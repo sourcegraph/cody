@@ -9,6 +9,7 @@ import { execQueryWrapper } from '../tree-sitter/query-sdk'
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
 const DOC_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+D' : 'Opt+D'
+const TEST_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+T' : 'Opt+T'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
@@ -46,10 +47,7 @@ function isEmptyOrIncompleteSelection(
  * @param symbolRange - The range of the symbol in the original location
  * @returns The number of spaces to pad the decoration by on insertion line
  */
-function getSymbolDecorationPadding(
-    insertionLine: vscode.TextLine,
-    symbolRange: vscode.Range
-): number {
+function getSymbolDecorationPadding(insertionLine: vscode.TextLine, symbolRange: vscode.Range): number {
     const insertionEndCharacter = insertionLine.range.end.character
 
     // We ideally want to attempt to anchor the decoration onto the start of end of the symbol range
@@ -73,7 +71,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
-type HintType = 'EditOrChat' | 'Document' | 'Generate'
+type HintType = 'EditOrChat' | 'Document' | 'DocumentOrTest' | 'Generate'
 
 /**
  * Decorations for showing a "ghost" hint to the user.
@@ -85,30 +83,36 @@ type HintType = 'EditOrChat' | 'Document' | 'Generate'
  * executing this code early, without impacting VS Code startup time.
  */
 const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.TextEditorDecorationType }> =
-{
-    EditOrChat: {
-        text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
-        decoration: vscode.window.createTextEditorDecorationType({
-            isWholeLine: true,
-            after: {
-                color: GHOST_TEXT_COLOR,
-                margin: '0 0 0 1em',
-            },
-        }),
-    },
-    Document: {
-        text: `${DOC_SHORTCUT_LABEL} to Document`,
-        decoration: vscode.window.createTextEditorDecorationType({
-            after: { color: GHOST_TEXT_COLOR },
-        }),
-    },
-    Generate: {
-        text: `${EDIT_SHORTCUT_LABEL} to Generate`,
-        decoration: vscode.window.createTextEditorDecorationType({
-            after: { color: GHOST_TEXT_COLOR },
-        }),
-    },
-}
+    {
+        EditOrChat: {
+            text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                isWholeLine: true,
+                after: {
+                    color: GHOST_TEXT_COLOR,
+                    margin: '0 0 0 1em',
+                },
+            }),
+        },
+        Document: {
+            text: `${DOC_SHORTCUT_LABEL} to Document`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                after: { color: GHOST_TEXT_COLOR },
+            }),
+        },
+        DocumentOrTest: {
+            text: `${DOC_SHORTCUT_LABEL} to Document, ${TEST_SHORTCUT_LABEL} to Test`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                after: { color: GHOST_TEXT_COLOR },
+            }),
+        },
+        Generate: {
+            text: `${EDIT_SHORTCUT_LABEL} to Generate`,
+            decoration: vscode.window.createTextEditorDecorationType({
+                after: { color: GHOST_TEXT_COLOR },
+            }),
+        },
+    }
 
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
@@ -184,6 +188,39 @@ export class GhostHintDecorator implements vscode.Disposable {
                         selection.active,
                         'getDocumentableNode'
                     )
+
+                    const [testableNode] = execQueryWrapper(
+                        editor.document,
+                        selection.active,
+                        'getTestableNode'
+                    )
+
+                    console.log('Doc node', documentableNode)
+                    console.log('Test node', testableNode)
+
+                    if (documentableNode && testableNode) {
+                        this.clearGhostText(editor)
+                        /**
+                         * "Document" code flow.
+                         * Display ghost text above the relevant symbol.
+                         */
+                        const precedingLine = Math.max(0, documentableNode.symbol.startPosition.row - 1)
+                        return this.setThrottledGhostText(
+                            editor,
+                            new vscode.Position(precedingLine, Number.MAX_VALUE),
+                            'DocumentOrTest',
+                            getSymbolDecorationPadding(
+                                editor.document.lineAt(precedingLine),
+                                new vscode.Range(
+                                    documentableNode.symbol.startPosition.row,
+                                    documentableNode.symbol.startPosition.column,
+                                    documentableNode.symbol.endPosition.row,
+                                    documentableNode.symbol.endPosition.column
+                                )
+                            )
+                        )
+                    }
+
                     if (documentableNode) {
                         this.clearGhostText(editor)
                         /**
@@ -214,9 +251,9 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     /**
-                                         * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
-                                         * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
-                                         */
+                     * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
+                     * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
+                     */
                     const targetPosition = selection.isReversed
                         ? selection.active
                         : selection.active.translate(selection.end.character === 0 ? -1 : 0)

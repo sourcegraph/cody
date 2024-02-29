@@ -18,8 +18,10 @@ export const claude: EditLLMInteraction = {
         }
     },
     getDoc(options) {
+        const firstLine = options.selectedText.split('\n')[0]
         return {
             ...SHARED_PARAMETERS,
+            stopSequences: [...SHARED_PARAMETERS.stopSequences, firstLine],
             prompt: buildGenericPrompt('doc', options),
         }
     },

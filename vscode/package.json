@@ -550,6 +550,11 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
+        "command": "cody.command.unit-tests",
+        "key": "alt+t",
+        "when": "cody.activated && editorIsOpen"
+      },
+      {
         "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",

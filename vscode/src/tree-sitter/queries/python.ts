@@ -64,5 +64,6 @@ export const pythonQueries = {
         singlelineTriggers: '',
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
+        testableNodes: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
