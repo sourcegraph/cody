@@ -17,10 +17,15 @@ import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
 
+export type Action =
+    | { type: 'writeSearchQuery'; result?: string[] }
+    | { type: 'search'; queries: string[]; result?: { [query: string]: string } }
+
 /**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
+    | { command: 'agi/submitIssueDescription'; description: string }
     | { command: 'ready' }
     | { command: 'initialized' }
     | {
@@ -103,6 +108,7 @@ export type WebviewMessage =
  * A message sent from the extension host to the webview.
  */
 export type ExtensionMessage =
+    | { type: 'agi/actions' }
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv

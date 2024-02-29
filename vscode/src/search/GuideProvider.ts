@@ -1,9 +1,12 @@
+import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { Action, WebviewMessage } from '../chat/protocol'
 import type { SymfRunner } from '../local-context/symf'
 
 export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private webview?: vscode.Webview
+    private actions: Action[] = []
 
     constructor(
         private extensionUri: vscode.Uri,
@@ -13,6 +16,7 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
     dispose() {
         throw new Error('Method not implemented.')
     }
+
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         context: vscode.WebviewViewResolveContext<unknown>,
@@ -43,14 +47,43 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
 
         // Register to receive messages from webview
         this.disposables.push(
-            webviewView.webview.onDidReceiveMessage(
-                message => {
-                    console.log('# got message', message)
-                }
-                // this.onDidReceiveMessage(
-                //     hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                // )
+            webviewView.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(
+                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
+                )
             )
         )
+    }
+
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        switch (message.command) {
+            case 'agi/submitIssueDescription':
+                this.actions.push({
+                    type: 'writeSearchQuery',
+                    result: undefined,
+                })
+                await this.postActions()
+                void this.doLastAction()
+                break
+        }
+    }
+
+    private async doLastAction(): Promise<void> {
+        const lastAction = this.actions.at(-1)
+        if (!lastAction) {
+            return
+        }
+        switch (lastAction.type) {
+            case 'writeSearchQuery':
+                console.log('# doLastAction > writeSearchQuery')
+                break
+        }
+    }
+
+    private async postActions() {
+        this.webview?.postMessage({
+            type: 'agi/actions',
+            actions: this.actions,
+        })
     }
 }
