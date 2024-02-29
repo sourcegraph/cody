@@ -4,6 +4,7 @@ import { XMLParser } from 'fast-xml-parser'
 import * as vscode from 'vscode'
 import type { Action, WebviewMessage } from '../chat/protocol'
 import type { SymfRunner } from '../local-context/symf'
+import { getScopeDirs } from './SearchViewProvider'
 
 export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -71,6 +72,11 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
                 await this.postActions()
                 void this.doLastAction()
                 break
+            case 'agi/doNewAction':
+                this.actions = [...message.prevActions, message.newAction]
+                await this.postActions()
+                void this.doLastAction()
+                break
         }
     }
 
@@ -83,6 +89,26 @@ export class GuideProvider implements vscode.WebviewViewProvider, vscode.Disposa
             case 'writeSearchQuery': {
                 const queries = await writeQueries(this.completionsClient, this.issueDescription)
                 lastAction.result = queries
+                await this.postActions()
+                break
+            }
+            case 'searchAll': {
+                const queries = lastAction.queries
+                const scopeDirs = getScopeDirs()
+                const r0 = await Promise.all(
+                    queries.map(query => {
+                        return {
+                            query,
+                            results: this.symfRunner.getResults(query, scopeDirs),
+                        }
+                    })
+                )
+                const r1 = await Promise.all(
+                    r0.map(async ({ query, results }) => {
+                        return { query, results: (await Promise.all((await results).flat())).flat() }
+                    })
+                )
+                lastAction.result = r1
                 await this.postActions()
                 break
             }

@@ -340,7 +340,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
 /**
  * @returns the list of workspace folders to search. The first folder is the active file's folder.
  */
-function getScopeDirs(): FileURI[] {
+export function getScopeDirs(): FileURI[] {
     const folders = vscode.workspace.workspaceFolders?.map(f => f.uri).filter(isFileURI)
     if (!folders) {
         return []

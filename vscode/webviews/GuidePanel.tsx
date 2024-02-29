@@ -18,6 +18,16 @@ export const GuidePanel: React.FunctionComponent<{
             description: issueDescription,
         })
     }, [vscodeAPI, issueDescription])
+    const onAddAction = useCallback(
+        (newAction: Action) => {
+            vscodeAPI.postMessage({
+                command: 'agi/doNewAction',
+                newAction,
+                prevActions: actions,
+            })
+        },
+        [vscodeAPI, actions]
+    )
 
     useEffect(() => {
         return vscodeAPI.onMessage(message => {
@@ -46,16 +56,25 @@ export const GuidePanel: React.FunctionComponent<{
                     </button>
                 </div>
             </div>
-            {actions.map(action => (
+            {actions.map((action, i) => (
                 <div>
-                    <ActionBlock key={action.type} action={action} />
+                    <ActionBlock
+                        key={action.type}
+                        action={action}
+                        isInteractive={i === actions.length - 1}
+                        onAddAction={onAddAction}
+                    />
                 </div>
             ))}
         </>
     )
 }
 
-const ActionBlock: React.FunctionComponent<{ action: Action }> = ({ action }) => {
+const ActionBlock: React.FunctionComponent<{
+    action: Action
+    isInteractive: boolean
+    onAddAction: (action: Action) => void
+}> = ({ action, isInteractive, onAddAction: addAction }) => {
     switch (action.type) {
         case 'writeSearchQuery':
             if (!action.result) {
@@ -65,12 +84,49 @@ const ActionBlock: React.FunctionComponent<{ action: Action }> = ({ action }) =>
                 <div>
                     <div>Proposed queries:</div>
                     <textarea defaultValue={action.result.join('\n')} />
-                    <div>
-                        <button type="button">Search all</button>
-                    </div>
+                    {isInteractive && (
+                        <div>
+                            <button
+                                onClick={() =>
+                                    addAction({
+                                        type: 'searchAll',
+                                        queries: action.result ?? [],
+                                    })
+                                }
+                                type="button"
+                            >
+                                Search all
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )
+        case 'searchAll':
+            if (!action.result) {
+                return <div>searching...</div>
+            }
+            return (
+                <div>
+                    <div>Results:</div>
+                    {action.result.map((result, i) => (
+                        <div key={result.query}>
+                            <div>
+                                <span>{result.query}</span>
+                                <span>
+                                    {result.results.length}
+                                    {result.results.length === 1 ? 'hit' : 'hits'}
+                                </span>
+                            </div>
+                            <div>
+                                {result.results.map(r => {
+                                    return <div>{r.fqname}</div>
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )
         default:
-            return <div>Unrecognized action: {action.type}</div>
+            return <div>Unrecognized action: {(action as any).type}</div>
     }
 }

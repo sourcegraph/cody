@@ -8,6 +8,7 @@ import type {
     ContextFile,
     EnhancedContextContextT,
     ModelProvider,
+    Result,
     SearchPanelFile,
     TelemetryEventProperties,
     UserLocalHistory,
@@ -19,13 +20,14 @@ import type { Repo } from '../context/repo-fetcher'
 
 export type Action =
     | { type: 'writeSearchQuery'; result?: string[] }
-    | { type: 'search'; queries: string[]; result?: { [query: string]: string } }
+    | { type: 'searchAll'; queries: string[]; result?: { query: string; results: Result[] }[] }
 
 /**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
     | { command: 'agi/submitIssueDescription'; description: string }
+    | { command: 'agi/doNewAction'; newAction: Action; prevActions: Action[] }
     | { command: 'ready' }
     | { command: 'initialized' }
     | {
