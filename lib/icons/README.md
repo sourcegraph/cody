@@ -11,6 +11,7 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 | `C`       | ![C icon](svg-originals/C.svg) |
 | `D`       | ![D icon](svg-originals/D.svg) |
 | `E`       | ![E icon](svg-originals/E.svg) |
+| `F`       | ![E icon](svg-originals/F.svg) |
 | `H`       | ![H icon](svg-originals/H.svg) |
 
 ## Regenerating

@@ -1065,6 +1065,13 @@
           "fontCharacter": "\\0045"
         }
       },
+      "ollama-logo": {
+        "description": "Ollama logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0046"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {
