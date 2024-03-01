@@ -35,8 +35,7 @@ export class ModelProvider {
 
     /**
      * Fetches available Ollama models from the local Ollama server
-     * and adds them to the list of default providers.
-     * The models are marked as Cody Pro only.
+     * and adds them to the list of ollama providers.
      */
     public static getLocalOllamaModels(): void {
         fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
@@ -68,8 +67,7 @@ export class ModelProvider {
 
     /**
      * Gets the model providers based on the endpoint and current model.
-     * If endpoint is a dotcom endpoint, returns dotComProviders.
-     * Otherwise returns providers.
+     * If endpoint is a dotcom endpoint, returns dotComProviders with ollama providers.
      * If currentModel is provided, sets it as the default model.
      */
     public static get(
