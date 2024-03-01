@@ -101,7 +101,7 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ symbol?: QueryCapture; range?: QueryCapture }]
+    ) => [] | readonly { readonly node?: SyntaxNode; readonly name?: string }[]
 }
 
 /**
@@ -157,7 +157,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 )
             })
 
-            return [{ symbol, range }] as const
+            return [{ node: symbol?.node, name: symbol?.name }, { node: range?.node, name: range?.name }] as const
         },
     }
 }

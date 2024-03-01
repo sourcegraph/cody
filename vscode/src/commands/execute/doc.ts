@@ -15,16 +15,16 @@ function getSymbolRangeAtPosition(
     document: vscode.TextDocument,
     position: vscode.Position
 ): { range?: vscode.Range; insertionPoint?: vscode.Position } {
-    const [documentableNodeAtCursor] = execQueryWrapper(document, position, 'getDocumentableNode')
-    if (!documentableNodeAtCursor.range) {
+    const [_, documentableRange] = execQueryWrapper(document, position, 'getDocumentableNode')
+    if (!documentableRange.node) {
         return {}
     }
 
-    const { range: { node: { startPosition, endPosition }, name } } = documentableNodeAtCursor
+    const { node: { startPosition, endPosition }, name } = documentableRange
 
     let insertionPoint = new vscode.Position(startPosition.row, 0)
 
-    if (document.languageId === 'python' && (name === 'range.function' || name === 'range.class')) {
+    if (document.languageId === 'python' && name && (name === 'range.function' || name === 'range.class')) {
         /**
          * Adjust the insertion point to be below the symbol position for functions and classes.
          * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/

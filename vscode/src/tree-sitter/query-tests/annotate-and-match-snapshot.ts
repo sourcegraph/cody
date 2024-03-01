@@ -99,7 +99,7 @@ type Captures = (
     node: SyntaxNode,
     startPosition: Point,
     endPosition?: Point
-) => readonly Readonly<Parser.QueryCapture>[]
+) => readonly Readonly<Partial<Parser.QueryCapture>>[]
 
 interface AnnotateSnippetsParams {
     code: string
@@ -149,6 +149,10 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const nodeTypes = []
 
     for (const { name, node } of capturedNodes) {
+        if (!name || !node) {
+            continue;
+        }
+
         const { startPosition: start, endPosition, type } = node
 
         const end = {
@@ -238,33 +242,18 @@ interface AnnotateAndMatchParams {
  * Add "// only", or other comment delimiter for the current language, to
  * focus on one code sample (similar to `it.only` from `jest`).
  */
-/**
- * Annotates the given code snippets with query match information, runs
- * snapshot testing on the annotated code, and saves the snapshot file.
- *
- * Splits the given source code into snippets, annotates each snippet by
- * running the parser and captures on it, joins the annotated snippets, adds
- * header documentation, and saves to a snapshot file for snapshot testing.
- *
- * Allows focusing on one snippet at a time by using a comment like
- * "// only" in the source code.
- */
-export async function annotateAndMatchSnapshot(
-    params: AnnotateAndMatchParams
-): Promise<void> {
+export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): Promise<void> {
     const { captures, sourcesPath, parser, language } = params
 
     const { delimiter, separator } = getCommentDelimiter(language)
 
     // Get the source code and split into snippets.
-    const code = fs.readFileSync(path.join(__dirname, sourcesPath), "utf8")
+    const code = fs.readFileSync(path.join(__dirname, sourcesPath), 'utf8')
     // Queries are used on specific parts of the source code (e.g., range of the inserted multiline completion).
     // Snippets are required to mimic such behavior and test the order of returned captures.
     const snippets = code.split(separator)
     // Support "// only" to focus on one code sample at a time
-    const onlySnippet = findLast(snippets, (snippet) =>
-        snippet.startsWith(`${delimiter} only`)
-    )
+    const onlySnippet = findLast(snippets, snippet => snippet.startsWith(`${delimiter} only`))
 
     const header = dedent`
         ${commentOutLines(DOCUMENTATION_HEADER, delimiter)}
@@ -272,13 +261,8 @@ export async function annotateAndMatchSnapshot(
     `.trim()
 
     const annotated = (onlySnippet ? [onlySnippet] : snippets)
-        .map((snippet) => {
-            return annotateSnippets({
-                code: snippet,
-                language,
-                parser,
-                captures,
-            })
+        .map(snippet => {
+            return annotateSnippets({ code: snippet, language, parser, captures })
         })
         .join(separator)
 

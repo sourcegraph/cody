@@ -176,19 +176,19 @@ export class GhostHintDecorator implements vscode.Disposable {
                         return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
                     }
 
-                    const [documentableNode] = execQueryWrapper(
+                    const [documentableSymbol] = execQueryWrapper(
                         editor.document,
                         selection.active,
                         'getDocumentableNode'
                     )
 
-                    if (documentableNode.symbol) {
+                    if (documentableSymbol.node) {
                         this.clearGhostText(editor)
                         /**
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
                          */
-                        const precedingLine = Math.max(0, documentableNode.symbol.node.startPosition.row - 1)
+                        const precedingLine = Math.max(0, documentableSymbol.node.startPosition.row - 1)
                         return this.setThrottledGhostText(
                             editor,
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -196,10 +196,10 @@ export class GhostHintDecorator implements vscode.Disposable {
                             getSymbolDecorationPadding(
                                 editor.document.lineAt(precedingLine),
                                 new vscode.Range(
-                                    documentableNode.symbol.node.startPosition.row,
-                                    documentableNode.symbol.node.startPosition.column,
-                                    documentableNode.symbol.node.endPosition.row,
-                                    documentableNode.symbol.node.endPosition.column
+                                    documentableSymbol.node.startPosition.row,
+                                    documentableSymbol.node.startPosition.column,
+                                    documentableSymbol.node.endPosition.row,
+                                    documentableSymbol.node.endPosition.column
                                 )
                             )
                         )

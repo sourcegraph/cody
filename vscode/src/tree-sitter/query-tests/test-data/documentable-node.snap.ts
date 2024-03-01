@@ -8,227 +8,216 @@
   function wrapper() {
       console.log('wrapper')
       function test() {
-//             ^^^^ documentableNode[1]
+//    ^ start range.identifier[1]
+//             ^^^^ symbol.identifier[1]
 //                █
       }
+//    ^ end range.identifier[1]
   }
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: function_declaration
 
 // ------------------------------------
 
   function testFunc() {
-//         ^^^^^^^^ documentableNode[1]
+//^ start range.identifier[1]
+//         ^^^^^^^^ symbol.identifier[1]
 //              █
       wrapper
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: function_declaration
 
 // ------------------------------------
 
-function testParameter(val) {
-    //                 |
-    wrapper
-}
+  function testParameter(val) {
+//^ start range.identifier[1]
+//                       █
+      wrapper
+  }
+//^ end range.identifier[1]
+
+// Nodes types:
+// range.identifier[1]: function_declaration
 
 // ------------------------------------
 
   function arrowWrapper() {
       const arrow = (value: string) => {
-//          ^^^^^ documentableNode[1]
+//          ^^^^^ symbol.identifier[1]
+//          ^ start range.identifier[1]
 //            █
       }
+//    ^ end range.identifier[1]
   }
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: variable_declarator
 
 // ------------------------------------
 
   const arrowFunc = (value: string) => {
-//      ^^^^^^^^^ documentableNode[1]
+//      ^^^^^^^^^ symbol.identifier[1]
+//      ^ start range.identifier[1]
 //        █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: variable_declarator
 
 // ------------------------------------
 
   class Agent {
-//      ^^^^^ documentableNode[1]
+//^ start range.identifier[1]
+//      ^^^^^ symbol.identifier[1]
 //         █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: type_identifier
+// symbol.identifier[1]: type_identifier
+// range.identifier[1]: class_declaration
 
 // ------------------------------------
 
   class AgentConstructor {
       constructor() {
-//    ^^^^^^^^^^^ documentableNode[1]
+//    ^^^^^^^^^^^ symbol.function[1]
+//    ^ start range.function[1]
 //         █
       }
+//    ^ end range.function[1]
   }
 
 // Nodes types:
-// documentableNode[1]: property_identifier
+// symbol.function[1]: property_identifier
+// range.function[1]: method_definition
 
 // ------------------------------------
 
   function signature()
-//         ^^^^^^^^^ documentableNode[1]
+//^^^^^^^^^^^^^^^^^^^^ range.identifier[1]
+//         ^^^^^^^^^ symbol.identifier[1]
 //             █
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: function_signature
 
 // ------------------------------------
 
   interface TestInterface {
-//          ^^^^^^^^^^^^^ documentableNode[1]
+//^ start range.identifier[1]
+//          ^^^^^^^^^^^^^ symbol.identifier[1]
 //                █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: type_identifier
+// symbol.identifier[1]: type_identifier
+// range.identifier[1]: interface_declaration
 
 // ------------------------------------
 
   interface TestInterfacePropertySignature {
+//^ start range.identifier[1]
       test: boolean
-//    ^^^^ documentableNode[1]
+//    ^^^^ symbol.identifier[1]
 //      █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: property_identifier
+// symbol.identifier[1]: property_identifier
+// range.identifier[1]: interface_declaration
 
 // ------------------------------------
 
   interface TestInterfaceCallSignature {
       (): boolean;
-//    ^^^^^^^^^^^ documentableNode[1]
+//    ^^^^^^^^^^^ symbol.function[1], range.function[1]
 //       █
   }
 
 // Nodes types:
-// documentableNode[1]: call_signature
+// symbol.function[1]: call_signature
+// range.function[1]: call_signature
 
 // ------------------------------------
 
   type TestType = {
-//     ^^^^^^^^ documentableNode[1]
+//^ start range.identifier[1]
+//     ^^^^^^^^ symbol.identifier[1]
 //         █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: type_identifier
+// symbol.identifier[1]: type_identifier
+// range.identifier[1]: type_alias_declaration
 
 // ------------------------------------
 
   type TestTypePropertySignature = {
+//^ start range.identifier[1]
       test: number
-//    ^^^^ documentableNode[1]
+//    ^^^^ sybmol.identifier[1]
 //     █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// documentableNode[1]: property_identifier
+// sybmol.identifier[1]: property_identifier
+// range.identifier[1]: type_alias_declaration
 
 // ------------------------------------
 
   type TestTypeCallSignature = {
       (): boolean;
-//    ^^^^^^^^^^^ documentableNode[1]
+//    ^^^^^^^^^^^ symbol.function[1], range.function[1]
 //         █
   }
 
 // Nodes types:
-// documentableNode[1]: call_signature
+// symbol.function[1]: call_signature
+// range.function[1]: call_signature
 
 // ------------------------------------
 
   enum TestEnum { One, Two, Three }
-//     ^^^^^^^^ documentableNode[1]
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ range.identifier[1]
+//     ^^^^^^^^ symbol.identifier[1]
 //       █
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: enum_declaration
 
 // ------------------------------------
 
   const name = 'test'
-//      ^^^^ documentableNode[1]
+//      ^^^^ symbol.identifier[1]
+//      ^^^^^^^^^^^^^ range.identifier[1]
 //       █
 
 // Nodes types:
-// documentableNode[1]: identifier
+// symbol.identifier[1]: identifier
+// range.identifier[1]: variable_declarator
 
 // ------------------------------------
 
-let changingName = 'test'
-changingName = 'other'
-// |
-
-// ------------------------------------
-
-  export function testFunc() {}
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ documentableExport[1]
+  let changingName = 'test'
+  changingName = 'other'
 //   █
 
 // Nodes types:
-// documentableExport[1]: export_statement
 
-// ------------------------------------
-
-  export function testFunc() {}
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ documentableExport[1]
-//             █
-
-// Nodes types:
-// documentableExport[1]: export_statement
-
-// ------------------------------------
-
-  const name = 'test'
-  export { name }
-//^^^^^^^^^^^^^^^ documentableExport[1]
-//   █
-
-// Nodes types:
-// documentableExport[1]: export_statement
-
-// ------------------------------------
-
-  const name = 'test'
-  export { name }
-//         ^^^^ documentableNode[1]
-//           █
-
-// Nodes types:
-// documentableNode[1]: identifier
-
-// ------------------------------------
-
-  const name = 'test'
-  export default name
-//^^^^^^^^^^^^^^^^^^^ documentableExport[1]
-//          █
-
-// Nodes types:
-// documentableExport[1]: export_statement
-
-// ------------------------------------
-
-  export default function testFunc() {}
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ documentableExport[1]
-//                  █
-
-// Nodes types:
-// documentableExport[1]: export_statement
 
