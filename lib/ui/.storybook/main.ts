@@ -9,7 +9,8 @@ const config: StorybookConfig = {
         name: '@storybook/react-vite',
         options: {},
     },
-    viteFinal: config => defineProjectWithDefaults(__dirname, config),
+    viteFinal: config =>
+        defineProjectWithDefaults(__dirname, { ...config, define: { 'process.env': '{}' } }),
     docs: {
         autodocs: 'tag',
     },
