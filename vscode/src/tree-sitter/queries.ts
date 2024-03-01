@@ -3,7 +3,7 @@ import { goQueries } from './queries/go'
 import { javascriptQueries } from './queries/javascript'
 import { pythonQueries } from './queries/python'
 
-export type QueryName = 'singlelineTriggers' | 'intents' | 'documentableNodes' | 'testableNodes'
+export type QueryName = 'singlelineTriggers' | 'intents' | 'documentableNodes'
 
 /**
  * Completion intents sorted by priority.

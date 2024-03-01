@@ -11,6 +11,5 @@ export const goQueries = {
         `,
         intents: '',
         documentableNodes: '',
-        testableNodes: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

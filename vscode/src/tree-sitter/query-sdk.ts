@@ -101,12 +101,7 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ symbol?: SyntaxNode; span?: SyntaxNode }]
-    getTestableNode: (
-        node: SyntaxNode,
-        start: Point,
-        end?: Point
-    ) => [] | readonly [{ symbol: SyntaxNode; span: SyntaxNode }]
+    ) => [] | readonly [{ symbol?: QueryCapture; range?: QueryCapture }]
 }
 
 /**
@@ -136,20 +131,18 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
         },
         getDocumentableNode: (root, start, end) => {
-            const cursorCaptures = []
-            const spanCaptures = []
             const captures = queries.documentableNodes.compiled.captures(root, start, end)
-
+            const symbolCaptures = []
+            const rangeCaptures = []
             for (const capture of captures) {
                 if (capture.name === 'span') {
-                    spanCaptures.push(capture)
+                    rangeCaptures.push(capture)
                 } else {
-                    cursorCaptures.push(capture)
+                    symbolCaptures.push(capture)
                 }
             }
 
-            // TODO: Clean this up
-            const cursorCapture = findLast(cursorCaptures, ({ node }) => {
+            const symbol = findLast(symbolCaptures, ({ node }) => {
                 return (
                     node.startPosition.row === start.row &&
                     (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
@@ -157,50 +150,14 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 )
             })
 
-            const spanCapture = findLast(spanCaptures, ({ node }) => {
+            const range = findLast(rangeCaptures, ({ node }) => {
                 return (
                     (node.startPosition.row <= start.row && node.startPosition.column <= start.column) &&
                     (start.column <= node.endPosition.column || start.row <= node.endPosition.row)
                 )
             })
 
-            return [{ symbol: cursorCapture?.node, span: spanCapture?.node }] as const
-        },
-        getTestableNode: (root, start, end) => {
-            const cursorCaptures = []
-            const spanCaptures = []
-            const captures = queries.testableNodes.compiled.captures(root, start, end)
-
-            for (const capture of captures) {
-                if (capture.name === 'span') {
-                    spanCaptures.push(capture)
-                } else {
-                    cursorCaptures.push(capture)
-                }
-            }
-
-            // TODO: Clean this up
-            const cursorCapture = findLast(cursorCaptures, ({ node }) => {
-                return (
-                    node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
-                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
-                )
-            })
-
-            const spanCapture = findLast(spanCaptures, ({ node }) => {
-                return (
-                    node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
-                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
-                )
-            })
-
-            if (!cursorCapture || !spanCapture) {
-                return []
-            }
-
-            return [{ symbol: cursorCapture.node, span: spanCapture.node }] as const
+            return [{ symbol, range }] as const
         },
     }
 }

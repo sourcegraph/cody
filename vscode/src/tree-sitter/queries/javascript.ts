@@ -128,14 +128,14 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 const JS_DOCUMENTABLE_NODES_QUERY = dedent`
     ; Identifiers
     ;--------------------------------
-    (_ name: (identifier) @symbol) @span
+    (_ name: (identifier) @symbol.identifier) @range.identifier
 
     ; Property Identifiers
     ;--------------------------------
     (method_definition
-        name: (property_identifier) @symbol) @span
+        name: (property_identifier) @symbol.function) @range.function
     (pair
-        key: (property_identifier) @symbol) @span
+        key: (property_identifier) @symbol.identifier) @range.identifier
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
@@ -144,44 +144,23 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ; Type Identifiers
     ;--------------------------------
     (_
-        name: (type_identifier) @symbol) @span
+        name: (type_identifier) @symbol.identifier) @range.identifier
 
     ; Type Signatures
     ;--------------------------------
-    ((call_signature) @symbol) @span
+    ((call_signature) @symbol.function) @range.function
     (interface_declaration
         (interface_body
             (property_signature
-                name: (property_identifier) @symbol))) @span
+                name: (property_identifier) @symbol.identifier))) @range.identifier
     (interface_declaration
         (interface_body
             (method_signature
-                name: (property_identifier) @symbol))) @span
+                name: (property_identifier) @symbol.identifier))) @range.identifier
     (type_alias_declaration
         (object_type
             (property_signature
-                name: (property_identifier) @sybmol))) @span
-`
-
-const JS_TESTABLE_NODES_QUERY = dedent`
-    ; Function Identifiers
-    ;--------------------------------
-    (_ name: (identifier) @symbol.function value: (arrow_function)) @span
-    (_ key: (property_identifier) @symbol.function value: (arrow_function)) @span
-
-    ; TODO Fix
-    ; (_ key: (property_identifier) @symbol.function value: (function_expression)) @span
-
-    ; Function Declarations
-    ;--------------------------------
-    (method_definition name: (property_identifier) @symbol.function) @span
-    (function_declaration name: (identifier) @symbol.function) @span
-    (generator_function_declaration name: (identifier) @symbol.function) @span
-`
-
-/** TOOD: Anything different required? */
-const TS_TESTABLE_NODES_QUERY = dedent`
-    ${JS_TESTABLE_NODES_QUERY}
+                name: (property_identifier) @sybmol.identifier))) @range.identifier
 `
 
 export const javascriptQueries = {
@@ -189,24 +168,20 @@ export const javascriptQueries = {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
-        testableNodes: JS_TESTABLE_NODES_QUERY,
     },
     [SupportedLanguage.javascriptreact]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
-        testableNodes: JS_TESTABLE_NODES_QUERY,
     },
     [SupportedLanguage.typescript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
-        testableNodes: TS_TESTABLE_NODES_QUERY,
     },
     [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
-        testableNodes: TS_TESTABLE_NODES_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

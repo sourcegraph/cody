@@ -27,7 +27,6 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-3-sonnet-20240229': claude,
     'openai/gpt-3.5-turbo': openai,
     'openai/gpt-4-1106-preview': openai,
-    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct': claude
 } as const
 
 const getInteractionArgsFromIntent = (

@@ -9,7 +9,6 @@ import { execQueryWrapper } from '../tree-sitter/query-sdk'
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
 const DOC_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+D' : 'Opt+D'
-const TEST_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+T' : 'Opt+T'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
@@ -71,7 +70,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
-type HintType = 'EditOrChat' | 'Document' | 'DocumentOrTest' | 'Generate'
+type HintType = 'EditOrChat' | 'Document' | 'Generate'
 
 /**
  * Decorations for showing a "ghost" hint to the user.
@@ -96,12 +95,6 @@ const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.Text
         },
         Document: {
             text: `${DOC_SHORTCUT_LABEL} to Document`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                after: { color: GHOST_TEXT_COLOR },
-            }),
-        },
-        DocumentOrTest: {
-            text: `${DOC_SHORTCUT_LABEL} to Document, ${TEST_SHORTCUT_LABEL} to Test`,
             decoration: vscode.window.createTextEditorDecorationType({
                 after: { color: GHOST_TEXT_COLOR },
             }),
@@ -189,42 +182,13 @@ export class GhostHintDecorator implements vscode.Disposable {
                         'getDocumentableNode'
                     )
 
-                    const [testableNode] = execQueryWrapper(
-                        editor.document,
-                        selection.active,
-                        'getTestableNode'
-                    )
-
-                    if (documentableNode.symbol && testableNode.symbol) {
-                        this.clearGhostText(editor)
-                        /**
-                         * "Document" code flow.
-                         * Display ghost text above the relevant symbol.
-                         */
-                        const precedingLine = Math.max(0, documentableNode.symbol.startPosition.row - 1)
-                        return this.setThrottledGhostText(
-                            editor,
-                            new vscode.Position(precedingLine, Number.MAX_VALUE),
-                            'DocumentOrTest',
-                            getSymbolDecorationPadding(
-                                editor.document.lineAt(precedingLine),
-                                new vscode.Range(
-                                    documentableNode.symbol.startPosition.row,
-                                    documentableNode.symbol.startPosition.column,
-                                    documentableNode.symbol.endPosition.row,
-                                    documentableNode.symbol.endPosition.column
-                                )
-                            )
-                        )
-                    }
-
                     if (documentableNode.symbol) {
                         this.clearGhostText(editor)
                         /**
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
                          */
-                        const precedingLine = Math.max(0, documentableNode.symbol.startPosition.row - 1)
+                        const precedingLine = Math.max(0, documentableNode.symbol.node.startPosition.row - 1)
                         return this.setThrottledGhostText(
                             editor,
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -232,10 +196,10 @@ export class GhostHintDecorator implements vscode.Disposable {
                             getSymbolDecorationPadding(
                                 editor.document.lineAt(precedingLine),
                                 new vscode.Range(
-                                    documentableNode.symbol.startPosition.row,
-                                    documentableNode.symbol.startPosition.column,
-                                    documentableNode.symbol.endPosition.row,
-                                    documentableNode.symbol.endPosition.column
+                                    documentableNode.symbol.node.startPosition.row,
+                                    documentableNode.symbol.node.startPosition.column,
+                                    documentableNode.symbol.node.endPosition.row,
+                                    documentableNode.symbol.node.endPosition.column
                                 )
                             )
                         )

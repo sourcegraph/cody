@@ -9,23 +9,22 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] {
         const [documentableNode] = execQueryWrapper(document, range.start, 'getDocumentableNode')
 
-        if (!documentableNode.symbol || !documentableNode.span) {
+        if (!documentableNode.symbol || !documentableNode.range) {
             return []
         }
 
-        const { symbol, span } = documentableNode
         // Expand the range from the node to include the full line
         const documentableRange = new vscode.Range(
-            span.startPosition.row,
-            span.startPosition.column,
-            span.endPosition.row,
-            span.endPosition.column
+            documentableNode.range.node.startPosition.row,
+            documentableNode.range.node.startPosition.column,
+            documentableNode.range.node.endPosition.row,
+            documentableNode.range.node.endPosition.column
         )
         return [
             this.createCommandCodeAction(
                 document,
                 documentableRange,
-                `Ask Cody to Document: ${symbol.text}`
+                `Ask Cody to Document: ${documentableNode.symbol.node.text}`
             ),
         ]
     }

@@ -46,17 +46,17 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
     ; Function definitions
     ;--------------------------------
     (function_definition
-        name: (identifier) @function)
+        name: (identifier) @symbol.function) @range.function
 
     ; Class definitions
     ;--------------------------------
     (class_definition
-        name: (identifier) @class)
+        name: (identifier) @symbol.class) @range.class
 
     ; Assignments
     ;--------------------------------
     (assignment
-        left: (identifier) @variable)
+        left: (identifier) @symbol.identifier) @range.identifier
 `
 
 export const pythonQueries = {
@@ -64,6 +64,5 @@ export const pythonQueries = {
         singlelineTriggers: '',
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
-        testableNodes: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
