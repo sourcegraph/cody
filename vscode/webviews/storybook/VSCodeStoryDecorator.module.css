@@ -2,6 +2,10 @@
 * CSS styles for storybooks to define variables and otherwise resemble the VS Code.
 */
 
+body {
+    font-family: var(--vscode-font-family);
+}
+
 vscode-button::part(control) {
     font-size: inherit;
 }
@@ -56,6 +60,7 @@ vscode-button::part(control) {
     --type-ramp-base-line-height: normal;
     --vscode-input-background: #313131;
     --vscode-input-foreground: #cccccc;
+    --vscode-input-border: #555555;
     --vscode-inputOption-activeBorder: #2488db;
     --vscode-inputOption-hoverBackground: rgb(90 93 94 / 50%);
     --vscode-inputOption-activeBackground: rgb(36 137 219 / 51%);
@@ -63,7 +68,12 @@ vscode-button::part(control) {
     --vscode-inputValidation-errorBackground: #ff000033;
     --vscode-inputValidation-errorBorder: #ff0000;
     --vscode-link-color: #4daafc;
-    --vscode-list-activeSelectionBackground: #04395e;
+    --vscode-list-hoverForeground: #ffffff;
+    --vscode-list-activeSelectionBackground: #2222dd;
+    --vscode-list-inactiveSelectionBackground: #555555;
+    --vscode-list-inactiveSelectionForeground: #ffffff;
+    --vscode-list-focusBackground: #2222dd;
+    --vscode-list-hoverBackground: #2222dd;
     --vscode-list-activeSelectionForeground: #ffffff;
     --vscode-list-warningForeground: #855600;
     --vscode-problemsErrorIcon-foreground: #f48771;
@@ -78,10 +88,12 @@ vscode-button::part(control) {
     --vscode-tab-inactiveForeground: #ffffff77;
     --vscode-textLink-foreground: #4daafc;
     --vscode-widget-shadow: rgba(0 0 0 0.2);
-    --vscode-dropdown-background: #313131;
+    --vscode-widget-border: #555555;
+    --vscode-dropdown-background: #222222;
     --vscode-dropdown-border: #3c3c3c;
     --vscode-dropdown-foreground: #cccccc;
     --vscode-dropdown-listBackground: #1f1f1f;
+    --vscode-quickInputList-focusBackground: #2222dd;
 }
 
 @font-face {

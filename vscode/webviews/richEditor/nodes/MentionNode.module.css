@@ -1,0 +1,4 @@
+.mention-node {
+    color: var(--vscode-list-inactiveSelectionForeground);
+    background-color: var(--vscode-list-inactiveSelectionBackground);
+}

@@ -1,10 +1,10 @@
 /* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
-.chat-input-container {
+.container {
     /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
     display: grid;
 }
 
-.chat-input-container::after {
+.container::after {
     /* Note the weird space! Needed to preventy jumpy behavior */
     content: attr(data-value) ' ';
 
@@ -15,14 +15,13 @@
     visibility: hidden;
 }
 
-.new-chat-input,
-.new-chat-input-container::after {
-    min-height: unset;
-}
 
 /* Both elements need the same styling so the height matches */
-.chat-input,
-.chat-input-container::after {
+.editor,
+.container::after {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+
     box-sizing: border-box;
     border: 1px solid transparent;
     border-radius: 2px;
@@ -39,4 +38,21 @@
     /* Place on top of each other */
     grid-area: 1 / 1 / 2 / 2;
     resize: none;
+}
+
+.editor:focus,
+.editor:focus-visible,
+.editor:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.editor {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.disabled {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
 }

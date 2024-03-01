@@ -1,69 +1,80 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
-import { UserContextSelectorComponent } from './UserContextSelector'
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
+import { VSCodeStoryDecorator } from '../../../storybook/VSCodeStoryDecorator'
+import { OptionsList, toOptions } from './atMentions'
 
-const meta: Meta<typeof UserContextSelectorComponent> = {
-    title: 'cody/User Context Selector',
-    component: UserContextSelectorComponent,
+const meta: Meta<typeof OptionsList> = {
+    title: 'cody/OptionsList',
+    component: OptionsList,
+
+    args: {
+        query: '',
+        options: [],
+        selectedIndex: null,
+        selectOptionAndCleanUp: () => {},
+        setHighlightedIndex: () => {},
+    } as React.ComponentProps<typeof OptionsList>,
+
     decorators: [
         VSCodeStoryDecorator,
-        Story => {
+        story => {
             return (
-                <div style={{ position: 'absolute', bottom: 0 }}>
-                    <Story />
+                <div
+                    style={{
+                        background: 'rgb(28, 33, 40)',
+                        position: 'absolute',
+                        bottom: 0,
+                        color: 'white',
+                        width: '600px',
+                    }}
+                >
+                    {story()}
                 </div>
             )
         },
     ],
-    argTypes: {
-        onSelected: { action: 'selected' },
-        setSelectedChatContext: { action: 'setSelectedChatContext' },
-    },
 }
 
 export default meta
 
-export const FileSearchEmpty: StoryObj<typeof UserContextSelectorComponent> = {
+export const FileSearchEmpty: StoryObj<typeof OptionsList> = {
     args: {
-        contextSelection: undefined,
-        selected: 0,
-        contextQuery: '',
+        query: '',
+        options: toOptions([]),
     },
 }
 
-export const FileSearchNoMatches: StoryObj<typeof UserContextSelectorComponent> = {
+export const FileSearchNoMatches: StoryObj<typeof OptionsList> = {
     args: {
-        contextSelection: [],
-        selected: 0,
-        contextQuery: 'missing',
+        query: 'missing',
+        options: toOptions([]),
     },
 }
 
-export const FileSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
+export const FileSearchMatches: StoryObj<typeof OptionsList> = {
     args: {
-        // Long enough to test text-overflow
-        contextSelection: Array.from(new Array(20).keys()).map(i => ({
-            uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
-            type: 'file',
-        })),
-        selected: 0,
-        contextQuery: 'file',
+        query: 'd',
+        options: toOptions(
+            Array.from(new Array(20).keys()).map(i => ({
+                uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
+                type: 'file',
+            }))
+        ),
     },
 }
 
-export const SymbolSearchNoMatchesWarning: StoryObj<typeof UserContextSelectorComponent> = {
+export const SymbolSearchNoMatchesWarning: StoryObj<typeof OptionsList> = {
     args: {
-        contextSelection: [],
-        selected: 0,
-        contextQuery: '#a',
+        query: '#a',
+        options: toOptions([]),
     },
 }
 
-export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> = {
+export const SymbolSearchMatches: StoryObj<typeof OptionsList> = {
     args: {
-        contextSelection: [
+        query: '#login',
+        options: toOptions([
             {
                 symbolName: 'LoginDialog',
                 type: 'symbol',
@@ -107,8 +118,6 @@ export const SymbolSearchMatches: StoryObj<typeof UserContextSelectorComponent> 
                 kind: 'method',
                 uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
             },
-        ],
-        selected: 0,
-        contextQuery: '#login',
+        ]),
     },
 }

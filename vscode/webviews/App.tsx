@@ -6,7 +6,6 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     type Configuration,
-    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
@@ -45,12 +44,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         isCodyProUser: false,
     })
 
-    const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
     const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
-
-    const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -248,10 +244,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         messageBeingEdited={messageBeingEdited}
                                         setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
-                                        contextSelection={contextSelection}
-                                        setContextSelection={setContextSelection}
-                                        formInput={formInput}
-                                        setFormInput={setFormInput}
                                         inputHistory={inputHistory}
                                         setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}

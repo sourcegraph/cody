@@ -4,11 +4,14 @@ import { Chat } from './Chat'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
-    title: 'ui/Chat',
+    title: 'cody/Chat',
     component: Chat,
 
     args: {
-        transcript: [],
+        transcript: [
+            { speaker: 'assistant', displayText: 'Hello from Cody!' },
+            { speaker: 'human', displayText: 'Hi from human.' },
+        ],
         messageInProgress: null,
         messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
@@ -20,7 +23,6 @@ const meta: Meta<typeof Chat> = {
         onSubmit: () => {},
         isCodyEnabled: true,
         chatEnabled: true,
-        setContextSelection: () => {},
         userInfo: { isCodyProUser: true, isDotComUser: true },
         isWebviewActive: true,
         vscodeAPI: null as any,
@@ -28,7 +30,10 @@ const meta: Meta<typeof Chat> = {
         isTranscriptError: false,
     } as React.ComponentProps<typeof Chat>,
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [
+        VSCodeStoryDecorator,
+        story => <div style={{ background: 'rgb(28, 33, 40)' }}>{story()}</div>,
+    ],
 } as Meta
 
 export default meta
