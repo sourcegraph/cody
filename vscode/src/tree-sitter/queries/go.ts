@@ -21,6 +21,9 @@ const DOCUMENTABLE_NODES = dedent`
     (var_declaration
         (var_spec
             (identifier) @symbol.identifier) @range.identifier)
+    (const_declaration
+        (const_spec
+            (identifier) @symbol.identifier))
     (short_var_declaration
         left:
             (expression_list (identifier) @symbol.identifier) @range.identifier)
