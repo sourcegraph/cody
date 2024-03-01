@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -23,6 +23,7 @@ import {
     type WebviewChatSubmitType,
 } from '@sourcegraph/cody-ui/src/Chat'
 import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import { TextArea } from '@sourcegraph/cody-ui/src/chat/TextArea'
 import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
@@ -208,7 +209,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputHistory={inputHistory}
             setInputHistory={setInputHistory}
             onSubmit={onSubmit}
-            textAreaComponent={TextArea}
+            textAreaComponent={VSCodeTextArea}
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
             symbolLinkComponent={SymbolLink}
@@ -268,117 +269,16 @@ const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
     </VSCodeButton>
 )
 
-const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
-    className,
-    isFocusd,
-    value,
-    setValue,
-    chatEnabled,
-    required,
-    onInput,
-    onKeyDown,
-    onKeyUp,
-    onFocus,
-    chatModels,
-    messageBeingEdited,
-    isNewChat,
-    inputCaretPosition,
-    isWebviewActive,
-}) => {
-    const inputRef = useRef<HTMLTextAreaElement>(null)
-    const tips = '(@ to include files or symbols)'
-    const placeholder = isNewChat ? `Message ${tips}` : `Follow-Up Message ${tips}`
-    const disabledPlaceHolder = 'Chat has been disabled by your Enterprise instance site administrator'
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: want new value to refresh it
-    useEffect(() => {
-        if (isFocusd) {
-            if (isWebviewActive) {
-                inputRef.current?.focus()
-            }
-
-            if (inputCaretPosition) {
-                return
-            }
-
-            // move cursor to end of line if current cursor position is at the beginning
-            if (inputRef.current?.selectionStart === 0 && value.length > 0) {
-                inputRef.current?.setSelectionRange(value.length, value.length)
-            }
-        }
-    }, [isFocusd, value, messageBeingEdited, chatModels])
-
-    useEffect(() => {
-        if (inputCaretPosition) {
-            inputRef.current?.setSelectionRange(inputCaretPosition, inputCaretPosition)
-            return
-        }
-    }, [inputCaretPosition])
-
-    // Focus the textarea when the webview gains focus (unless there is text selected). This makes
-    // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
-    // View` with the keyboard.
-    useEffect(() => {
-        const handleFocus = (): void => {
-            if (document.getSelection()?.isCollapsed) {
-                inputRef.current?.focus()
-            }
-        }
-        window.addEventListener('focus', handleFocus)
-        return () => {
-            window.removeEventListener('focus', handleFocus)
-        }
-    }, [])
-
-    const onTextAreaKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-            onKeyDown?.(event, inputRef.current?.selectionStart ?? null)
-        },
-        [onKeyDown]
-    )
-    const onTextAreaKeyUp = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-            onKeyUp?.(event, inputRef.current?.selectionStart ?? null)
-        },
-        [onKeyUp]
-    )
-
-    const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
-    const isDisabled = !chatEnabled
-
-    return (
-        <div
-            className={classNames(
-                styles.chatInputContainer,
-                className,
-                chatModels && styles.newChatInputContainer
-            )}
-            data-value={value || actualPlaceholder}
-        >
-            <textarea
-                className={classNames(
-                    styles.chatInput,
-                    className,
-                    chatModels && styles.newChatInput,
-                    isDisabled && styles.textareaDisabled
-                )}
-                rows={1}
-                ref={inputRef}
-                value={value}
-                required={required}
-                onInput={onInput}
-                onKeyDown={onTextAreaKeyDown}
-                onKeyUp={onTextAreaKeyUp}
-                onFocus={onFocus}
-                onPaste={onInput}
-                placeholder={actualPlaceholder}
-                aria-label="Chat message"
-                title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
-                disabled={isDisabled} // Disable the textarea if the chat is disabled and change the background color to grey
-            />
-        </div>
-    )
-}
+const VSCodeTextArea: React.FunctionComponent<
+    Omit<ChatUITextAreaProps, 'containerClassName' | 'inputClassName' | 'disabledClassName'>
+> = props => (
+    <TextArea
+        {...props}
+        containerClassName={styles.chatInputContainer}
+        inputClassName={styles.chatInput}
+        disabledClassName={styles.textareaDisabled}
+    />
+)
 
 const submitButtonTypes = {
     user: { icon: 'codicon codicon-arrow-up', title: 'Send Message' },

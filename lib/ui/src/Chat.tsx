@@ -112,7 +112,9 @@ export interface ChatButtonProps {
 }
 
 export interface ChatUITextAreaProps {
-    className: string
+    containerClassName?: string
+    inputClassName?: string
+    disabledClassName?: string
     rows: number
     isFocusd: boolean
     isNewChat: boolean
@@ -864,7 +866,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     <div className={styles.chatInputContainer}>
                         <TextArea
-                            className={classNames(styles.chatInput, chatInputClassName)}
+                            containerClassName={classNames(styles.chatInput, chatInputClassName)}
                             rows={inputRows}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
                             isFocusd={inputFocus}
