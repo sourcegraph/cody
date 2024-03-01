@@ -73,7 +73,7 @@ function createProvider(prefix: string) {
         position,
         multiline: false,
         n: 1,
-        firstCompletionTimeout: 1900,
+        firstCompletionTimeout: 1500,
     })
 }
 

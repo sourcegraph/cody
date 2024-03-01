@@ -411,7 +411,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
         // For the now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout: 1900,
+        firstCompletionTimeout: 1500,
     }
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it
