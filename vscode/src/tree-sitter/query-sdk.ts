@@ -135,7 +135,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             const symbolCaptures = []
             const rangeCaptures = []
             for (const capture of captures) {
-                if (capture.name === 'span') {
+                if (capture.name.startsWith('range')) {
                     rangeCaptures.push(capture)
                 } else {
                     symbolCaptures.push(capture)

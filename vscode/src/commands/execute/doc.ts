@@ -24,7 +24,6 @@ function getSymbolRangeAtPosition(
 
     let insertionPoint = new vscode.Position(startPosition.row, 0)
 
-    // TODO: Provide a way to differentiate between symbols to change logic depending on if it's a function
     if (document.languageId === 'python' && (name === 'range.function' || name === 'range.class')) {
         /**
          * Adjust the insertion point to be below the symbol position for functions and classes.
