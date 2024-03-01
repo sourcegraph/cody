@@ -115,10 +115,10 @@ class CodyLoginPanel(
 
   fun getServer(): SourcegraphServerPath =
       SourcegraphServerPath.from(
-          serverTextField.text.trim(), tokenUi.customRequestHeadersField.text.trim())
+          serverTextField.text.trim().lowercase(), tokenUi.customRequestHeadersField.text.trim())
 
   fun setServer(path: String) {
-    serverTextField.text = path
+    serverTextField.text = path.lowercase()
   }
 
   fun setCustomRequestHeaders(customRequestHeaders: String) {

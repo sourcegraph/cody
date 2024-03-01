@@ -29,7 +29,7 @@ data class CodyAccount(
     return AccountType.ENTERPRISE
   }
 
-  fun isDotcomAccount() = server.url.startsWith(ConfigUtil.DOTCOM_URL)
+  fun isDotcomAccount() = server.url.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
 
   override fun toString(): String = "$server/$name"
 

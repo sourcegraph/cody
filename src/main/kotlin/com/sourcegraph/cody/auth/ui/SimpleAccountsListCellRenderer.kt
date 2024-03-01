@@ -79,7 +79,7 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     serverName.apply {
       if (account is ServerAccount) {
         isVisible = true
-        text = account.server.toString()
+        text = account.server.toString().lowercase()
       } else {
         isVisible = false
       }
