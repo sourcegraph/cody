@@ -170,7 +170,7 @@ export const Transcript: React.FunctionComponent<
             const isItemBeingEdited = messageBeingEdited === transcriptIndex
 
             return (
-                <div>
+                <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
                     <TranscriptItem
                         index={transcriptIndex}
