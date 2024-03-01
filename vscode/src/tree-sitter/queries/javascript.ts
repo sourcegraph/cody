@@ -151,16 +151,13 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ((call_signature) @symbol.function) @range.function
     (interface_declaration
         (interface_body
-            (property_signature
-                name: (property_identifier) @symbol.identifier))) @range.identifier
+            (property_signature name: (property_identifier) @symbol.identifier) @range.identifier))
     (interface_declaration
         (interface_body
-            (method_signature
-                name: (property_identifier) @symbol.identifier))) @range.identifier
+            (method_signature name: (property_identifier) @symbol.identifier) @range.identifier))
     (type_alias_declaration
         (object_type
-            (property_signature
-                name: (property_identifier) @sybmol.identifier))) @range.identifier
+            (property_signature name: (property_identifier) @sybmol.identifier) @range.identifier))
 `
 
 export const javascriptQueries = {
