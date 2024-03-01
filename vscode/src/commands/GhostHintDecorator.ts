@@ -5,6 +5,7 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
+import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -42,18 +43,46 @@ function isEmptyOrIncompleteSelection(
  * Calculates padding to apply before and after the symbol decoration
  * to align it with the text on the insertion line.
  *
+ * For this to work effectively, this makes some assumptions:
+ * - The user has a monospace font
+ * - Our decoration is the first, or only decoration to appear on this line.
+ *
+ * These are relatively safe assumptions to make. However, if they are wrong, it means the decoration may be misaligned.
+ *
  * @param insertionLine - The line that the symbol decoration will be inserted on
  * @param symbolRange - The range of the symbol in the original location
  * @returns The number of spaces to pad the decoration by on insertion line
  */
-function getSymbolDecorationPadding(insertionLine: vscode.TextLine, symbolRange: vscode.Range): number {
-    const insertionEndCharacter = insertionLine.range.end.character
+function getSymbolDecorationPadding(
+    document: vscode.TextDocument,
+    insertionLine: vscode.TextLine,
+    symbolRange: vscode.Range
+): number {
+    const insertSpaces = getEditorInsertSpaces(document.uri)
 
-    // We ideally want to attempt to anchor the decoration onto the start of end of the symbol range
-    const symbolAnchor =
-        symbolRange.start.character > insertionEndCharacter ? symbolRange.start : symbolRange.end
+    if (insertSpaces) {
+        const insertionEndCharacter = insertionLine.range.end.character
+        const symbolAnchorCharacter =
+            symbolRange.start.character > insertionEndCharacter
+                ? symbolRange.start.character
+                : symbolRange.end.character
 
-    return Math.max(symbolAnchor.character - insertionEndCharacter, 2)
+        return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
+    }
+
+    // This file is used tab-based indentation
+    // We cannot rely on vscode.Range to provide the correct number of spaces required to align the symbol with the text.
+    // We must first convert any tabs to spaces and then calculate the number of spaces required to align the symbol with the text.
+    const tabSize = getEditorTabSize(document.uri)
+    const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
+    const insertionEndCharacter = insertionLine.text.slice(0, insertionLine.range.end.character).replaceAll(/\t/g, tabAsSpace).length
+
+    const symbolAnchorPosition =
+        symbolRange.start.character > insertionEndCharacter
+            ? symbolRange.start.character
+            : symbolRange.end.character
+    const symbolAnchorCharacter = document.lineAt(symbolRange.start.line).text.slice(0, symbolAnchorPosition).replaceAll(/\t/g, tabAsSpace).length
+    return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
 export async function getGhostHintEnablement(): Promise<boolean> {
@@ -197,6 +226,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
                             'Document',
                             getSymbolDecorationPadding(
+                                editor.document,
                                 editor.document.lineAt(precedingLine),
                                 new vscode.Range(
                                     documentableSymbol.node.startPosition.row,
@@ -264,12 +294,12 @@ export class GhostHintDecorator implements vscode.Disposable {
         editor: vscode.TextEditor,
         position: vscode.Position,
         hint: HintType,
-        padding = 0
+        textPadding = 0
     ): void {
         this.fireThrottledDisplayEvent(hint)
 
         const decorationHint = HINT_DECORATIONS[hint]
-        const decorationText = UNICODE_SPACE.repeat(padding) + decorationHint.text
+        const decorationText = UNICODE_SPACE.repeat(textPadding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
 
         editor.setDecorations(HINT_DECORATIONS[hint].decoration, [
