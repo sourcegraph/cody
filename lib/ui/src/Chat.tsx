@@ -17,6 +17,7 @@ import {
     isAtMention,
     isAtRange,
     isDefined,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 
 import type { CodeBlockMeta } from './chat/CodeBlocks'
@@ -916,10 +917,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             </form>
         </div>
     )
-}
-
-export function isMacOS(): boolean {
-    return window.navigator.userAgent?.includes('Mac')
 }
 
 interface WelcomeTextOptions {
