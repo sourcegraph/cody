@@ -16,16 +16,16 @@ function getSymbolRangeAtPosition(
     position: vscode.Position
 ): { range?: vscode.Range; insertionPoint?: vscode.Position } {
     const [documentableNodeAtCursor] = execQueryWrapper(document, position, 'getDocumentableNode')
-    if (!documentableNodeAtCursor) {
+    if (!documentableNodeAtCursor.span) {
         return {}
     }
 
     const {
         // symbol: { name },
-        span: { startPosition, endPosition }
+        span: { startPosition, endPosition },
     } = documentableNodeAtCursor
 
-    let insertionPoint = new vscode.Position(startPosition.row, 0)
+    const insertionPoint = new vscode.Position(startPosition.row, 0)
 
     // TODO: Provide a way to differentiate between symbols to change logic depending on if it's a function
     // if (document.languageId === 'python' && (name === 'function' || name === 'class')) {

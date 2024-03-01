@@ -195,10 +195,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                         'getTestableNode'
                     )
 
-                    console.log('Doc node', documentableNode)
-                    console.log('Test node', testableNode)
-
-                    if (documentableNode && testableNode) {
+                    if (documentableNode.symbol && testableNode.symbol) {
                         this.clearGhostText(editor)
                         /**
                          * "Document" code flow.
@@ -221,7 +218,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                         )
                     }
 
-                    if (documentableNode) {
+                    if (documentableNode.symbol) {
                         this.clearGhostText(editor)
                         /**
                          * "Document" code flow.

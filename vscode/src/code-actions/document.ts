@@ -9,7 +9,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] {
         const [documentableNode] = execQueryWrapper(document, range.start, 'getDocumentableNode')
 
-        if (!documentableNode) {
+        if (!documentableNode.symbol || !documentableNode.span) {
             return []
         }
 

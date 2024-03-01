@@ -101,7 +101,7 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ symbol: SyntaxNode; span: SyntaxNode }]
+    ) => [] | readonly [{ symbol?: SyntaxNode; span?: SyntaxNode }]
     getTestableNode: (
         node: SyntaxNode,
         start: Point,
@@ -159,17 +159,12 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
 
             const spanCapture = findLast(spanCaptures, ({ node }) => {
                 return (
-                    node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
-                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                    (node.startPosition.row <= start.row && node.startPosition.column <= start.column) &&
+                    (start.column <= node.endPosition.column || start.row <= node.endPosition.row)
                 )
             })
 
-            if (!cursorCapture || !spanCapture) {
-                return []
-            }
-
-            return [{ symbol: cursorCapture.node, span: spanCapture.node }] as const
+            return [{ symbol: cursorCapture?.node, span: spanCapture?.node }] as const
         },
         getTestableNode: (root, start, end) => {
             const cursorCaptures = []
