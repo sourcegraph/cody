@@ -6,7 +6,7 @@ import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
-import type { EditorState } from 'lexical'
+import { $getRoot, type EditorState } from 'lexical'
 import { useMemo } from 'react'
 import styles from './RichEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
@@ -57,4 +57,8 @@ export const RichEditor: React.FunctionComponent<Props> = ({ initialEditorState,
             </div>
         </div>
     )
+}
+
+export function editorStateToText(editorState: EditorState): string {
+    return editorState.read(() => $getRoot().getTextContent())
 }
