@@ -1,6 +1,7 @@
+import { OLLAMA_DEFAULT_URL } from '../ollama/ollama-client'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { DEFAULT_DOT_COM_MODELS } from './dotcom'
-import type { ModelUsage } from './types'
+import { ModelUsage } from './types'
 import { getProviderName } from './utils'
 
 /**
@@ -29,6 +30,28 @@ export class ModelProvider {
     private static privateProviders: Map<string, ModelProvider> = new Map()
     // Providers available for dotcom instances
     private static dotComProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
+    // Providers available from local ollama instances
+    private static ollamaProviders: ModelProvider[] = []
+
+    /**
+     * Fetches available Ollama models from the local Ollama server
+     * and adds them to the list of default providers.
+     * The models are marked as Cody Pro only.
+     */
+    public static getLocalOllamaModels(): void {
+        fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
+            .then(response => response.json())
+            .then(data => {
+                const models = new Set<ModelProvider>()
+                for (const model of data.models) {
+                    const name = `ollama/${model.model}`
+                    const newModel = new ModelProvider(name, [ModelUsage.Chat])
+                    models.add(newModel)
+                }
+                ModelProvider.ollamaProviders = Array.from(models)
+            })
+            .catch(() => console.log('Cannot find local ollama models'))
+    }
 
     /**
      * Adds a new model provider, instantiated from the given model string,
@@ -57,7 +80,7 @@ export class ModelProvider {
         const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
         const models = (
             isDotComUser
-                ? ModelProvider.dotComProviders
+                ? ModelProvider.dotComProviders.concat(ModelProvider.ollamaProviders)
                 : Array.from(ModelProvider.privateProviders.values())
         ).filter(model => model.usage.includes(type))
 

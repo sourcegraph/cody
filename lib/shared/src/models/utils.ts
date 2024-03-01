@@ -5,6 +5,8 @@ export function getProviderName(name: string): string {
             return 'Anthropic'
         case 'openai':
             return 'OpenAI'
+        case 'ollama':
+            return 'Ollama'
         default:
             return providerName
     }

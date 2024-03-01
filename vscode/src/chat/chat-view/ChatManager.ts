@@ -87,6 +87,9 @@ export class ChatManager implements vscode.Disposable {
                 this.passthroughVsCodeOpen(...args)
             )
         )
+
+        // Get a list of models from local-hosted Ollama (if any)
+        ModelProvider.getLocalOllamaModels()
     }
 
     private async getChatProvider(): Promise<SimpleChatPanelProvider> {

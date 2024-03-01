@@ -2,16 +2,18 @@ import http from 'http'
 import https from 'https'
 
 import { onAbort } from '../../common/abortController'
-import { logError } from '../../logger'
+import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
 import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { CompletionStopReason } from '../../inferenceClient/misc'
+import { OLLAMA_DEFAULT_URL, type OllamaGenerateResponse } from '../../ollama/ollama-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -39,6 +41,99 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             }
 
             const log = this.logger?.startCompletion(params, this.completionsEndpoint)
+
+            // TODO (bee) clean up & move to seperate function
+            if (params.model?.startsWith('ollama')) {
+                const lastHumanMessage = params.messages[params.messages.length - 2]
+                const stopReason = ''
+                const ollamaparams = {
+                    ...params,
+                    stop_sequence: [stopReason],
+                    model: params.model.replace('ollama/', ''),
+                    prompt: lastHumanMessage.text,
+                    messages: params.messages.map(msg => {
+                        return {
+                            role: msg.speaker === 'human' ? 'user' : 'assistant',
+                            content: msg.text,
+                        }
+                    }),
+                }
+
+                fetch(new URL('/api/generate', OLLAMA_DEFAULT_URL).href, {
+                    method: 'POST',
+                    body: JSON.stringify(ollamaparams),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    signal,
+                }).then(async response => {
+                    const reader = response?.body?.getReader() // Get the reader from the ReadableStream
+
+                    const textDecoderStream = new TransformStream({
+                        transform(chunk, controller) {
+                            const text = new TextDecoder().decode(chunk, { stream: true })
+                            controller.enqueue(text)
+                        },
+                    })
+
+                    const readableStream = new ReadableStream({
+                        start(controller) {
+                            const pump = () => {
+                                reader?.read().then(({ done, value }) => {
+                                    if (done) {
+                                        controller.close()
+                                        return
+                                    }
+                                    controller.enqueue(value)
+                                    pump()
+                                })
+                            }
+                            pump()
+                        },
+                    })
+
+                    const transformedStream = readableStream.pipeThrough(textDecoderStream)
+                    const readerForTransformedStream = transformedStream.getReader()
+
+                    let insertText = ''
+
+                    while (true) {
+                        const { done, value } = await readerForTransformedStream.read()
+                        if (done) {
+                            break
+                        }
+                        const lines = value.toString().split(/\r?\n/).filter(Boolean)
+                        for (const line of lines) {
+                            if (!line) {
+                                continue
+                            }
+                            const parsedLine = JSON.parse(line) as OllamaGenerateResponse
+
+                            if (parsedLine.response) {
+                                insertText += parsedLine.response
+                                cb.onChange(insertText)
+                            }
+
+                            if (parsedLine.done && parsedLine.total_duration) {
+                                logDebug?.('ollama', 'generation done', parsedLine)
+                                const completionResponse: CompletionResponse = {
+                                    completion: insertText,
+                                    stopReason: stopReason || CompletionStopReason.RequestFinished,
+                                }
+                                cb.onComplete()
+                                log?.onComplete(completionResponse)
+                            }
+                        }
+                    }
+
+                    const completionResponse: CompletionResponse = {
+                        completion: insertText,
+                        stopReason: stopReason || CompletionStopReason.RequestFinished,
+                    }
+                    log?.onComplete(completionResponse)
+                })
+                return
+            }
 
             const requestFn = this.completionsEndpoint.startsWith('https://')
                 ? https.request

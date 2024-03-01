@@ -5,6 +5,7 @@ import {
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
+    OLLAMA_DEFAULT_URL,
 } from '@sourcegraph/cody-shared'
 
 import {
@@ -137,7 +138,7 @@ export function getConfiguration(
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
-                url: 'http://localhost:11434',
+                url: OLLAMA_DEFAULT_URL,
                 model: 'codellama:7b-code',
             }
         ),

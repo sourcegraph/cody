@@ -11,12 +11,14 @@ import { isAbortError } from '../sourcegraph-api/errors'
 import { isNodeResponse } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
+export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
+
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
  */
 export interface OllamaGenerateParams {
     model: string
-    template: string
+    template?: string
     prompt: string
     options?: OllamaGenerateParameters
 }
@@ -24,7 +26,7 @@ export interface OllamaGenerateParams {
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L88
  */
-interface OllamaGenerateResponse {
+export interface OllamaGenerateResponse {
     model: string
     response?: string
     done: boolean
