@@ -20,18 +20,18 @@ const DOCUMENTABLE_NODES = dedent`
     ;--------------------------------
     (var_declaration
         (var_spec
-            (identifier) @symbol.identifier) @range.identifier)
+            (identifier) @symbol.identifier)) @range.identifier
     (const_declaration
         (const_spec
-            (identifier) @symbol.identifier))
+            (identifier) @symbol.identifier)) @range.identifier
     (short_var_declaration
         left:
-            (expression_list (identifier) @symbol.identifier) @range.identifier)
+            (expression_list (identifier) @symbol.identifier)) @range.identifier
 
     ; Types
     ;--------------------------------
     (type_declaration
-        (type_spec name: (type_identifier) @symbol.identifier) @range.identifier)
+        (type_spec name: (type_identifier) @symbol.identifier)) @range.identifier
     (struct_type
         (_
             (field_declaration name: (field_identifier) @symbol.identifier) @range.identifier))

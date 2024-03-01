@@ -21,17 +21,16 @@
 // ------------------------------------
 
   type Animal struct {
-//^ start range.identifier[1]
       Name string
 //    ^^^^ symbol.identifier[1]
+//    ^^^^^^^^^^^ range.identifier[1]
 //     █
       Type string
   }
-//^ end range.identifier[1]
 
 // Nodes types:
 // symbol.identifier[1]: field_identifier
-// range.identifier[1]: type_declaration
+// range.identifier[1]: field_declaration
 
 // ------------------------------------
 
@@ -50,16 +49,15 @@
 // ------------------------------------
 
   type Stringer interface {
-//^ start range.identifier[1]
       String() string
 //    ^^^^^^ symbol.identifier[1]
+//    ^^^^^^^^^^^^^^^ range.identifier[1]
 //       █
   }
-//^ end range.identifier[1]
 
 // Nodes types:
 // symbol.identifier[1]: field_identifier
-// range.identifier[1]: type_declaration
+// range.identifier[1]: method_spec
 
 // ------------------------------------
 
@@ -106,6 +104,17 @@
 // Nodes types:
 // symbol.identifier[1]: identifier
 // range.identifier[1]: short_var_declaration
+
+// ------------------------------------
+
+  const name = "Tom"
+//^^^^^^^^^^^^^^^^^^ range.identifier[1]
+//      ^^^^ symbol.identifier[1]
+//        █
+
+// Nodes types:
+// symbol.identifier[1]: identifier
+// range.identifier[1]: const_declaration
 
 // ------------------------------------
 

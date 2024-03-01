@@ -128,16 +128,15 @@
 // ------------------------------------
 
   interface TestInterfacePropertySignature {
-//^ start range.identifier[1]
       test: boolean
 //    ^^^^ symbol.identifier[1]
+//    ^^^^^^^^^^^^^ range.identifier[1]
 //      █
   }
-//^ end range.identifier[1]
 
 // Nodes types:
 // symbol.identifier[1]: property_identifier
-// range.identifier[1]: interface_declaration
+// range.identifier[1]: property_signature
 
 // ------------------------------------
 
@@ -167,16 +166,15 @@
 // ------------------------------------
 
   type TestTypePropertySignature = {
-//^ start range.identifier[1]
       test: number
 //    ^^^^ sybmol.identifier[1]
+//    ^^^^^^^^^^^^ range.identifier[1]
 //     █
   }
-//^ end range.identifier[1]
 
 // Nodes types:
 // sybmol.identifier[1]: property_identifier
-// range.identifier[1]: type_alias_declaration
+// range.identifier[1]: property_signature
 
 // ------------------------------------
 
