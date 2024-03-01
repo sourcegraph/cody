@@ -16,7 +16,6 @@
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-    ".storybook/*.ts"
   ],
   "exclude": [
     "scripts",
