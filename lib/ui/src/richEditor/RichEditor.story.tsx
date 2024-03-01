@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import type { EditorState } from 'lexical'
+import { useState } from 'react'
 import { RichEditor } from './RichEditor'
 
 const meta: Meta<typeof RichEditor> = {
@@ -16,10 +18,9 @@ const meta: Meta<typeof RichEditor> = {
                 style={{
                     maxWidth: '600px',
                     margin: '2rem auto',
-                    border: 'solid 1px #ccc',
-                    fontFamily: 'system-ui',
                 }}
             >
+                <style>{'body { font-family: system-ui; }'}</style>
                 {story()}
             </div>
         ),
@@ -28,4 +29,22 @@ const meta: Meta<typeof RichEditor> = {
 
 export default meta
 
-export const Default: StoryObj<typeof meta> = {}
+export const Interactive: StoryObj<typeof meta> = {
+    render: props => {
+        const [editorState, setEditorState] = useState<EditorState | undefined>(props.initialEditorState)
+        return (
+            <div>
+                <div style={{ border: 'solid 1px #ccc' }}>
+                    <RichEditor
+                        {...props}
+                        initialEditorState={editorState}
+                        setEditorState={setEditorState}
+                    />
+                </div>
+                <pre style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#eee' }}>
+                    {JSON.stringify(editorState ?? {}, null, 2)}
+                </pre>
+            </div>
+        )
+    },
+}

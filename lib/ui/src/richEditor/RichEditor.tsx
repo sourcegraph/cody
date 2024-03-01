@@ -9,6 +9,8 @@ import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import type { EditorState } from 'lexical'
 import { useMemo } from 'react'
 import styles from './RichEditor.module.css'
+import { RICH_EDITOR_NODES } from './nodes'
+import MentionsPlugin from './plugins/atMentions'
 
 interface Props {
     initialEditorState: EditorState | undefined
@@ -24,6 +26,7 @@ export const RichEditor: React.FunctionComponent<Props> = ({ initialEditorState,
             onError: (error: any) => console.error(error),
             editorState: initialEditorState,
             editable: true,
+            nodes: RICH_EDITOR_NODES,
         }),
         []
     )
@@ -45,6 +48,7 @@ export const RichEditor: React.FunctionComponent<Props> = ({ initialEditorState,
                     />
                     <HistoryPlugin />
                     <OnChangePlugin onChange={setEditorState} />
+                    <MentionsPlugin />
                 </LexicalComposer>
             </div>
         </div>
