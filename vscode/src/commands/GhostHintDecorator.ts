@@ -102,7 +102,10 @@ const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.Text
         Generate: {
             text: `${EDIT_SHORTCUT_LABEL} to Generate`,
             decoration: vscode.window.createTextEditorDecorationType({
-                after: { color: GHOST_TEXT_COLOR },
+                after: {
+                    color: GHOST_TEXT_COLOR,
+                    margin: '0 0 0 1em',
+                },
             }),
         },
     }

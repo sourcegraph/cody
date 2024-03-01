@@ -24,7 +24,7 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
-import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
+import { ACTIONABLE_TASK_STATES, ACTIVE_TASK_STATES } from './codelenses/constants'
 import { FixupCodeLenses } from './codelenses/provider'
 import { type Diff, computeDiff } from './diff'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -106,7 +106,7 @@ export class FixupController
                 return this.skipFormatting(id)
             }),
             vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
-                const nearestTask = this.getNearestTask({ filter: { states: CANCELABLE_TASK_STATES } })
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIVE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
@@ -254,8 +254,6 @@ export class FixupController
             insertionPoint
         )
         this.tasks.set(task.id, task)
-        const state = task.intent === 'test' ? CodyTaskState.pending : CodyTaskState.working
-        this.setTaskState(task, state)
         return task
     }
 
@@ -1124,7 +1122,7 @@ export class FixupController
         })
     }
 
-    private setTaskState(task: FixupTask, state: CodyTaskState): void {
+    public setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
         if (oldState === state) {
             // Not a transition--nothing to do.

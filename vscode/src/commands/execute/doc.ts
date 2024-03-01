@@ -76,10 +76,13 @@ export async function executeDocCommand(
          * Attempt to get the range of a documentable symbol at the current cursor position.
          * If present, use this for the edit instead of expanding the range to the nearest block.
          */
-        const { range, insertionPoint } = getSymbolRangeAtPosition(
+        const symbolRange = getSymbolRangeAtPosition(
             editor.document,
             editor.selection.active
         )
+
+        const range = symbolRange?.range || editor.selection
+        const insertionPoint = symbolRange?.insertionPoint
 
         return {
             type: 'edit',
