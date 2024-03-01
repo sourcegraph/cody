@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
-import { Chat } from './Chat'
+import { LibChat } from './LibChat'
 import { TextArea } from './chat/TextArea'
 
-const meta: Meta<typeof Chat> = {
-    title: 'ui/Chat',
-    component: Chat,
+const meta: Meta<typeof LibChat> = {
+    title: 'ui/LibChat',
+    component: LibChat,
 
     args: {
         transcript: [],
@@ -27,7 +27,7 @@ const meta: Meta<typeof Chat> = {
         setContextSelection: () => {},
         userInfo: { isCodyProUser: true, isDotComUser: true },
         isWebviewActive: true,
-    } as React.ComponentProps<typeof Chat>,
+    } as React.ComponentProps<typeof LibChat>,
 
     decorators: [
         story => (
@@ -50,6 +50,6 @@ export default meta
 export const Default: StoryObj<typeof meta> = {
     render: props => {
         const [formInput, setFormInput] = useState(props.formInput)
-        return <Chat {...props} formInput={formInput} setFormInput={setFormInput} />
+        return <LibChat {...props} formInput={formInput} setFormInput={setFormInput} />
     },
 }

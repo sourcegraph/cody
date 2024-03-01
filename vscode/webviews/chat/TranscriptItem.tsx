@@ -11,7 +11,7 @@ import type {
     EditButtonProps,
     FeedbackButtonsProps,
     UserAccountInfo,
-} from '../Chat'
+} from '../LibChat'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'

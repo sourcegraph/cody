@@ -12,7 +12,7 @@ import type {
     EditButtonProps,
     FeedbackButtonsProps,
     UserAccountInfo,
-} from '../Chat'
+} from '../LibChat'
 
 import type { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'

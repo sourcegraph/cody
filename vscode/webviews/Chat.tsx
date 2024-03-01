@@ -13,18 +13,18 @@ import type {
     TelemetryService,
 } from '@sourcegraph/cody-shared'
 import {
-    Chat as ChatUI,
     type ChatButtonProps,
     type ChatUISubmitButtonProps,
     type ChatUITextAreaProps,
     type EditButtonProps,
     type FeedbackButtonsProps,
+    LibChat,
     type UserAccountInfo,
     type WebviewChatSubmitType,
-} from '@sourcegraph/cody-ui/src/Chat'
-import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
-import { TextArea } from '@sourcegraph/cody-ui/src/chat/TextArea'
-import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+} from './LibChat'
+import type { CodeBlockMeta } from './chat/CodeBlocks'
+import { TextArea } from './chat/TextArea'
+import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 
@@ -199,7 +199,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     return (
-        <ChatUI
+        <LibChat
             messageInProgress={messageInProgress}
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}

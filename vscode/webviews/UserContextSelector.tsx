@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import classNames from 'classnames'
 
 import { displayPath } from '@sourcegraph/cody-shared'
-import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import type { UserContextSelectorProps } from './LibChat'
 
 import styles from './UserContextSelector.module.css'
 

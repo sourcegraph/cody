@@ -26,7 +26,7 @@ import { Transcript } from './chat/Transcript'
 import type { TranscriptItemClassNames } from './chat/TranscriptItem'
 import type { FileLinkProps } from './chat/components/EnhancedContext'
 
-import styles from './Chat.module.css'
+import styles from './LibChat.module.css'
 import { ChatActions } from './chat/components/ChatActions'
 
 interface ChatProps extends ChatClassNames {
@@ -180,7 +180,7 @@ export interface ChatModelDropdownMenuProps {
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
-export const Chat: React.FunctionComponent<ChatProps> = ({
+export const LibChat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,

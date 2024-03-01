@@ -4,8 +4,8 @@ import { type ComponentProps, useCallback, useRef, useState } from 'react'
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import type { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
-import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
+import type { ChatModelDropdownMenuProps } from '../LibChat'
+import { AnthropicLogo, MistralLogo, OpenAILogo } from '../icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
-import type { CodeBlockActionsProps } from '../Chat'
+import type { CodeBlockActionsProps } from '../LibChat'
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,

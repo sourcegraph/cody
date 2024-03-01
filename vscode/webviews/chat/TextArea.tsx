@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { useCallback, useEffect, useRef } from 'react'
-import type { ChatUITextAreaProps } from '../Chat'
+import type { ChatUITextAreaProps } from '../LibChat'
 import styles from './TextArea.module.css'
 
 export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({

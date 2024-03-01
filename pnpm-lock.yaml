@@ -240,26 +240,14 @@ importers:
         specifier: ^1.80.0
         version: 1.80.0
 
-  lib/ui:
-    dependencies:
-      '@mdi/js':
-        specifier: ^7.2.96
-        version: 7.2.96
-      '@sourcegraph/cody-shared':
-        specifier: workspace:*
-        version: link:../shared
-      classnames:
-        specifier: ^2.3.2
-        version: 2.3.2
-      vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
-
   vscode:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.4.2
         version: 0.4.3
+      '@mdi/js':
+        specifier: ^7.2.96
+        version: 7.2.96
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -302,9 +290,6 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
-      '@sourcegraph/cody-ui':
-        specifier: workspace:*
-        version: link:../lib/ui
       '@sourcegraph/telemetry':
         specifier: ^0.16.0
         version: 0.16.0
