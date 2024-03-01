@@ -20,19 +20,26 @@ function getSymbolRangeAtPosition(
         return {}
     }
 
-    const { node: { startPosition, endPosition }, name } = documentableRange
+    const {
+        node: { startPosition, endPosition },
+        name,
+    } = documentableRange
 
-    let insertionPoint = new vscode.Position(startPosition.row, 0)
+    let insertionPoint = new vscode.Position(
+        startPosition.row,
+        document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
+    )
 
-    if (document.languageId === 'python' && name && (name === 'range.function' || name === 'range.class')) {
+    if (
+        document.languageId === 'python' &&
+        name &&
+        (name === 'range.function' || name === 'range.class')
+    ) {
         /**
          * Adjust the insertion point to be below the symbol position for functions and classes.
          * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/
          */
         insertionPoint = new vscode.Position(startPosition.row + 1, 0)
-    } else {
-        // Default insertion is at the start of the symbol line
-        insertionPoint = new vscode.Position(startPosition.row, 0)
     }
 
     return {
@@ -76,10 +83,7 @@ export async function executeDocCommand(
          * Attempt to get the range of a documentable symbol at the current cursor position.
          * If present, use this for the edit instead of expanding the range to the nearest block.
          */
-        const symbolRange = getSymbolRangeAtPosition(
-            editor.document,
-            editor.selection.active
-        )
+        const symbolRange = getSymbolRangeAtPosition(editor.document, editor.selection.active)
 
         const range = symbolRange?.range || editor.selection
         const insertionPoint = symbolRange?.insertionPoint
