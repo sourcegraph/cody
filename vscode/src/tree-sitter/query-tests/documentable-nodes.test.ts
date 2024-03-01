@@ -16,4 +16,15 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.ts',
         })
     })
+
+    it('python', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Python)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getDocumentableNode,
+            sourcesPath: 'test-data/documentable-node.py',
+        })
+    })
 })
