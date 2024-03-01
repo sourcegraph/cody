@@ -68,7 +68,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
       if (text.lines().size != 1) "$label:\n```text\n$text\n```" else "$label: ```$text```"
 
   private fun getEncodedUrl(error: CodyError): String =
-      "https://github.com/exigow/issue-template-test/issues/new" +
+      "https://github.com/sourcegraph/jetbrains/issues/new" +
           "?template=bug_report.yml" +
           "&labels=bug,team/jetbrains" +
           "&projects=sourcegraph/381" +
