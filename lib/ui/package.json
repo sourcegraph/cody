@@ -26,6 +26,8 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
+    "@lexical/code": "^0.13.1",
+    "@lexical/markdown": "^0.13.1",
     "@lexical/react": "^0.13.1",
     "@mdi/js": "^7.2.96",
     "@sourcegraph/cody-shared": "workspace:*",

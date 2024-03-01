@@ -11,6 +11,8 @@ import { useMemo } from 'react'
 import styles from './RichEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions'
+import CodeHighlightPlugin from './plugins/codeHighlight'
+import MarkdownShortcutPlugin from './plugins/markdownShortcut'
 
 interface Props {
     initialEditorState: EditorState | undefined
@@ -49,6 +51,8 @@ export const RichEditor: React.FunctionComponent<Props> = ({ initialEditorState,
                     <HistoryPlugin />
                     <OnChangePlugin onChange={setEditorState} />
                     <MentionsPlugin />
+                    <CodeHighlightPlugin />
+                    <MarkdownShortcutPlugin />
                 </LexicalComposer>
             </div>
         </div>
