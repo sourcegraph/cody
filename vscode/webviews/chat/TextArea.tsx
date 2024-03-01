@@ -1,7 +1,29 @@
+import type { ModelProvider } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { useCallback, useEffect, useRef } from 'react'
-import type { ChatUITextAreaProps } from '../LibChat'
 import styles from './TextArea.module.css'
+
+interface ChatUITextAreaProps {
+    containerClassName?: string
+    inputClassName?: string
+    disabledClassName?: string
+    rows: number
+    isFocusd: boolean
+    isNewChat: boolean
+    value: string
+    required: boolean
+    chatEnabled: boolean
+    disabled?: boolean
+    onInput: React.FormEventHandler<HTMLTextAreaElement>
+    setValue?: (value: string) => void
+    onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onKeyUp?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void
+    chatModels?: ModelProvider[]
+    messageBeingEdited: number | undefined
+    inputCaretPosition?: number
+    isWebviewActive: boolean
+}
 
 export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     containerClassName,

@@ -4,7 +4,6 @@ import classNames from 'classnames'
 
 import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
-import type { CodeBlockActionsProps } from '../LibChat'
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,
@@ -14,6 +13,11 @@ import {
 } from '../icons/CodeBlockActionIcons'
 
 import styles from './CodeBlocks.module.css'
+
+export interface CodeBlockActionsProps {
+    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', metadata?: CodeBlockMeta) => void
+    insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
+}
 
 interface CodeBlocksProps {
     displayText: string

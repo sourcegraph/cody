@@ -12,7 +12,7 @@ import {
     type ModelProvider,
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
-import type { UserAccountInfo } from './LibChat'
+import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'

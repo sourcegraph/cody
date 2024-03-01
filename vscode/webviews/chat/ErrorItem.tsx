@@ -2,7 +2,9 @@ import React, { useCallback } from 'react'
 
 import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
-import type { ApiPostMessage, ChatButtonProps, UserAccountInfo } from '../LibChat'
+import type { UserAccountInfo } from '../Chat'
+import type { ChatButtonProps } from '../Chat'
+import type { ApiPostMessage } from '../Chat'
 
 import styles from './ErrorItem.module.css'
 

@@ -3,7 +3,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { RateLimitError } from '@sourcegraph/cody-shared'
-import type { ChatButtonProps } from './LibChat'
+import type { ChatButtonProps } from './Chat'
 import { ErrorItem } from './chat/ErrorItem'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'

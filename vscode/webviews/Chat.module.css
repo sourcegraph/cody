@@ -1,10 +1,16 @@
 .inner-container {
+    display: flex;
+    flex-direction: column;
     height: 100%;
 
     /* popups use a screen to capture clicks outside the popups; this is
        necessary so that the screen can extend to the extent of the view without
        scrollbars */
     overflow: clip;
+}
+
+.transcript-container {
+    flex: 1;
 }
 
 .transcript-item {
@@ -81,12 +87,15 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .input-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
     gap: 0.5rem;
     padding: 0.75rem;
 }
-
-
 
 /* Both elements need the same styling so the height matches */
 .chat-input,
@@ -95,8 +104,16 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     color: var(--vscode-input-foreground);
 }
 
+.chat-input-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
 
 .chat-input {
+    width: 100%;
+    height: 100%;
+    resize: none;
     border-color: var(--vscode-input-border, transparent);
 }
 
@@ -138,6 +155,17 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     padding: 0.25rem;
 }
 
+.context-button {
+    color: var(--button-primary-background);
+    position: absolute;
+    right: 0.3rem;
+    bottom: 0.3rem;
+    fill: currentColor;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
 .chat-input-context {
     opacity: 0.85;
 }
@@ -167,6 +195,16 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     cursor: pointer;
 }
 
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0.1rem;
+    margin-bottom: 0.25rem;
+    /* This matches the button paddings, so the button text lines up with the input */
+    margin-left: -6px;
+}
+
 .suggestion-button {
     all: unset;
     cursor: pointer;
@@ -189,6 +227,15 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button {
+    border: none;
+    cursor: pointer;
+
+    border-radius: 50%;
+    height: 2rem;
+    width: 2rem;
+
+    margin-left: 0.5rem;
+
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     display: flex;
@@ -223,3 +270,9 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     cursor: default;
 }
 
+.text-area-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+}
