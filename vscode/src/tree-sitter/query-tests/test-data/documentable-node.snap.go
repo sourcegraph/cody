@@ -98,19 +98,6 @@
 
 // ------------------------------------
 
-  func greet() {
-//^ start range.function[1]
-//     ^^^^^ symbol.function[1]
-//        █
-  }
-//^ end range.function[1]
-
-// Nodes types:
-// symbol.function[1]: identifier
-// range.function[1]: function_declaration
-
-// ------------------------------------
-
   shortDeclaration := 4
 //^^^^^^^^^^^^^^^^ symbol.identifier[1]
 //^^^^^^^^^^^^^^^^^^^^^ range.identifier[1]
@@ -132,4 +119,31 @@
 // Nodes types:
 // symbol.identifier[1]: identifier
 // range.identifier[1]: short_var_declaration
+
+// ------------------------------------
+
+  func greet() {
+//^ start range.function[1]
+//     ^^^^^ symbol.function[1]
+//        █
+  }
+//^ end range.function[1]
+
+// Nodes types:
+// symbol.function[1]: identifier
+// range.function[1]: function_declaration
+
+// ------------------------------------
+
+  func (u User) DisplayName() string {
+//^ start range.function[1]
+//              ^^^^^^^^^^^ symbol.function[1]
+//                 █
+      return u.FirstName + " " + u.LastName
+  }
+//^ end range.function[1]
+
+// Nodes types:
+// symbol.function[1]: field_identifier
+// range.function[1]: method_declaration
 

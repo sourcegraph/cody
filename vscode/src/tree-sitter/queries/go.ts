@@ -13,6 +13,8 @@ const DOCUMENTABLE_NODES = dedent`
     ;--------------------------------
     (function_declaration
         name: (identifier) @symbol.function) @range.function
+    (method_declaration
+        name: (field_identifier) @symbol.function) @range.function
 
     ; Variables
     ;--------------------------------

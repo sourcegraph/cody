@@ -45,12 +45,6 @@ var person = struct {
 
 // ------------------------------------
 
-func greet() {
-	//  |
-}
-
-// ------------------------------------
-
 shortDeclaration := 4
 //      |
 
@@ -59,4 +53,17 @@ shortDeclaration := 4
 func nestedVar() {
     y := 4
 //  |
+}
+
+// ------------------------------------
+
+func greet() {
+	//  |
+}
+
+// ------------------------------------
+
+func (u User) DisplayName() string {
+    //           |
+    return u.FirstName + " " + u.LastName
 }
