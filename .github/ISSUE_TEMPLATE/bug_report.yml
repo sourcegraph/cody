@@ -1,3 +1,6 @@
+# IMPORTANT: This template is also used for error reporting and some attributes are automatically prefilled.
+# If you make changes, make sure that ATTRIBUTE IDs, LABELS and PROJECTS matches com.sourcegraph.cody.error.CodyErrorSubmitter code (and vice versa).
+
 name: JetBrains Bug report ፨
 description: "File a bug report for any of the JetBrains IDEs: IntelliJ, Goland, WebStorm, etc."
 title: "bug: "
@@ -13,33 +16,33 @@ body:
         Thanks for taking the time to fill out this bug report! Please include as much information as possible to help us fix the issue. 
 
         Tip: You can attach images or videos by dragging it into the text box.
-  - type: textarea
+  - id: version
+    type: textarea
     attributes:
       label: Installation Information
-      description: Trigger the action "About", click on "Copy and close" and paste the output here
+      description: Trigger the action "About", click on "Copy and Close" and paste the output here.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Describe the bug
-      description: A clear and concise description of what the bug is. Please include steps on how to reproduce the behaviour.
+      description: Description of what the bug is. Please include steps on how to reproduce the behaviour.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Expected behavior
-      description: A clear and concise description of what you expected to happen.
+      description: Description of what you expected to happen.
     validations:
       required: true
-  - type: textarea
+  - id: logs
+    type: textarea
     attributes:
-      label: Additional context (logs, images, etc)
+      label: Additional context
       description: |
-        Please add any links, or references that can give us more context on the bug.
+        Please include stacktrace, logs, links, or references that can give us more context on the bug.
 
-        For logs - Trigger the action "Show Log", open the file, search for exceptions related to Cody/Sourcegraph and copy relevant lines here
-        Alternatively, feel free to upload idea.log as an attachment but please make sure it doesn't contain sensitive information (it normally doesn't)
-
-        Tip: You can attach images or videos by dragging it into the text box.
+        For logs - Trigger the action "Show Log", open the file, search for exceptions related to Cody/Sourcegraph and copy relevant lines here.
+        Alternatively, feel free to upload `idea.log` as an attachment but please make sure it doesn't contain sensitive information (it normally doesn't).
     validations:
       required: false

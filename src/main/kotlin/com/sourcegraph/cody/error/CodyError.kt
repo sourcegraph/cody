@@ -1,9 +1,3 @@
 package com.sourcegraph.cody.error
 
-data class CodyError(
-    val title: String,
-    val pluginVersion: String?,
-    val ideVersion: String,
-    val additionalInfo: String?,
-    val stacktrace: String
-)
+data class CodyError(val title: String, val version: String, val logs: String)
