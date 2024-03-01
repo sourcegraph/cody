@@ -75,13 +75,18 @@ function getSymbolDecorationPadding(
     // We must first convert any tabs to spaces and then calculate the number of spaces required to align the symbol with the text.
     const tabSize = getEditorTabSize(document.uri)
     const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
-    const insertionEndCharacter = insertionLine.text.slice(0, insertionLine.range.end.character).replaceAll(/\t/g, tabAsSpace).length
+    const insertionEndCharacter = insertionLine.text
+        .slice(0, insertionLine.range.end.character)
+        .replaceAll(/\t/g, tabAsSpace).length
 
     const symbolAnchorPosition =
         symbolRange.start.character > insertionEndCharacter
             ? symbolRange.start.character
             : symbolRange.end.character
-    const symbolAnchorCharacter = document.lineAt(symbolRange.start.line).text.slice(0, symbolAnchorPosition).replaceAll(/\t/g, tabAsSpace).length
+    const symbolAnchorCharacter = document
+        .lineAt(symbolRange.start.line)
+        .text.slice(0, symbolAnchorPosition)
+        .replaceAll(/\t/g, tabAsSpace).length
     return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
