@@ -1,5 +1,5 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
 export interface ChatContextClient {
@@ -42,6 +42,37 @@ export const WithChatContextClient: React.FunctionComponent<
     <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
 )
 
-export function useChatContextClient(): ChatContextClient {
+function useChatContextClient(): ChatContextClient {
     return useContext(ChatContextClientContext)
+}
+
+/** Hook to get the chat context items for the given query. */
+export function useChatContextItems(query: string): ContextItem[] | undefined {
+    const chatContextClient = useChatContextClient()
+    const [results, setResults] = useState<ContextItem[]>()
+    useEffect(() => {
+        // Track if the query changed since this request was sent (which would make our results
+        // no longer valid).
+        let invalidated = false
+
+        if (chatContextClient) {
+            chatContextClient
+                .getChatContextItems(query)
+                .then(mentions => {
+                    if (invalidated) {
+                        return
+                    }
+                    setResults(mentions)
+                })
+                .catch(error => {
+                    setResults(undefined)
+                    console.error(error)
+                })
+        }
+
+        return () => {
+            invalidated = true
+        }
+    }, [chatContextClient, query])
+    return results
 }

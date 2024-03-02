@@ -5,7 +5,7 @@ import {
     MenuOption,
     type MenuTextMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import type { TextNode } from 'lexical'
+import { $createTextNode, type TextNode } from 'lexical'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
@@ -13,7 +13,7 @@ import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { $createMentionNode } from '../../nodes/MentionNode'
 import { OptionsList } from './OptionsList'
-import { useChatContextClient } from './chatContextClient'
+import { useChatContextItems } from './chatContextClient'
 
 const PUNCTUATION = '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;'
 
@@ -97,7 +97,7 @@ function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextM
     return null
 }
 
-function getPossibleQueryMatch(text: string): MenuTextMatch | null {
+export function getPossibleQueryMatch(text: string): MenuTextMatch | null {
     return checkForAtSignMentions(text, 0)
 }
 
@@ -133,32 +133,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         middleware: [offset(6), flip(), shift()],
     })
 
-    const chatContextClient = useChatContextClient()
-    const [results, setResults] = useState<ContextItem[]>()
-    useEffect(() => {
-        // Track if the query changed since this request was sent (which would make our results
-        // no longer valid).
-        let invalidated = false
-
-        if (chatContextClient) {
-            chatContextClient
-                .getChatContextItems(query)
-                .then(mentions => {
-                    if (invalidated) {
-                        return
-                    }
-                    setResults(mentions)
-                })
-                .catch(error => {
-                    setResults(undefined)
-                    console.error(error)
-                })
-        }
-
-        return () => {
-            invalidated = true
-        }
-    }, [chatContextClient, query])
+    const results = useChatContextItems(query)
     const options = useMemo(
         () =>
             results
@@ -182,7 +157,11 @@ export default function MentionsPlugin(): JSX.Element | null {
                 if (nodeToReplace) {
                     nodeToReplace.replace(mentionNode)
                 }
-                mentionNode.select()
+
+                const spaceAfter = $createTextNode(' ')
+                mentionNode.insertAfter(spaceAfter)
+                spaceAfter.select()
+
                 closeMenu()
             })
         },
