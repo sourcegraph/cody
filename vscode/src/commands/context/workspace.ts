@@ -1,4 +1,4 @@
-import { type ContextFile, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { CancellationTokenSource, workspace } from 'vscode'
 import { createContextFile } from '../utils/create-context-file'
 import { getDocText } from '../utils/workspace-files'
@@ -16,12 +16,12 @@ export async function getWorkspaceFilesContext(
     globalPattern: string,
     excludePattern?: string,
     maxResults = 5
-): Promise<ContextFile[]> {
+): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.workspace', async span => {
         // the default exclude pattern excludes dotfiles, node_modules, and snap directories
         const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
 
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         // set cancellation token to time out after 20s
         const token = new CancellationTokenSource()

@@ -8512,169 +8512,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4d28fe9147b851eaac5a45db378d43b5
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2355
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  "My selected TypeScript code from file `src/sum.ts`:
-                  <selected>
-                  Context from file path @src/sum.ts:
-                  export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to replace parts of the selected code or correct a problem by following their instructions.
-
-                  Provide your generated code using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Add a 'hello' comment for the selected code, without including the selected code.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 382
-        content:
-          mimeType: text/event-stream
-          size: 382
-          text: |+
-            event: completion
-            data: {"completion":"/**","stopReason":""}
-
-            event: completion
-            data: {"completion":"/** hello","stopReason":""}
-
-            event: completion
-            data: {"completion":"/** hello */","stopReason":""}
-
-            event: completion
-            data: {"completion":"/** hello */\n","stopReason":""}
-
-            event: completion
-            data: {"completion":"/** hello */\n","stopReason":"stop_sequence"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 09 Feb 2024 10:10:16 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1289
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-09T10:10:15.234Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 2c6d350030c453cff8578d77927ccbc4
       _order: 0
       cache: {}
@@ -11807,366 +11644,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e0367cc63d576f11dfd2130e79b0267d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2437
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: Context from
-                  file path @src/animal.ts:
-
-                  /* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/animal.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>/* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */</SELECTEDCODE7662>
-
-
-                  The user wants you to replace parts of the selected code or correct a problem by following their instructions.
-
-                  Provide your generated code using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Add a new field to the class that console log the name of the animal.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |
-                  <CODE5711>
-            model: anthropic/claude-2.0
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 6291
-        content:
-          mimeType: text/event-stream
-          size: 6291
-          text: >+
-            event: completion
-
-            data: {"completion":"/*","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SE","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    make","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound():","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isM","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMam","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName():","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/*","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SE","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION_","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION_END","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION_END */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION_END */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 14 Feb 2024 20:00:04 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1293
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-14T20:00:01.261Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 6721336c88c8c3735b98c2242b8178ca
       _order: 0
       cache: {}
@@ -13285,10 +12762,6 @@ log:
 
 
 
-
-
-
-                      
                   </selected>
               - speaker: assistant
                 text: Ok.
@@ -18251,6 +17724,588 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 4d89b8d9cfa9bc8c5363a03c6804d763
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2354
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/sum.ts`:
+                  <selected>
+                  Context from file path src/sum.ts:
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/sum.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to replace parts of the selected code or correct a problem by following their instructions.
+
+                  Provide your generated code using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Add a 'hello' comment for the selected code, without including the selected code.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 377
+        content:
+          mimeType: text/event-stream
+          size: 377
+          text: |+
+            event: completion
+            data: {"completion":"/*","stopReason":""}
+
+            event: completion
+            data: {"completion":"/* hello","stopReason":""}
+
+            event: completion
+            data: {"completion":"/* hello */","stopReason":""}
+
+            event: completion
+            data: {"completion":"/* hello */\n","stopReason":""}
+
+            event: completion
+            data: {"completion":"/* hello */\n","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 27 Feb 2024 10:02:31 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "489"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1400
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-27T10:02:29.559Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 21bc967e938394a02e27f2b6e64b243c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2436
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3709f5bf232c2abca4c612f0768368b57919ca6eaa470e3fd7160cbf3e8d0ec3
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: Context from
+                  file path src/animal.ts:
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/animal.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>/* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */</SELECTEDCODE7662>
+
+
+                  The user wants you to replace parts of the selected code or correct a problem by following their instructions.
+
+                  Provide your generated code using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Add a new field to the class that console log the name of the animal.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |
+                  <CODE5711>
+            model: anthropic/claude-2.0
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 9060
+        content:
+          mimeType: text/event-stream
+          size: 9060
+          text: >+
+            event: completion
+
+            data: {"completion":"/*","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    make","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound():","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isM","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMam","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    print","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n     ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/*","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION_END","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION_END */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION_END */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string \n    isMammal: boolean\n    printName() {\n      console.log(this.name)\n    }\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 27 Feb 2024 10:03:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "416"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1400
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-02-27T10:03:43.363Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 5cf8d8dc18412c693f512d2a13102039
       _order: 0
       cache: {}
@@ -18292,10 +18347,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 2955
+        bodySize: 1264
         content:
           mimeType: text/event-stream
-          size: 2955
+          size: 1264
           text: >+
             event: completion
 
@@ -18319,112 +18374,52 @@ log:
 
             event: completion
 
-            data: {"completion":" I'm Claude, one","stopReason":""}
+            data: {"completion":" I'm Claude, an","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of","stopReason":""}
+            data: {"completion":" I'm Claude, an AI","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of An","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthrop","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created by","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic's","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created by An","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic's conversational","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created by Anthrop","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created by Anthropic","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models","stopReason":""}
+            data: {"completion":" I'm Claude, an AI assistant created by Anthropic.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" I'm Claude, one of Anthropic's conversational AI models. I don't have a specific model number or version.","stopReason":"stop_sequence"}
+            data: {"completion":" I'm Claude, an AI assistant created by Anthropic.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18434,7 +18429,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 26 Feb 2024 12:56:07 GMT
+            value: Tue, 27 Feb 2024 10:16:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18463,7 +18458,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-26T12:56:06.090Z
+      startedDateTime: 2024-02-27T10:16:23.469Z
       time: 0
       timings:
         blocked: -1
@@ -18473,11 +18468,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 96a7720c4d67d9cdf61b191f58670d16
+    - _id: 37bcad611d12b5f3f8be7e87e7db0736
       _order: 0
       cache: {}
       request:
-        bodySize: 537
+        bodySize: 481
         cookies: []
         headers:
           - name: content-type
@@ -18507,8 +18502,7 @@ log:
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: " I'm Claude, one of Anthropic's conversational AI models. I don't have a
-                  specific model number or version."
+                text: " I'm Claude, an AI assistant created by Anthropic."
               - speaker: human
                 text: What model are you?
               - speaker: assistant
@@ -18519,10 +18513,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 3882
+        bodySize: 3885
         content:
           mimeType: text/event-stream
-          size: 3882
+          size: 3885
           text: >+
             event: completion
 
@@ -18666,17 +18660,17 @@ log:
 
             event: completion
 
-            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number","stopReason":""}
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or version","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number.","stopReason":""}
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or version.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or number.","stopReason":"stop_sequence"}
+            data: {"completion":" I'm an AI assistant created by Anthropic to be helpful, harmless, and honest. I don't have a specific model name or version.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18686,7 +18680,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 26 Feb 2024 12:56:09 GMT
+            value: Tue, 27 Feb 2024 10:16:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18715,7 +18709,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-26T12:56:08.022Z
+      startedDateTime: 2024-02-27T10:16:25.078Z
       time: 0
       timings:
         blocked: -1

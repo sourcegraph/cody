@@ -3,11 +3,10 @@ import * as vscode from 'vscode'
 import { logDebug } from '../log'
 
 import { type ConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
-import { type FileURI, isFileURI } from '@sourcegraph/cody-shared'
+import { type ContextItem, type FileURI, isFileURI } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
-import type { ContextItem } from '../prompt-builder/types'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
@@ -163,7 +162,7 @@ export class ContextRankingController implements ContextRanker {
         const rankContextItems = contextItems.map((item, index) => ({
             document_id: index,
             filePath: item.uri?.path ? path.relative(baseRepoPath, item.uri?.path) : '',
-            content: item.text,
+            content: item.content ?? '',
             source: item.source,
         }))
         return rankContextItems

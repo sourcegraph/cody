@@ -8,38 +8,38 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import java.lang.reflect.Type
 
-sealed class ContextFile {
+sealed class ContextItem {
   companion object {
-    val deserializer: JsonDeserializer<ContextFile> =
+    val deserializer: JsonDeserializer<ContextItem> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.asJsonObject.get("type").asString) {
-          "file" -> context.deserialize<ContextFileFile>(element, ContextFileFile::class.java)
-          "symbol" -> context.deserialize<ContextFileSymbol>(element, ContextFileSymbol::class.java)
+          "file" -> context.deserialize<ContextItemFile>(element, ContextItemFile::class.java)
+          "symbol" -> context.deserialize<ContextItemSymbol>(element, ContextItemSymbol::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
   }
 }
 
-data class ContextFileFile(
+data class ContextItemFile(
   val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val range: RangeData? = null,
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
   val source: ContextFileSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal
   val content: String? = null,
   val type: TypeEnum? = null, // Oneof: file
-) : ContextFile() {
+) : ContextItem() {
 
   enum class TypeEnum {
     @SerializedName("file") File,
   }
 }
 
-data class ContextFileSymbol(
+data class ContextItemSymbol(
   val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val range: RangeData? = null,
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
@@ -48,7 +48,7 @@ data class ContextFileSymbol(
   val type: TypeEnum? = null, // Oneof: symbol
   val symbolName: String? = null,
   val kind: SymbolKind? = null, // Oneof: class, function, method
-) : ContextFile() {
+) : ContextItem() {
 
   enum class TypeEnum {
     @SerializedName("symbol") Symbol,

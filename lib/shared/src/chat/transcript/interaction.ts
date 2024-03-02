@@ -1,4 +1,4 @@
-import type { ContextFile, ContextMessage, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem, ContextMessage, PreciseContext } from '../../codebase-context/messages'
 import { isCodyIgnoredFile } from '../../cody-ignore/context-filter'
 
 import type { ChatMessage, InteractionMessage } from './messages'
@@ -7,7 +7,7 @@ export interface InteractionJSON {
     humanMessage: InteractionMessage
     assistantMessage: InteractionMessage
     fullContext: ContextMessage[]
-    usedContextFiles: ContextFile[]
+    usedContextFiles: ContextItem[]
     usedPreciseContext: PreciseContext[]
     timestamp: string
 
@@ -20,7 +20,7 @@ export class Interaction {
         private readonly humanMessage: InteractionMessage,
         private assistantMessage: InteractionMessage,
         private fullContext: Promise<ContextMessage[]>,
-        private usedContextFiles: ContextFile[],
+        private usedContextFiles: ContextItem[],
         private usedPreciseContext: PreciseContext[] = [],
         public readonly timestamp: string = new Date().toISOString()
     ) {}
@@ -69,7 +69,7 @@ export class Interaction {
         return msgs.map(msg => ({ ...msg }))
     }
 
-    public setUsedContext(usedContextFiles: ContextFile[], usedPreciseContext: PreciseContext[]): void {
+    public setUsedContext(usedContextFiles: ContextItem[], usedPreciseContext: PreciseContext[]): void {
         this.usedContextFiles = usedContextFiles
         this.usedPreciseContext = usedPreciseContext
     }

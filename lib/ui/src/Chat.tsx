@@ -8,7 +8,7 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     type CodyCommand,
-    type ContextFile,
+    type ContextItem,
     type Guardrails,
     type ModelProvider,
     getAtMentionQuery,
@@ -40,7 +40,7 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (
         text: string,
         submitType: WebviewChatSubmitType,
-        userContextFiles?: Map<string, ContextFile>
+        userContextFiles?: Map<string, ContextItem>
     ) => void
     gettingStartedComponent?: React.FunctionComponent<any>
     gettingStartedComponentProps?: any
@@ -73,8 +73,8 @@ interface ChatProps extends ChatClassNames {
         input: string
     ) => [string, CodyCommand][]
     isTranscriptError?: boolean
-    contextSelection?: ContextFile[] | null
-    setContextSelection: (context: ContextFile[] | null) => void
+    contextSelection?: ContextItem[] | null
+    setContextSelection: (context: ContextItem[] | null) => void
     UserContextSelectorComponent?: React.FunctionComponent<UserContextSelectorProps>
     chatModels?: ModelProvider[]
     EnhancedContextSettings?: React.FunctionComponent<{
@@ -157,8 +157,8 @@ export interface CodeBlockActionsProps {
 }
 
 export interface UserContextSelectorProps {
-    onSelected: (context: ContextFile, queryEndsWithColon?: boolean) => void
-    contextSelection?: ContextFile[]
+    onSelected: (context: ContextItem, queryEndsWithColon?: boolean) => void
+    contextSelection?: ContextItem[]
     selected?: number
     onSubmit: (input: string, inputType: 'user') => void
     setSelectedChatContext: (arg: number) => void
@@ -243,7 +243,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
-    const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextFile>>(new Map([]))
+    const [chatContextFiles, setChatContextFiles] = useState<Map<string, ContextItem>>(new Map([]))
     const [selectedChatContext, setSelectedChatContext] = useState(0)
     const [currentChatContextQuery, setCurrentChatContextQuery] = useState<string | undefined>(undefined)
 
@@ -327,8 +327,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     // Add old context files from the transcript to the map
-    const useOldChatMessageContext = (oldContextFiles: ContextFile[]) => {
-        const contextFilesMap = new Map<string, ContextFile>(chatContextFiles)
+    const useOldChatMessageContext = (oldContextFiles: ContextItem[]) => {
+        const contextFilesMap = new Map<string, ContextItem>(chatContextFiles)
         for (const file of oldContextFiles) {
             const fileDisplayText = getContextFileDisplayText(file)
             contextFilesMap.set(fileDisplayText, file)
@@ -343,7 +343,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
      * Allows users to quickly insert file context into the chat input.
      */
     const onChatContextSelected = useCallback(
-        (selected: ContextFile, queryEndsWithColon = false): void => {
+        (selected: ContextItem, queryEndsWithColon = false): void => {
             const atRangeEndingRegex = /:\d+(-\d+)?$/
             const inputBeforeCaret = formInput.slice(0, inputCaretPosition)
 

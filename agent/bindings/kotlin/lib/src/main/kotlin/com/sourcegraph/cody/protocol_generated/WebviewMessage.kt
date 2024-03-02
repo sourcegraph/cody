@@ -82,7 +82,7 @@ data class EventWebviewMessage(
 data class SubmitWebviewMessage(
   val command: CommandEnum? = null, // Oneof: submit
   val addEnhancedContext: Boolean? = null,
-  val contextFiles: List<ContextFile>? = null,
+  val contextFiles: List<ContextItem>? = null,
   val text: String? = null,
   val submitType: ChatSubmitType? = null, // Oneof: user, user-newchat
 ) : WebviewMessage() {
@@ -169,7 +169,7 @@ data class `get-chat-modelsWebviewMessage`(
 data class OpenFileWebviewMessage(
   val command: CommandEnum? = null, // Oneof: openFile
   val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -180,7 +180,7 @@ data class OpenFileWebviewMessage(
 data class OpenLocalFileWithRangeWebviewMessage(
   val command: CommandEnum? = null, // Oneof: openLocalFileWithRange
   val filePath: String? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -191,7 +191,7 @@ data class OpenLocalFileWithRangeWebviewMessage(
 data class EditWebviewMessage(
   val command: CommandEnum? = null, // Oneof: edit
   val addEnhancedContext: Boolean? = null,
-  val contextFiles: List<ContextFile>? = null,
+  val contextFiles: List<ContextItem>? = null,
   val text: String? = null,
   val index: Int? = null,
 ) : WebviewMessage() {
@@ -364,7 +364,7 @@ data class SearchWebviewMessage(
 data class `show-search-resultWebviewMessage`(
   val command: CommandEnum? = null, // Oneof: show-search-result
   val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

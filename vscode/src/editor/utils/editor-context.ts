@@ -5,11 +5,11 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    type ContextFile,
-    type ContextFileFile,
     type ContextFileSource,
-    type ContextFileSymbol,
     type ContextFileType,
+    type ContextItem,
+    type ContextItemFile,
+    type ContextItemSymbol,
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
     displayPath,
@@ -52,7 +52,7 @@ export async function getFileContextFiles(
     query: string,
     maxResults: number,
     token: vscode.CancellationToken
-): Promise<ContextFileFile[]> {
+): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
     }
@@ -121,7 +121,7 @@ export async function getFileContextFiles(
 export async function getSymbolContextFiles(
     query: string,
     maxResults = 20
-): Promise<ContextFileSymbol[]> {
+): Promise<ContextItemSymbol[]> {
     if (!query.trim()) {
         return []
     }
@@ -177,7 +177,7 @@ export async function getSymbolContextFiles(
  * Gets context files for each open editor tab in VS Code.
  * Filters out large files over 1MB to avoid expensive parsing.
  */
-export async function getOpenTabsContextFile(): Promise<ContextFileFile[]> {
+export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterLargeFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
@@ -192,13 +192,13 @@ function createContextFileFromUri(
     selectionRange: vscode.Range,
     kind: SymbolKind,
     symbolName: string
-): ContextFileSymbol[]
+): ContextItemSymbol[]
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextFileSource,
     type: 'file',
     selectionRange?: vscode.Range
-): ContextFileFile[]
+): ContextItemFile[]
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextFileSource,
@@ -206,7 +206,7 @@ function createContextFileFromUri(
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
     symbolName?: string
-): ContextFile[] {
+): ContextItem[] {
     if (isCodyIgnoredFile(uri)) {
         return []
     }
@@ -231,7 +231,7 @@ function createContextFileFromUri(
     ]
 }
 
-function createContextFileRange(selectionRange: vscode.Range): ContextFile['range'] {
+function createContextFileRange(selectionRange: vscode.Range): ContextItem['range'] {
     return {
         start: {
             line: selectionRange.start.line,
@@ -248,7 +248,7 @@ function createContextFileRange(selectionRange: vscode.Range): ContextFile['rang
  * Filters the given context files to remove files larger than 1MB and non-text files.
  * Sets the title to 'large-file' for files contains more characters than the token limit.
  */
-export async function filterLargeFiles(contextFiles: ContextFileFile[]): Promise<ContextFileFile[]> {
+export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
         // Remove file larger than 1MB and non-text files
