@@ -1,4 +1,4 @@
-import type { ContextFile, ContextFileSymbol, SymbolKind } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextItemSymbol, SymbolKind } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { ChatContextClient } from './chatContextClient'
 
@@ -21,17 +21,33 @@ export const dummyChatContextClient: ChatContextClient = {
     },
 }
 
-const DUMMY_FILES: ContextFile[] = [
-    ...(Array.from(new Array(20).keys()).map(i => ({
-        uri: URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-a-${i}.py`),
-        type: 'file',
-    })) satisfies ContextFile[]),
+const DUMMY_FILES: ContextItem[] = [
+    ...Array.from(new Array(20).keys()).map(
+        i =>
+            ({
+                uri: URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-a-${i}.py`),
+                type: 'file',
+            }) satisfies ContextItem
+    ),
     { type: 'file', uri: URI.file('dir/file-large.py'), title: 'large-file' },
 ]
 
-const DUMMY_SYMBOLS: ContextFileSymbol[] = Array.from(new Array(20).keys()).map(i => ({
-    symbolName: `Symbol${i}`,
-    kind: ['function', 'class', 'method'][i % 3] as SymbolKind,
-    uri: URI.file(`a/b/file${i}.go`),
-    type: 'symbol',
-}))
+const DUMMY_SYMBOLS: ContextItemSymbol[] = Array.from(new Array(20).keys()).map(
+    i =>
+        ({
+            symbolName: `Symbol${i}`,
+            kind: ['function', 'class', 'method'][i % 3] as SymbolKind,
+            uri: URI.file(`a/b/file${i}.go`),
+            range: {
+                start: {
+                    line: i + 1,
+                    character: (13 * i) % 80,
+                },
+                end: {
+                    line: ((3 * i) % 100) + 1,
+                    character: 1,
+                },
+            },
+            type: 'symbol',
+        }) satisfies ContextItemSymbol
+)

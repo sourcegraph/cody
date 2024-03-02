@@ -1,9 +1,5 @@
-:root {
-    --item-height: 1.5rem;
-    --item-padding-y: 0.3rem;
-}
-
-.typeahead-popover {
+.popover {
+    overflow: hidden;
     background: var(--vscode-dropdown-background);
     color: var(--vscode-dropdown-foreground);
     border: 1px solid var(--vscode-widget-border);
@@ -12,86 +8,8 @@
     position: fixed;
 }
 
-.typeahead-popover ul {
-    padding: 0;
-    list-style: none;
-    margin: 0;
-    min-width: 180px;
-    max-height: calc(7*var(--item-height));
-    overflow-y: scroll;
-}
-
-/* Hide scrollbar */
-.typeahead-popover ul {
-    scrollbar-width: none;
-}
-.typeahead-popover ul::-webkit-scrollbar {
-    display: none;
-}
-
-/* Scroll snap */
-.typeahead-popover ul {
-    scroll-snap-type: y mandatory;
-}
-.item {
-    scroll-snap-align: start;
-}
-
-.item {
-    height: calc(var(--item-height) - 2*var(--item-padding-y));
-    padding: var(--item-padding-y) 0.35rem;
-    font-size: 75%;
-}
-
-.option-item {
-    cursor: pointer;
-}
-
-.option-item:hover, .option-item.selected {
-    color: var(--vscode-list-hoverForeground);
-    background-color: var(--vscode-list-hoverBackground);
-}
-
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .option-item.selected,
-body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
-    outline: 1px dashed var(--vscode-contrastActiveBorder);
-    outline-offset: -1px;
-}
-
-/* Option item content */
-.option-item {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    gap: 0.25rem;
-}
-.option-item-title, .option-item-description {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-.option-item-title--with-warning {
-    opacity: 0.7;
-}
-.option-item-description {
-    opacity: 0.75;
-    flex: 1;
-}
-.option-item-warning {
-    font-weight: bold;
-}
-
-.mentions-menu {
-    overflow: hidden;
-}
-
 .reset-anchor {
     top: 0 !important;
     left: 0 !important;
 }
 
-.help-item {
-    opacity: 0.8;
-    border-bottom: 1px solid var(--vscode-dropdown-border);
-    user-select: none;
-}

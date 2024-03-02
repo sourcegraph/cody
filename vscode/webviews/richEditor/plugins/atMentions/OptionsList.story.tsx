@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
 import { VSCodeStoryDecorator } from '../../../storybook/VSCodeStoryDecorator'
-import { OptionsList, toOptions } from './atMentions'
+import { OptionsList } from './OptionsList'
+import { toOptions } from './atMentions'
 
 const meta: Meta<typeof OptionsList> = {
     title: 'cody/OptionsList',
@@ -17,22 +18,19 @@ const meta: Meta<typeof OptionsList> = {
     } as React.ComponentProps<typeof OptionsList>,
 
     decorators: [
-        VSCodeStoryDecorator,
         story => {
             return (
                 <div
                     style={{
-                        background: 'rgb(28, 33, 40)',
-                        position: 'absolute',
-                        bottom: 0,
-                        color: 'white',
-                        width: '600px',
+                        background: 'var(--vscode-editor-background)',
+                        color: 'var(--vscode-editor-foreground)',
                     }}
                 >
                     {story()}
                 </div>
             )
         },
+        VSCodeStoryDecorator,
     ],
 }
 
@@ -56,7 +54,7 @@ export const FileSearchMatches: StoryObj<typeof OptionsList> = {
     args: {
         query: 'd',
         options: toOptions(
-            Array.from(new Array(20).keys()).map(i => ({
+            Array.from(new Array(10).keys()).map(i => ({
                 uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
                 type: 'file',
             }))
@@ -64,9 +62,28 @@ export const FileSearchMatches: StoryObj<typeof OptionsList> = {
     },
 }
 
-export const SymbolSearchNoMatchesWarning: StoryObj<typeof OptionsList> = {
+export const LongScrolling: StoryObj<typeof OptionsList> = {
+    args: {
+        query: 'd',
+        options: toOptions(
+            Array.from(new Array(20).keys()).map(i => ({
+                uri: URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-${i}.py`),
+                type: 'file',
+            }))
+        ),
+    },
+}
+
+export const SymbolSearchNoMatches: StoryObj<typeof OptionsList> = {
     args: {
         query: '#a',
+        options: toOptions([]),
+    },
+}
+
+export const SymbolSearchNoMatchesWarning: StoryObj<typeof OptionsList> = {
+    args: {
+        query: '#abcdefg',
         options: toOptions([]),
     },
 }

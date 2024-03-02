@@ -1,15 +1,15 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 import { createContext, useContext } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
 export interface ChatContextClient {
-    getChatContextItems(query: string): Promise<ContextFile[]>
+    getChatContextItems(query: string): Promise<ContextItem[]>
 }
 
 const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
-    getChatContextItems(query: string): Promise<ContextFile[]> {
+    getChatContextItems(query: string): Promise<ContextItem[]> {
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
-        return new Promise<ContextFile[]>((resolve, reject) => {
+        return new Promise<ContextItem[]>((resolve, reject) => {
             const vscodeApi = getVSCodeAPI()
             vscodeApi.postMessage({ command: 'getUserContext', query })
 
