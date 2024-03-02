@@ -119,10 +119,6 @@ export class MentionTypeaheadOption extends MenuOption {
     }
 }
 
-export function toOptions(items: ContextItem[]): MentionTypeaheadOption[] {
-    return items.map(item => new MentionTypeaheadOption(item))
-}
-
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 

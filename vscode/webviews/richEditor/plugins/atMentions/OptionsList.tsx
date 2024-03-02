@@ -88,7 +88,6 @@ const Item: React.FunctionComponent<{
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"
             aria-selected={isSelected}
-            id={'typeahead-item-' + index}
             onMouseEnter={onMouseEnter}
             onClick={onClick}
         >
