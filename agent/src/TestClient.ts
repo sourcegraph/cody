@@ -5,7 +5,7 @@ import { createPatch } from 'diff'
 import { type ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import os from 'os'
 import path from 'path'
-import { type ChatMessage, type ContextFile, logError } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type ContextItem, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import fspromises from 'fs/promises'
@@ -458,7 +458,7 @@ export class TestClient extends MessageHandler {
     public async editMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
     ): Promise<ChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
@@ -478,7 +478,7 @@ export class TestClient extends MessageHandler {
     public async sendMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<ChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
             ?.lastMessage
@@ -486,14 +486,14 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChat(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<ChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
     ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
         const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(

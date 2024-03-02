@@ -32,6 +32,8 @@ function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): voi
 }
 */
 
+import type { RangeData } from '@sourcegraph/cody-shared'
+
 function render(ch: string): string {
     return ch === '\n' ? '@' : ch
 }
@@ -219,14 +221,9 @@ export interface Position {
     character: number
 }
 
-export interface Range {
-    start: Position
-    end: Position
-}
-
 export interface Edit {
     text: string
-    range: Range
+    range: RangeData
 }
 
 export interface Diff {
@@ -235,9 +232,9 @@ export interface Diff {
     mergedText: string | undefined
     // TODO: We can use the presence of mergedText to indicate clean
     clean: boolean
-    conflicts: Range[]
+    conflicts: RangeData[]
     edits: Edit[]
-    highlights: Range[]
+    highlights: RangeData[]
 }
 
 // Rolls over characters in text and computes the updated position to the end

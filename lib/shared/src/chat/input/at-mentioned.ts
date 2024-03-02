@@ -1,4 +1,4 @@
-import type { ContextFile } from '../../codebase-context/messages'
+import type { ContextItem } from '../../codebase-context/messages'
 import { displayPath } from '../../editor/displayPath'
 
 /**
@@ -57,7 +57,7 @@ export function getAtMentionedInputText(
  *
  * e.g. @foo/bar.ts or @foo/bar.ts:1-15#baz
  */
-export function getContextFileDisplayText(contextFile: ContextFile, inputBeforeCaret?: string): string {
+export function getContextFileDisplayText(contextFile: ContextItem, inputBeforeCaret?: string): string {
     const isSymbol = contextFile.type === 'symbol'
     const displayText = `@${displayPath(contextFile.uri)}`
 

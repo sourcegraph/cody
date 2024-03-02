@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type ConfigurationUseContext,
+    type ContextItem,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
@@ -18,7 +19,6 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import type { ContextItem } from '../../prompt-builder/types'
 import { viewRangeToRange } from './chat-helpers'
 
 interface GetEnhancedContextOptions {
@@ -233,7 +233,8 @@ async function searchRemote(
         }
         return (await remoteSearch.query(userText)).map(result => {
             return {
-                text: result.content,
+                type: 'file',
+                content: result.content,
                 range: new vscode.Range(result.startLine, 0, result.endLine, 0),
                 uri: result.uri,
                 source: 'unified',
@@ -299,10 +300,11 @@ async function searchSymf(
                         return []
                     }
                     return {
+                        type: 'file',
                         uri: result.file,
                         range,
                         source: 'search',
-                        text,
+                        content: text,
                     }
                 }
             )
@@ -336,9 +338,10 @@ async function searchEmbeddingsLocal(
             )
 
             contextItems.push({
+                type: 'file',
                 uri: result.uri,
                 range,
-                text: result.content,
+                content: result.content,
                 source: 'embeddings',
             })
         }
@@ -370,7 +373,8 @@ function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
 
     return [
         {
-            text: selection.selectedText,
+            type: 'file',
+            content: selection.selectedText,
             uri: selection.fileUri,
             range,
             source: 'selection',
@@ -390,6 +394,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
         }
         return [
             {
+                type: 'file',
                 text: visible.content,
                 uri: fileUri,
                 source: 'editor',
@@ -511,8 +516,9 @@ async function getReadmeContext(): Promise<ContextItem[]> {
 
     return [
         {
+            type: 'file',
             uri: readmeUri,
-            text: truncatedReadmeText,
+            content: truncatedReadmeText,
             range: viewRangeToRange(range),
             source: 'editor',
         },
@@ -555,7 +561,7 @@ export function fuseContext(
     const maxKeywordChars = embeddingsItems.length > 0 ? maxChars * 0.8 : maxChars
 
     for (const item of keywordItems) {
-        const len = item.text.length
+        const len = item.content?.length ?? 0
 
         if (charsUsed + len <= maxKeywordChars) {
             charsUsed += len
@@ -564,7 +570,7 @@ export function fuseContext(
     }
 
     for (const item of embeddingsItems) {
-        const len = item.text.length
+        const len = item.content?.length ?? 0
 
         if (charsUsed + len <= maxChars) {
             charsUsed += len

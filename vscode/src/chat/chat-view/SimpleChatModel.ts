@@ -3,6 +3,7 @@ import { findLast } from 'lodash'
 import {
     type ChatError,
     type ChatMessage,
+    type ContextItem,
     type InteractionJSON,
     type InteractionMessage,
     type Message,
@@ -10,11 +11,11 @@ import {
     errorToChatError,
     isCodyIgnoredFile,
     reformatBotMessageForChat,
+    toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import type { Repo } from '../../context/repo-fetcher'
-import type { ContextItem } from '../../prompt-builder/types'
-import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
+import { getChatPanelTitle } from './chat-helpers'
 
 /**
  * Interface for a chat message with additional context.
@@ -210,7 +211,7 @@ function messageToInteractionJSON(
             botMessage?.message?.speaker === 'assistant'
                 ? messageToInteractionMessage(botMessage)
                 : { speaker: 'assistant' },
-        usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
+        usedContextFiles: humanMessage.newContextUsed ?? [],
         // These fields are unused on deserialization
         fullContext: [],
         usedPreciseContext: [],
@@ -232,7 +233,11 @@ export function toViewMessage(mwc: MessageWithContext): ChatMessage {
         ...mwc.message,
         error: mwc.error,
         displayText,
-        contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
+        contextFiles: (mwc.newContextUsed ?? []).map(item => ({
+            ...item,
+            // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+            range: toRangeData(item.range),
+        })),
     }
 }
 

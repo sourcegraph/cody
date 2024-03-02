@@ -1,30 +1,20 @@
 import * as vscode from 'vscode'
 
-import type { Edit, Position, Range } from './diff'
+import { type RangeData, toRangeData } from '@sourcegraph/cody-shared'
+import type { Edit, Position } from './diff'
 import type { FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
 
 // This does some thunking to manage the two range types: diff ranges, and
 // text change ranges.
-function updateDiffRange(range: Range, changes: TextChange[]): Range {
-    return toDiffRange(
+function updateDiffRange(range: RangeData, changes: TextChange[]): RangeData {
+    return toRangeData(
         updateRangeMultipleChanges(toVsCodeRange(range), changes, { supportRangeAffix: true })
     )
 }
 
-function toDiffRange(range: vscode.Range): Range {
-    return {
-        start: toDiffPosition(range.start),
-        end: toDiffPosition(range.end),
-    }
-}
-
-function toDiffPosition(position: vscode.Position): Position {
-    return { line: position.line, character: position.character }
-}
-
-function toVsCodeRange(range: Range): vscode.Range {
+function toVsCodeRange(range: RangeData): vscode.Range {
     return new vscode.Range(toVsCodePosition(range.start), toVsCodePosition(range.end))
 }
 
@@ -33,7 +23,7 @@ function toVsCodePosition(position: Position): vscode.Position {
 }
 
 // Updates the ranges in a diff.
-function updateRanges(ranges: Range[], changes: TextChange[]): void {
+function updateRanges(ranges: RangeData[], changes: TextChange[]): void {
     for (let i = 0; i < ranges.length; i++) {
         ranges[i] = updateDiffRange(ranges[i], changes)
     }

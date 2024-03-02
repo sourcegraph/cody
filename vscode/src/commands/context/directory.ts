@@ -1,5 +1,5 @@
 import {
-    type ContextFile,
+    type ContextItem,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
@@ -17,9 +17,9 @@ import { getEditor } from '../../editor/active-editor'
  * truncates it, and adds it to the context messages along with the file name.
  * Limits file sizes to 1MB.
  */
-export async function getContextFileFromDirectory(directory?: URI): Promise<ContextFile[]> {
+export async function getContextFileFromDirectory(directory?: URI): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.directory', async () => {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         const editor = getEditor()
         const document = editor?.active?.document
@@ -65,7 +65,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                     content: truncatedContent,
                     source: 'editor',
                     range,
-                } as ContextFile
+                } as ContextItem
 
                 contextFiles.push(contextFile)
 
