@@ -2,8 +2,8 @@ import type { Decorator } from '@storybook/react'
 
 import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
-import { WithChatContextClient } from '../richEditor/plugins/atMentions/chatContextClient'
-import { dummyChatContextClient } from '../richEditor/plugins/atMentions/fixtures'
+import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
+import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
 import styles from './VSCodeStoryDecorator.module.css'
 
 setDisplayPathEnvInfo({

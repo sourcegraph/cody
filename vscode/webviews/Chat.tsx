@@ -25,7 +25,7 @@ import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
-import { PromptEditor } from './richEditor/PromptEditor'
+import { PromptEditor } from './promptEditor/PromptEditor'
 import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
