@@ -22,6 +22,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'human',
             displayText: 'What color is the sky?',
+            contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
         },
         {
             speaker: 'assistant',

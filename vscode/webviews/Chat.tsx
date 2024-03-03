@@ -74,9 +74,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const resetEditorValue = useCallback((value: PromptEditorValue) => {
         setEditorValue(value)
-        if (editorRef.current) {
-            editorRef.current.resetEditorStateAndFocus(value.editorState)
-        }
+        editorRef.current?.resetValue(value)
     }, [])
 
     const onAbortMessageInProgress = useCallback(() => {

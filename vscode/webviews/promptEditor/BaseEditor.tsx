@@ -83,12 +83,12 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         ErrorBoundary={LexicalErrorBoundary}
                     />
                     <HistoryPlugin />
-                    <OnChangePlugin onChange={onChange} />
+                    <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
                     <MentionsPlugin />
                     <CodeHighlightPlugin />
                     <MarkdownShortcutPlugin />
                     <AutoFocusPlugin defaultSelection="rootEnd" />
-                    <OnFocusPlugin onFocus={onFocus} />
+                    {false && <OnFocusPlugin onFocus={onFocus} />}
                     {editorRef && <RefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin onKeyDown={onKeyDown} onEscapeKey={onEscapeKey} />
                 </LexicalComposer>

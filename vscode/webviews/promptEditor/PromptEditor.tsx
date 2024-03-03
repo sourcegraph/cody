@@ -1,6 +1,15 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
+import {
+    $createParagraphNode,
+    $createTextNode,
+    $getRoot,
+    $isParagraphNode,
+    CLEAR_HISTORY_COMMAND,
+    type LexicalEditor,
+    type ParagraphNode,
+    type SerializedEditorState,
+} from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
@@ -8,7 +17,6 @@ import styles from './PromptEditor.module.css'
 import {
     ContextItemMentionNode,
     type SerializedContextItem,
-    type SerializedContextItemMentionNode,
     isSerializedContextItemMentionNode,
 } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
@@ -29,7 +37,7 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    resetEditorStateAndFocus(editorState: SerializedEditorState): void
+    resetValue(value: PromptEditorValue): void
 }
 
 const TIPS = '(@ for files, @# for symbols)'
@@ -67,13 +75,22 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useEffect(() => {
         if (ref) {
             ;(ref as MutableRefObject<PromptEditorRefAPI>).current = {
-                resetEditorStateAndFocus: (editorState: SerializedEditorState) => {
+                resetValue: (value: PromptEditorValue) => {
+                    if (value.text === '') {
+                        // Clearing seems to require a different code path because focusing fails if
+                        // the editor is empty.
+                        editorRef.current?.update(() => {
+                            $getRoot().clear()
+                        })
+                        return
+                    }
+
                     const editor = editorRef.current
                     if (editor) {
-                        editor.setEditorState(editor.parseEditorState(editorState))
+                        editor.setEditorState(editor.parseEditorState(value.editorState))
+                        addExtraContextItems(editor, value.extraContextItems)
                         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-                        editor.update(() => {})
-                        setTimeout(() => editor.getRootElement()?.focus())
+                        editor.focus()
                     }
                 },
             }
@@ -130,6 +147,7 @@ export interface PromptEditorValue {
     v: 1
     text: string
     editorState: SerializedEditorState
+    extraContextItems?: ContextItem[]
 }
 
 export function toPromptEditorValue(editorState: EditorState): PromptEditorValue {
@@ -138,6 +156,32 @@ export function toPromptEditorValue(editorState: EditorState): PromptEditorValue
         editorState: editorState.toJSON(),
         text: editorStateToText(editorState),
     }
+}
+
+function addExtraContextItems(
+    editor: LexicalEditor,
+    contextItems: PromptEditorValue['extraContextItems']
+): void {
+    if (contextItems === undefined || contextItems.length === 0) {
+        return
+    }
+
+    // Add the context files as @-mentions after the message for now. This will result in duplicate
+    // @-mention text in the message (but only the latter mentions will be mention nodes).
+    editor.update(() => {
+        const root = $getRoot()
+        let paragraph = root.getFirstChild<ParagraphNode>()
+        if ($isParagraphNode(paragraph)) {
+            paragraph.append($createTextNode(' '))
+        } else {
+            paragraph = $createParagraphNode()
+            root.append(paragraph)
+        }
+        for (const contextItem of contextItems) {
+            const node = new ContextItemMentionNode(contextItem)
+            paragraph.append(node)
+        }
+    })
 }
 
 /**
@@ -161,11 +205,6 @@ export function createEditorValueFromText(
                             type: 'text',
                             version: 1,
                         },
-                        ...(extraContextItems ?? []).map(contextItem => {
-                            return new ContextItemMentionNode(
-                                contextItem
-                            ).exportJSON() satisfies SerializedContextItemMentionNode
-                        }),
                     ],
                     direction: 'ltr',
                     format: '',
@@ -181,7 +220,7 @@ export function createEditorValueFromText(
             version: 1,
         },
     }
-    return { v: 1, editorState, text }
+    return { v: 1, editorState, text, extraContextItems }
 }
 
 export const EMPTY_PROMPT_EDITOR_VALUE: PromptEditorValue = createEditorValueFromText('')

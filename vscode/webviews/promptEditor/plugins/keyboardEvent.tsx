@@ -21,7 +21,9 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                 editor.registerCommand(
                     KEY_DOWN_COMMAND,
                     event => {
-                        onKeyDown?.(event, editorSelectionStart(editor.getEditorState()) ?? 0)
+                        setTimeout(() =>
+                            onKeyDown?.(event, editorSelectionStart(editor.getEditorState()) ?? 0)
+                        )
                         return false
                     },
                     COMMAND_PRIORITY_LOW
@@ -33,7 +35,7 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                 editor.registerCommand(
                     KEY_ESCAPE_COMMAND,
                     () => {
-                        onEscapeKey?.()
+                        setTimeout(() => onEscapeKey?.())
                         return false
                     },
                     COMMAND_PRIORITY_LOW
