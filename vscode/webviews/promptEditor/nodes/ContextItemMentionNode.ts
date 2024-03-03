@@ -155,7 +155,9 @@ export function contextItemMentionNodeDisplayText(contextItem: ContextItemFields
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
 
-export function $createContextItemMentionNode(contextItem: ContextItemFields): ContextItemMentionNode {
+export function $createContextItemMentionNode(
+    contextItem: ContextItem | ContextItemFields
+): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()
     return $applyNodeReplacement(node)
