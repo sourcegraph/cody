@@ -12,7 +12,7 @@ const meta: Meta<typeof Chat> = {
             { speaker: 'assistant', displayText: 'Hello from Cody!' },
         ],
         messageInProgress: null,
-        inputHistory: [],
+        inputHistory: [{ inputText: 'My previous message', inputContextFiles: [] }],
         setInputHistory: () => {},
         chatIDHistory: [],
         chatEnabled: true,

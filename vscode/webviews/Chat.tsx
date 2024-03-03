@@ -202,6 +202,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const isMac = isMacOS()
     const setInputFocus = (focus: boolean): void => {} // TODO(sqs)
 
+    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
+
     // The context files added via the chat input by user
     const chatContextFiles = new Map<string, ContextItem>() // TODO(sqs)
 
@@ -338,7 +340,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress])
 
     const onEditorKeyDown = useCallback(
-        (event: KeyboardEvent): void => {
+        (event: KeyboardEvent, caretPosition: number): void => {
             // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
             const isModifierDown = isMac ? event.metaKey : event.ctrlKey
             if (isModifierDown) {
@@ -424,6 +426,41 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 setEnableNewChatMode(!enableNewChatMode)
                 return
             }
+
+            // If there's no input or the input matches the current history index, handle cycling through
+            // history with the cursor keys.
+            const previousHistoryInput = inputHistory[historyIndex]
+            const previousHistoryText: string =
+                typeof previousHistoryInput === 'string'
+                    ? previousHistoryInput
+                    : previousHistoryInput?.inputText
+            if (editorValue.text === previousHistoryText || !editorValue) {
+                let newIndex: number | undefined
+                if (event.key === 'ArrowUp' && caretPosition === 0) {
+                    newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                } else if (event.key === 'ArrowDown' && caretPosition === editorValue.text.length) {
+                    if (historyIndex + 1 < inputHistory.length) {
+                        newIndex = historyIndex + 1
+                    }
+                }
+
+                if (newIndex !== undefined) {
+                    setHistoryIndex(newIndex)
+
+                    const newHistoryInput = inputHistory[newIndex]
+                    if (typeof newHistoryInput === 'string') {
+                        resetEditorValue(createEditorValueFromText(newHistoryInput))
+                    } else {
+                        resetEditorValue(createEditorValueFromText(newHistoryInput.inputText))
+                    }
+
+                    postMessage?.({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:chatInputHistory:executed',
+                        properties: { source: 'chat' },
+                    })
+                }
+            }
         },
         [
             isMac,
@@ -435,6 +472,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onChatSubmit,
             enableNewChatMode,
             postMessage,
+            inputHistory,
+            historyIndex,
+            postMessage,
+            resetEditorValue,
         ]
     )
 

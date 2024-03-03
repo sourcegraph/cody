@@ -1,9 +1,10 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND, KEY_ESCAPE_COMMAND } from 'lexical'
 import { type FunctionComponent, useLayoutEffect } from 'react'
+import { editorSelectionStart } from '../BaseEditor'
 
 export interface KeyboardEventPluginProps {
-    onKeyDown?: (event: KeyboardEvent) => void
+    onKeyDown?: (event: KeyboardEvent, caretPosition: number) => void
     onEscapeKey?: () => void
 }
 
@@ -20,7 +21,7 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                 editor.registerCommand(
                     KEY_DOWN_COMMAND,
                     event => {
-                        onKeyDown?.(event)
+                        onKeyDown?.(event, editorSelectionStart(editor.getEditorState()) ?? 0)
                         return false
                     },
                     COMMAND_PRIORITY_LOW
