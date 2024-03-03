@@ -80,7 +80,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const resetEditorValue = useCallback((value: PromptEditorValue) => {
         setEditorValue(value)
         if (editorRef.current) {
-            editorRef.current.resetEditorState(value.editorState)
+            editorRef.current.resetEditorStateAndFocus(value.editorState)
         }
     }, [])
 
@@ -271,9 +271,19 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [postMessage, setEditMessageState]
     )
 
-    const onEditorChange = useCallback((value: PromptEditorValue): void => {
-        setEditorValue(value)
-    }, [])
+    const onEditorChange = useCallback(
+        (value: PromptEditorValue): void => {
+            setEditorValue(value)
+
+            // TODO(sqs): this correct?
+            const lastInput = inputHistory[historyIndex]
+            const lastText = typeof lastInput === 'string' ? lastInput : lastInput?.inputText
+            if (value.text !== lastText) {
+                setHistoryIndex(inputHistory.length)
+            }
+        },
+        [inputHistory, historyIndex]
+    )
 
     const submitInput = useCallback(
         (value: PromptEditorValue, submitType: WebviewChatSubmitType): void => {
@@ -434,7 +444,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 typeof previousHistoryInput === 'string'
                     ? previousHistoryInput
                     : previousHistoryInput?.inputText
-            if (editorValue.text === previousHistoryText || !editorValue) {
+            if (editorValue.text === previousHistoryText || editorValue.text === '') {
                 let newIndex: number | undefined
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
                     newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
@@ -448,11 +458,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     setHistoryIndex(newIndex)
 
                     const newHistoryInput = inputHistory[newIndex]
-                    if (typeof newHistoryInput === 'string') {
-                        resetEditorValue(createEditorValueFromText(newHistoryInput))
-                    } else {
-                        resetEditorValue(createEditorValueFromText(newHistoryInput.inputText))
-                    }
+                    resetEditorValue(
+                        createEditorValueFromText(
+                            typeof newHistoryInput === 'string'
+                                ? newHistoryInput
+                                : newHistoryInput.inputText
+                        )
+                    )
 
                     postMessage?.({
                         command: 'event',

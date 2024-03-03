@@ -1,13 +1,4 @@
-:global(.theme-light) {
-    --row-background-color: inherit;
-    --row-human-background-color: #efefef;
-    --row-foreground-color: black;
-    --row-participant-name-color: #777;
-    --row-border-color: #cccccc;
-    --transcript-action-background-color: #00000011;
-}
-
-:global(.theme-dark) {
+:root {
     --row-background-color: inherit;
     --row-human-background-color: #ffffff0c;
     --row-foreground-color: #ffffffee;

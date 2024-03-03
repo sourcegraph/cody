@@ -26,7 +26,7 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    resetEditorState(editorState: SerializedEditorState): void
+    resetEditorStateAndFocus(editorState: SerializedEditorState): void
 }
 
 const TIPS = '(@ for files, @# for symbols)'
@@ -64,10 +64,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useEffect(() => {
         if (ref) {
             ;(ref as MutableRefObject<PromptEditorRefAPI>).current = {
-                resetEditorState: (editorState: SerializedEditorState) => {
+                resetEditorStateAndFocus: (editorState: SerializedEditorState) => {
                     const editor = editorRef.current
                     if (editor) {
                         editor.setEditorState(editor.parseEditorState(editorState))
+                        setTimeout(() => editor.focus())
                     }
                 },
             }

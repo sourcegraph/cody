@@ -43,8 +43,8 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
 })
 
-// TODO (bee) fix flanky test
-test.skip('chat input focus', async ({ page, sidebar }) => {
+// TODO(sqs): was flaky and skipped
+test('chat input focus', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     // Open the buzz.ts file from the tree view,
     // and then submit a chat question from the command menu.

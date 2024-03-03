@@ -39,7 +39,6 @@ export const OptionsList: FunctionComponent<
             <ul ref={ref} className={styles.list}>
                 {options.map((option, i) => (
                     <Item
-                        index={i}
                         isSelected={selectedIndex === i}
                         onClick={() => {
                             setHighlightedIndex(i)
@@ -59,13 +58,12 @@ export const OptionsList: FunctionComponent<
 }
 
 const Item: FunctionComponent<{
-    index: number
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
     option: MentionTypeaheadOption
     className?: string
-}> = ({ index, isSelected, onClick, onMouseEnter, option, className }) => {
+}> = ({ isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'

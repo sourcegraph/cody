@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
+import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { VSCodeStoryDecorator, WithBorder } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
@@ -7,12 +8,11 @@ const meta: Meta<typeof Chat> = {
     component: Chat,
 
     args: {
-        transcript: [
-            { speaker: 'human', text: 'Hi from human.', displayText: 'Hi from human.' },
-            { speaker: 'assistant', displayText: 'Hello from Cody!' },
-        ],
+        transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        inputHistory: [{ inputText: 'My previous message', inputContextFiles: [] }],
+        inputHistory: FIXTURE_TRANSCRIPT.simple2
+            .filter(m => m.speaker === 'human')
+            .map(m => ({ inputText: m.text ?? '', inputContextFiles: m.contextFiles ?? [] })),
         setInputHistory: () => {},
         chatIDHistory: [],
         chatEnabled: true,
