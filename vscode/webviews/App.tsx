@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import {
-    type ChatInputHistory,
     type ChatMessage,
     type Configuration,
     type EnhancedContextContextT,
@@ -44,7 +43,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         isCodyProUser: false,
     })
 
-    const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
     const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
@@ -125,7 +123,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.localHistory?.input ?? [])
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'enhanced-context':
@@ -239,8 +236,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
                                         transcript={transcript}
-                                        inputHistory={inputHistory}
-                                        setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
                                         isTranscriptError={isTranscriptError}

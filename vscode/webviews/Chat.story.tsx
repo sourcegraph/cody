@@ -10,10 +10,6 @@ const meta: Meta<typeof Chat> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        inputHistory: FIXTURE_TRANSCRIPT.simple2
-            .filter(m => m.speaker === 'human')
-            .map(m => ({ inputText: m.text ?? '', inputContextFiles: m.contextFiles ?? [] })),
-        setInputHistory: () => {},
         chatIDHistory: [],
         chatEnabled: true,
         userInfo: { isCodyProUser: true, isDotComUser: true },

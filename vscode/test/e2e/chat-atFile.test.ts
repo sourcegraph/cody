@@ -92,7 +92,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).not.toHaveText('Explain @Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
-    // Use history to re-send a message with context files
+    // Edit a previously sent message and confirm it is sent with the right context items.
     await page.waitForTimeout(50)
     await chatInput.press('ArrowUp', { delay: 50 })
     await expect(chatInput).toHaveText('Explain @Main.java ')

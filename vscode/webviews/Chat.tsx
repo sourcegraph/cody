@@ -5,7 +5,6 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
-    type ChatInputHistory,
     type ChatMessage,
     type ContextItem,
     type Guardrails,
@@ -43,8 +42,6 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
-    inputHistory: ChatInputHistory[]
-    setInputHistory: (history: ChatInputHistory[]) => void
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
     isTranscriptError: boolean
@@ -60,8 +57,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     welcomeMessage,
     messageInProgress,
     transcript,
-    inputHistory,
-    setInputHistory,
     vscodeAPI,
     telemetryService,
     isTranscriptError,
@@ -202,11 +197,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const isMac = isMacOS()
     const setInputFocus = (focus: boolean): void => {} // TODO(sqs)
 
-    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
-
-    // The context files added via the chat input by user
-    const chatContextFiles = new Map<string, ContextItem>() // TODO(sqs)
-
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
     const [enableNewChatMode, setEnableNewChatMode] = useState(false)
@@ -271,19 +261,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [postMessage, setEditMessageState]
     )
 
-    const onEditorChange = useCallback(
-        (value: PromptEditorValue): void => {
-            setEditorValue(value)
-
-            // TODO(sqs): this correct?
-            const lastInput = inputHistory[historyIndex]
-            const lastText = typeof lastInput === 'string' ? lastInput : lastInput?.inputText
-            if (value.text !== lastText) {
-                setHistoryIndex(inputHistory.length)
-            }
-        },
-        [inputHistory, historyIndex]
-    )
+    const onEditorChange = useCallback((value: PromptEditorValue): void => {
+        setEditorValue(value)
+    }, [])
 
     const submitInput = useCallback(
         (value: PromptEditorValue, submitType: WebviewChatSubmitType): void => {
@@ -292,25 +272,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
             onSubmit(value, submitType)
 
-            // Record the chat history with (optional) context files.
-            const newHistory: ChatInputHistory = {
-                inputText: value.text, // TODO(sqs): store full editor state
-                inputContextFiles: Array.from(chatContextFiles.values()),
-            }
-            setInputHistory([...inputHistory, newHistory])
-
             resetEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
             setEditMessageState()
         },
-        [
-            messageInProgress,
-            onSubmit,
-            chatContextFiles,
-            inputHistory,
-            setInputHistory,
-            setEditMessageState,
-            resetEditorValue,
-        ]
+        [messageInProgress, onSubmit, setEditMessageState, resetEditorValue]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -437,41 +402,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 return
             }
 
-            // If there's no input or the input matches the current history index, handle cycling through
-            // history with the cursor keys.
-            const previousHistoryInput = inputHistory[historyIndex]
-            const previousHistoryText: string =
-                typeof previousHistoryInput === 'string'
-                    ? previousHistoryInput
-                    : previousHistoryInput?.inputText
-            if (editorValue.text === previousHistoryText || editorValue.text === '') {
-                let newIndex: number | undefined
-                if (event.key === 'ArrowUp' && caretPosition === 0) {
-                    newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                } else if (event.key === 'ArrowDown' && caretPosition === editorValue.text.length) {
-                    if (historyIndex + 1 < inputHistory.length) {
-                        newIndex = historyIndex + 1
-                    }
-                }
-
-                if (newIndex !== undefined) {
-                    setHistoryIndex(newIndex)
-
-                    const newHistoryInput = inputHistory[newIndex]
-                    resetEditorValue(
-                        createEditorValueFromText(
-                            typeof newHistoryInput === 'string'
-                                ? newHistoryInput
-                                : newHistoryInput.inputText
-                        )
-                    )
-
-                    postMessage?.({
-                        command: 'event',
-                        eventName: 'CodyVSCodeExtension:chatInputHistory:executed',
-                        properties: { source: 'chat' },
-                    })
-                }
+            // If there's no input and ArrowUp is pressed, edit the last message.
+            if (event.key === 'ArrowUp' && editorValue.text === '') {
+                setEditMessageState(lastHumanMessageIndex)
             }
         },
         [
@@ -484,10 +417,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onChatSubmit,
             enableNewChatMode,
             postMessage,
-            inputHistory,
-            historyIndex,
-            postMessage,
-            resetEditorValue,
         ]
     )
 
