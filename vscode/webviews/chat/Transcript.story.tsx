@@ -24,7 +24,14 @@ const meta: Meta<typeof Transcript> = {
 
     decorators: [
         story => (
-            <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>
+            <div
+                style={{
+                    maxWidth: '600px',
+                    margin: '2rem auto',
+                    border: 'solid 1px #ccc',
+                    fontFamily: 'system-ui',
+                }}
+            >
                 {story()}
             </div>
         ),

@@ -24,9 +24,6 @@
                 "entry": ["**/__tests__/**/*.ts"]
             },
             "ignore": ["src/vscode-shim.ts"]
-        },
-        "lib/ui": {
-            "ignore": ["src/utils/icons.tsx"]
         }
     },
     "ignore": ["**/__mocks__/**", "**/mocks.*"],
