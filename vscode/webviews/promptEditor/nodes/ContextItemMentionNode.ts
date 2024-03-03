@@ -177,7 +177,7 @@ export function $createContextItemMentionNode(
     contextItem: ContextItem | SerializedContextItem,
     hidden?: boolean
 ): ContextItemMentionNode {
-    const node = new ContextItemMentionNode(contextItem)
+    const node = new ContextItemMentionNode(contextItem, hidden)
     node.setMode('token').toggleDirectionless()
     return $applyNodeReplacement(node)
 }
