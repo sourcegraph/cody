@@ -4,15 +4,13 @@ import classNames from 'classnames'
 
 import type { ChatMessage, Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
 
-import type {
-    ApiPostMessage,
-    ChatButtonProps,
-    ChatModelDropdownMenuProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
-} from '../Chat'
+import type { UserAccountInfo } from '../Chat'
+import type { ChatButtonProps } from '../Chat'
+import type { EditButtonProps } from '../Chat'
+import type { FeedbackButtonsProps } from '../Chat'
+import type { ApiPostMessage } from '../Chat'
+import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
+import type { CodeBlockActionsProps } from './CodeBlocks'
 
 import type { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
@@ -170,7 +168,7 @@ export const Transcript: React.FunctionComponent<
             const isItemBeingEdited = messageBeingEdited === transcriptIndex
 
             return (
-                <div>
+                <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
                     <TranscriptItem
                         index={transcriptIndex}

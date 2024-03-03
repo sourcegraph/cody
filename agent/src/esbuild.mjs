@@ -20,8 +20,6 @@ import { build } from 'esbuild'
             // during dev.
             '@sourcegraph/cody-shared': '@sourcegraph/cody-shared/src/index',
             '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
-            '@sourcegraph/cody-ui': '@sourcegraph/cody-ui/src/index',
-            '@sourcegraph/cody-ui/src': '@sourcegraph/cody-ui/src',
         },
     }
     const res = await build(esbuildOptions)

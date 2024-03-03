@@ -4,14 +4,12 @@ import classNames from 'classnames'
 
 import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
-import type {
-    ApiPostMessage,
-    ChatButtonProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
-} from '../Chat'
+import type { UserAccountInfo } from '../Chat'
+import type { ChatButtonProps } from '../Chat'
+import type { EditButtonProps } from '../Chat'
+import type { FeedbackButtonsProps } from '../Chat'
+import type { ApiPostMessage } from '../Chat'
+import type { CodeBlockActionsProps } from './CodeBlocks'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
