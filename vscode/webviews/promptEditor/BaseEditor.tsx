@@ -1,5 +1,3 @@
-import type React from 'react'
-
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { type InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -15,16 +13,17 @@ import {
     type LexicalEditor,
     type SerializedEditorState,
 } from 'lexical'
-import { type RefObject, useMemo } from 'react'
+import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
+import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import MarkdownShortcutPlugin from './plugins/markdownShortcut'
 import { OnFocusPlugin } from './plugins/onFocus'
 import { RefPlugin } from './plugins/ref'
 
-interface Props {
+interface Props extends KeyboardEventPluginProps {
     initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState) => void
     onFocus?: () => void
@@ -37,7 +36,7 @@ interface Props {
 /**
  * The low-level rich editor for messages to Cody.
  */
-export const BaseEditor: React.FunctionComponent<Props> = ({
+export const BaseEditor: FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
     onFocus,
@@ -45,6 +44,10 @@ export const BaseEditor: React.FunctionComponent<Props> = ({
     placeholder,
     disabled,
     className,
+
+    // KeyboardEventPluginProps
+    onKeyDown,
+    onEscapeKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
@@ -82,6 +85,7 @@ export const BaseEditor: React.FunctionComponent<Props> = ({
                     <AutoFocusPlugin />
                     <OnFocusPlugin onFocus={onFocus} />
                     {editorRef && <RefPlugin editorRef={editorRef} />}
+                    <KeyboardEventPlugin onKeyDown={onKeyDown} onEscapeKey={onEscapeKey} />
                 </LexicalComposer>
             </div>
         </div>

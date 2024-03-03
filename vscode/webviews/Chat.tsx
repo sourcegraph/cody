@@ -25,10 +25,17 @@ import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
-import { PromptEditor, type PromptEditorValue } from './promptEditor/PromptEditor'
+import {
+    EMPTY_PROMPT_EDITOR_VALUE,
+    PromptEditor,
+    type PromptEditorValue,
+    contextItemsFromPromptEditorValue,
+    createEditorValueFromText,
+} from './promptEditor/PromptEditor'
 import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
+import { deserializeContextItem } from './promptEditor/nodes/ContextItemMentionNode'
 
 interface ChatboxProps {
     welcomeMessage?: string
@@ -69,7 +76,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatIDHistory,
     isWebviewActive,
 }) => {
-    const [editorValue, setEditorValue] = useState<PromptEditorValue | null>(null)
+    const [editorValue, setEditorValue] = useState<PromptEditorValue>(EMPTY_PROMPT_EDITOR_VALUE)
 
     const onAbortMessageInProgress = useCallback(() => {
         vscodeAPI.postMessage({ command: 'abort' })
@@ -91,11 +98,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onSubmit = useCallback(
-        (text: string, submitType: WebviewChatSubmitType, contextFiles: ContextItem[]) => {
+        (value: PromptEditorValue, submitType: WebviewChatSubmitType) => {
+            const contextItems = contextItemsFromPromptEditorValue(value).map(deserializeContextItem)
+
             // Handle edit requests
             if (submitType === 'edit') {
                 if (messageBeingEdited !== undefined) {
-                    onEditSubmit(text, messageBeingEdited, contextFiles)
+                    onEditSubmit(value.text, messageBeingEdited, contextItems)
                 }
                 return
             }
@@ -103,9 +112,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             vscodeAPI.postMessage({
                 command: 'submit',
                 submitType,
-                text,
+                text: value.text,
                 addEnhancedContext,
-                contextFiles,
+                contextFiles: contextItems,
             })
         },
         [addEnhancedContext, messageBeingEdited, onEditSubmit, vscodeAPI]
@@ -215,7 +224,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // When a message is no longer being edited
             // we will reset the form input fill to empty state
             if (index === undefined && index !== messageBeingEdited) {
-                setEditorValue(null)
+                setEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
                 setInputFocus(true)
             }
             setMessageBeingEdited(index)
@@ -227,7 +236,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const messageAtIndex = transcript[index]
             const inputText = messageAtIndex?.text
             if (inputText) {
-                setEditorValue(inputText) // TODO(sqs): make editing work, createEditorValueFromText
+                setEditorValue(createEditorValueFromText(inputText))
             }
             // move focus back to chatbox
             setInputFocus(true)
@@ -259,20 +268,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     const submitInput = useCallback(
-        (input: string, submitType: WebviewChatSubmitType): void => {
+        (value: PromptEditorValue, submitType: WebviewChatSubmitType): void => {
             if (messageInProgress && submitType !== 'edit') {
                 return
             }
-            onSubmit(input, submitType, chatContextFiles)
+            onSubmit(value, submitType)
 
             // Record the chat history with (optional) context files.
             const newHistory: ChatInputHistory = {
-                inputText: input,
+                inputText: value.text, // TODO(sqs): store full editor state
                 inputContextFiles: Array.from(chatContextFiles.values()),
             }
             setInputHistory([...inputHistory, newHistory])
 
-            setEditorValue(null)
+            setEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
             setEditMessageState()
         },
         [
@@ -307,30 +316,22 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         onAbortMessageInProgress,
     ])
 
-    const onChatKeyUp = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-            // Captures Escape button clicks
-            if (event.key === 'Escape') {
-                // Exits editing mode if a message is being edited
-                if (messageBeingEdited !== undefined) {
-                    event.preventDefault()
-                    setEditMessageState()
-                    return
-                }
+    const onEditorEscapeKey = useCallback((): void => {
+        // Exits editing mode if a message is being edited
+        if (messageBeingEdited !== undefined) {
+            setEditMessageState()
+            return
+        }
 
-                // Aborts a message in progress if one exists
-                if (messageInProgress?.speaker) {
-                    event.preventDefault()
-                    onAbortMessageInProgress()
-                    return
-                }
-            }
-        },
-        [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress]
-    )
+        // Aborts a message in progress if one exists
+        if (messageInProgress?.speaker) {
+            onAbortMessageInProgress()
+            return
+        }
+    }, [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress])
 
-    const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null): void => {
+    const onEditorKeyDown = useCallback(
+        (event: KeyboardEvent): void => {
             // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
             const isModifierDown = isMac ? event.metaKey : event.ctrlKey
             if (isModifierDown) {
@@ -395,12 +396,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
 
             // Submit input on Enter press (without shift) and
-            // trim the formInput to make sure input value is not empty.
+            // trim the editorValue to make sure input value is not empty.
             if (
                 event.key === 'Enter' &&
                 !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                editorValue?.trim()
+                !event.isComposing &&
+                editorValue.text.length > 0
             ) {
                 event.preventDefault()
                 onChatSubmit()
@@ -508,11 +509,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             initialValue={editorValue}
                             onChange={onEditorChange}
                             onFocus={() => setIsEnhancedContextOpen(false)}
-                            onKeyDown={onChatKeyDown}
-                            onKeyUp={onChatKeyUp}
                             chatEnabled={chatEnabled}
-                            messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
+                            onKeyDown={onEditorKeyDown}
+                            onEscapeKey={onEditorEscapeKey}
                         />
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings

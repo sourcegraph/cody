@@ -1,11 +1,16 @@
 import classNames from 'classnames'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { useCallback, useEffect, useRef } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
+import {
+    type SerializedContextItem,
+    isSerializedContextItemMentionNode,
+} from './nodes/ContextItemMentionNode'
+import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
-interface Props {
+interface Props extends KeyboardEventPluginProps {
     containerClassName?: string
     editorClassName?: string
     isNewChat: boolean
@@ -23,7 +28,7 @@ const TIPS = '(@ for files, @# for symbols)'
 /**
  * The component for composing and editing prompts.
  */
-export const PromptEditor: React.FunctionComponent<Props> = ({
+export const PromptEditor: FunctionComponent<Props> = ({
     containerClassName,
     editorClassName,
     initialValue,
@@ -34,6 +39,10 @@ export const PromptEditor: React.FunctionComponent<Props> = ({
     chatEnabled,
 
     isNewChat,
+
+    // KeyboardEventPluginProps
+    onKeyDown,
+    onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
@@ -78,15 +87,22 @@ export const PromptEditor: React.FunctionComponent<Props> = ({
                 }
                 disabled={!chatEnabled}
                 aria-label="Chat message"
+                //
+                // KeyboardEventPluginProps
+                onKeyDown={onKeyDown}
+                onEscapeKey={onEscapeKey}
             />
         </div>
     )
 }
 
+/**
+ * The representation of a user's prompt input in the chat view.
+ */
 export interface PromptEditorValue {
     v: 1
-    editorState: SerializedEditorState
     text: string
+    editorState?: SerializedEditorState
 }
 
 export function toPromptEditorValue(editorState: EditorState): PromptEditorValue {
@@ -131,4 +147,28 @@ export function createEditorValueFromText(text: string): PromptEditorValue {
         },
     }
     return { v: 1, editorState, text }
+}
+
+export const EMPTY_PROMPT_EDITOR_VALUE: PromptEditorValue = createEditorValueFromText('')
+
+export function contextItemsFromPromptEditorValue(value: PromptEditorValue): SerializedContextItem[] {
+    const contextItems: SerializedContextItem[] = []
+
+    if (value.editorState) {
+        const queue: SerializedLexicalNode[] = [value.editorState.root]
+        // iterate over queue
+        while (queue.length > 0) {
+            const node = queue.shift()
+            if (node && 'children' in node && Array.isArray(node.children)) {
+                for (const child of node.children as SerializedLexicalNode[]) {
+                    if (isSerializedContextItemMentionNode(child)) {
+                        contextItems.push(child.contextItem)
+                    }
+                    queue.push(child)
+                }
+            }
+        }
+    }
+
+    return contextItems
 }

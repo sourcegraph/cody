@@ -1,12 +1,11 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { displayPath } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { type FunctionComponent, useEffect, useRef } from 'react'
 import styles from './OptionsList.module.css'
 import type { MentionTypeaheadOption } from './atMentions'
 
-export const OptionsList: React.FunctionComponent<
+export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
         Parameters<MenuRenderFn<MentionTypeaheadOption>>[1],
         'selectedIndex' | 'setHighlightedIndex' | 'selectOptionAndCleanUp'
@@ -59,7 +58,7 @@ export const OptionsList: React.FunctionComponent<
     )
 }
 
-const Item: React.FunctionComponent<{
+const Item: FunctionComponent<{
     index: number
     isSelected: boolean
     onClick: () => void

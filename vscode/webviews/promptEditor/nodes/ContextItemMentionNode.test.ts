@@ -14,6 +14,7 @@ describe('contextItemMentionNodeDisplayText', () => {
                 uri: 'file:///foo/bar.ts',
                 range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
                 symbolName: 'MySymbol',
+                kind: 'function',
             })
         ).toBe('@#MySymbol'))
 })

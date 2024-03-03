@@ -1,7 +1,7 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { useLayoutEffect } from 'react'
+import { type FunctionComponent, useLayoutEffect } from 'react'
 
-export const OnFocusPlugin: React.FunctionComponent<{ onFocus?: () => void }> = ({ onFocus }) => {
+export const OnFocusPlugin: FunctionComponent<{ onFocus?: () => void }> = ({ onFocus }) => {
     const [editor] = useLexicalComposerContext()
 
     useLayoutEffect(() => {

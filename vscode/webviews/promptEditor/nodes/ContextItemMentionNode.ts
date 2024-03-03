@@ -1,4 +1,4 @@
-import type { Spread } from 'lexical'
+import type { SerializedLexicalNode, Spread } from 'lexical'
 import styles from './ContextItemMentionNode.module.css'
 
 import {
@@ -24,13 +24,15 @@ import { URI } from 'vscode-uri'
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
  */
-type ContextItemFields = { uri: string } & (
-    | Pick<ContextItemFile, 'type'>
-    | Pick<ContextItemSymbol, 'type' | 'range' | 'symbolName'>
-)
+export type SerializedContextItem = { uri: string } & Pick<ContextItem, 'range'> &
+    (Pick<ContextItemFile, 'type'> | Pick<ContextItemSymbol, 'type' | 'range' | 'symbolName' | 'kind'>)
+
+export function deserializeContextItem(contextItem: SerializedContextItem): ContextItem {
+    return { ...contextItem, uri: URI.parse(contextItem.uri) }
+}
 
 export type SerializedContextItemMentionNode = Spread<
-    { contextItem: ContextItemFields },
+    { contextItem: SerializedContextItem },
     SerializedTextNode
 >
 
@@ -38,7 +40,7 @@ function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOu
     const data = domNode.getAttribute(DOM_DATA_ATTR)
     if (data !== null) {
         try {
-            const contextItem: ContextItemFields = JSON.parse(data)
+            const contextItem: SerializedContextItem = JSON.parse(data)
             const node = $createContextItemMentionNode(contextItem)
             return { node }
         } catch (error) {
@@ -70,16 +72,16 @@ export class ContextItemMentionNode extends TextNode {
         return node
     }
 
-    private contextItem: ContextItemFields
+    private contextItem: SerializedContextItem
 
     constructor(
-        contextItemWithAllFields: ContextItem | ContextItemFields,
+        contextItemWithAllFields: ContextItem | SerializedContextItem,
         text?: string,
         key?: NodeKey
     ) {
         // Make sure we only bring over the fields on the context item that we need, or else we
         // could accidentally include tons of data (including the entire contents of files).
-        const contextItem: ContextItemFields = {
+        const contextItem: SerializedContextItem = {
             ...(contextItemWithAllFields.type === 'file'
                 ? { type: contextItemWithAllFields.type, uri: contextItemWithAllFields.uri.toString() }
                 : {
@@ -87,6 +89,7 @@ export class ContextItemMentionNode extends TextNode {
                       uri: contextItemWithAllFields.uri.toString(),
                       range: contextItemWithAllFields.range,
                       symbolName: contextItemWithAllFields.symbolName,
+                      kind: contextItemWithAllFields.kind,
                   }),
         }
 
@@ -144,7 +147,7 @@ export class ContextItemMentionNode extends TextNode {
     }
 }
 
-export function contextItemMentionNodeDisplayText(contextItem: ContextItemFields): string {
+export function contextItemMentionNodeDisplayText(contextItem: SerializedContextItem): string {
     if (contextItem.type === 'file') {
         return `@${displayPath(URI.parse(contextItem.uri))}`
     }
@@ -156,7 +159,7 @@ export function contextItemMentionNodeDisplayText(contextItem: ContextItemFields
 }
 
 export function $createContextItemMentionNode(
-    contextItem: ContextItem | ContextItemFields
+    contextItem: ContextItem | SerializedContextItem
 ): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()
@@ -167,4 +170,10 @@ export function $isContextItemMentionNode(
     node: LexicalNode | null | undefined
 ): node is ContextItemMentionNode {
     return node instanceof ContextItemMentionNode
+}
+
+export function isSerializedContextItemMentionNode(
+    node: SerializedLexicalNode | null | undefined
+): node is SerializedContextItemMentionNode {
+    return Boolean(node && node.type === ContextItemMentionNode.getType())
 }

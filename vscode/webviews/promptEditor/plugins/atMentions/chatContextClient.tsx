@@ -1,5 +1,5 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
 export interface ChatContextClient {
@@ -36,7 +36,7 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
     },
 })
 
-export const WithChatContextClient: React.FunctionComponent<
+export const WithChatContextClient: FunctionComponent<
     React.PropsWithChildren<{ value: ChatContextClient }>
 > = ({ value, children }) => (
     <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>

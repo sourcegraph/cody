@@ -23,11 +23,11 @@ export default meta
 
 export const Interactive: StoryObj<typeof meta> = {
     render: props => {
-        const [editorState, setEditorState] = useState<EditorState | null>(props.initialEditorState)
+        const [editorState, setEditorState] = useState<EditorState | null>(null)
         return (
             <div>
                 <div style={{ color: '#fff' }}>
-                    <BaseEditor {...props} initialEditorState={editorState} onChange={setEditorState} />
+                    <BaseEditor {...props} onChange={setEditorState} />
                 </div>
                 <div className={styles.stateValue}>
                     {editorState ? editorStateToText(editorState) : ''}
