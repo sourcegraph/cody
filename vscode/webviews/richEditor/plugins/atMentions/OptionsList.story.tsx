@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import { VSCodeStoryDecorator } from '../../../storybook/VSCodeStoryDecorator'
+import { VSCodeStoryDecorator, WithBorder } from '../../../storybook/VSCodeStoryDecorator'
 import { OptionsList } from './OptionsList'
 import { MentionTypeaheadOption } from './atMentions'
 
@@ -18,21 +18,7 @@ const meta: Meta<typeof OptionsList> = {
         setHighlightedIndex: () => {},
     } as React.ComponentProps<typeof OptionsList>,
 
-    decorators: [
-        story => {
-            return (
-                <div
-                    style={{
-                        background: 'var(--vscode-editor-background)',
-                        color: 'var(--vscode-editor-foreground)',
-                    }}
-                >
-                    {story()}
-                </div>
-            )
-        },
-        VSCodeStoryDecorator,
-    ],
+    decorators: [WithBorder, VSCodeStoryDecorator],
 }
 
 export default meta

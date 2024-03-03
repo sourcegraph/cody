@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
+import { VSCodeStoryDecorator, WithBorder } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -27,22 +27,7 @@ const meta: Meta<typeof Chat> = {
         isTranscriptError: false,
     } as React.ComponentProps<typeof Chat>,
 
-    decorators: [
-        story => <div style={{ background: 'var(--vscode-editor-background)' }}>{story()}</div>,
-        VSCodeStoryDecorator,
-    ],
-
-    parameters: {
-        backgrounds: {
-            default: 'vscode',
-            values: [
-                {
-                    name: 'vscode',
-                    value: 'var(--vscode-sideBar-background)',
-                },
-            ],
-        },
-    },
+    decorators: [WithBorder, VSCodeStoryDecorator],
 } as Meta
 
 export default meta

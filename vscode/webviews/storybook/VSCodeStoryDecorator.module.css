@@ -4,6 +4,7 @@
 
 body {
     font-family: var(--vscode-font-family);
+    background-color: var(--vscode-sideBar-background);
 }
 
 vscode-button::part(control) {
@@ -16,6 +17,7 @@ vscode-button::part(control) {
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
 }
 
 .container a {

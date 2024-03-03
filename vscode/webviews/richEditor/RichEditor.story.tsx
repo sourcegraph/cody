@@ -26,20 +26,28 @@ export const Interactive: StoryObj<typeof meta> = {
         const [editorState, setEditorState] = useState<EditorState | undefined>(props.initialEditorState)
         return (
             <div>
-                <div style={{ border: 'solid 1px #ccc' }}>
+                <div style={{ border: 'solid 1px #333', color: '#fff' }}>
                     <RichEditor {...props} initialEditorState={editorState} onChange={setEditorState} />
                 </div>
                 <div
                     style={{
                         marginTop: '2rem',
                         padding: '1rem',
-                        backgroundColor: '#eee',
+                        backgroundColor: '#333',
+                        color: '#ccc',
                         whiteSpace: 'pre',
                     }}
                 >
                     {editorState ? editorStateToText(editorState) : ''}
                 </div>
-                <pre style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#eee' }}>
+                <pre
+                    style={{
+                        marginTop: '2rem',
+                        padding: '1rem',
+                        backgroundColor: '#333',
+                        color: '#ccc',
+                    }}
+                >
                     {JSON.stringify(editorState ?? {}, null, 2)}
                 </pre>
             </div>

@@ -19,3 +19,9 @@ export const VSCodeStoryDecorator: Decorator = story => (
         <WithChatContextClient value={dummyChatContextClient}>{story()}</WithChatContextClient>
     </div>
 )
+
+export const WithBorder: Decorator = story => (
+    <div className={styles.container} style={{ border: 'solid 1px #333' }}>
+        {story()}
+    </div>
+)
