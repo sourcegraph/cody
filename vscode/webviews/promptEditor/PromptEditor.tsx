@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
-import type { EditorState } from 'lexical'
+import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
@@ -95,4 +95,40 @@ export function toPromptEditorValue(editorState: EditorState): PromptEditorValue
         editorState: editorState.toJSON(),
         text: editorStateToText(editorState),
     }
+}
+
+/**
+ * This treats the entire text as plain text and does not parse it for any @-mentions.
+ */
+export function createEditorValueFromText(text: string): PromptEditorValue {
+    const editorState: SerializedEditorState = {
+        root: {
+            children: [
+                {
+                    children: [
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            text,
+                            type: 'text',
+                            version: 1,
+                        },
+                    ],
+                    direction: 'ltr',
+                    format: '',
+                    indent: 0,
+                    type: 'paragraph',
+                    version: 1,
+                } as SerializedLexicalNode,
+            ],
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            type: 'root',
+            version: 1,
+        },
+    }
+    return { v: 1, editorState, text }
 }

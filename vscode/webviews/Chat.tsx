@@ -227,7 +227,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const messageAtIndex = transcript[index]
             const inputText = messageAtIndex?.text
             if (inputText) {
-                setEditorValue(inputText)
+                setEditorValue(inputText) // TODO(sqs): make editing work, createEditorValueFromText
             }
             // move focus back to chatbox
             setInputFocus(true)
@@ -294,7 +294,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
 
         // Submit chat only when input is not empty and not in progress
-        if (editorValue.trim() && !messageInProgress?.speaker) {
+        if (editorValue?.text && !messageInProgress?.speaker) {
             const submitType = enableNewChatMode ? 'user-newchat' : 'user'
             submitInput(editorValue, submitType)
         }
@@ -416,53 +416,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 setEnableNewChatMode(!enableNewChatMode)
                 return
             }
-
-            // Loop through input history on up arrow press
-            if (!inputHistory?.length) {
-                return
-            }
-
-            // If there's no input or the input matches the current history index, handle cycling through
-            // history with the cursor keys.
-            const previousHistoryInput = inputHistory[historyIndex]
-            const previousHistoryText: string =
-                typeof previousHistoryInput === 'string'
-                    ? previousHistoryInput
-                    : previousHistoryInput?.inputText
-            if (editorValue === previousHistoryText || !editorValue) {
-                let newIndex: number | undefined
-                if (event.key === 'ArrowUp' && caretPosition === 0) {
-                    newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                } else if (event.key === 'ArrowDown' && caretPosition === editorValue.length) {
-                    if (historyIndex + 1 < inputHistory.length) {
-                        newIndex = historyIndex + 1
-                    }
-                }
-
-                if (newIndex !== undefined) {
-                    setHistoryIndex(newIndex)
-
-                    const newHistoryInput = inputHistory[newIndex]
-                    if (typeof newHistoryInput === 'string') {
-                        setEditorValue(newHistoryInput)
-                    } else {
-                        setEditorValue(newHistoryInput.inputText)
-                    }
-
-                    postMessage?.({
-                        command: 'event',
-                        eventName: 'CodyVSCodeExtension:chatInputHistory:executed',
-                        properties: { source: 'chat' },
-                    })
-                }
-            }
         },
         [
             isMac,
             messageBeingEdited,
             editorValue,
-            inputHistory,
-            historyIndex,
             onChatResetClick,
             setEditMessageState,
             lastHumanMessageIndex,
@@ -574,7 +532,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         }
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!editorValue.length && !messageInProgress}
+                        disabled={!editorValue?.text && !messageInProgress}
                         onAbortMessageInProgress={
                             messageInProgress ? onAbortMessageInProgress : undefined
                         }
