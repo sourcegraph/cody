@@ -37,6 +37,7 @@ export async function _getSymfPath(
     actualDownloadSymf: (op: {
         symfPath: string
         symfFilename: string
+        symfUnzippedFilename: string
         symfURL: string
     }) => Promise<void> = downloadSymf
 ): Promise<string | null> {
@@ -50,6 +51,7 @@ export async function _getSymfPath(
     }
 
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
+    const symfUnzippedFilename = `symf-${arch}-${platform}` // the filename inside the zip
     const symfPath = path.join(symfContainingDir, symfFilename)
     if (await fileExists(symfPath)) {
         logDebug('symf', `using downloaded symf "${symfPath}"`)
@@ -72,14 +74,14 @@ export async function _getSymfPath(
             return symfPath
         }
 
-        await actualDownloadSymf({ symfPath, symfURL, symfFilename })
+        await actualDownloadSymf({ symfPath, symfURL, symfFilename, symfUnzippedFilename })
         void removeOldSymfBinaries(symfContainingDir, symfFilename)
     } catch (error) {
         captureException(error)
         void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
         return null
     } finally {
-        await downloadLock.release()
+        downloadLock.release()
     }
 
     return symfPath
@@ -88,10 +90,12 @@ export async function _getSymfPath(
 async function downloadSymf({
     symfPath,
     symfFilename,
+    symfUnzippedFilename,
     symfURL,
 }: {
     symfPath: string
     symfFilename: string
+    symfUnzippedFilename: string
     symfURL: string
 }): Promise<void> {
     logDebug('symf', `downloading symf from ${symfURL}`)
@@ -112,7 +116,7 @@ async function downloadSymf({
             await unzipSymf(symfZipFile, symfTmpDir)
             logDebug('symf', `downloaded symf to ${symfTmpDir}`)
 
-            const tmpFile = path.join(symfTmpDir, symfFilename)
+            const tmpFile = path.join(symfTmpDir, symfUnzippedFilename)
             await fspromises.chmod(tmpFile, 0o755)
             await fspromises.rename(tmpFile, symfPath)
             await fspromises.rm(symfTmpDir, { recursive: true })
