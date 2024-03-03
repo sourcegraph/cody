@@ -194,16 +194,16 @@ test.extend<ExpectedEvents>({
 
     const osKey = getMetaKeyByOS()
 
-    // Typing out the whole file path without pressing tab/enter should still include the
-    // file as context
+    // Typing out the whole file path without pressing tab/enter should NOT include the
+    // file as context.
     await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
-    await chatInput.press('l')
+    await chatInput.press('l', { delay: 50 })
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Space')
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
 })
 
 test('@-file with range support', async ({ page, sidebar }) => {
