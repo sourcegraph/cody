@@ -49,19 +49,18 @@ export async function _getSymfPath(
         )
         return null
     }
+    // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
+    // identifier (linux-musl, windows-gnu, macos).
+    const zigPlatform =
+        platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
 
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
-    const symfUnzippedFilename = `symf-${arch}-${platform}` // the filename inside the zip
+    const symfUnzippedFilename = `symf-${arch}-${zigPlatform}` // the filename inside the zip
     const symfPath = path.join(symfContainingDir, symfFilename)
     if (await fileExists(symfPath)) {
         logDebug('symf', `using downloaded symf "${symfPath}"`)
         return symfPath
     }
-
-    // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
-    // identifier (linux-musl, windows-gnu, macos).
-    const zigPlatform =
-        platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
 
     const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${zigPlatform}.zip`
 
