@@ -1,11 +1,14 @@
+import type { ContextItem } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import type { LexicalEditor, SerializedEditorState } from 'lexical'
+import { CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
+    ContextItemMentionNode,
     type SerializedContextItem,
+    type SerializedContextItemMentionNode,
     isSerializedContextItemMentionNode,
 } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
@@ -68,7 +71,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     const editor = editorRef.current
                     if (editor) {
                         editor.setEditorState(editor.parseEditorState(editorState))
-                        setTimeout(() => editor.focus())
+                        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
+                        editor.update(() => {})
+                        setTimeout(() => editor.getRootElement()?.focus())
                     }
                 },
             }
@@ -138,7 +143,10 @@ export function toPromptEditorValue(editorState: EditorState): PromptEditorValue
 /**
  * This treats the entire text as plain text and does not parse it for any @-mentions.
  */
-export function createEditorValueFromText(text: string): PromptEditorValue {
+export function createEditorValueFromText(
+    text: string,
+    extraContextItems?: ContextItem[]
+): PromptEditorValue {
     const editorState: SerializedEditorState = {
         root: {
             children: [
@@ -153,6 +161,11 @@ export function createEditorValueFromText(text: string): PromptEditorValue {
                             type: 'text',
                             version: 1,
                         },
+                        ...(extraContextItems ?? []).map(contextItem => {
+                            return new ContextItemMentionNode(
+                                contextItem
+                            ).exportJSON() satisfies SerializedContextItemMentionNode
+                        }),
                     ],
                     direction: 'ltr',
                     format: '',

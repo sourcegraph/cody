@@ -87,7 +87,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <MentionsPlugin />
                     <CodeHighlightPlugin />
                     <MarkdownShortcutPlugin />
-                    <AutoFocusPlugin />
+                    <AutoFocusPlugin defaultSelection="rootEnd" />
                     <OnFocusPlugin onFocus={onFocus} />
                     {editorRef && <RefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin onKeyDown={onKeyDown} onEscapeKey={onEscapeKey} />

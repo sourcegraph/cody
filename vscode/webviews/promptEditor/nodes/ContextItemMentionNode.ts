@@ -27,6 +27,24 @@ import { URI } from 'vscode-uri'
 export type SerializedContextItem = { uri: string } & Pick<ContextItem, 'range'> &
     (Pick<ContextItemFile, 'type'> | Pick<ContextItemSymbol, 'type' | 'range' | 'symbolName' | 'kind'>)
 
+export function serializeContextItem(
+    contextItem: ContextItem | SerializedContextItem
+): SerializedContextItem {
+    // Make sure we only bring over the fields on the context item that we need, or else we
+    // could accidentally include tons of data (including the entire contents of files).
+    return {
+        ...(contextItem.type === 'file'
+            ? { type: contextItem.type, uri: contextItem.uri.toString() }
+            : {
+                  type: contextItem.type,
+                  uri: contextItem.uri.toString(),
+                  range: contextItem.range,
+                  symbolName: contextItem.symbolName,
+                  kind: contextItem.kind,
+              }),
+    }
+}
+
 export function deserializeContextItem(contextItem: SerializedContextItem): ContextItem {
     return { ...contextItem, uri: URI.parse(contextItem.uri) }
 }
@@ -81,17 +99,7 @@ export class ContextItemMentionNode extends TextNode {
     ) {
         // Make sure we only bring over the fields on the context item that we need, or else we
         // could accidentally include tons of data (including the entire contents of files).
-        const contextItem: SerializedContextItem = {
-            ...(contextItemWithAllFields.type === 'file'
-                ? { type: contextItemWithAllFields.type, uri: contextItemWithAllFields.uri.toString() }
-                : {
-                      type: contextItemWithAllFields.type,
-                      uri: contextItemWithAllFields.uri.toString(),
-                      range: contextItemWithAllFields.range,
-                      symbolName: contextItemWithAllFields.symbolName,
-                      kind: contextItemWithAllFields.kind,
-                  }),
-        }
+        const contextItem = serializeContextItem(contextItemWithAllFields)
 
         super(text ?? contextItemMentionNodeDisplayText(contextItem), key)
 
@@ -109,7 +117,7 @@ export class ContextItemMentionNode extends TextNode {
 
     createDOM(config: EditorConfig): HTMLElement {
         const dom = super.createDOM(config)
-        dom.className = styles.contextItemMentionNode
+        dom.className = `context-item-mention-node ${styles.contextItemMentionNode}`
         return dom
     }
 

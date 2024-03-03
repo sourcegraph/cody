@@ -74,6 +74,7 @@ vscode-button::part(control) {
     --vscode-list-activeSelectionBackground: #2222dd;
     --vscode-list-inactiveSelectionBackground: #555555;
     --vscode-list-inactiveSelectionForeground: #ffffff;
+    --vscode-list-dropBackground: #062f4a;
     --vscode-list-focusBackground: #2222dd;
     --vscode-list-hoverBackground: #2222dd;
     --vscode-list-activeSelectionForeground: #ffffff;

@@ -222,19 +222,19 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // When a message is no longer being edited
             // we will reset the form input fill to empty state
             if (index === undefined && index !== messageBeingEdited) {
-                setEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
-                setInputFocus(true)
+                resetEditorValue(createEditorValueFromText(''))
             }
             setMessageBeingEdited(index)
             if (index === undefined || index > transcript.length) {
                 return
             }
-            // Only returns command name if it is the first word in the message
-            // Attempts to remove markdown links
+
             const messageAtIndex = transcript[index]
-            const inputText = messageAtIndex?.text
-            if (inputText) {
-                resetEditorValue(createEditorValueFromText(inputText))
+            if (messageAtIndex) {
+                // TODO(sqs): preserve full editor state, not just text and context items
+                resetEditorValue(
+                    createEditorValueFromText(messageAtIndex.text ?? '', messageAtIndex.contextFiles)
+                )
             }
             // move focus back to chatbox
             setInputFocus(true)

@@ -49,7 +49,7 @@ test.extend<ExpectedEvents>({
     // TODO(dantup): After https://github.com/sourcegraph/cody/pull/2235 lands, add workspacedirectory to the test
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
-    await page.keyboard.type('@fixtures') // fixture is in the test project folder name, but in the relative paths.
+    await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
     await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
@@ -85,6 +85,7 @@ test.extend<ExpectedEvents>({
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
     await expect(chatInput).toHaveText('Explain @Main.java ')
+    await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
@@ -97,7 +98,9 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowUp', { delay: 50 })
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(2)
+    console.log('XXXXXXXX')
+    await page.waitForTimeout(10000)
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 
     // Keyboard nav through context files
     await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
