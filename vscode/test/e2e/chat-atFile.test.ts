@@ -98,20 +98,18 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowUp', { delay: 50 })
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    console.log('XXXXXXXX')
-    await page.waitForTimeout(10000)
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 
     // Keyboard nav through context files
-    await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
-    await chatInput.press('Enter')
+    await chatInput.type('Explain @var.go', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
-    await chatInput.type('and @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.type('and @visualize.go', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
     await chatInput.press('ArrowDown') // second item (visualize.go)
     await chatInput.press('ArrowDown') // third item (.vscode/settings.json)
     await chatInput.press('ArrowDown') // wraps back to first item
     await chatInput.press('ArrowDown') // second item again
-    await chatInput.press('Enter')
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
         withPlatformSlashes(
             'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '

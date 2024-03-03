@@ -78,7 +78,7 @@ export class ContextItemMentionNode extends TextNode {
     }
 
     static clone(node: ContextItemMentionNode): ContextItemMentionNode {
-        return new ContextItemMentionNode(node.contextItem, node.__text, node.__key)
+        return new ContextItemMentionNode(node.contextItem, node.hidden, node.__text, node.__key)
     }
     static importJSON(serializedNode: SerializedContextItemMentionNode): ContextItemMentionNode {
         const node = $createContextItemMentionNode(serializedNode.contextItem)
@@ -94,6 +94,7 @@ export class ContextItemMentionNode extends TextNode {
 
     constructor(
         contextItemWithAllFields: ContextItem | SerializedContextItem,
+        private hidden?: boolean,
         text?: string,
         key?: NodeKey
     ) {
@@ -101,7 +102,13 @@ export class ContextItemMentionNode extends TextNode {
         // could accidentally include tons of data (including the entire contents of files).
         const contextItem = serializeContextItem(contextItemWithAllFields)
 
-        super(text ?? contextItemMentionNodeDisplayText(contextItem), key)
+        // HACK(sqs): Since we don't pass the full editorState in the transcript, when we
+        // deserialize the editorState from `text` and `contextItems`, we can't recreate the inline
+        // mention nodes from the raw `text`. Therefore, we add on mention nodes to the end based on
+        // the `contextItems`. But we don't want to show these to the user in the message, since
+        // they would duplicate what is now plain text (for example, `What does @main.go do?
+        // @main.go`).
+        super(text ?? (hidden ? '\u200b' : contextItemMentionNodeDisplayText(contextItem)), key)
 
         this.contextItem = contextItem
     }
@@ -167,7 +174,8 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 }
 
 export function $createContextItemMentionNode(
-    contextItem: ContextItem | SerializedContextItem
+    contextItem: ContextItem | SerializedContextItem,
+    hidden?: boolean
 ): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()

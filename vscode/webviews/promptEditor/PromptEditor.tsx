@@ -15,7 +15,7 @@ import { type FunctionComponent, type MutableRefObject, useCallback, useEffect, 
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
-    ContextItemMentionNode,
+    $createContextItemMentionNode,
     type SerializedContextItem,
     isSerializedContextItemMentionNode,
 } from './nodes/ContextItemMentionNode'
@@ -178,7 +178,7 @@ function addExtraContextItems(
             root.append(paragraph)
         }
         for (const contextItem of contextItems) {
-            const node = new ContextItemMentionNode(contextItem)
+            const node = $createContextItemMentionNode(contextItem, true)
             paragraph.append(node)
         }
     })
