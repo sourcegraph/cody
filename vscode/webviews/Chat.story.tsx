@@ -8,24 +8,23 @@ const meta: Meta<typeof Chat> = {
 
     args: {
         transcript: [
-            { speaker: 'human', displayText: 'Hi from human.' },
+            { speaker: 'human', text: 'Hi from human.', displayText: 'Hi from human.' },
             { speaker: 'assistant', displayText: 'Hello from Cody!' },
         ],
         messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
         inputHistory: [],
         setInputHistory: () => {},
         chatIDHistory: [],
-        onSubmit: () => {},
-        isCodyEnabled: true,
         chatEnabled: true,
         userInfo: { isCodyProUser: true, isDotComUser: true },
         isWebviewActive: true,
-        vscodeAPI: null as any,
+        vscodeAPI: {
+            postMessage: () => {},
+            onMessage: () => () => {},
+        },
         telemetryService: null as any,
         isTranscriptError: false,
-    } as React.ComponentProps<typeof Chat>,
+    } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [WithBorder, VSCodeStoryDecorator],
 } as Meta

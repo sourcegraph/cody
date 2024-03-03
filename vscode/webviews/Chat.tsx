@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -28,6 +28,7 @@ import { ChatActions } from './chat/components/ChatActions'
 import {
     EMPTY_PROMPT_EDITOR_VALUE,
     PromptEditor,
+    type PromptEditorRefAPI,
     type PromptEditorValue,
     contextItemsFromPromptEditorValue,
     createEditorValueFromText,
@@ -41,12 +42,10 @@ interface ChatboxProps {
     welcomeMessage?: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
     transcript: ChatMessage[]
     inputHistory: ChatInputHistory[]
     setInputHistory: (history: ChatInputHistory[]) => void
-    vscodeAPI: VSCodeWrapper
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
     isTranscriptError: boolean
     setChatModels?: (models: ModelProvider[]) => void
@@ -60,8 +59,6 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
     messageInProgress,
-    messageBeingEdited,
-    setMessageBeingEdited,
     transcript,
     inputHistory,
     setInputHistory,
@@ -76,7 +73,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatIDHistory,
     isWebviewActive,
 }) => {
+    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
+
     const [editorValue, setEditorValue] = useState<PromptEditorValue>(EMPTY_PROMPT_EDITOR_VALUE)
+    const editorRef = useRef<PromptEditorRefAPI>(null)
+    const resetEditorValue = useCallback((value: PromptEditorValue) => {
+        setEditorValue(value)
+        if (editorRef.current) {
+            editorRef.current.resetEditorState(value.editorState)
+        }
+    }, [])
 
     const onAbortMessageInProgress = useCallback(() => {
         vscodeAPI.postMessage({ command: 'abort' })
@@ -236,12 +242,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const messageAtIndex = transcript[index]
             const inputText = messageAtIndex?.text
             if (inputText) {
-                setEditorValue(createEditorValueFromText(inputText))
+                resetEditorValue(createEditorValueFromText(inputText))
             }
             // move focus back to chatbox
             setInputFocus(true)
         },
-        [messageBeingEdited, setMessageBeingEdited, transcript]
+        [messageBeingEdited, transcript, resetEditorValue]
     )
 
     /**
@@ -281,7 +287,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
             setInputHistory([...inputHistory, newHistory])
 
-            setEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
+            resetEditorValue(EMPTY_PROMPT_EDITOR_VALUE)
             setEditMessageState()
         },
         [
@@ -291,6 +297,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputHistory,
             setInputHistory,
             setEditMessageState,
+            resetEditorValue,
         ]
     )
 
@@ -513,6 +520,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             isNewChat={!transcript.length}
                             onKeyDown={onEditorKeyDown}
                             onEscapeKey={onEditorEscapeKey}
+                            editorRef={editorRef}
                         />
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings

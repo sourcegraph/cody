@@ -221,3 +221,15 @@ vscode-button::part(control) {
 :global .codicon-symbol-method::before {
     content: '\ea8c';
 }
+
+:global .codicon-edit::before {
+    content: '\ea73';
+}
+
+:global .codicon-send::before {
+    content: '\ec0f';
+}
+
+:global .codicon-arrow-up::before {
+    content: '\eaa1';
+}

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { type FunctionComponent, useCallback, useEffect, useRef } from 'react'
+import { type FunctionComponent, type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -21,6 +21,12 @@ interface Props extends KeyboardEventPluginProps {
     onFocus?: () => void
 
     chatEnabled: boolean
+
+    editorRef?: React.RefObject<PromptEditorRefAPI>
+}
+
+export interface PromptEditorRefAPI {
+    resetEditorState(editorState: SerializedEditorState): void
 }
 
 const TIPS = '(@ for files, @# for symbols)'
@@ -32,13 +38,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
     containerClassName,
     editorClassName,
     initialValue,
-    onChange: setValue,
+    onChange,
 
     onFocus,
 
     chatEnabled,
 
     isNewChat,
+
+    editorRef: ref,
 
     // KeyboardEventPluginProps
     onKeyDown,
@@ -48,10 +56,23 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     const onBaseEditorChange = useCallback(
         (editorState: EditorState): void => {
-            setValue?.(toPromptEditorValue(editorState))
+            onChange?.(toPromptEditorValue(editorState))
         },
-        [setValue]
+        [onChange]
     )
+
+    useEffect(() => {
+        if (ref) {
+            ;(ref as MutableRefObject<PromptEditorRefAPI>).current = {
+                resetEditorState: (editorState: SerializedEditorState) => {
+                    const editor = editorRef.current
+                    if (editor) {
+                        editor.setEditorState(editor.parseEditorState(editorState))
+                    }
+                },
+            }
+        }
+    }, [ref])
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
@@ -102,7 +123,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 export interface PromptEditorValue {
     v: 1
     text: string
-    editorState?: SerializedEditorState
+    editorState: SerializedEditorState
 }
 
 export function toPromptEditorValue(editorState: EditorState): PromptEditorValue {
