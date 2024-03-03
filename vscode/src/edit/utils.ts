@@ -13,5 +13,5 @@ export function contentSanitizer(text: string): string {
         // NOTE: 6 is the length of `tags:` + 1 space
         output = output.slice(tagsIndex + 6)
     }
-    return output.replace(/^\s*\n/, '')
+    return output.replace(/\\_/g, "_")
 }
