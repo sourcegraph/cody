@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 /**
@@ -208,50 +208,41 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
 })
 
-test('@-file with range support', async ({ page, sidebar }) => {
+test('@-file with symbol support', async ({ page, sidebar }) => {
+    // Open the buzz.ts file so that VS Code starts to populate symbols.
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Open chat.
+    await page.click('[aria-label="Cody"]')
+    await page.waitForTimeout(100)
+    await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
+    await page.waitForTimeout(100)
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
-    await chatInput.fill('@index.htm')
-    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
-    await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
-    await expect(chatInput).toHaveText('@index.html ')
-
-    // NOTE: Ghost text format: @path/file:line-line (line range)
-    // Ghost text shows up when @file is followed by a colon and get updated as the user types
-    await chatInput.fill('@index.html:')
-    const ghostText0 = 'index.html:line-line (line range)'
-    await expect(chatPanelFrame.getByRole('option', { name: ghostText0 })).toBeVisible()
-
-    await chatInput.fill('@index.html:1')
-    const ghostText1 = 'index.html:1-line (line range)'
-    await expect(chatPanelFrame.getByRole('option', { name: ghostText1 })).toBeVisible()
-
-    await chatInput.fill('@index.html:1-')
-    const ghostText2 = 'index.html:1-line (line range)'
-    await expect(chatPanelFrame.getByRole('option', { name: ghostText2 })).toBeVisible()
-
-    await chatInput.fill('@index.html:1-5')
-    const ghostText3 = 'index.html:1-5 (line range)'
-    await expect(chatPanelFrame.getByRole('option', { name: ghostText3 })).toBeVisible()
-
-    // Pressing enter should close the suggestion box and add a whitespace after selection
-    await chatInput.press('Enter')
-    await expect(chatPanelFrame.getByRole('option', { name: ghostText3 })).not.toBeVisible()
-    await expect(chatInput).toHaveText('@index.html:1-5 ')
+    await chatInput.fill('@#fizzb')
+    await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
+    await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
+    await expect(chatInput).toHaveText('@#fizzbuzz() ')
 
     // Submit the message
     await chatInput.press('Enter')
 
+    // Close file.
+    const pinnedTab = page.getByRole('tab', { name: 'buzz.ts' })
+    await pinnedTab.getByRole('button', { name: /^Close/ }).click()
+
     // @-file with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').hover()
-    await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').click()
-    await chatPanelFrame.getByRole('link', { name: '@index.html:1-5' }).hover()
-    await chatPanelFrame.getByRole('link', { name: '@index.html:1-5' }).click()
-    const indexFileTab = page.getByRole('tab', { name: /index.html, preview, Editor Group/ })
-    await indexFileTab.hover()
-    await expect(indexFileTab).toBeVisible()
+    await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').hover()
+    await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').click()
+    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:1-15' }).hover()
+    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:1-15' }).click()
+    const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
+    await previewTab.hover()
+    await expect(previewTab).toBeVisible()
 })

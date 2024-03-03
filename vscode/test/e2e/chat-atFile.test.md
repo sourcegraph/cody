@@ -10,7 +10,6 @@ Currently covered by the e2e test in `chat-atFile.test.ts`:
 - Can click a file result fom the box to insert it into the chat input.
 - Inserted file context persists when resending a message from history.
 - Can use the Up and Down arrow keys to navigate through suggested file results.
-- Can use the Left and Right arrow keys to close the file selector without modifying the input text.
 - Can use the ESC key to close the file selector without modifying the input text.
 - Pressing tab after a full filename inserts the @-mention with a trailing space.
 - Pressing tab after a partial filename completes to an existing @-mention.
