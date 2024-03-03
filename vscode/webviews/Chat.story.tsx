@@ -33,3 +33,7 @@ const meta: Meta<typeof Chat> = {
 export default meta
 
 export const Default: StoryObj<typeof meta> = {}
+
+export const PrefilledPromptEditor: StoryObj<typeof meta> = {
+    args: {},
+}

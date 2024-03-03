@@ -15,11 +15,13 @@ import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import MarkdownShortcutPlugin from './plugins/markdownShortcut'
+import { OnFocusPlugin } from './plugins/onFocus'
 import { RefPlugin } from './plugins/ref'
 
 interface Props {
-    initialEditorState?: EditorState
+    initialEditorState: EditorState | null
     onChange: (editorState: EditorState) => void
+    onFocus?: () => void
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
     disabled?: boolean
@@ -32,6 +34,7 @@ interface Props {
 export const BaseEditor: React.FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
+    onFocus,
     editorRef,
     placeholder,
     disabled,
@@ -71,6 +74,7 @@ export const BaseEditor: React.FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     <MarkdownShortcutPlugin />
                     <AutoFocusPlugin />
+                    <OnFocusPlugin onFocus={onFocus} />
                     {editorRef && <RefPlugin editorRef={editorRef} />}
                 </LexicalComposer>
             </div>

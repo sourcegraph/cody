@@ -19,7 +19,6 @@ export {
     getAtMentionQuery,
     getAtMentionedInputText,
     getContextFileDisplayText,
-    verifyContextFilesFromInput,
     isAtMention,
     isAtRange,
 } from './chat/input'

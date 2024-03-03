@@ -1,43 +1,45 @@
 import classNames from 'classnames'
 import type { LexicalEditor } from 'lexical'
 import type { EditorState } from 'lexical'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
-import styles from './Prompteditor.module.css'
+import styles from './PromptEditor.module.css'
 
-const TIPS = '(@ for files, @# for symbols)'
-
-interface ChatEditorProps {
+interface Props {
     containerClassName?: string
     editorClassName?: string
     isNewChat: boolean
-    value: string
-    chatEnabled: boolean
-    disabled?: boolean
+
+    initialValue: PromptEditorValue | null
+    onChange?: (value: PromptEditorValue) => void
+
     onFocus?: () => void
-    onChange?: (value: string) => void
-    messageBeingEdited: number | undefined
+
+    chatEnabled: boolean
 }
+
+const TIPS = '(@ for files, @# for symbols)'
 
 /**
  * The component for composing and editing prompts.
  */
-export const PromptEditor: React.FunctionComponent<ChatEditorProps> = ({
+export const PromptEditor: React.FunctionComponent<Props> = ({
     containerClassName,
     editorClassName,
-    value, // TODO(sqs)
+    initialValue,
     onChange: setValue,
+
+    onFocus,
+
     chatEnabled,
-    onFocus, // TODO(sqs)
+
     isNewChat,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
-    const [editorState, setEditorState] = useState<EditorState>()
-    const onEditorStateChange = useCallback(
+    const onBaseEditorChange = useCallback(
         (editorState: EditorState): void => {
-            setEditorState(editorState)
-            setValue?.(editorStateToText(editorState))
+            setValue?.(toPromptEditorValue(editorState))
         },
         [setValue]
     )
@@ -63,7 +65,9 @@ export const PromptEditor: React.FunctionComponent<ChatEditorProps> = ({
         <div className={classNames(styles.container, containerClassName)}>
             <BaseEditor
                 className={classNames(styles.editor, editorClassName, !chatEnabled && styles.disabled)}
-                onChange={onEditorStateChange}
+                initialEditorState={initialValue?.editorState ?? null}
+                onChange={onBaseEditorChange}
+                onFocus={onFocus}
                 editorRef={editorRef}
                 placeholder={
                     chatEnabled
@@ -72,9 +76,23 @@ export const PromptEditor: React.FunctionComponent<ChatEditorProps> = ({
                             : `Follow-Up Message ${TIPS}`
                         : 'Chat has been disabled by your Enterprise instance site administrator'
                 }
-                aria-label="Chat message"
                 disabled={!chatEnabled}
+                aria-label="Chat message"
             />
         </div>
     )
+}
+
+export interface PromptEditorValue {
+    v: 1
+    editorState: EditorState
+    text: string
+}
+
+export function toPromptEditorValue(editorState: EditorState): PromptEditorValue {
+    return {
+        v: 1,
+        editorState,
+        text: editorStateToText(editorState),
+    }
 }

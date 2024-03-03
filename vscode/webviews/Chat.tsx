@@ -25,7 +25,7 @@ import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
-import { PromptEditor } from './promptEditor/PromptEditor'
+import { PromptEditor, type PromptEditorValue } from './promptEditor/PromptEditor'
 import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
@@ -69,7 +69,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatIDHistory,
     isWebviewActive,
 }) => {
-    const [formInput, setFormInput] = useState('')
+    const [editorValue, setEditorValue] = useState<PromptEditorValue | null>(null)
 
     const onAbortMessageInProgress = useCallback(() => {
         vscodeAPI.postMessage({ command: 'abort' })
@@ -180,17 +180,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
-    const isCodyEnabled = true
     const postMessage: ApiPostMessage = msg => vscodeAPI.postMessage(msg)
-
-    const needsEmailVerification = false
 
     //////////// LIB COPIED HERE TODO(sqs)
 
     const isMac = isMacOS()
     const setInputFocus = (focus: boolean): void => {} // TODO(sqs)
-
-    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
     const chatContextFiles = new Map<string, ContextItem>() // TODO(sqs)
@@ -220,7 +215,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // When a message is no longer being edited
             // we will reset the form input fill to empty state
             if (index === undefined && index !== messageBeingEdited) {
-                setFormInput('')
+                setEditorValue(null)
                 setInputFocus(true)
             }
             setMessageBeingEdited(index)
@@ -232,7 +227,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const messageAtIndex = transcript[index]
             const inputText = messageAtIndex?.text
             if (inputText) {
-                setFormInput(inputText)
+                setEditorValue(inputText)
             }
             // move focus back to chatbox
             setInputFocus(true)
@@ -259,17 +254,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [postMessage, setEditMessageState]
     )
 
-    const setValueAndSaveHistory = useCallback(
-        (inputValue: string): void => {
-            setFormInput(inputValue)
-            const lastInput = inputHistory[historyIndex]
-            const lastText = typeof lastInput === 'string' ? lastInput : lastInput?.inputText
-            if (inputValue !== lastText) {
-                setHistoryIndex(inputHistory.length)
-            }
-        },
-        [inputHistory, historyIndex]
-    )
+    const onEditorChange = useCallback((value: PromptEditorValue): void => {
+        setEditorValue(value)
+    }, [])
 
     const submitInput = useCallback(
         (input: string, submitType: WebviewChatSubmitType): void => {
@@ -283,10 +270,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 inputText: input,
                 inputContextFiles: Array.from(chatContextFiles.values()),
             }
-            setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, newHistory])
 
-            setFormInput('')
+            setEditorValue(null)
             setEditMessageState()
         },
         [
@@ -303,17 +289,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         // Submit edits when there is one being edited
         if (messageBeingEdited !== undefined) {
             onAbortMessageInProgress()
-            submitInput(formInput, 'edit')
+            submitInput(editorValue, 'edit')
             return
         }
 
         // Submit chat only when input is not empty and not in progress
-        if (formInput.trim() && !messageInProgress?.speaker) {
+        if (editorValue.trim() && !messageInProgress?.speaker) {
             const submitType = enableNewChatMode ? 'user-newchat' : 'user'
-            submitInput(formInput, submitType)
+            submitInput(editorValue, submitType)
         }
     }, [
-        formInput,
+        editorValue,
         messageBeingEdited,
         messageInProgress?.speaker,
         enableNewChatMode,
@@ -414,7 +400,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 event.key === 'Enter' &&
                 !event.shiftKey &&
                 !event.nativeEvent.isComposing &&
-                formInput?.trim()
+                editorValue?.trim()
             ) {
                 event.preventDefault()
                 onChatSubmit()
@@ -443,11 +429,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 typeof previousHistoryInput === 'string'
                     ? previousHistoryInput
                     : previousHistoryInput?.inputText
-            if (formInput === previousHistoryText || !formInput) {
+            if (editorValue === previousHistoryText || !editorValue) {
                 let newIndex: number | undefined
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
                     newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
+                } else if (event.key === 'ArrowDown' && caretPosition === editorValue.length) {
                     if (historyIndex + 1 < inputHistory.length) {
                         newIndex = historyIndex + 1
                     }
@@ -458,9 +444,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
                     const newHistoryInput = inputHistory[newIndex]
                     if (typeof newHistoryInput === 'string') {
-                        setFormInput(newHistoryInput)
+                        setEditorValue(newHistoryInput)
                     } else {
-                        setFormInput(newHistoryInput.inputText)
+                        setEditorValue(newHistoryInput.inputText)
                     }
 
                     postMessage?.({
@@ -474,7 +460,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [
             isMac,
             messageBeingEdited,
-            formInput,
+            editorValue,
             inputHistory,
             historyIndex,
             onChatResetClick,
@@ -561,12 +547,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     <div className={styles.editorOuterContainer}>
                         <PromptEditor
                             containerClassName={styles.editorInnerContainer}
-                            value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
-                            disabled={needsEmailVerification || !isCodyEnabled}
+                            initialValue={editorValue}
+                            onChange={onEditorChange}
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
                             onKeyUp={onChatKeyUp}
-                            onChange={setValueAndSaveHistory}
                             chatEnabled={chatEnabled}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}
@@ -589,11 +574,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         }
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={
-                            needsEmailVerification ||
-                            !isCodyEnabled ||
-                            (!formInput.length && !messageInProgress)
-                        }
+                        disabled={!editorValue.length && !messageInProgress}
                         onAbortMessageInProgress={
                             messageInProgress ? onAbortMessageInProgress : undefined
                         }

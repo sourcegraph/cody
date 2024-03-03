@@ -10,7 +10,7 @@ const meta: Meta<typeof BaseEditor> = {
     component: BaseEditor,
 
     args: {
-        initialEditorState: undefined,
+        initialEditorState: null,
         placeholder: 'Placeholder text',
         onChange: () => {},
         className: styles.editor,
@@ -23,33 +23,16 @@ export default meta
 
 export const Interactive: StoryObj<typeof meta> = {
     render: props => {
-        const [editorState, setEditorState] = useState<EditorState | undefined>(props.initialEditorState)
+        const [editorState, setEditorState] = useState<EditorState | null>(props.initialEditorState)
         return (
             <div>
-                <div style={{ border: 'solid 1px #333', color: '#fff' }}>
+                <div style={{ color: '#fff' }}>
                     <BaseEditor {...props} initialEditorState={editorState} onChange={setEditorState} />
                 </div>
-                <div
-                    style={{
-                        marginTop: '2rem',
-                        padding: '1rem',
-                        backgroundColor: '#333',
-                        color: '#ccc',
-                        whiteSpace: 'pre',
-                    }}
-                >
+                <div className={styles.stateValue}>
                     {editorState ? editorStateToText(editorState) : ''}
                 </div>
-                <pre
-                    style={{
-                        marginTop: '2rem',
-                        padding: '1rem',
-                        backgroundColor: '#333',
-                        color: '#ccc',
-                    }}
-                >
-                    {JSON.stringify(editorState ?? {}, null, 2)}
-                </pre>
+                <pre className={styles.stateValue}>{JSON.stringify(editorState ?? {}, null, 2)}</pre>
             </div>
         )
     },
