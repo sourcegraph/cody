@@ -15,7 +15,7 @@ import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNod
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
 
-const PUNCTUATION = ',\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]!%\'"~=<>:;'
+const PUNCTUATION = ',\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]!%\'"~=<>:;'
 
 const ItemMentionsRegex = {
     PUNCTUATION,

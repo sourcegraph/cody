@@ -128,7 +128,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(3)
+    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(2)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -160,22 +160,22 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveText('Explain the @Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
     await page.keyboard.type('!')
+    await page.keyboard.press('Delete')
     await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
-    //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
+    //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
     await chatInput.type(' @abcdefg', { delay: 50 })
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
-    await expect(noMatches).not.toBeVisible()
+    await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowRight')
-    await expect(noMatches).not.toBeVisible()
+    await expect(noMatches).toBeVisible()
     await chatInput.type('?', { delay: 50 })
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg?file')
-    await noMatches.hover()
-    await expect(noMatches).toBeVisible()
+    await expect(noMatches).not.toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
     await expect(noMatches).not.toBeVisible()
