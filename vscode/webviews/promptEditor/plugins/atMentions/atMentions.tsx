@@ -149,7 +149,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             closeMenu: () => void
         ) => {
             editor.update(() => {
-                const mentionNode = $createContextItemMentionNode(selectedOption.displayPath)
+                const mentionNode = $createContextItemMentionNode(selectedOption.item)
                 if (nodeToReplace) {
                     nodeToReplace.replace(mentionNode)
                 }

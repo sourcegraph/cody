@@ -2,6 +2,12 @@ import type { Spread } from 'lexical'
 import styles from './ContextItemMentionNode.module.css'
 
 import {
+    type ContextItem,
+    type ContextItemFile,
+    type ContextItemSymbol,
+    displayPath,
+} from '@sourcegraph/cody-shared'
+import {
     $applyNodeReplacement,
     type DOMConversionMap,
     type DOMConversionOutput,
@@ -12,41 +18,50 @@ import {
     type SerializedTextNode,
     TextNode,
 } from 'lexical'
+import { URI } from 'vscode-uri'
+
+/**
+ * The subset of {@link ContextItem} fields that we need to store to identify and display context
+ * item mentions.
+ */
+type ContextItemFields = { uri: string } & (
+    | Pick<ContextItemFile, 'type'>
+    | Pick<ContextItemSymbol, 'type' | 'range' | 'symbolName'>
+)
 
 export type SerializedContextItemMentionNode = Spread<
-    {
-        mentionName: string
-    },
+    { contextItem: ContextItemFields },
     SerializedTextNode
 >
 
 function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOutput | null {
-    const textContent = domNode.textContent
-
-    if (textContent !== null) {
-        const node = $createContextItemMentionNode(textContent)
-        return {
-            node,
+    const data = domNode.getAttribute(DOM_DATA_ATTR)
+    if (data !== null) {
+        try {
+            const contextItem: ContextItemFields = JSON.parse(data)
+            const node = $createContextItemMentionNode(contextItem)
+            return { node }
+        } catch (error) {
+            console.error(error)
+            return null
         }
     }
 
     return null
 }
 
-const DOM_DATA_ATTR = 'data-lexical-mention'
+const DOM_DATA_ATTR = 'data-lexical-context-item-mention'
 
 export class ContextItemMentionNode extends TextNode {
-    __contextItemMention: string
-
     static getType(): string {
         return 'contextItemMention'
     }
 
     static clone(node: ContextItemMentionNode): ContextItemMentionNode {
-        return new ContextItemMentionNode(node.__contextItemMention, node.__text, node.__key)
+        return new ContextItemMentionNode(node.contextItem, node.__text, node.__key)
     }
     static importJSON(serializedNode: SerializedContextItemMentionNode): ContextItemMentionNode {
-        const node = $createContextItemMentionNode(serializedNode.mentionName)
+        const node = $createContextItemMentionNode(serializedNode.contextItem)
         node.setTextContent(serializedNode.text)
         node.setFormat(serializedNode.format)
         node.setDetail(serializedNode.detail)
@@ -55,15 +70,35 @@ export class ContextItemMentionNode extends TextNode {
         return node
     }
 
-    constructor(mentionName: string, text?: string, key?: NodeKey) {
-        super(text ?? `@${mentionName}`, key)
-        this.__contextItemMention = mentionName
+    private contextItem: ContextItemFields
+
+    constructor(
+        contextItemWithAllFields: ContextItem | ContextItemFields,
+        text?: string,
+        key?: NodeKey
+    ) {
+        // Make sure we only bring over the fields on the context item that we need, or else we
+        // could accidentally include tons of data (including the entire contents of files).
+        const contextItem: ContextItemFields = {
+            ...(contextItemWithAllFields.type === 'file'
+                ? { type: contextItemWithAllFields.type, uri: contextItemWithAllFields.uri.toString() }
+                : {
+                      type: contextItemWithAllFields.type,
+                      uri: contextItemWithAllFields.uri.toString(),
+                      range: contextItemWithAllFields.range,
+                      symbolName: contextItemWithAllFields.symbolName,
+                  }),
+        }
+
+        super(text ?? contextItemMentionNodeDisplayText(contextItem), key)
+
+        this.contextItem = contextItem
     }
 
     exportJSON(): SerializedContextItemMentionNode {
         return {
             ...super.exportJSON(),
-            mentionName: this.__contextItemMention,
+            contextItem: this.contextItem,
             type: ContextItemMentionNode.getType(),
             version: 1,
         }
@@ -77,7 +112,7 @@ export class ContextItemMentionNode extends TextNode {
 
     exportDOM(): DOMExportOutput {
         const element = document.createElement('span')
-        element.setAttribute(DOM_DATA_ATTR, 'true')
+        element.setAttribute(DOM_DATA_ATTR, JSON.stringify(this.contextItem))
         element.textContent = this.__text
         return { element }
     }
@@ -109,10 +144,21 @@ export class ContextItemMentionNode extends TextNode {
     }
 }
 
-export function $createContextItemMentionNode(mentionName: string): ContextItemMentionNode {
-    const mentionNode = new ContextItemMentionNode(mentionName)
-    mentionNode.setMode('token').toggleDirectionless()
-    return $applyNodeReplacement(mentionNode)
+export function contextItemMentionNodeDisplayText(contextItem: ContextItemFields): string {
+    if (contextItem.type === 'file') {
+        return `@${displayPath(URI.parse(contextItem.uri))}`
+    }
+    if (contextItem.type === 'symbol') {
+        return `@#${contextItem.symbolName}`
+    }
+    // @ts-ignore
+    throw new Error(`unrecognized context item type ${contextItem.type}`)
+}
+
+export function $createContextItemMentionNode(contextItem: ContextItemFields): ContextItemMentionNode {
+    const node = new ContextItemMentionNode(contextItem)
+    node.setMode('token').toggleDirectionless()
+    return $applyNodeReplacement(node)
 }
 
 export function $isContextItemMentionNode(

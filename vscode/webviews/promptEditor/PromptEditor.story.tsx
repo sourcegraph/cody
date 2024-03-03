@@ -58,10 +58,46 @@ const FILE_MENTION_VALUE_FIXTURE: PromptEditorValue = {
                             format: 0,
                             mode: 'token',
                             style: '',
-                            text: '@file-a-0.py',
+                            text: '@#Symbol1',
                             type: 'contextItemMention',
                             version: 1,
-                            mentionName: 'file-a-0.py',
+                            contextItem: {
+                                type: 'symbol',
+                                uri: 'file:///a/b/file1.go',
+                                range: {
+                                    start: {
+                                        line: 2,
+                                        character: 13,
+                                    },
+                                    end: {
+                                        line: 4,
+                                        character: 1,
+                                    },
+                                },
+                                symbolName: 'Symbol1',
+                            },
+                        },
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            text: ' in ',
+                            type: 'text',
+                            version: 1,
+                        },
+                        {
+                            detail: 1,
+                            format: 0,
+                            mode: 'token',
+                            style: '',
+                            text: '@dir/dir/file-a-1.py',
+                            type: 'contextItemMention',
+                            version: 1,
+                            contextItem: {
+                                type: 'file',
+                                uri: 'file:///dir/dir/file-a-1.py',
+                            },
                         },
                         {
                             detail: 0,
@@ -87,7 +123,7 @@ const FILE_MENTION_VALUE_FIXTURE: PromptEditorValue = {
             version: 1,
         },
     },
-    text: 'What does @file-a-0.py do?',
+    text: 'What does @#Symbol1 in @dir/dir/file-a-1.py do?',
 }
 
 export const Interactive: StoryObj<typeof meta> = {
