@@ -2,19 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react'
 import type { EditorState } from 'lexical'
 import { useState } from 'react'
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
-import { RichEditor, editorStateToText } from './RichEditor'
-import styles from './RichEditor.story.module.css'
+import { BaseEditor, editorStateToText } from './BaseEditor'
+import styles from './BaseEditor.story.module.css'
 
-const meta: Meta<typeof RichEditor> = {
-    title: 'ui/RichEditor',
-    component: RichEditor,
+const meta: Meta<typeof BaseEditor> = {
+    title: 'ui/BaseEditor',
+    component: BaseEditor,
 
     args: {
         initialEditorState: undefined,
         placeholder: 'Placeholder text',
         onChange: () => {},
         className: styles.editor,
-    } as React.ComponentProps<typeof RichEditor>,
+    } as React.ComponentProps<typeof BaseEditor>,
 
     decorators: [VSCodeStoryDecorator],
 } as Meta
@@ -27,7 +27,7 @@ export const Interactive: StoryObj<typeof meta> = {
         return (
             <div>
                 <div style={{ border: 'solid 1px #333', color: '#fff' }}>
-                    <RichEditor {...props} initialEditorState={editorState} onChange={setEditorState} />
+                    <BaseEditor {...props} initialEditorState={editorState} onChange={setEditorState} />
                 </div>
                 <div
                     style={{

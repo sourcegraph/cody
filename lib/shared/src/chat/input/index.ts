@@ -5,4 +5,3 @@ export {
     isAtRange,
     isAtMention,
 } from './at-mentioned'
-export { verifyContextFilesFromInput } from './user-context'

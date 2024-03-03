@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import type { LexicalEditor } from 'lexical'
 import type { EditorState } from 'lexical'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { RichEditor, editorStateToText } from './RichEditor'
-import styles from './RichEditorTextArea.module.css'
+import { BaseEditor, editorStateToText } from './BaseEditor'
+import styles from './Prompteditor.module.css'
 
 const TIPS = '(@ for files, @# for symbols)'
 
-interface ChatUITextAreaProps {
+interface ChatEditorProps {
     containerClassName?: string
     editorClassName?: string
     isNewChat: boolean
@@ -15,21 +15,20 @@ interface ChatUITextAreaProps {
     chatEnabled: boolean
     disabled?: boolean
     onFocus?: () => void
-    setValue?: (value: string) => void
-    onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
-    onKeyUp?: (event: React.KeyboardEvent<HTMLTextAreaElement>, caretPosition: number | null) => void
+    onChange?: (value: string) => void
     messageBeingEdited: number | undefined
 }
 
-export const RichEditorTextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
+/**
+ * The component for composing and editing prompts.
+ */
+export const PromptEditor: React.FunctionComponent<ChatEditorProps> = ({
     containerClassName,
     editorClassName,
     value, // TODO(sqs)
-    setValue,
+    onChange: setValue,
     chatEnabled,
     onFocus, // TODO(sqs)
-    onKeyDown,
-    onKeyUp,
     isNewChat,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
@@ -62,7 +61,7 @@ export const RichEditorTextArea: React.FunctionComponent<ChatUITextAreaProps> = 
 
     return (
         <div className={classNames(styles.container, containerClassName)}>
-            <RichEditor
+            <BaseEditor
                 className={classNames(styles.editor, editorClassName, !chatEnabled && styles.disabled)}
                 onChange={onEditorStateChange}
                 editorRef={editorRef}

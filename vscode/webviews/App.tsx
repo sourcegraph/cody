@@ -131,9 +131,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
                         break
-                    case 'userContextFiles':
-                        setContextSelection(message.userContextFiles)
-                        break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
                         break

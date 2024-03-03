@@ -25,10 +25,9 @@ import { FileLink } from './Components/FileLink'
 import { SymbolLink } from './SymbolLink'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
-import { RichEditorTextArea } from './richEditor/RichEditorTextArea'
+import { PromptEditor } from './richEditor/PromptEditor'
 import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
-import { verifyContextFilesFromInput } from '@sourcegraph/cody-shared/src/chat/input/user-context'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
@@ -92,16 +91,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onSubmit = useCallback(
-        (text: string, submitType: WebviewChatSubmitType, contextFiles?: Map<string, ContextItem>) => {
-            // loop the added contextFiles to:
-            // 1. check if the key still exists in the text
-            // 2. remove the ones not present
-            const userContextFiles = verifyContextFilesFromInput(text, contextFiles)
-
+        (text: string, submitType: WebviewChatSubmitType, contextFiles: ContextItem[]) => {
             // Handle edit requests
             if (submitType === 'edit') {
                 if (messageBeingEdited !== undefined) {
-                    onEditSubmit(text, messageBeingEdited, userContextFiles)
+                    onEditSubmit(text, messageBeingEdited, contextFiles)
                 }
                 return
             }
@@ -111,7 +105,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 submitType,
                 text,
                 addEnhancedContext,
-                contextFiles: userContextFiles,
+                contextFiles,
             })
         },
         [addEnhancedContext, messageBeingEdited, onEditSubmit, vscodeAPI]
@@ -199,7 +193,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     // The context files added via the chat input by user
-    const chatContextFiles = new Map<string, ContextFile>() // TODO(sqs)
+    const chatContextFiles = new Map<string, ContextItem>() // TODO(sqs)
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
@@ -565,14 +559,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
                 <div className={styles.textAreaContainer}>
                     <div className={styles.editorOuterContainer}>
-                        <RichEditorTextArea
+                        <PromptEditor
                             containerClassName={styles.editorInnerContainer}
                             value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
                             disabled={needsEmailVerification || !isCodyEnabled}
                             onFocus={() => setIsEnhancedContextOpen(false)}
                             onKeyDown={onChatKeyDown}
                             onKeyUp={onChatKeyUp}
-                            setValue={setValueAndSaveHistory}
+                            onChange={setValueAndSaveHistory}
                             chatEnabled={chatEnabled}
                             messageBeingEdited={messageBeingEdited}
                             isNewChat={!transcript.length}

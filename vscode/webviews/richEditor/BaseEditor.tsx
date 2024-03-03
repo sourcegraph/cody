@@ -10,7 +10,7 @@ import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import classNames from 'classnames'
 import { $getRoot, $getSelection, type EditorState, type LexicalEditor } from 'lexical'
 import { type RefObject, useMemo } from 'react'
-import styles from './RichEditor.module.css'
+import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
@@ -26,7 +26,10 @@ interface Props {
     className?: string
 }
 
-export const RichEditor: React.FunctionComponent<Props> = ({
+/**
+ * The low-level rich editor for messages to Cody.
+ */
+export const BaseEditor: React.FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
     editorRef,
@@ -37,7 +40,7 @@ export const RichEditor: React.FunctionComponent<Props> = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
         () => ({
-            namespace: 'RichEditor',
+            namespace: 'BaseEditor',
             theme: { paragraph: styles.themeParagraph },
             onError: (error: any) => console.error(error),
             editorState: initialEditorState,
