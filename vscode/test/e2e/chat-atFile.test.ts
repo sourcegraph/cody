@@ -198,9 +198,11 @@ test.extend<ExpectedEvents>({
     // file as context.
     await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
-    await chatInput.press('l', { delay: 50 })
+    await page.waitForTimeout(100)
+    await chatInput.press('l')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Space')
+    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).not.toBeVisible()
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
