@@ -4,6 +4,7 @@ import { sidebarSignin } from './common'
 import { type ExpectedEvents, newChat, test } from './helpers'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { sleep } from '../../src/completions/utils'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -99,6 +100,7 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
     // Choosing should dismiss the repo picker, but not the enhanced context
     // settings widget.
     await repoFoo.click()
+    await sleep(100)
     await page.keyboard.type('\n')
     await expect(repoPicker).not.toBeVisible()
     await expect(chooseReposButton).toBeVisible()
