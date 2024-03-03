@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { RichEditor, editorStateToText } from './RichEditor'
 import styles from './RichEditorTextArea.module.css'
 
-const TIPS = '(@ to include files or symbols)'
+const TIPS = '(@ for files, @# for symbols)'
 
 interface ChatUITextAreaProps {
     containerClassName?: string

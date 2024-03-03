@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { useState } from 'react'
 import { Chat } from './Chat'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
@@ -9,14 +8,12 @@ const meta: Meta<typeof Chat> = {
 
     args: {
         transcript: [
-            { speaker: 'assistant', displayText: 'Hello from Cody!' },
             { speaker: 'human', displayText: 'Hi from human.' },
+            { speaker: 'assistant', displayText: 'Hello from Cody!' },
         ],
         messageInProgress: null,
         messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
-        formInput: '',
-        setFormInput: () => {},
         inputHistory: [],
         setInputHistory: () => {},
         chatIDHistory: [],
@@ -31,16 +28,23 @@ const meta: Meta<typeof Chat> = {
     } as React.ComponentProps<typeof Chat>,
 
     decorators: [
+        story => <div style={{ background: 'var(--vscode-editor-background)' }}>{story()}</div>,
         VSCodeStoryDecorator,
-        story => <div style={{ background: 'rgb(28, 33, 40)' }}>{story()}</div>,
     ],
+
+    parameters: {
+        backgrounds: {
+            default: 'vscode',
+            values: [
+                {
+                    name: 'vscode',
+                    value: 'var(--vscode-sideBar-background)',
+                },
+            ],
+        },
+    },
 } as Meta
 
 export default meta
 
-export const Default: StoryObj<typeof meta> = {
-    render: props => {
-        const [formInput, setFormInput] = useState(props.formInput)
-        return <Chat {...props} formInput={formInput} setFormInput={setFormInput} />
-    },
-}
+export const Default: StoryObj<typeof meta> = {}
