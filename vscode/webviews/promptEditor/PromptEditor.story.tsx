@@ -59,7 +59,7 @@ const FILE_MENTION_VALUE_FIXTURE: PromptEditorValue = {
                             mode: 'token',
                             style: '',
                             text: '@file-a-0.py',
-                            type: 'mention',
+                            type: 'contextItemMention',
                             version: 1,
                             mentionName: 'file-a-0.py',
                         },

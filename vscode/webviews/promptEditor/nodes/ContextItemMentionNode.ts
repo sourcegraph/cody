@@ -1,5 +1,5 @@
 import type { Spread } from 'lexical'
-import styles from './MentionNode.module.css'
+import styles from './ContextItemMentionNode.module.css'
 
 import {
     $applyNodeReplacement,
@@ -13,18 +13,18 @@ import {
     TextNode,
 } from 'lexical'
 
-export type SerializedMentionNode = Spread<
+export type SerializedContextItemMentionNode = Spread<
     {
         mentionName: string
     },
     SerializedTextNode
 >
 
-function convertMentionElement(domNode: HTMLElement): DOMConversionOutput | null {
+function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOutput | null {
     const textContent = domNode.textContent
 
     if (textContent !== null) {
-        const node = $createMentionNode(textContent)
+        const node = $createContextItemMentionNode(textContent)
         return {
             node,
         }
@@ -33,18 +33,20 @@ function convertMentionElement(domNode: HTMLElement): DOMConversionOutput | null
     return null
 }
 
-export class MentionNode extends TextNode {
-    __mention: string
+const DOM_DATA_ATTR = 'data-lexical-mention'
+
+export class ContextItemMentionNode extends TextNode {
+    __contextItemMention: string
 
     static getType(): string {
-        return 'mention'
+        return 'contextItemMention'
     }
 
-    static clone(node: MentionNode): MentionNode {
-        return new MentionNode(node.__mention, node.__text, node.__key)
+    static clone(node: ContextItemMentionNode): ContextItemMentionNode {
+        return new ContextItemMentionNode(node.__contextItemMention, node.__text, node.__key)
     }
-    static importJSON(serializedNode: SerializedMentionNode): MentionNode {
-        const node = $createMentionNode(serializedNode.mentionName)
+    static importJSON(serializedNode: SerializedContextItemMentionNode): ContextItemMentionNode {
+        const node = $createContextItemMentionNode(serializedNode.mentionName)
         node.setTextContent(serializedNode.text)
         node.setFormat(serializedNode.format)
         node.setDetail(serializedNode.detail)
@@ -55,27 +57,27 @@ export class MentionNode extends TextNode {
 
     constructor(mentionName: string, text?: string, key?: NodeKey) {
         super(text ?? `@${mentionName}`, key)
-        this.__mention = mentionName
+        this.__contextItemMention = mentionName
     }
 
-    exportJSON(): SerializedMentionNode {
+    exportJSON(): SerializedContextItemMentionNode {
         return {
             ...super.exportJSON(),
-            mentionName: this.__mention,
-            type: 'mention',
+            mentionName: this.__contextItemMention,
+            type: ContextItemMentionNode.getType(),
             version: 1,
         }
     }
 
     createDOM(config: EditorConfig): HTMLElement {
         const dom = super.createDOM(config)
-        dom.className = `mention ${styles.mentionNode}`
+        dom.className = styles.contextItemMentionNode
         return dom
     }
 
     exportDOM(): DOMExportOutput {
         const element = document.createElement('span')
-        element.setAttribute('data-lexical-mention', 'true')
+        element.setAttribute(DOM_DATA_ATTR, 'true')
         element.textContent = this.__text
         return { element }
     }
@@ -83,11 +85,11 @@ export class MentionNode extends TextNode {
     static importDOM(): DOMConversionMap | null {
         return {
             span: (domNode: HTMLElement) => {
-                if (!domNode.hasAttribute('data-lexical-mention')) {
+                if (!domNode.hasAttribute(DOM_DATA_ATTR)) {
                     return null
                 }
                 return {
-                    conversion: convertMentionElement,
+                    conversion: convertContextItemMentionElement,
                     priority: 1,
                 }
             },
@@ -107,12 +109,14 @@ export class MentionNode extends TextNode {
     }
 }
 
-export function $createMentionNode(mentionName: string): MentionNode {
-    const mentionNode = new MentionNode(mentionName)
+export function $createContextItemMentionNode(mentionName: string): ContextItemMentionNode {
+    const mentionNode = new ContextItemMentionNode(mentionName)
     mentionNode.setMode('token').toggleDirectionless()
     return $applyNodeReplacement(mentionNode)
 }
 
-export function $isMentionNode(node: LexicalNode | null | undefined): node is MentionNode {
-    return node instanceof MentionNode
+export function $isContextItemMentionNode(
+    node: LexicalNode | null | undefined
+): node is ContextItemMentionNode {
+    return node instanceof ContextItemMentionNode
 }

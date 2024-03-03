@@ -11,7 +11,7 @@ import styles from './atMentions.module.css'
 
 import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { $createMentionNode } from '../../nodes/MentionNode'
+import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
 
@@ -149,7 +149,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             closeMenu: () => void
         ) => {
             editor.update(() => {
-                const mentionNode = $createMentionNode(selectedOption.displayPath)
+                const mentionNode = $createContextItemMentionNode(selectedOption.displayPath)
                 if (nodeToReplace) {
                     nodeToReplace.replace(mentionNode)
                 }
