@@ -8,7 +8,13 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import classNames from 'classnames'
-import { $getRoot, $getSelection, type EditorState, type LexicalEditor } from 'lexical'
+import {
+    $getRoot,
+    $getSelection,
+    type EditorState,
+    type LexicalEditor,
+    type SerializedEditorState,
+} from 'lexical'
 import { type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
@@ -19,7 +25,7 @@ import { OnFocusPlugin } from './plugins/onFocus'
 import { RefPlugin } from './plugins/ref'
 
 interface Props {
-    initialEditorState: EditorState | null
+    initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState) => void
     onFocus?: () => void
     editorRef?: RefObject<LexicalEditor>
@@ -46,7 +52,7 @@ export const BaseEditor: React.FunctionComponent<Props> = ({
             namespace: 'BaseEditor',
             theme: { paragraph: styles.themeParagraph },
             onError: (error: any) => console.error(error),
-            editorState: initialEditorState,
+            editorState: initialEditorState !== null ? JSON.stringify(initialEditorState) : null,
             editable: !disabled,
             nodes: RICH_EDITOR_NODES,
         }),

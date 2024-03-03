@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import type { LexicalEditor } from 'lexical'
+import type { LexicalEditor, SerializedEditorState } from 'lexical'
 import type { EditorState } from 'lexical'
 import { useCallback, useEffect, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
@@ -85,14 +85,14 @@ export const PromptEditor: React.FunctionComponent<Props> = ({
 
 export interface PromptEditorValue {
     v: 1
-    editorState: EditorState
+    editorState: SerializedEditorState
     text: string
 }
 
 export function toPromptEditorValue(editorState: EditorState): PromptEditorValue {
     return {
         v: 1,
-        editorState,
+        editorState: editorState.toJSON(),
         text: editorStateToText(editorState),
     }
 }
