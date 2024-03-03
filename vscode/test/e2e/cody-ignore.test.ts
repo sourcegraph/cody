@@ -62,7 +62,7 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(chatPanel.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await expect(chatPanel.getByRole('note', { name: 'No matching files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(

@@ -26,6 +26,9 @@
     border-bottom: 1px solid var(--vscode-dropdown-border);
     margin-bottom: -1px;
     user-select: none;
+    font-size: normal;
+    font-weight: normal;
+    margin: 0;
 }
 
 /* Hide scrollbar */

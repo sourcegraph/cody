@@ -21,7 +21,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <aside role="note" className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={classNames(styles.item, styles.helpItem)}>
                 {query === ''
                     ? 'Search for a file to include, or type # for symbols...'
                     : query.startsWith('#')
@@ -35,7 +35,7 @@ export const OptionsList: FunctionComponent<
                       : options.length > 0
                           ? 'Search for a file to include...'
                           : 'No files found'}
-            </aside>
+            </h3>
             <ul ref={ref} className={styles.list}>
                 {options.map((option, i) => (
                     <Item

@@ -31,6 +31,7 @@ interface Props extends KeyboardEventPluginProps {
     placeholder?: string
     disabled?: boolean
     className?: string
+    'aria-label'?: string
 }
 
 /**
@@ -44,6 +45,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     placeholder,
     disabled,
     className,
+    'aria-label': ariaLabel,
 
     // KeyboardEventPluginProps
     onKeyDown,
@@ -70,7 +72,10 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         contentEditable={
                             <div className={styles.editorScroller}>
                                 <div className={styles.editor}>
-                                    <ContentEditable className={styles.contentEditable} />
+                                    <ContentEditable
+                                        className={styles.contentEditable}
+                                        ariaLabel={ariaLabel}
+                                    />
                                 </div>
                             </div>
                         }

@@ -31,14 +31,14 @@ test.extend<ExpectedEvents>({
     await page.keyboard.type('@')
     await expect(
         chatPanelFrame.getByRole('heading', {
-            name: 'Search for a file to include, or type # to search symbols...',
+            name: 'Search for a file to include, or type # for symbols...',
         })
     ).toBeVisible()
+    await page.keyboard.press('Backspace')
 
     // No results
-    await chatInput.click()
-    await page.keyboard.type('@definitelydoesntexist')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await chatInput.fill('@definitelydoesntexist')
+    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
     // check (otherwise the test can pass even without the filter working).
@@ -50,68 +50,66 @@ test.extend<ExpectedEvents>({
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
     await page.keyboard.type('@fixtures') // fixture is in the test project folder name, but in the relative paths.
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
-    await expect(chatPanelFrame.getByRole('button', { name: '.mydotfile' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: '.mydotfile' })).toBeVisible()
 
     // Symbol empty state
     await chatInput.fill('@#')
-    await expect(
-        chatPanelFrame.getByRole('heading', { name: 'Search for a symbol to include..' })
-    ).toBeVisible()
+    await expect(chatPanelFrame.getByRole('heading', { name: /No symbols found/ })).toBeVisible()
 
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
     await expect(
-        chatPanelFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 
     // Backslashes
     if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
-            chatPanelFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
+            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('lib/batches/env/var.go') })
         ).toBeVisible()
     }
 
     // Space before @ is required unless it's at position 0
     await chatInput.fill('Explain@mj')
-    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
     await chatInput.fill('@mj')
-    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.fill('clear')
 
     // Searching and clicking
     await chatInput.fill('Explain @mj')
-    await chatPanelFrame.getByRole('button', { name: 'Main.java' }).click()
-    await expect(chatInput).toHaveValue('Explain @Main.java ')
+    await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
+    await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
-    await expect(chatInput).not.toHaveValue('Explain @Main.java ')
-    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
+    await expect(chatInput).not.toHaveText('Explain @Main.java ')
+    await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
     // Use history to re-send a message with context files
     await page.waitForTimeout(50)
     await chatInput.press('ArrowUp', { delay: 50 })
-    await expect(chatInput).toHaveValue('Explain @Main.java ')
+    await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(2)
 
     // Keyboard nav through context files
     await chatInput.type('Explain @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
     await chatInput.press('Enter')
-    await expect(chatInput).toHaveValue(withPlatformSlashes('Explain @lib/batches/env/var.go '))
+    await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
     await chatInput.type('and @vgo', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
     await chatInput.press('ArrowDown') // second item (visualize.go)
     await chatInput.press('ArrowDown') // third item (.vscode/settings.json)
     await chatInput.press('ArrowDown') // wraps back to first item
     await chatInput.press('ArrowDown') // second item again
     await chatInput.press('Enter')
-    await expect(chatInput).toHaveValue(
+    await expect(chatInput).toHaveText(
         withPlatformSlashes(
             'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '
         )
@@ -137,14 +135,14 @@ test.extend<ExpectedEvents>({
     await chatInput.clear()
     await chatInput.type('@Main.java', { delay: 50 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue('@Main.java ')
+    await expect(chatInput).toHaveText('@Main.java ')
 
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
     await chatInput.type('and @Main.ja', { delay: 50 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue('@Main.java and @Main.java ')
+    await expect(chatInput).toHaveText('@Main.java and @Main.java ')
 
     // Support @-file in mid-sentence
     await chatInput.focus()
@@ -158,15 +156,15 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Space') // 'Explain the | file'
     await chatInput.type('@Main', { delay: 50 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue('Explain the @Main.java file')
+    await expect(chatInput).toHaveText('Explain the @Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
     await page.keyboard.type('!')
-    await expect(chatInput).toHaveValue('Explain the @Main.java !file')
+    await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys close the selection without altering current input.
-    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No matching files found' })
+    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
     await chatInput.type(' @abcdefg', { delay: 50 })
-    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefgfile')
+    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
@@ -174,7 +172,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowRight')
     await expect(noMatches).not.toBeVisible()
     await chatInput.type('?', { delay: 50 })
-    await expect(chatInput).toHaveValue('Explain the @Main.java ! @abcdefg?file')
+    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg?file')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
     // Selection close on submit
@@ -188,7 +186,7 @@ test.extend<ExpectedEvents>({
     await chatInput.fill('@unknown')
     await expect(noMatches).toBeVisible()
     await chatInput.press('?')
-    await expect(chatInput).toHaveValue('@unknown?')
+    await expect(chatInput).toHaveText('@unknown?')
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
@@ -200,7 +198,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
     await chatInput.press('l')
-    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Space')
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
@@ -215,32 +213,32 @@ test('@-file with range support', async ({ page, sidebar }) => {
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.fill('@index.htm')
-    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
-    await chatPanelFrame.getByRole('button', { name: 'index.html' }).click()
-    await expect(chatInput).toHaveValue('@index.html ')
+    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
+    await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
+    await expect(chatInput).toHaveText('@index.html ')
 
     // NOTE: Ghost text format: @path/file:line-line (line range)
     // Ghost text shows up when @file is followed by a colon and get updated as the user types
     await chatInput.fill('@index.html:')
     const ghostText0 = 'index.html:line-line (line range)'
-    await expect(chatPanelFrame.getByRole('button', { name: ghostText0 })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: ghostText0 })).toBeVisible()
 
     await chatInput.fill('@index.html:1')
     const ghostText1 = 'index.html:1-line (line range)'
-    await expect(chatPanelFrame.getByRole('button', { name: ghostText1 })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: ghostText1 })).toBeVisible()
 
     await chatInput.fill('@index.html:1-')
     const ghostText2 = 'index.html:1-line (line range)'
-    await expect(chatPanelFrame.getByRole('button', { name: ghostText2 })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: ghostText2 })).toBeVisible()
 
     await chatInput.fill('@index.html:1-5')
     const ghostText3 = 'index.html:1-5 (line range)'
-    await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: ghostText3 })).toBeVisible()
 
     // Pressing enter should close the suggestion box and add a whitespace after selection
     await chatInput.press('Enter')
-    await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).not.toBeVisible()
-    await expect(chatInput).toHaveValue('@index.html:1-5 ')
+    await expect(chatPanelFrame.getByRole('option', { name: ghostText3 })).not.toBeVisible()
+    await expect(chatInput).toHaveText('@index.html:1-5 ')
 
     // Submit the message
     await chatInput.press('Enter')
