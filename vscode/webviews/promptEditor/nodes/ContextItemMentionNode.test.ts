@@ -5,7 +5,7 @@ import { contextItemMentionNodeDisplayText } from './ContextItemMentionNode'
 describe('contextItemMentionNodeDisplayText', () => {
     test('file', () =>
         expect(contextItemMentionNodeDisplayText({ type: 'file', uri: 'file:///foo/bar.ts' })).toBe(
-            isWindows() ? '@foo\\bar.ts' : '@foo/bar.ts'
+            isWindows() ? '@\\foo\\bar.ts' : '@foo/bar.ts'
         ))
 
     test('symbol', () =>
