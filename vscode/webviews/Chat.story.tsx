@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import { Chat } from './Chat'
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
+import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
+import { VSCodeStoryDecorator, WithBorder } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
     title: 'ui/Chat',
     component: Chat,
 
     args: {
-        transcript: [],
+        transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
         messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
@@ -28,7 +29,7 @@ const meta: Meta<typeof Chat> = {
         isTranscriptError: false,
     } as React.ComponentProps<typeof Chat>,
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [WithBorder, VSCodeStoryDecorator],
 } as Meta
 
 export default meta
