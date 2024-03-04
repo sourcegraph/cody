@@ -66,9 +66,9 @@ test.extend<ExpectedEvents>({
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore') })
+        chatPanel.getByRole('option', { name: withPlatformSlashes('.cody/ignore') })
     ).toBeVisible()
-    await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
+    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain Code').hover()
