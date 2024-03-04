@@ -251,6 +251,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.submitType,
                     message.contextFiles ?? [],
+                    message.editorState,
                     message.addEnhancedContext ?? false,
                     'chat'
                 )
@@ -262,6 +263,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.index,
                     message.contextFiles ?? [],
+                    message.editorState,
                     message.addEnhancedContext || false
                 )
                 break
@@ -393,6 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: string,
         submitType: ChatSubmitType,
         userContextFiles: ContextItem[],
+        editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
         source?: ChatEventSource
     ): Promise<void> {
@@ -440,7 +443,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     await this.clearAndRestartSession()
                 }
 
-                this.chatModel.addHumanMessage({ text: inputText })
+                this.chatModel.addHumanMessage({ text: inputText, editorState })
                 await this.saveSession()
 
                 this.postEmptyMessageInProgress()
@@ -533,8 +536,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleEdit(
         requestID: string,
         text: string,
-        index?: number,
-        contextFiles: ContextItem[] = [],
+        index: number | undefined,
+        contextFiles: ContextItem[],
+        editorState: ChatMessage['editorState'],
         addEnhancedContext = true
     ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
@@ -553,6 +557,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 text,
                 'user',
                 contextFiles,
+                editorState,
                 addEnhancedContext
             )
         } catch {
