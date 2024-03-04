@@ -103,8 +103,8 @@ test.extend<ExpectedEvents>({
     await chatInput.press(`${osKey}+k`)
     await expect(chatInput).toHaveText('Four')
     await chatInput.fill('Explain @mj')
-    await expect(chatInput).not.toHaveValue('Four')
-    await expect(chatFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await expect(chatInput).not.toHaveText('Four')
+    await expect(chatFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain @Main.java ')
 
