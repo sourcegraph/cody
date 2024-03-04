@@ -1,7 +1,7 @@
+import crypto from 'crypto'
 import http from 'http'
 import type { AddressInfo } from 'net'
 import { sleep } from '../completions/utils'
-import crypto from 'crypto'
 
 const FIVE_MINUTES = 5 * 60 * 1000
 
