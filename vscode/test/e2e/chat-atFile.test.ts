@@ -226,7 +226,10 @@ test('@-file with symbol support', async ({ page, sidebar }) => {
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.fill('@#fizzb')
-    await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible({
+        // Longer timeout because sometimes tsserver takes a while to become ready.
+        timeout: 15000,
+    })
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@#fizzbuzz() ')
 

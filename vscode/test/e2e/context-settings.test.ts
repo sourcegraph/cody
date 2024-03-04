@@ -16,7 +16,8 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
     ],
 })('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
-    // This test requires that the window be focused in the OS window manager.
+    // This test requires that the window be focused in the OS window manager because it deals with
+    // focus.
     await page.bringToFront()
 
     await sidebarSignin(page, sidebar)
