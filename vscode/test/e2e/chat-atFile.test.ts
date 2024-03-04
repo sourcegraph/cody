@@ -85,13 +85,6 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).not.toHaveText('Explain @Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
-    // Edit a previously sent message and confirm it is sent with the right context items.
-    await page.waitForTimeout(50)
-    await chatInput.press('ArrowUp', { delay: 50 })
-    await expect(chatInput).toHaveText('Explain @Main.java ')
-    await chatInput.press('Meta+Enter')
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
-
     // Keyboard nav through context files
     await chatInput.fill('Explain @var.go')
     await expect(chatPanelFrame.getByRole('option', { name: 'lib/batches/env/var.go' })).toBeVisible()
@@ -168,7 +161,7 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowRight')
     await expect(noMatches).toBeVisible()
-    await chatInput.press('?', { delay: 50 })
+    await chatInput.press('?')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg?file')
     await expect(noMatches).not.toBeVisible()
     // Selection close on submit
@@ -188,17 +181,49 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
 })
 
-test('typing @-mention text does not automatically accept it ', async ({ page, sidebar }) => {
+test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
-    // Typing out the whole file path without pressing tab/enter should NOT include the
-    // file as context.
+    // Send a message with an @-mention.
+    await chatInput.fill('Explain @mj')
+    await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
+    await expect(chatInput).toHaveText('Explain @Main.java ')
+    await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
+    await chatInput.press('Enter')
+    await expect(chatInput).toBeEmpty()
+    await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatPanelFrame.getByText(/^✨ Context: 1 file/)).toHaveCount(1)
+
+    // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
+    await chatInput.press('ArrowUp')
+    await expect(chatInput).toHaveText('Explain @Main.java ')
+    await chatInput.press('Meta+Enter')
+    await expect(chatPanelFrame.getByText(/^✨ Context: 1 file/)).toHaveCount(1)
+
+    // Edit it again, add a new @-mention, and resend.
+    await chatInput.press('ArrowUp')
+    await expect(chatInput).toHaveText('Explain @Main.java ')
+    await chatInput.pressSequentially('and @index.ht')
+    await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
+    await expect(chatInput).toHaveText('Explain @Main.java and @index.html')
+    await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
+    await chatInput.press('Enter')
+    await expect(chatInput).toBeEmpty()
+    await expect(chatPanelFrame.getByText('Explain @Main.java and @index.html')).toBeVisible()
+    await expect(chatPanelFrame.getByText(/^✨ Context: 2 files/)).toHaveCount(1)
+})
+
+test('typing @-mention text does not automatically accept it ', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
+    // Typing out the whole file path without pressing tab/enter should NOT include the file as
+    // context.
     await chatInput.fill('Explain @index.htm')
     await page.waitForTimeout(100)
     await chatInput.press('l')
