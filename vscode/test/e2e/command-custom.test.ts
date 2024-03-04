@@ -1,7 +1,6 @@
 import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
-import { sleep } from '../../src/completions/utils'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
@@ -280,7 +279,7 @@ test.extend<ExpectedEvents>({
 
     // Open the cody.json from User Settings
     // NOTE: This is expected to fail locally if you currently have User commands configured
-    await sleep(100)
+    await page.waitForTimeout(100)
     await customCommandSidebar.click()
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
