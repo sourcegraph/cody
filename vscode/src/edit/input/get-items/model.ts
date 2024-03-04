@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import type { GetItemsResult } from '../quick-pick'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
-import type { EditModelItem } from './types'
 import type { EditModel, ModelProvider } from '@sourcegraph/cody-shared'
+import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
+import type { GetItemsResult } from '../quick-pick'
+import type { EditModelItem } from './types'
 
-export const getModelProviderIcon = (provider: string): string => {
+const getModelProviderIcon = (provider: string): string => {
     switch (provider) {
         case 'Anthropic':
             return '$(anthropic-logo)'

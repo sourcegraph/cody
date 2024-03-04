@@ -1,6 +1,6 @@
 # AI that knows your entire codebase
 
-[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is a free AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
+[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
 Cody is now generally available. If you're using Cody Pro, make sure to update to the latest version of the IDE extension to get the latest features and unlimited rate limits.
 
@@ -51,11 +51,9 @@ Cody builds a Search index of your local files to make it easier to find what yo
 
 ## Usage
 
-Cody Free: This version of Cody is available entirely free for all developers. It includes up to 500 autocomplete suggestions & 20 chat/command invocations per month.
+This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
 
-Cody Pro: This is an expanded version of Cody for developers who want to use it every day, for either work or personal projects, with no usage limits. Cody Pro will be available for free until February 14, 2024, and after that Cody Pro will be available for $9/user/month.
-
-You can find more information on our [pricing page](https://sourcegraph.com/pricing).
+You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 
 ## Programming Languages
 
@@ -73,7 +71,9 @@ For example:
 
 ## Cody Enterprise
 
-Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=marketplace.visualstudio.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
+Cody Enterprise is able to retrieve context from your entire remote codebase using Sourcegraph search. This gives Cody the ability to understand and answer questions about all of your code, even the repositories that don't live on your local machine.
+
+[Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=marketplace.visualstudio.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
 ## Feedback
 

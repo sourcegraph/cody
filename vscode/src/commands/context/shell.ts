@@ -6,13 +6,13 @@ import * as vscode from 'vscode'
 
 import { logError } from '../../log'
 
+import path from 'node:path/posix'
 import {
+    type ContextItem,
     MAX_CURRENT_FILE_TOKENS,
-    type ContextFile,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import path from 'node:path/posix'
 
 const _exec = promisify(exec)
 
@@ -22,7 +22,7 @@ const _exec = promisify(exec)
  * Executes the given shell command, captures the output, wraps it in a context format,
  * and returns it as a ContextFile.
  */
-export async function getContextFileFromShell(command: string): Promise<ContextFile[]> {
+export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async span => {
         const rootDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
@@ -55,7 +55,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextF
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
                 source: 'terminal',
-            } as ContextFile
+            } as ContextItem
 
             return [file]
         } catch (error) {

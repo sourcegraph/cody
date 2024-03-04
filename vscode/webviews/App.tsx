@@ -3,17 +3,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import {
-    GuardrailsPost,
     type ChatInputHistory,
     type ChatMessage,
-    type ModelProvider,
     type Configuration,
-    type ContextFile,
+    type ContextItem,
     type EnhancedContextContextT,
+    GuardrailsPost,
+    type ModelProvider,
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
-import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
-import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import type { UserAccountInfo } from './Chat'
+import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
@@ -26,9 +26,9 @@ import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
@@ -50,7 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
-    const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
+    const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -220,6 +220,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         probablyNewInstall={
                             !userHistory.filter(chat => chat.interactions.length)?.length
                         }
+                        vscodeAPI={vscodeAPI}
                     />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />

@@ -1,8 +1,8 @@
+import { type ChatEventSource, ConfigFeaturesSingleton } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { isDefaultChatCommand } from '.'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
-import { ConfigFeaturesSingleton, type ChatEventSource } from '@sourcegraph/cody-shared'
-import { isDefaultChatCommand } from '.'
 import { getEditor } from '../../editor/active-editor'
 
 export interface ExecuteChatArguments extends WebviewSubmitMessage {

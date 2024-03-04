@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import type { Editor } from '@sourcegraph/cody-shared'
+import type { ContextItem, Editor } from '@sourcegraph/cody-shared'
 
 import '../../testutils/vscode'
 
 import { contextFilesToContextItems } from './SimpleChatPanelProvider'
-import type { ContextItem } from '../../prompt-builder/types'
 
 describe('contextFilesToContextItems', () => {
     test('omits files that could not be read', async () => {
@@ -33,6 +32,8 @@ describe('contextFilesToContextItems', () => {
             ],
             true
         )
-        expect(contextItems).toEqual<ContextItem[]>([{ uri: URI.parse('file:///a.txt'), text: 'a' }])
+        expect(contextItems).toEqual<ContextItem[]>([
+            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+        ])
     })
 })

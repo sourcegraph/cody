@@ -6,8 +6,10 @@ import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@source
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
+import { isValidTestFile } from '../commands/utils/test-commands'
+import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
-import { insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
+import { type DocumentContext, insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
 import type {
@@ -18,13 +20,11 @@ import type {
 } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isValidTestFile } from '../commands/utils/test-commands'
-import { completionProviderConfig } from './completion-provider-config'
 import { sleep } from './utils'
-import type { SmartThrottleService } from './smart-throttle'
 
 export interface InlineCompletionsParams {
     // Context
@@ -410,8 +410,8 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
-        // For the now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout: 1900,
+        // For now the value is static and based on the average multiline completion latency.
+        firstCompletionTimeout: 1500,
     }
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it

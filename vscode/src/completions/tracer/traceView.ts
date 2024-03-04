@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { displayPath, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
 
 import {
-    registerDebugListener as registerSectionObserverDebugListener,
     SectionHistoryRetriever,
+    registerDebugListener as registerSectionObserverDebugListener,
 } from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import type { InlineCompletionItemProvider } from '../inline-completion-item-provider'

@@ -1,7 +1,7 @@
 import * as fs from 'fs'
-import fspromises from 'fs/promises'
 import * as os from 'os'
 import * as path from 'path'
+import fspromises from 'fs/promises'
 
 import axios from 'axios'
 import * as unzipper from 'unzipper'
@@ -11,7 +11,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
-const symfVersion = 'v0.0.6'
+const symfVersion = 'v0.0.7'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.

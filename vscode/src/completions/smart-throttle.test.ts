@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { SmartThrottleService, THROTTLE_TIMEOUT } from './smart-throttle'
-import type { RequestParams } from './request-manager'
-import { TriggerKind } from './get-inline-completions'
-import { documentAndPosition } from './test-helpers'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
+import { TriggerKind } from './get-inline-completions'
+import type { RequestParams } from './request-manager'
+import { SmartThrottleService, THROTTLE_TIMEOUT } from './smart-throttle'
+import { documentAndPosition } from './test-helpers'
 
 describe('SmartThrottleService', () => {
     let service: SmartThrottleService

@@ -1,5 +1,5 @@
-import { expect } from '@playwright/test'
 import path from 'path'
+import { expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 
@@ -42,8 +42,9 @@ test.extend<ExpectedEvents>({
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
-    // Open Cody sidebar to start a new chat
     await page.click('.badge[aria-label="Cody"]')
+
+    // Start new chat
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     /* TEST: Chat Context - Ignored file do not show up with context */

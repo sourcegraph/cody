@@ -8,15 +8,15 @@ import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import {
+    type FileURI,
+    type IndexedKeywordContextFetcher,
+    type Result,
+    type SourcegraphCompletionsClient,
     assertFileURI,
     isFileURI,
     isWindows,
     uriBasename,
     uriDirname,
-    type FileURI,
-    type IndexedKeywordContextFetcher,
-    type Result,
-    type SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
@@ -25,6 +25,26 @@ import { getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
 
 const execFile = promisify(_execFile)
+const oneDayMillis = 1000 * 60 * 60 * 24
+
+interface CorpusDiff {
+    maybeChangedFiles?: boolean
+    changedFiles?: string[]
+    millisElapsed?: number
+}
+
+function parseJSONToCorpusDiff(json: string): CorpusDiff {
+    const obj = JSON.parse(json)
+    if (obj.maybeChangedFiles === undefined && obj.changedFiles === undefined) {
+        throw new Error(`malformed CorpusDiff: ${json}`)
+    }
+    return obj as CorpusDiff
+}
+
+interface IndexOptions {
+    retryIfLastAttemptFailed: boolean
+    ignoreExisting: boolean
+}
 
 export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
     // The root of all symf index directories
@@ -111,7 +131,10 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         // Run in a loop in case the index is deleted before we can query it
         for (let i = 0; i < maxRetries; i++) {
             await this.getIndexLock(scopeDir).withWrite(async () => {
-                await this.unsafeEnsureIndex(scopeDir, { hard: i === 0 })
+                await this.unsafeEnsureIndex(scopeDir, {
+                    retryIfLastAttemptFailed: i === 0,
+                    ignoreExisting: false,
+                })
             })
 
             let indexNotFound = false
@@ -157,9 +180,66 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return 'unindexed'
     }
 
+    /**
+     * Check index freshness and reindex if needed. Currently reindexes daily if changes
+     * have been detected.
+     */
+    public async reindexIfStale(scopeDir: FileURI): Promise<void> {
+        logDebug('SymfRunner', 'reindexIfStale', scopeDir.fsPath)
+        try {
+            const diff = await this.statIndex(scopeDir)
+            if (!diff) {
+                await this.ensureIndex(scopeDir, {
+                    retryIfLastAttemptFailed: false,
+                    ignoreExisting: false,
+                })
+                return
+            }
+            if (
+                (diff.millisElapsed === undefined || diff.millisElapsed > oneDayMillis) &&
+                (diff.maybeChangedFiles || (diff.changedFiles && diff.changedFiles.length > 0))
+            ) {
+                // reindex targeting a temporary directory
+                // atomically replace index
+                await this.ensureIndex(scopeDir, {
+                    retryIfLastAttemptFailed: false,
+                    ignoreExisting: true,
+                })
+            }
+        } catch (error) {
+            logDebug('SymfRunner', `Error checking freshness of index at ${scopeDir.fsPath}`, error)
+        }
+    }
+
+    private async statIndex(scopeDir: FileURI): Promise<CorpusDiff | null> {
+        const { indexDir } = this.getIndexDir(scopeDir)
+        const { symfPath } = await this.getSymfInfo()
+        try {
+            const { stdout } = await execFile(symfPath, [
+                '--index-root',
+                indexDir.fsPath,
+                'status',
+                scopeDir.fsPath,
+            ])
+            return parseJSONToCorpusDiff(stdout)
+        } catch (error) {
+            logDebug('SymfRunner', 'symf status error', error)
+            return null
+        }
+    }
+
+    /**
+     * Triggers indexing for a scopeDir.
+     *
+     * Options:
+     * - retryIfLastAttemptFailed: if the last indexing run ended in failure, we don't retry
+     *   unless this value is true.
+     * - ignoreExisting: if an index already exists, we don't reindex unless this value is true.
+     *   This should be set to true when we want to update an index because files have changed.
+     */
     public async ensureIndex(
         scopeDir: FileURI,
-        options: { hard: boolean } = { hard: false }
+        options: IndexOptions = { retryIfLastAttemptFailed: false, ignoreExisting: false }
     ): Promise<void> {
         await this.getIndexLock(scopeDir).withWrite(async () => {
             await this.unsafeEnsureIndex(scopeDir, options)
@@ -237,18 +317,21 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return fileExists(vscode.Uri.joinPath(indexDir, 'index.json'))
     }
 
-    private async unsafeEnsureIndex(
-        scopeDir: FileURI,
-        options: { hard: boolean } = { hard: false }
-    ): Promise<void> {
-        const indexExists = await this.unsafeIndexExists(scopeDir)
-        if (indexExists) {
-            return
+    private async unsafeEnsureIndex(scopeDir: FileURI, options: IndexOptions): Promise<void> {
+        logDebug('SymfRunner', 'unsafeEnsureIndex', scopeDir.toString(), { verbose: { options } })
+        if (!options.ignoreExisting) {
+            const indexExists = await this.unsafeIndexExists(scopeDir)
+            if (indexExists) {
+                return
+            }
         }
 
-        if (!options.hard && (await this.didIndexFail(scopeDir))) {
+        if (!options.retryIfLastAttemptFailed && (await this.didIndexFail(scopeDir))) {
             // Index build previous failed, so don't try to rebuild
-            logDebug('symf', 'index build previously failed and `hard` === false, not rebuilding')
+            logDebug(
+                'symf',
+                'index build previously failed and retryIfLastAttemptFailed=false, not rebuilding'
+            )
             return
         }
 
@@ -307,10 +390,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         if (!symfPath) {
             return
         }
-        await Promise.all([
-            rm(indexDir.fsPath, { recursive: true }).catch(() => undefined),
-            rm(tmpIndexDir.fsPath, { recursive: true }).catch(() => undefined),
-        ])
+        await rm(tmpIndexDir.fsPath, { recursive: true }).catch(() => undefined)
 
         logDebug('symf', 'creating index', indexDir)
         let maxCPUs = 1
@@ -362,6 +442,9 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     }
                 })
             })
+
+            // move just-built index to index path
+            await rm(indexDir.fsPath, { recursive: true }).catch(() => undefined)
             await mkdirp(uriDirname(indexDir).fsPath)
             await rename(tmpIndexDir.fsPath, indexDir.fsPath)
         } catch (error) {

@@ -49,10 +49,10 @@ export type {
 } from './codebase-context/context-status'
 export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
-    ContextFile,
-    ContextFileFile,
+    ContextItem,
+    ContextItemFile,
     ContextFileSource,
-    ContextFileSymbol,
+    ContextItemSymbol,
     ContextFileType,
     ContextMessage,
     HoverContext,
@@ -60,8 +60,9 @@ export type {
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
-export { DefaultCodyCommands, DefaultChatCommands } from './commands/types'
+export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export { type RangeData, toRangeData } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
@@ -69,7 +70,7 @@ export {
 } from './common/languages'
 export { renderMarkdown } from './common/markdown'
 export { posixFilePaths } from './common/path'
-export { isWindows } from './common/platform'
+export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
     isFileURI,
@@ -93,7 +94,6 @@ export type {
     ActiveTextEditorDiagnostic,
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from './editor'
@@ -204,4 +204,4 @@ export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
-export { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
+export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'

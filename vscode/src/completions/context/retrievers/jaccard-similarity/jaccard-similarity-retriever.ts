@@ -4,10 +4,10 @@ import type { URI } from 'vscode-uri'
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
-import { VSCodeDocumentHistory, type DocumentHistory } from './history'
+import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
-import { bestJaccardMatches, type JaccardMatch } from './bestJaccardMatch'
 import { lastNLines } from '../../../text-processing'
+import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many

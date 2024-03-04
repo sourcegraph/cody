@@ -1,22 +1,24 @@
+import os from 'os'
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
-import os from 'os'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { logDebug, logError } from '../../log'
 
-import { ConfigFiles, type CodyCommandsFile } from '../types'
-import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
-import { showNewCustomCommandMenu } from '../menus'
-import { URI, Utils } from 'vscode-uri'
-import { buildCodyCommandMap } from '../utils/get-commands'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { URI, Utils } from 'vscode-uri'
 import { getConfiguration } from '../../configuration'
-import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import { getCommandTreeItems } from '../../services/tree-views/commands'
+import { showNewCustomCommandMenu } from '../menus'
+import { type CodyCommandsFile, ConfigFiles } from '../types'
+import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
+import { buildCodyCommandMap } from '../utils/get-commands'
+import { getDocText } from '../utils/workspace-files'
 
 const isTesting = process.env.CODY_TESTING === 'true'
-const isMacOS = isMac()
 const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
 /**
@@ -25,10 +27,10 @@ const userHomePath = os.homedir() || process.env.HOME || process.env.USERPROFILE
 export class CustomCommandsManager implements vscode.Disposable {
     // Watchers for the cody.json files
     private fileWatcherDisposables: vscode.Disposable[] = []
+    private registeredCommands: vscode.Disposable[] = []
     private disposables: vscode.Disposable[] = []
 
     public customCommandsMap = new Map<string, CodyCommand>()
-    public userJSON: Record<string, unknown> | null = null
 
     // Configuration files
     protected configFileName
@@ -41,7 +43,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         return Utils.joinPath(workspaceRoot, this.configFileName)
     }
 
-    constructor() {
+    constructor(private sidebar: TreeViewProvider) {
         // TODO (bee) Migrate to use .cody/commands.json for VS Code
         // Right now agent is using .cody/commands.json for Custom Commands,
         // .vscode/cody.json in VS Code.
@@ -61,10 +63,6 @@ export class CustomCommandsManager implements vscode.Disposable {
                 this.configFileActions(type, 'delete')
             )
         )
-    }
-
-    public getCommands(): [string, CodyCommand][] {
-        return [...this.customCommandsMap].sort((a, b) => a[0].localeCompare(b[0]))
     }
 
     /**
@@ -94,7 +92,9 @@ export class CustomCommandsManager implements vscode.Disposable {
             }
         }
 
-        logDebug('CommandsController:fileWatcherInit', 'watchers created')
+        if (this.fileWatcherDisposables.length) {
+            logDebug('CommandsController:init', 'watchers created')
+        }
     }
 
     /**
@@ -106,45 +106,60 @@ export class CustomCommandsManager implements vscode.Disposable {
         return configFileUri
     }
 
+    /**
+     * Rebuild the Custom Commands Map from the cody.json files
+     */
     public async refresh(): Promise<CodyCommandsFile> {
         try {
+            // Deregister all commands before rebuilding them to avoid duplicates
+            this.disposeRegisteredCommands()
             // Reset the map before rebuilding
             this.customCommandsMap = new Map<string, CodyCommand>()
             // user commands
             if (this.userConfigFile?.path) {
                 await this.build(CustomCommandType.User)
             }
-            // only build workspace prompts if the workspace is trusted
+            // 🚨 SECURITY: Only build workspace command in trusted workspace
             if (vscode.workspace.isTrusted) {
                 await this.build(CustomCommandType.Workspace)
             }
         } catch (error) {
             logError('CustomCommandsProvider:refresh', 'failed', { verbose: error })
         }
+        this.sidebar.setTreeNodes(getCommandTreeItems([...this.customCommandsMap.values()]))
         return { commands: this.customCommandsMap }
     }
 
+    /**
+     * Handles building the Custom Commands Map from the cody.json files
+     *
+     * 🚨 SECURITY: Only build workspace command in trusted workspace
+     */
     public async build(type: CustomCommandType): Promise<Map<string, CodyCommand> | null> {
         const uri = this.getConfigFileByType(type)
-        // Security: Make sure workspace is trusted before building commands from workspace
         if (!uri || (type === CustomCommandType.Workspace && !vscode.workspace.isTrusted)) {
             return null
         }
         try {
-            const bytes = await vscode.workspace.fs.readFile(uri)
-            const content = new TextDecoder('utf-8').decode(bytes)
+            const content = await getDocText(uri)
             if (!content.trim()) {
-                throw new Error('Empty file')
+                return null
             }
             const customCommandsMap = buildCodyCommandMap(type, content)
             this.customCommandsMap = new Map([...this.customCommandsMap, ...customCommandsMap])
 
-            // Keep a copy of the user json file for recreating the commands later
-            if (type === CustomCommandType.User) {
-                this.userJSON = JSON.parse(content)
+            // Register Custom Commands as VS Code commands
+            for (const [key, _command] of customCommandsMap) {
+                this.registeredCommands.push(
+                    vscode.commands.registerCommand(`cody.command.custom.${key}`, () =>
+                        vscode.commands.executeCommand('cody.action.command', key, {
+                            source: 'editor',
+                        })
+                    )
+                )
             }
         } catch (error) {
-            logDebug('CustomCommandsProvider:build', 'failed', { verbose: error })
+            console.error('CustomCommandsProvider:build', 'failed', { verbose: error })
         }
         return this.customCommandsMap
     }
@@ -183,39 +198,22 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     /**
-     * Add the newly create command via quick pick to the cody.json file
+     * Add the newly create command via quick pick to the cody.json file on disk
      */
     private async save(
         id: string,
         command: CodyCommand,
         type: CustomCommandType = CustomCommandType.User
     ): Promise<void> {
-        this.customCommandsMap.set(id, command)
-        const updated: Omit<CodyCommand, 'key'> | undefined = omit(command, ['key', 'type'])
-
-        // Filter map to remove commands with non-match type
-        const filtered = new Map<string, Omit<CodyCommand, 'key'>>()
-        for (const [key, _command] of this.customCommandsMap) {
-            if (_command.type === type) {
-                filtered.set(key, omit(_command, ['key', 'type']))
-            }
-        }
-
-        // Add the new command to the filtered map
-        filtered.set(id, updated)
-
-        // turn map into json
-        const jsonContext = { ...this.userJSON }
-        jsonContext.commands = Object.fromEntries(filtered)
         const uri = this.getConfigFileByType(type)
         if (!uri) {
-            throw new Error('Invalid file path')
+            return
         }
-        try {
-            await saveJSONFile(jsonContext, uri)
-        } catch (error) {
-            logError('CustomCommandsProvider:save', 'failed', { verbose: error })
-        }
+        const fileContent = await getDocText(uri)
+        const parsed = JSON.parse(fileContent) as Record<string, any>
+        const commands = parsed.commands ?? parsed
+        commands[id] = omit(command, 'key')
+        await saveJSONFile(parsed, uri)
     }
 
     private async configFileActions(
@@ -235,7 +233,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 if (type === CustomCommandType.Workspace) {
                     fileType = 'workspace settings file (.vscode/cody.json)'
                 }
-                const bin = isMacOS ? 'Trash' : 'Recycle Bin'
+                const bin = isMacOS() ? 'Trash' : 'Recycle Bin'
                 const confirmationKey = `Move to ${bin}`
                 // Playwright cannot capture and interact with pop-up modal in VS Code,
                 // so we need to turn off modal mode for the display message during tests.
@@ -285,9 +283,9 @@ export class CustomCommandsManager implements vscode.Disposable {
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        this.disposeRegisteredCommands()
         this.disposeWatchers()
         this.customCommandsMap = new Map<string, CodyCommand>()
-        this.userJSON = null
     }
 
     private disposeWatchers(): void {
@@ -295,59 +293,17 @@ export class CustomCommandsManager implements vscode.Disposable {
             disposable.dispose()
         }
         this.fileWatcherDisposables = []
-        logDebug('CommandsController:disposeWatchers', 'watchers disposed')
+    }
+
+    private disposeRegisteredCommands(): void {
+        for (const rc of this.registeredCommands) {
+            rc.dispose()
+        }
+        this.registeredCommands = []
     }
 }
 
 export async function openCustomCommandDocsLink(): Promise<void> {
     const uri = 'https://sourcegraph.com/docs/cody/custom-commands'
     await vscode.env.openExternal(vscode.Uri.parse(uri))
-}
-
-// TODO (bee) Migrate cody.json to new config file location
-// Rename the old config files to the new location
-export async function migrateCommandFiles(): Promise<void> {
-    // WORKSPACE
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
-    if (workspaceRoot) {
-        const oldWsPath = Utils.joinPath(workspaceRoot, ConfigFiles.VSCODE)
-        const newWSPath = Utils.joinPath(workspaceRoot, ConfigFiles.COMMAND)
-        await migrateContent(oldWsPath, newWSPath).then(
-            () => {},
-            error => undefined
-        )
-    }
-
-    // USER
-    if (userHomePath) {
-        const oldUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.VSCODE)
-        const newUserPath = Utils.joinPath(URI.file(userHomePath), ConfigFiles.COMMAND)
-        await migrateContent(oldUserPath, newUserPath).then(
-            () => {},
-            error => undefined
-        )
-    }
-}
-
-async function migrateContent(oldFile: vscode.Uri, newFile: vscode.Uri): Promise<void> {
-    const oldUserContent = await tryReadFile(newFile)
-    if (!oldUserContent) {
-        return
-    }
-
-    const oldContent = await tryReadFile(oldFile)
-    const workspaceEditor = new vscode.WorkspaceEdit()
-    workspaceEditor.createFile(newFile, { ignoreIfExists: true })
-    workspaceEditor.insert(newFile, new vscode.Position(0, 0), JSON.stringify(oldContent, null, 2))
-    await vscode.workspace.applyEdit(workspaceEditor)
-    const doc = await vscode.workspace.openTextDocument(newFile)
-    await doc.save()
-    workspaceEditor.deleteFile(oldFile, { ignoreIfNotExists: true })
-}
-
-async function tryReadFile(fileUri: vscode.Uri): Promise<string | undefined> {
-    return vscode.workspace.fs.readFile(fileUri).then(
-        content => new TextDecoder('utf-8').decode(content),
-        error => undefined
-    )
 }

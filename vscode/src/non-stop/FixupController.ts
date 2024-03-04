@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
 import {
-    displayPathBasename,
     type ChatEventSource,
-    type ContextFile,
+    type ContextItem,
     type ContextMessage,
     type EditModel,
+    displayPathBasename,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -16,8 +16,8 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import { computeDiff, type Diff } from './diff'
-import { FixupCodeLenses } from './codelenses/provider'
+import { getInput } from '../edit/input/get-input'
+import type { AuthProvider } from '../services/AuthProvider'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
@@ -25,11 +25,11 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
+import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
+import { FixupCodeLenses } from './codelenses/provider'
+import { type Diff, computeDiff } from './diff'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
-import { getInput } from '../edit/input/get-input'
-import type { AuthProvider } from '../services/AuthProvider'
-import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -234,7 +234,7 @@ export class FixupController
     public async createTask(
         document: vscode.TextDocument,
         instruction: string,
-        userContextFiles: ContextFile[],
+        userContextFiles: ContextItem[],
         selectionRange: vscode.Range,
         intent: EditIntent,
         mode: EditMode,

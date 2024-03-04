@@ -1,19 +1,19 @@
 import * as vscode from 'vscode'
 
 import {
-    isError,
     type ContextGroup,
+    type ContextItemFile,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
     type IRemoteSearch,
-    type ContextFileFile,
     graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
-import type * as repofetcher from './repo-fetcher'
 import type { URI } from 'vscode-uri'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
     Automatic = 'auto',
@@ -129,7 +129,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.setRepos(repos, RepoInclusion.Automatic)
     }
 
-    public async search(query: string): Promise<ContextFileFile[]> {
+    public async search(query: string): Promise<ContextItemFile[]> {
         const results = await this.query(query)
         if (isError(results)) {
             throw results

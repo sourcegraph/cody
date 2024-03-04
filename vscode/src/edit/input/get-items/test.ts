@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
-import type { GetItemsResult } from '../quick-pick'
-import { symbolIsFunctionLike } from './utils'
-import type { EditRangeItem } from './types'
 import { getEditSmartSelection } from '../../utils/edit-selection'
 import type { EditInputInitialValues } from '../get-input'
+import type { GetItemsResult } from '../quick-pick'
 import { EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
+import type { EditRangeItem } from './types'
+import { symbolIsFunctionLike } from './utils'
 
-export const getDefaultTestItems = (
+const getDefaultTestItems = (
     document: vscode.TextDocument,
     initialValues: EditInputInitialValues
 ): EditRangeItem[] => {

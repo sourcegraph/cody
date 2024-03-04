@@ -1,12 +1,12 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextItem, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
-import { isTestFileForOriginal, isValidTestFile } from '../utils/test-commands'
-import { getWorkspaceFilesContext } from './workspace'
-import { getSearchPatternForTestFiles } from '../utils/search-pattern'
 import type { URI } from 'vscode-uri'
+import { getSearchPatternForTestFiles } from '../utils/search-pattern'
+import { isTestFileForOriginal, isValidTestFile } from '../utils/test-commands'
 import { getContextFileFromDirectory } from './directory'
+import { getWorkspaceFilesContext } from './workspace'
 
-export async function getContextFilesForAddingUnitTestCases(testFile: URI): Promise<ContextFile[]> {
+export async function getContextFilesForAddingUnitTestCases(testFile: URI): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.testCase', async span => {
         // Get the context from the current directory
         // and then find the original file of the test file in the returned context
@@ -19,7 +19,7 @@ export async function getContextFilesForAddingUnitTestCases(testFile: URI): Prom
         }
 
         // TODO (bee) improves context search
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
         // exclude any files in the path with e2e, integration, node_modules, or dist
         const excludePattern = '**/*{e2e,integration,node_modules,dist}*/**'
         // To search for files in the current directory only

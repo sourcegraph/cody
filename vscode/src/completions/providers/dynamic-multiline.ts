@@ -1,5 +1,5 @@
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { insertIntoDocContext, type DocumentContext } from '../get-current-doc-context'
+import { type DocumentContext, insertIntoDocContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 
 interface GetUpdatedDocumentContextParams {

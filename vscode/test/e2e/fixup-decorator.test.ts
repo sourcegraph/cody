@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test, type ExpectedEvents } from './helpers'
+import { type ExpectedEvents, test } from './helpers'
 
 const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'

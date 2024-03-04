@@ -1,11 +1,11 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextItem, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import type * as vscode from 'vscode'
 
-import { isValidTestFile } from '../utils/test-commands'
-import { getWorkspaceFilesContext } from './workspace'
-import { getContextFileFromDirectory } from './directory'
 import { getSearchPatternForTestFiles } from '../utils/search-pattern'
+import { isValidTestFile } from '../utils/test-commands'
+import { getContextFileFromDirectory } from './directory'
+import { getWorkspaceFilesContext } from './workspace'
 
 /**
  * Gets context files related to the given test file.
@@ -18,9 +18,9 @@ import { getSearchPatternForTestFiles } from '../utils/search-pattern'
  * NOTE: This is used by the current unit test commands to get context files.
  * NOTE: Will be replaced by the new unit test commands once it's ready.
  */
-export async function getContextFilesForTestCommand(file: vscode.Uri): Promise<ContextFile[]> {
+export async function getContextFilesForTestCommand(file: vscode.Uri): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.testChat', async span => {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         // exclude any files in the path with e2e, integration, node_modules, or dist
         const excludePattern = '**/*{e2e,integration,node_modules,dist}*/**'

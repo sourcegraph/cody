@@ -8,9 +8,9 @@ import {
     CODY_FEEDBACK_URL,
     DISCORD_URL,
 } from '../chat/protocol'
+import { releaseNotesURL } from '../release'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
-import { releaseNotesURL } from '../release'
 import { version } from '../version'
 
 export function registerSidebarCommands(): vscode.Disposable[] {
@@ -71,6 +71,10 @@ export function registerSidebarCommands(): vscode.Disposable[] {
         vscode.commands.registerCommand('cody.sidebar.account', () => {
             logSidebarClick('account')
             void vscode.commands.executeCommand('cody.auth.account')
+        }),
+        vscode.commands.registerCommand('cody.sidebar.logs', () => {
+            logSidebarClick('logs')
+            void vscode.commands.executeCommand('cody.debug.export.logs')
         }),
     ]
 }

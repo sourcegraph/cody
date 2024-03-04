@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import path from 'path'
 
-import { Polly, type EXPIRY_STRATEGY, type MODE } from '@pollyjs/core'
+import { type EXPIRY_STRATEGY, type MODE, Polly } from '@pollyjs/core'
 
 import { CodyNodeHttpAdapter } from './CodyNodeHttpAdapter'
 import { CodyPersister, redactAccessToken } from './CodyPersister'

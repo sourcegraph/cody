@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
-import type { GetItemsResult } from '../quick-pick'
-import { symbolIsFunctionLike } from './utils'
-import type { EditRangeItem } from './types'
+import { isGenerateIntent } from '../../utils/edit-intent'
 import { getEditSmartSelection } from '../../utils/edit-selection'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
-import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
 import type { EditInputInitialValues } from '../get-input'
-import { isGenerateIntent } from '../../utils/edit-intent'
+import type { GetItemsResult } from '../quick-pick'
+import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
+import type { EditRangeItem } from './types'
+import { symbolIsFunctionLike } from './utils'
 
-export const getDefaultRangeItems = (
+const getDefaultRangeItems = (
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues
 ): EditRangeItem[] => {

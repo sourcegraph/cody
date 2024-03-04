@@ -1,8 +1,8 @@
 import { logDebug } from '@sourcegraph/cody-shared'
-import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getEditor } from '../../editor/active-editor'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
+import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 

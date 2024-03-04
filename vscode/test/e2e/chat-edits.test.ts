@@ -1,10 +1,10 @@
 import { expect } from '@playwright/test'
 
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { sidebarSignin } from './common'
-import { test, withPlatformSlashes, type ExpectedEvents } from './helpers'
-import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
-const osKey = isMac() ? 'Meta' : 'Control'
+const osKey = isMacOS() ? 'Meta' : 'Control'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed

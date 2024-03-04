@@ -1,12 +1,12 @@
-import type * as vscode from 'vscode'
 import {
-    type FeatureFlagProvider,
     FeatureFlag,
+    type FeatureFlagProvider,
     type SourcegraphGraphQLAPIClient,
 } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
-import { URI } from 'vscode-uri'
 
 export class CodyProExpirationNotifications implements vscode.Disposable {
     public static readonly expiredActionUrl = 'https://sourcegraph.com/cody/subscription'

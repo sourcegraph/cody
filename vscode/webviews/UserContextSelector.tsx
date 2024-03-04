@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { displayPath } from '@sourcegraph/cody-shared'
-import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 
 import styles from './UserContextSelector.module.css'
 
@@ -13,9 +12,18 @@ const FILE_NO_RESULT = 'No matching files found'
 const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
 const SYMBOL_NO_RESULT = 'No matching symbols found'
 
+export interface UserContextSelectorProps {
+    onSelected: (context: ContextItem, queryEndsWithColon?: boolean) => void
+    contextSelection?: ContextItem[]
+    selected?: number
+    onSubmit: (input: string, inputType: 'user') => void
+    setSelectedChatContext: (arg: number) => void
+    contextQuery: string
+}
+
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
-> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext, contextQuery }) => {
+> = ({ onSelected, contextSelection, selected, setSelectedChatContext, contextQuery }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
@@ -49,7 +57,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return SYMBOL_NO_RESULT
     }, [contextQuery, contextSelection?.length])
 
-    if (formInput.endsWith(' ')) {
+    if (contextQuery.endsWith(' ')) {
         return null
     }
 
@@ -114,7 +122,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                 unavailable, so we take a guess: there should be some symbols
                 that exist for any given one or two letters, and if not, we give
                 them some help to debug the situation themselves */}
-            {formInput.match(/@#.{1,2}$/) && !contextSelection?.length ? (
+            {contextQuery.match(/#.{1,2}$/) && !contextSelection?.length ? (
                 <p className={styles.emptySymbolSearchTip}>
                     <i className="codicon codicon-info" /> VS Code may require you to open files and
                     install language extensions for accurate results

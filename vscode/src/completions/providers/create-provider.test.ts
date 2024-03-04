@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-    graphqlClient,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
-    type GraphQLAPIClientConfig,
     type ConfigurationWithAccessToken,
+    type GraphQLAPIClientConfig,
+    graphqlClient,
 } from '@sourcegraph/cody-shared'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
-import { createProviderConfig } from './create-provider'
 import { type AuthStatus, defaultAuthStatus } from '../../chat/protocol'
+import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<Configuration> = {}

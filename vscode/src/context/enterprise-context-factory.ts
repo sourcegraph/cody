@@ -1,8 +1,8 @@
 import type * as vscode from 'vscode'
-import { RemoteRepoPicker } from './repo-picker'
 import { RemoteSearch } from './remote-search'
-import { WorkspaceRepoMapper } from './workspace-repo-mapper'
 import { type Repo, RepoFetcher } from './repo-fetcher'
+import { RemoteRepoPicker } from './repo-picker'
+import { WorkspaceRepoMapper } from './workspace-repo-mapper'
 
 export class EnterpriseContextFactory implements vscode.Disposable {
     // Only one RemoteRepoPicker can be displayed at once, so we share one

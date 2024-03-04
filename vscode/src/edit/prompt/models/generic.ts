@@ -1,15 +1,15 @@
+import { displayPath } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import type { EditIntent } from '../../types'
 import { PROMPT_TOPICS } from '../constants'
 import type { GetLLMInteractionOptions } from '../type'
-import { displayPath } from '@sourcegraph/cody-shared'
 
 interface PromptVariant {
     system?: string
     instruction: string
 }
 
-export const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
+const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
     edit: {
         system: dedent`
             - You are an AI programming assistant who is an expert in updating code to meet given instructions.

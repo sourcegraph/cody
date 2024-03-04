@@ -1,16 +1,16 @@
 import {
-    graphqlClient,
-    GraphQLTelemetryExporter,
     type BillingCategory,
     type BillingProduct,
+    GraphQLTelemetryExporter,
+    graphqlClient,
 } from '@sourcegraph/cody-shared'
 import {
-    defaultEventRecordingOptions,
+    type MarketingTrackingProvider,
     MarketingTrackingTelemetryProcessor,
     TelemetryRecorderProvider,
-    TimestampTelemetryProcessor,
-    type MarketingTrackingProvider,
     TestTelemetryExporter,
+    TimestampTelemetryProcessor,
+    defaultEventRecordingOptions,
 } from '@sourcegraph/telemetry'
 
 import type { ClientInfo } from '../protocol-alias'

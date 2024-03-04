@@ -1,4 +1,4 @@
-import type { ContextFile } from '../..'
+import type { ContextItem } from '../..'
 
 /**
  * Verifies that the context files passed in the contextFilesMap are still referenced
@@ -13,8 +13,8 @@ import type { ContextFile } from '../..'
  */
 export function verifyContextFilesFromInput(
     inputValue: string,
-    contextFilesMap?: Map<string, ContextFile>
-): ContextFile[] {
+    contextFilesMap?: Map<string, ContextItem>
+): ContextItem[] {
     if (!inputValue.trim() || !contextFilesMap?.size) {
         return []
     }
@@ -23,7 +23,7 @@ export function verifyContextFilesFromInput(
     // is still present in the input string.
     // If so, create a new contextFile and add it to the returned array based on
     // presented strings that matches the @file-name with correct range.
-    const userContextFiles: ContextFile[] = []
+    const userContextFiles: ContextItem[] = []
     for (const [fileName, contextFile] of contextFilesMap) {
         if (!inputValue.includes(fileName)) {
             continue
@@ -42,10 +42,9 @@ export function verifyContextFilesFromInput(
 
         // Get the line number behind the file name if there is one:
         // SingleLines Example: foo/bar.ts:1 > 1
-        const singleLines = input.matchAll(new RegExp(atFileName + ':([0-9]+)(?!-)', 'g'))
+        const singleLines = input.matchAll(new RegExp(atFileName + ':(\\d+)(?!-)', 'g'))
         // MultiLines example: foo/bar.ts:1-2 > 1, 2
-        const multiLines = input.matchAll(new RegExp(atFileName + ':([0-9]+)-([0-9]+)', 'g'))
-
+        const multiLines = input.matchAll(new RegExp(atFileName + ':(\\d+)-(\\d+)', 'g'))
         // loop all matches and set the range property on the contextFile object
         for (const match of [...Array.from(singleLines), ...Array.from(multiLines)]) {
             const contextFileMatch = { ...contextFile }
@@ -62,9 +61,8 @@ export function verifyContextFilesFromInput(
                     start: { line: startLineNum, character: 0 },
                     end: { line: endLineNum, character: 0 },
                 }
+                userContextFiles.push(contextFileMatch)
             }
-
-            userContextFiles.push(contextFileMatch)
         }
     }
 

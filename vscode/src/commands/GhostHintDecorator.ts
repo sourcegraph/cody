@@ -1,10 +1,10 @@
-import { throttle, type DebouncedFunc } from 'lodash'
-import * as vscode from 'vscode'
-import type { AuthProvider } from '../services/AuthProvider'
-import type { AuthStatus } from '../chat/protocol'
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { type DebouncedFunc, throttle } from 'lodash'
+import * as vscode from 'vscode'
+import type { AuthStatus } from '../chat/protocol'
+import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
+import { telemetryRecorder } from '../services/telemetry-v2'
 
 const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
 const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
@@ -58,7 +58,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
  * We should also ensure that `activationEvent` `onLanguage` is set to provide the best chance of
  * executing this code early, without impacting VS Code startup time.
  */
-export const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
+const ghostHintDecoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     after: {
         color: new vscode.ThemeColor('editorGhostText.foreground'),

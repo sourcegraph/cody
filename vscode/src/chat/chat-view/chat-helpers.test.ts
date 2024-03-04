@@ -2,21 +2,15 @@ import { describe, expect, test } from 'vitest'
 
 import {
     CodebaseContext,
+    type ContextItem,
     populateCurrentEditorSelectedContextTemplate,
     populateCurrentSelectedCodeContextTemplate,
     testFileUri,
-    type ContextFile,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from '../../testutils/mocks'
 
-import {
-    contextItemsToContextFiles,
-    contextMessageToContextItem,
-    getChatPanelTitle,
-    stripContextWrapper,
-} from './chat-helpers'
-import type { ContextItem } from '../../prompt-builder/types'
+import { contextMessageToContextItem, getChatPanelTitle, stripContextWrapper } from './chat-helpers'
 
 describe('unwrap context snippets', () => {
     test('should wrap and unwrap context item snippets', () => {
@@ -27,26 +21,28 @@ describe('unwrap context snippets', () => {
         const testCases: TestCase[] = [
             {
                 contextItem: {
+                    type: 'file',
                     uri: testFileUri('test.ts'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
-                    text: '// This is code context',
+                    content: '// This is code context',
                 },
             },
             {
                 contextItem: {
+                    type: 'file',
                     uri: testFileUri('doc.md'),
                     range: new vscode.Range(0, 1, 2, 3),
                     source: 'editor',
-                    text: 'This is markdown context',
+                    content: 'This is markdown context',
                 },
             },
         ]
 
         for (const testCase of testCases) {
-            const contextFiles = contextItemsToContextFiles([testCase.contextItem])
+            const contextFiles = [testCase.contextItem]
             const contextMessages = CodebaseContext.makeContextMessageWithResponse({
-                file: contextFiles[0] as ContextFile & Required<Pick<ContextFile, 'uri'>>,
+                file: contextFiles[0] as ContextItem & Required<Pick<ContextItem, 'uri'>>,
                 results: [contextFiles[0].content || ''],
             })
             const contextItem = contextMessageToContextItem(contextMessages[0])

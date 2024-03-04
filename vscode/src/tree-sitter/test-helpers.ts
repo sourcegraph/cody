@@ -1,10 +1,10 @@
 import path from 'path'
 
-import type { default as Parser, QueryCapture, QueryMatch } from 'web-tree-sitter'
+import type { QueryCapture, QueryMatch, default as Parser } from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
 import { createParser } from './parser'
-import { getDocumentQuerySDK, type DocumentQuerySDK } from './query-sdk'
+import { type DocumentQuerySDK, getDocumentQuerySDK } from './query-sdk'
 
 const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
 

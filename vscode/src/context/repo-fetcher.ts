@@ -1,4 +1,4 @@
-import { logDebug, graphqlClient } from '@sourcegraph/cody-shared'
+import { graphqlClient, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 export interface Repo {

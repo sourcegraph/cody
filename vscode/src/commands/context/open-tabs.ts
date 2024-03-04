@@ -1,4 +1,4 @@
-import { logError, type ContextFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 
@@ -8,9 +8,9 @@ import { getContextFileFromUri } from './file-path'
  * Iterates through all open tabs, filters to only file tabs in the workspace,
  * and then creates ContextFile objects for each valid tab.
  */
-export async function getContextFileFromTabs(): Promise<ContextFile[]> {
+export async function getContextFileFromTabs(): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.openTabs', async span => {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
         try {
             // Get open tabs from the current editor
             const tabGroups = vscode.window.tabGroups.all

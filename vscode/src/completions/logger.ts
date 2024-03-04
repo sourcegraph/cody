@@ -3,10 +3,10 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    isNetworkError,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
+    isNetworkError,
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -16,6 +16,8 @@ import { getExtensionDetails, logPrefix, telemetryService } from '../services/te
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
+import type { Span } from '@opentelemetry/api'
+import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { PersistenceTracker } from './persistence-tracker'
@@ -24,8 +26,6 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
-import type { Span } from '@opentelemetry/api'
-import { completionProviderConfig } from './completion-provider-config'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
