@@ -1,8 +1,8 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
-import { getLabelForContextItem } from './utils'
+import { getFileContextFiles, getSymbolContextFiles } from '../../../editor/utils/editor-context'
+import { getLabelForContextItem } from '../utils'
 
 /* Match strings that end with a '@' followed by any characters except a space */
 const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/

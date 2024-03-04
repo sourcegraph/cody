@@ -16,7 +16,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import { getInput } from '../edit/input/get-input'
+import { showEditInput } from '../editor-input/edit'
 import type { AuthProvider } from '../services/AuthProvider'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
@@ -198,17 +198,12 @@ export class FixupController
         contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
-        const input = await getInput(
-            document,
-            this.authProvider,
-            {
-                initialRange: range,
-                initialExpandedRange: expandedRange,
-                initialModel: model,
-                initialIntent: intent,
-            },
-            source
-        )
+        const input = await showEditInput(document, this.authProvider, {
+            initialRange: range,
+            initialExpandedRange: expandedRange,
+            initialModel: model,
+            initialIntent: intent,
+        })
         if (!input) {
             return null
         }
@@ -1084,7 +1079,7 @@ export class FixupController
 
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        const input = await getInput(
+        const input = await showEditInput(
             document,
             this.authProvider,
             {
@@ -1094,7 +1089,6 @@ export class FixupController
                 initialModel: task.model,
                 initialIntent: task.intent,
             },
-            'code-lens'
         )
         if (!input) {
             return

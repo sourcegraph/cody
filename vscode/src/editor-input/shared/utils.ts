@@ -1,6 +1,14 @@
 import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { ModelProvider } from '@sourcegraph/cody-shared'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
+import type { AuthStatus } from '../../chat/protocol'
+import {
+    EditorInputTypeToModelType,
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from './constants'
+import type { EditorInputType } from './create-input'
 
 /**
  * Removes the string after the last '@' character in the given string.
@@ -75,4 +83,17 @@ export async function fetchDocumentSymbols(
 
     // Sort all symbols by their start position in the document
     return symbols.flatMap(flattenSymbols).sort((a, b) => a.range.start.compareTo(b.range.start))
+}
+
+export function getModelsForUser(authStatus: AuthStatus, type: EditorInputType): ModelProvider[] {
+    if (authStatus?.configOverwrites?.chatModel) {
+        ModelProvider.add(
+            new ModelProvider(authStatus.configOverwrites.chatModel, [
+                ModelUsage.Chat,
+                // TODO: Add configOverwrites.editModel for separate edit support
+                ModelUsage.Edit,
+            ])
+        )
+    }
+    return ModelProvider.get(EditorInputTypeToModelType[type].type, authStatus.endpoint)
 }

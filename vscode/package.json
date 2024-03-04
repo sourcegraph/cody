@@ -516,11 +516,6 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.panel.new",
-        "key": "alt+l",
-        "when": "cody.activated"
-      },
-      {
         "command": "cody.command.edit-code",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
@@ -532,7 +527,12 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
-        "command": "cody.menu.commands",
+        "command": "cody.input.chat",
+        "key": "alt+l",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.editor.input",
         "key": "alt+c",
         "mac": "alt+c",
         "when": "cody.activated"

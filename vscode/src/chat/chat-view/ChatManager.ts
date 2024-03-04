@@ -18,10 +18,13 @@ import type { AuthStatus } from '../protocol'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import { getEditLineSelection, getEditSmartSelection } from '../../edit/utils/edit-selection'
+import { getEditor } from '../../editor/active-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { showChatInput } from '../../editor-input/chat/get-input'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -70,6 +73,7 @@ export class ChatManager implements vscode.Disposable {
         // Register Commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
+            vscode.commands.registerCommand('cody.input.chat', () => this.executeChatInline()),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
@@ -130,6 +134,53 @@ export class ChatManager implements vscode.Disposable {
             args?.contextFiles ?? [],
             args?.addEnhancedContext ?? true,
             args?.source
+        )
+        return provider
+    }
+
+    /**
+     * Execute a chat request in a new chat panel, triggered via an in-editor inpiut
+     */
+    public async executeChatInline(): Promise<ChatSession | undefined> {
+        const editor = getEditor()
+        if (editor.ignored) {
+            void vscode.window.showInformationMessage('Cannot edit Cody ignored file.')
+            return
+        }
+
+        if (!editor.active) {
+            void vscode.window.showErrorMessage('Please open a file before running a command.')
+            return
+        }
+
+        const range = getEditLineSelection(editor.active.document, editor.active.selection)
+        let expandedRange: vscode.Range | undefined
+        const smartRange = await getEditSmartSelection(editor.active.document, range, {})
+        if (!smartRange.isEqual(range)) {
+            expandedRange = smartRange
+        }
+
+        const input = await showChatInput(
+            editor.active.document,
+            this.options.authProvider,
+            {
+                initialRange: range,
+                initialExpandedRange: expandedRange,
+                initialModel: 'anthropic/claude-2.0',
+            },
+        )
+        if (!input) {
+            return
+        }
+
+        const provider = await this.getChatProvider()
+        await provider?.handleUserMessageSubmission(
+            uuid.v4(),
+            input.instruction,
+            'user-newchat', // submitType
+            input.userContextFiles,
+            true,
+            'editor'
         )
         return provider
     }
