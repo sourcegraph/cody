@@ -1,10 +1,11 @@
+import { isWindows } from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
 import { contextItemMentionNodeDisplayText } from './ContextItemMentionNode'
 
 describe('contextItemMentionNodeDisplayText', () => {
     test('file', () =>
         expect(contextItemMentionNodeDisplayText({ type: 'file', uri: 'file:///foo/bar.ts' })).toBe(
-            '@foo/bar.ts'
+            isWindows() ? '@foo/bar.ts' : '@foo\\bar.ts'
         ))
 
     test('symbol', () =>

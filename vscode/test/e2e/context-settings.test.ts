@@ -17,6 +17,9 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
     ],
 })('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
+    // This test requires that the window be focused in the OS window manager.
+    await page.bringToFront()
+
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
@@ -25,7 +28,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Space')
     // Opening the enhanced context settings should focus the checkbox for toggling it.
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox.and(page.locator(':focus'))).toBeVisible()
+    await expect(enhancedContextCheckbox).toBeFocused()
 
     // Enhanced context should be enabled by default.
     await expect(enhancedContextCheckbox).toBeChecked()
