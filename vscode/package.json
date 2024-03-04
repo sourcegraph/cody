@@ -1007,7 +1007,7 @@
             "model": {
               "type": "string",
               "default": "deepseek-coder:6.7b-base-q4_K_M",
-              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M"]
+              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M", "starcoder2:7b", "starcoder2:15b"]
             },
             "parameters": {
               "type": "object",
