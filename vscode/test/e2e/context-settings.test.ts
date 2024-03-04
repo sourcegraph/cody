@@ -4,7 +4,6 @@ import { sidebarSignin } from './common'
 import { type ExpectedEvents, newChat, test } from './helpers'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { sleep } from '../../src/completions/utils'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -103,18 +102,10 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
     // Choosing should dismiss the repo picker, but not the enhanced context
     // settings widget.
     await repoFoo.click()
-    await sleep(100)
+    await page.waitForTimeout(100)
     await page.keyboard.type('\n')
     await expect(repoPicker).not.toBeVisible()
     await expect(chooseReposButton).toBeVisible()
-    // We need a delay here because the enhanced context settings widget was
-    // dismissing after a rerender.
-    await new Promise(resolve => setTimeout(resolve, 250))
-
-    // TODO: When https://github.com/sourcegraph/cody/issues/2938 is fixed,
-    // expect the choose repos button to be visible.
-    await expect(chooseReposButton).not.toBeVisible()
-    await chatFrame.getByTitle('Configure Enhanced Context').click()
 
     // The chosen repo should appear in the picker.
     await expect(chatFrame.getByTitle('repo/foo').getByText(/^foo$/)).toBeVisible()
