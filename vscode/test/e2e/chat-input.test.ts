@@ -28,14 +28,14 @@ test.extend<ExpectedEvents>({
     await chatInput.type('One')
     await chatInput.press('Control+ArrowLeft')
     await chatInput.type('Two')
-    await expect(chatInput).toHaveValue('TwoOne')
+    await expect(chatInput).toHaveText('TwoOne')
 
     // Test that Ctrl+Shift+Arrow highlights a word by trying to delete it.
     await chatInput.clear()
     await chatInput.type('One')
     await chatInput.press('Control+Shift+ArrowLeft')
     await chatInput.press('Delete')
-    await expect(chatInput).toHaveValue('')
+    await expect(chatInput).toHaveText('')
 
     // Chat input should have focused after sending a message.
     await expect(chatInput).toBeFocused()

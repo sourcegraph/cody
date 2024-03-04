@@ -54,7 +54,7 @@ test.extend<ExpectedEvents>({
     // The submit button will also be replaced with "Update Message" button
     await editButtons.nth(0).click()
     await expect(chatInput).toBeFocused()
-    await expect(chatInput).toHaveValue('One')
+    await expect(chatInput).toHaveText('One')
     await expect(updateMessageButton).toBeVisible()
     await expect(submitMessageButton).not.toBeVisible()
 
@@ -72,7 +72,7 @@ test.extend<ExpectedEvents>({
     // edit the message from "Two" to "Four"
     await editButtons.nth(1).click()
     // the original message text should shows up in the text box
-    await expect(chatInput).toHaveValue('Two')
+    await expect(chatInput).toHaveText('Two')
     await chatInput.click()
     await chatInput.fill('Four')
     await page.keyboard.press('Enter')
@@ -92,7 +92,7 @@ test.extend<ExpectedEvents>({
 
     // "Meta(MacOS)/Control" + "K" should enter the editing mode on the last message
     await chatInput.press(`${osKey}+k`)
-    await expect(chatInput).toHaveValue('Four')
+    await expect(chatInput).toHaveText('Four')
     // There should be no "New Chat" action button in editing mode
     // But will show up again after exiting editing mode
     await expect(newChatButton).not.toBeVisible()
@@ -101,12 +101,12 @@ test.extend<ExpectedEvents>({
 
     // At-file should work in the edit mode
     await chatInput.press(`${osKey}+k`)
-    await expect(chatInput).toHaveValue('Four')
+    await expect(chatInput).toHaveText('Four')
     await chatInput.fill('Explain @mj')
-    await expect(chatInput).not.toHaveValue('Four')
-    await expect(chatFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await expect(chatInput).not.toHaveText('Four')
+    await expect(chatFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue('Explain @Main.java ')
+    await expect(chatInput).toHaveText('Explain @Main.java ')
 
     // Enter should submit the message and exit editing mode
     // The last message should be "Explain @Main.java"
@@ -122,7 +122,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveValue('Explain @Main.java ')
     await chatInput.type('and @vgo', { delay: 50 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveValue(
+    await expect(chatInput).toHaveText(
         withPlatformSlashes('Explain @Main.java and @lib/batches/env/var.go ')
     )
     await chatInput.press('Enter')

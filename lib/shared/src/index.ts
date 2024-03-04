@@ -13,14 +13,6 @@ export type {
     SerializedChatTranscript,
 } from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
-export {
-    getAtMentionQuery,
-    getAtMentionedInputText,
-    getContextFileDisplayText,
-    verifyContextFilesFromInput,
-    isAtMention,
-    isAtRange,
-} from './chat/input'
 export type {
     ChatError,
     ChatEventSource,
