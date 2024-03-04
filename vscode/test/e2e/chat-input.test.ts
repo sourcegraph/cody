@@ -63,7 +63,10 @@ test('chat input focus', async ({ page, sidebar }) => {
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).hover()
+    console.log('ABOUT TO CLICK')
+    await page.waitForTimeout(100)
     await page.getByLabel(/Commands \(/).click()
+    await page.waitForTimeout(100)
     await page.getByRole('option', { name: 'New Chat' }).hover()
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
     // the command is sent. This provides us with a small window to move the cursor
