@@ -46,18 +46,18 @@ export const claude: EditLLMInteraction = {
     },
     getDoc(options) {
         const firstLine = options.selectedText.split('\n')[0]
-        const { commentPrefix, commentSuffix } = getDocumentCommentSyntax(options.document)
+        // const { commentSuffix } = getDocumentCommentSyntax(options.document)
         const stopSequences = [...SHARED_PARAMETERS.stopSequences, firstLine]
-        if (commentSuffix) {
-            stopSequences.push(commentSuffix)
-        }
+        // if (commentSuffix) {
+        //     stopSequences.push(commentSuffix)
+        // }
 
         return {
             ...SHARED_PARAMETERS,
             stopSequences,
-            assistantPrefix: commentPrefix + RESPONSE_PREFIX,
-            assistantSuffix: commentSuffix ? commentSuffix + '\n' : '',
-            assistantText: RESPONSE_PREFIX + commentPrefix,
+            assistantPrefix: RESPONSE_PREFIX,
+            // assistantSuffix: commentSuffix ? commentSuffix + '\n' : '',
+            assistantText: RESPONSE_PREFIX,
             prompt: buildGenericPrompt('doc', options),
         }
     },
