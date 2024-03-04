@@ -19,6 +19,7 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import { startTokenReceiver } from '../../auth/token-receiver'
+import { OnboardingExperimentBranch, logExposure, pickBranch } from '../../services/OnboardingExperiment'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -60,35 +61,41 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
-                if (
-                    message.authKind === 'simplified-onboarding' ||
-                    message.authKind === 'simplified-onboarding-local-server'
-                ) {
-                    if (isAuthProgressInProgress()) {
-                        return
-                    }
-                    startAuthProgressIndicator()
-
+                if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
-                    const tokenReceiverUrl = await startTokenReceiver(
-                        endpoint,
-                        async (token, endpoint) => {
-                            closeAuthProgressIndicator()
-                            const authStatus = await this.authProvider.auth(endpoint, token)
-                            if (!authStatus?.isLoggedIn) {
-                                void vscode.window.showErrorMessage(
-                                    'Authentication failed. Please check your token and try again.'
-                                )
-                            }
+
+                    let tokenReceiverUrl: string | undefined = undefined
+                    const branch = pickBranch()
+                    logExposure()
+                    if (branch === OnboardingExperimentBranch.RemoveAuthenticationStep) {
+                        if (isAuthProgressInProgress()) {
+                            return
                         }
-                    )
+                        startAuthProgressIndicator()
+                        tokenReceiverUrl = await startTokenReceiver(
+                            endpoint,
+                            async (token, endpoint) => {
+                                closeAuthProgressIndicator()
+                                const authStatus = await this.authProvider.auth(endpoint, token)
+                                if (!authStatus?.isLoggedIn) {
+                                    void vscode.window.showErrorMessage(
+                                        'Authentication failed. Please check your token and try again.'
+                                    )
+                                }
+                            }
+                        )
+                    }
+
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
-                    void authProviderSimplified.openExternalAuthUrl(
+                    const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
                         this.authProvider,
                         authMethod,
                         tokenReceiverUrl
                     )
+                    if (!successfullyOpenedUrl) {
+                        closeAuthProgressIndicator()
+                    }
                     break
                 }
                 // cody.auth.signin or cody.auth.signout

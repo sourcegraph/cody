@@ -15,11 +15,12 @@ export class AuthProviderSimplified {
         classicAuthProvider: AuthProvider,
         method: AuthMethod,
         tokenReceiverUrl?: string
-    ): Promise<void> {
+    ): Promise<boolean> {
         if (!(await openExternalAuthUrl(method, tokenReceiverUrl))) {
-            return
+            return false
         }
         classicAuthProvider.authProviderSimplifiedWillAttemptAuth()
+        return true
     }
 }
 

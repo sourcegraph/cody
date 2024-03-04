@@ -67,13 +67,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind:
-              | 'signin'
-              | 'signout'
-              | 'support'
-              | 'callback'
-              | 'simplified-onboarding'
-              | 'simplified-onboarding-local-server'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
           endpoint?: string
           value?: string
           authMethod?: AuthMethod
