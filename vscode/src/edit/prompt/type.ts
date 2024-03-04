@@ -6,6 +6,7 @@ export interface LLMInteraction {
     responseTopic?: string
     assistantText?: string
     assistantPrefix?: string
+    assistantSuffix?: string
 }
 
 export interface GetLLMInteractionOptions {
@@ -14,6 +15,7 @@ export interface GetLLMInteractionOptions {
     selectedText: string
     followingText: string
     uri: vscode.Uri
+    document: vscode.TextDocument
 }
 
 type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction

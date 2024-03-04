@@ -1,3 +1,4 @@
+import type * as vscode from 'vscode'
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
@@ -10,6 +11,32 @@ const SHARED_PARAMETERS = {
     assistantPrefix: RESPONSE_PREFIX,
 }
 
+const getDocumentCommentSyntax = (
+    document: vscode.TextDocument
+): { commentPrefix: string; commentSuffix: string } => {
+    // TODO: Should we improve this so it handles symbols vs functions etc?
+    switch (document.languageId) {
+        case 'typescript':
+        case 'typescriptreact':
+        case 'javascript':
+        case 'javascriptreact':
+            return {
+                commentPrefix: '/**\n',
+                commentSuffix: '*/',
+            }
+        case 'python':
+            return {
+                commentPrefix: '"""',
+                commentSuffix: '"""',
+            }
+        default:
+            return {
+                commentPrefix: '',
+                commentSuffix: '',
+            }
+    }
+}
+
 export const claude: EditLLMInteraction = {
     getEdit(options) {
         return {
@@ -18,16 +45,25 @@ export const claude: EditLLMInteraction = {
         }
     },
     getDoc(options) {
+        const firstLine = options.selectedText.split('\n')[0]
+        const { commentPrefix, commentSuffix } = getDocumentCommentSyntax(options.document)
+        const stopSequences = [...SHARED_PARAMETERS.stopSequences, firstLine]
+        if (commentSuffix) {
+            stopSequences.push(commentSuffix)
+        }
+
         return {
             ...SHARED_PARAMETERS,
+            stopSequences,
+            assistantPrefix: commentPrefix + RESPONSE_PREFIX,
+            assistantSuffix: commentSuffix ? commentSuffix + '\n' : '',
+            assistantText: RESPONSE_PREFIX + commentPrefix,
             prompt: buildGenericPrompt('doc', options),
         }
     },
     getFix(options) {
-        const firstLine = options.selectedText.split('\n')[0]
         return {
             ...SHARED_PARAMETERS,
-            stopSequences: [...SHARED_PARAMETERS.stopSequences, firstLine],
             prompt: buildGenericPrompt('fix', options),
         }
     },

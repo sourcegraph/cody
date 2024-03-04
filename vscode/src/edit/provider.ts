@@ -46,12 +46,13 @@ export class EditProvider {
                 this.config.authProvider.getAuthStatus(),
                 model
             )
-            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
-                model,
-                contextWindow,
-                task: this.config.task,
-                editor: this.config.editor,
-            })
+            const { messages, stopSequences, responseTopic, responsePrefix = '', responseSuffix = '' } =
+                await buildInteraction({
+                    model,
+                    contextWindow,
+                    task: this.config.task,
+                    editor: this.config.editor,
+                })
 
             const multiplexer = new BotResponseMultiplexer()
 
@@ -72,7 +73,7 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
-                    void this.handleResponse(text, false)
+                    void this.handleResponse(text + responseSuffix, false)
                     return Promise.resolve()
                 },
             })

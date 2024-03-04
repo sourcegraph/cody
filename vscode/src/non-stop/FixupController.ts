@@ -620,7 +620,13 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.selectionRange
+        // Expand the range to include full lines to reduce the change of formatting issues
+        const rangeToFormat = new vscode.Range(
+            task.selectionRange.start.line,
+            0,
+            task.selectionRange.end.line,
+            Number.MAX_VALUE
+        )
 
         if (!rangeToFormat) {
             return false
