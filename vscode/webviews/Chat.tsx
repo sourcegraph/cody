@@ -53,6 +53,8 @@ interface ChatboxProps {
     isWebviewActive: boolean
 }
 
+const isMac = isMacOS()
+
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     welcomeMessage,
     messageInProgress,
@@ -192,10 +194,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     //////////// LIB COPIED HERE TODO(sqs)
 
-    const isMac = isMacOS()
-    const setInputFocus = (focus: boolean): void => {
+    const setInputFocus = useCallback((focus: boolean): void => {
         editorRef.current?.setFocus(focus)
-    }
+    }, [])
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
@@ -239,7 +240,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // move focus back to chatbox
             setInputFocus(true)
         },
-        [messageBeingEdited, transcript, resetEditorValue]
+        [messageBeingEdited, transcript, resetEditorValue, setInputFocus]
     )
 
     /**
@@ -408,7 +409,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
         },
         [
-            isMac,
             messageBeingEdited,
             editorValue,
             onChatResetClick,
