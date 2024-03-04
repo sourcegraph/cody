@@ -49,9 +49,7 @@ function openExternalAuthUrl(provider: AuthMethod, tokenReceiverUrl?: string): T
 
     // FIXME: It's a complete mystery to me why a double URL decoding is necessary for this.
     const newTokenUrl = encodeURIComponent(
-        encodeURIComponent(
-            `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
-        )
+        `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
     )
     const postSignUpSurveyUrl = encodeURIComponent(`/post-sign-up?returnTo=${newTokenUrl}`)
     const site = DOTCOM_URL.toString() // Note, ends with the path /

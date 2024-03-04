@@ -13,8 +13,13 @@ import type { ContextProvider } from '../ContextProvider'
 import type { MessageErrorType, MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
-import { addWebviewViewHTML } from './ChatManager'
+import {
+    closeAuthProgressIndicator,
+    isAuthProgressInProgress,
+    startAuthProgressIndicator,
+} from '../../auth/auth-progress-indicator'
 import { startTokenReceiver } from '../../auth/token-receiver'
+import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -59,10 +64,16 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     message.authKind === 'simplified-onboarding' ||
                     message.authKind === 'simplified-onboarding-local-server'
                 ) {
+                    if (isAuthProgressInProgress()) {
+                        return
+                    }
+                    startAuthProgressIndicator()
+
                     const endpoint = DOTCOM_URL.href
                     const tokenReceiverUrl = await startTokenReceiver(
                         endpoint,
                         async (token, endpoint) => {
+                            closeAuthProgressIndicator()
                             const authStatus = await this.authProvider.auth(endpoint, token)
                             if (!authStatus?.isLoggedIn) {
                                 void vscode.window.showErrorMessage(
