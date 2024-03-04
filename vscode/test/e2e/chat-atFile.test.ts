@@ -93,10 +93,11 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
 
     // Keyboard nav through context files
-    await chatInput.type('Explain @var.go', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.fill('Explain @var.go')
+    await expect(chatPanelFrame.getByRole('option', { name: 'lib/batches/env/var.go' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
-    await chatInput.type('and @visualize.go', { delay: 50 }) // without this delay the following Enter submits the form instead of selecting
+    await chatInput.pressSequentially('and @visualize.go')
     await chatInput.press('ArrowDown') // second item (visualize.go)
     await chatInput.press('ArrowDown') // third item (.vscode/settings.json)
     await chatInput.press('ArrowDown') // wraps back to first item
@@ -126,38 +127,40 @@ test.extend<ExpectedEvents>({
     // https://github.com/sourcegraph/cody/issues/2200
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.type('@Main.java', { delay: 50 })
+    await chatInput.pressSequentially('@Main.java')
+    await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java ')
 
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
-    await chatInput.type('and @Main.ja', { delay: 50 })
+    await chatInput.pressSequentially('and @Main.ja', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java and @Main.java ')
 
     // Support @-file in mid-sentence
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.type('Explain the file', { delay: 50 })
+    await chatInput.fill('Explain the file')
     await chatInput.press('ArrowLeft') // 'Explain the fil|e'
     await chatInput.press('ArrowLeft') // 'Explain the fi|le'
     await chatInput.press('ArrowLeft') // 'Explain the f|ile'
     await chatInput.press('ArrowLeft') // 'Explain the |file'
     await chatInput.press('ArrowLeft') // 'Explain the| file'
     await chatInput.press('Space') // 'Explain the | file'
-    await chatInput.type('@Main', { delay: 50 })
+    await chatInput.pressSequentially('@Main')
+    await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain the @Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
-    await page.keyboard.type('!')
+    await page.keyboard.press('!')
     await page.keyboard.press('Delete')
     await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
-    await chatInput.type(' @abcdefg', { delay: 50 })
+    await chatInput.pressSequentially(' @abcdefg')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
@@ -165,7 +168,7 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowRight')
     await expect(noMatches).toBeVisible()
-    await chatInput.type('?', { delay: 50 })
+    await chatInput.press('?', { delay: 50 })
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg?file')
     await expect(noMatches).not.toBeVisible()
     // Selection close on submit
@@ -196,13 +199,12 @@ test('typing @-mention text does not automatically accept it ', async ({ page, s
 
     // Typing out the whole file path without pressing tab/enter should NOT include the
     // file as context.
-    await chatInput.fill('@index.htm')
+    await chatInput.fill('Explain @index.htm')
     await page.waitForTimeout(100)
     await chatInput.press('l')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Space')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).not.toBeVisible()
-    await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
 })
@@ -214,20 +216,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:symbol:executed',
     ],
 })('@-mention symbol in chat', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    // Open chat.
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'buzz.ts' }).hover()
 
-    // Open chat.
-    await page.click('[aria-label="Cody"]')
-    await page.waitForTimeout(100)
-    await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
-    await page.waitForTimeout(100)
-    await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    // Go back to the Cody chat tab
+    await page.getByRole('tab', { name: 'New Chat' }).click()
 
     // Symbol empty state
     await chatInput.fill('@#')
