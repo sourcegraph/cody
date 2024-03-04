@@ -43,7 +43,6 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
 })
 
-// TODO(sqs): was flaky and skipped
 test('chat input focus', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     // Open the buzz.ts file from the tree view,
@@ -70,6 +69,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     // the command is sent. This provides us with a small window to move the cursor
     // from the new opened chat window back to the editor, before the chat has finished
     // streaming its response.
+    await page.waitForTimeout(100)
     await page.keyboard.type('delay')
     await page.keyboard.press('Enter')
 
@@ -82,7 +82,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     // once the response is 'Done', check the input focus
     await chatInput.hover()
     await expect(panel.getByText('Done')).toBeVisible()
-    await expect(chatInput).not.toBeFocused()
+    await expect(chatInput).toBeFocused()
 
     // Click on the chat input box to make sure it now has the focus, before submitting
     // a new chat question. The original focus area which is the chat input should still

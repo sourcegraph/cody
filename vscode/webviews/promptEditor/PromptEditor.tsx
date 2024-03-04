@@ -38,6 +38,7 @@ interface Props extends KeyboardEventPluginProps {
 
 export interface PromptEditorRefAPI {
     resetValue(value: PromptEditorValue): void
+    setFocus(focus: boolean): void
 }
 
 const TIPS = '(@ for files, @# for symbols)'
@@ -75,7 +76,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useEffect(() => {
         if (ref) {
             ;(ref as MutableRefObject<PromptEditorRefAPI>).current = {
-                resetValue: (value: PromptEditorValue) => {
+                resetValue(value: PromptEditorValue): void {
                     if (value.text === '') {
                         // Clearing seems to require a different code path because focusing fails if
                         // the editor is empty.
@@ -91,6 +92,16 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         addExtraContextItems(editor, value.extraContextItems)
                         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
                         editor.focus()
+                    }
+                },
+                setFocus(focus) {
+                    const editor = editorRef.current
+                    if (editor) {
+                        if (focus) {
+                            editor.focus()
+                        } else {
+                            editor.blur()
+                        }
                     }
                 },
             }

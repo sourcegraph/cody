@@ -193,7 +193,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     //////////// LIB COPIED HERE TODO(sqs)
 
     const isMac = isMacOS()
-    const setInputFocus = (focus: boolean): void => {} // TODO(sqs)
+    const setInputFocus = (focus: boolean): void => {
+        editorRef.current?.setFocus(focus)
+    }
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
     // Users can toggle this feature via "shift" + "Meta(Mac)/Control" keys
