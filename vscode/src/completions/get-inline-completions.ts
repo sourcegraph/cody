@@ -262,7 +262,12 @@ async function doGetInlineCompletions(
                   handleDidPartiallyAcceptCompletionItem,
               })
             : null
-    if (resultToReuse) {
+
+    // If smart throttle is enabled we want to reuse the last candidate only if the request is throttled (see below).
+    // Otherwise we want to make a new request based on the latest user input and update the completion.
+    // We also use the last candidate insert text as a source for identifiers for the updated context to improve the
+    // updated completion.
+    if (resultToReuse && !smartThrottleService) {
         return resultToReuse
     }
 
@@ -309,9 +314,15 @@ async function doGetInlineCompletions(
 
     if (smartThrottleService) {
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+
         if (throttledRequest === null) {
+            if (resultToReuse) {
+                return resultToReuse
+            }
+
             return null
         }
+
         requestParams = throttledRequest
     }
 
@@ -346,6 +357,7 @@ async function doGetInlineCompletions(
                 docContext,
                 abortSignal,
                 maxChars: providerConfig.contextSizeHints.totalChars,
+                lastCandidate,
             })
         ),
         remainingInterval > 0

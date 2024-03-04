@@ -3,12 +3,13 @@ import path from 'path'
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
-import { SupportedLanguage } from './grammars'
+import type { Tree } from 'web-tree-sitter'
+import { SupportedLanguage, getParseLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
 /*
- * Loading wasm grammar and creation parser instance everytime we trigger
+ * Loading wasm grammar and creation parser instance every time we trigger
  * pre- and post-process might be a performance problem, so we create instance
  * and load language grammar only once, first time we need parser for a specific
  * language, next time we read it from this cache.
@@ -69,6 +70,21 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     initQueries(languageGrammar, language, parser)
 
     return parser
+}
+
+export function parseString(languageId: string, source: string): Tree | null {
+    const parseLanguage = getParseLanguage(languageId)
+
+    if (!parseLanguage) {
+        return null
+    }
+    const parser = getParser(parseLanguage)
+
+    if (!parser) {
+        return null
+    }
+
+    return parser.parse(source)
 }
 
 // TODO: Add grammar type autogenerate script

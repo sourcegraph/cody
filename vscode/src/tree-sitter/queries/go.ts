@@ -11,5 +11,11 @@ export const goQueries = {
         `,
         intents: '',
         documentableNodes: '',
+        bfgIdentifiers: dedent`
+            (identifier) @identifier
+            (qualified_type (type_identifier) @identifier)
+            (type_spec (type_identifier) @identifier)
+            (selector_expression (field_identifier)) @identifier
+        `,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

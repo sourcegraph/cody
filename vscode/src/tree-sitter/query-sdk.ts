@@ -6,6 +6,7 @@ import type {
     Query,
     QueryCapture,
     SyntaxNode,
+    Tree,
     default as Parser,
 } from 'web-tree-sitter'
 
@@ -107,6 +108,7 @@ interface QueryWrappers {
         | readonly [
               { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
           ]
+    getBfgIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
 /**
@@ -156,6 +158,9 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                     name: cursorCapture.name === 'export' ? 'documentableExport' : 'documentableNode',
                 },
             ] as const
+        },
+        getBfgIdentifiers: (root, start, end) => {
+            return queries.bfgIdentifiers.compiled.captures(root, start, end)
         },
     }
 }
@@ -323,7 +328,7 @@ interface QueryPoints {
     endPoint: Point
 }
 
-function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
     const startPoint = {
         row: position.line,
         column: position.character,
@@ -340,17 +345,18 @@ function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): 
 
 export function execQueryWrapper<T extends keyof QueryWrappers>(
     document: TextDocument,
-    position: Pick<Position, 'line' | 'character'>,
-    queryWrapper: T
+    queryPoints: QueryPoints,
+    queryWrapper: T,
+    tree?: Tree
 ): ReturnType<QueryWrappers[T]> | never[] {
     const parseTreeCache = getCachedParseTreeForDocument(document)
     const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const { startPoint, endPoint } = queryPoints
+    const treeToQuery = tree || parseTreeCache?.tree
 
-    const { startPoint, endPoint } = positionToQueryPoints(position)
-
-    if (documentQuerySDK && parseTreeCache) {
+    if (documentQuerySDK && treeToQuery) {
         return documentQuerySDK.queries[queryWrapper](
-            parseTreeCache.tree.rootNode,
+            treeToQuery.rootNode,
             startPoint,
             endPoint
         ) as ReturnType<QueryWrappers[T]>

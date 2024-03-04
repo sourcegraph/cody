@@ -6,7 +6,10 @@ import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
-import { getContextRange } from '../../../doc-context-getters'
+import {
+    getLastNBfgIdentifiersFromDocument,
+    getLastNBfgIdentifiersFromString,
+} from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
 import { type SimpleRepository, inferGitRepository } from './simple-git'
@@ -169,6 +172,7 @@ export class BfgRetriever implements ContextRetriever {
         position,
         docContext,
         hints,
+        lastCandidate,
     }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
         try {
             if (this.didFailLoading) {
@@ -184,32 +188,57 @@ export class BfgRetriever implements ContextRetriever {
                 await this.bfgIndexingPromise
             }
 
-            const responses = await bfg.request('bfg/contextAtPosition', {
+            const lastCandidateCurrentLine =
+                (lastCandidate?.lastTriggerDocContext.currentLinePrefix || '') +
+                lastCandidate?.result.items[0].insertText
+
+            const bfgRequestStart = performance.now()
+            const inputIdentifiers = Array.from(
+                new Set([
+                    // Get last 10 identifiers from the last candidate insert text
+                    // in hopes that LLM partially guessed the right completion.
+                    ...getLastNBfgIdentifiersFromString({
+                        n: 10,
+                        document,
+                        position,
+                        currentLinePrefix: docContext.currentLinePrefix,
+                        source: lastCandidateCurrentLine,
+                    }),
+                    // Get last 10 identifiers from the current document prefix.
+                    ...getLastNBfgIdentifiersFromDocument({
+                        n: 10,
+                        document,
+                        position,
+                        currentLinePrefix: docContext.currentLinePrefix,
+                    }),
+                ])
+            )
+
+            const response = await bfg.request('bfg/contextForIdentifiers', {
                 uri: document.uri.toString(),
-                content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
-                position: { line: position.line, character: position.character },
-                maxChars: hints.maxChars, // ignored by BFG server for now
-                contextRange: getContextRange(document, docContext),
+                identifiers: inputIdentifiers,
+                maxSnippets: 20,
+                maxDepth: 4,
             })
 
             // Just in case, handle non-object results
-            if (typeof responses !== 'object') {
+            if (typeof response !== 'object') {
                 return []
             }
 
-            const mergedContextSnippets = [...(responses.symbols || []), ...(responses?.files || [])]
-
             // Convert BFG snippets to match the format expected on the client.
-            const symbols = mergedContextSnippets.map(contextSnippet => ({
+            const symbols = (response.symbols || []).map(contextSnippet => ({
                 ...contextSnippet,
                 uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
             })) satisfies Omit<ContextSnippet, 'startLine' | 'endLine'>[]
 
-            logDebug(
-                'CodyEngine',
-                'bfg/contextAtPosition',
-                `returning ${mergedContextSnippets.length} results`
-            )
+            logDebug('CodyEngine', 'bfg/contextForIdentifiers', {
+                verbose: {
+                    inputIdentifiers,
+                    duration: `${performance.now() - bfgRequestStart}ms`,
+                    symbols: symbols.map(s => `${s.symbol} ${s.content}`),
+                },
+            })
 
             // TODO: add `startLine` and `endLine` to `responses` or explicitly add
             // another context snippet type to the client.

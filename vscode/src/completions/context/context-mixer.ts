@@ -5,8 +5,10 @@ import { isCodyIgnoredFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { DocumentContext } from '../get-current-doc-context'
 import type { ContextSnippet } from '../types'
 
+import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 import { fuseResults } from './reciprocal-rank-fusion'
+import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 
 interface GetContextOptions {
     document: vscode.TextDocument
@@ -14,6 +16,7 @@ interface GetContextOptions {
     docContext: DocumentContext
     abortSignal?: AbortSignal
     maxChars: number
+    lastCandidate?: LastInlineCompletionCandidate
 }
 
 export interface ContextSummary {
@@ -60,6 +63,10 @@ export interface GetContextResult {
  */
 export class ContextMixer implements vscode.Disposable {
     constructor(private strategyFactory: ContextStrategyFactory) {}
+
+    public isBfgRetrieverEnabled(): boolean {
+        return this.strategyFactory.graphRetriever instanceof BfgRetriever
+    }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()

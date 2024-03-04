@@ -45,5 +45,6 @@ export const pythonQueries = {
             (return_statement (_) @return_statement.value!)
         `,
         documentableNodes: '',
+        bfgIdentifiers: '(identifier) @identifier',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

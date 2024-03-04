@@ -16,13 +16,14 @@ export type ContextStrategy =
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
+    graphRetriever: ContextRetriever | undefined
 }
 
 export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     private disposables: vscode.Disposable[] = []
 
     private localRetriever: ContextRetriever | undefined
-    private graphRetriever: ContextRetriever | undefined
+    public graphRetriever: ContextRetriever | undefined
 
     constructor(
         private contextStrategy: ContextStrategy,
