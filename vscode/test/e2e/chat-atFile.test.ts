@@ -3,23 +3,19 @@ import { expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
-/**
- * Tests for @-file & @#-symbol in chat
- * See chat-atFile.test.md for the expected behavior for this feature.
- *
- * NOTE: Creating new chats is slow, and setup is slow, so we collapse all these into one test
- */
+// See chat-atFile.test.md for the expected behavior for this feature.
+//
+// NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
+
 test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:at-mention:executed',
         'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
     ],
-})('@-file & @#-symbol in chat view', async ({ page, sidebar }) => {
+})('@-mention file in chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -55,10 +51,6 @@ test.extend<ExpectedEvents>({
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
     await expect(chatPanelFrame.getByRole('option', { name: '.mydotfile' })).toBeVisible()
-
-    // Symbol empty state
-    await chatInput.fill('@#')
-    await expect(chatPanelFrame.getByRole('heading', { name: /No symbols found/ })).toBeVisible()
 
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
@@ -191,12 +183,19 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
+})
 
-    const osKey = getMetaKeyByOS()
+test('typing @-mention text does not automatically accept it ', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Typing out the whole file path without pressing tab/enter should NOT include the
     // file as context.
-    await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
     await page.waitForTimeout(100)
     await chatInput.press('l')
@@ -208,7 +207,13 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
 })
 
-test('@-file with symbol support', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:at-mention:executed',
+        'CodyVSCodeExtension:at-mention:symbol:executed',
+    ],
+})('@-mention symbol in chat', async ({ page, sidebar }) => {
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
@@ -223,6 +228,10 @@ test('@-file with symbol support', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
+    // Symbol empty state
+    await chatInput.fill('@#')
+    await expect(chatPanelFrame.getByRole('heading', { name: /No symbols found/ })).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.fill('@#fizzb')

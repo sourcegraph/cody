@@ -1,8 +1,8 @@
 # Expected behaviors for the @-mention feature
 
-Currently covered by the e2e test in `chat-atFile.test.ts`:
+Currently covered by the e2e tests in `chat-atFile.test.ts`:
 
-- Typing '@' in the chat input shows a search box for files. Typing '#' shows one for symbols instead.
+- Typing '@' in the chat input shows a search box for files. Typing '@#' shows one for symbols instead.
 - Searching for a non-existent file or symbol shows a "No files/symbols found" message.
 - Search only matches files in the relative visible path, not full absolute paths.
 - Search includes dotfiles after ".".
