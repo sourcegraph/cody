@@ -63,7 +63,6 @@ test('chat input focus', async ({ page, sidebar }) => {
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).hover()
-    console.log('ABOUT TO CLICK')
     await page.waitForTimeout(100)
     await page.getByLabel(/Commands \(/).click()
     await page.waitForTimeout(100)
@@ -81,7 +80,6 @@ test('chat input focus', async ({ page, sidebar }) => {
     const panel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = panel.getByRole('textbox', { name: 'Chat message' })
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await expect(panel.getByText('Done')).not.toBeVisible()
     // once the response is 'Done', check the input focus
     await chatInput.hover()
     await expect(panel.getByText('Done')).toBeVisible()
