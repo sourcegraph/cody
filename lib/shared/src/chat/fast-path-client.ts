@@ -149,7 +149,12 @@ export function createFastPathClient(
                         break
                     }
 
-                    if (response.type === 'content_block_start') {
+                    if (response.type === 'chunk') {
+                        fullResponse = {
+                            completion: (fullResponse ? fullResponse.completion : '') + response.delta,
+                            stopReason: response.stopReason ?? CompletionStopReason.StreamingChunk,
+                        }
+                    } else if (response.type === 'content_block_start') {
                         fullResponse = {
                             completion: response.content_block.text,
                             stopReason: CompletionStopReason.StreamingChunk,
@@ -221,6 +226,10 @@ async function createRateLimitErrorFromResponse(
 }
 
 type UnifiedSSE =
+    // Not yet used unified SSE payloads (will require the server to parse the SSE stream first)
+    | { type: 'chunk'; delta: ''; stopReason?: string }
+
+    // Unstable SSE events for v0 before we update the unified endpoints to parse the SSE stream
     | { type: 'message_start' }
     | {
           type: 'content_block_start'
@@ -229,9 +238,7 @@ type UnifiedSSE =
               text: string
           }
       }
-    | {
-          type: 'ping'
-      }
+    | { type: 'ping' }
     | {
           type: 'content_block_delta'
           delta: {
@@ -239,12 +246,6 @@ type UnifiedSSE =
               text: string
           }
       }
-    | {
-          type: 'content_block_stop'
-      }
-    | {
-          type: 'message_delta'
-      }
-    | {
-          type: 'message_stop'
-      }
+    | { type: 'content_block_stop' }
+    | { type: 'message_delta' }
+    | { type: 'message_stop' }

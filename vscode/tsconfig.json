@@ -15,8 +15,7 @@
     "test/e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json",
-    ".storybook/*.ts"
+    "package.json"
   ],
   "exclude": [
     "scripts",
