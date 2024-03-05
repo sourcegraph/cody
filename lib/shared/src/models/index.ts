@@ -11,7 +11,6 @@ import { getProviderName } from './utils'
 export class ModelProvider {
     public default = false
     public codyProOnly = false
-    public unifiedApi = false
     public provider: string
     public readonly title: string
 

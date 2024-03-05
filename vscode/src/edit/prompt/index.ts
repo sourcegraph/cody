@@ -95,7 +95,7 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble()
+    const preamble = getSimplePreamble(model)
     promptBuilder.tryAddToPrefix(preamble)
 
     const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]

@@ -174,14 +174,14 @@ export function createFastPathClient(
                     fullResponse.stopReason = CompletionStopReason.RequestFinished
                 }
 
-                return fullResponse
+                yield { type: 'complete' }
             } catch (error) {
                 // In case of the abort error and non-empty completion response, we can
                 // consider the completion partially completed and want to log it to
                 // the Cody output channel via `log.onComplete()` instead of erroring.
                 if (isAbortError(error as Error) && fullResponse) {
                     fullResponse.stopReason = CompletionStopReason.RequestAborted
-                    return
+                    yield { type: 'complete' }
                 }
 
                 recordErrorToSpan(span, error as Error)

@@ -9,3 +9,7 @@ export function getProviderName(name: string): string {
             return providerName
     }
 }
+
+export function supportsUnifiedApi(model: string): boolean {
+    return model.startsWith('anthropic/claude-3')
+}
