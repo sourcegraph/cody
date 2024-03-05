@@ -211,9 +211,6 @@ function messageToInteractionJSON(
                 ? messageToInteractionMessage(botMessage)
                 : { speaker: 'assistant' },
         usedContextFiles: humanMessage.newContextUsed ?? [],
-        // These fields are unused on deserialization
-        fullContext: [],
-        timestamp: new Date().toISOString(),
     }
 }
 
