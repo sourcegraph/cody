@@ -63,8 +63,8 @@ export function replaceFileNameWithMarkdownLink(
     const text = humanInput
         .replace(trailingNonAlphaNumericRegex, '')
         .replace(textToBeReplaced, ` ${markdownText}`)
-    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
-    return (text + lastChar).trim()
+    const trailingNonAlphanum = humanInput.match(trailingNonAlphaNumericRegex)?.[0] ?? ''
+    return (text + trailingNonAlphanum).trim()
 }
 
 /**
