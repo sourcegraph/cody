@@ -15,20 +15,26 @@ export function ollamaChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    const lastHumanMessage = params.messages[params.messages.length - 2]
+    const lastHumanMessage = params.messages[params.messages.length - 2]?.text || ''
+    // Empty string as stop reason
     const stopReason = ''
     const ollamaparams = {
         ...params,
         stop_sequence: [stopReason],
         model: params?.model?.replace('ollama/', ''),
-        prompt: lastHumanMessage.text,
+        prompt: lastHumanMessage,
         messages: params.messages.map(msg => {
             return {
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
                 content: msg.text,
             }
         }),
+        stream: true,
+        options: {
+            temperature: params.temperature,
+        },
     }
+
     const log = logger?.startCompletion(params, completionsEndpoint)
 
     fetch(new URL('/api/generate', OLLAMA_DEFAULT_URL).href, {
@@ -39,42 +45,22 @@ export function ollamaChatClient(
         },
         signal,
     }).then(async response => {
-        const reader = response?.body?.getReader() // Get the reader from the ReadableStream
-
-        const textDecoderStream = new TransformStream({
-            transform(chunk, controller) {
-                const text = new TextDecoder().decode(chunk, { stream: true })
-                controller.enqueue(text)
-            },
-        })
-
-        const readableStream = new ReadableStream({
-            start(controller) {
-                const pump = () => {
-                    reader?.read().then(({ done, value }) => {
-                        if (done) {
-                            controller.close()
-                            return
-                        }
-                        controller.enqueue(value)
-                        pump()
-                    })
-                }
-                pump()
-            },
-        })
-
-        const transformedStream = readableStream.pipeThrough(textDecoderStream)
-        const readerForTransformedStream = transformedStream.getReader()
+        if (!response.body) {
+            throw new Error('Response body is null')
+        }
 
         let insertText = ''
 
+        const reader = response.body.getReader()
+
         while (true) {
-            const { done, value } = await readerForTransformedStream.read()
+            const { done, value } = await reader.read()
             if (done) {
                 break
             }
-            const lines = value.toString().split(/\r?\n/).filter(Boolean)
+            const textDecoder = new TextDecoder()
+            const text = textDecoder.decode(value, { stream: true })
+            const lines = text.split(/\r?\n/).filter(Boolean)
             for (const line of lines) {
                 if (!line) {
                     continue
