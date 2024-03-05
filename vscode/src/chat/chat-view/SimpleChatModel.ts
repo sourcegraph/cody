@@ -5,7 +5,6 @@ import {
     type ChatMessage,
     type ContextItem,
     type InteractionJSON,
-    type InteractionMessage,
     type Message,
     type TranscriptJSON,
     errorToChatError,
@@ -218,7 +217,7 @@ function messageToInteractionJSON(
     }
 }
 
-function messageToInteractionMessage(message: MessageWithContext): InteractionMessage {
+function messageToInteractionMessage(message: MessageWithContext): ChatMessage {
     return {
         speaker: message.message.speaker,
         text: message.message.text,

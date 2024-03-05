@@ -32,7 +32,6 @@ import styles from './Chat.module.css'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
-import { SymbolLink } from './SymbolLink'
 import { UserContextSelectorComponent } from './UserContextSelector'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
@@ -732,7 +731,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {
                 speaker: 'assistant',
                 displayText: welcomeText({ welcomeMessage }),
-                data: 'welcome-text',
             },
             ...transcript,
         ],
@@ -750,7 +748,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}
                     fileLinkComponent={FileLink}
-                    symbolLinkComponent={SymbolLink}
                     codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
                     codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
                     transcriptItemClassName={styles.transcriptItem}

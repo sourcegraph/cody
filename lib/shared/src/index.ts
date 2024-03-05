@@ -21,13 +21,11 @@ export {
     isAtRange,
 } from './chat/input'
 export type {
-    ChatButton,
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatMessage,
     ChatInputHistory,
-    InteractionMessage,
+    ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
@@ -52,8 +50,6 @@ export type {
     ContextItemSymbol,
     ContextFileType,
     ContextMessage,
-    HoverContext,
-    PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
@@ -108,7 +104,6 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'

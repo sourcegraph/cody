@@ -1,9 +1,9 @@
 import type { ContextItem, ContextMessage } from '../../codebase-context/messages'
-import type { InteractionMessage } from './messages'
+import type { ChatMessage } from './messages'
 
 export interface InteractionJSON {
-    humanMessage: InteractionMessage
-    assistantMessage: InteractionMessage
+    humanMessage: ChatMessage
+    assistantMessage: ChatMessage
     fullContext: ContextMessage[]
     usedContextFiles: ContextItem[]
     timestamp: string

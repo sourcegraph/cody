@@ -4,7 +4,7 @@ import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import type { AuthStatus } from '../chat/protocol'
 
-import type { InteractionMessage } from '@sourcegraph/cody-shared'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 interface GroupedChats {
@@ -59,7 +59,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
     }
     const chatHistoryEntries = [...Object.entries(chats)]
     for (const [id, entry] of chatHistoryEntries) {
-        let lastHumanMessage: InteractionMessage | undefined = undefined
+        let lastHumanMessage: ChatMessage | undefined = undefined
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
             lastHumanMessage = entry.interactions[index]?.humanMessage
