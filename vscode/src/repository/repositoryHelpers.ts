@@ -7,10 +7,6 @@ import { logDebug } from '../log'
 import { TestSupport } from '../test-support'
 import type { API, GitExtension, Repository } from './builtinGitExtension'
 
-export function gitDirectoryUri(uri: vscode.Uri): vscode.Uri | undefined {
-    return gitAPI()?.getRepository(uri)?.rootUri
-}
-
 export function gitAPI(): API | undefined {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
     if (!extension) {
