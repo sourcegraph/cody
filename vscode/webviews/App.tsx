@@ -6,14 +6,14 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     type Configuration,
-    type ContextFile,
+    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
     type TranscriptJSON,
 } from '@sourcegraph/cody-shared'
-import type { UserAccountInfo } from '@sourcegraph/cody-ui/src/Chat'
-import { EnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import type { UserAccountInfo } from './Chat'
+import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
 
@@ -50,7 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
-    const [contextSelection, setContextSelection] = useState<ContextFile[] | null>(null)
+    const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)

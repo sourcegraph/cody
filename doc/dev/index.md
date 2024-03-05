@@ -14,5 +14,4 @@ See [vscode/CONTRIBUTING.md](../../vscode/CONTRIBUTING.md) for more information.
 
 ### Other topics
 
-- [Developing the Cody library packages (`@sourcegraph/cody-{shared,ui}`)](library-development.md)
 - [Quality tools](quality/index.md)

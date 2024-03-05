@@ -1,4 +1,4 @@
-import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, CodyCommand, ContextItem } from '@sourcegraph/cody-shared'
 
 /**
  * The name of the file for configuring Custom Commands.
@@ -29,6 +29,6 @@ export interface CodyCommandArgs {
     // runs the command in chat mode, even if it's an edit command
     runInChatMode?: boolean
     // current context to add on top of the command context
-    userContextFiles?: ContextFile[]
+    userContextFiles?: ContextItem[]
     additionalInstruction?: string
 }

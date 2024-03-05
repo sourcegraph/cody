@@ -1,7 +1,6 @@
 import type { URI } from 'vscode-uri'
 import { ProgrammingLanguage, languageFromFilename } from '../common/languages'
 import type { Configuration } from '../configuration'
-import type { ActiveTextEditorSelectionRange } from '../editor'
 import type {
     IRemoteSearch,
     IndexedKeywordContextFetcher,
@@ -10,9 +9,10 @@ import type {
 import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
+import type { RangeData } from '../common/range'
 import {
-    type ContextFile,
     type ContextFileSource,
+    type ContextItem,
     type ContextMessage,
     getContextMessageWithResponse,
 } from './messages'
@@ -103,7 +103,7 @@ export class CodebaseContext {
     }
 
     public static makeContextMessageWithResponse(groupedResults: {
-        file: ContextFile & Required<Pick<ContextFile, 'uri'>>
+        file: ContextItem & Required<Pick<ContextItem, 'uri'>>
         results: string[]
     }): ContextMessage[] {
         const contextTemplateFn =
@@ -122,12 +122,12 @@ export class CodebaseContext {
 
 function groupResultsByFile(
     results: EmbeddingsSearchResult[]
-): { file: ContextFile & Required<Pick<ContextFile, 'uri'>>; results: string[] }[] {
-    const originalFileOrder: (ContextFile & Required<Pick<ContextFile, 'uri'>>)[] = []
+): { file: ContextItem & Required<Pick<ContextItem, 'uri'>>; results: string[] }[] {
+    const originalFileOrder: (ContextItem & Required<Pick<ContextItem, 'uri'>>)[] = []
     for (const result of results) {
         if (
             !originalFileOrder.find(
-                (ogFile: ContextFile) => ogFile.uri.toString() === result.uri.toString()
+                (ogFile: ContextItem) => ogFile.uri.toString() === result.uri.toString()
             )
         ) {
             originalFileOrder.push({
@@ -137,6 +137,7 @@ function groupResultsByFile(
                 range: createContextFileRange(result),
                 source: 'embeddings',
                 type: 'file',
+                content: '',
             })
         }
     }
@@ -187,7 +188,7 @@ function contextMessageWithSource(
     return message
 }
 
-function createContextFileRange(result: EmbeddingsSearchResult): ActiveTextEditorSelectionRange {
+function createContextFileRange(result: EmbeddingsSearchResult): RangeData {
     return {
         start: {
             line: result.startLine,

@@ -1,15 +1,10 @@
 import * as vscode from 'vscode'
 
-import type {
-    ActiveTextEditorSelectionRange,
-    ContextFile,
-    ContextMessage,
-} from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../../prompt-builder/types'
+import type { ContextItem, ContextMessage, RangeData } from '@sourcegraph/cody-shared'
 
 export async function openFile(
     uri: vscode.Uri,
-    range?: ActiveTextEditorSelectionRange,
+    range?: RangeData,
     currentViewColumn?: vscode.ViewColumn
 ): Promise<void> {
     let viewColumn = vscode.ViewColumn.Beside
@@ -41,7 +36,8 @@ export function contextMessageToContextItem(contextMessage: ContextMessage): Con
     }
     const range = contextMessage.file.range
     return {
-        text: contextText,
+        type: 'file',
+        content: contextText,
         uri: contextMessage.file.uri,
         source: contextMessage.file.source,
         range:
@@ -88,41 +84,6 @@ export function stripContextWrapper(text: string): string | undefined {
     return undefined
 }
 
-export function contextItemsToContextFiles(items: ContextItem[]): ContextFile[] {
-    const contextFiles: ContextFile[] = []
-    for (const item of items) {
-        contextFiles.push({
-            type: 'file', // TODO(sqs): some of these are symbols; preserve that `type`
-            uri: item.uri,
-            source: item.source || 'embeddings',
-            range: rangeToActiveTextEditorSelectionRange(item.range),
-            content: item.text,
-            repoName: item.repoName,
-            revision: item.revision,
-            title: item.title,
-        })
-    }
-    return contextFiles
-}
-
-function rangeToActiveTextEditorSelectionRange(
-    range?: vscode.Range
-): ActiveTextEditorSelectionRange | undefined {
-    if (!range) {
-        return undefined
-    }
-    return {
-        start: {
-            line: range.start.line,
-            character: range.start.character,
-        },
-        end: {
-            line: range.end.line,
-            character: range.end.character,
-        },
-    }
-}
-
 export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true): string {
     if (!lastDisplayText) {
         return 'New Chat'
@@ -137,7 +98,7 @@ export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true
     return lastDisplayText.length > 25 ? `${lastDisplayText.slice(0, 25).trim()}...` : lastDisplayText
 }
 
-export function viewRangeToRange(range?: ActiveTextEditorSelectionRange): vscode.Range | undefined {
+export function viewRangeToRange(range?: RangeData): vscode.Range | undefined {
     if (!range) {
         return undefined
     }

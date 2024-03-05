@@ -1,5 +1,4 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../../prompt-builder/types'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -22,11 +21,11 @@ export function sortContextItems(files: ContextItem[]): void {
         if (bySource !== 0) {
             return bySource
         }
-        return a.text.localeCompare(b.text)
+        return (a.content ?? '').localeCompare(b.content ?? '')
     })
 }
 
-export function sortContextFiles(files: ContextFile[]): void {
+export function sortContextFiles(files: ContextItem[]): void {
     if (!isAgentTesting) {
         return
     }

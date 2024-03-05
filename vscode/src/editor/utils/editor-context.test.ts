@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import {
-    type ContextFileFile,
+    type ContextItemFile,
     MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
@@ -138,7 +138,7 @@ describe('filterLargeFiles', () => {
         const largeFile = {
             uri: vscode.Uri.file('/large-file.txt'),
             type: 'file',
-        } as ContextFileFile
+        } as ContextItemFile
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 1000001,
             type: vscode.FileType.File,
@@ -153,7 +153,7 @@ describe('filterLargeFiles', () => {
         const binaryFile = {
             uri: vscode.Uri.file('/binary.bin'),
             type: 'file',
-        } as ContextFileFile
+        } as ContextItemFile
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 100,
             type: vscode.FileType.SymbolicLink,
@@ -168,7 +168,7 @@ describe('filterLargeFiles', () => {
         const largeTextFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
-        } as ContextFileFile
+        } as ContextItemFile
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
             type: vscode.FileType.File,

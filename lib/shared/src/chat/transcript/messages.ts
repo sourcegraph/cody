@@ -1,28 +1,14 @@
-import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { TranscriptJSON } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
-export interface ChatButton {
-    label: string
-    action: string
-    onClick: (action: string) => void
-    appearance?: 'primary' | 'secondary' | 'icon'
-}
-
 export interface ChatMessage extends Message {
     displayText?: string
-    contextFiles?: ContextFile[]
-    preciseContext?: PreciseContext[]
-    buttons?: ChatButton[]
-    data?: any
+    contextFiles?: ContextItem[]
     metadata?: ChatMetadata
     error?: ChatError
-}
-
-export interface InteractionMessage extends ChatMessage {
-    prefix?: string
 }
 
 export interface ChatError {
@@ -62,7 +48,7 @@ export interface ChatHistory {
 
 export interface ChatInputHistory {
     inputText: string
-    inputContextFiles: ContextFile[]
+    inputContextFiles: ContextItem[]
 }
 
 export type ChatEventSource =

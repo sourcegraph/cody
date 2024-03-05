@@ -1942,125 +1942,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c951c98d1e9c307d254ae06abe162efe
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 351
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "351"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: submitted
-                  feature: cody.chat-question
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.0
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 21 Feb 2024 20:12:15 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1237
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-21T20:12:15.690Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 612c7659dc0cfe66165ce92a8479a8b1
+    - _id: 9b22ba8e12e8669a186175c2c87e1ee7
       _order: 0
       cache: {}
       request:
@@ -2116,7 +1998,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2137,7 +2019,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2163,12 +2045,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.457Z
+      startedDateTime: 2024-03-04T13:12:28.510Z
       time: 0
       timings:
         blocked: -1
@@ -2178,7 +2060,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b82bddfb47b25003bdd7eed35fff3d40
+    - _id: 68d204548efccef97a090a68fe204efa
       _order: 0
       cache: {}
       request:
@@ -2234,7 +2116,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2255,7 +2137,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2281,12 +2163,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.478Z
+      startedDateTime: 2024-03-04T13:12:28.545Z
       time: 0
       timings:
         blocked: -1
@@ -2296,7 +2178,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4aba907309d0a81e223b7f3f9fb29581
+    - _id: 870f864949ce44cab4779c1ddb3d6801
       _order: 0
       cache: {}
       request:
@@ -2352,7 +2234,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2373,7 +2255,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2399,12 +2281,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.618Z
+      startedDateTime: 2024-03-04T13:12:28.717Z
       time: 0
       timings:
         blocked: -1
@@ -2414,7 +2296,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5ae098398cba07e2ceda7c06842ea3f1
+    - _id: 2a2e15efb733d013f00cd19f9da37adc
       _order: 0
       cache: {}
       request:
@@ -2470,7 +2352,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2491,7 +2373,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2517,12 +2399,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.630Z
+      startedDateTime: 2024-03-04T13:12:28.731Z
       time: 0
       timings:
         blocked: -1
@@ -2532,7 +2414,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4edbc3c3f52bcc0ae5677ef9729864ed
+    - _id: a3c69ce6a548f0cd486079592a297e4a
       _order: 0
       cache: {}
       request:
@@ -2588,7 +2470,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2609,7 +2491,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2635,12 +2517,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.633Z
+      startedDateTime: 2024-03-04T13:12:28.735Z
       time: 0
       timings:
         blocked: -1
@@ -2650,7 +2532,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 83889206e48f2e3375d802df3185bf16
+    - _id: 20c2d8d0f85fd867475b5c7ba2809de9
       _order: 0
       cache: {}
       request:
@@ -2706,7 +2588,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.0
+                    clientVersion: 1.6.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2727,7 +2609,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Feb 2024 20:13:57 GMT
+            value: Mon, 04 Mar 2024 13:12:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2753,12 +2635,130 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1237
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-21T20:13:57.634Z
+      startedDateTime: 2024-03-04T13:12:28.737Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 630513806fa5798036730b6cf0409912
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 351
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "351"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: submitted
+                  feature: cody.chat-question
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.6.1
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 04 Mar 2024 13:12:29 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-04T13:12:28.744Z
       time: 0
       timings:
         blocked: -1

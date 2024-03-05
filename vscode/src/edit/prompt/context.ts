@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 
 import {
     type CodyCommand,
-    type ContextFile,
+    type ContextItem,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
     createContextMessageByFile,
@@ -17,7 +17,6 @@ import {
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import type { ContextItem } from '../../prompt-builder/types'
 import { PROMPT_TOPICS } from './constants'
 import { extractContextItemsFromContextMessages } from './utils'
 
@@ -139,7 +138,7 @@ const getContextFromIntent = async ({
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 interface GetContextOptions extends GetContextFromIntentOptions {
-    userContextFiles: ContextFile[]
+    userContextFiles: ContextItem[]
     contextMessages?: ContextMessage[]
     editor: VSCodeEditor
     command?: CodyCommand
@@ -151,7 +150,10 @@ export const getContext = async ({
     contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextItem[]> => {
-    if (contextMessages) {
+    if (contextMessages && contextMessages.length > 0) {
+        // TODO: We currently use `contextMessages` as a way to programmatically provide specific context
+        // for test files and attach this context to the `FixupTask`.
+        // We should move this logic to `getContextFromIntent`
         return extractContextItemsFromContextMessages(contextMessages)
     }
 

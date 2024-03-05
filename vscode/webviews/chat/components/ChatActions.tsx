@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 
-import { isMacOS } from '../../Chat'
-
+import { isMacOS } from '@sourcegraph/cody-shared'
 import styles from './ChatActions.module.css'
 
 export const ChatActions: React.FunctionComponent<{

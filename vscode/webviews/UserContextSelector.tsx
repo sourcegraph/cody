@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { displayPath } from '@sourcegraph/cody-shared'
-import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 
 import styles from './UserContextSelector.module.css'
 
@@ -12,6 +11,15 @@ const FILE_ON_RESULT = 'Search for a file to include...'
 const FILE_NO_RESULT = 'No matching files found'
 const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
 const SYMBOL_NO_RESULT = 'No matching symbols found'
+
+export interface UserContextSelectorProps {
+    onSelected: (context: ContextItem, queryEndsWithColon?: boolean) => void
+    contextSelection?: ContextItem[]
+    selected?: number
+    onSubmit: (input: string, inputType: 'user') => void
+    setSelectedChatContext: (arg: number) => void
+    contextQuery: string
+}
 
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
