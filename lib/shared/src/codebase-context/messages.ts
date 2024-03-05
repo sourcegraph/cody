@@ -53,6 +53,9 @@ export type ContextItemSymbol = ContextItemCommon & {
     kind: SymbolKind
 }
 
+/** {@link ContextItem} with the `content` field set to the content. */
+export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>
+
 /**
  * A system chat message that adds a context item to the conversation.
  */

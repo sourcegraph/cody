@@ -1,6 +1,12 @@
-import { type ContextItem, type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextMessage,
+    type Message,
+    isCodyIgnoredFile,
+} from '@sourcegraph/cody-shared'
+import { SHA256 } from 'crypto-js'
 import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
-import { contextItemId, renderContextItem } from './utils'
+import { renderContextItem } from './utils'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -24,7 +30,7 @@ export class PromptBuilder {
     public tryAddToPrefix(messages: Message[]): boolean {
         let numChars = 0
         for (const message of messages) {
-            numChars += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
+            numChars += messageChars(message)
         }
         if (numChars + this.charsUsed > this.charLimit) {
             return false
@@ -74,7 +80,7 @@ export class PromptBuilder {
      * overall character limit, which is still enforced.
      */
     public tryAddContext(
-        contextItems: ContextItem[],
+        contextItemsAndMessages: (ContextItem | ContextMessage)[],
         charLimit?: number
     ): {
         limitReached: boolean
@@ -94,40 +100,47 @@ export class PromptBuilder {
         if (isAgentTesting) {
             // Need deterministic ordering of context files for the tests to pass
             // consistently across different file systems.
-            contextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+            contextItemsAndMessages.sort((a, b) =>
+                contextItem(a).uri.path.localeCompare(contextItem(b).uri.path)
+            )
             // Move the selectionContext to the first position so that it'd be
             // the last context item to be read by the LLM to avoid confusions where
             // other files also include the selection text in test files.
-            const selectionContext = contextItems.find(item => item.source === 'selection')
+            const selectionContext = contextItemsAndMessages.find(
+                item => (isContextItem(item) ? item.source : item.file.source) === 'selection'
+            )
             if (selectionContext) {
-                contextItems.splice(contextItems.indexOf(selectionContext), 1)
-                contextItems.unshift(selectionContext)
+                contextItemsAndMessages.splice(contextItemsAndMessages.indexOf(selectionContext), 1)
+                contextItemsAndMessages.unshift(selectionContext)
             }
         }
-        for (const contextItem of contextItems) {
-            if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
-                ignored.push(contextItem)
+        for (const v of contextItemsAndMessages) {
+            const uri = contextItem(v).uri
+            if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
+                ignored.push(contextItem(v))
                 continue
             }
-            const id = contextItemId(contextItem)
+            const id = contextItemId(v)
             if (this.seenContext.has(id)) {
-                duplicate.push(contextItem)
+                duplicate.push(contextItem(v))
                 continue
             }
-            const contextMessages = renderContextItem(contextItem).reverse()
-            const contextLen = contextMessages.reduce(
-                (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
-                0
-            )
+            const contextMessage = isContextItem(v) ? renderContextItem(v) : v
+            const contextLen = contextMessage
+                ? contextMessage.speaker.length + contextMessage.text.length + 3
+                : 0
             if (this.charsUsed + contextLen > effectiveCharLimit) {
-                ignored.push(contextItem)
+                ignored.push(contextItem(v))
                 limitReached = true
                 continue
             }
             this.seenContext.add(id)
-            this.reverseMessages.push(...contextMessages)
+            if (contextMessage) {
+                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
+                this.reverseMessages.push(contextMessage)
+            }
             this.charsUsed += contextLen
-            used.push(contextItem)
+            used.push(contextItem(v))
         }
         return {
             limitReached,
@@ -136,4 +149,30 @@ export class PromptBuilder {
             duplicate,
         }
     }
+}
+
+function isContextItem(value: ContextItem | ContextMessage): value is ContextItem {
+    return 'uri' in value && 'type' in value && !('speaker' in value)
+}
+
+function contextItem(value: ContextItem | ContextMessage): ContextItem {
+    return isContextItem(value) ? value : value.file
+}
+
+export function contextItemId(value: ContextItem | ContextMessage): string {
+    const item = contextItem(value)
+
+    if (item.range) {
+        return `${item.uri.toString()}#${item.range.start.line}:${item.range.end.line}`
+    }
+
+    if (item.content) {
+        return `${item.uri.toString()}#${SHA256(item.content).toString()}`
+    }
+
+    return item.uri.toString()
+}
+
+function messageChars(message: Message): number {
+    return message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
 }

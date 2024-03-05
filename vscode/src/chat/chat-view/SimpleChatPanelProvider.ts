@@ -56,6 +56,7 @@ import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
+import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { toVSCodeRange } from '../../common/range'
@@ -450,7 +451,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
-                const userContextItems = await fillInContextItemContent(
+                const userContextItems: ContextItemWithContent[] = await fillInContextItemContent(
                     this.editor,
                     userContextFiles || []
                 )
@@ -1271,10 +1272,10 @@ async function newChatModelfromTranscriptJSON(
 export async function fillInContextItemContent(
     editor: Editor,
     items: ContextItem[]
-): Promise<ContextItem[]> {
+): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItem | null> => {
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
                 let content = item.content
                 if (!item.content) {
                     try {
