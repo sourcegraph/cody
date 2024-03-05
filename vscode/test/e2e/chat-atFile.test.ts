@@ -285,7 +285,7 @@ test.extend<ExpectedEvents>({
         timeout: 15000,
     })
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText('@#fizzbuzz() ')
+    await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
 
     // Submit the message
     await chatInput.press('Enter')

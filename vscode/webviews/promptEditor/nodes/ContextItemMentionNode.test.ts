@@ -17,5 +17,5 @@ describe('contextItemMentionNodeDisplayText', () => {
                 symbolName: 'MySymbol',
                 kind: 'function',
             })
-        ).toBe('@#MySymbol'))
+        ).toBe(`@${isWindows() ? '\\foo\\bar.ts' : 'foo/bar.ts'}:2-4#MySymbol`))
 })

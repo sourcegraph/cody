@@ -167,7 +167,11 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         return `@${displayPath(URI.parse(contextItem.uri))}`
     }
     if (contextItem.type === 'symbol') {
-        return `@#${contextItem.symbolName}`
+        return `@${displayPath(URI.parse(contextItem.uri))}${
+            contextItem.range
+                ? `:${contextItem.range.start.line + 1}-${contextItem.range.end.line + 1}`
+                : ''
+        }#${contextItem.symbolName}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
