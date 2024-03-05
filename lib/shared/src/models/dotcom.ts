@@ -3,30 +3,6 @@ import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 export const DEFAULT_DOT_COM_MODELS = [
-    // {
-    //     title: 'Claude 2.0',
-    //     model: 'anthropic/claude-2.0',
-    //     provider: 'Anthropic',
-    //     default: false,
-    //     codyProOnly: false,
-    //     usage: [ModelUsage.Chat, ModelUsage.Edit],
-    // },
-    // {
-    //     title: 'Claude 2.1 Preview',
-    //     model: 'anthropic/claude-2.1',
-    //     provider: 'Anthropic',
-    //     default: false,
-    //     codyProOnly: true,
-    //     usage: [ModelUsage.Chat, ModelUsage.Edit],
-    // },
-    // {
-    //     title: 'Claude Instant',
-    //     model: 'anthropic/claude-instant-1.2',
-    //     provider: 'Anthropic',
-    //     default: false,
-    //     codyProOnly: true,
-    //     usage: [ModelUsage.Chat, ModelUsage.Edit],
-    // },
     {
         title: 'Claude 3 Opus',
         model: 'anthropic/claude-3-opus-20240229',
@@ -37,7 +13,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Claude 3 Sonnet',
-        model: 'claude-3-sonnet-20240229',
+        model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
         codyProOnly: false,

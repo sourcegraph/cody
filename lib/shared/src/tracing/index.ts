@@ -1,5 +1,5 @@
 import opentelemetry, { SpanStatusCode, context, propagation, type Span } from '@opentelemetry/api'
-import { BrowserOrNodeResponse } from '../sourcegraph-api/graphql/client'
+import type { BrowserOrNodeResponse } from '../sourcegraph-api/graphql/client'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
