@@ -1039,7 +1039,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return this.newSession()
         }
         this.cancelInProgressCompletion()
-        const newModel = await newChatModelfromTranscriptJSON(oldTranscript, this.chatModel.modelID)
+        const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
 
         // Restore per-chat enhanced context settings
@@ -1241,12 +1241,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 }
 
-async function newChatModelfromTranscriptJSON(
+function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
     modelID: string
-): Promise<SimpleChatModel> {
-    const messages: MessageWithContext[][] = json.interactions.map(
-        (interaction: SerializedChatInteraction): MessageWithContext[] => {
+): SimpleChatModel {
+    return new SimpleChatModel(
+        json.chatModel || modelID,
+        json.interactions.flatMap((interaction: SerializedChatInteraction): MessageWithContext[] => {
             return [
                 {
                     message: {
@@ -1264,11 +1265,7 @@ async function newChatModelfromTranscriptJSON(
                     displayText: interaction.assistantMessage.displayText,
                 },
             ]
-        }
-    )
-    return new SimpleChatModel(
-        json.chatModel || modelID,
-        (await Promise.all(messages)).flat(),
+        }),
         json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos
