@@ -2,10 +2,32 @@ import { URI } from 'vscode-uri'
 
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 
-export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
+export const FIXTURE_TRANSCRIPT: Record<
+    'simple' | 'simple2' | 'codeQuestion' | 'explainCode',
+    ChatMessage[]
+> = setOtherChatMessageFields({
     simple: [
         { speaker: 'human', displayText: 'Hello, world!' },
         { speaker: 'assistant', displayText: 'Thank you' },
+    ],
+    simple2: [
+        {
+            speaker: 'human',
+            displayText: 'What planet are we on?',
+        },
+        {
+            speaker: 'assistant',
+            displayText: 'Earth',
+        },
+        {
+            speaker: 'human',
+            displayText: 'What color is the sky?',
+            contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+        },
+        {
+            speaker: 'assistant',
+            displayText: 'Blue.',
+        },
     ],
     codeQuestion: [
         {
@@ -43,4 +65,18 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
                 "Here is the rewritten code using only hexadecimal encoding:\n\n```\nprivate getNonce(): string {\n  let text = ''\n  const possible = '0123456789ABCDEF'\n  for (let i = 0; i < 32; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length))\n  }\n  return text\n}\n```",
         },
     ],
+})
+
+// Some things require the `text` field to be set.
+function setOtherChatMessageFields<K extends string>(
+    data: Record<K, ChatMessage[]>
+): Record<K, ChatMessage[]> {
+    for (const chatMessages of Object.values(data) as ChatMessage[][]) {
+        for (const chatMessage of chatMessages) {
+            if (!chatMessage.text) {
+                chatMessage.text = chatMessage.displayText
+            }
+        }
+    }
+    return data
 }

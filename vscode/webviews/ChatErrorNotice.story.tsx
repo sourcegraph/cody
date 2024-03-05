@@ -3,13 +3,13 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { RateLimitError } from '@sourcegraph/cody-shared'
-import type { ChatButtonProps } from '@sourcegraph/cody-ui/src/Chat'
-import { ErrorItem } from '@sourcegraph/cody-ui/src/chat/ErrorItem'
+import type { ChatButtonProps } from './Chat'
+import { ErrorItem } from './chat/ErrorItem'
 
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 
-import transcriptItemStyles from '../../lib/ui/src/chat/TranscriptItem.module.css'
 import chatStyles from './Chat.module.css'
+import transcriptItemStyles from './chat/TranscriptItem.module.css'
 
 const meta: Meta<typeof ErrorItem> = {
     title: 'cody/Chat Error Item',

@@ -1,13 +1,13 @@
 import * as vscode from 'vscode'
 
-import type { ContextMessage } from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../../prompt-builder/types'
+import type { ContextItem, ContextMessage } from '@sourcegraph/cody-shared'
 
 type ExtractableContextMessage = Required<Pick<ContextMessage, 'file'>> & ContextMessage
 
 const contextMessageToContextItem = ({ text, file }: ExtractableContextMessage): ContextItem => {
     return {
-        text: text,
+        type: 'file',
+        content: text,
         range: file.range
             ? new vscode.Range(
                   new vscode.Position(file.range.start.line, file.range.start.character),

@@ -1,4 +1,4 @@
-import type { ChatEventSource, ContextFile, EditModel } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
@@ -22,13 +22,13 @@ import { getTestInputItems } from './get-items/test'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
-import { fetchDocumentSymbols, getLabelForContextFile, getTitleRange, removeAfterLastAt } from './utils'
+import { fetchDocumentSymbols, getLabelForContextItem, getTitleRange, removeAfterLastAt } from './utils'
 
 interface QuickPickInput {
     /** The user provided instruction */
     instruction: string
     /** Any user provided context, from @ or @# */
-    userContextFiles: ContextFile[]
+    userContextFiles: ContextItem[]
     /** The LLM that the user has selected */
     model: EditModel
     /** The range that the user has selected */
@@ -47,7 +47,7 @@ export interface EditInputInitialValues {
     initialModel: EditModel
     initialIntent: EditIntent
     initialInputValue?: string
-    initialSelectedContextFiles?: ContextFile[]
+    initialSelectedContextFiles?: ContextItem[]
 }
 
 const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
@@ -87,13 +87,13 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     // ContextItems to store possible user-provided context
-    const contextItems = new Map<string, ContextFile>()
-    const selectedContextItems = new Map<string, ContextFile>()
+    const contextItems = new Map<string, ContextItem>()
+    const selectedContextItems = new Map<string, ContextItem>()
 
     // Initialize the selectedContextItems with any previous items
     // This is primarily for edit retries, where a user may want to reuse their context
     for (const file of initialValues.initialSelectedContextFiles ?? []) {
-        selectedContextItems.set(getLabelForContextFile(file), file)
+        selectedContextItems.set(getLabelForContextItem(file), file)
     }
 
     /**

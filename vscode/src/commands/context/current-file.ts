@@ -1,5 +1,5 @@
 import {
-    type ContextFile,
+    type ContextItem,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
@@ -8,7 +8,7 @@ import {
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 
-export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
+export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.file', async span => {
         try {
             const editor = getEditor()
@@ -37,7 +37,7 @@ export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
                     source: 'editor',
                     range: selection,
-                } as ContextFile,
+                } as ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCurrentFile', 'failed', { verbose: error })

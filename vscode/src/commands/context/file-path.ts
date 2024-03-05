@@ -1,5 +1,5 @@
 import {
-    type ContextFile,
+    type ContextItem,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
@@ -11,7 +11,7 @@ import type { URI } from 'vscode-uri'
 /**
  * Generate ContextFile for a file URI.
  */
-export async function getContextFileFromUri(file: URI): Promise<ContextFile[]> {
+export async function getContextFileFromUri(file: URI): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
             const doc = await vscode.workspace.openTextDocument(file)

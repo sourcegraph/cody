@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite'
-import { mergeConfig } from 'vite'
+import { defineProjectWithDefaults } from '../../.config/viteShared'
 
 const config: StorybookConfig = {
     stories: ['../webviews/**/*.story.@(js|jsx|ts|tsx)'],
@@ -8,8 +8,7 @@ const config: StorybookConfig = {
         name: '@storybook/react-vite',
         options: {},
     },
-    viteFinal: async config => {
-        return mergeConfig(config, { define: { 'process.env': {} } })
-    },
+    viteFinal: async config =>
+        defineProjectWithDefaults(__dirname, { ...config, define: { 'process.env': '{}' } }),
 }
 export default config

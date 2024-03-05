@@ -1,11 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type Message, getSimplePreamble, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type Message,
+    getSimplePreamble,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
 
 import { PromptBuilder } from '../../prompt-builder'
-import type { ContextItem } from '../../prompt-builder/types'
 import type { MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 import { sortContextItems } from './agentContextSorting'
 

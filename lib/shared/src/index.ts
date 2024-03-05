@@ -4,15 +4,12 @@ export { ModelProvider } from './models'
 export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
-export { Transcript } from './chat/transcript'
 export type { TranscriptJSON } from './chat/transcript'
-export { Interaction } from './chat/transcript/interaction'
 export type { InteractionJSON } from './chat/transcript/interaction'
 export { errorToChatError } from './chat/transcript/messages'
 export {
@@ -24,13 +21,11 @@ export {
     isAtRange,
 } from './chat/input'
 export type {
-    ChatButton,
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatMessage,
     ChatInputHistory,
-    InteractionMessage,
+    ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
@@ -49,19 +44,18 @@ export type {
 } from './codebase-context/context-status'
 export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
-    ContextFile,
-    ContextFileFile,
+    ContextItem,
+    ContextItemFile,
     ContextFileSource,
-    ContextFileSymbol,
+    ContextItemSymbol,
     ContextFileType,
     ContextMessage,
-    HoverContext,
-    PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export { type RangeData, toRangeData } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
@@ -69,7 +63,7 @@ export {
 } from './common/languages'
 export { renderMarkdown } from './common/markdown'
 export { posixFilePaths } from './common/path'
-export { isWindows } from './common/platform'
+export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
     isFileURI,
@@ -93,7 +87,6 @@ export type {
     ActiveTextEditorDiagnostic,
     ActiveTextEditorDiagnosticType,
     ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from './editor'
@@ -111,7 +104,6 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'

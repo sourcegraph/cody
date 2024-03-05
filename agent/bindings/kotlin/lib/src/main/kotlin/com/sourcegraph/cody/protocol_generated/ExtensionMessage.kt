@@ -123,7 +123,7 @@ data class `transcript-errorsExtensionMessage`(
 
 data class UserContextFilesExtensionMessage(
   val type: TypeEnum? = null, // Oneof: userContextFiles
-  val userContextFiles: List<ContextFile>? = null,
+  val userContextFiles: List<ContextItem>? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {

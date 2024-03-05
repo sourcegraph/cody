@@ -1,10 +1,10 @@
 import type { URI } from 'vscode-uri'
 
+import type { RangeData } from '../common/range'
 import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
-    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '../editor'
@@ -38,7 +38,7 @@ export class MockEditor implements Editor {
     }
 
     public getActiveTextEditorDiagnosticsForRange(
-        range: ActiveTextEditorSelectionRange
+        range: RangeData
     ): ActiveTextEditorDiagnostic[] | null {
         return this.mocks.getActiveTextEditorDiagnosticsForRange?.(range) ?? null
     }
@@ -55,10 +55,7 @@ export class MockEditor implements Editor {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
 
-    public async getTextEditorContentForFile(
-        uri: URI,
-        range?: ActiveTextEditorSelectionRange
-    ): Promise<string | undefined> {
+    public async getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string | undefined> {
         return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
     }
 }

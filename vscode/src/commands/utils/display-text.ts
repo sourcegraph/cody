@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextFile, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import { trailingNonAlphaNumericRegex } from './test-commands'
 
 /**
@@ -15,7 +15,7 @@ export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
  */
-export function createDisplayTextWithFileLinks(humanInput: string, files: ContextFile[]): string {
+export function createDisplayTextWithFileLinks(humanInput: string, files: ContextItem[]): string {
     let formattedText = humanInput
     for (const file of files) {
         // +1 on the end line numbers because we want to make sure to include everything on the end line by
@@ -63,8 +63,8 @@ export function replaceFileNameWithMarkdownLink(
     const text = humanInput
         .replace(trailingNonAlphaNumericRegex, '')
         .replace(textToBeReplaced, ` ${markdownText}`)
-    const lastChar = trailingNonAlphaNumericRegex.test(humanInput) ? humanInput.slice(-1) : ''
-    return (text + lastChar).trim()
+    const trailingNonAlphanum = humanInput.match(trailingNonAlphaNumericRegex)?.[0] ?? ''
+    return (text + trailingNonAlphanum).trim()
 }
 
 /**

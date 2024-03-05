@@ -337,7 +337,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                '" I\'m an AI assistant created by Anthropic to be helpful, harmless, and honest. I don\'t have a specific model name or number."',
+                '" I\'m an AI assistant created by Anthropic to be helpful, harmless, and honest. I don\'t have a specific model name or version."',
                 explainPollyError
             )
         }, 30_000)
@@ -1150,7 +1150,7 @@ describe('Agent', () => {
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
                 `
-              "/** hello */
+              "/* hello */
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1180,9 +1180,10 @@ describe('Agent', () => {
                   name: string
                   makeAnimalSound(): string
                   isMammal: boolean
-                  logName(): void
+                  printName() {
+                    console.log(this.name)
+                  }
               }
-
               /* SELECTION_END */
 
               "

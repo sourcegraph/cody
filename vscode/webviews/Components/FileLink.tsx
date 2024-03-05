@@ -1,7 +1,7 @@
 import type React from 'react'
 
 import { displayPath } from '@sourcegraph/cody-shared'
-import type { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import type { FileLinkProps } from '../chat/components/EnhancedContext'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 

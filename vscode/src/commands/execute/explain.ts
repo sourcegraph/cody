@@ -1,4 +1,4 @@
-import { type ContextFile, displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath, logDebug } from '@sourcegraph/cody-shared'
 import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
@@ -30,7 +30,7 @@ async function explainCommand(
     }
 
     // fetches the context file from the current cursor position using getContextFileFromCursor().
-    const contextFiles: ContextFile[] = []
+    const contextFiles: ContextItem[] = []
 
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)
