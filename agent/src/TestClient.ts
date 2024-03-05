@@ -523,7 +523,7 @@ export class TestClient extends MessageHandler {
         const message = missingRecording.error ?? ''
         const jsonText = message.split('\n').slice(1).join('\n')
         const json = JSON.parse(jsonText)
-        const bodyText = json?.body || '{}' // default to empty object if body is missing
+        const bodyText = json?.body ?? '{}'
         const body = JSON.parse(bodyText)
         const { closestBody } = await this.request('testing/closestPostData', {
             url: json?.url ?? '',
