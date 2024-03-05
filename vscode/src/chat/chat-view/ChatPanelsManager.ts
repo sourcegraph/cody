@@ -109,8 +109,9 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposePanels()
         }
 
+        const endpoint = authStatus.endpoint ?? ''
         this.currentAuthAccount = {
-            endpoint: authStatus.endpoint ?? '',
+            endpoint,
             primaryEmail: authStatus.primaryEmail,
             username: authStatus.username,
         }
@@ -118,6 +119,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         await this.updateTreeViewHistory()
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
+
+        // Get a list of models from local-hosted Ollama (if any) for DotCom users
+        ModelProvider.getLocalOllamaModels(endpoint)
     }
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {

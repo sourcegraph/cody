@@ -37,7 +37,12 @@ export class ModelProvider {
      * Fetches available Ollama models from the local Ollama server
      * and adds them to the list of ollama providers.
      */
-    public static getLocalOllamaModels(): void {
+    public static getLocalOllamaModels(endpoint?: string | null): void {
+        // Only fetch local models if the endpoint is not a dotcom instance
+        if (endpoint && !isDotCom(endpoint)) {
+            return
+        }
+
         fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
             .then(response => response.json())
             .then(data => {
