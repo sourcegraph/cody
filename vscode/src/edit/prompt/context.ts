@@ -150,7 +150,10 @@ export const getContext = async ({
     contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextItem[]> => {
-    if (contextMessages) {
+    if (contextMessages && contextMessages.length > 0) {
+        // TODO: We currently use `contextMessages` as a way to programmatically provide specific context
+        // for test files and attach this context to the `FixupTask`.
+        // We should move this logic to `getContextFromIntent`
         return extractContextItemsFromContextMessages(contextMessages)
     }
 
