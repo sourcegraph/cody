@@ -118,6 +118,8 @@ test.extend<ExpectedEvents>({
 
     // Add a new at-file to an old messages
     await chatInput.press(`${osKey}+k`)
+    await chatInput.focus()
+    await expect(chatInput).toHaveValue('Explain @Main.java ')
     await chatInput.type('and @vgo', { delay: 50 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveValue(
