@@ -5,12 +5,12 @@ import { executeEdit } from '../../edit/execute'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 
 export const DOCUMENT_ITEM: vscode.QuickPickItem = {
-    label: 'Document Code',
+    label: '$(book) Document Code',
     alwaysShow: true,
 }
 
 export const TEST_ITEM: vscode.QuickPickItem = {
-    label: 'Generate Tests',
+    label: '$(package) Generate Tests',
     alwaysShow: true,
 }
 

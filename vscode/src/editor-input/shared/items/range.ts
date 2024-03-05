@@ -6,6 +6,7 @@ import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './
 import type { RangeItem } from './types'
 import { isGenerateIntent } from '../../../edit/utils/edit-intent'
 import { RANGE_SYMBOLS_ITEM } from './range-symbols'
+import type { EditorInputType } from '../create-input'
 
 export const RANGE_ITEM: vscode.QuickPickItem = {
     label: 'Range',
@@ -13,20 +14,26 @@ export const RANGE_ITEM: vscode.QuickPickItem = {
 }
 
 const getDefaultRangeItems = (
+    type: EditorInputType,
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues
 ): RangeItem[] => {
     const { initialRange, initialExpandedRange, initialCursorPosition } = initialValues
 
-    const cursorItem = {
-        ...CURSOR_RANGE_ITEM,
-        range: new vscode.Range(initialCursorPosition, initialCursorPosition),
-    }
+    const everPresentItems: RangeItem[] =
+        type === 'Chat'
+            ? []
+            : [
+                  {
+                      ...CURSOR_RANGE_ITEM,
+                      range: new vscode.Range(initialCursorPosition, initialCursorPosition),
+                  },
+              ]
 
     if (initialExpandedRange) {
         // No need to show the selection (it will be the same as the expanded range)
         return [
-            cursorItem,
+            ...everPresentItems,
             {
                 ...EXPANDED_RANGE_ITEM,
                 range: initialExpandedRange,
@@ -37,7 +44,7 @@ const getDefaultRangeItems = (
     if (isGenerateIntent(document, initialRange)) {
         // No need to show the selection (it will be the same as the cursor position)
         return [
-            cursorItem,
+            ...everPresentItems,
             {
                 ...EXPANDED_RANGE_ITEM,
                 range: async () =>
@@ -49,7 +56,7 @@ const getDefaultRangeItems = (
     }
 
     return [
-        cursorItem,
+        ...everPresentItems,
         {
             ...SELECTION_RANGE_ITEM,
             range: initialRange,
@@ -71,11 +78,12 @@ interface RangeInputInitialValues {
 }
 
 export const getRangeInputItems = async (
+    type: EditorInputType,
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues,
-    activeRange: vscode.Range,
+    activeRange: vscode.Range
 ): Promise<GetItemsResult> => {
-    const defaultItems = getDefaultRangeItems(document, initialValues).map(item => ({
+    const defaultItems = getDefaultRangeItems(type, document, initialValues).map(item => ({
         ...item,
         label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${item.label}`,
     }))

@@ -363,7 +363,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
     )
 }
 
-function firstInterestingLine(contents: string): string {
+export function firstInterestingLine(contents: string): string {
     const lines = contents.split('\n')
     for (const line of lines) {
         if (line.trim().length > 3) {

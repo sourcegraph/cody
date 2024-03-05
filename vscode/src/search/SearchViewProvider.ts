@@ -174,6 +174,10 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 for (const folder of folders) {
                     await this.indexManager.refreshIndex(folder)
                 }
+            }),
+            vscode.commands.registerCommand('cody.search.submit', async (query: string) => {
+                const result = await this.submitQuery(query)
+                return result
             })
         )
         // Kick off search index creation for all workspace folders
@@ -247,41 +251,23 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 break
             }
             case 'show-search-result': {
-                const { range, uri } = message
                 const vscodeRange = new vscode.Range(
-                    range.start.line,
-                    range.start.character,
-                    range.end.line,
-                    range.end.character
+                    message.range.start.line,
+                    message.range.start.character,
+                    message.range.end.line,
+                    message.range.end.character
                 )
-
-                // show file and range in editor
-                const doc = await vscode.workspace.openTextDocument(uri)
-                const editor = await vscode.window.showTextDocument(doc, {
-                    selection: vscodeRange,
-                    preserveFocus: true,
-                })
-                const isWholeFile =
-                    vscodeRange.start.line === 0 && vscodeRange.end.line === doc.lineCount - 1
-                if (!isWholeFile) {
-                    editor.setDecorations(searchDecorationType, [vscodeRange])
-                    editor.revealRange(
-                        vscodeRange,
-                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
-                    )
-                }
+                await previewSearchResult(vscodeRange, message.uri)
                 break
             }
         }
     }
 
-    // TODO(beyang): support cancellation through symf
-    private async onDidReceiveQuery(query: string): Promise<void> {
+    private async submitQuery(query: string): Promise<SearchPanelFile[]> {
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
 
         if (query.trim().length === 0) {
-            await this.webview?.postMessage({ type: 'update-search-results', results: [] })
-            return
+            return []
         }
 
         const symf = this.symfRunner
@@ -292,14 +278,25 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         const scopeDirs = getScopeDirs()
         if (scopeDirs.length === 0) {
             void vscode.window.showErrorMessage('Open a workspace folder to determine the search scope')
-            return
+            return []
         }
 
         // Check cancellation after index is ready
         if (cancellationToken.isCancellationRequested) {
-            return
+            return []
         }
 
+        const cumulativeResults: SearchPanelFile[] = []
+        this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
+        const resultSets = await symf.getResults(query, scopeDirs)
+        for (const resultSet of resultSets) {
+            cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
+        }
+        return cumulativeResults
+    }
+
+    // TODO(beyang): support cancellation through symf
+    private async onDidReceiveQuery(query: string): Promise<void> {
         // Update the config. We could do this on a smarter schedule, but this suffices for when the
         // webview needs it for now.
         this.webview?.postMessage({
@@ -309,29 +306,12 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         } satisfies ExtensionMessage)
 
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
-            const cumulativeResults: SearchPanelFile[] = []
-            this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
-            const resultSets = await symf.getResults(query, scopeDirs)
-            for (const resultSet of resultSets) {
-                try {
-                    cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
-                    await this.webview?.postMessage({
-                        type: 'update-search-results',
-                        results: cumulativeResults,
-                        query,
-                    })
-                } catch (error) {
-                    if (error instanceof vscode.CancellationError) {
-                        void vscode.window.showErrorMessage(
-                            'No search results because indexing was canceled'
-                        )
-                    } else {
-                        void vscode.window.showErrorMessage(
-                            `Error fetching results for query "${query}": ${error}`
-                        )
-                    }
-                }
-            }
+            const cumulativeResults = await this.submitQuery(query)
+            await this.webview?.postMessage({
+                type: 'update-search-results',
+                results: cumulativeResults,
+                query,
+            })
         })
     }
 }
@@ -410,4 +390,25 @@ async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFi
             })
         )
     ).filter(result => result !== null) as SearchPanelFile[]
+}
+
+export async function previewSearchResult(range: vscode.Range, uri: vscode.Uri): Promise<void> {
+    // show file and range in editor
+    const doc = await vscode.workspace.openTextDocument(uri)
+    const editor = await vscode.window.showTextDocument(doc, {
+        selection: range,
+        preserveFocus: true,
+    })
+    const isWholeFile = range.start.line === 0 && range.end.line === doc.lineCount - 1
+    if (!isWholeFile) {
+        editor.setDecorations(searchDecorationType, [range])
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+    }
+}
+
+export async function clearSearchResultPreviews() {
+    const visibleEditors = vscode.window.visibleTextEditors
+    for (const editor of visibleEditors) {
+        editor.setDecorations(searchDecorationType, [])
+    }
 }

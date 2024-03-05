@@ -64,7 +64,6 @@ export interface OutputValues {
         model: ChatModel
     } & GenericOutputValues
     Edit: {
-        type?: 'Edit'
         /** The LLM that the user has selected */
         model: EditModel
         /**
@@ -249,9 +248,9 @@ export async function showEditorInput<T extends EditorInputType>({
 
     const rangeInput = createQuickPick({
         title: INPUT_TITLE,
-        placeHolder: 'Select a range to edit',
+        placeHolder: 'Select a range',
         getItems: () =>
-            getRangeInputItems(document, { ...initialValues, initialCursorPosition }, activeRange),
+            getRangeInputItems(type, document, { ...initialValues, initialCursorPosition }, activeRange),
         buttons: [vscode.QuickInputButtons.Back],
         onDidTriggerButton: () => targetInput.render(targetInput.input.value),
         onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
@@ -286,9 +285,13 @@ export async function showEditorInput<T extends EditorInputType>({
 
     const targetInput = createQuickPick({
         title: INPUT_TITLE,
-        placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
+        placeHolder:
+            type === 'Chat'
+                ? 'Enter chat message (@ to include code)'
+                : 'Enter edit instruction (@ to include code)',
         getItems: () =>
             getSharedInputItems(
+                type,
                 targetInput.input.value,
                 activeRangeItem,
                 activeModelItem,
@@ -324,6 +327,7 @@ export async function showEditorInput<T extends EditorInputType>({
                 // Nothing to match, re-render existing items
                 // eslint-disable-next-line no-self-assign
                 input.items = getSharedInputItems(
+                    type,
                     input.value,
                     activeRangeItem,
                     activeModelItem,

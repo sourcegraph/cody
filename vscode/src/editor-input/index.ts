@@ -2,11 +2,12 @@ import type { ChatEventSource } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ChatManager } from '../chat/chat-view/ChatManager'
 import { executeEdit } from '../edit/execute'
-import { type GetItemsResult, createQuickPick } from './shared/quick-pick'
 import type { EditManager } from '../edit/manager'
 import { getEditor } from '../editor/active-editor'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
+import { showSearchInput } from './search'
+import { type GetItemsResult, createQuickPick } from './shared/quick-pick'
 
 const CHAT_ITEM_PREFIX: vscode.QuickPickItem = {
     label: '@',
@@ -128,8 +129,8 @@ export const getInput = async ({
                     case CHAT_ITEM_NO_PREFIX.label:
                         return chatManager.executeChatInline()
                     case SEARCH_ITEM_PREFIX.label:
-                        // render the search input
-                        return
+                    case SEARCH_ITEM_NO_PREFIX.label:
+                        return showSearchInput()
                 }
 
                 return

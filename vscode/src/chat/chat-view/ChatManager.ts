@@ -24,7 +24,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import { showChatInput } from '../../editor-input/chat/get-input'
+import { showChatInput } from '../../editor-input/chat'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
