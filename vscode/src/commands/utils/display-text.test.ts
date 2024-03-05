@@ -198,4 +198,14 @@ describe('replaceFileNameWithMarkdownLink', () => {
             )}) what does this do`
         )
     })
+
+    it('preserves trailing non-alphanum', () => {
+        expect(
+            replaceFileNameWithMarkdownLink('Hello @path/to/test.js :-)', URI.file('/path/to/test.js'))
+        ).toEqual(
+            `Hello [_@path/to/test.js_](command:_cody.vscode.open?${encodeURIComponent(
+                '[{"$mid":1,"path":"/path/to/test.js","scheme":"file"},{"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
+            )}) :-)`
+        )
+    })
 })
