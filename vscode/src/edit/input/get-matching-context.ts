@@ -1,8 +1,8 @@
-import type { ContextFile } from '@sourcegraph/cody-shared'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
-import { getLabelForContextFile } from './utils'
+import { getLabelForContextItem } from './utils'
 
 /* Match strings that end with a '@' followed by any characters except a space */
 const MATCHING_CONTEXT_FILE_REGEX = /@(\S+)$/
@@ -17,7 +17,7 @@ interface FixupMatchingContext {
     key: string
     /* If present, will override the key shown in the quick pick selector */
     shortLabel?: string
-    file: ContextFile
+    file: ContextItem
 }
 
 export async function getMatchingContext(instruction: string): Promise<FixupMatchingContext[] | null> {
@@ -25,7 +25,7 @@ export async function getMatchingContext(instruction: string): Promise<FixupMatc
     if (symbolMatch) {
         const symbolResults = await getSymbolContextFiles(symbolMatch[1], MAX_FUZZY_RESULTS)
         return symbolResults.map(result => ({
-            key: getLabelForContextFile(result),
+            key: getLabelForContextItem(result),
             file: result,
             shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
                 result.symbolName
@@ -42,7 +42,7 @@ export async function getMatchingContext(instruction: string): Promise<FixupMatc
             cancellation.token
         )
         return fileResults.map(result => ({
-            key: getLabelForContextFile(result),
+            key: getLabelForContextItem(result),
             file: result,
         }))
     }

@@ -67,12 +67,14 @@ test.extend<ExpectedEvents>({
     await heyTreeItem.hover()
     await heyTreeItem.getByLabel('Delete Chat').hover()
     await heyTreeItem.getByLabel('Delete Chat').click()
+    await page.waitForTimeout(100)
     expect(heyTreeItem).not.toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hey' })).not.toBeVisible()
 
     await holaTreeItem.hover()
     await holaTreeItem.getByLabel('Delete Chat').hover()
     await holaTreeItem.getByLabel('Delete Chat').click()
+    await page.waitForTimeout(100)
     expect(holaTreeItem).not.toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hola' })).not.toBeVisible()
 

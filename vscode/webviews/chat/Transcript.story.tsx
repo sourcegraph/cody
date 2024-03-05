@@ -4,6 +4,7 @@ import { Transcript } from './Transcript'
 import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 
+import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 import styles from './Transcript.story.module.css'
 
 const meta: Meta<typeof Transcript> = {
@@ -19,16 +20,10 @@ const meta: Meta<typeof Transcript> = {
         },
     },
     args: {
-        transcript: FIXTURE_TRANSCRIPT[Object.keys(FIXTURE_TRANSCRIPT).sort()[0]],
+        transcript: FIXTURE_TRANSCRIPT.simple,
     },
 
-    decorators: [
-        story => (
-            <div style={{ maxWidth: '600px', margin: '2rem auto', border: 'solid 1px #ccc' }}>
-                {story()}
-            </div>
-        ),
-    ],
+    decorators: [VSCodeStoryDecorator],
 }
 
 export default meta

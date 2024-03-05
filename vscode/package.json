@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -20,8 +20,8 @@
     "build": "tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
     "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
     "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
-    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
-    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:@sourcegraph/cody-ui=@sourcegraph/cody-ui/src/index --alias:@sourcegraph/cody-ui/src=@sourcegraph/cody-ui/src\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
@@ -490,6 +490,13 @@
         "command": "cody.embeddings.resolveIssue",
         "title": "Cody Embeddings",
         "when": "cody.embeddings.hasIssue"
+      },
+      {
+        "command": "cody.debug.export.logs",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Export Logs…",
+        "when": "config.cody.debug.enable"
       }
     ],
     "keybindings": [
@@ -696,6 +703,11 @@
         },
         {
           "command": "cody.welcome",
+          "when": "view == cody.support.tree.view",
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.debug.export.logs",
           "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
         },
@@ -995,7 +1007,7 @@
             "model": {
               "type": "string",
               "default": "deepseek-coder:6.7b-base-q4_K_M",
-              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M"]
+              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M", "starcoder2:7b", "starcoder2:15b"]
             },
             "parameters": {
               "type": "object",
@@ -1064,6 +1076,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@mdi/js": "^7.2.96",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1078,7 +1091,6 @@
     "@sentry/core": "^7.66.0",
     "@sentry/node": "^7.66.0",
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/cody-ui": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@storybook/preview-api": "^7.6.2",
     "@vscode/codicons": "^0.0.35",

@@ -129,6 +129,16 @@ class CodeLlama extends DefaultOllamaModel {
     }
 }
 
+class StarCoder extends DefaultOllamaModel {
+    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+        const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
+
+        const infillPrefix = context + currentFileNameComment + prefix
+
+        return `<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+    }
+}
+
 export function getModelHelpers(model: string) {
     if (model.includes('codellama')) {
         return new CodeLlama()
@@ -136,6 +146,10 @@ export function getModelHelpers(model: string) {
 
     if (model.includes('deepseek-coder')) {
         return new DeepseekCoder()
+    }
+
+    if (model.includes('starcoder')) {
+        return new StarCoder()
     }
 
     return new DefaultOllamaModel()

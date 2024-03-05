@@ -1,10 +1,16 @@
 .inner-container {
+    display: flex;
+    flex-direction: column;
     height: 100%;
 
     /* popups use a screen to capture clicks outside the popups; this is
        necessary so that the screen can extend to the extent of the view without
        scrollbars */
     overflow: clip;
+}
+
+.transcript-container {
+    flex: 1;
 }
 
 .transcript-item {
@@ -81,58 +87,33 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .input-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
     gap: 0.5rem;
     padding: 0.75rem;
 }
 
-/* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
-.chat-input-container {
-    /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
-    display: grid;
-}
-
-.chat-input-container::after {
-    /* Note the weird space! Needed to preventy jumpy behavior */
-    content: attr(data-value) ' ';
-
-    /* This is how textarea text behaves */
-    white-space: pre-wrap;
-
-    /* Hidden from view, clicks, and screen readers */
-    visibility: hidden;
-}
-
 /* Both elements need the same styling so the height matches */
 .chat-input,
 .chat-input-container::after {
-    box-sizing: border-box;
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
-    border: 1px solid transparent;
-    border-radius: 2px;
-
-    /* Extra right padding to ensure it doesn't overlap with enhanced context button */
-    padding: 0.5rem 32px 0.5rem 0.5rem;
-    font: inherit;
-    width: 100%;
-    overflow: hidden;
-
-    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
-    max-height: 80vh; /* 80% of viewport height */
-
-    /* Place on top of each other */
-    grid-area: 1 / 1 / 2 / 2;
-    resize: none;
 }
 
-/* Unset for the new chat ui */
-.new-chat-input,
-.new-chat-input-container::after {
-    min-height: unset;
+.chat-input-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
 .chat-input {
+    width: 100%;
+    height: 100%;
+    resize: none;
     border-color: var(--vscode-input-border, transparent);
 }
 
@@ -142,6 +123,13 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
 }
+
+.textarea-disabled {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
+}
+
 
 .chat-input-actions {
     position: absolute;
@@ -165,6 +153,17 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .chat-button {
     margin-top: 0.5rem;
     padding: 0.25rem;
+}
+
+.context-button {
+    color: var(--button-primary-background);
+    position: absolute;
+    right: 0.3rem;
+    bottom: 0.3rem;
+    fill: currentColor;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .chat-input-context {
@@ -196,6 +195,16 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     cursor: pointer;
 }
 
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0.1rem;
+    margin-bottom: 0.25rem;
+    /* This matches the button paddings, so the button text lines up with the input */
+    margin-left: -6px;
+}
+
 .suggestion-button {
     all: unset;
     cursor: pointer;
@@ -218,6 +227,15 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 }
 
 .submit-button {
+    border: none;
+    cursor: pointer;
+
+    border-radius: 50%;
+    height: 2rem;
+    width: 2rem;
+
+    margin-left: 0.5rem;
+
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     display: flex;
@@ -252,8 +270,9 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     cursor: default;
 }
 
-.textarea-disabled {
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    opacity: 0.5;
+.text-area-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
 }

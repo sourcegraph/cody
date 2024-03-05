@@ -1,4 +1,4 @@
-import type { InteractionMessage } from '../chat/transcript/messages'
+import type { ChatMessage } from '../chat/transcript/messages'
 
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
 const hallucinate =
@@ -26,7 +26,7 @@ export class PromptMixin {
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
-    public static mixInto(humanMessage: InteractionMessage): InteractionMessage {
+    public static mixInto(humanMessage: ChatMessage): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
         const mixins = [...PromptMixin.mixins, ...PromptMixin.customMixin, PromptMixin.defaultMixin]
             .map(mixin => mixin.prompt)

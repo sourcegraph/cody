@@ -5,7 +5,7 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
   },
   "include": [
     "src",
@@ -16,7 +16,7 @@
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-    ".storybook/*.ts", "../lib/shared/src/fetch.ts",
+    ".storybook/*.ts"
   ],
   "exclude": [
     "scripts",
@@ -30,8 +30,5 @@
     {
       "path": "../lib/shared"
     },
-    {
-      "path": "../lib/ui"
-    }
   ]
 }

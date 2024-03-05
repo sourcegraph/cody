@@ -1,5 +1,5 @@
 import {
-    type ContextFile,
+    type ContextItem,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
@@ -14,7 +14,7 @@ import { getSmartSelection } from '../../editor/utils'
  * When no selection is made, try getting the smart selection based on the cursor position.
  * If no smart selection is found, use the visible range of the editor instead.
  */
-export async function getContextFileFromCursor(): Promise<ContextFile[]> {
+export async function getContextFileFromCursor(): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.selection', async span => {
         try {
             const editor = getEditor()
@@ -42,7 +42,7 @@ export async function getContextFileFromCursor(): Promise<ContextFile[]> {
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
                     source: 'selection',
                     range: selection,
-                } as ContextFile,
+                } as ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })

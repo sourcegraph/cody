@@ -1,6 +1,6 @@
-import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import { isMacOS } from '@sourcegraph/cody-shared'
 
-const osIcon = isMac() ? '⌥' : 'Alt+'
+const osIcon = isMacOS() ? '⌥' : 'Alt+'
 
 export const CodyCommandMenuItems = [
     {

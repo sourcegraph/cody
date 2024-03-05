@@ -1,4 +1,4 @@
-import { type CodyCommand, type ContextFile, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { type CodyCommand, type ContextItem, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
@@ -92,7 +92,7 @@ export class CommandsProvider implements vscode.Disposable {
      * Gets the context file content from executing a shell command.
      * Used for retreiving context for the command field in custom command
      */
-    public async runShell(shell: string): Promise<ContextFile[]> {
+    public async runShell(shell: string): Promise<ContextItem[]> {
         return getContextFileFromShell(shell)
     }
 

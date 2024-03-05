@@ -4,17 +4,14 @@ import classNames from 'classnames'
 
 import type { ChatMessage, Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
 
-import type {
-    ApiPostMessage,
-    ChatButtonProps,
-    ChatModelDropdownMenuProps,
-    CodeBlockActionsProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
-    UserAccountInfo,
-} from '../Chat'
+import type { UserAccountInfo } from '../Chat'
+import type { ChatButtonProps } from '../Chat'
+import type { EditButtonProps } from '../Chat'
+import type { FeedbackButtonsProps } from '../Chat'
+import type { ApiPostMessage } from '../Chat'
+import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
+import type { CodeBlockActionsProps } from './CodeBlocks'
 
-import type { SymbolLinkProps } from './PreciseContext'
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 import type { FileLinkProps } from './components/EnhancedContext'
 
@@ -27,7 +24,6 @@ export const Transcript: React.FunctionComponent<
         messageBeingEdited: number | undefined
         setMessageBeingEdited: (index?: number) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         className?: string
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
@@ -49,7 +45,6 @@ export const Transcript: React.FunctionComponent<
     messageBeingEdited,
     setMessageBeingEdited,
     fileLinkComponent,
-    symbolLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -170,7 +165,7 @@ export const Transcript: React.FunctionComponent<
             const isItemBeingEdited = messageBeingEdited === transcriptIndex
 
             return (
-                <div>
+                <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
                     <TranscriptItem
                         index={transcriptIndex}
@@ -186,7 +181,6 @@ export const Transcript: React.FunctionComponent<
                         setBeingEdited={setMessageBeingEdited}
                         EditButtonContainer={EditButtonContainer}
                         fileLinkComponent={fileLinkComponent}
-                        symbolLinkComponent={symbolLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}
@@ -233,7 +227,6 @@ export const Transcript: React.FunctionComponent<
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
                         fileLinkComponent={fileLinkComponent}
-                        symbolLinkComponent={symbolLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}

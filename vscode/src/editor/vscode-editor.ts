@@ -5,9 +5,9 @@ import {
     type ActiveTextEditorDiagnostic,
     type ActiveTextEditorDiagnosticType,
     type ActiveTextEditorSelection,
-    type ActiveTextEditorSelectionRange,
     type ActiveTextEditorVisibleContent,
     type Editor,
+    type RangeData,
     SURROUNDING_LINES,
     isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
@@ -73,7 +73,7 @@ export class VSCodeEditor implements Editor {
 
     public async getTextEditorContentForFile(
         fileUri: vscode.Uri,
-        selectionRange?: ActiveTextEditorSelectionRange
+        selectionRange?: RangeData
     ): Promise<string | undefined> {
         if (!fileUri) {
             return undefined
@@ -113,7 +113,7 @@ export class VSCodeEditor implements Editor {
     public getActiveTextEditorDiagnosticsForRange({
         start,
         end,
-    }: ActiveTextEditorSelectionRange): ActiveTextEditorDiagnostic[] | null {
+    }: RangeData): ActiveTextEditorDiagnostic[] | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null

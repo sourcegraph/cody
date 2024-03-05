@@ -1,5 +1,5 @@
-@import '@sourcegraph/cody-ui/src/index.css';
 @import '@vscode/codicons/dist/codicon';
+@import url(./utils/highlight.css);
 
 @font-face {
     font-family: cody-icons;

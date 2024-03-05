@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
 import {
-    type ContextFileFile,
     type ContextGroup,
+    type ContextItemFile,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
@@ -129,7 +129,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.setRepos(repos, RepoInclusion.Automatic)
     }
 
-    public async search(query: string): Promise<ContextFileFile[]> {
+    public async search(query: string): Promise<ContextItemFile[]> {
         const results = await this.query(query)
         if (isError(results)) {
             throw results

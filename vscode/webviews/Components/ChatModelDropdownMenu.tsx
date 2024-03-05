@@ -4,14 +4,22 @@ import { type ComponentProps, useCallback, useRef, useState } from 'react'
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import type { ChatModelDropdownMenuProps } from '@sourcegraph/cody-ui/src/Chat'
-import { AnthropicLogo, MistralLogo, OpenAILogo } from '@sourcegraph/cody-ui/src/icons/LLMProviderIcons'
+import { AnthropicLogo, MistralLogo, OpenAILogo } from '../icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { UserAccountInfo } from '../Chat'
 import styles from './ChatModelDropdownMenu.module.css'
 
 type DropdownProps = ComponentProps<typeof VSCodeDropdown>
+
+export interface ChatModelDropdownMenuProps {
+    models: ModelProvider[]
+    disabled: boolean // Disabled when transcript length > 1
+    onCurrentChatModelChange: (model: ModelProvider) => void
+    userInfo: UserAccountInfo
+}
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
     models,
