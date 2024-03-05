@@ -64,13 +64,20 @@ test.extend<ExpectedEvents>({
         .filter({ hasText: /New Custom Command.../ })
         .click()
     // Enter command name
-    await expect(page.getByText('New Custom Cody Command: Command Name')).toBeVisible()
-    await page.keyboard.type(commandName)
-    await page.keyboard.press('Enter')
+    const commandInputTitle = page.getByText('New Custom Cody Command: Command Name')
+    await expect(commandInputTitle).toBeVisible()
+    const commandInputBox = page.getByPlaceholder('e.g. hello')
+    await commandInputBox.fill(commandName)
+    await commandInputBox.fill(commandName)
+    await commandInputBox.press('Enter')
     // Enter prompt
-    await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()
-    await page.keyboard.type(prompt)
-    await page.keyboard.press('Enter')
+    const promptInputTitle = page.getByText('New Custom Cody Command: Prompt')
+    await expect(promptInputTitle).toBeVisible()
+    const promptInputBox = page.getByPlaceholder(
+        'e.g. Create five different test cases for the selected code'
+    )
+    await promptInputBox.fill(prompt)
+    await promptInputBox.press('Enter')
     // Use default context
     await expect(page.getByText('New Custom Cody Command: Context Options')).toBeVisible()
     await page.keyboard.press('Enter')

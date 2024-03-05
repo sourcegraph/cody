@@ -43,6 +43,11 @@ const responses = {
         template: { completion: '', stopReason: 'stop_sequence' },
         mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],
     },
+    document: `
+    /**
+     * Mocked doc string
+     */
+    `,
 }
 
 const FIXUP_PROMPT_TAG = '<SELECTEDCODE7662>'
@@ -201,7 +206,11 @@ export class MockServer {
             const request = req as MockRequest
             const lastHumanMessageIndex = request.body.messages.length - 2
             let response = responses.chat
-            if (
+            // Doc command
+            if (request.body.messages[lastHumanMessageIndex].text.includes('documentation comment')) {
+                response = responses.document
+            } else if (
+                // Edit command
                 request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
                 request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
             ) {
