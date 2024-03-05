@@ -8,12 +8,21 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared'
+import { SHA256 } from 'crypto-js'
 import { URI } from 'vscode-uri'
 
 export function contextItemId(contextItem: ContextItem): string {
-    return contextItem.range
-        ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-        : contextItem.uri.toString()
+    const uri = contextItem.uri.toString()
+
+    if (contextItem.range) {
+        return `${uri}#${contextItem.range.start.line}:${contextItem.range.end.line}`
+    }
+
+    if (contextItem.content) {
+        return `${uri}#${SHA256(contextItem.content).toString()}`
+    }
+
+    return uri
 }
 
 export function renderContextItem(contextItem: ContextItem): Message[] {
