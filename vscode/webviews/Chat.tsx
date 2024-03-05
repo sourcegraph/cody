@@ -428,6 +428,24 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
+    const onCancelEditClick = useCallback(() => setEditMessageState(), [setEditMessageState])
+    const onEditLastMessageClick = useCallback(
+        () => setEditMessageState(lastHumanMessageIndex),
+        [setEditMessageState, lastHumanMessageIndex]
+    )
+
+    const onRestoreLastChatClick = useCallback(() => {
+        // Display the restore button if there is a previous chat id in current window
+        // And the current chat window is new
+        chatIDHistory.length > 1
+            ? () =>
+                  postMessage?.({
+                      command: 'restoreHistory',
+                      chatID: chatIDHistory.at(-2),
+                  })
+            : undefined
+    }, [chatIDHistory, postMessage])
+
     return (
         <div className={classNames(styles.innerContainer)}>
             {
@@ -469,19 +487,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     isMessageInProgress={!!messageInProgress?.speaker}
                     isEditing={transcript.length > 1 && messageBeingEdited !== undefined}
                     onChatResetClick={onChatResetClick}
-                    onCancelEditClick={() => setEditMessageState()}
-                    onEditLastMessageClick={() => setEditMessageState(lastHumanMessageIndex)}
-                    onRestoreLastChatClick={
-                        // Display the restore button if there is a previous chat id in current window
-                        // And the current chat window is new
-                        chatIDHistory.length > 1
-                            ? () =>
-                                  postMessage?.({
-                                      command: 'restoreHistory',
-                                      chatID: chatIDHistory.at(-2),
-                                  })
-                            : undefined
-                    }
+                    onCancelEditClick={onCancelEditClick}
+                    onEditLastMessageClick={onEditLastMessageClick}
+                    onRestoreLastChatClick={onRestoreLastChatClick}
                 />
 
                 <div className={styles.textAreaContainer}>
