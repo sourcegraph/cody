@@ -39,16 +39,10 @@ interface ChatMetadata {
 
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
     [chatID: string]: SerializedChatTranscript
-}
-
-export interface ChatInputHistory {
-    inputText: string
-    inputContextFiles: ContextItem[]
 }
 
 export type ChatEventSource =

@@ -275,10 +275,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
-            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
-                chat: { a: null as any },
-                input: [{ inputText: '', inputContextFiles: [] }],
-            })
+            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, { chat: { a: null as any } })
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
 
