@@ -5,9 +5,9 @@ import type { ContextItem, Editor } from '@sourcegraph/cody-shared'
 
 import '../../testutils/vscode'
 
-import { contextFilesToContextItems } from './SimpleChatPanelProvider'
+import { fillInContextItemContent } from './SimpleChatPanelProvider'
 
-describe('contextFilesToContextItems', () => {
+describe('fillInContextItemContent', () => {
     test('omits files that could not be read', async () => {
         // Fixes https://github.com/sourcegraph/cody/issues/2390.
         const mockEditor: Partial<Editor> = {
@@ -18,20 +18,16 @@ describe('contextFilesToContextItems', () => {
                 throw new Error('error')
             },
         }
-        const contextItems = await contextFilesToContextItems(
-            mockEditor as Editor,
-            [
-                {
-                    type: 'file',
-                    uri: URI.parse('file:///a.txt'),
-                },
-                {
-                    type: 'file',
-                    uri: URI.parse('file:///error.txt'),
-                },
-            ],
-            true
-        )
+        const contextItems = await fillInContextItemContent(mockEditor as Editor, [
+            {
+                type: 'file',
+                uri: URI.parse('file:///a.txt'),
+            },
+            {
+                type: 'file',
+                uri: URI.parse('file:///error.txt'),
+            },
+        ])
         expect(contextItems).toEqual<ContextItem[]>([
             { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
         ])
