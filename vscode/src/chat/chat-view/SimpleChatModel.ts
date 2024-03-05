@@ -214,7 +214,6 @@ function messageToInteractionJSON(
         usedContextFiles: humanMessage.newContextUsed ?? [],
         // These fields are unused on deserialization
         fullContext: [],
-        usedPreciseContext: [],
         timestamp: new Date().toISOString(),
     }
 }
