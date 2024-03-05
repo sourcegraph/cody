@@ -21,6 +21,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.6.1]
+
+### Changed
+
+- Autocomplete: Reduce the adaptive timeout to match latency improvements. [pull/3283](https://github.com/sourcegraph/cody/pull/3283)
+
 ## [1.6.0]
 
 ### Added
