@@ -4,15 +4,12 @@ export { ModelProvider } from './models'
 export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { createClient, type Client } from './chat/client'
 export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
-export { Transcript } from './chat/transcript'
 export type { TranscriptJSON } from './chat/transcript'
-export { Interaction } from './chat/transcript/interaction'
 export type { InteractionJSON } from './chat/transcript/interaction'
 export { errorToChatError } from './chat/transcript/messages'
 export {
@@ -24,13 +21,11 @@ export {
     isAtRange,
 } from './chat/input'
 export type {
-    ChatButton,
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatMessage,
     ChatInputHistory,
-    InteractionMessage,
+    ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
@@ -55,8 +50,6 @@ export type {
     ContextItemSymbol,
     ContextFileType,
     ContextMessage,
-    HoverContext,
-    PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
@@ -111,7 +104,6 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'

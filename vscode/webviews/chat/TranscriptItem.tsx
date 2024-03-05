@@ -14,7 +14,6 @@ import type { CodeBlockActionsProps } from './CodeBlocks'
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { PreciseContexts, type SymbolLinkProps } from './PreciseContext'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
 import styles from './TranscriptItem.module.css'
@@ -44,7 +43,6 @@ export const TranscriptItem: React.FunctionComponent<
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
@@ -66,7 +64,6 @@ export const TranscriptItem: React.FunctionComponent<
     beingEdited,
     setBeingEdited,
     fileLinkComponent,
-    symbolLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -129,15 +126,6 @@ export const TranscriptItem: React.FunctionComponent<
                     </header>
                 </div>
             )}
-            {message.preciseContext && message.preciseContext.length > 0 && (
-                <div className={styles.actions}>
-                    <PreciseContexts
-                        preciseContexts={message.preciseContext}
-                        symbolLinkComponent={symbolLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
             {message.error ? (
                 typeof message.error === 'string' ? (
                     <RequestErrorItem error={message.error} />
@@ -165,9 +153,6 @@ export const TranscriptItem: React.FunctionComponent<
                     inProgress && <BlinkingCursor />
                 )}
             </div>
-            {message.buttons?.length && ChatButtonComponent && (
-                <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
-            )}
             {/* Enhanced Context list shows up on human message only */}
             {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
