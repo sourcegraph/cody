@@ -7,7 +7,6 @@ import {
     type ModelProvider,
 } from '@sourcegraph/cody-shared'
 
-import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
@@ -28,7 +27,6 @@ import { getEditLineSelection, getEditSmartSelection } from './utils/edit-select
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
-    contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
     authProvider: AuthProvider
 }
