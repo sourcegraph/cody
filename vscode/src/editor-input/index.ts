@@ -44,6 +44,7 @@ const SEARCH_ITEM_NO_PREFIX: vscode.QuickPickItem = {
 
 /** Temporary type for prototyping the input using a prefix design vs no-prefix */
 export type InputType = 'WithPrefix' | 'NoPrefix'
+export const DEFAULT_INPUT_TYPE: InputType = 'WithPrefix'
 
 export const INPUT_TITLE = `Cody${!isRunningInsideAgent() ? ' (⌥C)' : ''}`
 
@@ -113,7 +114,7 @@ export const getInput = async ({
                           }
 
                           if (value.startsWith('%')) {
-                              return showSearchInput('% ')
+                              return showSearchInput(type)
                           }
 
                           return
@@ -126,13 +127,13 @@ export const getInput = async ({
                 switch (selectedItem.label) {
                     case EDIT_ITEM_PREFIX.label:
                     case EDIT_ITEM_NO_PREFIX.label:
-                        return executeEdit({ configuration: { document }, source })
+                        return executeEdit({ configuration: { document, inputType: type }, source })
                     case CHAT_ITEM_PREFIX.label:
                     case CHAT_ITEM_NO_PREFIX.label:
                         return chatManager.executeChatInline(type)
                     case SEARCH_ITEM_PREFIX.label:
                     case SEARCH_ITEM_NO_PREFIX.label:
-                        return showSearchInput()
+                        return showSearchInput(type)
                 }
 
                 return

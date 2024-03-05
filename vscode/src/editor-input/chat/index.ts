@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { InputType } from '..'
+import { DEFAULT_INPUT_TYPE, type InputType } from '..'
 import { executeExplainCommand, executeSmellCommand } from '../../commands/execute'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type InitialValues, type OutputValues, showEditorInput } from '../shared/create-input'
@@ -23,7 +23,7 @@ export const showChatInput = (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: InitialValues['Chat'],
-    inputType: InputType = 'NoPrefix'
+    inputType: InputType = DEFAULT_INPUT_TYPE
 ): Promise<OutputValues['Chat']> => {
     return new Promise(resolve => {
         showEditorInput<'Chat'>({

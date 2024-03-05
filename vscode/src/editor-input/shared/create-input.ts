@@ -313,6 +313,12 @@ export async function showEditorInput<T extends EditorInputType>({
                 return
             }
 
+            if (inputType === 'WithPrefix' && value.trim().length === 0) {
+                console.log('TRYING!!')
+                // Support removing the prefix to go back to the previous menu
+                return vscode.commands.executeCommand('cody.editor.input')
+            }
+
             const isFileSearch = value.endsWith('@')
             const isSymbolSearch = value.endsWith('@#')
 

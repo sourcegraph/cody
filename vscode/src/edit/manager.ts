@@ -126,7 +126,7 @@ export class EditManager implements vscode.Disposable {
                 intent,
                 configuration.contextMessages || [],
                 source,
-                args.configuration?.inputType
+                configuration.inputType
             )
         }
 

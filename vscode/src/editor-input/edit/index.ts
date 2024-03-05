@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { InputType } from '..'
+import { DEFAULT_INPUT_TYPE, type InputType } from '..'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { executeEdit } from '../../edit/execute'
 import type { AuthProvider } from '../../services/AuthProvider'
@@ -19,7 +19,7 @@ export const showEditInput = (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: InitialValues['Edit'],
-    inputType: InputType = 'NoPrefix'
+    inputType: InputType = DEFAULT_INPUT_TYPE
 ): Promise<OutputValues['Edit']> => {
     return new Promise(resolve => {
         showEditorInput<'Edit'>({

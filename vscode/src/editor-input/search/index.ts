@@ -1,7 +1,7 @@
 import { type SearchPanelFile, displayPathBasename } from '@sourcegraph/cody-shared'
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
-import { INPUT_TITLE } from '..'
+import { INPUT_TITLE, type InputType } from '..'
 import { firstInterestingLine } from '../../../webviews/SearchPanel'
 import { clearSearchResultPreviews, previewSearchResult } from '../../search/SearchViewProvider'
 import { type GetItemsResult, createQuickPick } from '../shared/quick-pick'
@@ -50,8 +50,9 @@ const getSearchItems = async (query: string): Promise<GetItemsResult> => {
     return { items }
 }
 
-export const showSearchInput = (instructionPrefix = ''): Promise<void> => {
+export const showSearchInput = (type: InputType): Promise<void> => {
     return new Promise(resolve => {
+        const instructionPrefix = type === 'WithPrefix' ? '%' : ''
         let activeQuery = ''
         const updateActiveQuery = throttle(
             async (query: string) => {
@@ -72,6 +73,15 @@ export const showSearchInput = (instructionPrefix = ''): Promise<void> => {
             }),
             onDidHide: () => clearSearchResultPreviews(),
             onDidChangeValue: async value => {
+                if (value === instructionPrefix) {
+                    // Same as prefix, do nothing
+                    return
+                }
+
+                if (type === 'WithPrefix' && value.trim().length === 0) {
+                    return
+                }
+
                 if (value !== activeQuery) {
                     // Clear existing query and results
                     updateActiveQuery.cancel()
@@ -94,7 +104,10 @@ export const showSearchInput = (instructionPrefix = ''): Promise<void> => {
             },
         })
 
-        searchInput.render(instructionPrefix)
+        searchInput.render('')
         searchInput.input.activeItems = []
+        if (instructionPrefix) {
+            searchInput.input.value = instructionPrefix
+        }
     })
 }

@@ -16,7 +16,8 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-import type { InputType } from '../editor-input'
+import type { InputType } from 'zlib'
+import { DEFAULT_INPUT_TYPE } from '../editor-input'
 import { showEditInput } from '../editor-input/edit'
 import type { AuthProvider } from '../services/AuthProvider'
 import { ContentProvider } from './FixupContentStore'
@@ -198,14 +199,14 @@ export class FixupController
         intent: EditIntent,
         contextMessages: ContextMessage[],
         source: ChatEventSource,
-        inputType: InputType = 'NoPrefix'
+        inputType: InputType = DEFAULT_INPUT_TYPE
     ): Promise<FixupTask | null> {
         const input = await showEditInput(document, this.authProvider, {
             initialRange: range,
             initialExpandedRange: expandedRange,
             initialModel: model,
             initialIntent: intent,
-            initialInputValue: inputType === 'WithPrefix' ? ': ' : '',
+            initialInputValue: inputType === 'WithPrefix' ? ':' : '',
         })
         if (!input) {
             return null
