@@ -80,9 +80,10 @@ import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManag
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { type MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
+import { getChatPanelTitle, openFile, stripContextWrapper } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
+import { toVSCodeRange } from '../../common/range'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -1280,7 +1281,7 @@ export async function contextFilesToContextItems(
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItem | null> => {
-                const range = viewRangeToRange(item.range)
+                const range = toVSCodeRange(item.range)
                 let content = item.content
                 if (!item.content && fetchContent) {
                     try {
@@ -1311,7 +1312,6 @@ function deserializedContextFilesToContextItems(
     }
 
     return files.map((file: ContextItem): ContextItem => {
-        const range = viewRangeToRange(file.range)
         let text = file.content
         if (!text) {
             const contextMessage = contextByFile.get(file.uri.toString())
@@ -1322,7 +1322,7 @@ function deserializedContextFilesToContextItems(
         return {
             type: 'file',
             uri: file.uri,
-            range,
+            range: file.range,
             content: text || '',
             source: file.source,
             repoName: file.repoName,
