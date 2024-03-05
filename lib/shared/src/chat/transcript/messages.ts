@@ -1,7 +1,7 @@
 import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
-import type { TranscriptJSON } from '.'
+import type { SerializedChatTranscript } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
@@ -43,7 +43,7 @@ export interface UserLocalHistory {
 }
 
 export interface ChatHistory {
-    [chatID: string]: TranscriptJSON
+    [chatID: string]: SerializedChatTranscript
 }
 
 export interface ChatInputHistory {

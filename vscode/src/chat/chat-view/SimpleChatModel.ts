@@ -4,9 +4,9 @@ import {
     type ChatError,
     type ChatMessage,
     type ContextItem,
-    type InteractionJSON,
     type Message,
-    type TranscriptJSON,
+    type SerializedChatInteraction,
+    type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
     reformatBotMessageForChat,
@@ -172,16 +172,16 @@ export class SimpleChatModel {
     }
 
     /**
-     * Serializes to the legacy transcript JSON format
+     * Serializes to the transcript JSON format.
      */
-    public toTranscriptJSON(): TranscriptJSON {
-        const interactions: InteractionJSON[] = []
+    public toSerializedChatTranscript(): SerializedChatTranscript {
+        const interactions: SerializedChatInteraction[] = []
         for (let i = 0; i < this.messagesWithContext.length; i += 2) {
             const humanMessage = this.messagesWithContext[i]
             const botMessage = this.messagesWithContext[i + 1]
-            interactions.push(messageToInteractionJSON(humanMessage, botMessage))
+            interactions.push(messageToSerializedChatInteraction(humanMessage, botMessage))
         }
-        const result: TranscriptJSON = {
+        const result: SerializedChatTranscript = {
             id: this.sessionID,
             chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
@@ -197,12 +197,12 @@ export class SimpleChatModel {
     }
 }
 
-function messageToInteractionJSON(
+function messageToSerializedChatInteraction(
     humanMessage: MessageWithContext,
     botMessage: MessageWithContext
-): InteractionJSON {
+): SerializedChatInteraction {
     if (humanMessage?.message?.speaker !== 'human') {
-        throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+        throw new Error('expected human message, got bot')
     }
     return {
         humanMessage: messageToInteractionMessage(humanMessage),

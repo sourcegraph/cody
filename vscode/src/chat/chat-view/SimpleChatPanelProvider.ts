@@ -11,10 +11,10 @@ import {
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
-    type InteractionJSON,
     type Message,
     ModelProvider,
-    type TranscriptJSON,
+    type SerializedChatInteraction,
+    type SerializedChatTranscript,
     Typewriter,
     featureFlagProvider,
     hydrateAfterPostMessage,
@@ -1055,7 +1055,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
-            this.chatModel.toTranscriptJSON(),
+            this.chatModel.toSerializedChatTranscript(),
             humanInput
         )
         if (allHistory) {
@@ -1242,11 +1242,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 }
 
 async function newChatModelfromTranscriptJSON(
-    json: TranscriptJSON,
+    json: SerializedChatTranscript,
     modelID: string
 ): Promise<SimpleChatModel> {
     const messages: MessageWithContext[][] = json.interactions.map(
-        (interaction: InteractionJSON): MessageWithContext[] => {
+        (interaction: SerializedChatInteraction): MessageWithContext[] => {
             return [
                 {
                     message: {
