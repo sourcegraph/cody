@@ -39,7 +39,7 @@ export class ModelProvider {
      */
     public static getLocalOllamaModels(endpoint?: string | null): void {
         // Only fetch local models if the endpoint is not a dotcom instance
-        if (endpoint && !isDotCom(endpoint)) {
+        if (!endpoint || !isDotCom(endpoint)) {
             return
         }
 
