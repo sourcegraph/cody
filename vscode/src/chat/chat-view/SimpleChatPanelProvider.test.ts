@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import type { Editor } from '@sourcegraph/cody-shared'
+import type { ContextItem, Editor } from '@sourcegraph/cody-shared'
 
 import '../../testutils/vscode'
 
-import type { ContextItem } from '../../prompt-builder/types'
 import { contextFilesToContextItems } from './SimpleChatPanelProvider'
 
 describe('contextFilesToContextItems', () => {
@@ -33,6 +32,8 @@ describe('contextFilesToContextItems', () => {
             ],
             true
         )
-        expect(contextItems).toEqual<ContextItem[]>([{ uri: URI.parse('file:///a.txt'), text: 'a' }])
+        expect(contextItems).toEqual<ContextItem[]>([
+            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+        ])
     })
 })

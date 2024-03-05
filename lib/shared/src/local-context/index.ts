@@ -1,9 +1,9 @@
 import type { URI } from 'vscode-uri'
 
-import type { ContextFile, ContextFileFile } from '../codebase-context/messages'
+import type { ContextItem, ContextItemFile } from '../codebase-context/messages'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
-export type ContextResult = ContextFile & {
+export type ContextResult = ContextItem & {
     repoName?: string
     revision?: string
     content: string
@@ -20,7 +20,7 @@ export interface LocalEmbeddingsFetcher {
 // Minimal interface so inline edit can use remote search for context.
 export interface IRemoteSearch {
     setWorkspaceUri(uri: URI): Promise<void>
-    search(query: string): Promise<ContextFileFile[]>
+    search(query: string): Promise<ContextItemFile[]>
 }
 
 interface Point {

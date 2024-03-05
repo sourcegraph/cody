@@ -1,5 +1,5 @@
+import type { RangeData } from '../common/range'
 import type { ConfigurationUseContext } from '../configuration'
-import type { ActiveTextEditorSelectionRange } from '../editor'
 
 export interface ChatContextStatus {
     mode?: ConfigurationUseContext
@@ -10,6 +10,6 @@ export interface ChatContextStatus {
     embeddingsEndpoint?: string
     codebase?: string
     filePath?: string
-    selectionRange?: ActiveTextEditorSelectionRange
+    selectionRange?: RangeData
     supportsKeyword?: boolean
 }

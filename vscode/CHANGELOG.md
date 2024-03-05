@@ -18,8 +18,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Auth: Logging in via redirect should now work in Cursor. This requires Sourcegraph 5.3.2 or later. [pull/3241](https://github.com/sourcegraph/cody/pull/3241)
 - Chat: Fixed error `found consecutive messages with the same speaker 'assistant'` that occurred when prompt length exceeded limit. [pull/3228](https://github.com/sourcegraph/cody/pull/3228)
+- Edit: Fixed an issue where preceding and following text would not be included for instruction-based Edits. [pull/3309](https://github.com/sourcegraph/cody/pull/3309)
 
 ### Changed
+
+## [1.6.1]
+
+### Changed
+
+- Autocomplete: Reduce the adaptive timeout to match latency improvements. [pull/3283](https://github.com/sourcegraph/cody/pull/3283)
 
 ## [1.6.0]
 

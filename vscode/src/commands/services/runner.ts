@@ -5,7 +5,7 @@ import {
     type ChatEventSource,
     type CodyCommand,
     ConfigFeaturesSingleton,
-    type ContextFile,
+    type ContextItem,
 } from '@sourcegraph/cody-shared'
 
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
@@ -162,7 +162,7 @@ export class CommandRunner implements vscode.Disposable {
     /**
      * Combine userContextFiles and context fetched for the command
      */
-    private async getContextFiles(): Promise<ContextFile[]> {
+    private async getContextFiles(): Promise<ContextItem[]> {
         const contextConfig = this.command.context
         this.span.setAttribute('contextConfig', JSON.stringify(contextConfig))
 
