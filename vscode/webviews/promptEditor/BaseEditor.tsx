@@ -49,6 +49,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
 
     // KeyboardEventPluginProps
     onKeyDown,
+    onEnterKey,
     onEscapeKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
@@ -90,7 +91,11 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <AutoFocusPlugin defaultSelection="rootEnd" />
                     <OnFocusPlugin onFocus={onFocus} />
                     {editorRef && <RefPlugin editorRef={editorRef} />}
-                    <KeyboardEventPlugin onKeyDown={onKeyDown} onEscapeKey={onEscapeKey} />
+                    <KeyboardEventPlugin
+                        onKeyDown={onKeyDown}
+                        onEnterKey={onEnterKey}
+                        onEscapeKey={onEscapeKey}
+                    />
                 </LexicalComposer>
             </div>
         </div>

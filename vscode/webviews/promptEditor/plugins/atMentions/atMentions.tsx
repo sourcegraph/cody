@@ -5,7 +5,7 @@ import {
     MenuOption,
     type MenuTextMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, type TextNode } from 'lexical'
+import { $createTextNode, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
@@ -173,6 +173,9 @@ export default function MentionsPlugin(): JSX.Element | null {
             triggerFn={getPossibleQueryMatch}
             options={options}
             anchorClassName={styles.resetAnchor}
+            commandPriority={
+                COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
+            }
             onOpen={menuResolution => {
                 refs.setPositionReference({
                     getBoundingClientRect: menuResolution.getRect,

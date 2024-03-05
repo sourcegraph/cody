@@ -62,6 +62,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     // KeyboardEventPluginProps
     onKeyDown,
+    onEnterKey,
     onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
@@ -143,6 +144,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 //
                 // KeyboardEventPluginProps
                 onKeyDown={onKeyDown}
+                onEnterKey={onEnterKey}
                 onEscapeKey={onEscapeKey}
             />
         </div>

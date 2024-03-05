@@ -218,7 +218,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByText(/^✨ Context: 2 files/)).toHaveCount(1)
 })
 
-test('typing @-mention text does not automatically accept it ', async ({ page, sidebar }) => {
+test('typing @-mention text does not automatically accept it', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -234,6 +234,22 @@ test('typing @-mention text does not automatically accept it ', async ({ page, s
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).not.toBeVisible()
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
+})
+
+test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
+    page,
+    sidebar,
+}) => {
+    await sidebarSignin(page, sidebar)
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
+    await chatInput.fill('Explain @index.htm')
+    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
+    await chatInput.press('Enter')
+    await expect(chatInput).toHaveText('Explain @index.html')
+    await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
 })
 
 test.extend<ExpectedEvents>({

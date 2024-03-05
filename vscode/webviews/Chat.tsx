@@ -311,6 +311,19 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [messageBeingEdited, setEditMessageState, messageInProgress, onAbortMessageInProgress])
 
+    const onEditorEnterKey = useCallback(
+        (event: KeyboardEvent | null): void => {
+            // Submit input on Enter press (without shift) and trim the editorValue to make sure
+            // input value is not empty.
+            if (event && !event.shiftKey && !event.isComposing && editorValue.text.length > 0) {
+                event.preventDefault()
+                onChatSubmit()
+                return
+            }
+        },
+        [editorValue, onChatSubmit]
+    )
+
     const onEditorKeyDown = useCallback(
         (event: KeyboardEvent, caretPosition: number): void => {
             // Check if the Ctrl key is pressed on Windows/Linux or the Cmd key is pressed on macOS
@@ -376,19 +389,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 return
             }
 
-            // Submit input on Enter press (without shift) and
-            // trim the editorValue to make sure input value is not empty.
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.isComposing &&
-                editorValue.text.length > 0
-            ) {
-                event.preventDefault()
-                onChatSubmit()
-                return
-            }
-
             // TODO (bee) - Update to use Option key instead
             // TODO (bee) - remove once updated to use Option key
             // Toggles between new chat mode and regular chat mode
@@ -410,7 +410,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onChatResetClick,
             setEditMessageState,
             lastHumanMessageIndex,
-            onChatSubmit,
             enableNewChatMode,
             postMessage,
         ]
@@ -495,6 +494,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             chatEnabled={chatEnabled}
                             isNewChat={!transcript.length}
                             onKeyDown={onEditorKeyDown}
+                            onEnterKey={onEditorEnterKey}
                             onEscapeKey={onEditorEscapeKey}
                             editorRef={editorRef}
                         />
