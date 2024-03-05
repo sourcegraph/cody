@@ -18,9 +18,29 @@ export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
  */
 export interface OllamaGenerateParams {
     model: string
-    template?: string
+    template: string
     prompt: string
     options?: OllamaGenerateParameters
+}
+
+/**
+ * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L50
+ */
+export interface OllamaChatParams {
+    model: string
+    messages: OllamaChatMessage[]
+    format?: string
+    stream?: boolean
+    //  controls how long the model will stay loaded into memory following the request (default: 5m)
+    keep_alive?: string
+
+    options?: OllamaGenerateParameters
+}
+
+interface OllamaChatMessage {
+    role: string
+    content: string
+    images?: string[]
 }
 
 /**

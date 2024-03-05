@@ -1,13 +1,16 @@
 import { onAbort } from '../common/abortController'
 import { CompletionStopReason } from '../inferenceClient/misc'
-import { logDebug } from '../logger'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
     CompletionParameters,
     CompletionResponse,
 } from '../sourcegraph-api/completions/types'
-import { OLLAMA_DEFAULT_URL, type OllamaGenerateResponse } from './completions-client'
+import {
+    OLLAMA_DEFAULT_URL,
+    type OllamaChatParams,
+    type OllamaGenerateResponse,
+} from './completions-client'
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -21,14 +24,19 @@ export function ollamaChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    // Empty string as stop reason
-    const stopReason = ''
-    const ollamaparams = {
-        model: params?.model?.replace('ollama/', ''),
+    const log = logger?.startCompletion(params, completionsEndpoint)
+    const model = params.model?.replace('ollama/', '')
+    if (!model || !params.messages) {
+        log?.onError('No model or messages')
+        throw new Error('No model or messages')
+    }
+
+    const ollamaChatParams = {
+        model,
         messages: params.messages.map(msg => {
             return {
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text,
+                content: msg.text ?? '',
             }
         }),
         options: {
@@ -37,17 +45,17 @@ export function ollamaChatClient(
             top_p: params.topP,
             tfs_z: params.maxTokensToSample,
         },
-    }
+    } satisfies OllamaChatParams
+
     // Sends the completion parameters and callbacks to the Ollama API.
     fetch(new URL('/api/chat', OLLAMA_DEFAULT_URL).href, {
         method: 'POST',
-        body: JSON.stringify(ollamaparams),
+        body: JSON.stringify(ollamaChatParams),
         headers: {
             'Content-Type': 'application/json',
         },
         signal,
     }).then(async response => {
-        const log = logger?.startCompletion(params, completionsEndpoint)
         if (!response.body) {
             log?.onError('No response body')
             throw new Error('No response body')
@@ -74,17 +82,11 @@ export function ollamaChatClient(
                 insertText += parsedLine.message.content
                 cb.onChange(insertText)
             }
-
-            if (parsedLine.done && parsedLine.total_duration) {
-                logDebug?.('ollama', 'generation done', parsedLine)
-                cb.onComplete()
-                break
-            }
         }
 
         const completionResponse: CompletionResponse = {
             completion: insertText,
-            stopReason: stopReason || CompletionStopReason.RequestFinished,
+            stopReason: CompletionStopReason.RequestFinished,
         }
         log?.onComplete(completionResponse)
     })
