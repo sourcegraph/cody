@@ -2,15 +2,21 @@ import assert from 'assert'
 
 import { createPatch } from 'diff'
 
-import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
-import fspromises from 'fs/promises'
+import { type ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import os from 'os'
 import path from 'path'
+import { type ChatMessage, type ContextItem, logError } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
+import { applyPatch } from 'fast-myers-diff'
+import fspromises from 'fs/promises'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
-import { logError, type ChatMessage, type ContextFile } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
+import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentTextDocument } from './AgentTextDocument'
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     ClientInfo,
@@ -30,12 +36,6 @@ import type {
     WebviewPostMessageParams,
     WorkspaceEditParams,
 } from './protocol-alias'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
-import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { applyPatch } from 'fast-myers-diff'
-import dedent from 'dedent'
-import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -458,7 +458,7 @@ export class TestClient extends MessageHandler {
     public async editMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; index?: number }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
     ): Promise<ChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
@@ -478,7 +478,7 @@ export class TestClient extends MessageHandler {
     public async sendMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<ChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
             ?.lastMessage
@@ -486,14 +486,14 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChat(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[] }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<ChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextFile[]; id?: string }
+        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
     ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
         const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(

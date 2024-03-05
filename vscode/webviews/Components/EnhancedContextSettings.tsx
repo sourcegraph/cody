@@ -11,7 +11,7 @@ import type {
     LocalSearchProvider,
     RemoteSearchProvider,
 } from '@sourcegraph/cody-shared'
-import { useEnhancedContextEnabled } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import { useEnhancedContextEnabled } from '../chat/components/EnhancedContext'
 
 import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'

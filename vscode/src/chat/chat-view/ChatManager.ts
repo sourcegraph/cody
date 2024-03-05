@@ -2,7 +2,7 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatClient, type Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
 import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
@@ -15,12 +15,13 @@ import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { AuthStatus } from '../protocol'
 
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import type { ExecuteChatArguments } from '../../commands/execute/ask'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { ExecuteChatArguments } from '../../commands/execute/ask'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 /**
@@ -43,6 +44,7 @@ export class ChatManager implements vscode.Disposable {
         private chatClient: ChatClient,
         private enterpriseContext: EnterpriseContextFactory | null,
         private localEmbeddings: LocalEmbeddingsController | null,
+        private contextRanking: ContextRankingController | null,
         private symf: SymfRunner | null,
         private guardrails: Guardrails
     ) {
@@ -59,6 +61,7 @@ export class ChatManager implements vscode.Disposable {
             this.options,
             this.chatClient,
             this.localEmbeddings,
+            this.contextRanking,
             this.symf,
             this.enterpriseContext,
             this.guardrails

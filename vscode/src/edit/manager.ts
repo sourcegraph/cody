@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatClient, type ModelProvider } from '@sourcegraph/cody-shared'
+import { type ChatClient, ConfigFeaturesSingleton, type ModelProvider } from '@sourcegraph/cody-shared'
 
 import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -9,17 +9,17 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import type { ExecuteEditArguments } from './execute'
-import { EditProvider } from './provider'
-import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
-import { DEFAULT_EDIT_MODE } from './constants'
-import type { AuthProvider } from '../services/AuthProvider'
-import { editModel } from '../models'
 import type { AuthStatus } from '../chat/protocol'
-import { getEditModelsForUser } from './utils/edit-models'
-import { getEditIntent } from './utils/edit-intent'
+import { editModel } from '../models'
+import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { DEFAULT_EDIT_MODE } from './constants'
+import type { ExecuteEditArguments } from './execute'
+import { EditProvider } from './provider'
+import { getEditIntent } from './utils/edit-intent'
+import { getEditModelsForUser } from './utils/edit-models'
+import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -160,14 +160,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         return provider
-    }
-
-    public removeProviderForTask(task: FixupTask): void {
-        const provider = this.editProviders.get(task)
-
-        if (provider) {
-            this.editProviders.delete(task)
-        }
     }
 
     public dispose(): void {

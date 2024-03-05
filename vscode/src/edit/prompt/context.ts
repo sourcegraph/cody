@@ -1,6 +1,9 @@
 import type * as vscode from 'vscode'
 
 import {
+    type CodyCommand,
+    type ContextItem,
+    type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
     createContextMessageByFile,
     getContextMessageWithResponse,
@@ -9,9 +12,6 @@ import {
     populateCurrentEditorDiagnosticsTemplate,
     truncateText,
     truncateTextStart,
-    type CodyCommand,
-    type ContextFile,
-    type ContextMessage,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -19,7 +19,6 @@ import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
 import { extractContextItemsFromContextMessages } from './utils'
-import type { ContextItem } from '../../prompt-builder/types'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -139,7 +138,7 @@ const getContextFromIntent = async ({
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 interface GetContextOptions extends GetContextFromIntentOptions {
-    userContextFiles: ContextFile[]
+    userContextFiles: ContextItem[]
     contextMessages?: ContextMessage[]
     editor: VSCodeEditor
     command?: CodyCommand

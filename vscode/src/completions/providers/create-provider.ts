@@ -1,21 +1,21 @@
 import {
-    FeatureFlag,
-    featureFlagProvider,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
+    FeatureFlag,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
 
+import type { AuthStatus } from '../../chat/protocol'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
-    createProviderConfig as createFireworksProviderConfig,
     type FireworksOptions,
+    createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
 import type { ProviderConfig } from './provider'
-import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
-import type { AuthStatus } from '../../chat/protocol'
 
 export async function createProviderConfig(
     config: ConfigurationWithAccessToken,

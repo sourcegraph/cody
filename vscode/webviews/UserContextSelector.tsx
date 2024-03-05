@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { displayPath } from '@sourcegraph/cody-shared'
-import type { UserContextSelectorProps } from '@sourcegraph/cody-ui/src/Chat'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 
 import styles from './UserContextSelector.module.css'
 
@@ -13,9 +12,18 @@ const FILE_NO_RESULT = 'No matching files found'
 const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
 const SYMBOL_NO_RESULT = 'No matching symbols found'
 
+export interface UserContextSelectorProps {
+    onSelected: (context: ContextItem, queryEndsWithColon?: boolean) => void
+    contextSelection?: ContextItem[]
+    selected?: number
+    onSubmit: (input: string, inputType: 'user') => void
+    setSelectedChatContext: (arg: number) => void
+    contextQuery: string
+}
+
 export const UserContextSelectorComponent: React.FunctionComponent<
     React.PropsWithChildren<UserContextSelectorProps>
-> = ({ onSelected, contextSelection, formInput, selected, setSelectedChatContext, contextQuery }) => {
+> = ({ onSelected, contextSelection, selected, setSelectedChatContext, contextQuery }) => {
     const selectionRef = useRef<HTMLButtonElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
@@ -49,15 +57,54 @@ export const UserContextSelectorComponent: React.FunctionComponent<
         return SYMBOL_NO_RESULT
     }, [contextQuery, contextSelection?.length])
 
+    if (contextQuery.endsWith(' ')) {
+        return null
+    }
+
+    /**
+     * Extracts line range information from the context query and displays tips as ghost text.
+     */
+    const regex = /:(\d+)?(-)?(\d+)?$/
+    const match = regex.exec(contextQuery)
+    if (match && contextSelection?.length) {
+        const [colon, startLine, dash, endLine] = match
+        const ghostStart = colon && startLine ? '' : 'line'
+        const ghostEnd = dash ? (endLine ? '' : 'line') : '-line'
+        const hint = endLine && endLine < startLine ? '(invalid line range)' : '(line range)'
+        return (
+            <div className={classNames(styles.container)}>
+                <div className={classNames(styles.headingContainer)}>
+                    <h3 className={styles.heading}>{FILE_ON_RESULT}</h3>
+                </div>
+                <button
+                    className={classNames(styles.selectionItem, styles.selected)}
+                    title={contextQuery}
+                    type="button"
+                    onClick={() => onSelected(contextSelection[0])}
+                >
+                    <span className={styles.titleAndDescriptionContainer}>
+                        <span className={styles.selectionTitle}>
+                            {contextQuery}
+                            <span className={styles.ghostText}>
+                                {ghostStart}
+                                {ghostEnd} {hint}
+                            </span>
+                        </span>
+                    </span>
+                </button>
+            </div>
+        )
+    }
+
     if (contextSelection === null || selected === -1) {
         return null
     }
 
-    // If the query ENDS with a non-alphanumeric character (except #),
-    // ex. '@abcdefg?' -> false & '@abcdefg?file' -> false
-    // and there is no contextSelection to display,
-    // don't display the selector.
-    if (/[^a-zA-Z0-9#]$/.test(contextQuery)) {
+    // Don't display the selector when there is no contextSelection to display AND
+    // query ends with a non-alphanumeric character (except #, which is used for symbol query (@#)).
+    // e.g. '@abcdefg?' -> false || '@abcdefg?file' -> false
+    const endRegex = /[^a-zA-Z0-9#]$/
+    if (endRegex.test(contextQuery)) {
         if (!contextSelection?.length) {
             return null
         }
@@ -75,7 +122,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                 unavailable, so we take a guess: there should be some symbols
                 that exist for any given one or two letters, and if not, we give
                 them some help to debug the situation themselves */}
-            {formInput.match(/@#.{1,2}$/) && !contextSelection?.length ? (
+            {contextQuery.match(/#.{1,2}$/) && !contextSelection?.length ? (
                 <p className={styles.emptySymbolSearchTip}>
                     <i className="codicon codicon-info" /> VS Code may require you to open files and
                     install language extensions for accurate results
@@ -111,7 +158,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                         warning && styles.showWarning
                                     )}
                                     title={title}
-                                    onClick={() => onSelected(match, formInput)}
+                                    onClick={() => onSelected(match)}
                                     type="button"
                                 >
                                     {match.type === 'symbol' && icon && (

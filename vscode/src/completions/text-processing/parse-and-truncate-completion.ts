@@ -4,7 +4,7 @@ import type { SyntaxNode } from 'web-tree-sitter'
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import type { DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import { type ParsedCompletion, parseCompletion } from './parse-completion'
 import type { InlineCompletionItemWithAnalytics } from './process-inline-completions'
 import { normalizeStartLine, truncateMultilineCompletion } from './truncate-multiline-completion'
 import { truncateParsedCompletion } from './truncate-parsed-completion'

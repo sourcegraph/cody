@@ -1,8 +1,9 @@
-import * as vscode from 'vscode'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
+import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
-import { PromptBuilder } from '../../prompt-builder'
 
 describe('DefaultPrompter', () => {
     afterEach(() => {
@@ -74,10 +75,11 @@ describe('DefaultPrompter', () => {
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
         const overallLimit = 1
         const promptBuilder = new PromptBuilder(overallLimit)
-        const contextItems = [
+        const contextItems: ContextItem[] = [
             {
+                type: 'file',
                 uri: vscode.Uri.file('/foo/bar'),
-                text: 'foobar',
+                content: 'foobar',
             },
         ]
 

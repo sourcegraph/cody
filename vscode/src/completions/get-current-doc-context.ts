@@ -150,7 +150,7 @@ interface GetDerivedDocContextParams {
  * Calculates `DocumentContext` based on the existing prefix and suffix.
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
-export function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
+function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
     const { position, documentDependentContext, languageId, dynamicMultilineCompletions } = params
     const linesContext = getLinesContext(documentDependentContext)
 

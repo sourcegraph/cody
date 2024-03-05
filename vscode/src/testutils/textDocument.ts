@@ -1,4 +1,4 @@
-import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDocument } from 'vscode'
+import type { EndOfLine, Position, Range, TextDocument as VSCodeTextDocument, TextLine } from 'vscode'
 import type { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 

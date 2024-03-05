@@ -1,9 +1,9 @@
-import { wrapInActiveSpan, type ContextFile } from '@sourcegraph/cody-shared'
+import { type ContextItem, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
+import type { URI } from 'vscode-uri'
+import { getSearchPatternForTestFiles } from '../utils/search-pattern'
 import { isValidTestFile } from '../utils/test-commands'
 import { getWorkspaceFilesContext } from './workspace'
-import { getSearchPatternForTestFiles } from '../utils/search-pattern'
-import type { URI } from 'vscode-uri'
 
 /**
  * Gets context files related to the given test file.
@@ -16,9 +16,9 @@ import type { URI } from 'vscode-uri'
  * NOTE: Does not work with Agent as the underlying API is not available in Agent.
  * NOTE: Used by the new unit test commands to get context files.
  */
-export async function getContextFilesForUnitTestCommand(file: URI): Promise<ContextFile[]> {
+export async function getContextFilesForUnitTestCommand(file: URI): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.test', async span => {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         // exclude any files in the path with e2e, integration, node_modules, or dist
         const excludePattern = '**/*{e2e,integration,node_modules,dist}*/**'

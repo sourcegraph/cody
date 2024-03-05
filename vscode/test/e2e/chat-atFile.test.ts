@@ -76,6 +76,13 @@ test.extend<ExpectedEvents>({
         ).toBeVisible()
     }
 
+    // Space before @ is required unless it's at position 0
+    await chatInput.fill('Explain@mj')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).not.toBeVisible()
+    await chatInput.fill('@mj')
+    await expect(chatPanelFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    await chatInput.fill('clear')
+
     // Searching and clicking
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('button', { name: 'Main.java' }).click()
@@ -186,9 +193,10 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
 
+    const osKey = getMetaKeyByOS()
+
     // Typing out the whole file path without pressing tab/enter should still include the
     // file as context
-    const osKey = getMetaKeyByOS()
     await chatInput.press(`${osKey}+/`) // start a new chat
     await chatInput.fill('@index.htm')
     await chatInput.press('l')
@@ -197,4 +205,52 @@ test.extend<ExpectedEvents>({
     await page.keyboard.type('explain.', { delay: 50 })
     await chatInput.press('Enter')
     await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(1)
+})
+
+test('@-file with range support', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
+    // Clicking on a file in the selector should autocomplete the file in chat input with added space
+    await chatInput.fill('@index.htm')
+    await expect(chatPanelFrame.getByRole('button', { name: 'index.html' })).toBeVisible()
+    await chatPanelFrame.getByRole('button', { name: 'index.html' }).click()
+    await expect(chatInput).toHaveValue('@index.html ')
+
+    // NOTE: Ghost text format: @path/file:line-line (line range)
+    // Ghost text shows up when @file is followed by a colon and get updated as the user types
+    await chatInput.fill('@index.html:')
+    const ghostText0 = 'index.html:line-line (line range)'
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText0 })).toBeVisible()
+
+    await chatInput.fill('@index.html:1')
+    const ghostText1 = 'index.html:1-line (line range)'
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText1 })).toBeVisible()
+
+    await chatInput.fill('@index.html:1-')
+    const ghostText2 = 'index.html:1-line (line range)'
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText2 })).toBeVisible()
+
+    await chatInput.fill('@index.html:1-5')
+    const ghostText3 = 'index.html:1-5 (line range)'
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).toBeVisible()
+
+    // Pressing enter should close the suggestion box and add a whitespace after selection
+    await chatInput.press('Enter')
+    await expect(chatPanelFrame.getByRole('button', { name: ghostText3 })).not.toBeVisible()
+    await expect(chatInput).toHaveValue('@index.html:1-5 ')
+
+    // Submit the message
+    await chatInput.press('Enter')
+
+    // @-file with the correct line range shows up in the chat view and it opens on click
+    await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').hover()
+    await chatPanelFrame.getByText('✨ Context: 5 lines from 1 file').click()
+    await chatPanelFrame.getByRole('link', { name: '@index.html:1-5' }).hover()
+    await chatPanelFrame.getByRole('link', { name: '@index.html:1-5' }).click()
+    const indexFileTab = page.getByRole('tab', { name: /index.html, preview, Editor Group/ })
+    await indexFileTab.hover()
+    await expect(indexFileTab).toBeVisible()
 })

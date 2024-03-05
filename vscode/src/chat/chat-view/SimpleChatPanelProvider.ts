@@ -2,8 +2,23 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ModelProvider,
+    type ChatClient,
+    type ChatEventSource,
+    type ChatInputHistory,
+    type ChatMessage,
     ConfigFeaturesSingleton,
+    type ContextItem,
+    type ContextMessage,
+    type Editor,
+    FeatureFlag,
+    type FeatureFlagProvider,
+    type Guardrails,
+    type InteractionJSON,
+    type Message,
+    ModelProvider,
+    type TranscriptJSON,
+    Typewriter,
+    featureFlagProvider,
     hydrateAfterPostMessage,
     isDefined,
     isDotCom,
@@ -11,21 +26,6 @@ import {
     isFileURI,
     isRateLimitError,
     reformatBotMessageForChat,
-    Typewriter,
-    type ChatClient,
-    type ChatInputHistory,
-    type ChatMessage,
-    type ContextFile,
-    type ContextMessage,
-    type Editor,
-    type FeatureFlagProvider,
-    type Guardrails,
-    type InteractionJSON,
-    type Message,
-    type TranscriptJSON,
-    type ChatEventSource,
-    featureFlagProvider,
-    FeatureFlag,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -46,7 +46,7 @@ import type { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import type { TreeViewProvider } from '../../services/TreeViewProvider'
+import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -56,6 +56,16 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
+import type { Span } from '@opentelemetry/api'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { Repo } from '../../context/repo-fetcher'
+import type { RemoteRepoPicker } from '../../context/repo-picker'
+import type { ContextRankingController } from '../../local-context/context-ranking'
+import { chatModel } from '../../models'
+import { getContextWindowForModel } from '../../models/utilts'
+import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import type {
     ChatSubmitType,
@@ -64,25 +74,15 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
 import { ChatHistoryManager } from './ChatHistoryManager'
-import { addWebviewViewHTML, CodyChatPanelViewType } from './ChatManager'
+import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import { getEnhancedContext } from './context'
 import { InitDoer } from './InitDoer'
+import { type MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
+import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
+import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
-import { SimpleChatModel, toViewMessage, type MessageWithContext } from './SimpleChatModel'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import type { RemoteRepoPicker } from '../../context/repo-picker'
-import type { Repo } from '../../context/repo-fetcher'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { chatModel } from '../../models'
-import { getContextWindowForModel } from '../../models/utilts'
-import type { ContextItem } from '../../prompt-builder/types'
-import type { Span } from '@opentelemetry/api'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -90,6 +90,7 @@ interface SimpleChatPanelProviderOptions {
     authProvider: AuthProvider
     chatClient: ChatClient
     localEmbeddings: LocalEmbeddingsController | null
+    contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
@@ -138,6 +139,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
     private readonly localEmbeddings: LocalEmbeddingsController | null
+    private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -161,6 +163,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         authProvider,
         chatClient,
         localEmbeddings,
+        contextRanking,
         symf,
         editor,
         treeView,
@@ -173,6 +176,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
+        this.contextRanking = contextRanking
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
@@ -187,6 +191,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
+
+        // Start the context Ranking module
+        void this.contextRanking?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(
@@ -386,7 +393,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         inputText: string,
         submitType: ChatSubmitType,
-        userContextFiles: ContextFile[],
+        userContextFiles: ContextItem[],
         addEnhancedContext: boolean,
         source?: ChatEventSource
     ): Promise<void> {
@@ -467,6 +474,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                           this.config.internalUnstable || (await useFusedContextPromise),
                                   },
                                   hints: { maxChars },
+                                  contextRanking: this.contextRanking,
                               })
                         : undefined
                 )
@@ -532,7 +540,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         text: string,
         index?: number,
-        contextFiles: ContextFile[] = [],
+        contextFiles: ContextItem[] = [],
         addEnhancedContext = true
     ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
@@ -579,7 +587,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
             telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
 
-            const tabs = getOpenTabsContextFile()
+            const tabs = await getOpenTabsContextFile()
             void this.postMessage({
                 type: 'userContextFiles',
                 userContextFiles: tabs,
@@ -640,7 +648,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleSymfIndex(): Promise<void> {
         const codebase = await this.codebaseStatusProvider.currentCodebase()
         if (codebase && isFileURI(codebase.localFolder)) {
-            await this.symf?.ensureIndex(codebase.localFolder, { hard: true })
+            await this.symf?.ensureIndex(codebase.localFolder, {
+                retryIfLastAttemptFailed: true,
+                ignoreExisting: false,
+            })
         }
     }
 
@@ -837,6 +848,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         span: Span,
         firstTokenSpan: Span
     ): void {
+        logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
+            verbose: { requestID, prompt },
+        })
         let firstTokenMeasured = false
         function measureFirstToken() {
             if (firstTokenMeasured) {
@@ -1260,37 +1274,32 @@ async function newChatModelfromTranscriptJSON(
 
 export async function contextFilesToContextItems(
     editor: Editor,
-    files: ContextFile[],
+    items: ContextItem[],
     fetchContent?: boolean
 ): Promise<ContextItem[]> {
     return (
         await Promise.all(
-            files.map(async (file: ContextFile): Promise<ContextItem | null> => {
-                const range = viewRangeToRange(file.range)
-                let text = file.content
-                if (!text && fetchContent) {
+            items.map(async (item: ContextItem): Promise<ContextItem | null> => {
+                const range = viewRangeToRange(item.range)
+                let content = item.content
+                if (!item.content && fetchContent) {
                     try {
-                        text = await editor.getTextEditorContentForFile(file.uri, range)
+                        content = await editor.getTextEditorContentForFile(item.uri, range)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${file.uri}. (Reason: ${error})`
+                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
                         )
                         return null
                     }
                 }
-                return {
-                    uri: file.uri,
-                    range,
-                    text: text || '',
-                    source: file.source,
-                }
+                return { ...item, content: content! }
             })
         )
     ).filter(isDefined)
 }
 
 function deserializedContextFilesToContextItems(
-    files: ContextFile[],
+    files: ContextItem[],
     contextMessages: ContextMessage[]
 ): ContextItem[] {
     const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
@@ -1301,7 +1310,7 @@ function deserializedContextFilesToContextItems(
         contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
     }
 
-    return files.map((file: ContextFile): ContextItem => {
+    return files.map((file: ContextItem): ContextItem => {
         const range = viewRangeToRange(file.range)
         let text = file.content
         if (!text) {
@@ -1311,9 +1320,10 @@ function deserializedContextFilesToContextItems(
             }
         }
         return {
+            type: 'file',
             uri: file.uri,
             range,
-            text: text || '',
+            content: text || '',
             source: file.source,
             repoName: file.repoName,
             revision: file.revision,

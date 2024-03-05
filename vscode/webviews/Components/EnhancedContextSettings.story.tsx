@@ -8,9 +8,9 @@ import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
+    type EnhancedContextEventHandlersT,
     EnhancedContextPresentationMode,
     EnhancedContextSettings,
-    type EnhancedContextEventHandlersT,
 } from './EnhancedContextSettings'
 
 const meta: Meta<typeof EnhancedContextSettings> = {

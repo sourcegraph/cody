@@ -1,11 +1,11 @@
 import {
-    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
-    defaultEventRecordingOptions,
     NoOpTelemetryExporter,
-    TimestampTelemetryProcessor,
     type TelemetryEventInput,
     type TelemetryProcessor,
+    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     TestTelemetryExporter,
+    TimestampTelemetryProcessor,
+    defaultEventRecordingOptions,
 } from '@sourcegraph/telemetry'
 
 import {

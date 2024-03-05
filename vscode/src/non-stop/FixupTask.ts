@@ -1,13 +1,13 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextFile, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextItem, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
-import type { Diff } from './diff'
-import type { FixupFile } from './FixupFile'
-import { CodyTaskState } from './utils'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
+import type { FixupFile } from './FixupFile'
+import type { Diff } from './diff'
+import { CodyTaskState } from './utils'
 
 export type taskID = string
 
@@ -53,7 +53,7 @@ export class FixupTask {
          */
         public fixupFile: FixupFile,
         public readonly instruction: string,
-        public readonly userContextFiles: ContextFile[],
+        public readonly userContextFiles: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,

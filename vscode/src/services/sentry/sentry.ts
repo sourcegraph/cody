@@ -2,12 +2,12 @@ import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
 import {
+    type ConfigurationWithAccessToken,
+    NetworkError,
     isAbortError,
     isAuthError,
     isDotCom,
     isRateLimitError,
-    NetworkError,
-    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'

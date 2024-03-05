@@ -4,9 +4,9 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
+    type ExpectedEvents,
     test as baseTest,
     withPlatformSlashes,
-    type ExpectedEvents,
 } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -97,8 +97,14 @@ test.extend<ExpectedEvents>({
     await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Commands').locator('a').click()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
-    await expect(page.getByText(commandName)).toBeVisible()
-    await page.getByText(commandName).click()
+    const newCommandMenuItem = page.getByLabel('tools  ATestCommand, The test command has been created')
+    const newCommandSidebarItem = page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')
+    await expect(page.getByText(commandName)).toHaveCount(2) // one in sidebar, and one in menu
+    await newCommandMenuItem.hover()
+    await expect(newCommandMenuItem).toBeVisible()
+    await newCommandSidebarItem.hover()
+    await expect(newCommandSidebarItem).toBeVisible()
+    await newCommandMenuItem.click()
 
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -272,6 +278,8 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
 
     // Open the cody.json from User Settings
+    // NOTE: This is expected to fail locally if you currently have User commands configured
+    await page.waitForTimeout(100)
     await customCommandSidebar.click()
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()

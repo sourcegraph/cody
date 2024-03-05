@@ -22,18 +22,26 @@ export class AuthProviderSimplified {
     }
 }
 
+/**
+ * Returns a known referral code to use based on the current VS Code environment.
+ */
+export function getAuthReferralCode(): string {
+    return (
+        {
+            'vscode-insiders': 'CODY_INSIDERS',
+            vscodium: 'CODY_VSCODIUM',
+            cursor: 'CODY_CURSOR',
+        }[vscode.env.uriScheme] || 'CODY'
+    )
+}
+
 // Opens authentication URLs for simplified onboarding.
 async function openExternalAuthUrl(provider: AuthMethod): Promise<boolean> {
     // Create the chain of redirects:
     // 1. Specific login page (GitHub, etc.) redirects to the post-sign up survey
     // 2. Post-sign up survery redirects to the new token page
     // 3. New token page redirects back to the extension with the new token
-    const uriScheme = vscode.env.uriScheme
-    const referralCode =
-        {
-            'vscode-insiders': 'CODY_INSIDERS',
-            vscodium: 'CODY_VSCODIUM',
-        }[uriScheme] || 'CODY'
+    const referralCode = getAuthReferralCode()
     const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}`
     const postSignUpSurveyUrl = `/post-sign-up?returnTo=${newTokenUrl}`
     const site = DOTCOM_URL.toString() // Note, ends with the path /

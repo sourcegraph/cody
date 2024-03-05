@@ -1,11 +1,11 @@
-import { Range } from 'vscode'
-import { logError, type ContextFile } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
-import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { type ContextItem, logError } from '@sourcegraph/cody-shared'
 import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { Range } from 'vscode'
+import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
-import type { CodyCommandArgs } from '../types'
 import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case'
+import type { CodyCommandArgs } from '../types'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
@@ -29,7 +29,7 @@ export async function executeTestCaseEditCommand(
             return
         }
 
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         try {
             const files = await getContextFilesForAddingUnitTestCases(document.uri)

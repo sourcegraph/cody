@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import type { Range, ProtocolTextDocument } from './agent-protocol'
 import { logDebug } from '../log'
+import type { ProtocolTextDocument, Range } from './agent-protocol'
 
 /**
  * Wrapper around `ProtocolTextDocument` that also contains a parsed vscode.Uri.

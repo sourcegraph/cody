@@ -1,19 +1,18 @@
 import type { URI } from 'vscode-uri'
 
 import type {
-    ActiveTextEditorSelectionRange,
     ChatMessage,
-    ModelProvider,
     CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
-    ContextFile,
-    ContextFileType,
+    ContextItem,
     EnhancedContextContextT,
+    ModelProvider,
+    RangeData,
     SearchPanelFile,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import type { CodeBlockMeta } from '@sourcegraph/cody-ui/src/chat/CodeBlocks'
+import type { CodeBlockMeta } from '../../webviews/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
@@ -43,14 +42,14 @@ export type WebviewMessage =
     | {
           command: 'openFile'
           uri: URI
-          range?: ActiveTextEditorSelectionRange
+          range?: RangeData
       }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends to munge the type in a weird way (nested fields become array indices).
-          range?: ActiveTextEditorSelectionRange
+          range?: RangeData
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
@@ -90,7 +89,7 @@ export type WebviewMessage =
     | {
           command: 'show-search-result'
           uri: URI
-          range: ActiveTextEditorSelectionRange
+          range: RangeData
       }
     | {
           command: 'reset'
@@ -122,8 +121,7 @@ export type ExtensionMessage =
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'userContextFiles'
-          userContextFiles: ContextFile[] | null
-          kind?: ContextFileType
+          userContextFiles: ContextItem[] | null
       }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
@@ -168,7 +166,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
 interface WebviewContextMessage {
     addEnhancedContext?: boolean
-    contextFiles?: ContextFile[]
+    contextFiles?: ContextItem[]
 }
 
 export interface ExtensionTranscriptMessage {

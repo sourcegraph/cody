@@ -2,18 +2,20 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    SourcegraphGuardrailsClient,
-    SourcegraphIntentDetectorClient,
-    graphqlClient,
-    isError,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
     type IntentDetector,
+    SourcegraphGuardrailsClient,
+    SourcegraphIntentDetectorClient,
+    graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { PlatformContext } from './extension.common'
+import type { ContextRankerConfig } from './local-context/context-ranking'
+import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
@@ -23,6 +25,7 @@ interface ExternalServices {
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
 
@@ -38,9 +41,11 @@ type ExternalServicesConfiguration = Pick<
     | 'customHeaders'
     | 'accessToken'
     | 'debugEnable'
+    | 'debugVerbose'
     | 'experimentalTracing'
 > &
-    LocalEmbeddingsConfig
+    LocalEmbeddingsConfig &
+    ContextRankerConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -52,6 +57,7 @@ export async function configureExternalServices(
         | 'createSentryService'
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
+        | 'createContextRankingController'
     >
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
@@ -73,6 +79,10 @@ export async function configureExternalServices(
         )
     }
 
+    const contextRanking = initialConfig.experimentalChatContextRanker
+        ? platform.createContextRankingController?.(initialConfig)
+        : undefined
+
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient)
@@ -85,6 +95,7 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         symfRunner,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
@@ -92,6 +103,7 @@ export async function configureExternalServices(
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+            void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

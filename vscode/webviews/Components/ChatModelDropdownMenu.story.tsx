@@ -4,8 +4,8 @@ import { DOTCOM_URL, ModelProvider } from '@sourcegraph/cody-shared'
 
 import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
 
-import { ChatModelDropdownMenu } from './ChatModelDropdownMenu'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { ChatModelDropdownMenu } from './ChatModelDropdownMenu'
 
 const meta: Meta<typeof ChatModelDropdownMenu> = {
     title: 'cody/Chat Model Dropdown',

@@ -9,8 +9,10 @@ import type {
 
 import { getConfiguration } from './configuration'
 
+export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
+
 export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel(
-    'Cody by Sourcegraph',
+    CODY_OUTPUT_CHANNEL,
     'json'
 )
 
@@ -24,7 +26,7 @@ export const outputChannel: vscode.OutputChannel = vscode.window.createOutputCha
  *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
 export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
-    log('error', filterLabel, text, ...args)
+    log('debug', filterLabel, text, ...args)
 }
 
 /**

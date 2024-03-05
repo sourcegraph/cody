@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
+import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import type { AuthStatus } from '../chat/protocol'
 
-import type { CodySidebarTreeItem } from './treeViewItems'
 import type { InteractionMessage } from '@sourcegraph/cody-shared'
+import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]

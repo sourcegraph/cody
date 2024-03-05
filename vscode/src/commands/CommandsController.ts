@@ -1,12 +1,12 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
-import type { CodyCommandArgs } from './types'
-import { CommandRunner } from './services/runner'
-import type { CommandsProvider } from './services/provider'
 import type { CommandResult } from '../main'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
+import type { CommandsProvider } from './services/provider'
+import { CommandRunner } from './services/runner'
+import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
@@ -23,7 +23,13 @@ class CommandsController implements vscode.Disposable {
     public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
-            this.disposables.push(this.provider)
+            this.disposables.push(
+                this.provider,
+                vscode.window.registerTreeDataProvider(
+                    'cody.commands.tree.view',
+                    this.provider.treeViewProvider
+                )
+            )
         }
     }
 

@@ -18,7 +18,7 @@ interface QueryParams {
     query: string
 }
 
-export interface QueryResultSet {
+interface QueryResultSet {
     results: QueryResult[]
 }
 

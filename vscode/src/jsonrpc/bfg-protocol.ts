@@ -4,12 +4,12 @@
  */
 import type { Position, Range } from './agent-protocol'
 
-export interface BFGFileContextSnippet {
+interface BFGFileContextSnippet {
     fileName: string
     content: string
 }
 
-export interface BFGSymbolContextSnippet extends BFGFileContextSnippet {
+interface BFGSymbolContextSnippet extends BFGFileContextSnippet {
     symbol: string
 }
 

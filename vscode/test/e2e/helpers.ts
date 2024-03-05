@@ -1,13 +1,13 @@
 import * as child_process from 'child_process'
-import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile, type PathLike, type RmOptions } from 'fs'
+import { type PathLike, type RmOptions, mkdir, mkdtempSync, promises as fs, rmSync, writeFile } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
-import { test as base, expect, type Frame, type FrameLocator, type Page } from '@playwright/test'
+import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { loggedEvents, MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
+import { MockServer, loggedEvents, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
 

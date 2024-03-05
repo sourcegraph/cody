@@ -1,17 +1,17 @@
 import * as vscode from 'vscode'
 
 import {
-    DOTCOM_URL,
     type Configuration,
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
+    DOTCOM_URL,
 } from '@sourcegraph/cody-shared'
 
 import {
     CONFIG_KEY,
-    getConfigEnumValues,
     type ConfigKeys,
     type ConfigurationKeysMap,
+    getConfigEnumValues,
 } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
@@ -123,6 +123,8 @@ export function getConfiguration(
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
+
+        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
             'autocomplete.experimental.dynamicMultilineCompletions',

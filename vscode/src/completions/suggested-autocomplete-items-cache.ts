@@ -2,11 +2,11 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
+import type { Span } from '@opentelemetry/api'
 import type { DocumentContext } from './get-current-doc-context'
 import type { CompletionItemID, CompletionLogID } from './logger'
 import type { RequestParams } from './request-manager'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import type { Span } from '@opentelemetry/api'
 
 interface AutocompleteItemParams {
     insertText: string | vscode.SnippetString

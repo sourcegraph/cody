@@ -2,18 +2,18 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource } from './get-inline-completions'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
+import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import { Provider } from './providers/provider'
 import {
     RequestManager,
-    computeIfRequestStillRelevant,
     type RequestManagerResult,
     type RequestParams,
+    computeIfRequestStillRelevant,
 } from './request-manager'
 import { documentAndPosition, nextTick } from './test-helpers'
-import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
-import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 
 class MockProvider extends Provider {
     public didFinishNetworkRequest = false

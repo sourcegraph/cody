@@ -1,30 +1,29 @@
+import { type ContextItem, testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { fuseContext } from './context'
-import { testFileUri } from '@sourcegraph/cody-shared'
-import type { ContextItem } from '../../prompt-builder/types'
 
 describe('fuseContext', () => {
     const uri = testFileUri('test.ts')
-    const keywordItems = [
-        { text: '0', uri },
-        { text: '1', uri },
-        { text: '2', uri },
-        { text: '3', uri },
-        { text: '4', uri },
-        { text: '5', uri },
-        { text: '6', uri },
-        { text: '7', uri },
-        { text: '8', uri },
-        { text: '9', uri },
+    const keywordItems: ContextItem[] = [
+        { type: 'file', content: '0', uri, source: 'keyword' },
+        { type: 'file', content: '1', uri, source: 'keyword' },
+        { type: 'file', content: '2', uri, source: 'keyword' },
+        { type: 'file', content: '3', uri, source: 'keyword' },
+        { type: 'file', content: '4', uri, source: 'keyword' },
+        { type: 'file', content: '5', uri, source: 'keyword' },
+        { type: 'file', content: '6', uri, source: 'keyword' },
+        { type: 'file', content: '7', uri, source: 'keyword' },
+        { type: 'file', content: '8', uri, source: 'keyword' },
+        { type: 'file', content: '9', uri, source: 'keyword' },
     ]
-    const embeddingsItems = [
-        { text: 'A', uri },
-        { text: 'B', uri },
-        { text: 'C', uri },
+    const embeddingsItems: ContextItem[] = [
+        { type: 'file', content: 'A', uri, source: 'embeddings' },
+        { type: 'file', content: 'B', uri, source: 'embeddings' },
+        { type: 'file', content: 'C', uri, source: 'embeddings' },
     ]
 
     function joined(items: ContextItem[]): string {
-        return items.map(r => r.text).join('')
+        return items.map(r => r.content).join('')
     }
 
     it('includes the right 80-20 split', () => {
@@ -34,24 +33,24 @@ describe('fuseContext', () => {
     })
 
     it('skips over large items in an attempt to optimize utilization', () => {
-        const keywordItems = [
-            { text: '0', uri },
-            { text: '1', uri },
-            { text: '2', uri },
-            { text: '3', uri },
-            { text: '4', uri },
-            { text: '5', uri },
-            { text: 'very large keyword item', uri },
-            { text: '6', uri },
-            { text: '7', uri },
-            { text: '8', uri },
-            { text: '9', uri },
+        const keywordItems: ContextItem[] = [
+            { type: 'file', content: '0', uri, source: 'keyword' },
+            { type: 'file', content: '1', uri, source: 'keyword' },
+            { type: 'file', content: '2', uri, source: 'keyword' },
+            { type: 'file', content: '3', uri, source: 'keyword' },
+            { type: 'file', content: '4', uri, source: 'keyword' },
+            { type: 'file', content: '5', uri, source: 'keyword' },
+            { type: 'file', content: 'very large keyword item', uri, source: 'keyword' },
+            { type: 'file', content: '6', uri, source: 'keyword' },
+            { type: 'file', content: '7', uri, source: 'keyword' },
+            { type: 'file', content: '8', uri, source: 'keyword' },
+            { type: 'file', content: '9', uri, source: 'keyword' },
         ]
-        const embeddingsItems = [
-            { text: 'A', uri },
-            { text: 'very large embeddings item', uri },
-            { text: 'B', uri },
-            { text: 'C', uri },
+        const embeddingsItems: ContextItem[] = [
+            { type: 'file', content: 'A', uri, source: 'embeddings' },
+            { type: 'file', content: 'very large embeddings item', uri, source: 'embeddings' },
+            { type: 'file', content: 'B', uri, source: 'embeddings' },
+            { type: 'file', content: 'C', uri, source: 'embeddings' },
         ]
         const maxChars = 10
         const result = fuseContext(keywordItems, embeddingsItems, maxChars)

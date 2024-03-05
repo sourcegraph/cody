@@ -9,9 +9,9 @@ import { resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
 import {
+    type DocumentContext,
     getCurrentDocContext,
     insertIntoDocContext,
-    type DocumentContext,
 } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 

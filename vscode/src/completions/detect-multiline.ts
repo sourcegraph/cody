@@ -7,10 +7,10 @@ import type { DocumentDependentContext, LinesContext } from './get-current-doc-c
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,
+    OPENING_BRACKET_REGEX,
     getLastLine,
     indentation,
     lines,
-    OPENING_BRACKET_REGEX,
 } from './text-processing'
 
 interface DetectMultilineParams {

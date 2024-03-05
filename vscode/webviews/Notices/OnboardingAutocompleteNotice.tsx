@@ -1,18 +1,20 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
 
-import { getVSCodeAPI } from '../utils/VSCodeApi'
+import type { VSCodeWrapper } from '../utils/VSCodeApi'
 
 import { Notice } from './Notice'
 
 import styles from './OnboardingAutocompleteNotice.module.css'
 
-export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
+export const OnboardingAutocompleteNotice: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({
+    vscodeAPI,
+}) => {
     const [showNotice, setShowNotice] = useState<boolean>(false)
 
     // On first render we set up a listener for messages from ChatViewProvider
     useEffect(() => {
-        const cleanup = getVSCodeAPI().onMessage(message => {
+        const cleanup = vscodeAPI.onMessage(message => {
             if (message.type === 'notice' && message.notice.key === 'onboarding-autocomplete') {
                 setShowNotice(true)
             }
@@ -21,7 +23,7 @@ export const OnboardingAutocompleteNotice: React.FunctionComponent = () => {
         return () => {
             cleanup()
         }
-    }, [])
+    }, [vscodeAPI])
 
     if (!showNotice) {
         return undefined

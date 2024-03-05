@@ -1,4 +1,4 @@
-import { summariseAttribution, type Editor, type Guardrails } from '@sourcegraph/cody-shared'
+import { type Editor, type Guardrails, summariseAttribution } from '@sourcegraph/cody-shared'
 
 export class GuardrailsProvider {
     // TODO(keegancsmith) this provider should create the client since the guardrails client requires a dotcom graphql connection.

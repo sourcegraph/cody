@@ -1,13 +1,14 @@
-import type { CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
+import { type CodyCommand, type ContextItem, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
-import { showCommandMenu } from '../menus'
-import { getContextFileFromShell } from '../context/shell'
-import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CodyCommandMenuItems } from '..'
+import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import { getContextFileFromShell } from '../context/shell'
+import { showCommandMenu } from '../menus'
+import { getDefaultCommandsMap } from '../utils/get-commands'
+import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
-export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
+const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.
@@ -18,7 +19,8 @@ export const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems 
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     protected readonly defaultCommands = vscodeDefaultCommands
-    protected customCommandsStore = new CustomCommandsManager()
+    public treeViewProvider = new TreeViewProvider('command', featureFlagProvider)
+    protected customCommandsStore = new CustomCommandsManager(this.treeViewProvider)
 
     // The commands grouped with default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
@@ -33,7 +35,12 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
             vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
-            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
+            vscode.workspace.onDidChangeConfiguration(async event => {
+                if (event.affectsConfiguration('cody')) {
+                    await this.treeViewProvider.refresh()
+                }
+            })
         )
 
         this.customCommandsStore.init()
@@ -85,7 +92,7 @@ export class CommandsProvider implements vscode.Disposable {
      * Gets the context file content from executing a shell command.
      * Used for retreiving context for the command field in custom command
      */
-    public async runShell(shell: string): Promise<ContextFile[]> {
+    public async runShell(shell: string): Promise<ContextItem[]> {
         return getContextFileFromShell(shell)
     }
 

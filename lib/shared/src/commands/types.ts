@@ -39,7 +39,7 @@ export interface CodyCommand {
  * - 'ask' mode is the default mode, run prompt in chat view
  * - 'edit' mode will run prompt with edit command which replace selection with cody's response
  * - 'insert' mode is the same as edit, it adds to the top of the selection instead of replacing selection
- * - 'file' mode create a new file with cody's response as content
+ * - 'file' mode create a new file with cody's response as content - not supported yet
  */
 type CodyCommandMode = 'ask' | 'edit' | 'insert' | 'file'
 
@@ -77,4 +77,4 @@ export enum CustomCommandType {
     User = 'user',
 }
 
-export type DefaultCommandType = 'default' | 'experimental'
+type DefaultCommandType = 'default' | 'experimental'

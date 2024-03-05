@@ -1,5 +1,5 @@
-import * as fspromises from 'fs/promises'
 import * as path from 'path'
+import * as fspromises from 'fs/promises'
 
 import * as commander from 'commander'
 import * as vscode from 'vscode'
