@@ -11,7 +11,7 @@ import {
     type SerializedEditorState,
 } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { type FunctionComponent, type MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -74,40 +74,40 @@ export const PromptEditor: FunctionComponent<Props> = ({
         [onChange]
     )
 
-    useEffect(() => {
-        if (ref) {
-            ;(ref as MutableRefObject<PromptEditorRefAPI>).current = {
-                resetValue(value: PromptEditorValue): void {
-                    if (value.text === '') {
-                        // Clearing seems to require a different code path because focusing fails if
-                        // the editor is empty.
-                        editorRef.current?.update(() => {
-                            $getRoot().clear()
-                        })
-                        return
-                    }
+    useImperativeHandle(
+        ref,
+        () => ({
+            resetValue(value: PromptEditorValue): void {
+                if (value.text === '') {
+                    // Clearing seems to require a different code path because focusing fails if
+                    // the editor is empty.
+                    editorRef.current?.update(() => {
+                        $getRoot().clear()
+                    })
+                    return
+                }
 
-                    const editor = editorRef.current
-                    if (editor) {
-                        editor.setEditorState(editor.parseEditorState(value.editorState))
-                        addExtraContextItems(editor, value.extraContextItems)
-                        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
+                const editor = editorRef.current
+                if (editor) {
+                    editor.setEditorState(editor.parseEditorState(value.editorState))
+                    addExtraContextItems(editor, value.extraContextItems)
+                    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
+                    editor.focus()
+                }
+            },
+            setFocus(focus) {
+                const editor = editorRef.current
+                if (editor) {
+                    if (focus) {
                         editor.focus()
+                    } else {
+                        editor.blur()
                     }
-                },
-                setFocus(focus) {
-                    const editor = editorRef.current
-                    if (editor) {
-                        if (focus) {
-                            editor.focus()
-                        } else {
-                            editor.blur()
-                        }
-                    }
-                },
-            }
-        }
-    }, [ref])
+                }
+            },
+        }),
+        []
+    )
 
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
