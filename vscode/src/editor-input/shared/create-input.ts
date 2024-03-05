@@ -294,6 +294,7 @@ export async function showEditorInput<T extends EditorInputType>({
         getItems: () =>
             getSharedInputItems(
                 type,
+                inputType,
                 targetInput.input.value,
                 activeRangeItem,
                 activeModelItem,
@@ -314,7 +315,6 @@ export async function showEditorInput<T extends EditorInputType>({
             }
 
             if (inputType === 'WithPrefix' && value.trim().length === 0) {
-                console.log('TRYING!!')
                 // Support removing the prefix to go back to the previous menu
                 return vscode.commands.executeCommand('cody.editor.input')
             }
@@ -338,6 +338,7 @@ export async function showEditorInput<T extends EditorInputType>({
                 // eslint-disable-next-line no-self-assign
                 input.items = getSharedInputItems(
                     type,
+                    inputType,
                     input.value,
                     activeRangeItem,
                     activeModelItem,

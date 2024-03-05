@@ -64,13 +64,19 @@ export const showSearchInput = (type: InputType): Promise<void> => {
             { leading: false, trailing: true }
         )
 
+        const getDefaultItems = (query: string): vscode.QuickPickItem[] => {
+            if (query === instructionPrefix || type === 'NoPrefix' || type === 'Hybrid') {
+                return []
+            }
+            return [{ label: 'Search for code using a natural language query', alwaysShow: true }]
+        }
+
         const searchInput = createQuickPick({
             title: INPUT_TITLE,
             placeHolder: 'Search for code using a natural language query',
-            getItems: () => ({
-                // We do not currently support opening this input with a pre-filled query.
-                items: [],
-            }),
+            getItems: () => {
+                return { items: getDefaultItems(activeQuery) }
+            },
             onDidHide: () => clearSearchResultPreviews(),
             onDidChangeValue: async value => {
                 if (value === instructionPrefix) {
@@ -79,7 +85,7 @@ export const showSearchInput = (type: InputType): Promise<void> => {
                 }
 
                 if (type === 'WithPrefix' && value.trim().length === 0) {
-                    return
+                    return vscode.commands.executeCommand('cody.editor.input')
                 }
 
                 if (value !== activeQuery) {

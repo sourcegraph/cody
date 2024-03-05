@@ -20,6 +20,12 @@ const CHAT_ITEM_NO_PREFIX: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
+const CHAT_ITEM_HYBRID: vscode.QuickPickItem = {
+    label: '$(comment) Chat',
+    description: '(?)',
+    alwaysShow: true,
+}
+
 const EDIT_ITEM_PREFIX: vscode.QuickPickItem = {
     label: ':',
     description: 'Edit',
@@ -28,6 +34,12 @@ const EDIT_ITEM_PREFIX: vscode.QuickPickItem = {
 
 const EDIT_ITEM_NO_PREFIX: vscode.QuickPickItem = {
     label: '$(edit) Edit',
+    alwaysShow: true,
+}
+
+const EDIT_ITEM_HYBRID: vscode.QuickPickItem = {
+    label: '$(edit) Edit',
+    description: '(:)',
     alwaysShow: true,
 }
 
@@ -42,9 +54,15 @@ const SEARCH_ITEM_NO_PREFIX: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
+const SEARCH_ITEM_HYBRID: vscode.QuickPickItem = {
+    label: '$(search) Search',
+    description: '(%)',
+    alwaysShow: true,
+}
+
 /** Temporary type for prototyping the input using a prefix design vs no-prefix */
-export type InputType = 'WithPrefix' | 'NoPrefix'
-export const DEFAULT_INPUT_TYPE: InputType = 'WithPrefix'
+export type InputType = 'WithPrefix' | 'NoPrefix' | 'Hybrid'
+export const DEFAULT_INPUT_TYPE: InputType = 'Hybrid'
 
 export const INPUT_TITLE = `Cody${!isRunningInsideAgent() ? ' (⌥C)' : ''}`
 
@@ -57,6 +75,12 @@ const getInputItems = (type: InputType): GetItemsResult => {
     if (type === 'WithPrefix') {
         return {
             items: [CHAT_ITEM_PREFIX, EDIT_ITEM_PREFIX, SEARCH_ITEM_PREFIX],
+        }
+    }
+
+    if (type === 'Hybrid') {
+        return {
+            items: [CHAT_ITEM_HYBRID, EDIT_ITEM_HYBRID, SEARCH_ITEM_HYBRID],
         }
     }
 
@@ -78,7 +102,7 @@ export const getInput = async ({
     chatManager,
     editManager,
     source,
-    type = 'WithPrefix',
+    type = DEFAULT_INPUT_TYPE,
 }: GetInputParams): Promise<null> => {
     const editor = getEditor().active
     if (!editor) {
@@ -100,7 +124,7 @@ export const getInput = async ({
                 }
             },
             onDidChangeValue:
-                type === 'WithPrefix'
+                type === 'WithPrefix' || type === 'Hybrid'
                     ? async (value: string) => {
                           if (value.startsWith('?')) {
                               return chatManager.executeChatInline(type)
@@ -127,12 +151,15 @@ export const getInput = async ({
                 switch (selectedItem.label) {
                     case EDIT_ITEM_PREFIX.label:
                     case EDIT_ITEM_NO_PREFIX.label:
+                    case EDIT_ITEM_HYBRID.label:
                         return executeEdit({ configuration: { document, inputType: type }, source })
                     case CHAT_ITEM_PREFIX.label:
                     case CHAT_ITEM_NO_PREFIX.label:
+                    case CHAT_ITEM_HYBRID.label:
                         return chatManager.executeChatInline(type)
                     case SEARCH_ITEM_PREFIX.label:
                     case SEARCH_ITEM_NO_PREFIX.label:
+                    case SEARCH_ITEM_HYBRID.label:
                         return showSearchInput(type)
                 }
 

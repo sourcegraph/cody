@@ -206,7 +206,7 @@ export class FixupController
             initialExpandedRange: expandedRange,
             initialModel: model,
             initialIntent: intent,
-            initialInputValue: inputType === 'WithPrefix' ? ':' : '',
+            initialInputValue: inputType === 'WithPrefix' ? ':' : undefined,
         })
         if (!input) {
             return null

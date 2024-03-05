@@ -170,7 +170,7 @@ export class ChatManager implements vscode.Disposable {
                 initialRange: range,
                 initialExpandedRange: expandedRange,
                 initialModel: 'anthropic/claude-2.0',
-                initialInputValue: inputType === 'WithPrefix' ? '?' : '',
+                initialInputValue: inputType === 'WithPrefix' ? '?' : undefined,
             },
             inputType
         )
