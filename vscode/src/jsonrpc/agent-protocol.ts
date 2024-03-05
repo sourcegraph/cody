@@ -329,6 +329,9 @@ interface ClientCapabilities {
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
+    // The strategy for decorating fixups with controls in code lenses.
+    // To enable, must also have codeLenses == 'enabled'.
+    fixupCodeLenses?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {

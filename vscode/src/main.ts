@@ -217,6 +217,7 @@ const register = async (
         editor,
         ghostHintDecorator,
         authProvider,
+        extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
