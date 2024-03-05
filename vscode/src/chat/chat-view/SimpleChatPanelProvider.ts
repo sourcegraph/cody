@@ -450,10 +450,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
-                const userContextItems = await contextFilesToContextItems(
+                const userContextItems = await fillInContextItemContent(
                     this.editor,
-                    userContextFiles || [],
-                    true
+                    userContextFiles || []
                 )
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
@@ -1269,19 +1268,20 @@ async function newChatModelfromTranscriptJSON(
     )
 }
 
-export async function contextFilesToContextItems(
+export async function fillInContextItemContent(
     editor: Editor,
-    items: ContextItem[],
-    fetchContent?: boolean
+    items: ContextItem[]
 ): Promise<ContextItem[]> {
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItem | null> => {
-                const range = toVSCodeRange(item.range)
                 let content = item.content
-                if (!item.content && fetchContent) {
+                if (!item.content) {
                     try {
-                        content = await editor.getTextEditorContentForFile(item.uri, range)
+                        content = await editor.getTextEditorContentForFile(
+                            item.uri,
+                            toVSCodeRange(item.range)
+                        )
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
