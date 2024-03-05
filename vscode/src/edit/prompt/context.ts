@@ -150,7 +150,7 @@ export const getContext = async ({
     contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextItem[]> => {
-    if (contextMessages) {
+    if (contextMessages && contextMessages.length > 0) {
         return extractContextItemsFromContextMessages(contextMessages)
     }
 
