@@ -19,7 +19,6 @@ import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
-import MarkdownShortcutPlugin from './plugins/markdownShortcut'
 import { OnFocusPlugin } from './plugins/onFocus'
 import { RefPlugin } from './plugins/ref'
 
@@ -87,7 +86,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
                     <MentionsPlugin />
                     <CodeHighlightPlugin />
-                    <MarkdownShortcutPlugin />
                     <AutoFocusPlugin defaultSelection="rootEnd" />
                     <OnFocusPlugin onFocus={onFocus} />
                     {editorRef && <RefPlugin editorRef={editorRef} />}
