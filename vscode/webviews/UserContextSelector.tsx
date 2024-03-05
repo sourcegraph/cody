@@ -12,7 +12,7 @@ const FILE_NO_RESULT = 'No matching files found'
 const SYMBOL_ON_RESULT = 'Search for a symbol to include...'
 const SYMBOL_NO_RESULT = 'No matching symbols found'
 
-export interface UserContextSelectorProps {
+interface UserContextSelectorProps {
     onSelected: (context: ContextItem, queryEndsWithColon?: boolean) => void
     contextSelection?: ContextItem[]
     selected?: number

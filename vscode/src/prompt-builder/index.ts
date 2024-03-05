@@ -159,7 +159,7 @@ function contextItem(value: ContextItem | ContextMessage): ContextItem {
     return isContextItem(value) ? value : value.file
 }
 
-export function contextItemId(value: ContextItem | ContextMessage): string {
+function contextItemId(value: ContextItem | ContextMessage): string {
     const item = contextItem(value)
 
     if (item.range) {
