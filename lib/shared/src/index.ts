@@ -30,7 +30,6 @@ export type {
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
-export { CodebaseContext } from './codebase-context'
 export type {
     ContextGroup,
     ContextProvider,
@@ -42,7 +41,6 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
     ContextItem,
     ContextItemFile,

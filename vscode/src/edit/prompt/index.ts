@@ -108,7 +108,7 @@ export const buildInteraction = async ({
         intent: task.intent,
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
-        userContextFiles: task.userContextFiles,
+        userContextItems: task.userContextItems,
         editor,
         followingText,
         precedingText,

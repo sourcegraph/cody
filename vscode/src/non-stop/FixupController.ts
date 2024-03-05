@@ -1085,7 +1085,7 @@ export class FixupController
             {
                 initialInputValue: task.instruction,
                 initialRange: task.selectionRange,
-                initialSelectedContextFiles: task.userContextFiles,
+                initialSelectedContextItems: task.userContextItems,
                 initialModel: task.model,
                 initialIntent: task.intent,
             },

@@ -53,7 +53,7 @@ export class FixupTask {
          */
         public fixupFile: FixupFile,
         public readonly instruction: string,
-        public readonly userContextFiles: ContextItem[],
+        public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
         public selectionRange: vscode.Range,

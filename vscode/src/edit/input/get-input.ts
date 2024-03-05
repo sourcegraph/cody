@@ -47,7 +47,7 @@ export interface EditInputInitialValues {
     initialModel: EditModel
     initialIntent: EditIntent
     initialInputValue?: string
-    initialSelectedContextFiles?: ContextItem[]
+    initialSelectedContextItems?: ContextItem[]
 }
 
 const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
@@ -92,7 +92,7 @@ export const getInput = async (
 
     // Initialize the selectedContextItems with any previous items
     // This is primarily for edit retries, where a user may want to reuse their context
-    for (const file of initialValues.initialSelectedContextFiles ?? []) {
+    for (const file of initialValues.initialSelectedContextItems ?? []) {
         selectedContextItems.set(getLabelForContextItem(file), file)
     }
 
