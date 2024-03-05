@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import {
     type ContextItem,
     type Message,
@@ -10,10 +11,22 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
+function sha256(input: string): string {
+    return crypto.createHash('sha256').update(input).digest('hex')
+}
+
 export function contextItemId(contextItem: ContextItem): string {
-    return contextItem.range
-        ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-        : contextItem.uri.toString()
+    const uri = contextItem.uri.toString()
+
+    if (contextItem.range) {
+        return `${uri}#${contextItem.range.start.line}:${contextItem.range.end.line}`
+    }
+
+    if (contextItem.content) {
+        return `${uri}#${sha256(contextItem.content)}`
+    }
+
+    return uri
 }
 
 export function renderContextItem(contextItem: ContextItem): Message[] {
