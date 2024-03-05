@@ -1,4 +1,4 @@
-import { OLLAMA_DEFAULT_URL } from '../ollama/ollama-client'
+import { OLLAMA_DEFAULT_URL } from '../ollama/completions-client'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { DEFAULT_DOT_COM_MODELS } from './dotcom'
 import { ModelUsage } from './types'

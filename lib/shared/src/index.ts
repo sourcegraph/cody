@@ -130,7 +130,7 @@ export {
     createOllamaClient,
     type OllamaGenerateParams,
     OLLAMA_DEFAULT_URL,
-} from './ollama/ollama-client'
+} from './ollama/completions-client'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,

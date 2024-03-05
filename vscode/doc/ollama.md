@@ -22,10 +22,6 @@
 
 1. Confirm Cody uses Ollama by looking at the Cody output channel or the autocomplete trace view (in the command palette).
 
-## Current limitations
-
-Ollama is currently only supported by the autocomplete feature and is considered experimental. You can track [issue #3252](https://github.com/sourcegraph/cody/issues/3252) for chat support.
-
 # Experimental chat and commands support with Ollama running locally
 
 ## How to use
