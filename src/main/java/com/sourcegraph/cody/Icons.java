@@ -28,7 +28,7 @@ public interface Icons {
     Icon CodyAutocompleteDisabled =
         IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
 
-    Icon CodyAutocompleteUnavailable =
+    Icon CodyUnavailable =
         IconLoader.getIcon("/icons/codyLogoMonochromaticUnavailable.svg", Icons.class);
   }
 

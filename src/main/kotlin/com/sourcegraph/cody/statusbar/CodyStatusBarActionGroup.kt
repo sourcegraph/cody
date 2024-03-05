@@ -20,8 +20,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
     e.presentation.isVisible = ConfigUtil.isCodyEnabled()
 
     removeAll()
-    if (CodyAutocompleteStatusService.getCurrentStatus() ==
-        CodyAutocompleteStatus.CodyAgentNotRunning) {
+    if (CodyStatusService.getCurrentStatus() == CodyStatus.CodyAgentNotRunning) {
       addAll(
           OpenLogAction(),
           AboutAction().apply { templatePresentation.text = "Open About To Troubleshoot Issue" },

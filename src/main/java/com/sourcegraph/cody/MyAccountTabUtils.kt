@@ -51,21 +51,7 @@ private fun ensureUserIdMatchInAgent(jetbrainsUserId: String, server: CodyAgentS
 }
 
 @RequiresBackgroundThread
-private fun getUserId(server: CodyAgentServer): String? =
-    server
-        .currentUserId()
-        .exceptionally {
-          CodyToolWindowContent.logger.warn("Unable to fetch user id from agent")
-          null
-        }
-        .get()
+private fun getUserId(server: CodyAgentServer): String? = server.currentUserId().get()
 
 @RequiresBackgroundThread
-private fun getIsCurrentUserPro(server: CodyAgentServer): Boolean? =
-    server
-        .isCurrentUserPro()
-        .exceptionally { e ->
-          CodyToolWindowContent.logger.warn("Error getting user pro status", e)
-          null
-        }
-        .get()
+private fun getIsCurrentUserPro(server: CodyAgentServer): Boolean? = server.isCurrentUserPro().get()

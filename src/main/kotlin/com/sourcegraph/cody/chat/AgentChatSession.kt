@@ -16,6 +16,7 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -30,7 +31,6 @@ private constructor(
     private val internalId: String = UUID.randomUUID().toString(),
     chatModelProviderFromState: ChatModelsResponse.ChatModelProvider? = null,
 ) : ChatSession {
-
   /**
    * There are situations (like startup of the chat) when we want to show UI immediately, but we
    * have not established connection with the agent yet. This is why we use CompletableFuture to
@@ -114,15 +114,21 @@ private constructor(
               addEnhancedContext = chatPanel.isEnhancedContextEnabled(),
               contextFiles = contextFiles)
 
-      val request =
-          agent.server.chatSubmitMessage(ChatSubmitMessageParams(sessionId.get().get(), message))
+      try {
+        val request =
+            agent.server.chatSubmitMessage(ChatSubmitMessageParams(sessionId.get().get(), message))
 
-      GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
+        GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
 
-      ApplicationManager.getApplication().invokeLater {
-        createCancellationToken(
-            onCancel = { request.cancel(true) },
-            onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
+        ApplicationManager.getApplication().invokeLater {
+          createCancellationToken(
+              onCancel = { request.cancel(true) },
+              onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
+        }
+      } catch (e: Exception) {
+        createCancellationToken(onCancel = {}, onFinish = {})
+        getCancellationToken().abort()
+        throw e
       }
     }
   }
@@ -150,7 +156,9 @@ private constructor(
 
           addErrorMessageAsAssistantMessage(text, index = extensionMessage.messages.count() - 1)
         } else {
-          // Currently we ignore other kind of errors like context window limit reached
+          val message = CodyBundle.getString("chat.general-error").fmt(lastMessage.error.message)
+          CodyAgentService.setAgentError(project, lastMessage.error.message)
+          addErrorMessageAsAssistantMessage(message, index = extensionMessage.messages.count() - 1)
         }
       } else {
         RateLimitStateManager.invalidateForChat(project)
@@ -341,15 +349,8 @@ private constructor(
     ): CompletableFuture<SessionId> {
       val result = CompletableFuture<SessionId>()
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        try {
-          newPanelAction(agent).thenAccept(result::complete)
-        } catch (e: ExecutionException) {
-          // Agent cannot gracefully recover when connection is lost, we need to restart it
-          // TODO https://github.com/sourcegraph/jetbrains/issues/306
-          logger.warn("Failed to load new chat, restarting agent", e)
-          CodyAgentService.getInstance(project).restartAgent(project)
-          Thread.sleep(5000)
-          createNewPanel(project, newPanelAction).thenAccept(result::complete)
+        newPanelAction(agent).whenComplete { value, throwable ->
+          if (throwable != null) result.completeExceptionally(throwable) else result.complete(value)
         }
       }
       return result

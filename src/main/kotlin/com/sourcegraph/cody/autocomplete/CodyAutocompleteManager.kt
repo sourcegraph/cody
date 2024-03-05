@@ -26,9 +26,9 @@ import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.resetApplication
+import com.sourcegraph.cody.statusbar.CodyStatus
+import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.notifyApplication
+import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.*
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.cody.vscode.TextDocument
@@ -220,7 +220,7 @@ class CodyAutocompleteManager {
                         Range(
                             com.sourcegraph.cody.vscode.Position(lineNumber, startPosition),
                             position)))
-    notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress)
+    notifyApplication(CodyStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<Void?>()
     CodyAgentService.withAgent(project) { agent ->

@@ -16,8 +16,8 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
   override fun ID(): String = CodyWidgetFactory.ID
 
   override fun getWidgetState(file: VirtualFile?): WidgetState {
-    val currentStatus = CodyAutocompleteStatusService.getCurrentStatus()
-    if (currentStatus == CodyAutocompleteStatus.CodyDisabled) {
+    val currentStatus = CodyStatusService.getCurrentStatus()
+    if (currentStatus == CodyStatus.CodyDisabled) {
       return WidgetState.HIDDEN
     }
     val state = WidgetState(currentStatus.presentableText, "", true)

@@ -7,7 +7,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtil
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
+import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
@@ -53,7 +53,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
               toolWindow?.setAvailable(true, null)
             }
 
-            CodyAutocompleteStatusService.resetApplication(project)
+            CodyStatusService.resetApplication(project)
 
             // Rerender autocompletions when custom autocomplete color changed
             // or when checkbox state changed

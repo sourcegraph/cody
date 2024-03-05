@@ -7,7 +7,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
 import com.sourcegraph.cody.config.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
+import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.TelemetryInitializerActivity
@@ -26,7 +26,7 @@ class PostStartupActivity : StartupActivity.DumbAware {
     CodyAuthNotificationActivity().runActivity(project)
     CheckUpdatesTask(project).queue()
     if (ConfigUtil.isCodyEnabled()) CodyAgentService.getInstance(project).startAgent(project)
-    CodyAutocompleteStatusService.resetApplication(project)
+    CodyStatusService.resetApplication(project)
     CodyFocusChangeListener().runActivity(project)
     EndOfTrialNotificationScheduler.createAndStart(project)
   }

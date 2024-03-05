@@ -14,23 +14,23 @@ import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
 
 @Service
-class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable {
+class CodyStatusService : CodyStatusListener, Disposable {
 
-  @GuardedBy("this") private var status: CodyAutocompleteStatus = CodyAutocompleteStatus.CodyUninit
+  @GuardedBy("this") private var status: CodyStatus = CodyStatus.CodyUninit
 
   init {
     ApplicationManager.getApplication()
         .messageBus
         .connect(this)
-        .subscribe(CodyAutocompleteStatusListener.TOPIC, this)
+        .subscribe(CodyStatusListener.TOPIC, this)
   }
 
-  override fun onCodyAutocompleteStatus(codyAutocompleteStatus: CodyAutocompleteStatus) {
+  override fun onCodyAutocompleteStatus(codyStatus: CodyStatus) {
     val notify =
         synchronized(this) {
           val oldStatus = status
-          status = codyAutocompleteStatus
-          return@synchronized oldStatus != codyAutocompleteStatus
+          status = codyStatus
+          return@synchronized oldStatus != codyStatus
         }
     if (notify) {
       updateCodyStatusBarIcons()
@@ -58,18 +58,20 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
               ?.let(service::findCredentials)
       status =
           if (!ConfigUtil.isCodyEnabled()) {
-            CodyAutocompleteStatus.CodyDisabled
+            CodyStatus.CodyDisabled
           } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
-            CodyAutocompleteStatus.AutocompleteDisabled
+            CodyStatus.AutocompleteDisabled
           } else if (!CodyAgentService.isConnected(project)) {
-            CodyAutocompleteStatus.CodyAgentNotRunning
+            CodyStatus.CodyAgentNotRunning
           } else if (token == null) {
-            CodyAutocompleteStatus.CodyNotSignedIn
+            CodyStatus.CodyNotSignedIn
           } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
               UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
-            CodyAutocompleteStatus.RateLimitError
+            CodyStatus.RateLimitError
+          } else if (CodyAgentService.agentError.get() != null) {
+            CodyStatus.AgentError
           } else {
-            CodyAutocompleteStatus.Ready
+            CodyStatus.Ready
           }
       return oldStatus != status
     }
@@ -84,7 +86,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
     }
   }
 
-  private fun getStatus(): CodyAutocompleteStatus {
+  private fun getStatus(): CodyStatus {
     synchronized(this) {
       return status
     }
@@ -94,17 +96,17 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
 
   companion object {
 
-    fun getCurrentStatus(): CodyAutocompleteStatus {
+    fun getCurrentStatus(): CodyStatus {
       return ApplicationManager.getApplication()
-          .getService(CodyAutocompleteStatusService::class.java)
+          .getService(CodyStatusService::class.java)
           .getStatus()
     }
 
     @JvmStatic
-    fun notifyApplication(status: CodyAutocompleteStatus) {
+    fun notifyApplication(status: CodyStatus) {
       ApplicationManager.getApplication()
           .messageBus
-          .syncPublisher(CodyAutocompleteStatusListener.TOPIC)
+          .syncPublisher(CodyStatusListener.TOPIC)
           .onCodyAutocompleteStatus(status)
     }
 
@@ -112,7 +114,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
     fun resetApplication(project: Project) {
       ApplicationManager.getApplication()
           .messageBus
-          .syncPublisher(CodyAutocompleteStatusListener.TOPIC)
+          .syncPublisher(CodyStatusListener.TOPIC)
           .onCodyAutocompleteStatusReset(project)
     }
   }
