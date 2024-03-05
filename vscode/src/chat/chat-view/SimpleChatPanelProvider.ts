@@ -26,7 +26,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import {
@@ -78,7 +77,7 @@ import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
-import { type MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
+import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
@@ -440,11 +439,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     await this.clearAndRestartSession()
                 }
 
-                const displayText = userContextFiles?.length
-                    ? createDisplayTextWithFileLinks(inputText, userContextFiles)
-                    : inputText
-                const promptText = inputText
-                this.chatModel.addHumanMessage({ text: promptText }, displayText)
+                this.chatModel.addHumanMessage({ text: inputText })
                 await this.saveSession({ inputText, inputContextFiles: userContextFiles })
 
                 this.postEmptyMessageInProgress()
@@ -502,7 +497,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // the condition below is an additional safeguard measure
                             promptText:
                                 authStatus.endpoint && isDotCom(authStatus.endpoint)
-                                    ? promptText
+                                    ? inputText
                                     : undefined,
                         },
                     })
@@ -708,9 +703,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {
-        const messages: ChatMessage[] = this.chatModel
-            .getMessagesWithContext()
-            .map(m => toViewMessage(m))
+        const messages: ChatMessage[] = [...this.chatModel.getMessages()]
         if (messageInProgress) {
             messages.push(messageInProgress)
         }
@@ -719,7 +712,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // https://github.com/microsoft/vscode/issues/159431
         void this.postMessage({
             type: 'transcript',
-            messages,
+            messages: messages.map(prepareChatMessage),
             isMessageInProgress: !!messageInProgress,
             chatID: this.chatModel.sessionID,
         })
@@ -818,7 +811,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction
-        this.chatModel.setNewContextUsed(newContextUsed)
+        this.chatModel.setLastMessageContext(newContextUsed)
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -864,14 +857,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             update: content => {
                 measureFirstToken()
                 span.addEvent('update')
-                this.postViewTranscript(
-                    toViewMessage({
-                        message: {
-                            speaker: 'assistant',
-                            text: content,
-                        },
-                    })
-                )
+                this.postViewTranscript({
+                    speaker: 'assistant',
+                    text: content,
+                })
             },
             close: content => {
                 measureFirstToken()
@@ -1236,8 +1225,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     // Convenience function for tests
-    public getViewTranscript(): ChatMessage[] {
-        return this.chatModel.getMessagesWithContext().map(m => toViewMessage(m))
+    public getViewTranscript(): readonly ChatMessage[] {
+        return this.chatModel.getMessages().map(prepareChatMessage)
     }
 }
 
@@ -1247,25 +1236,9 @@ function newChatModelFromSerializedChatTranscript(
 ): SimpleChatModel {
     return new SimpleChatModel(
         json.chatModel || modelID,
-        json.interactions.flatMap((interaction: SerializedChatInteraction): MessageWithContext[] => {
-            return [
-                {
-                    message: {
-                        speaker: 'human',
-                        text: interaction.humanMessage.text,
-                    },
-                    displayText: interaction.humanMessage.displayText,
-                    newContextUsed: interaction.usedContextFiles,
-                },
-                {
-                    message: {
-                        speaker: 'assistant',
-                        text: interaction.assistantMessage.text,
-                    },
-                    displayText: interaction.assistantMessage.displayText,
-                },
-            ]
-        }),
+        json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
+            [interaction.humanMessage, interaction.assistantMessage].filter(isDefined)
+        ),
         json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos

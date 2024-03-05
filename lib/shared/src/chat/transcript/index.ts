@@ -1,4 +1,3 @@
-import type { ContextItem } from '../../codebase-context/messages'
 import type { ChatMessage } from './messages'
 
 /**
@@ -27,6 +26,7 @@ export interface SerializedChatTranscript {
  */
 export interface SerializedChatInteraction {
     humanMessage: ChatMessage
-    assistantMessage: ChatMessage
-    usedContextFiles: ContextItem[]
+
+    /** `null` if the assistant has not yet replied to the human message. */
+    assistantMessage: ChatMessage | null
 }

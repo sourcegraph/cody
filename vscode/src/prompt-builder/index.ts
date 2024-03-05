@@ -1,11 +1,11 @@
 import {
+    type ChatMessage,
     type ContextItem,
     type ContextMessage,
     type Message,
     isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 import { SHA256 } from 'crypto-js'
-import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
 import { renderContextItem } from './utils'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
@@ -47,13 +47,13 @@ export class PromptBuilder {
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddMessages(reverseTranscript: MessageWithContext[]): number {
+    public tryAddMessages(reverseTranscript: ChatMessage[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
-        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
+        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.speaker === 'human')
         for (let i = lastHumanMsgIndex; i < reverseTranscript.length; i += 2) {
-            const humanMsg = reverseTranscript[i]?.message
-            const assistantMsg = reverseTranscript[i - 1]?.message
+            const humanMsg = reverseTranscript[i]
+            const assistantMsg = reverseTranscript[i - 1]
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
