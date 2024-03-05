@@ -38,8 +38,9 @@ export class ModelProvider {
      * and adds them to the list of ollama providers.
      */
     public static getLocalOllamaModels(endpoint?: string | null): void {
+        const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
         // Only fetch local models if the endpoint is not a dotcom instance
-        if (!endpoint || !isDotCom(endpoint)) {
+        if (isAgentTesting || !endpoint || !isDotCom(endpoint)) {
             return
         }
 

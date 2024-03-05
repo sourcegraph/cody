@@ -524,7 +524,6 @@ export class TestClient extends MessageHandler {
         const jsonText = message.split('\n').slice(1).join('\n')
         const json = JSON.parse(jsonText)
         const bodyText = json?.body ?? '{}'
-        console.log(bodyText, 'bodyText')
         const body = JSON.parse(bodyText)
         const { closestBody } = await this.request('testing/closestPostData', {
             url: json?.url ?? '',
