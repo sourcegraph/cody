@@ -91,7 +91,9 @@ test.extend<ExpectedEvents>({
 
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByLabel('.vscode', { exact: true }).hover()
+    await page.getByLabel('.vscode', { exact: true }).click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
     // Click on minimap to scroll to the buttom
@@ -291,5 +293,6 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+    await page.getByRole('tab', { name: 'cody.json, preview' }).hover()
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
 })
