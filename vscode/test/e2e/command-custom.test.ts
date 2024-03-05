@@ -18,12 +18,16 @@ test.beforeEach(() => {
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
+        'CodyVSCodeExtension:command:custom:build:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:custom:executed',
@@ -105,9 +109,12 @@ test.extend<ExpectedEvents>({
     // Show the new command in the menu and execute it
     await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Commands').locator('a').click()
+    await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     const newCommandMenuItem = page.getByLabel('tools  ATestCommand, The test command has been created')
     const newCommandSidebarItem = page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')
+    await newCommandMenuItem.hover()
+    await newCommandSidebarItem.hover()
     await expect(page.getByText(commandName)).toHaveCount(2) // one in sidebar, and one in menu
     await newCommandMenuItem.hover()
     await expect(newCommandMenuItem).toBeVisible()
