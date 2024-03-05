@@ -6,10 +6,22 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
 import com.intellij.xml.util.XmlStringUtil
 import com.jetbrains.rd.util.AtomicReference
-import com.sourcegraph.cody.agent.*
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.ExtensionMessage
+import com.sourcegraph.cody.agent.WebviewMessage
+import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ChatModelsParams
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
+import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
+import com.sourcegraph.cody.agent.protocol.ContextFile
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ui.ChatPanel
+import com.sourcegraph.cody.chat.ui.LlmDropdownData
 import com.sourcegraph.cody.commands.CommandId
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
@@ -18,7 +30,7 @@ import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.telemetry.GraphQlLogger
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -27,17 +39,17 @@ import org.slf4j.LoggerFactory
 class AgentChatSession
 private constructor(
     private val project: Project,
-    newSessionId: CompletableFuture<SessionId>,
+    newConnectionId: CompletableFuture<ConnectionId>,
     private val internalId: String = UUID.randomUUID().toString(),
-    chatModelProviderFromState: ChatModelsResponse.ChatModelProvider? = null,
+    private val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider? = null,
 ) : ChatSession {
   /**
    * There are situations (like startup of the chat) when we want to show UI immediately, but we
    * have not established connection with the agent yet. This is why we use CompletableFuture to
-   * store the sessionId.
+   * store the connectionId.
    */
-  private val sessionId: AtomicReference<CompletableFuture<SessionId>> =
-      AtomicReference(newSessionId)
+  private val connectionId: AtomicReference<CompletableFuture<ConnectionId>> =
+      AtomicReference(newConnectionId)
   private val chatPanel: ChatPanel =
       ChatPanel(project, chatSession = this, chatModelProviderFromState)
   private val cancellationToken = AtomicReference(CancellationToken())
@@ -45,7 +57,7 @@ private constructor(
 
   init {
     cancellationToken.get().dispose()
-    newSessionId.thenAccept { sessionId -> chatPanel.updateWithSessionId(sessionId) }
+    fetchLlms()
   }
 
   fun restoreAgentSession(
@@ -66,15 +78,17 @@ private constructor(
             chatModelProvider?.model,
             messagesToReload,
             UUID.randomUUID().toString())
-    val newSessionId = agent.server.chatRestore(restoreParams)
-    sessionId.getAndSet(newSessionId)
+    val newConnectionId = agent.server.chatRestore(restoreParams)
+    connectionId.getAndSet(newConnectionId)
+    fetchLlms()
   }
 
   fun getPanel(): ChatPanel = chatPanel
 
-  override fun getSessionId(): SessionId? = sessionId.get().getNow(null)
+  override fun getConnectionId(): ConnectionId? = connectionId.get().getNow(null)
 
-  fun hasSessionId(thatSessionId: SessionId): Boolean = getSessionId() == thatSessionId
+  fun hasConnectionId(thatConnectionId: ConnectionId): Boolean =
+      getConnectionId() == thatConnectionId
 
   override fun getInternalId(): String = internalId
 
@@ -116,7 +130,8 @@ private constructor(
 
       try {
         val request =
-            agent.server.chatSubmitMessage(ChatSubmitMessageParams(sessionId.get().get(), message))
+            agent.server.chatSubmitMessage(
+                ChatSubmitMessageParams(connectionId.get().get(), message))
 
         GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
 
@@ -201,7 +216,7 @@ private constructor(
   override fun sendWebviewMessage(message: WebviewMessage) {
     CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
       agent.server.webviewReceiveMessage(
-          WebviewReceiveMessageParams(this.sessionId.get().get(), message))
+          WebviewReceiveMessageParams(this.connectionId.get().get(), message))
     }
   }
 
@@ -246,20 +261,40 @@ private constructor(
     chatPanel.registerCancellationToken(newCancellationToken)
   }
 
+  private fun fetchLlms() {
+    if (chatModelProviderFromState != null) {
+      return
+    }
+
+    CodyAgentService.withAgent(project) { agent ->
+      val chatModels = agent.server.chatModels(ChatModelsParams(connectionId.get().get()))
+      val response =
+          chatModels.completeOnTimeout(null, 4, TimeUnit.SECONDS).get() ?: return@withAgent
+
+      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+      val isCurrentUserFree =
+          if (activeAccountType?.isDotcomAccount() == true) {
+            agent.server.isCurrentUserPro().completeOnTimeout(false, 4, TimeUnit.SECONDS).get() ==
+                false
+          } else false
+      chatPanel.updateLlmDropdownModels(LlmDropdownData(response.models, isCurrentUserFree))
+    }
+  }
+
   companion object {
     private val logger = LoggerFactory.getLogger(AgentChatSession::class.java)
 
     @RequiresEdt
     fun createNew(project: Project): AgentChatSession {
-      val sessionId = createNewPanel(project) { it.server.chatNew() }
-      val chatSession = AgentChatSession(project, sessionId)
+      val connectionId = createNewPanel(project) { it.server.chatNew() }
+      val chatSession = AgentChatSession(project, connectionId)
       AgentChatSessionService.getInstance(project).addSession(chatSession)
       return chatSession
     }
 
     @RequiresEdt
     fun createFromCommand(project: Project, commandId: CommandId): AgentChatSession {
-      val sessionId =
+      val connectionId =
           createNewPanel(project) { agent: CodyAgent ->
             when (commandId) {
               CommandId.Explain -> agent.server.commandsExplain()
@@ -272,7 +307,7 @@ private constructor(
         GraphQlLogger.logCodyEvent(project, "command:${commandId.displayName}", "submitted")
       }
 
-      val chatSession = AgentChatSession(project, sessionId)
+      val chatSession = AgentChatSession(project, connectionId)
 
       chatSession.createCancellationToken(
           onCancel = { chatSession.sendWebviewMessage(WebviewMessage(command = "abort")) },
@@ -301,19 +336,19 @@ private constructor(
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
       val agentChatSession = CompletableFuture<AgentChatSession>()
       createNewPanel(project) { codyAgent ->
-        val innerSessionId = codyAgent.server.chatNew()
+        val newConnectionId = codyAgent.server.chatNew()
         val modelFromState =
             state.llm?.let {
               ChatModelsResponse.ChatModelProvider(
                   default = it.model == null,
                   codyProOnly = false,
-                  provider = it.provider ?: "Unknown",
-                  title = it.title ?: "Unknown",
+                  provider = it.provider ?: "Default",
+                  title = it.title ?: "Default",
                   model = it.model ?: "")
             }
 
         val chatSession =
-            AgentChatSession(project, innerSessionId, state.internalId!!, modelFromState)
+            AgentChatSession(project, newConnectionId, state.internalId!!, modelFromState)
         val chatMessages =
             state.messages.map { message ->
               val parsed =
@@ -338,7 +373,7 @@ private constructor(
 
         AgentChatSessionService.getInstance(project).addSession(chatSession)
         agentChatSession.complete(chatSession)
-        innerSessionId
+        newConnectionId
       }
       return agentChatSession.completeOnTimeout(null, 15, TimeUnit.SECONDS).get()
     }
@@ -346,8 +381,8 @@ private constructor(
     private fun createNewPanel(
         project: Project,
         newPanelAction: (CodyAgent) -> CompletableFuture<String>
-    ): CompletableFuture<SessionId> {
-      val result = CompletableFuture<SessionId>()
+    ): CompletableFuture<ConnectionId> {
+      val result = CompletableFuture<ConnectionId>()
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         newPanelAction(agent).whenComplete { value, throwable ->
           if (throwable != null) result.completeExceptionally(throwable) else result.complete(value)

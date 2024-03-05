@@ -6,7 +6,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
 import com.sourcegraph.cody.agent.protocol.AttributionSearchResponse
-import com.sourcegraph.cody.chat.SessionId
+import com.sourcegraph.cody.chat.ConnectionId
 import com.sourcegraph.cody.chat.ui.CodeEditorPart
 import java.util.*
 import java.util.function.BiFunction
@@ -22,11 +22,15 @@ class AttributionSearchCommand(private val project: Project) {
    * and triggers attribution search (if enabled). Once attribution returns, the
    * [CodeEditorPart.attributionListener] is updated.
    */
-  fun onSnippetFinished(snippet: String, sessionId: SessionId, listener: AttributionListener) {
+  fun onSnippetFinished(
+      snippet: String,
+      connectionId: ConnectionId,
+      listener: AttributionListener
+  ) {
     if (attributionEnabled()) {
       CodyAgentService.withAgent(project) { agent ->
         ApplicationManager.getApplication().invokeLater { listener.onAttributionSearchStart() }
-        val params = AttributionSearchParams(id = sessionId, snippet = snippet)
+        val params = AttributionSearchParams(id = connectionId, snippet = snippet)
         agent.server.attributionSearch(params).handle(updateEditor(listener))
       }
     }

@@ -88,14 +88,17 @@ class HistoryTree(
       if (period == null) {
         val newPeriod = PeriodNode(periodText)
         val newLeaf = LeafNode(chat)
-        root.add(newPeriod.also { it.add(newLeaf) })
-        model.reload(root)
+        newPeriod.add(newLeaf)
+        val newRoot = RootNode()
+        newRoot.add(newPeriod)
+        root.periods().forEach { newRoot.add(it) }
+        model.setRoot(newRoot)
       } else {
         addChatToPeriodAndSort(period, chat)
       }
     } else {
       val currentPeriodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
-      val currentPeriod = root.periods().find { it.periodText == currentPeriodText }
+      val currentPeriod = root.periods().find { it.periodText == currentPeriodText } ?: return
       val leafWithChangedPeriod =
           root
               .periods()
@@ -110,18 +113,14 @@ class HistoryTree(
           if (period.childCount == 0) period.removeFromParent()
           model.reload(period)
         }
-        currentPeriod?.let { period ->
-          addChatToPeriodAndSort(period, chat)
-          model.reload(period)
-        }
+        addChatToPeriodAndSort(currentPeriod, chat)
+        model.reload(currentPeriod)
       } else {
-        currentPeriod?.let { period ->
-          val sorted = period.leafs().sortedByDescending { it.chat.getUpdatedTimeAt() }
-          if (period.leafs() != sorted) {
-            period.removeAllChildren()
-            for (child in sorted) period.add(child)
-            model.reload(period)
-          }
+        val sorted = currentPeriod.leafs().sortedByDescending { it.chat.getUpdatedTimeAt() }
+        if (currentPeriod.leafs() != sorted) {
+          currentPeriod.removeAllChildren()
+          for (child in sorted) currentPeriod.add(child)
+          model.reload(currentPeriod)
         }
       }
     }

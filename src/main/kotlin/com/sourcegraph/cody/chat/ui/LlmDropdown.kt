@@ -1,23 +1,23 @@
 package com.sourcegraph.cody.chat.ui
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
-import com.sourcegraph.cody.chat.SessionId
 import com.sourcegraph.cody.config.CodyAccount.Companion.isEnterpriseAccount
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.ui.LLMComboBoxRenderer
+import com.sourcegraph.cody.ui.LlmComboBoxRenderer
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.CodyBundle
-import java.util.concurrent.TimeUnit
 
-class LLMDropdown(
-    val project: Project,
+data class LlmDropdownData(
+    val models: List<ChatModelsResponse.ChatModelProvider>,
+    val isCurrentUserFree: Boolean
+)
+
+class LlmDropdown(
+    private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
     private val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
@@ -25,7 +25,7 @@ class LLMDropdown(
   private var didSendFirstMessage: Boolean = false
 
   init {
-    renderer = LLMComboBoxRenderer(this)
+    renderer = LlmComboBoxRenderer(this)
     if (chatModelProviderFromState != null) {
       addItem(chatModelProviderFromState)
     }
@@ -33,37 +33,16 @@ class LLMDropdown(
     isEnabled = false
   }
 
-  fun fetchAndUpdateModels(sessionId: SessionId) {
+  @RequiresEdt
+  fun updateModels(data: LlmDropdownData) {
     if (chatModelProviderFromState != null) {
       return
     }
 
-    CodyAgentService.withAgent(project) { agent ->
-      val chatModels = agent.server.chatModels(ChatModelsParams(sessionId))
-      val response =
-          chatModels.completeOnTimeout(null, 4, TimeUnit.SECONDS).get() ?: return@withAgent
-
-      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-      val isCurrentUserFree =
-          if (activeAccountType?.isDotcomAccount() == true) {
-            agent.server.isCurrentUserPro().completeOnTimeout(false, 4, TimeUnit.SECONDS).get() ==
-                false
-          } else false
-      ApplicationManager.getApplication().invokeLater {
-        updateModels(response.models, isCurrentUserFree)
-      }
-    }
-  }
-
-  @RequiresEdt
-  private fun updateModels(
-      models: List<ChatModelsResponse.ChatModelProvider>,
-      isCurrentUserFree: Boolean
-  ) {
     removeAllItems()
-    (renderer as LLMComboBoxRenderer).isCurrentUserFree = isCurrentUserFree
-    models.forEach(::addItem)
-    models.find { it.default }?.let { this.selectedItem = it }
+    (renderer as LlmComboBoxRenderer).isCurrentUserFree = data.isCurrentUserFree
+    data.models.forEach(::addItem)
+    data.models.find { it.default }?.let { this.selectedItem = it }
 
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
     isEnabled =
@@ -78,7 +57,7 @@ class LLMDropdown(
     val modelProvider = anObject as? ChatModelsResponse.ChatModelProvider
     if (modelProvider != null) {
       if (modelProvider.codyProOnly) {
-        if ((renderer as LLMComboBoxRenderer).isCurrentUserFree) {
+        if ((renderer as LlmComboBoxRenderer).isCurrentUserFree) {
           BrowserOpener.openInBrowser(project, "https://sourcegraph.com/cody/subscription")
           return
         }
@@ -94,7 +73,7 @@ class LLMDropdown(
 
     val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
     if (activeAccountType?.isDotcomAccount() == true) {
-      toolTipText = CodyBundle.getString("LLMDropdown.disabled.text")
+      toolTipText = CodyBundle.getString("LlmDropdown.disabled.text")
     }
   }
 }

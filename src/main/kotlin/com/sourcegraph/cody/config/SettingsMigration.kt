@@ -18,7 +18,11 @@ import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.initialization.Activity
-import com.sourcegraph.config.*
+import com.sourcegraph.config.AccessTokenStorage
+import com.sourcegraph.config.CodyApplicationService
+import com.sourcegraph.config.CodyProjectService
+import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.UserLevelConfig
 import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : Activity {
@@ -92,7 +96,7 @@ class SettingsMigration : Activity {
         .filter { it.llm == null }
         .forEach {
           val (model, provider, title) =
-              modelToProviderAndTitle.getOrDefault(it.model, Triple("", "Unknown", "Unknown"))
+              modelToProviderAndTitle.getOrDefault(it.model, Triple("", "Default", "Default"))
           val llmState = LLMState()
           llmState.provider = provider
           llmState.title = title

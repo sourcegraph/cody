@@ -3,7 +3,7 @@ package com.sourcegraph.cody.ui
 import com.intellij.ui.CellRendererPanel
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
-import com.sourcegraph.cody.chat.ui.LLMDropdown
+import com.sourcegraph.cody.chat.ui.LlmDropdown
 import java.awt.BorderLayout
 import java.awt.Component
 import javax.swing.BorderFactory
@@ -12,7 +12,7 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
 
-class LLMComboBoxRenderer(private val llmDropdown: LLMDropdown) : DefaultListCellRenderer() {
+class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCellRenderer() {
 
   var isCurrentUserFree: Boolean = false
 

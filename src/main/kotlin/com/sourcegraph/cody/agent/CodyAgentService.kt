@@ -43,6 +43,7 @@ class CodyAgentService(project: Project) : Disposable {
       }
 
       if (!project.isDisposed) {
+        AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
         FileEditorManager.getInstance(project).openFiles.forEach { file ->
           CodyFileEditorListener.fileOpened(project, agent, file)
         }

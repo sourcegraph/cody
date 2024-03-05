@@ -9,7 +9,12 @@ import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.attribution.AttributionListener
 import com.sourcegraph.cody.attribution.AttributionSearchCommand
-import com.sourcegraph.cody.chat.*
+import com.sourcegraph.cody.chat.ChatSession
+import com.sourcegraph.cody.chat.CodeEditorFactory
+import com.sourcegraph.cody.chat.MessageContentCreatorFromMarkdownNodes
+import com.sourcegraph.cody.chat.extractCodeAndLanguage
+import com.sourcegraph.cody.chat.findNodeAfterLastCodeBlock
+import com.sourcegraph.cody.chat.isCodeBlock
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import com.sourcegraph.telemetry.GraphQlLogger
 import java.awt.Color
@@ -113,9 +118,9 @@ class SingleMessagePanel(
   fun onPartFinished() {
     val lastPart = lastMessagePart
     if (lastPart is CodeEditorPart) {
-      chatSession.getSessionId()?.let { sessionId ->
+      chatSession.getConnectionId()?.let { connectionId ->
         val listener = AttributionListener.UiThreadDecorator(lastPart.attribution)
-        AttributionSearchCommand(project).onSnippetFinished(lastPart.text, sessionId, listener)
+        AttributionSearchCommand(project).onSnippetFinished(lastPart.text, connectionId, listener)
       }
 
       ApplicationManager.getApplication().executeOnPooledThread {

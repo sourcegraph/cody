@@ -1,18 +1,16 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.util.IconUtil
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.PromptPanel
-import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.WebviewMessage
-import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.chat.ChatSession
-import com.sourcegraph.cody.chat.SessionId
 import com.sourcegraph.cody.config.CodyAccount.Companion.isEnterpriseAccount
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.ui.EnhancedContextPanel
@@ -34,7 +32,7 @@ class ChatPanel(
 
   val promptPanel: PromptPanel = PromptPanel(project, chatSession)
   private val llmDropdown =
-      LLMDropdown(project, onSetSelectedItem = ::setLlmForAgentSession, chatModelProviderFromState)
+      LlmDropdown(project, onSetSelectedItem = ::setLlmForAgentSession, chatModelProviderFromState)
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
 
@@ -111,23 +109,17 @@ class ChatPanel(
     stopGeneratingButton.addActionListener { cancellationToken.abort() }
   }
 
-  fun updateWithSessionId(sessionId: SessionId) {
-    llmDropdown.fetchAndUpdateModels(sessionId)
+  fun updateLlmDropdownModels(llmDropdownData: LlmDropdownData) {
+    ApplicationManager.getApplication().invokeLater { llmDropdown.updateModels(llmDropdownData) }
   }
 
   private fun setLlmForAgentSession(chatModelProvider: ChatModelsResponse.ChatModelProvider) {
-    val sessionId = chatSession.getSessionId() ?: return
-
-    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-      if (activeAccountType.isEnterpriseAccount()) {
-        agent.server.webviewReceiveMessage(
-            WebviewReceiveMessageParams(sessionId, WebviewMessage(command = "chatModel")))
-      } else {
-        agent.server.webviewReceiveMessage(
-            WebviewReceiveMessageParams(
-                sessionId, WebviewMessage(command = "chatModel", model = chatModelProvider.model)))
-      }
+    val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
+    if (activeAccountType.isEnterpriseAccount()) {
+      chatSession.sendWebviewMessage(WebviewMessage(command = "chatModel"))
+    } else {
+      chatSession.sendWebviewMessage(
+          WebviewMessage(command = "chatModel", model = chatModelProvider.model))
     }
 
     HistoryService.getInstance(project)

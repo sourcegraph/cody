@@ -6,11 +6,11 @@ import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.protocol.ContextFile
 import com.sourcegraph.cody.vscode.CancellationToken
 
-typealias SessionId = String
+typealias ConnectionId = String
 
 interface ChatSession {
 
-  fun getSessionId(): SessionId?
+  fun getConnectionId(): ConnectionId?
 
   fun sendWebviewMessage(message: WebviewMessage)
 
