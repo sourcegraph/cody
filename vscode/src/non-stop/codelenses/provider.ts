@@ -7,7 +7,28 @@ import { CodyTaskState } from '../utils'
 import { ALL_ACTIONABLE_TASK_STATES } from './constants'
 import { getLensesForTask } from './items'
 
-export class FixupCodeLenses implements vscode.CodeLensProvider {
+// An interface for decorating fixup tasks with controls.
+export interface FixupControlApplicator extends vscode.Disposable {
+    didUpdateTask(task: FixupTask): void
+    didDeleteTask(task: FixupTask): void
+    // Called when visible files changed. This is *not* called when a new task
+    // is created in a file that is already visible. It *is* called every time
+    // visible files change, so be prepared to handle repeated calls with
+    // an empty or unchanged set of files efficiently.
+    visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void
+}
+
+// A FixupControlsApplicator which does not present any controls for fixup
+// tasks.
+export class NullFixupControlsApplicator implements FixupControlApplicator {
+    public didUpdateTask(task: FixupTask): void {}
+    public didDeleteTask(task: FixupTask): void {}
+    public visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void {}
+    public dispose(): void {}
+}
+
+// A FixupControlsApplicator which produces code lenses.
+export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApplicator {
     private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
 
     private _disposables: vscode.Disposable[] = []
@@ -62,11 +83,16 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
         }
     }
 
+    public visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void {
+        // Update shortcut enablement for visible files
+        this.updateKeyboardShortcutEnablement(files)
+    }
+
     /**
      * For a set of active files, check to see if any tasks within these files are currently actionable.
      * If they are, enable the code lens keyboard shortcuts in the editor.
      */
-    public updateKeyboardShortcutEnablement(activeFiles: FixupFile[]): void {
+    private updateKeyboardShortcutEnablement(activeFiles: readonly FixupFile[]): void {
         const allTasks = activeFiles
             .filter(file =>
                 vscode.window.visibleTextEditors.some(editor => editor.document.uri === file.uri)

@@ -16,6 +16,7 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { getInput } from '../edit/input/get-input'
+import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
@@ -25,7 +26,6 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
 import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
-import { FixupCodeLenses } from './codelenses/provider'
 import { type Diff, computeDiff } from './diff'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
@@ -40,12 +40,16 @@ export class FixupController
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
-    private readonly codelenses = new FixupCodeLenses(this)
+    private readonly controlApplicator
     private readonly contentStore = new ContentProvider()
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(private readonly authProvider: AuthProvider) {
+    constructor(
+        private readonly authProvider: AuthProvider,
+        client: ExtensionClient
+    ) {
+        this.controlApplicator = client.createFixupControlApplicator(this)
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
@@ -792,7 +796,7 @@ export class FixupController
 
     private discard(task: FixupTask): void {
         this.needsDiffUpdate_.delete(task)
-        this.codelenses.didDeleteTask(task)
+        this.controlApplicator.didDeleteTask(task)
         this.contentStore.delete(task.id)
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
@@ -929,7 +933,7 @@ export class FixupController
 
     // Handles when the range associated with a fixup task changes.
     public rangeDidChange(task: FixupTask): void {
-        this.codelenses.didUpdateTask(task)
+        this.controlApplicator.didUpdateTask(task)
         // We don't notify the decorator about this range change; vscode
         // updates any text decorations and we can recompute them, lazily,
         // if the diff is dirtied.
@@ -973,8 +977,7 @@ export class FixupController
             this.decorator.didChangeVisibleTextEditors(file, editors)
         }
 
-        // Update shortcut enablement for visible files
-        this.codelenses.updateKeyboardShortcutEnablement([...editorsByFile.keys()])
+        this.controlApplicator.visibleFilesWithTasksMaybeChanged([...editorsByFile.keys()])
     }
 
     private updateDiffs(): void {
@@ -1144,7 +1147,7 @@ export class FixupController
             return
         }
         // Save states of the task
-        this.codelenses.didUpdateTask(task)
+        this.controlApplicator.didUpdateTask(task)
 
         if (task.state === CodyTaskState.applying) {
             void this.apply(task.id)
@@ -1192,7 +1195,7 @@ export class FixupController
 
     public dispose(): void {
         this.reset()
-        this.codelenses.dispose()
+        this.controlApplicator.dispose()
         this.decorator.dispose()
         for (const disposable of this._disposables) {
             disposable.dispose()

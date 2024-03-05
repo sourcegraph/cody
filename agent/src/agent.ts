@@ -35,9 +35,16 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
+import {
+    FixupCodeLenses,
+    type FixupControlApplicator,
+    NullFixupControlsApplicator,
+} from '../../vscode/src/non-stop/codelenses/provider'
+import type { FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
@@ -63,7 +70,10 @@ import * as vscode_shim from './vscode-shim'
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
 
-export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
+export async function initializeVscodeExtension(
+    workspaceRoot: vscode.Uri,
+    extensionClient: ExtensionClient
+): Promise<void> {
     const paths = envPaths('Cody')
     try {
         const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
@@ -109,7 +119,7 @@ export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Prom
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     }
 
-    await activate(context)
+    await activate(context, extensionClient)
 }
 
 export async function newAgentClient(
@@ -155,7 +165,7 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     return agent
 }
 
-export class Agent extends MessageHandler {
+export class Agent extends MessageHandler implements ExtensionClient {
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
@@ -280,7 +290,7 @@ export class Agent extends MessageHandler {
                       path: clientInfo.workspaceRootPath,
                   })
             try {
-                await initializeVscodeExtension(this.workspace.workspaceRootUri)
+                await initializeVscodeExtension(this.workspace.workspaceRootUri, this)
                 this.registerWebviewHandlers()
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
@@ -856,6 +866,15 @@ export class Agent extends MessageHandler {
                 limitHit: result?.attribution?.limitHit || false,
             }
         })
+    }
+
+    // ExtensionClient callbacks.
+
+    public createFixupControlApplicator(files: FixupFileCollection): FixupControlApplicator {
+        return this.clientInfo?.capabilities?.codeLenses &&
+            this.clientInfo?.capabilities?.fixupCodeLenses
+            ? new FixupCodeLenses(files)
+            : new NullFixupControlsApplicator()
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
