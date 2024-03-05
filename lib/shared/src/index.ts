@@ -25,7 +25,6 @@ export type {
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatInputHistory,
     ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'

@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     type ChatEventSource,
-    type ChatInputHistory,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
@@ -442,7 +441,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
 
                 this.chatModel.addHumanMessage({ text: inputText })
-                await this.saveSession({ inputText, inputContextFiles: userContextFiles })
+                await this.saveSession()
 
                 this.postEmptyMessageInProgress()
 
@@ -1044,11 +1043,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
     }
 
-    private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
+    private async saveSession(): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
-            this.chatModel.toSerializedChatTranscript(),
-            humanInput
+            this.chatModel.toSerializedChatTranscript()
         )
         if (allHistory) {
             void this.postMessage({
