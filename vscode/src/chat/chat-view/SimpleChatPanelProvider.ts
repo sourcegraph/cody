@@ -8,7 +8,6 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextMessage,
     type Editor,
     FeatureFlag,
     type FeatureFlagProvider,
@@ -59,6 +58,7 @@ import { countGeneratedCode } from '../utils'
 import type { Span } from '@opentelemetry/api'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { toVSCodeRange } from '../../common/range'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -80,10 +80,9 @@ import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManag
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { type MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-import { getChatPanelTitle, openFile, stripContextWrapper } from './chat-helpers'
+import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
-import { toVSCodeRange } from '../../common/range'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -1249,10 +1248,7 @@ async function newChatModelfromTranscriptJSON(
                         text: interaction.humanMessage.text,
                     },
                     displayText: interaction.humanMessage.displayText,
-                    newContextUsed: deserializedContextFilesToContextItems(
-                        interaction.usedContextFiles,
-                        interaction.fullContext
-                    ),
+                    newContextUsed: interaction.usedContextFiles,
                 },
                 {
                     message: {
@@ -1297,39 +1293,6 @@ export async function contextFilesToContextItems(
             })
         )
     ).filter(isDefined)
-}
-
-function deserializedContextFilesToContextItems(
-    files: ContextItem[],
-    contextMessages: ContextMessage[]
-): ContextItem[] {
-    const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
-    for (const contextMessage of contextMessages) {
-        if (!contextMessage.file) {
-            continue
-        }
-        contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
-    }
-
-    return files.map((file: ContextItem): ContextItem => {
-        let text = file.content
-        if (!text) {
-            const contextMessage = contextByFile.get(file.uri.toString())
-            if (contextMessage) {
-                text = stripContextWrapper(contextMessage.text || '')
-            }
-        }
-        return {
-            type: 'file',
-            uri: file.uri,
-            range: file.range,
-            content: text || '',
-            source: file.source,
-            repoName: file.repoName,
-            revision: file.revision,
-            title: file.title,
-        }
-    })
 }
 
 function isAbortError(error: Error): boolean {
