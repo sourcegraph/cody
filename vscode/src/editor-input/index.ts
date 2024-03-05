@@ -62,7 +62,7 @@ const SEARCH_ITEM_HYBRID: vscode.QuickPickItem = {
 
 /** Temporary type for prototyping the input using a prefix design vs no-prefix */
 export type InputType = 'WithPrefix' | 'NoPrefix' | 'Hybrid'
-export const DEFAULT_INPUT_TYPE: InputType = 'Hybrid'
+export const DEFAULT_INPUT_TYPE: InputType = 'NoPrefix'
 
 export const INPUT_TITLE = `Cody${!isRunningInsideAgent() ? ' (⌥C)' : ''}`
 
