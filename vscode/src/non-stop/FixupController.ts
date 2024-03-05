@@ -16,6 +16,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
+import type { InputType } from '../editor-input'
 import { showEditInput } from '../editor-input/edit'
 import type { AuthProvider } from '../services/AuthProvider'
 import { ContentProvider } from './FixupContentStore'
@@ -196,13 +197,15 @@ export class FixupController
         model: EditModel,
         intent: EditIntent,
         contextMessages: ContextMessage[],
-        source: ChatEventSource
+        source: ChatEventSource,
+        inputType: InputType = 'NoPrefix'
     ): Promise<FixupTask | null> {
         const input = await showEditInput(document, this.authProvider, {
             initialRange: range,
             initialExpandedRange: expandedRange,
             initialModel: model,
             initialIntent: intent,
+            initialInputValue: inputType === 'WithPrefix' ? ': ' : '',
         })
         if (!input) {
             return null
@@ -1079,17 +1082,13 @@ export class FixupController
 
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        const input = await showEditInput(
-            document,
-            this.authProvider,
-            {
-                initialInputValue: task.instruction,
-                initialRange: task.selectionRange,
-                initialSelectedContextFiles: task.userContextFiles,
-                initialModel: task.model,
-                initialIntent: task.intent,
-            },
-        )
+        const input = await showEditInput(document, this.authProvider, {
+            initialInputValue: task.instruction,
+            initialRange: task.selectionRange,
+            initialSelectedContextFiles: task.userContextFiles,
+            initialModel: task.model,
+            initialIntent: task.intent,
+        })
         if (!input) {
             return
         }

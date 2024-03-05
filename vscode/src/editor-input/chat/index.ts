@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
-import { type InitialValues, type OutputValues, showEditorInput } from '../shared/create-input'
-import type { AuthProvider } from '../../services/AuthProvider'
+import type { InputType } from '..'
 import { executeExplainCommand, executeSmellCommand } from '../../commands/execute'
+import type { AuthProvider } from '../../services/AuthProvider'
+import { type InitialValues, type OutputValues, showEditorInput } from '../shared/create-input'
 
 const EXPLAIN_ITEM: vscode.QuickPickItem = {
     label: '$(book) Explain Code',
@@ -21,11 +22,13 @@ const ADD_TO_CHAT_ITEM: vscode.QuickPickItem = {
 export const showChatInput = (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
-    initialValues: InitialValues['Chat']
+    initialValues: InitialValues['Chat'],
+    inputType: InputType = 'NoPrefix'
 ): Promise<OutputValues['Chat']> => {
     return new Promise(resolve => {
         showEditorInput<'Chat'>({
             type: 'Chat',
+            inputType,
             document,
             authProvider,
             initialValues,
@@ -57,7 +60,7 @@ export const showChatInput = (
                 }
 
                 resolve(args)
-            }
+            },
         })
     })
 }

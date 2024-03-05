@@ -50,7 +50,7 @@ const getSearchItems = async (query: string): Promise<GetItemsResult> => {
     return { items }
 }
 
-export const showSearchInput = (): Promise<void> => {
+export const showSearchInput = (instructionPrefix = ''): Promise<void> => {
     return new Promise(resolve => {
         let activeQuery = ''
         const updateActiveQuery = throttle(
@@ -94,7 +94,7 @@ export const showSearchInput = (): Promise<void> => {
             },
         })
 
-        searchInput.render('')
+        searchInput.render(instructionPrefix)
         searchInput.input.activeItems = []
     })
 }

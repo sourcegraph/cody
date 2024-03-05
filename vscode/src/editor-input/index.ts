@@ -10,7 +10,7 @@ import { showSearchInput } from './search'
 import { type GetItemsResult, createQuickPick } from './shared/quick-pick'
 
 const CHAT_ITEM_PREFIX: vscode.QuickPickItem = {
-    label: '@',
+    label: '?',
     description: 'Chat',
     alwaysShow: true,
 }
@@ -43,7 +43,7 @@ const SEARCH_ITEM_NO_PREFIX: vscode.QuickPickItem = {
 }
 
 /** Temporary type for prototyping the input using a prefix design vs no-prefix */
-type InputType = 'WithPrefix' | 'NoPrefix'
+export type InputType = 'WithPrefix' | 'NoPrefix'
 
 export const INPUT_TITLE = `Cody${!isRunningInsideAgent() ? ' (⌥C)' : ''}`
 
@@ -77,7 +77,7 @@ export const getInput = async ({
     chatManager,
     editManager,
     source,
-    type = 'NoPrefix',
+    type = 'WithPrefix',
 }: GetInputParams): Promise<null> => {
     const editor = getEditor().active
     if (!editor) {
@@ -101,17 +101,19 @@ export const getInput = async ({
             onDidChangeValue:
                 type === 'WithPrefix'
                     ? async (value: string) => {
-                          if (value.startsWith('@')) {
-                              return chatManager.executeChatInline()
+                          if (value.startsWith('?')) {
+                              return chatManager.executeChatInline(type)
                           }
 
                           if (value.startsWith(':')) {
-                              return editManager.executeEdit({ configuration: { document }, source })
+                              return editManager.executeEdit({
+                                  configuration: { document, inputType: type },
+                                  source,
+                              })
                           }
 
                           if (value.startsWith('%')) {
-                              // render the search input
-                              return
+                              return showSearchInput('% ')
                           }
 
                           return
@@ -127,7 +129,7 @@ export const getInput = async ({
                         return executeEdit({ configuration: { document }, source })
                     case CHAT_ITEM_PREFIX.label:
                     case CHAT_ITEM_NO_PREFIX.label:
-                        return chatManager.executeChatInline()
+                        return chatManager.executeChatInline(type)
                     case SEARCH_ITEM_PREFIX.label:
                     case SEARCH_ITEM_NO_PREFIX.label:
                         return showSearchInput()

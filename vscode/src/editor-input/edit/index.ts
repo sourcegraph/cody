@@ -1,15 +1,16 @@
 import * as vscode from 'vscode'
-import { type InitialValues, type OutputValues, showEditorInput } from '../shared/create-input'
-import type { AuthProvider } from '../../services/AuthProvider'
-import { executeEdit } from '../../edit/execute'
+import type { InputType } from '..'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
+import { executeEdit } from '../../edit/execute'
+import type { AuthProvider } from '../../services/AuthProvider'
+import { type InitialValues, type OutputValues, showEditorInput } from '../shared/create-input'
 
-export const DOCUMENT_ITEM: vscode.QuickPickItem = {
+const DOCUMENT_ITEM: vscode.QuickPickItem = {
     label: '$(book) Document Code',
     alwaysShow: true,
 }
 
-export const TEST_ITEM: vscode.QuickPickItem = {
+const TEST_ITEM: vscode.QuickPickItem = {
     label: '$(package) Generate Tests',
     alwaysShow: true,
 }
@@ -17,11 +18,13 @@ export const TEST_ITEM: vscode.QuickPickItem = {
 export const showEditInput = (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
-    initialValues: InitialValues['Edit']
+    initialValues: InitialValues['Edit'],
+    inputType: InputType = 'NoPrefix'
 ): Promise<OutputValues['Edit']> => {
     return new Promise(resolve => {
         showEditorInput<'Edit'>({
             type: 'Edit',
+            inputType,
             document,
             authProvider,
             initialValues,
@@ -57,7 +60,7 @@ export const showEditInput = (
                 }
 
                 resolve(args)
-            }
+            },
         })
     })
 }

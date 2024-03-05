@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import type { ChatEventSource, ContextItem, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
 
+import type { InputType } from '../editor-input'
 import type { FixupTask } from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
 
@@ -17,6 +18,7 @@ export interface ExecuteEditArguments {
         model?: EditModel
         // The file to write the edit to. If not provided, the edit will be applied to the current file.
         destinationFile?: vscode.Uri
+        inputType?: InputType
     }
     source?: ChatEventSource
 }

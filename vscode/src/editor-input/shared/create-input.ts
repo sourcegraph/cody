@@ -1,7 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import type { ChatModel, EditModel } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
-import { INPUT_TITLE } from '..'
+import { INPUT_TITLE, type InputType } from '..'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import type { EditIntent } from '../../edit/types'
 import { isGenerateIntent } from '../../edit/utils/edit-intent'
@@ -77,6 +77,7 @@ export interface OutputValues {
 
 export async function showEditorInput<T extends EditorInputType>({
     type,
+    inputType,
     document,
     authProvider,
     initialValues,
@@ -84,6 +85,7 @@ export async function showEditorInput<T extends EditorInputType>({
     onDidAccept,
 }: {
     type: T
+    inputType: InputType
     document: vscode.TextDocument
     authProvider: AuthProvider
     initialValues: InitialValues[T]
@@ -298,6 +300,8 @@ export async function showEditorInput<T extends EditorInputType>({
                 showModelSelector,
                 additionalItems
             ),
+        buttons: [vscode.QuickInputButtons.Back],
+        onDidTriggerButton: () => vscode.commands.executeCommand('cody.editor.input'),
         onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
         onDidChangeValue: async value => {
             const input = targetInput.input
@@ -399,6 +403,9 @@ export async function showEditorInput<T extends EditorInputType>({
         },
     })
 
-    targetInput.render(initialValues.initialInputValue || '')
+    targetInput.render('')
     targetInput.input.activeItems = []
+    if (initialValues.initialInputValue) {
+        targetInput.input.value = initialValues.initialInputValue
+    }
 }
