@@ -37,11 +37,15 @@ export class ChatClient {
                   ? messages.concat([{ speaker: 'assistant' }])
                   : messages
 
+        // Strip `file` from any messages that are ContextMessage type, so that we don't send it up.
+        // We only want to send up what's in the prompt text.
+        const messagesWithoutFile = augmentedMessages.map(message => ({ ...message, file: undefined }))
+
         return this.completions.stream(
             {
                 ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
                 ...params,
-                messages: augmentedMessages,
+                messages: messagesWithoutFile,
             },
             abortSignal
         )

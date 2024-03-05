@@ -1,6 +1,6 @@
 import {
     type ContextItem,
-    type Message,
+    type ContextMessage,
     ProgrammingLanguage,
     languageFromFilename,
     populateCodeContextTemplate,
@@ -8,27 +8,13 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared'
-import { SHA256 } from 'crypto-js'
+
 import { URI } from 'vscode-uri'
 
-export function contextItemId(contextItem: ContextItem): string {
-    const uri = contextItem.uri.toString()
-
-    if (contextItem.range) {
-        return `${uri}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-    }
-
-    if (contextItem.content) {
-        return `${uri}#${SHA256(contextItem.content).toString()}`
-    }
-
-    return uri
-}
-
-export function renderContextItem(contextItem: ContextItem): Message[] {
+export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
     // Do not create context item for empty file
     if (!contextItem.content?.trim()?.length) {
-        return []
+        return null
     }
     let messageText: string
     const uri = contextItem.source === 'unified' ? URI.parse(contextItem.title || '') : contextItem.uri
@@ -46,8 +32,5 @@ export function renderContextItem(contextItem: ContextItem): Message[] {
     } else {
         messageText = populateCodeContextTemplate(contextItem.content, uri, contextItem.repoName)
     }
-    return [
-        { speaker: 'human', text: messageText },
-        { speaker: 'assistant', text: 'Ok.' },
-    ]
+    return { speaker: 'human', text: messageText, file: contextItem }
 }

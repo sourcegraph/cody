@@ -937,22 +937,23 @@ describe('Agent', () => {
                 'TestClass.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "const foo = 42
+                      "const foo = 42
 
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
+                      export class TestClass {
+                          constructor(private shouldGreet: boolean) {}
 
-                      /**
-                       * If shouldGreet is true, logs a greeting to the console.
-                       */
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
+                          /**
+                           * If the shouldGreet property is true, this method logs 'Hello World!'
+                           * to the console.
+                           */
+                          public functionName() {
+                              if (this.shouldGreet) {
+                                  console.log(/* CURSOR */ 'Hello World!')
+                              }
                           }
                       }
-                  }
-                  "
-                `)
+                      "
+                    `)
             )
 
             checkDocumentCommand(
@@ -961,25 +962,24 @@ describe('Agent', () => {
                 'TestLogger.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "const foo = 42
-                  /**
-                   * Starts logging by initializing some internal state,
-                   * and then calls an internal \`recordLog\` function
-                   * to log a sample message.
-                   */
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
+                      "const foo = 42
+                      /**
+                       * Starts logging by performing setup actions
+                       * and calling an internal recordLog function.
+                       */
+                      export const TestLogger = {
+                          startLogging: () => {
+                              // Do some stuff
 
-                          function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
+                              function recordLog() {
+                                  console.log(/* CURSOR */ 'Recording the log')
+                              }
 
-                          recordLog()
-                      },
-                  }
-                  "
-                `)
+                              recordLog()
+                          },
+                      }
+                      "
+                    `)
             )
 
             checkDocumentCommand(
@@ -988,32 +988,35 @@ describe('Agent', () => {
                 'example.test.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+                      "import { expect } from 'vitest'
+                      import { it } from 'vitest'
+                      import { describe } from 'vitest'
 
-                  /**
-                   * Test block that contains 3 test cases:
-                   * - Does test 1
-                   * - Does test 2
-                   * - Does another test that has a bug
-                  */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
+                      /**
+                       * A test block with sample tests using Vitest.
+                       *
+                       * Contains 3 sample test cases asserting true is true,
+                       * demonstrating common test patterns.
+                       *
+                       * The 3rd test shows an example of how to test for errors,
+                       * in this case an incorrect usage of \`performance.now\`.
+                       */
+                      describe('test block', () => {
+                          it('does 1', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
+                          it('does 2', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
+                          it('does something else', () => {
+                              // This line will error due to incorrect usage of \`performance.now\`
+                              const startTime = performance.now(/* CURSOR */)
+                          })
                       })
-                  })
-                  "
-                `)
+                      "
+                    `)
             )
         })
     })
@@ -1150,7 +1153,7 @@ describe('Agent', () => {
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
                 `
-              "/* hello */
+              "// hello
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1177,11 +1180,12 @@ describe('Agent', () => {
                 `
               "/* SELECTION_START */
               export interface Animal {
-                  name: string
-                  makeAnimalSound(): string
-                  isMammal: boolean
-                  printName() {
-                    console.log(this.name)
+                  name: string;
+                  makeAnimalSound(): string;
+                  isMammal: boolean;
+
+                  logName(): void {
+                      console.log(this.name);
                   }
               }
               /* SELECTION_END */
@@ -1338,11 +1342,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Defines a test block with 3 test cases using Vitest:
-                   * - does 1 - asserts true equals true
-                   * - does 2 - asserts true equals true
-                   * - does something else - attempts to call performance.now incorrectly
-                   */
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Attempts to test usage of performance.now()
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)

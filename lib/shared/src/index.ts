@@ -4,7 +4,6 @@ export { ModelProvider } from './models'
 export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
@@ -30,7 +29,6 @@ export type {
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
-export { CodebaseContext } from './codebase-context'
 export type {
     ContextGroup,
     ContextProvider,
@@ -42,7 +40,6 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
     ContextItem,
     ContextItemFile,
