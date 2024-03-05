@@ -139,7 +139,6 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextFiles: ContextItem[]
-    contextMessages?: ContextMessage[]
     editor: VSCodeEditor
     command?: CodyCommand
 }
@@ -147,16 +146,8 @@ interface GetContextOptions extends GetContextFromIntentOptions {
 export const getContext = async ({
     userContextFiles,
     editor,
-    contextMessages,
     ...options
 }: GetContextOptions): Promise<ContextItem[]> => {
-    if (contextMessages && contextMessages.length > 0) {
-        // TODO: We currently use `contextMessages` as a way to programmatically provide specific context
-        // for test files and attach this context to the `FixupTask`.
-        // We should move this logic to `getContextFromIntent`
-        return extractContextItemsFromContextMessages(contextMessages)
-    }
-
     const derivedContextMessages = await getContextFromIntent({ editor, ...options })
 
     const userProvidedContextMessages: ContextMessage[] = []

@@ -278,7 +278,6 @@ export const getInput = async (
                         range: activeRange,
                         intent: 'doc',
                         mode: 'insert',
-                        contextMessages: [],
                         userContextFiles: [],
                     },
                     source: 'menu',

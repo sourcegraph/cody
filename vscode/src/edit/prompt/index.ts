@@ -109,7 +109,6 @@ export const buildInteraction = async ({
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
         userContextFiles: task.userContextFiles,
-        contextMessages: task.contextMessages,
         editor,
         followingText,
         precedingText,

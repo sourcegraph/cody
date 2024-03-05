@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextItem, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
@@ -62,7 +62,6 @@ export class FixupTask {
         public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[],
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri
     ) {

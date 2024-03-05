@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ChatEventSource,
     type ContextItem,
-    type ContextMessage,
     type EditModel,
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
@@ -195,7 +194,6 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         intent: EditIntent,
-        contextMessages: ContextMessage[],
         source: ChatEventSource
     ): Promise<FixupTask | null> {
         const input = await getInput(
@@ -221,8 +219,7 @@ export class FixupController
             input.intent,
             mode,
             input.model,
-            source,
-            contextMessages
+            source
         )
 
         // Return focus to the editor
@@ -240,7 +237,6 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         source?: ChatEventSource,
-        contextMessages?: ContextMessage[],
         destinationFile?: vscode.Uri
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
@@ -253,7 +249,6 @@ export class FixupController
             mode,
             model,
             source,
-            contextMessages,
             destinationFile
         )
         this.tasks.set(task.id, task)
