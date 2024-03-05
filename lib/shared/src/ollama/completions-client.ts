@@ -39,6 +39,11 @@ export interface OllamaGenerateResponse {
     eval_duration?: number
     sample_count?: number
     sample_duration?: number
+    message?: {
+        role: string
+        content: string
+        images?: string[] | null
+    }
 }
 
 interface OllamaGenerateErrorResponse {
