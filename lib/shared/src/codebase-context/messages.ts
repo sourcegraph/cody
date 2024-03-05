@@ -56,35 +56,6 @@ export type ContextItemSymbol = ContextItemCommon & {
 
 export interface ContextMessage extends Required<Message> {
     file?: ContextItem
-    preciseContext?: PreciseContext
-}
-
-export interface PreciseContext {
-    symbol: {
-        fuzzyName?: string
-    }
-    hoverText: string[]
-    definitionSnippet: string
-    filePath: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
-}
-
-export interface HoverContext {
-    symbolName: string
-    sourceSymbolName?: string
-    content: string[]
-    uri: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
 }
 
 export function getContextMessageWithResponse(
