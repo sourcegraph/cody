@@ -16,7 +16,7 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
-import { fillInContextItemContent } from '../../chat/chat-view/SimpleChatPanelProvider'
+import { fillInContextItemContent } from '../../editor/utils/editor-context'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
