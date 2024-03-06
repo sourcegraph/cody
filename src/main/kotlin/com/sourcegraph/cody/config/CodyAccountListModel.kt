@@ -19,7 +19,7 @@ class CodyAccountListModel(private val project: Project) :
   override var activeAccount: CodyAccount? = null
 
   override fun addAccount(parentComponent: JComponent, point: RelativePoint?) {
-    val group = actionManager.getAction("Cody.Accounts.AddAccount") as ActionGroup
+    val group = actionManager.getAction("cody.accounts.addAccount") as ActionGroup
     val popup = actionManager.createActionPopupMenu("LogInToSourcegraphAction", group)
 
     val actualPoint = point ?: RelativePoint.getCenterOf(parentComponent)

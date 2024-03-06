@@ -14,9 +14,7 @@ abstract class BaseChatAction : DumbAwareBGTAction() {
   override fun actionPerformed(event: AnActionEvent) {
     val project = event.project ?: return
 
-    ToolWindowManager.getInstance(project)
-        .getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
-        ?.show()
+    showCodyToolWindow(project)
 
     doAction(project)
   }
@@ -27,7 +25,7 @@ abstract class BaseChatAction : DumbAwareBGTAction() {
     event.presentation.isEnabledAndVisible = hasActiveAccount
   }
 
-  private fun showToolbar(project: Project) =
+  private fun showCodyToolWindow(project: Project) =
       ToolWindowManager.getInstance(project)
           .getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
           ?.show()
