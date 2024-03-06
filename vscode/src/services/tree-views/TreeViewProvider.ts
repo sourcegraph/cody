@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type FeatureFlagProvider, isDotCom } from '@sourcegraph/cody-shared'
-
-import type { AuthStatus } from '../../chat/protocol'
+import { type AuthStatus, type FeatureFlagProvider, isDotCom } from '@sourcegraph/cody-shared'
 
 import type { CodyTreeItem } from './TreeItemProvider'
 import { initializeGroupedChats } from './chat-history'

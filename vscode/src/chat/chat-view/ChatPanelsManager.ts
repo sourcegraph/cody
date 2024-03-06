@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ChatClient,
     type Configuration,
     type ConfigurationWithAccessToken,
@@ -17,7 +18,7 @@ import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
-import type { AuthStatus, ExtensionMessage } from '../protocol'
+import type { ExtensionMessage } from '../protocol'
 
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'

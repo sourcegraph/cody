@@ -1,7 +1,11 @@
-import type { ChatInputHistory, TranscriptJSON, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatInputHistory,
+    TranscriptJSON,
+    UserLocalHistory,
+} from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../../services/LocalStorageProvider'
-import type { AuthStatus } from '../protocol'
 
 export class ChatHistoryManager {
     public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {

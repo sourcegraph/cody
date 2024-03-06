@@ -27,9 +27,11 @@
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "marked": "^4.0.16",
-    "vscode-uri": "^3.0.7"
+    "vscode-uri": "^3.0.7",
+    "crypto-js": "^4.2.0"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/dompurify": "^3.0.2",
     "@types/highlight.js": "^9.12.4",
     "@types/isomorphic-fetch": "^0.0.39",

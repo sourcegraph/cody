@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
@@ -18,12 +19,7 @@ import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import {
-    ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
-    type AuthStatus,
-    CODY_FEEDBACK_URL,
-} from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -172,7 +168,7 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, platform)
+    } = await configureExternalServices(context, initialConfig, platform, authProvider)
 
     if (symfRunner) {
         disposables.push(symfRunner)

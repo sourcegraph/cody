@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     FeatureFlag,
@@ -7,7 +8,6 @@ import {
 
 import { logError } from '../../log'
 
-import type { AuthStatus } from '../../chat/protocol'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {

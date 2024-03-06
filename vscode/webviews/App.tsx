@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import {
+    type AuthStatus,
     type ChatInputHistory,
     type ChatMessage,
     type Configuration,
@@ -15,7 +16,7 @@ import {
 import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
 
-import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import {

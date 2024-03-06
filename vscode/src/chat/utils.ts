@@ -1,4 +1,5 @@
-import { type AuthStatus, defaultAuthStatus, unauthenticatedStatus } from './protocol'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
+import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
 /**
  * Checks a user's authentication status.

@@ -1,8 +1,7 @@
 import { Readable } from 'stream'
 
 import { describe, expect, it } from 'vitest'
-
-import { createSSEIterator } from './client'
+import { createSSEIterator } from './sse-iterator'
 
 describe('createSSEIterator', () => {
     it('yields SSE messages from the iterator', async () => {
