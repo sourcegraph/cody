@@ -67,6 +67,9 @@ export enum ContextItemSource {
 
     /** Output from the terminal */
     Terminal = 'terminal',
+
+    /** Embeddings from the sentence transformers */
+    RankerSentenceTransformerEmbedding = 'ranker-sentence-transformer-embedding',
 }
 
 /**
