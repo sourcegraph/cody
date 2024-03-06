@@ -72,7 +72,6 @@ test.extend<ExpectedEvents>({
     await expect(commandInputTitle).toBeVisible()
     const commandInputBox = page.getByPlaceholder('e.g. hello')
     await commandInputBox.fill(commandName)
-    await commandInputBox.fill(commandName)
     await commandInputBox.press('Enter')
     // Enter prompt
     const promptInputTitle = page.getByText('New Custom Cody Command: Prompt')
