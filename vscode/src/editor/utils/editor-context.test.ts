@@ -3,13 +3,13 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    type ContextItem,
     type ContextItemFile,
+    type Editor,
     MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
     uriBasename,
-    type ContextItem,
-    type Editor,
 } from '@sourcegraph/cody-shared'
 
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'

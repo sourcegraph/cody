@@ -14,8 +14,8 @@ import {
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import { PROMPT_TOPICS } from './constants'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
+import { PROMPT_TOPICS } from './constants'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent

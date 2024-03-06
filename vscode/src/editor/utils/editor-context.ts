@@ -10,18 +10,18 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemSymbol,
+    type Editor,
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
     displayPath,
     isCodyIgnoredFile,
-    isWindows,
-    type Editor,
     isDefined,
+    isWindows,
 } from '@sourcegraph/cody-shared'
 
+import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
-import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { toVSCodeRange } from '../../common/range'
 
 const findWorkspaceFiles = async (
