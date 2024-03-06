@@ -906,7 +906,8 @@
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")"
+          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")",
+          "default": true
         },
         "cody.debug.verbose": {
           "order": 99,
