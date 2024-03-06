@@ -2,7 +2,6 @@ import { SpanStatusCode } from '@opentelemetry/api'
 import type { AuthStatus } from '../auth/types'
 import { fetch } from '../fetch'
 import { CompletionStopReason } from '../inferenceClient/misc'
-import { logDebug } from '../logger'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
