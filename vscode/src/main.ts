@@ -35,6 +35,7 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import { executeEditCommand } from './commands/execute/edit'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -338,6 +339,7 @@ const register = async (
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
+        vscode.commands.registerCommand('cody.command.edit', a => executeEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
         vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
         vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),

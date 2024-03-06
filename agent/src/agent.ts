@@ -709,7 +709,7 @@ export class Agent extends MessageHandler {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const args = { configuration: { ...params } }
             return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.edit-code', args)
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.edit', args)
             )
         })
 
