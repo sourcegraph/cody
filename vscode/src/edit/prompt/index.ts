@@ -23,6 +23,8 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
     'anthropic/claude-instant-1.2': claude,
+    'anthropic/claude-3-opus-20240229': claude,
+    'anthropic/claude-3-sonnet-20240229': claude,
     'openai/gpt-3.5-turbo': openai,
     'openai/gpt-4-1106-preview': openai,
 } as const
@@ -95,7 +97,7 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble()
+    const preamble = getSimplePreamble(model)
     promptBuilder.tryAddToPrefix(preamble)
 
     const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]

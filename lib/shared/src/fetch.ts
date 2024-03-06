@@ -5,12 +5,11 @@ import type { Agent } from 'http'
  * `fetch` by default, we still use the `node-fetch` polyfill and have access to the networking code
  */
 import isomorphicFetch from 'isomorphic-fetch'
-
 import {
     type BrowserOrNodeResponse,
     addCustomUserAgent,
     customUserAgent,
-} from '@sourcegraph/cody-shared'
+} from './sourcegraph-api/graphql/client'
 
 /**
  * In node environments, it might be necessary to set up a custom agent to control the network

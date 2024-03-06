@@ -1,5 +1,5 @@
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { AuthStatus } from '../../chat/protocol'
 import { groupCodyChats } from '../HistoryChat'
 import { CodyTreeItem } from './TreeItemProvider'
 

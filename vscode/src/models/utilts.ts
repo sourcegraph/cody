@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ChatModel, type EditModel, isDotCom } from '@sourcegraph/cody-shared'
-import type { AuthStatus } from '../chat/protocol'
+import { type AuthStatus, type ChatModel, type EditModel, isDotCom } from '@sourcegraph/cody-shared'
 
 export function getContextWindowForModel(
     authStatus: AuthStatus,

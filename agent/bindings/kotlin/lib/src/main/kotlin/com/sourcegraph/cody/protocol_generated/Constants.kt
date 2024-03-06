@@ -51,6 +51,7 @@ object Constants {
   const val method = "method"
   const val human = "human"
   const val assistant = "assistant"
+  const val system = "system"
   const val isChatErrorGuard = "isChatErrorGuard"
   const val menu = "menu"
   const val sidebar = "sidebar"
