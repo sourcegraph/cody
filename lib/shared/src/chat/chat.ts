@@ -25,17 +25,9 @@ export class ChatClient {
     ): AsyncGenerator<CompletionGeneratorValue> {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
-        const augmentedMessages =
-            // HACK: The fireworks chat inference endpoints requires the last message to be from a
-            // human. This will be the case in most of the prompts but if for some reason we have an
-            // assistant at the end, we slice the last message for now.
-            params?.model?.startsWith('fireworks/')
-                ? isLastMessageFromHuman
-                    ? messages
-                    : messages.slice(0, -1)
-                : isLastMessageFromHuman
-                  ? messages.concat([{ speaker: 'assistant' }])
-                  : messages
+        const augmentedMessages = isLastMessageFromHuman
+            ? messages.concat([{ speaker: 'assistant' }])
+            : messages
 
         // Strip `file` from any messages that are ContextMessage type, so that we don't send it up.
         // We only want to send up what's in the prompt text.
