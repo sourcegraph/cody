@@ -8,6 +8,9 @@ const FIVE_MINUTES = 5 * 60 * 1000
 // Start a http server on a free port and generate a secure hash. When authenticated, the browser
 // will post the auth token to this URL so that we can authenticate even if the redirect does not
 // go through.
+//
+// This works in addition to the existing tokenCallbackHandler and can receive tokens without having
+// the user follow a redirect.
 export function startTokenReceiver(
     endpoint: string,
     onNewToken: (accessToken: string, endpoint: string) => void,

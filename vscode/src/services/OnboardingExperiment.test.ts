@@ -7,25 +7,8 @@ import { telemetryService } from './telemetry'
 
 import { OnboardingExperimentBranch } from './OnboardingExperiment'
 
-//vi.mock('vscode', mockVScode)
 vi.mock('./LocalStorageProvider', mockLocalStorage)
 vi.mock('../log', mockLog)
-// function mockVScode() {
-//     return {
-//         UIKind: {
-//             Desktop: 1,
-//             Web: 42,
-//         },
-//         env: {
-//             uiKind: 1, // Desktop
-//         },
-//         workspace: {
-//             getConfiguration: () => ({
-//                 get: () => undefined,
-//             }),
-//         },
-//     }
-// }
 
 function mockLog() {
     return {
