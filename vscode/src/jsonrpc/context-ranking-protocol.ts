@@ -1,3 +1,5 @@
+import { QueryResultSet } from './embeddings-protocol'
+
 interface InitializeParams {
     indexPath: string
     accessToken: string
@@ -8,7 +10,7 @@ interface ComputeFeaturesParams {
 }
 
 export interface RankContextItem {
-    document_id: number
+    documentId: number
     filePath?: string
     content: string
     source?: string
@@ -25,9 +27,15 @@ interface RankerPredictions {
 }
 
 export interface RankerPrediction {
-    //todo: Change to camel case, when changing the protocol on bfg.
-    document_id: number
+    documentId: number
     score: number
+}
+
+export interface EmbeddingModelQueryParams {
+    repoPath: string
+    query: string
+    modelName: string
+    numResults: number
 }
 
 export type Requests = {
@@ -35,4 +43,5 @@ export type Requests = {
     'context-ranking/initialize': [InitializeParams, string]
     'context-ranking/compute-features': [ComputeFeaturesParams, string]
     'context-ranking/rank-items': [RankItemsParams, RankerPredictions]
+    'context-ranking/context-retriver-embedding': [EmbeddingModelQueryParams, QueryResultSet]
 }
