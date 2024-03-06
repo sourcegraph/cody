@@ -13,7 +13,13 @@ import { mkdtemp, open, rmdir } from 'fs/promises'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
-        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+        accessToken:
+            // The redacted ID below is copy-pasted from the recording file and needs to be updated
+            // whenever we change the underlying access token. We can't return a random string here
+            // because then Polly won't be able to associate the HTTP requests between record mode
+            // and replay mode.
+            process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_d7bab806eb3f338564ea65133c7d6d3ef03107f6dbdb6270a120887edbdd82c0',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
         debugEnable: true,
@@ -33,7 +39,7 @@ describe('symf', () => {
 
         check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"'
+                `"circulation current ebb flow heat ocean ppt psu salinity salt sea stream surf temp temperature tidal tide water wave waves"`
             )
         )
 
@@ -57,7 +63,7 @@ describe('symf', () => {
 
         check('scan tokens in C++', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"'
+                `"c c++ cin cplusplus cpp f getline in scan scan_f scanf token tokenization tokenize tokens"`
             )
         )
         afterAll(async () => {
