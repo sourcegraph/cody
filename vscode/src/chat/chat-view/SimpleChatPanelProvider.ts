@@ -7,7 +7,8 @@ import {
     type ChatInputHistory,
     type ChatMessage,
     ConfigFeaturesSingleton,
-    type ContextItem, FeatureFlag,
+    type ContextItem,
+    FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
     type InteractionJSON,
@@ -16,11 +17,12 @@ import {
     type TranscriptJSON,
     Typewriter,
     featureFlagProvider,
-    hydrateAfterPostMessage, isDotCom,
+    hydrateAfterPostMessage,
+    isDotCom,
     isError,
     isFileURI,
     isRateLimitError,
-    reformatBotMessageForChat
+    reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -443,7 +445,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     : inputText
                 const promptText = inputText
                 this.chatModel.addHumanMessage({ text: promptText }, displayText)
-                await this.saveSession({ inputText, inputContextFiles: userContextFiles })
+                await this.saveSession({
+                    inputText,
+                    inputContextFiles: userContextFiles,
+                })
 
                 this.postEmptyMessageInProgress()
 
@@ -580,8 +585,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         const source = 'chat'
         if (!query.length) {
-            telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
-            telemetryRecorder.recordEvent('cody.at-mention', 'executed', { privateMetadata: { source } })
+            telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
+                source,
+            })
+            telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                privateMetadata: { source },
+            })
 
             const tabs = await getOpenTabsContextFile()
             void this.postMessage({
@@ -1165,7 +1174,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Let the webview know if it is active
         panel.onDidChangeViewState(event =>
-            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+            this.postMessage({
+                type: 'webview-state',
+                isActive: event.webviewPanel.active,
+            })
         )
 
         this.disposables.push(

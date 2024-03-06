@@ -8,7 +8,7 @@ import {
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
     truncateText,
-    truncateTextStart
+    truncateTextStart,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
