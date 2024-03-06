@@ -79,7 +79,7 @@ class AddRepositoryDialog(
                   .children()
                   .toList()
                   .filterIsInstance<ContextTreeRemoteRepoNode>()
-                  .none { it.codebaseName == codebaseName }
+                  .none { it.codebaseName == codebaseName?.lowercase() }
             }
 
     return listOfNotNull(
@@ -94,7 +94,7 @@ class AddRepositoryDialog(
   }
 
   override fun doOKAction() {
-    addAction(repoUrlInputField.text)
+    addAction(repoUrlInputField.text.lowercase())
     close(OK_EXIT_CODE, true)
   }
 
