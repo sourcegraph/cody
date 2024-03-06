@@ -18,12 +18,16 @@ test.beforeEach(() => {
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
+        'CodyVSCodeExtension:command:custom:build:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:custom:executed',
@@ -64,13 +68,20 @@ test.extend<ExpectedEvents>({
         .filter({ hasText: /New Custom Command.../ })
         .click()
     // Enter command name
-    await expect(page.getByText('New Custom Cody Command: Command Name')).toBeVisible()
-    await page.keyboard.type(commandName)
-    await page.keyboard.press('Enter')
+    const commandInputTitle = page.getByText('New Custom Cody Command: Command Name')
+    await expect(commandInputTitle).toBeVisible()
+    const commandInputBox = page.getByPlaceholder('e.g. hello')
+    await commandInputBox.fill(commandName)
+    await commandInputBox.fill(commandName)
+    await commandInputBox.press('Enter')
     // Enter prompt
-    await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()
-    await page.keyboard.type(prompt)
-    await page.keyboard.press('Enter')
+    const promptInputTitle = page.getByText('New Custom Cody Command: Prompt')
+    await expect(promptInputTitle).toBeVisible()
+    const promptInputBox = page.getByPlaceholder(
+        'e.g. Create five different test cases for the selected code'
+    )
+    await promptInputBox.fill(prompt)
+    await promptInputBox.press('Enter')
     // Use default context
     await expect(page.getByText('New Custom Cody Command: Context Options')).toBeVisible()
     await page.keyboard.press('Enter')
@@ -84,7 +95,9 @@ test.extend<ExpectedEvents>({
 
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByLabel('.vscode', { exact: true }).hover()
+    await page.getByLabel('.vscode', { exact: true }).click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
     // Click on minimap to scroll to the buttom
@@ -96,9 +109,12 @@ test.extend<ExpectedEvents>({
     // Show the new command in the menu and execute it
     await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Commands').locator('a').click()
+    await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     const newCommandMenuItem = page.getByLabel('tools  ATestCommand, The test command has been created')
     const newCommandSidebarItem = page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')
+    await newCommandMenuItem.hover()
+    await newCommandSidebarItem.hover()
     await expect(page.getByText(commandName)).toHaveCount(2) // one in sidebar, and one in menu
     await newCommandMenuItem.hover()
     await expect(newCommandMenuItem).toBeVisible()
@@ -284,5 +300,6 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+    await page.getByRole('tab', { name: 'cody.json, preview' }).hover()
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
 })
