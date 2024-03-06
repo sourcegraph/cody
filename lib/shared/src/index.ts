@@ -123,7 +123,12 @@ export type {
     SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
-export { createOllamaClient, type OllamaGenerateParams } from './ollama/ollama-client'
+export {
+    createOllamaClient,
+    ollamaChatClient,
+    type OllamaGenerateParams,
+    OLLAMA_DEFAULT_URL,
+} from './ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,

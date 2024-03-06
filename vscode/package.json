@@ -879,6 +879,12 @@
           "markdownDescription": "Uses the new simplifed chat context fetcher",
           "default": true
         },
+        "cody.experimental.ollamaChat": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable local Ollama models for chat and commands",
+          "default": false
+        },
         "cody.experimental.symfContext": {
           "order": 99,
           "type": "boolean",

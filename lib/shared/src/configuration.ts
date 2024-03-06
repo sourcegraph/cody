@@ -51,6 +51,7 @@ export interface Configuration {
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
+    experimentalOllamaChat: boolean
 
     /**
      * Unstable Features for internal testing only

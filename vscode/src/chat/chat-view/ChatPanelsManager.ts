@@ -109,8 +109,9 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposePanels()
         }
 
+        const endpoint = authStatus.endpoint ?? ''
         this.currentAuthAccount = {
-            endpoint: authStatus.endpoint ?? '',
+            endpoint,
             primaryEmail: authStatus.primaryEmail,
             username: authStatus.username,
         }
