@@ -96,19 +96,21 @@ class SettingsMigration : Activity {
         .filter { it.llm == null }
         .forEach {
           val (model, provider, title) =
-              modelToProviderAndTitle.getOrDefault(it.model, Triple("", "Default", "Default"))
+              modelToProviderAndTitle.getOrDefault(it.model, Triple(it.model, null, null))
           val llmState = LLMState()
-          llmState.provider = provider
-          llmState.title = title
           llmState.model = model
+          llmState.title = title
+          llmState.provider = provider
           it.llm = llmState
-          it.model = null
         }
   }
 
   private val modelToProviderAndTitle =
       mapOf(
+          "Claude 2 by Anthropic" to Triple("anthropic/claude-2", "Anthropic", "claude 2"),
           "Claude 2.0 by Anthropic" to Triple("anthropic/claude-2.0", "Anthropic", "Claude 2.0"),
+          "Claude 2.1 by Anthropic" to
+              Triple("anthropic/claude-2.1", "Anthropic", "Claude 2.1 Preview"),
           "Claude 2.1 Preview by Anthropic" to
               Triple("anthropic/claude-2.1", "Anthropic", "Claude 2.1 Preview"),
           "Claude Instant by Anthropic" to

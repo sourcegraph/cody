@@ -342,8 +342,8 @@ private constructor(
               ChatModelsResponse.ChatModelProvider(
                   default = it.model == null,
                   codyProOnly = false,
-                  provider = it.provider ?: "Default",
-                  title = it.title ?: "Default",
+                  provider = it.provider,
+                  title = it.title,
                   model = it.model ?: "")
             }
 

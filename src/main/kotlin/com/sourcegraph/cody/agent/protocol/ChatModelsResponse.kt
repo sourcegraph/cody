@@ -21,8 +21,16 @@ data class ChatModelsResponse(val models: List<ChatModelProvider>) {
         }
 
     fun displayName(): String = buildString {
-      append(title ?: "Default")
-      provider?.let { append(" by $provider") }
+      if (title == null) {
+        if (model.isNotBlank()) {
+          append(model)
+        } else {
+          append("Default")
+        }
+      } else {
+        append(title)
+        provider?.let { append(" by $provider") }
+      }
     }
   }
 }
