@@ -47,6 +47,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.localSymbols':
                         return true
+                    case 'cody.experimental.ollamaChat':
+                        return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
@@ -126,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalOllamaChat: true,
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

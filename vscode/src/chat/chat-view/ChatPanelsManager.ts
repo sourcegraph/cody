@@ -119,9 +119,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         await this.updateTreeViewHistory()
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
-
-        // Get a list of models from local-hosted Ollama (if any) for DotCom users
-        ModelProvider.getLocalOllamaModels(endpoint)
     }
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {

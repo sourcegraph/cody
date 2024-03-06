@@ -125,9 +125,10 @@ export type {
 export { logDebug, logError, setLogger } from './logger'
 export {
     createOllamaClient,
+    ollamaChatClient,
     type OllamaGenerateParams,
     OLLAMA_DEFAULT_URL,
-} from './ollama/completions-client'
+} from './ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
