@@ -822,7 +822,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: false,
+    debugEnable: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',

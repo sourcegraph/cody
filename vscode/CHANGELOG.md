@@ -25,6 +25,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Debug: The `cody.debug.enabled` setting is now set to `true` by default. [pull/](https://github.com/sourcegraph/cody/pull/)
+
 ## [1.6.1]
 
 ### Changed
