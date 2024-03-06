@@ -153,7 +153,7 @@ export class EditManager implements vscode.Disposable {
         })
 
         if (activeTask) {
-            this.controller.cancelTask(task)
+            this.controller.cancel(task)
             return
         }
 

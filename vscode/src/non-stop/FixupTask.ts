@@ -9,10 +9,10 @@ import type { FixupFile } from './FixupFile'
 import type { Diff } from './diff'
 import { CodyTaskState } from './utils'
 
-export type taskID = string
+export type FixupTaskID = string
 
 export class FixupTask {
-    public id: taskID
+    public id: FixupTaskID
     public state_: CodyTaskState = CodyTaskState.idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event

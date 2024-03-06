@@ -39,12 +39,12 @@ import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
+import { FixupCodeLenses } from '../../vscode/src/non-stop/codelenses/provider'
+import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import {
-    FixupCodeLenses,
     type FixupControlApplicator,
-    NullFixupControlsApplicator,
-} from '../../vscode/src/non-stop/codelenses/provider'
-import type { FixupFileCollection } from '../../vscode/src/non-stop/roles'
+    NullFixupControlApplicator,
+} from '../../vscode/src/non-stop/strategies'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
@@ -870,11 +870,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     // ExtensionClient callbacks.
 
-    public createFixupControlApplicator(files: FixupFileCollection): FixupControlApplicator {
-        return this.clientInfo?.capabilities?.codeLenses &&
-            this.clientInfo?.capabilities?.fixupCodeLenses
+    public createFixupControlApplicator(
+        files: FixupActor & FixupFileCollection
+    ): FixupControlApplicator {
+        return this.clientInfo?.capabilities?.codeLenses === 'enabled' &&
+            this.clientInfo?.capabilities?.fixupControls === 'lenses'
             ? new FixupCodeLenses(files)
-            : new NullFixupControlsApplicator()
+            : new NullFixupControlApplicator()
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
