@@ -18,6 +18,7 @@ import {
     Typewriter,
     featureFlagProvider,
     hydrateAfterPostMessage,
+    isDefined,
     isDotCom,
     isError,
     isFileURI,
