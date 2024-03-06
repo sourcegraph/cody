@@ -1,9 +1,14 @@
 import * as path from 'path'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
-
-import { type ConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
-import { type ContextItem, type FileURI, isFileURI } from '@sourcegraph/cody-shared'
+import {
+    type ConfigurationWithAccessToken,
+    type EmbeddingsSearchResult,
+    type ContextItem,
+    type FileURI,
+    isFileURI,
+    isDotCom
+} from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
@@ -160,7 +165,7 @@ export class ContextRankingController implements ContextRanker {
         contextItems: ContextItem[]
     ): RankContextItem[] {
         const rankContextItems = contextItems.map((item, index) => ({
-            document_id: index,
+            documentId: index,
             filePath: item.uri?.path ? path.relative(baseRepoPath, item.uri?.path) : '',
             content: item.content ?? '',
             source: item.source,
@@ -175,12 +180,40 @@ export class ContextRankingController implements ContextRanker {
         rankedItemsOrder.sort((a, b) => b.score - a.score)
         const orderedContextItems: ContextItem[] = []
         for (const item of rankedItemsOrder) {
-            const newIndex = item.document_id
+            const newIndex = item.documentId
             if (newIndex < 0 || newIndex >= contextItems.length) {
                 return contextItems
             }
             orderedContextItems.push(contextItems[newIndex])
         }
         return orderedContextItems
+    }
+
+    public async retriveEmbeddingBasedContext(
+        query: string,
+        numResults: number,
+        modelName: string,
+    ): Promise<EmbeddingsSearchResult[]> {
+        const repoUri = this.getRepoUri()
+        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
+            return []
+        }
+        try {
+            const service = await this.getService()
+            const resp = await service.request('context-ranking/context-retriver-embedding', {
+                repoPath: repoUri.path,
+                query: query,
+                modelName: modelName,
+                numResults: numResults,
+            })
+            const model_specific_embedding_items = resp.results.map(result => ({
+                ...result,
+                uri: vscode.Uri.joinPath(repoUri, result.fileName),
+            }))
+            return model_specific_embedding_items
+        } catch (error) {
+            logDebug('ContextRankingController', 'error in fetching embeddings features', captureException(error))
+            return []
+        }
     }
 }

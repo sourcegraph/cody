@@ -20,6 +20,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import { ContentProvider } from '../../non-stop/FixupContentStore'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -189,6 +190,11 @@ async function getEnhancedContextFromRanker({
             'local-embeddings'
         )
 
+        const modelSpecificEmbeddingsContextItemsPromise = retrieveContextGracefully(
+            searchModelSpecificEmbeddings(contextRanking, text),
+            'model-specific-embeddings'
+        )
+
         const localSearchContextItemsPromise = providers.symf
             ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
             : []
@@ -205,12 +211,13 @@ async function getEnhancedContextFromRanker({
             ...(await remoteSearchContextItemsPromise),
         ])()
 
-        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
+        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] = await Promise.all([
             embeddingsContextItemsPromise,
             keywordContextItemsPromise,
+            modelSpecificEmbeddingsContextItemsPromise,
         ])
 
-        searchContext = searchContext.concat(keywordContextItems).concat(embeddingsContextItems)
+        searchContext = searchContext.concat(keywordContextItems).concat(embeddingsContextItems).concat(modelEmbeddingContextItems)
         const editorContext = await getPriorityContext(text, editor, searchContext)
         const allContext = editorContext.concat(searchContext)
         if (!contextRanking) {
@@ -343,6 +350,42 @@ async function searchEmbeddingsLocal(
                 range,
                 content: result.content,
                 source: ContextItemSource.Embeddings,
+            })
+        }
+        return contextItems
+    })
+}
+
+async function searchModelSpecificEmbeddings(
+    contextRankingController: ContextRankingController | null,
+    text: string
+): Promise<ContextItem[]> {
+    return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {
+        if (!contextRankingController) {
+            return []
+        }
+
+        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching model specific embeddings')
+        const contextItems: ContextItem[] = []
+        const numResults = 15;
+        const modelName = "sentence-transformers/multi-qa-mpnet-base-dot-v1";
+        const embeddingsResults = await contextRankingController.retriveEmbeddingBasedContext(
+            text,
+            numResults,
+            modelName
+        )
+        for (const result of embeddingsResults) {
+            const range = new vscode.Range(
+                new vscode.Position(result.startLine, 0),
+                new vscode.Position(result.endLine, 0)
+            )
+
+            contextItems.push({
+                type: 'file',
+                uri: result.uri,
+                range,
+                content: result.content,
+                source: ContextItemSource.RankerSentenceTransformerEmbedding,
             })
         }
         return contextItems
