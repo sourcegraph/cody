@@ -1,10 +1,13 @@
 import { dotcomTokenToGatewayToken } from '../auth/tokens'
 import type { AuthStatus } from '../auth/types'
 import type { ConfigurationWithAccessToken } from '../configuration'
-import { supportsUnifiedApi } from '../models/utils'
+import { supportsFastPath } from '../models/utils'
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
-import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
+import type {
+    CompletionLogger,
+    SourcegraphCompletionsClient,
+} from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
     CompletionParameters,
@@ -26,21 +29,23 @@ export class ChatClient {
     constructor(
         private completions: SourcegraphCompletionsClient,
         config: Pick<ConfigurationWithAccessToken, 'accessToken'>,
-        private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+        private getAuthStatus: () => Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>,
+        private completionLogger: CompletionLogger
     ) {
-        const isNode = typeof process !== 'undefined'
-
-        this.fastPathAccessToken =
-            config.accessToken &&
-            // Require the upstream to be dotcom
-            authStatus.isDotCom &&
-            // The fast path client only supports Node.js style response streams
-            isNode
-                ? dotcomTokenToGatewayToken(config.accessToken)
-                : undefined
+        this.onConfigurationChange(config)
     }
 
-    // TODO: add onConfigurationChange and handle auth status changes
+    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'accessToken'>): void {
+        const isNode = typeof process !== 'undefined'
+        this.fastPathAccessToken =
+            newConfig.accessToken &&
+            // Require the upstream to be dotcom
+            this.getAuthStatus().isDotCom &&
+            // The fast path client only supports Node.js style response streams
+            isNode
+                ? dotcomTokenToGatewayToken(newConfig.accessToken)
+                : undefined
+    }
 
     public chat(
         messages: Message[],
@@ -48,7 +53,7 @@ export class ChatClient {
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         const useFastPath =
-            this.fastPathAccessToken !== undefined && params.model && supportsUnifiedApi(params.model)
+            this.fastPathAccessToken !== undefined && params.model && supportsFastPath(params.model)
 
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
@@ -72,10 +77,10 @@ export class ChatClient {
         if (useFastPath) {
             return createFastPathClient(
                 completionParams,
-                this.authStatus,
+                this.getAuthStatus(),
                 this.fastPathAccessToken!,
                 abortSignal,
-                undefined /* TODO: add logger */
+                this.completionLogger
             )
         }
 

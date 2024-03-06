@@ -87,7 +87,12 @@ export async function configureExternalServices(
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
-    const chatClient = new ChatClient(completionsClient, initialConfig, authProvider.getAuthStatus())
+    const chatClient = new ChatClient(
+        completionsClient,
+        initialConfig,
+        () => authProvider.getAuthStatus(),
+        logger
+    )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
@@ -104,6 +109,7 @@ export async function configureExternalServices(
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
+            chatClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
             void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },

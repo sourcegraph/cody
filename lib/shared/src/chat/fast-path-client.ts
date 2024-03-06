@@ -68,7 +68,6 @@ export function createFastPathClient(
             headers.set('X-Sourcegraph-Feature', 'chat_completions')
             addTraceparent(headers)
 
-            logDebug('FastPathChatClient', 'fetch', { verbose: { url, request } })
             const response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify(request),

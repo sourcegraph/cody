@@ -1,14 +1,16 @@
-import { supportsUnifiedApi } from '../models/utils'
+import { supportsFastPath } from '../models/utils'
 import type { Message } from '../sourcegraph-api'
 
 export function getSimplePreamble(model: string, preInstruction?: string | undefined): Message[] {
-    if (supportsUnifiedApi(model)) {
+    const intro = `You are Cody, an AI coding assistant from Sourcegraph.${
+        preInstruction ? ` ${preInstruction}` : ''
+    }`
+
+    if (supportsFastPath(model)) {
         return [
             {
                 speaker: 'system',
-                text: `You are Cody, an AI coding assistant from Sourcegraph.${
-                    preInstruction ? ` ${preInstruction}` : ''
-                }`,
+                text: intro,
             },
         ]
     }
@@ -16,9 +18,7 @@ export function getSimplePreamble(model: string, preInstruction?: string | undef
     return [
         {
             speaker: 'human',
-            text: `You are Cody, an AI coding assistant from Sourcegraph.${
-                preInstruction ? ` ${preInstruction}` : ''
-            }`,
+            text: intro,
         },
         {
             speaker: 'assistant',
