@@ -16,6 +16,7 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { PROMPT_TOPICS } from './constants'
+import { fillInContextItemContent } from '../../chat/chat-view/SimpleChatPanelProvider'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -142,5 +143,7 @@ export const getContext = async ({
         userContextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
     }
 
-    return [...(await getContextFromIntent({ editor, ...options })), ...userContextItems]
+    const derivedContext = await getContextFromIntent({ editor, ...options })
+    const userContext = await fillInContextItemContent(editor, userContextItems)
+    return [...derivedContext, ...userContext]
 }
