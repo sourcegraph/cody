@@ -35,12 +35,7 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
             vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
             vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
-            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
-            vscode.workspace.onDidChangeConfiguration(async event => {
-                if (event.affectsConfiguration('cody')) {
-                    await this.treeViewProvider.refresh()
-                }
-            })
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
         )
 
         this.customCommandsStore.init()
