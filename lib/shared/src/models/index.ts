@@ -68,7 +68,8 @@ export class ModelProvider {
                     ModelProvider.ollamaProviders = Array.from(models)
                 },
                 error => {
-                    const isFetchFailed = error.toString().endsWith('fetch failed')
+                    const fetchFailedErrors = ['Failed to fetch', 'fetch failed']
+                    const isFetchFailed = fetchFailedErrors.some(err => error.toString().includes(err))
                     const serverErrorMsg = 'Please make sure the Ollama server is up & running.'
                     logError('getLocalOllamaModels: failed ', isFetchFailed ? serverErrorMsg : error)
                 }
