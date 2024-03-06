@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import {
-    type CodyCommand,
     type ContextItem,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
@@ -9,7 +8,7 @@ import {
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
     truncateText,
-    truncateTextStart,
+    truncateTextStart
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -129,7 +128,6 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextItems: ContextItem[]
     editor: VSCodeEditor
-    command?: CodyCommand
 }
 
 export const getContext = async ({
