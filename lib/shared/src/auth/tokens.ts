@@ -6,13 +6,13 @@ export function dotcomTokenToGatewayToken(dotcomToken: string): string | undefin
     const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
 
     if (!match) {
-        throw new Error('Access token format is invalid.')
+        return undefined
     }
 
     const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
 
     if (!hexEncodedAccessTokenBytes) {
-        throw new Error('Access token not found.')
+        return undefined
     }
 
     const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
