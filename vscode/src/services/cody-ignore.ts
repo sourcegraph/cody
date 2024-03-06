@@ -8,6 +8,8 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
+import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -124,7 +126,7 @@ async function refresh(uri: vscode.Uri): Promise<void> {
                 const ignoreFileAtRoot = vscode.Uri.joinPath(wf.uri, '.cody', 'ignore')
                 tryReadFile(ignoreFileAtRoot).then(content => {
                     if (content.length) {
-                        ignores.setIgnoreFiles(wf.uri, [{ uri: ignoreFileAtRoot, content }])
+                        setCodyIgnoreFiles(wf.uri, [{ uri: ignoreFileAtRoot, content }])
                         logDebug('CodyIgnore:refresh', 'found ignore file at root', {
                             verbose: wf.uri.path,
                         })
@@ -157,13 +159,22 @@ async function refresh(uri: vscode.Uri): Promise<void> {
             content: await tryReadFile(fileUri),
         }))
     )
-    ignores.setIgnoreFiles(wf.uri, filesWithContent)
+
+    setCodyIgnoreFiles(wf.uri, filesWithContent)
 
     // If we can locate the token, that means the job was completed before it times out.
     if (findInProgressTokens.get(uri.path)) {
         findInProgressTokens.delete(uri.path)
         const elapsed = performance.now() - startTime
         logDebug('CodyIgnore:refresh', `refresh completed in ${elapsed}`, { verbose: wf.uri.path })
+    }
+}
+
+function setCodyIgnoreFiles(ws: vscode.Uri, files: IgnoreFileContent[]): void {
+    ignores.setIgnoreFiles(ws, files)
+    if (files.length) {
+        telemetryService.log('CodyVSCodeExtension:codyIgnore:hasFile')
+        telemetryRecorder.recordEvent('cody.codyIgnore', 'hasFile')
     }
 }
 
