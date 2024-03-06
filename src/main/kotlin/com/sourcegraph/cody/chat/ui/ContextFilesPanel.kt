@@ -9,8 +9,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
-import com.intellij.util.withFragment
-import com.intellij.util.withQuery
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextFile
 import com.sourcegraph.cody.agent.protocol.ContextFileFile
@@ -21,7 +19,6 @@ import com.sourcegraph.cody.ui.AccordionSection
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import java.awt.BorderLayout
 import java.awt.Insets
-import java.nio.file.Paths
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
@@ -98,8 +95,7 @@ class ContextFilesPanel(
 
   private fun openInEditor(contextFileFile: ContextFileFile) {
     val logicalLine = contextFileFile.range?.start?.line ?: 0
-    val newUri = contextFileFile.uri.withFragment(null).withQuery(null)
-    val contextFilePath = Paths.get(newUri)
+    val contextFilePath = contextFileFile.getPath()
     ApplicationManager.getApplication().executeOnPooledThread {
       val findFileByNioFile = LocalFileSystem.getInstance().findFileByNioFile(contextFilePath)
       if (findFileByNioFile != null) {

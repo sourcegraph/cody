@@ -4,10 +4,10 @@ object Rfc3986UriEncoder {
 
   // todo solve this with library
   fun encode(uri: String): String {
-    val found = "file:///([A-Za-z]):".toRegex().find(uri)
-    if (found != null) {
-      val partition = found.groups[1]?.value ?: return uri
-      return uri.replace("file:///$partition:", "file:///${partition.lowercase()}%3A")
+    val found = "(\\w+:///?)([A-Za-z])(:.+)".toRegex().find(uri)
+    if (found != null && found.groups.size == 4) {
+      val (protocol, partition, rest) = found.destructured
+      return "$protocol${partition.lowercase()}$rest"
     } else {
       return uri
     }

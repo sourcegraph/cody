@@ -3,6 +3,8 @@ package com.sourcegraph.cody.agent.protocol
 import com.google.gson.*
 import java.lang.reflect.Type
 import java.net.URI
+import java.nio.file.Path
+import java.nio.file.Paths
 
 sealed class ContextFile {
   abstract val type: String
@@ -20,6 +22,10 @@ data class ContextFileFile(
   override val type: String = "file"
 
   fun isLocal() = repoName == null
+
+  fun getPath(): Path {
+    return Paths.get(uri.path).toAbsolutePath()
+  }
 
   fun getLinkActionText(projectPath: String?): String {
     val theRange = if (isLocal()) range?.intellijRange() else range?.toSearchRange()

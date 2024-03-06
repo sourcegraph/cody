@@ -10,7 +10,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +28,7 @@ public class IntelliJTextDocument implements TextDocument {
 
   @Override
   public URI uri() {
-    return Paths.get(file.getPath()).toUri();
+    return URI.create(file.getUrl());
   }
 
   @Override
