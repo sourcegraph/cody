@@ -2699,7 +2699,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2817,7 +2817,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2935,7 +2935,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3053,7 +3053,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3171,7 +3171,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3289,7 +3289,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3407,7 +3407,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
