@@ -317,6 +317,9 @@ importers:
       classnames:
         specifier: ^2.3.2
         version: 2.3.2
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
       detect-indent:
         specifier: ^7.0.1
         version: 7.0.1

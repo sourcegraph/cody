@@ -35,20 +35,16 @@ export function createFastPathClient(
 ): AsyncGenerator<CompletionGeneratorValue> {
     const isLocalInstance =
         authStatus.endpoint?.includes('sourcegraph.test') || authStatus.endpoint?.includes('localhost')
-
-    // TODO: Make this more robust
     const gatewayUrl = isLocalInstance ? 'http://localhost:9992' : 'https://cody-gateway.sourcegraph.com'
 
-    const url = `${gatewayUrl}/v1/completions/unified`
+    const url = `${gatewayUrl}/v1/completions/anthropic-messages`
     const log = logger?.startCompletion(requestParams, url)
 
     return tracer.startActiveSpan(
         `POST ${url}`,
         async function* (span): AsyncGenerator<CompletionGeneratorValue> {
-            // Create a unified API request, cf sourcegraph/sourcegraph
             const request = {
-                // TODO: This needs to be fixed in the upstream API
-                model: requestParams.model?.replace(/^anthropic\//, ''),
+                model: requestParams.model,
                 messages: requestParams.messages.map(message => {
                     return {
                         role: message.speaker === 'human' ? 'user' : message.speaker,
@@ -134,7 +130,7 @@ export function createFastPathClient(
                         break
                     }
 
-                    const response = JSON.parse(data) as UnifiedSSE
+                    const response = JSON.parse(data) as AnthropicMessagesSSE
 
                     if (
                         response.type === 'ping' ||
@@ -149,12 +145,7 @@ export function createFastPathClient(
                         break
                     }
 
-                    if (response.type === 'chunk') {
-                        fullResponse = {
-                            completion: (fullResponse ? fullResponse.completion : '') + response.delta,
-                            stopReason: response.stopReason ?? CompletionStopReason.StreamingChunk,
-                        }
-                    } else if (response.type === 'content_block_start') {
+                    if (response.type === 'content_block_start') {
                         fullResponse = {
                             completion: response.content_block.text,
                             stopReason: CompletionStopReason.StreamingChunk,
@@ -225,11 +216,7 @@ async function createRateLimitErrorFromResponse(
     )
 }
 
-type UnifiedSSE =
-    // Not yet used unified SSE payloads (will require the server to parse the SSE stream first)
-    | { type: 'chunk'; delta: ''; stopReason?: string }
-
-    // Unstable SSE events for v0 before we update the unified endpoints to parse the SSE stream
+type AnthropicMessagesSSE =
     | { type: 'message_start' }
     | {
           type: 'content_block_start'
