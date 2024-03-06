@@ -1180,6 +1180,7 @@
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@types/axios": "^0.14.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
