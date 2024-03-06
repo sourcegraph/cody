@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { type Configuration, DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
+import type { startTokenReceiver } from '../../auth/token-receiver'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
@@ -13,6 +14,12 @@ import type { ContextProvider } from '../ContextProvider'
 import type { MessageErrorType, MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
+import {
+    closeAuthProgressIndicator,
+    isAuthProgressInProgress,
+    startAuthProgressIndicator,
+} from '../../auth/auth-progress-indicator'
+import { OnboardingExperimentBranch, logExposure, pickBranch } from '../../services/OnboardingExperiment'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -21,6 +28,7 @@ export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> 
 
 export interface SidebarViewOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
+    startTokenReceiver?: typeof startTokenReceiver
     config: Pick<Configuration, 'isRunningInsideAgent'>
 }
 
@@ -32,11 +40,13 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
 
     private authProvider: AuthProvider
     private readonly contextProvider: ContextProvider
+    private startTokenReceiver?: typeof startTokenReceiver
 
     constructor({ extensionUri, ...options }: SidebarViewOptions) {
         this.authProvider = options.authProvider
         this.contextProvider = options.contextProvider
         this.extensionUri = extensionUri
+        this.startTokenReceiver = options.startTokenReceiver
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -49,20 +59,69 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 await this.setWebviewView('chat')
                 await this.contextProvider.init()
                 break
-            case 'auth':
+            case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 if (message.authKind === 'simplified-onboarding') {
+                    const endpoint = DOTCOM_URL.href
+
+                    let tokenReceiverUrl: string | undefined = undefined
+                    const branch = pickBranch()
+                    if (this.startTokenReceiver) {
+                        logExposure()
+                        if (branch === OnboardingExperimentBranch.RemoveAuthenticationStep) {
+                            if (isAuthProgressInProgress()) {
+                                return
+                            }
+                            startAuthProgressIndicator()
+                            tokenReceiverUrl = await this.startTokenReceiver(
+                                endpoint,
+                                async (token, endpoint) => {
+                                    closeAuthProgressIndicator()
+                                    const authStatus = await this.authProvider.auth(endpoint, token)
+                                    telemetryService.log('CodyVSCodeExtension:auth:fromTokenReceiver', {
+                                        type: 'callback',
+                                        from: 'web',
+                                        success: Boolean(authStatus?.isLoggedIn),
+                                        hasV2Event: true,
+                                    })
+                                    telemetryRecorder.recordEvent(
+                                        'cody.auth.fromTokenReceiver.web',
+                                        'succeeded',
+                                        {
+                                            metadata: {
+                                                success: authStatus?.isLoggedIn ? 1 : 0,
+                                            },
+                                        }
+                                    )
+                                    if (!authStatus?.isLoggedIn) {
+                                        void vscode.window.showErrorMessage(
+                                            'Authentication failed. Please check your token and try again.'
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
-                    void authProviderSimplified.openExternalAuthUrl(this.authProvider, authMethod)
+                    const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
+                        this.authProvider,
+                        authMethod,
+                        tokenReceiverUrl
+                    )
+                    if (!successfullyOpenedUrl) {
+                        closeAuthProgressIndicator()
+                    }
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
+            }
             case 'reload':
                 await this.authProvider.reloadAuthStatus()
                 telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, {

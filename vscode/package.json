@@ -1007,7 +1007,13 @@
             "model": {
               "type": "string",
               "default": "deepseek-coder:6.7b-base-q4_K_M",
-              "examples": ["codellama:7b-code", "codellama:13b-code", "deepseek-coder:6.7b-base-q4_K_M", "starcoder2:7b", "starcoder2:15b"]
+              "examples": [
+                "codellama:7b-code",
+                "codellama:13b-code",
+                "deepseek-coder:6.7b-base-q4_K_M",
+                "starcoder2:7b",
+                "starcoder2:15b"
+              ]
             },
             "parameters": {
               "type": "object",
@@ -1063,6 +1069,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0045"
+        }
+      },
+      "ollama-logo": {
+        "description": "Ollama logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0046"
         }
       },
       "new-comment-icon": {
@@ -1144,6 +1157,7 @@
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
     "express": "^4.18.2",
+    "fast-json-stable-stringify": "^2.1.0",
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",

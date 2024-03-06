@@ -50,18 +50,23 @@ export class ChatClient {
         const useFastPath =
             this.fastPathAccessToken !== undefined && params.model && supportsUnifiedApi(params.model)
 
+        const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
+
         const augmentedMessages =
-            // HACK: The fireworks chat inference endpoints requires the last message to be from a
-            // human. This will be the case in most of the prompts but if for some reason we have an
-            // assistant at the end, we slice the last message for now.
             params?.model?.startsWith('fireworks/') || useFastPath
                 ? sanitizeMessages(messages)
-                : messages.concat([{ speaker: 'assistant' }])
+                : isLastMessageFromHuman
+                  ? messages.concat([{ speaker: 'assistant' }])
+                  : messages
+
+        // Strip `file` from any messages that are ContextMessage type, so that we don't send it up.
+        // We only want to send up what's in the prompt text.
+        const messagesWithoutFile = augmentedMessages.map(message => ({ ...message, file: undefined }))
 
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
-            messages: augmentedMessages,
+            messages: messagesWithoutFile,
         }
 
         if (useFastPath) {

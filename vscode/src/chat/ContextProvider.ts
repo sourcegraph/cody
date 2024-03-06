@@ -1,22 +1,16 @@
 import * as vscode from 'vscode'
 
-import {
-    type AuthStatus,
-    CodebaseContext,
-    type ConfigurationWithAccessToken,
-    type ContextGroup,
-    type ContextStatusProvider,
-    type Editor,
-    type IndexedKeywordContextFetcher,
+import type {
+    ConfigurationWithAccessToken,
+    ContextGroup,
+    ContextStatusProvider,
 } from '@sourcegraph/cody-shared'
 
 import { getFullConfig } from '../configuration'
-import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
-import { getCodebaseFromWorkspaceUri, gitDirectoryUri } from '../repository/repositoryHelpers'
 import type { AuthProvider } from '../services/AuthProvider'
 import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
@@ -70,7 +64,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     constructor(
         public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private editor: VSCodeEditor,
-        private symf: IndexedKeywordContextFetcher | undefined,
         private authProvider: AuthProvider,
         public readonly localEmbeddings: LocalEmbeddingsController | undefined,
         private readonly remoteSearch: RemoteSearch | undefined
@@ -147,17 +140,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         }
         this.currentWorkspaceRoot = workspaceRoot
 
-        const codebaseContext = await getCodebaseContext(
-            this.config,
-            this.authProvider.getAuthStatus(),
-            this.symf,
-            this.editor,
-            this.localEmbeddings,
-            this.remoteSearch
-        )
-        if (!codebaseContext) {
-            return
-        }
         // After await, check we're still hitting the same workspace root.
         if (
             this.currentWorkspaceRoot &&
@@ -246,48 +228,4 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
         return this.contextStatusChangeEmitter.event(callback)
     }
-}
-
-/**
- * Gets codebase context for the current workspace.
- * @returns CodebaseContext if a codebase can be determined, else null
- */
-async function getCodebaseContext(
-    config: Config,
-    authStatus: AuthStatus,
-    symf: IndexedKeywordContextFetcher | undefined,
-    editor: Editor,
-    localEmbeddings: LocalEmbeddingsController | undefined,
-    remoteSearch: RemoteSearch | undefined
-): Promise<CodebaseContext | null> {
-    const workspaceRoot = editor.getWorkspaceRootUri()
-    if (!workspaceRoot) {
-        return null
-    }
-    const currentFile = getEditor()?.active?.document?.uri
-    // Get codebase from config or fallback to getting codebase name from current file URL
-    // Always use the codebase from config as this is manually set by the user
-    const codebase =
-        config.codebase || (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
-    if (!codebase) {
-        return null
-    }
-
-    const isConsumer = authStatus.isDotCom
-
-    // TODO(dpc): Support multiple workspace roots when
-    // https://github.com/sourcegraph/bfg-private/issues/145 is fixed and
-    // cody-engine local embeddings can consume them.
-    const repoDirUri = gitDirectoryUri(workspaceRoot)
-    const hasLocalEmbeddings = repoDirUri ? localEmbeddings?.load(repoDirUri) : false
-
-    return new CodebaseContext(
-        config,
-        codebase,
-        // Use local embeddings if we have them.
-        isConsumer && (await hasLocalEmbeddings) ? localEmbeddings : undefined,
-        // TODO(dpc): This should query index availability before passing symf.
-        isConsumer ? symf : undefined,
-        isConsumer ? undefined : remoteSearch
-    )
 }

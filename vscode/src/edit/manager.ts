@@ -117,7 +117,6 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 source,
-                configuration.contextMessages,
                 configuration.destinationFile
             )
         } else {
@@ -128,7 +127,6 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 intent,
-                configuration.contextMessages || [],
                 source
             )
         }

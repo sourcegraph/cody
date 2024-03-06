@@ -179,7 +179,6 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
-        symfRunner,
         authProvider,
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
@@ -202,6 +201,7 @@ const register = async (
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
             config,
+            startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
         enterpriseContextFactory,

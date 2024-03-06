@@ -9,6 +9,7 @@ import {
 
 import { logDebug } from '../../log'
 
+import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { PromptBuilder } from '../../prompt-builder'
 import type { MessageWithContext, SimpleChatModel } from './SimpleChatModel'
 import { sortContextItems } from './agentContextSorting'
@@ -26,7 +27,7 @@ const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% o
 
 export class DefaultPrompter implements IPrompter {
     constructor(
-        private explicitContext: ContextItem[],
+        private explicitContext: ContextItemWithContent[],
         private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
