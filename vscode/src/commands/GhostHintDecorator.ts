@@ -104,7 +104,7 @@ export async function getGhostHintEnablement(): Promise<boolean> {
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
-type HintType = 'EditOrChat' | 'Document' | 'Generate'
+type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 
 /**
  * Decorations for showing a "ghost" hint to the user.
@@ -115,34 +115,36 @@ type HintType = 'EditOrChat' | 'Document' | 'Generate'
  * We should also ensure that `activationEvent` `onLanguage` is set to provide the best chance of
  * executing this code early, without impacting VS Code startup time.
  */
-const HINT_DECORATIONS: Record<HintType, { text: string; decoration: vscode.TextEditorDecorationType }> =
-    {
-        EditOrChat: {
-            text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                isWholeLine: true,
-                after: {
-                    color: GHOST_TEXT_COLOR,
-                    margin: '0 0 0 1em',
-                },
-            }),
-        },
-        Document: {
-            text: `${DOC_SHORTCUT_LABEL} to Document`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                after: { color: GHOST_TEXT_COLOR },
-            }),
-        },
-        Generate: {
-            text: `${EDIT_SHORTCUT_LABEL} to Generate`,
-            decoration: vscode.window.createTextEditorDecorationType({
-                after: {
-                    color: GHOST_TEXT_COLOR,
-                    margin: '0 0 0 1em',
-                },
-            }),
-        },
-    }
+const HINT_DECORATIONS: Record<
+    GhostVariant,
+    { text: string; decoration: vscode.TextEditorDecorationType }
+> = {
+    EditOrChat: {
+        text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+            after: {
+                color: GHOST_TEXT_COLOR,
+                margin: '0 0 0 1em',
+            },
+        }),
+    },
+    Document: {
+        text: `${DOC_SHORTCUT_LABEL} to Document`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: { color: GHOST_TEXT_COLOR },
+        }),
+    },
+    Generate: {
+        text: `${EDIT_SHORTCUT_LABEL} to Generate`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: {
+                color: GHOST_TEXT_COLOR,
+                margin: '0 0 0 1em',
+            },
+        }),
+    },
+}
 
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
@@ -220,12 +222,17 @@ export class GhostHintDecorator implements vscode.Disposable {
                     )
 
                     if (documentableSymbol.node) {
-                        this.clearGhostText(editor)
                         /**
                          * "Document" code flow.
                          * Display ghost text above the relevant symbol.
                          */
                         const precedingLine = Math.max(0, documentableSymbol.node.startPosition.row - 1)
+                        if (
+                            this.activeDecorationRange &&
+                            this.activeDecorationRange.start.line !== precedingLine
+                        ) {
+                            this.clearGhostText(editor)
+                        }
                         return this.setThrottledGhostText(
                             editor,
                             new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -298,16 +305,16 @@ export class GhostHintDecorator implements vscode.Disposable {
     private setGhostText(
         editor: vscode.TextEditor,
         position: vscode.Position,
-        hint: HintType,
+        variant: GhostVariant,
         textPadding = 0
     ): void {
-        this.fireThrottledDisplayEvent(hint)
+        this.fireThrottledDisplayEvent(variant)
 
-        const decorationHint = HINT_DECORATIONS[hint]
+        const decorationHint = HINT_DECORATIONS[variant]
         const decorationText = UNICODE_SPACE.repeat(textPadding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
 
-        editor.setDecorations(HINT_DECORATIONS[hint].decoration, [
+        editor.setDecorations(HINT_DECORATIONS[variant].decoration, [
             {
                 range: this.activeDecorationRange,
                 renderOptions: { after: { contentText: decorationText } },
@@ -323,9 +330,9 @@ export class GhostHintDecorator implements vscode.Disposable {
         })
     }
 
-    private _fireDisplayEvent(hint: HintType): void {
-        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { hint })
-        telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { hint } })
+    private _fireDisplayEvent(variant: GhostVariant): void {
+        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant })
+        telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
     }
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
