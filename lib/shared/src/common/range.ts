@@ -14,11 +14,21 @@ export interface RangeData {
  */
 export function toRangeData<R extends RangeData>(range: R): RangeData
 export function toRangeData<R extends RangeData>(range: R | undefined): RangeData | undefined
-export function toRangeData<R extends RangeData>(range: R | undefined): RangeData | undefined {
-    return range
+export function toRangeData(
+    badVSCodeSerializedRange: [{ line: number; character: number }, { line: number; character: number }]
+): RangeData
+export function toRangeData<R extends RangeData>(
+    range: R | [{ line: number; character: number }, { line: number; character: number }] | undefined
+): RangeData | undefined {
+    // HACK: Handle if the `vscode.Range` value was accidentally JSON-serialized as [start, end],
+    // which `vscode.Range` instances do when JSON-serialized because of their `toJSON()` method
+    // that misleading and not represented in the type system).
+    const data = Array.isArray(range) ? { start: range[0], end: range[1] } : range
+
+    return data
         ? {
-              start: { line: range.start.line, character: range.start.character },
-              end: { line: range.end.line, character: range.end.character },
+              start: { line: data.start.line, character: data.start.character },
+              end: { line: data.end.line, character: data.end.character },
           }
         : undefined
 }
