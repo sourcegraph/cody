@@ -73,8 +73,9 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
+    'editCommands/code': [{ params: { instruction: string } }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
+    'commands/document': [null, EditTask] // TODO: rename to editCommands/document
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
