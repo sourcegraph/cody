@@ -289,7 +289,7 @@ data class CopyWebviewMessage(
 
 data class AuthWebviewMessage(
   val command: CommandEnum? = null, // Oneof: auth
-  val authKind: AuthKindEnum? = null, // Oneof: signin, signout, support, callback, simplified-onboarding, simplified-onboarding-exposure
+  val authKind: AuthKindEnum? = null, // Oneof: signin, signout, support, callback, simplified-onboarding
   val endpoint: String? = null,
   val value: String? = null,
   val authMethod: AuthMethod? = null, // Oneof: dotcom, github, gitlab, google
@@ -305,7 +305,6 @@ data class AuthWebviewMessage(
     @SerializedName("support") Support,
     @SerializedName("callback") Callback,
     @SerializedName("simplified-onboarding") `Simplified-onboarding`,
-    @SerializedName("simplified-onboarding-exposure") `Simplified-onboarding-exposure`,
   }
 }
 

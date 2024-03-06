@@ -205,6 +205,7 @@ const register = async (
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
             config,
+            startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
         enterpriseContextFactory,
