@@ -183,7 +183,6 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
-        symfRunner,
         authProvider,
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()

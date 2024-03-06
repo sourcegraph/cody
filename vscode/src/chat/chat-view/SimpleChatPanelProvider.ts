@@ -8,8 +8,6 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextMessage,
-    type Editor,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
@@ -20,7 +18,6 @@ import {
     Typewriter,
     featureFlagProvider,
     hydrateAfterPostMessage,
-    isDefined,
     isDotCom,
     isError,
     isFileURI,
@@ -33,6 +30,7 @@ import { createDisplayTextWithFileLinks } from '../../commands/utils/display-tex
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import {
+    fillInContextItemContent,
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
@@ -57,6 +55,7 @@ import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
+import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
@@ -80,7 +79,7 @@ import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManag
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { type MessageWithContext, SimpleChatModel, toViewMessage } from './SimpleChatModel'
-import { getChatPanelTitle, openFile, stripContextWrapper, viewRangeToRange } from './chat-helpers'
+import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
 
@@ -450,10 +449,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
-                const userContextItems = await contextFilesToContextItems(
+                const userContextItems: ContextItemWithContent[] = await fillInContextItemContent(
                     this.editor,
-                    userContextFiles || [],
-                    true
+                    userContextFiles || []
                 )
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
@@ -1248,10 +1246,7 @@ async function newChatModelfromTranscriptJSON(
                         text: interaction.humanMessage.text,
                     },
                     displayText: interaction.humanMessage.displayText,
-                    newContextUsed: deserializedContextFilesToContextItems(
-                        interaction.usedContextFiles,
-                        interaction.fullContext
-                    ),
+                    newContextUsed: interaction.usedContextFiles,
                 },
                 {
                     message: {
@@ -1270,66 +1265,6 @@ async function newChatModelfromTranscriptJSON(
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
-}
-
-export async function contextFilesToContextItems(
-    editor: Editor,
-    items: ContextItem[],
-    fetchContent?: boolean
-): Promise<ContextItem[]> {
-    return (
-        await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItem | null> => {
-                const range = viewRangeToRange(item.range)
-                let content = item.content
-                if (!item.content && fetchContent) {
-                    try {
-                        content = await editor.getTextEditorContentForFile(item.uri, range)
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
-                }
-                return { ...item, content: content! }
-            })
-        )
-    ).filter(isDefined)
-}
-
-function deserializedContextFilesToContextItems(
-    files: ContextItem[],
-    contextMessages: ContextMessage[]
-): ContextItem[] {
-    const contextByFile = new Map<string /* uri.toString() */, ContextMessage>()
-    for (const contextMessage of contextMessages) {
-        if (!contextMessage.file) {
-            continue
-        }
-        contextByFile.set(contextMessage.file.uri.toString(), contextMessage)
-    }
-
-    return files.map((file: ContextItem): ContextItem => {
-        const range = viewRangeToRange(file.range)
-        let text = file.content
-        if (!text) {
-            const contextMessage = contextByFile.get(file.uri.toString())
-            if (contextMessage) {
-                text = stripContextWrapper(contextMessage.text || '')
-            }
-        }
-        return {
-            type: 'file',
-            uri: file.uri,
-            range,
-            content: text || '',
-            source: file.source,
-            repoName: file.repoName,
-            revision: file.revision,
-            title: file.title,
-        }
-    })
 }
 
 function isAbortError(error: Error): boolean {

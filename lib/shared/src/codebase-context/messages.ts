@@ -1,7 +1,6 @@
 import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '../common/range'
-import { displayPath } from '../editor/displayPath'
 import type { Message } from '../sourcegraph-api'
 
 // tracked for telemetry purposes. Which context source provided this context file.
@@ -54,72 +53,22 @@ export type ContextItemSymbol = ContextItemCommon & {
     kind: SymbolKind
 }
 
+/** {@link ContextItem} with the `content` field set to the content. */
+export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>
+
+/**
+ * A system chat message that adds a context item to the conversation.
+ */
 export interface ContextMessage extends Required<Message> {
-    file?: ContextItem
-    preciseContext?: PreciseContext
-}
+    /**
+     * Context messages are always "from" the human. (In the future, this could be from "system" for
+     * LLMs that support that kind of message, but that `speaker` value is not currently supported
+     * by the `Message` type.)
+     */
+    speaker: 'human'
 
-export interface PreciseContext {
-    symbol: {
-        fuzzyName?: string
-    }
-    hoverText: string[]
-    definitionSnippet: string
-    filePath: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
-}
-
-export interface HoverContext {
-    symbolName: string
-    sourceSymbolName?: string
-    content: string[]
-    uri: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
-}
-
-export function getContextMessageWithResponse(
-    text: string,
-    file: ContextItem,
-    response = 'Ok.',
-    source: ContextFileSource = 'editor'
-): ContextMessage[] {
-    file.source = file.source || source
-
-    return [
-        { speaker: 'human', text, file },
-        { speaker: 'assistant', text: response },
-    ]
-}
-
-export function createContextMessageByFile(item: ContextItem, content: string): ContextMessage[] {
-    if (!content) {
-        content = item.content ?? ''
-    }
-    if (!content) {
-        return []
-    }
-    return [
-        {
-            speaker: 'human',
-            text:
-                item.type === 'file'
-                    ? `Context from file path ${displayPath(item.uri)}:\n${content}`
-                    : `${item.symbolName} is a ${item.kind} symbol from file path ${displayPath(
-                          item.uri
-                      )}:\n${content}`,
-
-            file: item,
-        },
-        { speaker: 'assistant', text: 'OK.' },
-    ]
+    /**
+     * The context item that this message introduces into the conversation.
+     */
+    file: ContextItem
 }

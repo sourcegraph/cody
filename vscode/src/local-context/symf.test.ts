@@ -4,11 +4,22 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { startPollyRecording } from '../testutils/polly'
 
+import { _getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
+
+import { tmpdir } from 'os'
+import path from 'path'
+import { mkdtemp, open, rmdir } from 'fs/promises'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
-        accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalid',
+        accessToken:
+            // The redacted ID below is copy-pasted from the recording file and needs to be updated
+            // whenever we change the underlying access token. We can't return a random string here
+            // because then Polly won't be able to associate the HTTP requests between record mode
+            // and replay mode.
+            process.env.SRC_ACCESS_TOKEN ??
+            'REDACTED_d7bab806eb3f338564ea65133c7d6d3ef03107f6dbdb6270a120887edbdd82c0',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
         debugEnable: true,
@@ -28,7 +39,7 @@ describe('symf', () => {
 
         check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"circulation current ebb flow heat motion ocean ppt psu salinity salt sea stream temp temperature tidal tide water wave waves"'
+                `"circulation current ebb flow heat ocean ppt psu salinity salt sea stream surf temp temperature tidal tide water wave waves"`
             )
         )
 
@@ -52,11 +63,40 @@ describe('symf', () => {
 
         check('scan tokens in C++', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"c cin f getline in scan scan_f scanf str stream streams string tok token tokens"'
+                `"c c++ cin cplusplus cpp f getline in scan scan_f scanf token tokenization tokenize tokens"`
             )
         )
         afterAll(async () => {
             await polly.stop()
+        })
+    })
+
+    describe('download', () => {
+        it('no parallel download', async () => {
+            const dir = await mkdtemp(path.join(tmpdir(), 'symf-'))
+            try {
+                const makeEmptyFile = async (filePath: string) => {
+                    const file = await open(filePath, 'w')
+                    await file.close()
+                }
+
+                let mockDownloadSymfCalled = 0
+                const mockDownloadSymf = async (op: {
+                    symfPath: string
+                    symfFilename: string
+                    symfURL: string
+                }): Promise<void> => {
+                    mockDownloadSymfCalled++
+                    await makeEmptyFile(op.symfPath)
+                }
+                const symfPaths = await Promise.all(
+                    [...Array(10).keys()].map(() => _getSymfPath(dir, mockDownloadSymf))
+                )
+                expect(symfPaths.every(p => p === symfPaths[0])).toBeTruthy()
+                expect(mockDownloadSymfCalled).toEqual(1)
+            } finally {
+                await rmdir(dir, { recursive: true })
+            }
         })
     })
 })

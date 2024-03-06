@@ -5,7 +5,6 @@ import {
     type ChatMessage,
     type ContextItem,
     type InteractionJSON,
-    type InteractionMessage,
     type Message,
     type TranscriptJSON,
     errorToChatError,
@@ -212,14 +211,10 @@ function messageToInteractionJSON(
                 ? messageToInteractionMessage(botMessage)
                 : { speaker: 'assistant' },
         usedContextFiles: humanMessage.newContextUsed ?? [],
-        // These fields are unused on deserialization
-        fullContext: [],
-        usedPreciseContext: [],
-        timestamp: new Date().toISOString(),
     }
 }
 
-function messageToInteractionMessage(message: MessageWithContext): InteractionMessage {
+function messageToInteractionMessage(message: MessageWithContext): ChatMessage {
     return {
         speaker: message.message.speaker,
         text: message.message.text,

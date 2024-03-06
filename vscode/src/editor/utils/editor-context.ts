@@ -10,15 +10,19 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemSymbol,
+    type Editor,
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
     displayPath,
     isCodyIgnoredFile,
+    isDefined,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
+import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { toVSCodeRange } from '../../common/range'
 
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
@@ -269,4 +273,31 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
         filtered.push(cf)
     }
     return filtered
+}
+
+export async function fillInContextItemContent(
+    editor: Editor,
+    items: ContextItem[]
+): Promise<ContextItemWithContent[]> {
+    return (
+        await Promise.all(
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
+                let content = item.content
+                if (!item.content) {
+                    try {
+                        content = await editor.getTextEditorContentForFile(
+                            item.uri,
+                            toVSCodeRange(item.range)
+                        )
+                    } catch (error) {
+                        void vscode.window.showErrorMessage(
+                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                        )
+                        return null
+                    }
+                }
+                return { ...item, content: content! }
+            })
+        )
+    ).filter(isDefined)
 }

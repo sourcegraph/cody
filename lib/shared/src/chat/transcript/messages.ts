@@ -1,28 +1,14 @@
-import type { ContextItem, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { TranscriptJSON } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
-export interface ChatButton {
-    label: string
-    action: string
-    onClick: (action: string) => void
-    appearance?: 'primary' | 'secondary' | 'icon'
-}
-
 export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: ContextItem[]
-    preciseContext?: PreciseContext[]
-    buttons?: ChatButton[]
-    data?: any
     metadata?: ChatMetadata
     error?: ChatError
-}
-
-export interface InteractionMessage extends ChatMessage {
-    prefix?: string
 }
 
 export interface ChatError {
