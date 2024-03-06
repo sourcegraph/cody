@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import {
-    type CodyCommand,
     type ContextItem,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
@@ -15,6 +14,7 @@ import {
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
+import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
 interface GetContextFromIntentOptions {
@@ -128,7 +128,6 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextItems: ContextItem[]
     editor: VSCodeEditor
-    command?: CodyCommand
 }
 
 export const getContext = async ({
@@ -142,5 +141,7 @@ export const getContext = async ({
         userContextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
     }
 
-    return [...(await getContextFromIntent({ editor, ...options })), ...userContextItems]
+    const derivedContext = await getContextFromIntent({ editor, ...options })
+    const userContext = await fillInContextItemContent(editor, userContextItems)
+    return [...derivedContext, ...userContext]
 }
