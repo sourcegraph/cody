@@ -4,6 +4,7 @@ import {
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    ModelProvider,
     PromptMixin,
     featureFlagProvider,
     graphqlClient,
@@ -230,6 +231,9 @@ const register = async (
         if (oldConfig === JSON.stringify(newConfig)) {
             return Promise.resolve()
         }
+
+        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
 
@@ -302,6 +306,7 @@ const register = async (
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
