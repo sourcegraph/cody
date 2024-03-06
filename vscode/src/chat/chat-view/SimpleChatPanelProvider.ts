@@ -8,7 +8,6 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type Editor,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
@@ -19,7 +18,6 @@ import {
     Typewriter,
     featureFlagProvider,
     hydrateAfterPostMessage,
-    isDefined,
     isDotCom,
     isError,
     isFileURI,
@@ -32,6 +30,7 @@ import { createDisplayTextWithFileLinks } from '../../commands/utils/display-tex
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import {
+    fillInContextItemContent,
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
@@ -59,7 +58,6 @@ import type { Span } from '@opentelemetry/api'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import { toVSCodeRange } from '../../common/range'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -1267,33 +1265,6 @@ async function newChatModelfromTranscriptJSON(
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
-}
-
-export async function fillInContextItemContent(
-    editor: Editor,
-    items: ContextItem[]
-): Promise<ContextItemWithContent[]> {
-    return (
-        await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let content = item.content
-                if (!item.content) {
-                    try {
-                        content = await editor.getTextEditorContentForFile(
-                            item.uri,
-                            toVSCodeRange(item.range)
-                        )
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
-                }
-                return { ...item, content: content! }
-            })
-        )
-    ).filter(isDefined)
 }
 
 function isAbortError(error: Error): boolean {
