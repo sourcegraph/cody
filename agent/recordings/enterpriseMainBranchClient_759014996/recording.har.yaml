@@ -810,7 +810,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
