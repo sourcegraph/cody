@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Fixed an issue with the new auth experience that could prevent you from opening a sign in link. [pull/3339](https://github.com/sourcegraph/cody/pull/3339)
+
 ### Changed
 
 ## [1.8.0]
