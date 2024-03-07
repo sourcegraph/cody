@@ -74,7 +74,7 @@ export class TestClient extends MessageHandler {
             readonly accessToken?: string
             serverEndpoint?: string
             telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
-            featureFlags?: 'enabled' // defaults to testing, which doesn't send telemetry
+            areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
             logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
             onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
         }
@@ -648,8 +648,7 @@ ${patch}`
                 CODY_RECORDING_NAME: this.name,
                 SRC_ACCESS_TOKEN: this.accessToken,
                 CODY_TELEMETRY_EXPORTER: this.params.telemetryExporter ?? 'testing',
-                BENCHMARK_DISABLE_FEATURE_FLAGS:
-                    this.params.featureFlags === 'enabled' ? undefined : 'true',
+                DISABLE_FEATURE_FLAGS: this.params.areFeatureFlagsEnabled ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: this.params.logEventMode,
                 ...process.env,
             },
