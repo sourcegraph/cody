@@ -1,13 +1,14 @@
 import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { getChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
     test as baseTest,
     withPlatformSlashes,
 } from './helpers'
+import { testGitWorkspace } from './utils/gitWorkspace'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -301,4 +302,30 @@ test.extend<ExpectedEvents>({
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
     await page.getByRole('tab', { name: 'cody.json, preview' }).hover()
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
+})
+
+testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    // Open the Source Control view
+    const sourceControlView = page.getByLabel(/Source Control/).nth(2)
+    await sourceControlView.click()
+
+    // Check the change is showing as a Git file in the sidebar
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
+    await page.locator('a').filter({ hasText: 'index.js' }).click()
+
+    // Run the custom command that uses terminal output as context
+    await page.getByRole('button', { name: 'Commands' }).click()
+    const menuInputBox = page.getByPlaceholder('Search for a command or enter your question here...')
+    await expect(menuInputBox).toBeVisible()
+    await menuInputBox.fill('shellOutput')
+    await expect(page.getByText('Get output from a shell command.')).toBeVisible()
+    await page.keyboard.press('Enter')
+
+    const chatPanel = getChatPanel(page)
+    await expect(chatPanel.getByText('✨ Context: 1 line from 2 files')).toBeVisible()
+    await chatPanel.getByText('✨ Context: 1 line from 2 files').click()
+    await expect(chatPanel.getByRole('button', { name: '@/terminal-output' })).toBeVisible()
 })
