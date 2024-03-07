@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem, Message } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -18,23 +18,21 @@ describe('DefaultPrompter', () => {
             Promise.resolve([])
         ).makePrompt(chat, 100000)
 
-        expect(prompt).toMatchInlineSnapshot(`
-          [
+        expect(prompt).toEqual<Message[]>([
             {
-              "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.",
+                speaker: 'human',
+                text: 'You are Cody, an AI coding assistant from Sourcegraph.',
             },
             {
-              "speaker": "assistant",
-              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
+                speaker: 'assistant',
+                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
             },
             {
-              "speaker": "human",
-              "text": "Hello",
+                speaker: 'human',
+                text: 'Hello',
             },
-          ]
-        `)
-        expect(newContextUsed).toMatchInlineSnapshot('[]')
+        ])
+        expect(newContextUsed).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -53,23 +51,21 @@ describe('DefaultPrompter', () => {
             Promise.resolve([])
         ).makePrompt(chat, 100000)
 
-        expect(prompt).toMatchInlineSnapshot(`
-          [
+        expect(prompt).toEqual<Message[]>([
             {
-              "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis",
+                speaker: 'human',
+                text: 'You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis',
             },
             {
-              "speaker": "assistant",
-              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
+                speaker: 'assistant',
+                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
             },
             {
-              "speaker": "human",
-              "text": "Hello",
+                speaker: 'human',
+                text: 'Hello',
             },
-          ]
-        `)
-        expect(newContextUsed).toMatchInlineSnapshot('[]')
+        ])
+        expect(newContextUsed).toEqual([])
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
@@ -93,6 +89,6 @@ describe('DefaultPrompter', () => {
         expect(used).toEqual([])
 
         const prompt = promptBuilder.build()
-        expect(prompt).toMatchInlineSnapshot('[]')
+        expect(prompt).toEqual([])
     })
 })

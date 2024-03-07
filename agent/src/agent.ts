@@ -755,7 +755,7 @@ export class Agent extends MessageHandler {
                 }
             }
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
+            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',

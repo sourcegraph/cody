@@ -5,6 +5,7 @@ import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
 import type { AuthStatus } from '@sourcegraph/cody-shared'
 import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { prepareChatMessage } from '../chat/chat-view/SimpleChatModel'
 import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 interface GroupedChats {
@@ -62,7 +63,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         let lastHumanMessage: ChatMessage | undefined = undefined
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
-            lastHumanMessage = entry.interactions[index]?.humanMessage
+            lastHumanMessage = prepareChatMessage(entry.interactions[index]?.humanMessage)
             if (lastHumanMessage) {
                 break
             }
