@@ -8,8 +8,10 @@ export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
-export type { TranscriptJSON } from './chat/transcript'
-export type { InteractionJSON } from './chat/transcript/interaction'
+export type {
+    SerializedChatInteraction,
+    SerializedChatTranscript,
+} from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
 export {
     getAtMentionQuery,
