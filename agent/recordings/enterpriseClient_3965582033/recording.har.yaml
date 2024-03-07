@@ -2643,7 +2643,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 627921aecef7f81ad3eced27ed298560
+    - _id: f7d661532c6712bfc5b6aa473be89de8
       _order: 0
       cache: {}
       request:
@@ -2699,7 +2699,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2720,7 +2720,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:32 GMT
+            value: Wed, 06 Mar 2024 23:46:52 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2751,7 +2751,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:32.205Z
+      startedDateTime: 2024-03-06T23:46:52.634Z
       time: 0
       timings:
         blocked: -1
@@ -2761,7 +2761,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 16f0bc26c451237b8ad4bf3c0643db6d
+    - _id: b656fa8b4a7bf9f6055a3cd2bb5829b8
       _order: 0
       cache: {}
       request:
@@ -2817,7 +2817,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2838,7 +2838,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:32 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2869,7 +2869,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:32.213Z
+      startedDateTime: 2024-03-06T23:46:52.669Z
       time: 0
       timings:
         blocked: -1
@@ -2879,7 +2879,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1b15851ff16d88768aa910634072814a
+    - _id: 0651bd1ac11f26c328e6c84e300c548e
       _order: 0
       cache: {}
       request:
@@ -2935,7 +2935,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2956,7 +2956,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:32 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2987,7 +2987,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:32.214Z
+      startedDateTime: 2024-03-06T23:46:52.670Z
       time: 0
       timings:
         blocked: -1
@@ -2997,7 +2997,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b9ea7097f1ce3852ff06bead29540c92
+    - _id: dc482c3bddc864b4b6450112dad79a31
       _order: 0
       cache: {}
       request:
@@ -3053,7 +3053,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3074,7 +3074,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:34 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3105,7 +3105,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:33.818Z
+      startedDateTime: 2024-03-06T23:46:52.819Z
       time: 0
       timings:
         blocked: -1
@@ -3115,7 +3115,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: aa8c3e28cdacdf38879f212b54a42679
+    - _id: acaaab5bba099cb56a2935493c6f397e
       _order: 0
       cache: {}
       request:
@@ -3171,7 +3171,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3192,7 +3192,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:38 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3223,7 +3223,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:38.310Z
+      startedDateTime: 2024-03-06T23:46:52.830Z
       time: 0
       timings:
         blocked: -1
@@ -3233,7 +3233,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 369e417e1dc33ddc74c9decbdc5ac9a2
+    - _id: 12f01789446e073746df1a886bdc0a13
       _order: 0
       cache: {}
       request:
@@ -3289,7 +3289,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3310,7 +3310,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:38 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3341,7 +3341,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:38.315Z
+      startedDateTime: 2024-03-06T23:46:52.834Z
       time: 0
       timings:
         blocked: -1
@@ -3351,7 +3351,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4c92e4e12b5040a9e19f92768cf0e975
+    - _id: 00ce0a526f87250d2bf7e97c929071f3
       _order: 0
       cache: {}
       request:
@@ -3407,7 +3407,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3428,7 +3428,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:38 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3459,7 +3459,115 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:38.317Z
+      startedDateTime: 2024-03-06T23:46:52.837Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c4c4ae6b9ce5d1c03e9505c20db6e1b3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 346
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "346"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 337
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasFile
+                  feature: cody.codyIgnore
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 07 Mar 2024 14:35:31 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-07T14:35:30.959Z
       time: 0
       timings:
         blocked: -1
@@ -4289,6 +4397,103 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-06T08:51:31.146Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ad22e9eaa01bebade8a4333120346c0f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 334
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 07 Mar 2024 00:09:37 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-07T00:09:37.302Z
       time: 0
       timings:
         blocked: -1
