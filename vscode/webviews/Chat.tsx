@@ -743,7 +743,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         <div className={classNames(styles.innerContainer)}>
             {
                 <Transcript
-                    transcript={transcriptWithWelcome}
+                    // Remove welcome message after the first message is submitted
+                    transcript={transcript.length ? transcript : transcriptWithWelcome}
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}
