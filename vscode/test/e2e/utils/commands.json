@@ -1,0 +1,42 @@
+{
+  "currentDir": {
+    "description": "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
+    "prompt": "Add four context files from the current directory.",
+    "context": {
+      "selection": false,
+      "currentDir": true
+    }
+  },
+  "filePath": {
+    "prompt": "Add lib/batches/env/var.go as context.",
+    "context": {
+      "filePath": "lib/batches/env/var.go"
+    }
+  },
+  "directoryPath": {
+    "description": "Get files from directory.",
+    "prompt": "Directory has one context file.",
+    "context": {
+      "directoryPath": "lib/batches/env"
+    }
+  },
+  "openTabs": {
+    "description": "Get files from open tabs.",
+    "prompt": "Open tabs as context.",
+    "context": {
+      "selection": false,
+      "openTabs": true
+    }
+  },
+  "shellOutput": {
+    "description": "Get output from a shell command.",
+    "prompt": "Shell command output as context.",
+    "context": {
+      "command": "git diff"
+    }
+  },
+  "invalid": {
+    "description": "Command without prompt should not break the custom command menu.",
+    "note": "This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu."
+  }
+}

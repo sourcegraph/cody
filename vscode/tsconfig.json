@@ -13,6 +13,7 @@
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",
+    "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
     "package.json"
@@ -28,6 +29,6 @@
   "references": [
     {
       "path": "../lib/shared"
-    },
+    }
   ]
 }
