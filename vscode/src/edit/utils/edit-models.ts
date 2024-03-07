@@ -20,8 +20,6 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
         case 'doc':
         case 'fix':
         case 'test':
-            // Edit commands have only been tested with Claude 2. Default to that for now.
-            return 'anthropic/claude-2.0'
         case 'add':
         case 'edit':
             // Support all model usage for add and edit intents.
