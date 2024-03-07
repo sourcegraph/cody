@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type ChatMessage,
     type ContextItem,
     type Message,
     getSimplePreamble,
@@ -11,7 +12,7 @@ import { logDebug } from '../../log'
 
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { PromptBuilder } from '../../prompt-builder'
-import type { MessageWithContext, SimpleChatModel } from './SimpleChatModel'
+import type { SimpleChatModel } from './SimpleChatModel'
 import { sortContextItems } from './agentContextSorting'
 
 interface PromptInfo {
@@ -57,7 +58,7 @@ export class DefaultPrompter implements IPrompter {
             }
 
             // Add existing transcript messages
-            const reverseTranscript: MessageWithContext[] = [...chat.getMessagesWithContext()].reverse()
+            const reverseTranscript: ChatMessage[] = [...chat.getMessages()].reverse()
             const contextLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (contextLimitReached) {
                 logDebug(
@@ -88,9 +89,7 @@ export class DefaultPrompter implements IPrompter {
             {
                 // Add context from previous messages
                 const { limitReached } = promptBuilder.tryAddContext(
-                    reverseTranscript.flatMap(
-                        (message: MessageWithContext) => message.newContextUsed || []
-                    )
+                    reverseTranscript.flatMap(message => message.contextFiles || [])
                 )
                 if (limitReached) {
                     logDebug(
@@ -102,16 +101,16 @@ export class DefaultPrompter implements IPrompter {
             }
 
             const lastMessage = reverseTranscript[0]
-            if (!lastMessage?.message.text) {
+            if (!lastMessage?.text) {
                 throw new Error('No last message or last message text was empty')
             }
-            if (lastMessage.message.speaker === 'assistant') {
+            if (lastMessage.speaker === 'assistant') {
                 throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
             }
             if (this.getEnhancedContext) {
                 // Add additional context from current editor or broader search
                 const additionalContextItems = await this.getEnhancedContext(
-                    lastMessage.message.text,
+                    lastMessage.text,
                     enhancedContextCharLimit
                 )
                 sortContextItems(additionalContextItems)

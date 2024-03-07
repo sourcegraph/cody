@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     BotResponseMultiplexer,
+    type ChatMessage,
     type CompletionParameters,
     type EditModel,
     type Message,
@@ -12,7 +13,6 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import type { EditIntent } from '../types'
 
-import type { MessageWithContext } from '../../chat/chat-view/SimpleChatModel'
 import { PromptBuilder } from '../../prompt-builder'
 import { getContext } from './context'
 import { claude } from './models/claude'
@@ -100,9 +100,9 @@ export const buildInteraction = async ({
     const preamble = getSimplePreamble(model)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
     if (assistantText) {
-        transcript.push({ message: { speaker: 'assistant', text: assistantText } })
+        transcript.push({ speaker: 'assistant', text: assistantText })
     }
     promptBuilder.tryAddMessages(transcript.reverse())
 

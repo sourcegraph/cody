@@ -1,17 +1,32 @@
-import type { InteractionJSON } from './interaction'
+import type { ChatMessage } from './messages'
 
-interface EnhancedContextJSON {
-    // For enterprise multi-repo search, the manually selected repository names
-    // (for example "github.com/sourcegraph/sourcegraph") and IDs
-    selectedRepos: { id: string; name: string }[]
-}
-
-export interface TranscriptJSON {
-    // This is the timestamp of the first interaction.
+/**
+ * The serialized form of a chat transcript (all data needed to display and recreate a chat
+ * session).
+ */
+export interface SerializedChatTranscript {
+    /** A unique and opaque identifier for this transcript. */
     id: string
+
     chatModel?: string
     chatTitle?: string
-    interactions: InteractionJSON[]
+    interactions: SerializedChatInteraction[]
     lastInteractionTimestamp: string
-    enhancedContext?: EnhancedContextJSON
+    enhancedContext?: {
+        /**
+         * For enterprise multi-repo search, the manually selected repository names (for example
+         * "github.com/sourcegraph/sourcegraph") and IDs.
+         */
+        selectedRepos: { id: string; name: string }[]
+    }
+}
+
+/**
+ * The serialized form of a back-and-forth interaction in a chat transcript.
+ */
+export interface SerializedChatInteraction {
+    humanMessage: ChatMessage
+
+    /** `null` if the assistant has not yet replied to the human message. */
+    assistantMessage: ChatMessage | null
 }

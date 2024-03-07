@@ -549,7 +549,7 @@ export class TestClient extends MessageHandler {
                     oldChange,
                     newChange,
                     'the request in this test that has no matching recording',
-                    'the closest matchin recording in the recording file.'
+                    'the closest matching recording in the recording file'
                 )
                 console.log(
                     `

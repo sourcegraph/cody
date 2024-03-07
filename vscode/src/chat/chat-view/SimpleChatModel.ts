@@ -1,121 +1,89 @@
 import { findLast } from 'lodash'
 
 import {
-    type ChatError,
     type ChatMessage,
     type ContextItem,
-    type InteractionJSON,
     type Message,
-    type TranscriptJSON,
+    type SerializedChatInteraction,
+    type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
     reformatBotMessageForChat,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
-
-/**
- * Interface for a chat message with additional context.
- *
- * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
- */
-export interface MessageWithContext {
-    message: Message
-
-    // If set, this should be used as the display text for the message.
-    // Do not access directly, prefer using the getDisplayText function
-    // instead.
-    displayText?: string
-
-    // The additional context items attached to this message (which should not
-    // duplicate any previous context items in the transcript). This should
-    // only be defined on human messages.
-    newContextUsed?: ContextItem[]
-
-    error?: ChatError
-}
 
 export class SimpleChatModel {
     constructor(
         public modelID: string,
-        private messagesWithContext: MessageWithContext[] = [],
+        private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {}
 
     public isEmpty(): boolean {
-        return this.messagesWithContext.length === 0
+        return this.messages.length === 0
     }
 
-    public setNewContextUsed(newContextUsed: ContextItem[]): void {
-        const lastMessage = this.messagesWithContext.at(-1)
+    public setLastMessageContext(newContextUsed: ContextItem[]): void {
+        const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
         }
-        if (lastMessage.message.speaker !== 'human') {
+        if (lastMessage.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
+        lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        if (this.messagesWithContext.at(-1)?.message.speaker === 'human') {
+    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+        if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
-        this.messagesWithContext.push({
-            displayText,
-            message: {
-                ...message,
-                speaker: 'human',
-            },
-        })
+        this.messages.push({ ...message, speaker: 'human' })
     }
 
     public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        const lastMessage = this.messagesWithContext.at(-1)?.message
+        const lastMessage = this.messages.at(-1)
         let error: any
         // If there is no text, it could be a placeholder message for an error
         if (lastMessage?.speaker === 'assistant') {
             if (lastMessage?.text) {
                 throw new Error('Cannot add a bot message after a bot message')
             }
-            error = this.messagesWithContext.pop()?.error
+            error = this.messages.pop()?.error
         }
-        this.messagesWithContext.push({
+        this.messages.push({
+            ...message,
+            speaker: 'assistant',
             displayText,
             error,
-            message: {
-                ...message,
-                speaker: 'assistant',
-            },
         })
     }
 
     public addErrorAsBotMessage(error: Error): void {
-        const lastMessage = this.messagesWithContext.at(-1)?.message
+        const lastMessage = this.messages.at(-1)
         // Remove the last assistant message if any
-        const lastAssistantMessage =
-            lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
-        const assistantMessage = lastAssistantMessage || { speaker: 'assistant' }
+        const lastAssistantMessage: ChatMessage | undefined =
+            lastMessage?.speaker === 'assistant' ? this.messages.pop() : undefined
         // Then add a new assistant message with error added
-        this.messagesWithContext.push({
+        this.messages.push({
+            ...(lastAssistantMessage ?? {}),
+            speaker: 'assistant',
             error: errorToChatError(error),
-            message: {
-                ...assistantMessage,
-                speaker: 'assistant',
-            },
         })
     }
 
-    public getLastHumanMessage(): MessageWithContext | undefined {
-        return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
+    public getLastHumanMessage(): ChatMessage | undefined {
+        return findLast(this.messages, message => message.speaker === 'human')
     }
 
     public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
-        return this.messagesWithContext.findLastIndex(message => message.message.speaker === speaker)
+        return this.messages.findLastIndex(message => message.speaker === speaker)
     }
 
     /**
@@ -129,7 +97,7 @@ export class SimpleChatModel {
             throw new Error('SimpleChatModel.removeMessagesFromIndex: not message to remove')
         }
 
-        const speakerAtIndex = this.messagesWithContext.at(index)?.message?.speaker
+        const speakerAtIndex = this.messages.at(index)?.speaker
         if (speakerAtIndex !== expectedSpeaker) {
             throw new Error(
                 `SimpleChatModel.removeMessagesFromIndex: expected ${expectedSpeaker}, got ${speakerAtIndex}`
@@ -137,18 +105,19 @@ export class SimpleChatModel {
         }
 
         // Removes everything from the index to the last element
-        this.messagesWithContext.splice(index)
+        this.messages.splice(index)
     }
 
-    public getMessagesWithContext(): MessageWithContext[] {
-        return this.messagesWithContext
+    public getMessages(): readonly ChatMessage[] {
+        return this.messages
     }
 
     public getChatTitle(): string {
         if (this.customChatTitle) {
             return this.customChatTitle
         }
-        const text = this.getLastHumanMessage()?.displayText
+        const lastHumanMessage = this.getLastHumanMessage()
+        const text = lastHumanMessage && getDisplayText(lastHumanMessage)
         if (text) {
             return getChatPanelTitle(text)
         }
@@ -172,16 +141,16 @@ export class SimpleChatModel {
     }
 
     /**
-     * Serializes to the legacy transcript JSON format
+     * Serializes to the transcript JSON format.
      */
-    public toTranscriptJSON(): TranscriptJSON {
-        const interactions: InteractionJSON[] = []
-        for (let i = 0; i < this.messagesWithContext.length; i += 2) {
-            const humanMessage = this.messagesWithContext[i]
-            const botMessage = this.messagesWithContext[i + 1]
-            interactions.push(messageToInteractionJSON(humanMessage, botMessage))
+    public toSerializedChatTranscript(): SerializedChatTranscript {
+        const interactions: SerializedChatInteraction[] = []
+        for (let i = 0; i < this.messages.length; i += 2) {
+            const humanMessage = this.messages[i]
+            const assistantMessage = this.messages.at(i + 1)
+            interactions.push(messageToSerializedChatInteraction(humanMessage, assistantMessage))
         }
-        const result: TranscriptJSON = {
+        const result: SerializedChatTranscript = {
             id: this.sessionID,
             chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
@@ -197,38 +166,37 @@ export class SimpleChatModel {
     }
 }
 
-function messageToInteractionJSON(
-    humanMessage: MessageWithContext,
-    botMessage: MessageWithContext
-): InteractionJSON {
-    if (humanMessage?.message?.speaker !== 'human') {
-        throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+function messageToSerializedChatInteraction(
+    humanMessage: ChatMessage,
+    assistantMessage?: ChatMessage
+): SerializedChatInteraction {
+    if (humanMessage?.speaker !== 'human') {
+        throw new Error('expected human message, got bot')
+    }
+
+    if (humanMessage.speaker !== 'human') {
+        throw new Error(`expected human message to have speaker == 'human', got ${humanMessage.speaker}`)
+    }
+    if (assistantMessage && assistantMessage.speaker !== 'assistant') {
+        throw new Error(
+            `expected bot message to have speaker == 'assistant', got ${assistantMessage.speaker}`
+        )
+    }
+
+    function toSerializedInteractionMessage(message: ChatMessage): ChatMessage {
+        return { ...message, displayText: getDisplayText(message) }
     }
     return {
-        humanMessage: messageToInteractionMessage(humanMessage),
-        assistantMessage:
-            botMessage?.message?.speaker === 'assistant'
-                ? messageToInteractionMessage(botMessage)
-                : { speaker: 'assistant' },
-        usedContextFiles: humanMessage.newContextUsed ?? [],
+        humanMessage: toSerializedInteractionMessage(humanMessage),
+        assistantMessage: assistantMessage ? toSerializedInteractionMessage(assistantMessage) : null,
     }
 }
 
-function messageToInteractionMessage(message: MessageWithContext): ChatMessage {
+export function prepareChatMessage(message: ChatMessage): ChatMessage {
     return {
-        speaker: message.message.speaker,
-        text: message.message.text,
+        ...message,
         displayText: getDisplayText(message),
-    }
-}
-
-export function toViewMessage(mwc: MessageWithContext): ChatMessage {
-    const displayText = getDisplayText(mwc)
-    return {
-        ...mwc.message,
-        error: mwc.error,
-        displayText,
-        contextFiles: (mwc.newContextUsed ?? []).map(item => ({
+        contextFiles: message.contextFiles?.map(item => ({
             ...item,
             // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
             range: toRangeData(item.range),
@@ -236,12 +204,15 @@ export function toViewMessage(mwc: MessageWithContext): ChatMessage {
     }
 }
 
-function getDisplayText(mwc: MessageWithContext): string | undefined {
-    if (mwc.displayText) {
-        return mwc.displayText
+function getDisplayText(message: ChatMessage): string | undefined {
+    if (message.displayText) {
+        return message.displayText
     }
-    if (mwc.message.speaker === 'assistant' && mwc.message.text) {
-        return reformatBotMessageForChat(mwc.message.text, '')
+    if (message.speaker === 'human' && message.text) {
+        return createDisplayTextWithFileLinks(message.text, message.contextFiles ?? [])
     }
-    return mwc.message.text
+    if (message.speaker === 'assistant' && message.text) {
+        return reformatBotMessageForChat(message.text, '')
+    }
+    return message.text
 }

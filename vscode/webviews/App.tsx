@@ -11,7 +11,7 @@ import {
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
-    type TranscriptJSON,
+    type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
@@ -48,7 +48,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
-    const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
+    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
