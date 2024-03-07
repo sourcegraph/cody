@@ -155,20 +155,16 @@ export const Transcript: React.FunctionComponent<
             if (!message?.displayText && !message.error) {
                 return null
             }
-            // The key index includes the Cody welcome message added to the transcript in the webview
-            // as it is not included in the transcript returned from the server, the key index is
-            // offset by 1 to account for this.
             const offsetIndex = index + offset === earlierMessages.length
             const keyIndex = index + offset
-            const transcriptIndex = keyIndex - 1
 
-            const isItemBeingEdited = messageBeingEdited === transcriptIndex
+            const isItemBeingEdited = messageBeingEdited === keyIndex
 
             return (
                 <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
                     <TranscriptItem
-                        index={transcriptIndex}
+                        index={keyIndex}
                         key={keyIndex}
                         message={message}
                         inProgress={

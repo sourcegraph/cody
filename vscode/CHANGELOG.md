@@ -10,6 +10,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Chat: Welcome message is only shown on new chat panel. [pull/3341](https://github.com/sourcegraph/cody/pull/3341)
 - Command: You can now use any edit model for the Generate Unit Test command to generate unit tests. [pull/3343](https://github.com/sourcegraph/cody/pull/3343)
 
 ## [1.8.1]

@@ -56,10 +56,11 @@ test('existing installs should show the update toast when the last dismissed ver
     await page.locator('*[aria-label="Tab actions"] *[aria-label~="Close"]').click()
 
     // Reopen the chat; the update notice should be visible.
+    // Welcome message is removed.
     await chatHistoryEntry.click()
     chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const introChat = chatFrame.getByText(greetingChatText)
-    await expect(introChat).toBeVisible()
+    await expect(introChat).not.toBeVisible()
     const chatNotice = chatFrame.getByText(updateToastText)
     await expect(chatNotice).toBeVisible()
 
