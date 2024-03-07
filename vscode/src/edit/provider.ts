@@ -46,7 +46,7 @@ export class EditProvider {
                 this.config.authProvider.getAuthStatus(),
                 model
             )
-            const { messages, stopSequences, responseTopic, responsePrefix = '', responseSuffix = '' } =
+            const { messages, stopSequences, responseTopic, responsePrefix = '' } =
                 await buildInteraction({
                     model,
                     contextWindow,
@@ -73,7 +73,7 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
-                    void this.handleResponse(text + responseSuffix, false)
+                    void this.handleResponse(text, false)
                     return Promise.resolve()
                 },
             })
