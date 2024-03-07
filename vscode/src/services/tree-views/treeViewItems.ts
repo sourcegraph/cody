@@ -18,7 +18,7 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
-    requireNotFree?: boolean
+    requirePaid?: boolean
 }
 
 /**
@@ -73,7 +73,7 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Support',
         icon: 'question',
         command: { command: 'cody.sidebar.support' },
-        requireNotFree: true,
+        requirePaid: true,
     },
     {
         title: 'Feedback',

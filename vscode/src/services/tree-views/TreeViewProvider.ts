@@ -80,7 +80,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 continue
             }
 
-            if (item.requireNotFree && this.authStatus?.userCanUpgrade === true) {
+            if (item.requirePaid && this.authStatus?.userCanUpgrade === true) {
                 continue
             }
 
