@@ -64,3 +64,15 @@ export function openCodyOutputChannel(): void {
         'workbench.action.output.show.extension-output-sourcegraph.cody-ai-#1-Cody by Sourcegraph'
     )
 }
+
+/**
+ * Enables debug mode by updating workspace configuration settings.
+ * Sets 'cody.debug.enable' and 'cody.debug.verbose' to true globally.
+ * Opens the Cody output channel.
+ */
+export function enableDebugMode(): void {
+    const workspaceConfig = vscode.workspace.getConfiguration()
+    void workspaceConfig.update('cody.debug.enable', true, vscode.ConfigurationTarget.Global)
+    void workspaceConfig.update('cody.debug.verbose', true, vscode.ConfigurationTarget.Global)
+    openCodyOutputChannel()
+}
