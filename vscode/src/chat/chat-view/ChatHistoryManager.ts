@@ -1,7 +1,7 @@
 import type {
     AuthStatus,
     ChatInputHistory,
-    TranscriptJSON,
+    SerializedChatTranscript,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -12,14 +12,14 @@ export class ChatHistoryManager {
         return localStorage.getChatHistory(authStatus)
     }
 
-    public getChat(authStatus: AuthStatus, sessionID: string): TranscriptJSON | null {
+    public getChat(authStatus: AuthStatus, sessionID: string): SerializedChatTranscript | null {
         const chatHistory = this.getLocalHistory(authStatus)
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
     public async saveChat(
         authStatus: AuthStatus,
-        chat: TranscriptJSON,
+        chat: SerializedChatTranscript,
         input?: ChatInputHistory
     ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)

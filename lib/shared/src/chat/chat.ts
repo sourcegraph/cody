@@ -64,14 +64,17 @@ export class ChatClient {
                   ? messages.concat([{ speaker: 'assistant' }])
                   : messages
 
-        // Strip `file` from any messages that are ContextMessage type, so that we don't send it up.
-        // We only want to send up what's in the prompt text.
-        const messagesWithoutFile = augmentedMessages.map(message => ({ ...message, file: undefined }))
+        // We only want to send up the speaker and prompt text, regardless of whatever other fields
+        // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
+        const messagesToSend = augmentedMessages.map(({ speaker, text }) => ({
+            text,
+            speaker,
+        }))
 
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
-            messages: messagesWithoutFile,
+            messages: messagesToSend,
         }
 
         if (useFastPath) {
