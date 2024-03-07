@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { FeedbackOptionItems } from './FeedbackOptions'
+import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
 
 interface StatusBarError {
     title: string
@@ -26,6 +26,7 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
+    syncAuthStatus(newStatus: AuthStatus): void
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -49,6 +50,7 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
 
+    let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
@@ -83,6 +85,13 @@ export function createStatusBar(): CodyStatusBar {
                 },
                 buttons,
             }
+        }
+
+        function createFeedbackAndSupportItems(): StatusBarItem[] {
+            const isPaidUser = authStatus?.isLoggedIn && !authStatus?.userCanUpgrade
+            const paidSupportItems = isPaidUser ? PremiumSupportItems : []
+            // Display to paid users (e.g. Enterprise users or Cody Pro uers) only
+            return [...paidSupportItems, ...FeedbackOptionItems]
         }
 
         if (errors.length > 0) {
@@ -178,7 +187,7 @@ export function createStatusBar(): CodyStatusBar {
                 },
             },
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
-            ...FeedbackOptionItems,
+            ...createFeedbackAndSupportItems(),
         ]
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'
@@ -293,6 +302,9 @@ export function createStatusBar(): CodyStatusBar {
         },
         hasError(errorName: StatusBarErrorName): boolean {
             return errors.some(e => e.error.errorType === errorName)
+        },
+        syncAuthStatus(newStatus: AuthStatus) {
+            authStatus = newStatus
         },
         dispose() {
             statusBarItem.dispose()
