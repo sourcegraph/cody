@@ -72,9 +72,7 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     if (this.startTokenReceiver) {
                         logExposure()
                         if (branch === OnboardingExperimentBranch.RemoveAuthenticationStep) {
-                            if (isAuthProgressInProgress()) {
-                                return
-                            }
+                            closeAuthProgressIndicator()
                             startAuthProgressIndicator()
                             tokenReceiverUrl = await this.startTokenReceiver(
                                 endpoint,
