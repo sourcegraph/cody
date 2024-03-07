@@ -754,7 +754,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 38505f96e0a8bea9859d860b34dc55b6
+    - _id: d79ae221eac441b2c43b972276ea858b
       _order: 0
       cache: {}
       request:
@@ -810,7 +810,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -831,7 +831,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:53:30 GMT
+            value: Wed, 06 Mar 2024 23:46:54 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -862,7 +862,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:53:30.168Z
+      startedDateTime: 2024-03-06T23:46:54.359Z
       time: 0
       timings:
         blocked: -1
@@ -1388,114 +1388,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 497016b346576225fa3857c9ca66af24
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 243
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseMainBranchClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "243"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 380
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SnippetAttribution($snippet: String!) {
-                  snippetAttribution(snippet: $snippet) {
-                      limitHit
-                      nodes {
-                          repositoryName
-                      }
-                  }
-              }
-            variables:
-              snippet: sourcegraph.Location(new URL
-        queryString:
-          - name: SnippetAttribution
-            value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?SnippetAttribution
-      response:
-        bodySize: 231
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 231
-          text: "[\"H4sIAAAAAAAAA4SNMQrDMAxF76I5aXZv3Tr1AqWD4whHEEvGkqEl+O4lU10IdPt83uPts\
-            Hjz4HZQppzRrmaF5mokfLwbJbIbGTgrFQdgWVDBPXYomEXJpLzv\",\"PiE4iGRrnS9\
-            B0qRSS8BYfF77DW048Tj/CrNXCmOQBUdiw+3c6mvRUG1KGP2B/ee72Dcz4suQlYQV2r\
-            O19gEAAP//AwAoEJKNGwEAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Sat, 27 Jan 2024 14:35:00 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1244
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-06T08:53:30.186Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: b635aa83c2f05439f124938c5856379f
       _order: 0
       cache: {}
@@ -1598,6 +1490,114 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-06T07:55:59.314Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 497016b346576225fa3857c9ca66af24
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 243
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseMainBranchClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "243"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 380
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SnippetAttribution($snippet: String!) {
+                  snippetAttribution(snippet: $snippet) {
+                      limitHit
+                      nodes {
+                          repositoryName
+                      }
+                  }
+              }
+            variables:
+              snippet: sourcegraph.Location(new URL
+        queryString:
+          - name: SnippetAttribution
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?SnippetAttribution
+      response:
+        bodySize: 231
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 231
+          text: "[\"H4sIAAAAAAAAA4SNMQrDMAxF76I5aXZv3Tr1AqWD4whHEEvGkqEl+O4lU10IdPt83uPts\
+            Hjz4HZQppzRrmaF5mokfLwbJbIbGTgrFQdgWVDBPXYomEXJpLzv\",\"PiE4iGRrnS9\
+            B0qRSS8BYfF77DW048Tj/CrNXCmOQBUdiw+3c6mvRUG1KGP2B/ee72Dcz4suQlYQV2r\
+            O19gEAAP//AwAoEJKNGwEAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Sat, 27 Jan 2024 14:35:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1244
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T08:53:30.186Z
       time: 0
       timings:
         blocked: -1
