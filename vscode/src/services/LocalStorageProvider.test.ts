@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import type { AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { localStorage } from './LocalStorageProvider'

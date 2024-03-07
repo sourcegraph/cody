@@ -1,6 +1,7 @@
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import * as vscode from 'vscode'
 
+import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import type { ExtensionApi } from './extension-api'
@@ -45,6 +46,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        startTokenReceiver: (...args) => startTokenReceiver(...args),
 
         onConfigurationChange: setCustomAgent,
     })

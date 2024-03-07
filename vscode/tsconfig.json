@@ -15,7 +15,7 @@
     "test/e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json",
+    "package.json"
   ],
   "exclude": [
     "scripts",

@@ -12,7 +12,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
-        title: 'Claude 2.1 Preview',
+        title: 'Claude 2.1',
         model: 'anthropic/claude-2.1',
         provider: 'Anthropic',
         default: false,
@@ -22,6 +22,22 @@ export const DEFAULT_DOT_COM_MODELS = [
     {
         title: 'Claude Instant',
         model: 'anthropic/claude-instant-1.2',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: 'Claude 3 Sonnet',
+        model: 'anthropic/claude-3-sonnet-20240229',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: 'Claude 3 Opus',
+        model: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,

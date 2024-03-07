@@ -6,6 +6,7 @@ import type {
     SourcegraphBrowserCompletionsClient,
 } from '@sourcegraph/cody-shared'
 import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import type { startTokenReceiver } from './auth/token-receiver'
 
 import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
@@ -41,6 +42,7 @@ export interface PlatformContext {
         | Constructor<typeof SourcegraphNodeCompletionsClient>
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
+    startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void
 }
 

@@ -4,13 +4,14 @@ export { ModelProvider } from './models'
 export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
-export type { TranscriptJSON } from './chat/transcript'
-export type { InteractionJSON } from './chat/transcript/interaction'
+export type {
+    SerializedChatInteraction,
+    SerializedChatTranscript,
+} from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
 export {
     getAtMentionQuery,
@@ -30,7 +31,6 @@ export type {
 } from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
-export { CodebaseContext } from './codebase-context'
 export type {
     ContextGroup,
     ContextProvider,
@@ -42,7 +42,6 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
     ContextItem,
     ContextItemFile,
@@ -126,7 +125,12 @@ export type {
     SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
-export { createOllamaClient, type OllamaGenerateParams } from './ollama/ollama-client'
+export {
+    createOllamaClient,
+    ollamaChatClient,
+    type OllamaGenerateParams,
+    OLLAMA_DEFAULT_URL,
+} from './ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
@@ -197,3 +201,6 @@ export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
+export * from './auth/types'
+export * from './auth/tokens'
+export * from './chat/sse-iterator'

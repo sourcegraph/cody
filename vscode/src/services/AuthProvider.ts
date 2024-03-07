@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
@@ -12,7 +13,6 @@ import {
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
-    type AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
     isSourcegraphToken,
@@ -23,6 +23,7 @@ import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
+import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
@@ -353,6 +354,8 @@ export class AuthProvider {
         uri: vscode.Uri,
         customHeaders: Record<string, string>
     ): Promise<void> {
+        closeAuthProgressIndicator()
+
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
         const endpoint = this.authStatus.endpoint

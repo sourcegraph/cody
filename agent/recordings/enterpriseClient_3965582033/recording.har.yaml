@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 6d99b7548134a5e127e06ba883c6f45d
+    - _id: 33f547ee020365276aa68813fbefa1d4
       _order: 0
       cache: {}
       request:
@@ -63,7 +63,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:06 GMT
+            value: Wed, 06 Mar 2024 08:51:33 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -87,12 +87,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1204
+        headersSize: 1214
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.612Z
+      startedDateTime: 2024-03-06T08:51:32.215Z
       time: 0
       timings:
         blocked: -1
@@ -102,11 +102,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 282c1ec78b202e69765ae92eb9d210ff
+    - _id: a9664e40a303b139e2ef31626a8d4fb8
       _order: 0
       cache: {}
       request:
-        bodySize: 3164
+        bodySize: 10762
         cookies: []
         headers:
           - name: content-type
@@ -134,14 +134,1239 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/internal/symbols/client.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  	client, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
+                  	if err != nil {
+                  		if status.Code(err) == codes.Unimplemented {
+                  			// This ignores errors from LocalCodeIntel to match the behavior found here:
+                  			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+                  			//
+                  			// This is weird, and maybe not intentional, but things break if we return an error.
+                  			return nil, nil
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file `/doc/cloud/index.md` in
+                  repository `github.com/sourcegraph/sourcegraph`:
+
+
+                  The below are for example purposes only:
+
+
+                  In the case of things like Code Search, latency is directly correlated with user input / shape of the query, ex. on our public [sourcegraph.com](https://sourcegraph.com/search) instance:
+
+
+                  - searching for “squirrel” in the [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) repo takes 30ms and returns 163 results
+
+                  - searching for “squirrel” in all OSS repos, but only requesting 1000 matches takes 540ms
+
+                  - searching for all matches of “squirrel” in all OSS repos returns 1.7million results in 30000ms
+
+                  - In the case of other features, latency of Sourcegraph directly depends on latency / uptime / rate-limits of customer managed systems, ex. for:
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file
+                  `/doc/admin/deploy/kubernetes/troubleshoot.md` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  SYMBOLS_URL=http:symbols:3184
+
+                  ```
+
+
+                  > WARNING: **This option is recommended only for symbols with a single replica**. Enabling this option will negatively impact the performance of the symbols service when it has multiple replicas, as it will no longer be able to distribute requests by repository/commit.
+
+
+                  #### Squirrel.LocalCodeIntel http status 502
+
+
+                  <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/212374098-dc2dfe69-4d26-4f5e-a78b-37a53c19ef22.png"/>
+
+                  The issue described is related to the Code Intel hover feature, where it may get stuck in a loading state or return a 502 error with the message `Squirrel.LocalCodeIntel http status 502`. This is caused by the same issue described in [Symbols sidebar and hovers are not working](#symbols-sidebar-and-hovers-are-not-working"). See that section for solution.
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/util.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"fmt"
+                  	"path/filepath"
+                  	"runtime"
+                  	"strings"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/service.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"fmt"
+                  	"os"
+                  	"runtime"
+                  	"strconv"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/service_test.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"os"
+                  	"path/filepath"
+                  	"slices"
+                  	"sort"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Use the following text from file
+                  `/cmd/symbols/squirrel/README.md` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  # Squirrel
+
+
+                  Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/lang_starlark.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"path/filepath"
+                  	"strings"
+
+                  	sitter "github.com/smacker/go-tree-sitter"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/lang_python.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"fmt"
+                  	"path/filepath"
+                  	"strings"
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/lang_java.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"fmt"
+                  	"path/filepath"
+                  	"sort"
+                  	"strings"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/hover_test.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"strings"
+                  	"testing"
+
+                  	"github.com/sourcegraph/sourcegraph/internal/types"
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/BUILD.bazel` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```bazel
+
+                  load("//dev:go_defs.bzl", "go_test")
+
+                  load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+
+                  go_library(
+                      name = "squirrel",
+                      srcs = [
+                          "breadcrumbs.go",
+                          "hover.go",
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/squirrel/breadcrumbs.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+
+                  package squirrel
+
+
+                  import (
+                  	"context"
+                  	"fmt"
+                  	"os"
+                  	"strings"
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/cmd/symbols/internal/api/handler_cgo.go` in repository
+                  `github.com/sourcegraph/sourcegraph`:
+
+                  ```go
+                  	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
+                  	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+                  	"github.com/sourcegraph/sourcegraph/lib/errors"
+                  )
+
+
+                  func convertSquirrelErrorToGrpcError(err error) *status.Status {
+                  	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
+                  		return status.New(codes.InvalidArgument, err.Error())
+                  	}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/web/src/enterprise/codeintel/useSearchBasedCodeIntel.ts`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+                              }))
+                      }
+                      return
+                  }
+
+
+                  async function searchBasedReferencesViaSquirrel(
+                      options: UseSearchBasedCodeIntelOptions
+                  ): Promise<Location[] | undefined> {
+                      const { repo, position, path, commit, fileContent } = options
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/client/shared/src/codeintel/legacy-extensions/search/providers.ts`
+                  in repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```typescript
+
+                  import { getConfig } from './config'
+
+                  import { type Result, resultToLocation, searchResultToResults } from './conversion'
+
+                  import { findDocstring } from './docstrings'
+
+                  import { wrapIndentationInCodeBlocks } from './markdown'
+
+                  import { definitionQuery, referencesQuery } from './queries'
+
+                  import { mkSquirrel } from './squirrel'
+
+                  import { findSearchToken } from './tokens'
+
+
+                  /** The number of files whose content can be cached at once. */
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file `/.bazelignore` in
+                  repository `github.com/sourcegraph/sourcegraph`:
+
+                  ```
+
+                  client/web/node_modules
+
+                  client/web-sveltekit/node_modules
+
+                  client/wildcard/node_modules
+
+                  dev/release/node_modules
+
+
+                  cmd/symbols/squirrel/test_repos/starlark
+
+
+                  # Generated by local tools
+
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Use the following code snippet from file
+                  `/agent/src/__tests__/example-ts/src/squirrel.ts` in
+                  repository `github.com/sourcegraph/cody`:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
                 text: >+
-                  Codebase context from file path src/example.test.ts: Use the
-                  following code snippet from file: src/example.test.ts:
+                  Use the following text from file `/agent/README.md` in
+                  repository `github.com/sourcegraph/cody`:
 
+                  | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+
+                  | `pnpm test agent/src/index.test.ts`                                                                                  | Run agent tests in replay mode                                                                                                                                |
+
+                  | `source agent/scripts/export-cody-http-recording-tokens.sh`                                                          | Export access tokens to enable recording mode                                                                                                                 |
+
+                  | `pnpm update-agent-tests`                                                                                            | Update HTTP recordings for all tests. Run this before opening a PR                                                                                            |
+
+                  | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts`                 | Run this when iterating on a feature and you only want to run an individual test via `it.only`. Remember to run `pnpm update-agent-tests` before sending a PR |
+
+                  | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
+
+
+                  ## Debugging the agent
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is Squirrel?
+              - speaker: assistant
+            model: anthropic/claude-2
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 61396
+        content:
+          mimeType: text/event-stream
+          size: 61396
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-s","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide ho","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Inter","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mock","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interf","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-s","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 08:52:23 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1214
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T08:52:19.460Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 55053fe9d89428c51f89486b98638610
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3109
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - name: user-agent
+            value: enterpriseClient / v1
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 265
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |+
+                  Use the following code snippet from file: src/example.test.ts:
                   import { expect } from 'vitest'
-
                   import { it } from 'vitest'
-
                   import { describe } from 'vitest'
 
 
@@ -202,8 +1427,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: |
-                  <CODE5711>
+                text: <CODE5711>
             model: anthropic/claude-2.0
             stopSequences:
               - </CODE5711>
@@ -213,254 +1437,234 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 8260
+        bodySize: 7147
         content:
           mimeType: text/event-stream
-          size: 8260
+          size: 7147
           text: >+
             event: completion
 
-            data: {"completion":"/**","stopReason":""}
+            data: {"completion":"\n/**","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n *","stopReason":""}
+            data: {"completion":"\n/**\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines","stopReason":""}
+            data: {"completion":"\n/**\n * Test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a","stopReason":""}
+            data: {"completion":"\n/**\n * Test block","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vit","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true ","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attemp","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Defines a test block with 3 test cases using Vitest:\n * - does 1 - asserts true equals true \n * - does 2 - asserts true equals true\n * - does something else - attempts to call performance.now incorrectly\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -470,7 +1674,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 08 Feb 2024 10:57:24 GMT
+            value: Wed, 06 Mar 2024 19:48:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -494,12 +1698,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1204
+        headersSize: 1214
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-02-08T10:57:20.992Z
+      startedDateTime: 2024-03-06T19:48:35.723Z
       time: 0
       timings:
         blocked: -1
@@ -509,522 +1713,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 46e5fea04316142c2df11930c54b1ebd
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 6208
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - name: user-agent
-            value: enterpriseClient / v1
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 265
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/internal/usagestats/codehost_integration.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	return fmt.Sprintf(`FILTER (WHERE %s = current_%s AND argument->>'%s' %s %s)`, period, period, argument, inQueryFragment, nameQueryFragment)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/internal/oobmigration/downgrade_test.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	}
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/internal/download/download.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	return os.Remove(src)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/internal/codeintel/sentinel/internal/store/observability.go`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	}
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Use the following text from file
-                  `/internal/authz/providers/perforce/cmd/scanprotects/README.md`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-                      "**/base/foo/config/labels/**"
-                    ]
-                  }
-
-                  ...
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file `/go.mod` in
-                  repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```mod
-                  	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-                  )
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Use the following text from file
-                  `/doc/admin/config/webhooks/outgoing.md` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-                    "owning_batch_change_id": "QmF0Y2hDaGFuZ2U6MTcz"
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/dev/sg/ci/command.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	},
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/dev/release/src/release.ts` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      },
-                  ]
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Use the following text from file
-                  `/cmd/symbols/squirrel/README.md` in repository
-                  `github.com/sourcegraph/sourcegraph`:
-
-                  # Squirrel
-
-
-                  Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/cmd/frontend/internal/dotcom/productsubscription/licenses_db_test.go`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	autogold.Expect("/nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:/n/n• *License version*: 123/n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (3.0 days remaining)/n• *Expiration (PT)*: Feb 24, 2023 6:48am PST/n• *User count*: 0/n• *License tags*: ``/n• *Salesforce subscription ID*: unknown/n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown/view|unknown>/n/nReply with a :approved_stamp: when this is approved/nReply with a :white_check_mark: when this has been sent to the customer/n").Equal(t, message)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/cmd/frontend/graphqlbackend/repository_text_search_index.go`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	return fmt.Sprintf("r:^%s$@%s type:file select:file index:only patternType:regexp ^NOT-INDEXED:", regexp.QuoteMeta(r.repo.Name()), r.branch)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/cmd/executor/internal/worker/runtime/kubernetes.go` in
-                  repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```go
-                  	return fmt.Sprintf("step.kubernetes.%d", index)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/wildcard/src/global-styles/input-group.scss` in
-                  repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```scss
-                      border-bottom-left-radius: 0;
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/wildcard/src/global-styles/GlobalStylesStory/FormFieldVariants/FormFieldVariants.tsx`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      </div>
-                  )
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/web/src/enterprise/repo/enterpriseRepoContainerRoutes.tsx`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      },
-                  ]
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/web-sveltekit/src/routes/[...repo=reporev]/(validrev)/(code)/+layout.ts`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      }
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/branded/src/search-ui/input/experimental/suggestionsExtension.ts`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      return state.field(suggestionsStateField)
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Use the following code snippet from file
-                  `/client/branded/src/search-ui/input/BaseCodeMirrorQueryInput.tsx`
-                  in repository `github.com/sourcegraph/sourcegraph`:
-
-                  ```typescript
-                      return useMemo(() => searchInputEventHandlers.init(() => handlers), [])
-                  }
-
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What is Squirrel?
-              - speaker: assistant
-            model: anthropic/claude-2
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://demo.sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 4519
-        content:
-          mimeType: text/event-stream
-          size: 4519
-          text: >+
-            event: completion
-
-            data: {"completion":" Based","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-s","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the README text you asked me to use earlier, Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 09 Feb 2024 18:16:08 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1204
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-02-09T18:16:04.647Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 402b7b5009f7d08b7aa1506bda51149c
+    - _id: bdc2963954b4d2c823757233e91ab963
       _order: 0
       cache: {}
       request:
@@ -1080,19 +1769,18 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
       response:
-        bodySize: 219
+        bodySize: 155
         content:
           encoding: base64
           mimeType: application/json
-          size: 219
-          text: "[\"H4sIAAAAAAAAAyzNrQ7CMBSG4Vs5+fSCwlCDGEENhaQTzXa2NOnOgf6IZum9kzDkK568O\
-            zhGjQnmtWPjlNzKMOidiGb6FI6VFs9hJotJ59qrLH69s8slcrIgFcr1zWTx9A==\",\
-            \"mS1OdPMzVS20sZO/GobHAUt02atYXNEh6PSrYx68MMy5w6ShbAJzaWMb2xcAAP//A\
-            wDS/lDDoQAAAA==\"]"
+          size: 155
+          text: "[\"H4sIAAAAAAAAAzyLwQqAIBAF/2XPfYFXof/YdC0h3dDnIcR/Dws6DQwznTyDyXSqETLp1\
+            N9Wc4j7KoxWpL72YJBBabIQN6jVdJ0yj885TYmzr38DlLg1\",\"RM1kAp9VxhjjAQA\
+            A//8DAIfOLkJuAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:32 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1118,12 +1806,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.382Z
+      startedDateTime: 2024-03-06T08:51:32.010Z
       time: 0
       timings:
         blocked: -1
@@ -1133,7 +1821,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a7f73f577ec825962be7b3003873378c
+    - _id: 5007670687f0520c7adc88dbc7af3663
       _order: 0
       cache: {}
       request:
@@ -1196,14 +1884,14 @@ log:
           encoding: base64
           mimeType: application/json
           size: 215
-          text: "[\"H4sIAAAAAAAAA4yOwQqDMBBE/2XPitFbc/Vqbv2BJYkamu6KWcEi+feil5YcSk8Dw5vHH\
-            OBQEPQBKYg/07J7DYPpmcYwbStKYLr6GcWw8xE0IMm88hJsYyNuztcdVB/A4A==\",\
-            \"fueHpwS67ZRSFYyYpP+1D5QESeoWCvjLdbtUlp9L9Oepv2QFXuhyzvkNAAD//wMAQ\
-            HxMmAIBAAA=\"]"
+          text: "[\"H4sIAAAAAAAAA4TOMQ7CMAxA0bt4bkXajaxdm40LWElKI4JdNS4CVbk7ShdQBpgsWd9P3\
+            sGhIOgdUhBfpmX3GkczME3huq0ogenYzyiGnY+gAUnmlZdg\",\"Tzbi5nzbQ/MJDD4\
+            vfPOUQHe9UqqBCZMMv+4DJUGStoMq/rLOB2X5vkRfnvqLPYpW9ZWXc85vAAAA//8DAC\
+            mc8DoDAQAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:03 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1229,12 +1917,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:03.016Z
+      startedDateTime: 2024-03-06T08:51:31.148Z
       time: 0
       timings:
         blocked: -1
@@ -1244,7 +1932,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b65ff73c0b9a34b07da801d1c70d8c56
+    - _id: 3e380435dfd6bb0c0dd09667e41479c5
       _order: 0
       cache: {}
       request:
@@ -1297,22 +1985,17 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 128
+        bodySize: 131
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
+          size: 131
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
-            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXA\",\"RQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:03 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1338,12 +2021,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:03.018Z
+      startedDateTime: 2024-03-06T08:51:31.149Z
       time: 0
       timings:
         blocked: -1
@@ -1353,7 +2036,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3ec34ed6dc417828a259a9dd9236c0f8
+    - _id: 4cfda87e85b57b509bfb2ace58bb4847
       _order: 0
       cache: {}
       request:
@@ -1417,13 +2100,13 @@ log:
           mimeType: application/json
           size: 203
           text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
-            A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GEkC7Ewhs4GXvAZqjiLDpg==\",\
-            \"GoJBzazpy5gW3wrnIukOA3pRIR0up3+5qkTS9jvurvf+AQAA//8DAD+3K/CYAAAA\
-            \"]"
+            A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GEkC7Ewh\",\"s4GXvAZqjiLDphq\
+            CQc2s6cuYFt8K5yLpDgN6USEdLqd/uapE0vY77q73/gEAAP//AwA/tyvwmAAAAA==\"\
+            ]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1449,12 +2132,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:03.755Z
+      startedDateTime: 2024-03-06T08:51:31.796Z
       time: 0
       timings:
         blocked: -1
@@ -1464,7 +2147,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7ec95f8298c0e6d9135597a17ea02e14
+    - _id: 567f59caa10337c11fa091c022af16df
       _order: 0
       cache: {}
       request:
@@ -1524,7 +2207,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:02 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -1547,12 +2230,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1202
+        headersSize: 1212
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-01-26T14:31:02.558Z
+      startedDateTime: 2024-03-06T08:51:30.946Z
       time: 0
       timings:
         blocked: -1
@@ -1562,7 +2245,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 578c7548bc2790e341deea1e2cbc4e07
+    - _id: 4dbefd8423aa4bbffa24e8a2c4b36c6f
       _order: 0
       cache: {}
       request:
@@ -1614,22 +2297,17 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?FeatureFlags
       response:
-        bodySize: 132
+        bodySize: 135
         content:
           encoding: base64
           mimeType: application/json
-          size: 132
+          size: 135
           text: "[\"H4sIAAAAAAAAAxTLwQmAMBAEwF72rQ1cAWlCfCxk8ZOonBdRQnoX5z8dmUFYh26WxlBOY\
-            jRXKtwu2NKxswqGUFFV+DvrOQ8PTPiLYOFNYx3jAwAA//8DAHxh3HJNAAAA\"]"
-          textDecoded:
-            data:
-              evaluatedFeatureFlags:
-                - name: telemetry-export
-                  value: true
+            jRXKtwu2NKxswqGUFFV+DvrOQ8PTPiLYOFNYx3jAwAA//8D\",\"AHxh3HJNAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:32 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1655,12 +2333,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.070Z
+      startedDateTime: 2024-03-06T08:51:32.014Z
       time: 0
       timings:
         blocked: -1
@@ -1670,7 +2348,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1014aeb1373c8aeb2eac8ff14a9fb8c7
+    - _id: da094df7da629505b79bccf78f47a535
       _order: 0
       cache: {}
       request:
@@ -1742,53 +2420,76 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?GetCodyContext
       response:
-        bodySize: 2506
+        bodySize: 4073
         content:
           encoding: base64
           mimeType: application/json
-          size: 2506
-          text: "[\"H4sIAAAAAAAA/+xZ63LbuBV+FQxbzUqqRMjUZW12MrPZWN7NTJxNbGV7CbMyCByRGJMAA\
-            xxKVrKe6bP00fokHVByTMnyJU37S/0j43oAft/B+Q7gz55gyLzws5cAvtBi\",\"+UI\
-            rhCv0wvefvTjTsesqGKZe6PFMgkK6gJhawykoBFMYaYEaKHStfgaFdnaYVGDOdIlgfb\
-            RXXsdzA61EbZbOrhRe6L3Lf13E/deF+OloCRP96XTy/JnX8RTLwQu9RGJaxj7XObW6N\
-            BwSw4q0XvauOx7XeS7RmdSVTSY4HB0Eg0H/kI2Gw0F/2DsawOD7kfh+NOyJg1EvZnE/\
-            Hri5pcm80KOPL/TDU63SLnXI0W/G67rjWWQGX0kFXjgcdjxQYl35vuPxtFSXFV8KvdA\
-            jhJDrTqQ+RMq77txhT8CcGsiAWai2sy77aPeNlweQ2ET8YLCB+cHg61G/8QGZCc6MqN\
-            ZLMh2zrGtxmYGlP1W186py7higJ9rkJxIy8Sszkim0d1v2+Tj9L6Dc4r0f1GnvD3ayH\
-            pW9Xp9TIedVCSLV2u0DifZzLfaNrvVXbyI7OujVkB0dBHeQjdDKxPqXh9aXmlo0JcfS\
-            gOjmYBLoCjmb0fmAzAd+4PcJpUQqIQ1wvBf+2zDctXPIEC4lrs59FWnpe9/3HTPP3I+\
-            B+QfanLNMCgPzFm1yLaBF/5SxpS5xD4PlY+g1hj9u4dcYHtNGcHiDYSM4clWHoyvWkN\
-            ySt6MNz9gdaCN1/SDJsWFKwCo2WGCGp91SUqmKEilcFWBkDgpZRm2ZJGBRamXHVwjKS\
-            q32l91vhm3rlI/6dS5Hw51kGsDSKGKRIfgzF5KbNfPnrrkK1K37Sc8FhSvgJWpDpUun\
-            FMvoQptLMNSUCmUO9LKMwShwOVWi947fr0doSwoPNqTw4K4URrgmcpajf14YqXDWjDy\
-            LUPg1yw0ReR0XrOHqAUIfd8cfmYUXWsCpNEabtyWY5UvXsccZ0X8M1ybVwbCuzcHwrj\
-            bXTm1p4RRy3Wy2yLNV+kNWS1fWx3NQ+DNTIgNjfakk1gem645Wh7z/cL8zuDTdJpRL6\
-            tBnSuzh+d2JwSZth4c11o56O86nu57cg/GXkODk2VUyakGhVJDdhguL2gDVsQUzZ7HM\
-            JC73kIpvgWor06mH1OGuiHp/nvNlJaEXKtNMfCnsMyU7wdgSMgf0rZANR/cLmbb+GeR\
-            6Dk1r+MPZx8xU0wWtPuBjFjN+6aq3NEwRrnC6io3TSv72kKhvgWpLpEb1wxOMnpyPmP\
-            C3hv3jDw1LcFlAOJOZU6wMOK7K1XqhVtmSFAydX03cOAMJXBXkt9e/TLovXx+P/zo+D\
-            l0is2r335Ya4RSQNU11B/JfsxyarVaHGN/JMk/v958v3qt1nMvEMJf3Vh6cGCZgimBx\
-            D33lqbBs56n9jTz17pXjSVG1tMxdQBjaKsyn2uLUda63sc90PAGa7Yi78Xi64+1051G\
-            9OHn5ajI+I82//Dw+G5OGJc8IL40BhdOGJc9fHxNmktJdSLvrh7fq97uG/c6NbtjWRY\
-            e4O6sWt39vprgrSJUFnxiWrBocSRtNj95PHniCrLLubmJ0WfiW2319UPgahLa8JhjVv\
-            SY43HkLibURYLqxRtR5N4MZdg0TsrQh6f35QcW2yzzWmaX2YymNgYyejZ8fn479fO8e\
-            aB9BY5OW+tXwrub+gZyvDUQqUjdlIi1hivw8mbwhLiEGQ2bakBmzSJgSpDDApQWSac4\
-            y4oIKqfLqTCagOJDSSpUQNABdK50k+09IxGo5ITq0CqNFydGWseVGFpWYZJKDsmCnIt\
-            5Xlf2vYLbpIoPehpP0dr3tsxJ1ojPhj68K4NiMvChSz4mCBVkvQBbMEm6AIQgSL0m7X\
-            TlNfS/r/7ykiIUNaR2GFUQSoctELtXW99C6EUsPgv7gd/ez0o8wilQUqX/945+k/Wq9\
-            lzkYK7Vqh+Qg6A==\",\"33SOrwq50jzSfDd50WqH5ARiEgw6JOgFfRKEg8MiJ+8mL0\
-            iz7/eIYEtLDORMKqmS1i4zbyZ3rIzCwSHLyZvzyc2EdxYM4bpU2A5Jb3uryBLbDsnFx\
-            U3HOcvAzrThsAney+N2SEp1qfRC7Riri0IbLJXE5WrovWAHvaDnZzJJ0X2XX02vCPjS\
-            Rg395dYcXS9K5xIWv9/sYKXgFfRnUGRLspCYEkZCVhRGz0FMLbK8CMkiBUUwlbYKK+v\
-            OO7MWqUSY8hT45TRn5rI+L2WWxACKuHs7QU0wBcJLizoH47bgtfzxx5JlTeyQHKxLeB\
-            54ntKcrryMazWTCV1AnGp9aakuMdEOkv3TlKeB8vWKH3l64TxqGjPk6ZSnTCUwlSLyQ\
-            hJ5b/OT3t+C9Jj9dFL+PXg3Op3wT5H3eLbPSkw/uegwlwKMpQWYyotX0siZKoxG4Gj3\
-            N0n4Jqy2HiqHDz9UVv9T99ptGjMLdKb1jQ9lLIbM0nbbcUrIh4pY3/cjdXFx8X+K94L\
-            iD9fX/w4AAP//m1GO3qsmAAA=\"]"
+          size: 4073
+          text: "[\"H4sIAAAAAA==\",\"AAD/7Fv7bts6k3+VWfWPJoFt+Z7EQLC95esG26b9cvkWB1XhUORI\
+            5loiVZJy4iYBzoPsvtx5kgVJyXZuTdJzegps6j9aW7wM+ZvfDGdGzHnAiCHB6DxI0by\
+            WbP5aCoNnJhh9Og/iTMa2qSBmEowCmrNQz/NYZjrUX0quFGbhwe7LN+93WzkLGoHCQm\
+            pupJrbUZwFo+A4/9dp3Nsv2NvtOR7Jr++PXu4EjUCQHINRkHIzKeMWlXmoZakopooUk\
+            9XvwWUjoDLPubFTSjfnoN0bdgaU9IfDhA3izlac4CDZHlKMaS/pbW13t+J+dyuxY0uV\
+            BaMgvF/Qi4fOGjZDi0t4DxqXjUAbosw7LjAYtRsBCua/bzUCOinF1CEtTDAKnsFhNUE\
+            kIlF/B66BCPiPo6OPoFHNUEEiFSREGyCCQaGQco2QSUoyoJIhcGEwy3iKgiKUmosUjE\
+            Jsam4MqlYkgsvGDbUySUPCci5ChkUm5+G0jFEJNKhDo2QZZ6gnUponqOPHQHNV4Z1Bb\
+            0XlnWHnhtIPf3v/6sO7w/HxwbudiTHFqCLTqNfZ6kfi5OTEkiEq2+0ewn+9PNjf2387\
+            go2NownXIAvDpbAMUWihQ8GQgRTZ3HGkmgpOuZkAAUuEDEFhkXFKNjZasCtInDl6rMx\
+            2yrMMBKbE8Blmc+B5QagBM0EoUCVS5cTySibuUS3DUpNThNMJCuAGJkRDXmaGF0uRug\
+            FE20YvQkImRYoKYgQSZwhGAuPaKB6Xxg76UqI2GuI5LOkWeoq0LCrPnj1b2kzrnTWA1\
+            5LhnqU/WDBBG2JKDYN2d4Ei5XkKNCNa70SBpgpR6Ik0cNrstNtRAFrRnSiwo/UoDEuN\
+            qslzkqJueWbZJ9Srz5FsuDXodTudzbDb6fY2++3trSajXZbgcLvZZ91hs58MsEk2t+J\
+            mb5MMerSzjUm32ypEGgWhV2wkjiYIXOsSgaGmisfIvFozYpBZZCzYdndQbU86T4DElA\
+            obFnaFFtqczCFFA9qUdApcAIFMEmaVbMFAkAoUmlLZlkG7C6iUVJ4iVkSOWpMU4eSBu\
+            J60wFGRa6Ck1MisuhwxSH7LlgR8OqwZwxnGRDkn5najgSgEYXUh1ZSL9PPas4pezapz\
+            kwjW9J2bRGFTSNOsOkfBegsOEcFMiAGN1JHZmYHMSvvjG46PZrJkIRcMz56of7uGwFU\
+            31uusurFe96Yb8wyOMZOnTosWdzwjubX+olSF1KidYxpZQ9wTjiKU6MqPcJFqyPi0ov\
+            ghEkUnDbDkF3RuycW4QmqyOVCpaqtwpLX2CFwUpYEQ9IQUC9f0pUQ1bwCetUAKkKWCo\
+            owzTuHTClgWyM9rtblfawi1W8g6cKGN9Xpu9U3wj61N2X3+8fv/1Cf/H7//r+W4lf7p\
+            Du3cLex+za47RwiGTFFDr51rZzzenDV0hj1QqMvM6IcskmQZfDg89L61AXFp/MlR+V0\
+            7sNNutyEnhk5QV1IH/XZ+y/R2srqjTO6TtlxyazPnWWYttVq57dtrt9uVlGtMkWay9H\
+            p6SRCZwOESpiVZGBYomGXeomsIZWF4jhCCIgabGc+5cYumpTYyRwU5ESRFBnquDebaU\
+            yiRanS7AyEpCvPYCHj/6173/T937vcgVLL5ba6Dku1+t48d1t7uD7Y62N+M46Tb3tqO\
+            yaCNnXZvQAeddo/e7zqshBcPna72Gdc3fdVh9Psr/mLQveEuLqD5Ez7wc8Q++AMXkbi\
+            Ak0IUORi08b0DWStaOWb7sGX0Cfzlnws4KIWX50Q7O7RhG5lDbl3yT/54ZDxra1io4o\
+            XRIZ4VUpmmZXHTutamjYWVjXg=\",\"mkZOUeiWnvwJxC5g1wkAQilqDX5OG5GhcFHr\
+            QtzPAWqFM2XBrEdz8DSdFn8AU1Ykw7ET6HPTBQx6cSC4JbQcs1yCEWMiFYIsUFi4CHw\
+            8+KHrc8i8/vDmt/F/7u5+HB/vHx/uvhkf7L7+cPBmb//t4Y5RJYLr4B+O9/4xfr93eL\
+            i3/9a3OViVXf+jzPFiuecqH0JF3IkqbdhdnV/u8J7L0h+7p8SannTSiAAuGJ9xVhIPI\
+            8w4gRNuWrbvSQsOMMc8RlWPuJsAFegaBVuA/hcgI4ozmPFvwQJNA8/rKMBt4vlJhYzb\
+            8CIhdZPYWE6WNn+xwTzQCREp6jrxoX+XZV34vBLeYFymqU+NK4djW247/lcrQFwYVIJ\
+            kISl4OCGCZajGNJWtVD61pOKhsFwrmKwmGrflGaZQ0kiIHoDNUmy9jlknCiIRmbrBzA\
+            vUj5zLjfHTPGhgxuPQ5dhu0LplUVIKClSKGSpTp9m7tsuRfKsK6r6uoVI+N1+HDZ9ut\
+            w591n3utpD4Vt3a07ZvA2pTax0L64tTwb8i+wfPcPfMoNBcil0/nRsfmaoKUM29j6dr\
+            1sp0a0/MSMbZS5WWOQrTsHJafk3rdvnm8n47WFRCq7LQ2PmEp20Ed2LymBpxQeiUpLh\
+            QtqUTz118suYpSX3lvmaoXHDVqilMeIb2S/1QZ5wu6aylcgPvznKslx+7levxOKwy/K\
+            bRrmHBQKOfUhL0YEweo+hwYyMSsAHXXgM4N5QQWpW5ckmnGrTM0dVQgEor22A2h1KsF\
+            A/rVeiWm3TP3FJc5HaotXjiKmcyWbxacKevIDOe+iYuVrNtN2UYCR+Hr6xwsfTz7/AY\
+            v5zFDTh+qJ9I8ltchiqF4Tku3INR9tS6y0Pcun5XrP3l/u9E5IcqVRtlE7L6p/FlPff\
+            zoeHLzbjnwap/dbz37k0rJl8x+6X4a3g8Ru2ZJGwtCsKQ4WyUyjHDRLfir1kUNGzsKh\
+            2XomA9ElXPF1yOnZixKjPU41SGYSpHDJMrwzIeK6LmbmQklg/WImFTIasG2IEoWNAta\
+            PgWraiGHfjkf9lPFMQKCaOqzGPdSuWiq290lK8f38qfjLuTdEIUMndu2jPHvccOM0wJ\
+            nTexjmJ1VZUPCyVnnKHSD443/h8R7E8Ddi3vGq7mXf0bHKzczDm4+yEi4SlcQqJkDs9\
+            bIXUPni+c0TlYZwEHrqLfqCr7R/KdpC5+aFTvDg6q5wdV5f/KhDNUdu2rkyZcsDeSeq\
+            e20pvVz/Rq71NFij3B6nhmT7yWDF9lLmBajs2JmjJ5ekUOw4QLbgf9079BUpigQkFRu\
+            wcrw7+UqDhekZtPF3HPsl9tQte34190HckpipXevsT43FpluLEBRxMEUbpqj0zARvAa\
+            TifSBWZOP0CJgBiBEjpBBsSAFBRbLir7hrWdYuyYg9bFF4prXCFRqdEv7hXRyBavf5+\
+            uqX0vWtcvhAyvXAi5aWmr1ahLm3C7L/4/n7JH4tJSg+i5oJCUwr/p1kv5Bwu+/ouTmo\
+            2VV/eXPPQIjm9f8gffHon1EXxUMuca/bWJ2no/fYYLKIUzEmTVxZRzPzmVQltqW340w\
+            HHE2bvlXQO8ehuOwdV+4RJ26iU9IrLIiEjHFtWMqOmvuPIOUH5oaHl7NWEl3hSR8ffN\
+            rtXXckKnqMJUNlfupN0VV96o4HljfIIq/wYS1zxMf1XTnf5NXVvV+NGutgejHUhVQV/\
+            7Ca9e91mj5qwB1sq7Q1d5falSvb4sQMK/7YDgWV1T5EldT7QzrKFS67CzA76weCwWJQ\
+            Zk9YjIhGF1gygVUqGuypr+MLx298hIf8nA1StinJAZlwoSWQ==\",\"CgYTVO56Rj3n\
+            99+yeEE6w16HDbaG7f5WZ7Dd2WxvDwmlvd5g2O9v0sEgJhgn3e630zxjinFV67Yh8b+\
+            /G2w2B5vLFd7Yv4ZT5Io13HuhnMxjfxmKO71xKUjmb2lU12VsxD0FnsApLm50CY9eq5\
+            67ei541rD/PNbFFnMzkeIJWttDIPm7yjH3e9oHK/VqkvZLqTch+ftrbN+nydLw7JcKr\
+            2LxUw3yZqm01urjXO5/kxn5pdhbAPm57rZ6MfYA1foCnw9mnpoWr+z9qsK6/Ss3iG+o\
+            bCXLFpLhOJeszFBHYtnQ1DPMDE65uaMLzxglil1rZTgLFWZINF5ricSttDOozdjpLaz\
+            TKXcrBN6iQOVemcXz6u9tjJSZ9p778+Xl/wUAAP//2nHa20c1AAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:07 GMT
+            value: Wed, 06 Mar 2024 08:52:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1814,12 +2515,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:06.353Z
+      startedDateTime: 2024-03-06T08:52:18.869Z
       time: 0
       timings:
         blocked: -1
@@ -1829,7 +2530,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 01ece4890d68be996873bb0761d426df
+    - _id: bc1e52317b4ea3bf902bd109bf28c0be
       _order: 0
       cache: {}
       request:
@@ -1903,7 +2604,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:32 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1927,12 +2628,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1201
+        headersSize: 1211
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.068Z
+      startedDateTime: 2024-03-06T08:51:32.011Z
       time: 0
       timings:
         blocked: -1
@@ -1942,7 +2643,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9b22ba8e12e8669a186175c2c87e1ee7
+    - _id: f7d661532c6712bfc5b6aa473be89de8
       _order: 0
       cache: {}
       request:
@@ -1998,7 +2699,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2019,7 +2720,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
+            value: Wed, 06 Mar 2024 23:46:52 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2050,7 +2751,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.510Z
+      startedDateTime: 2024-03-06T23:46:52.634Z
       time: 0
       timings:
         blocked: -1
@@ -2060,597 +2761,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 68d204548efccef97a090a68fe204efa
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 350
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "350"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: executed
-                  feature: cody.chat-question
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.1
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.545Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 870f864949ce44cab4779c1ddb3d6801
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 348
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "348"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: executed
-                  feature: cody.command.doc
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.1
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.717Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 2a2e15efb733d013f00cd19f9da37adc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 350
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "350"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: hasCode
-                  feature: cody.fixup.response
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.1
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.731Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a3c69ce6a548f0cd486079592a297e4a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 349
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "349"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: succeeded
-                  feature: cody.fixup.apply
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.1
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.735Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 20c2d8d0f85fd867475b5c7ba2809de9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 349
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "349"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
-              	telemetry {
-              		recordEvents(events: $events) {
-              			alwaysNil
-              		}
-              	}
-              }
-            variables:
-              events:
-                - action: accept
-                  feature: cody.fixup.codeLens
-                  parameters:
-                    privateMetadata: {}
-                    version: 0
-                  source:
-                    client: VSCode.Cody
-                    clientVersion: 1.6.1
-        queryString:
-          - name: RecordTelemetryEvents
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
-      response:
-        bodySize: 112
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 112
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
-            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
-          textDecoded:
-            data:
-              telemetry:
-                recordEvents:
-                  alwaysNil: null
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.737Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 630513806fa5798036730b6cf0409912
+    - _id: b656fa8b4a7bf9f6055a3cd2bb5829b8
       _order: 0
       cache: {}
       request:
@@ -2706,7 +2817,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.6.1
+                    clientVersion: 1.8.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2727,7 +2838,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 04 Mar 2024 13:12:29 GMT
+            value: Wed, 06 Mar 2024 23:46:53 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2758,7 +2869,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-04T13:12:28.744Z
+      startedDateTime: 2024-03-06T23:46:52.669Z
       time: 0
       timings:
         blocked: -1
@@ -2768,7 +2879,597 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: eafc5318df66369046c74884081085e5
+    - _id: 0651bd1ac11f26c328e6c84e300c548e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.chat-question
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 23:46:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T23:46:52.670Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: dc482c3bddc864b4b6450112dad79a31
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 348
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "348"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: executed
+                  feature: cody.command.doc
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 23:46:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T23:46:52.819Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: acaaab5bba099cb56a2935493c6f397e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasCode
+                  feature: cody.fixup.response
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 23:46:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T23:46:52.830Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 12f01789446e073746df1a886bdc0a13
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: succeeded
+                  feature: cody.fixup.apply
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 23:46:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T23:46:52.834Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 00ce0a526f87250d2bf7e97c929071f3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: accept
+                  feature: cody.fixup.codeLens
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 06 Mar 2024 23:46:53 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1243
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-06T23:46:52.837Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b38540ce2256c839f6ea9b4ee26f34fd
       _order: 0
       cache: {}
       request:
@@ -2825,18 +3526,18 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?Repositories
       response:
-        bodySize: 175
+        bodySize: 171
         content:
           encoding: base64
           mimeType: application/json
-          size: 175
+          size: 171
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS/KTC0G8fPyU0CM6GqlvMTcVCUrpfTMk\
-            ozSJL3k/Fz94vzSouTU9KLEggxktpKOUmaKkpVSaG5YeZKxX0GKu2Vlakh+lQ==\",\
-            \"b4ijrVJtbG1tLQAAAP//AwCy5jxcbwAAAA==\"]"
+            ozSJL3k/Fz94vzSouTU9KLEggxktpKOUmaKkpVSaG5YeZKx\",\"X0GKu2Vlakh+lW+\
+            Io61SbWxtbS0AAAD//wMAsuY8XG8AAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:06 GMT
+            value: Wed, 06 Mar 2024 08:51:38 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2862,12 +3563,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:06.083Z
+      startedDateTime: 2024-03-06T08:51:38.322Z
       time: 0
       timings:
         blocked: -1
@@ -2877,7 +3578,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4cf1d5f2bdf5fa0f3a23f7b5b0d71b18
+    - _id: 545488e46dbd4527dead77e98259e9ba
       _order: 0
       cache: {}
       request:
@@ -2937,7 +3638,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:02 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2960,12 +3661,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1202
+        headersSize: 1212
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-01-26T14:31:02.560Z
+      startedDateTime: 2024-03-06T08:51:30.948Z
       time: 0
       timings:
         blocked: -1
@@ -2975,7 +3676,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bc2dc036a16af0823a588cf749db6626
+    - _id: df5425b2424971cf9d052eec9b4bcf30
       _order: 0
       cache: {}
       request:
@@ -3041,7 +3742,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:32 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3067,12 +3768,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.381Z
+      startedDateTime: 2024-03-06T08:51:32.200Z
       time: 0
       timings:
         blocked: -1
@@ -3082,7 +3783,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 570c1a8e665e8bb39edf65bc3da9f573
+    - _id: ad724b1d99cd03b5ca781ef8a218294c
       _order: 0
       cache: {}
       request:
@@ -3135,25 +3836,24 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?SiteGraphQLFields
       response:
-        bodySize: 607
+        bodySize: 591
         content:
           encoding: base64
           mimeType: application/json
-          size: 607
-          text: "[\"H4sIAAAAAAAAA3yS0W5aMQyG3+Vc7wm4q05hq8SkDUZ3MU2ViX/Aak5yFjvQI8S7T6HtR\
-            M6gd4n/P4792ceGyaiZHJunJxt6lNNG4Fmbya9jE6hDM2mEm9OnfzcVw8P9\",\"ZcT\
-            FsJFtTmQSw6XgyaC2hJmErVZJ3mItqSPGNWm1mFefUFjAR+KlWOXfCw5ILYU77iSIGt\
-            KlTM5B9Ud8RqgqoGy7bynuhZEqAS+GFMjfORdzsEpbZ/H8iKSjRvsUOTu7ouSeydDu4\
-            J4vwwFgXaCPKhbT0N4i+F7MEmkvDjpLsZuJrwCQ9/EwZbHpyPxTbDc2jxO2//W4ScBK\
-            kXT64gAG138h1fYdaRsZD8HgvWwR3GiagXXakfhHJNmIO7d4DugVgsu8VpekH3PISls\
-            sjUzUxNWDDOSHcTDraKpdDIW0hO2NLAViWa33bS1A65T9NhFjAWIJ0PEyxdWrPg209i\
-            Noff+lUAoBzsD30drYva1XxQCpgG9j13sUAvo9R6OrFsZHtoQ/WRL0lTn4zHsWy7vh0\
-            idldsOVkl3kYT7/enMvi/6ZDAcaFmSYSydWwGZtTr9Pp9NfAAAA//8DAMCXY1pZBAAA\
-            \"]"
+          size: 591
+          text: "[\"H4sIAAAAAAAAA3yS0Y7aQAxF/yXP/QLeVilUK1GphWX7UFUrM74Eaycz6dgDGyH+vRroV\
+            kzE9i3xvXF8j31qmIya2al5ebFxQHnaCTxrM/t5agL1aGY=\",\"jXBz/vTvTcXw+Pm\
+            24mLYSZcTmcRwK3gyqK1hJqHTqsnfWkvqiHFP2qyW1U8orOAj8Vqs8h8ER6SWwgP3Ek\
+            QN6VYm56D6FF8Rqgko2/5bigdhpErAmyEF8g/OxRys0rZZPD8j6STokCJnZ3eUPDAZ2\
+            j3c6205AKwrDFHFYhrbjwi+D7NGOoiDLlLsF+IrAOR9PM5ZbD4x/xDbT827BGwUSedv\
+            DmBw3QmpDrwnbSPjMRi8lw7BTXYVWOc9iX9Gkp24S4BLQe/wWeetuiTDNGVW6rA2MlE\
+            TV68pkB+nxayTnfUxFI4Sug+6FETlcN5vseCqWw5dIsYKxBKg01OJm6s+D7T1NbQBqQ\
+            BtYz94lGT6PUejuxbG/2wJv7Mk6JUl+MJxEct3461Pyk7GO6O4yONy+fXDayr6VVyAL\
+            CfoVP1ChiONKzIspRcrOLM251/n8/kPAAAA//8DANaF7gAtBAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:03 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3179,12 +3879,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:03.259Z
+      startedDateTime: 2024-03-06T08:51:31.356Z
       time: 0
       timings:
         blocked: -1
@@ -3194,7 +3894,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: be19d9417d36e9a166b17ce300a46f59
+    - _id: e2304ad643386d8500a41a21d240755f
       _order: 0
       cache: {}
       request:
@@ -3253,7 +3953,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:03 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -3277,12 +3977,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1201
+        headersSize: 1211
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:03.482Z
+      startedDateTime: 2024-03-06T08:51:31.562Z
       time: 0
       timings:
         blocked: -1
@@ -3292,7 +3992,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cc90fd0d6e140d79de5f511ea5e23f70
+    - _id: 1b42d5288f9bce898af91a9766d70aba
       _order: 0
       cache: {}
       request:
@@ -3353,7 +4053,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:02 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -3376,12 +4076,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1202
+        headersSize: 1212
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-01-26T14:31:02.537Z
+      startedDateTime: 2024-03-06T08:51:30.832Z
       time: 0
       timings:
         blocked: -1
@@ -3391,7 +4091,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5d654013a5d5769adf1b01e3463a67b9
+    - _id: f005ccace6369a09527f0fa2dc44f267
       _order: 0
       cache: {}
       request:
@@ -3452,14 +4152,14 @@ log:
           encoding: base64
           mimeType: application/json
           size: 235
-          text: "[\"H4sIAAAAAAAAAzTMTQrDIBBA4bvMuoK/o2bdTemyJxh1JEJJQjWLEnr3kkLf5u2+AwoNg\
-            umA3gb/f7vCBCFEVxxlgR6zsExZpIhWBJcVBk9KVwkX2F5r2fN47KnnV9tGWw==\",\
-            \"l5N5tsxL/4kz9ZnLnd8wQXKhVh2d1MZ4E1Vl1MlXtOyUyTZKSxi8UZ64ckIy0jMGb\
-            WxRCZND+Jx9AQAA//8DADbnxC62AAAA\"]"
+          text: "[\"H4sIAAAAAAAAAzTMsQrDIBCA4Xe5uYIaPTVzl9KxT3A5TyKUJFQzlNB3Lyn0X/7tOyBTJ\
+            xgPaLXL/7crjBBj8tkTKwzIygmxmhI6FT0bjIGMLRousL3W\",\"vHN/7FPjV916XZe\
+            TeVaWpf3Emdos+S5vGAFDIs25IA1Mk3PJR6HBBmJEF4OYmJwwmuBtKFannJK3woMtmL\
+            WUCT5nXwAAAP//AwA4XaGTtgAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Jan 2024 14:31:04 GMT
+            value: Wed, 06 Mar 2024 08:51:32 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3485,12 +4185,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1233
+        headersSize: 1243
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-26T14:31:04.061Z
+      startedDateTime: 2024-03-06T08:51:32.008Z
       time: 0
       timings:
         blocked: -1
@@ -3500,7 +4200,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1951d7c2f154045a0e432063202ea21e
+    - _id: 2f61c4440220a7c49cbf07315e5225db
       _order: 0
       cache: {}
       request:
@@ -3555,11 +4255,11 @@ log:
         content:
           mimeType: application/json
           size: 44
-          text: "{\"data\":{\"site\":{\"productVersion\":\"5.2.6\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"5.3.1\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 29 Jan 2024 13:42:21 GMT
+            value: Wed, 06 Mar 2024 08:51:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -3583,12 +4283,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1201
+        headersSize: 1211
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-01-29T13:42:21.031Z
+      startedDateTime: 2024-03-06T08:51:31.146Z
       time: 0
       timings:
         blocked: -1

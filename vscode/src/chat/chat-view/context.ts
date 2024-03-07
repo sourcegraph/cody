@@ -19,7 +19,6 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { viewRangeToRange } from './chat-helpers'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -519,7 +518,7 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             type: 'file',
             uri: readmeUri,
             content: truncatedReadmeText,
-            range: viewRangeToRange(range),
+            range,
             source: 'editor',
         },
     ]

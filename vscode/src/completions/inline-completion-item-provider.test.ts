@@ -2,9 +2,13 @@ import dedent from 'dedent'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type GraphQLAPIClientConfig, RateLimitError, graphqlClient } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type GraphQLAPIClientConfig,
+    RateLimitError,
+    graphqlClient,
+} from '@sourcegraph/cody-shared'
 
-import type { AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'

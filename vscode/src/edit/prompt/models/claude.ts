@@ -2,7 +2,7 @@ import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
-const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>\n`
+const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],

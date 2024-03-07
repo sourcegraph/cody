@@ -14,7 +14,8 @@ interface ErrorEvent {
 export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
-    speaker: 'human' | 'assistant'
+    // Note: The unified API only supports one system message passed as the first message
+    speaker: 'human' | 'assistant' | 'system'
     text?: string
 }
 

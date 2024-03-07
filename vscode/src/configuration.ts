@@ -5,6 +5,7 @@ import {
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
+    OLLAMA_DEFAULT_URL,
 } from '@sourcegraph/cody-shared'
 
 import {
@@ -86,7 +87,7 @@ export function getConfiguration(
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
-        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
+        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, true),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
@@ -124,6 +125,8 @@ export function getConfiguration(
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
+        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
         autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
@@ -137,7 +140,7 @@ export function getConfiguration(
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
-                url: 'http://localhost:11434',
+                url: OLLAMA_DEFAULT_URL,
                 model: 'codellama:7b-code',
             }
         ),
