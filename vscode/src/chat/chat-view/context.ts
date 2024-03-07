@@ -211,13 +211,17 @@ async function getEnhancedContextFromRanker({
             ...(await remoteSearchContextItemsPromise),
         ])()
 
-        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] = await Promise.all([
-            embeddingsContextItemsPromise,
-            keywordContextItemsPromise,
-            modelSpecificEmbeddingsContextItemsPromise,
-        ])
+        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
+            await Promise.all([
+                embeddingsContextItemsPromise,
+                keywordContextItemsPromise,
+                modelSpecificEmbeddingsContextItemsPromise,
+            ])
 
-        searchContext = searchContext.concat(keywordContextItems).concat(embeddingsContextItems).concat(modelEmbeddingContextItems)
+        searchContext = searchContext
+            .concat(keywordContextItems)
+            .concat(embeddingsContextItems)
+            .concat(modelEmbeddingContextItems)
         const editorContext = await getPriorityContext(text, editor, searchContext)
         const allContext = editorContext.concat(searchContext)
         if (!contextRanking) {
@@ -367,9 +371,9 @@ async function searchModelSpecificEmbeddings(
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching model specific embeddings')
         const contextItems: ContextItem[] = []
-        const numResults = 15;
-        const modelName = "sentence-transformers/multi-qa-mpnet-base-dot-v1";
-        const embeddingsResults = await contextRankingController.retriveEmbeddingBasedContext(
+        const numResults = 15
+        const modelName = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
+        const embeddingsResults = await contextRankingController.retrieveEmbeddingBasedContext(
             text,
             numResults,
             modelName

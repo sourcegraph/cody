@@ -1,17 +1,17 @@
 import * as path from 'path'
-import * as vscode from 'vscode'
-import { logDebug } from '../log'
 import {
     type ConfigurationWithAccessToken,
-    type EmbeddingsSearchResult,
     type ContextItem,
+    type EmbeddingsSearchResult,
     type FileURI,
+    isDotCom,
     isFileURI,
-    isDotCom
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
+import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
@@ -116,6 +116,9 @@ export class ContextRankingController implements ContextRanker {
     }
 
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
+        service.registerNotification('context-ranking/rank-items-logger-payload', (payload: string) => {
+            logDebug('ContextRankingController', 'rank-items-logger-payload', payload)
+        })
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
@@ -189,10 +192,10 @@ export class ContextRankingController implements ContextRanker {
         return orderedContextItems
     }
 
-    public async retriveEmbeddingBasedContext(
+    public async retrieveEmbeddingBasedContext(
         query: string,
         numResults: number,
-        modelName: string,
+        modelName: string
     ): Promise<EmbeddingsSearchResult[]> {
         const repoUri = this.getRepoUri()
         if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
@@ -200,7 +203,7 @@ export class ContextRankingController implements ContextRanker {
         }
         try {
             const service = await this.getService()
-            const resp = await service.request('context-ranking/context-retriver-embedding', {
+            const resp = await service.request('context-ranking/context-retriever-embedding', {
                 repoPath: repoUri.path,
                 query: query,
                 modelName: modelName,
@@ -212,7 +215,11 @@ export class ContextRankingController implements ContextRanker {
             }))
             return model_specific_embedding_items
         } catch (error) {
-            logDebug('ContextRankingController', 'error in fetching embeddings features', captureException(error))
+            logDebug(
+                'ContextRankingController',
+                'error in fetching embeddings features',
+                captureException(error)
+            )
             return []
         }
     }
