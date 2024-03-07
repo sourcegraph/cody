@@ -872,6 +872,114 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 852345931c23377e552fce799f00e703
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 346
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseMainBranchClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseMainBranchClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "346"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 371
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasFile
+                  feature: cody.codyIgnore
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.6.1
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 07 Mar 2024 00:15:31 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1213
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-07T00:15:31.673Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 3b1b5f59d45319c7ea64d97ad93384aa
       _order: 0
       cache: {}
