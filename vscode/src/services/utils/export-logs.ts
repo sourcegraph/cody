@@ -54,9 +54,13 @@ export async function exportOutputLog(logUri: vscode.Uri): Promise<void> {
             })
     } catch (error) {
         // Open the output channel instead
-        void vscode.commands.executeCommand(
-            'workbench.action.output.show.extension-output-sourcegraph.cody-ai-#1-Cody by Sourcegraph'
-        )
+        openCodyOutputChannel()
         console.error(error)
     }
+}
+
+export function openCodyOutputChannel(): void {
+    void vscode.commands.executeCommand(
+        'workbench.action.output.show.extension-output-sourcegraph.cody-ai-#1-Cody by Sourcegraph'
+    )
 }

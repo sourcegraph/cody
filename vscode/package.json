@@ -503,9 +503,15 @@
       {
         "command": "cody.debug.export.logs",
         "category": "Cody",
-        "group": "Cody",
+        "group": "Debug",
         "title": "Export Logs…",
         "when": "config.cody.debug.enable"
+      },
+      {
+        "command": "cody.open.outputChannel",
+        "category": "Cody",
+        "group": "Debug",
+        "title": "Open Output Channel"
       }
     ],
     "keybindings": [
@@ -718,7 +724,12 @@
         {
           "command": "cody.debug.export.logs",
           "when": "view == cody.support.tree.view",
-          "group": "7_cody@0"
+          "group": "8_cody@0"
+        },
+        {
+          "command": "cody.open.outputChannel",
+          "when": "view == cody.support.tree.view",
+          "group": "8_cody@1"
         },
         {
           "command": "cody.search.index-update",

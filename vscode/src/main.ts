@@ -60,7 +60,7 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { exportOutputLog } from './services/utils/export-logs'
+import { exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -519,7 +519,8 @@ const register = async (
             void vscode.commands.executeCommand(command, [source])
         }),
         ...setUpCodyIgnore(initialConfig),
-        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
+        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
+        vscode.commands.registerCommand('cody.open.outputChannel', () => openCodyOutputChannel())
     )
 
     /**

@@ -6,6 +6,7 @@ import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems } from './FeedbackOptions'
+import { openCodyOutputChannel } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
@@ -194,6 +195,31 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.onDidTriggerItemButton(item => {
             // @ts-ignore: onClick is a custom extension to the QuickInputButton
             item?.button?.onClick?.()
+            quickPick.hide()
+        })
+        // Debug Mode
+        quickPick.buttons = [
+            {
+                iconPath: new vscode.ThemeIcon('bug'),
+                tooltip: 'Turn on Debug Mode',
+                onClick: () => {
+                    void workspaceConfig.update(
+                        'cody.debug.enable',
+                        true,
+                        vscode.ConfigurationTarget.Global
+                    )
+                    void workspaceConfig.update(
+                        'cody.debug.verbose',
+                        true,
+                        vscode.ConfigurationTarget.Global
+                    )
+                    openCodyOutputChannel()
+                },
+            } as vscode.QuickInputButton,
+        ]
+        quickPick.onDidTriggerButton(async item => {
+            // @ts-ignore: onClick is a custom extension to the QuickInputButton
+            item?.onClick?.()
             quickPick.hide()
         })
     })
