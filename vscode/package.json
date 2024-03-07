@@ -508,7 +508,8 @@
         "command": "cody.debug.enable.all",
         "category": "Cody Debug",
         "group": "Debug",
-        "title": "Enable Debug Mode"
+        "title": "Enable Debug Mode",
+        "when": "!config.cody.debug.verbose"
       }
     ],
     "keybindings": [
@@ -721,12 +722,17 @@
         {
           "command": "cody.debug.export.logs",
           "when": "view == cody.support.tree.view",
+          "group": "8_cody@1"
+        },
+        {
+          "command": "cody.debug.enable.all",
+          "when": "view == cody.support.tree.view && !config.cody.debug.verbose",
           "group": "8_cody@0"
         },
         {
           "command": "cody.debug.outputChannel",
           "when": "view == cody.support.tree.view",
-          "group": "8_cody@1"
+          "group": "8_cody@2"
         },
         {
           "command": "cody.search.index-update",
