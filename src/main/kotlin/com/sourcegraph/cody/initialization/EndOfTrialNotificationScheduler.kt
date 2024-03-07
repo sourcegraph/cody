@@ -41,6 +41,10 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
                 agent.server
                     .getCurrentUserCodySubscription()
                     .completeOnTimeout(null, 4, TimeUnit.SECONDS)
+                    .exceptionally { e ->
+                      logger.warn("Error while getting currentUserCodySubscription ", e)
+                      null
+                    }
                     .get()
 
             if (currentUserCodySubscription == null) {
