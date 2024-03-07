@@ -1,4 +1,4 @@
-import { type Frame, type Locator, type Page, expect } from '@playwright/test'
+import { type Frame, type FrameLocator, type Locator, type Page, expect } from '@playwright/test'
 
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 import { executeCommandInPalette } from './helpers'
@@ -25,11 +25,19 @@ export const sidebarSignin = async (
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
-const sidebarExplorerRole = { name: /Explorer.*/ }
-export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', sidebarExplorerRole)
+export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', { name: /Explorer.*/ })
 
+/**
+ * Use the command to toggle DND mode because the UI differs on Windows/non-Windows since 1.86 with
+ * macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
+ */
 async function disableNotifications(page: Page): Promise<void> {
-    // Use the command to toggle DND mode because the UI differs on Windows/non-Windows since 1.86 with
-    // macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
     await executeCommandInPalette(page, 'notifications: toggle do not disturb')
+}
+
+/**
+ * Gets the chat panel frame locator.
+ */
+export function getChatPanel(page: Page): FrameLocator {
+    return page.frameLocator('iframe.webview').frameLocator('iframe[title="New Chat"]')
 }

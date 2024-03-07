@@ -1,13 +1,14 @@
 import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { getChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
     test as baseTest,
     withPlatformSlashes,
 } from './helpers'
+import { testGitWorkspace } from './utils/gitWorkspace'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -301,4 +302,30 @@ test.extend<ExpectedEvents>({
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
     await page.getByRole('tab', { name: 'cody.json, preview' }).hover()
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
+})
+
+testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+    // Open the Source Control View to confirm this is a git workspace
+    // Check the change is showing as a Git file in the sidebar
+    const sourceControlView = page.getByLabel(/Source Control/).nth(2)
+    await sourceControlView.click()
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
+    await page.locator('a').filter({ hasText: 'index.js' }).click()
+
+    // Run the custom command that uses terminal output as context
+    await page.getByRole('button', { name: 'Commands' }).click()
+    const menuInputBox = page.getByPlaceholder('Search for a command or enter your question here...')
+    await expect(menuInputBox).toBeVisible()
+    await menuInputBox.fill('shellOutput')
+    await page.keyboard.press('Enter')
+
+    // Check the context list to confirm the terminal output is added as file
+    const panel = getChatPanel(page)
+    await expect(panel.getByText('✨ Context: 1 line from 2 files')).toBeVisible()
+    await panel.getByText('✨ Context: 1 line from 2 files').click()
+    await expect(
+        panel.getByRole('button', { name: withPlatformSlashes('@/terminal-output') })
+    ).toBeVisible()
 })
