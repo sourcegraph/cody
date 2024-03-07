@@ -294,6 +294,7 @@ export class MockServer {
         })
 
         let attribution = false
+        let codyPro = false
         app.post('/.api/graphql', (req, res) => {
             if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
                 res.sendStatus(401)
@@ -333,7 +334,7 @@ export class MockServer {
                             JSON.stringify({
                                 data: {
                                     currentUser: {
-                                        codyProEnabled: false,
+                                        codyProEnabled: codyPro,
                                     },
                                 },
                             })
@@ -421,6 +422,10 @@ export class MockServer {
             }
         })
 
+        app.post('/.test/currentUser/codyProEnabled', (req, res) => {
+            codyPro = true
+            res.sendStatus(200)
+        })
         app.post('/.test/attribution/enable', (req, res) => {
             attribution = true
             res.sendStatus(200)
