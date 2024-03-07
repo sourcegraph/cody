@@ -19,6 +19,8 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
     switch (intent) {
         case 'doc':
         case 'fix':
+            // Edit commands have only been tested with Claude 2. Default to that for now.
+            return 'anthropic/claude-2.0'
         case 'test':
         case 'add':
         case 'edit':
