@@ -1,4 +1,3 @@
-import type * as vscode from 'vscode'
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
@@ -11,32 +10,6 @@ const SHARED_PARAMETERS = {
     assistantPrefix: RESPONSE_PREFIX,
 }
 
-const getDocumentCommentSyntax = (
-    document: vscode.TextDocument
-): { commentPrefix: string; commentSuffix: string } => {
-    // TODO: Should we improve this so it handles symbols vs functions etc?
-    switch (document.languageId) {
-        case 'typescript':
-        case 'typescriptreact':
-        case 'javascript':
-        case 'javascriptreact':
-            return {
-                commentPrefix: '/**\n',
-                commentSuffix: '*/',
-            }
-        case 'python':
-            return {
-                commentPrefix: '"""',
-                commentSuffix: '"""',
-            }
-        default:
-            return {
-                commentPrefix: '',
-                commentSuffix: '',
-            }
-    }
-}
-
 export const claude: EditLLMInteraction = {
     getEdit(options) {
         return {
@@ -45,19 +18,15 @@ export const claude: EditLLMInteraction = {
         }
     },
     getDoc(options) {
+        const docStopSequences = [...SHARED_PARAMETERS.stopSequences]
         const firstLine = options.selectedText.split('\n')[0]
-        // const { commentSuffix } = getDocumentCommentSyntax(options.document)
-        const stopSequences = [...SHARED_PARAMETERS.stopSequences, firstLine]
-        // if (commentSuffix) {
-        //     stopSequences.push(commentSuffix)
-        // }
+        if (firstLine.trim().length > 0) {
+            docStopSequences.push(firstLine)
+        }
 
         return {
             ...SHARED_PARAMETERS,
-            stopSequences,
-            assistantPrefix: RESPONSE_PREFIX,
-            // assistantSuffix: commentSuffix ? commentSuffix + '\n' : '',
-            assistantText: RESPONSE_PREFIX,
+            stopSequences: docStopSequences,
             prompt: buildGenericPrompt('doc', options),
         }
     },

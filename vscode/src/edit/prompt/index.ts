@@ -27,7 +27,6 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-3-sonnet-20240229': claude,
     'openai/gpt-3.5-turbo': openai,
     'openai/gpt-4-1106-preview': openai,
-    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct': claude,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -62,7 +61,6 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
     messages: Message[]
     responseTopic: string
     responsePrefix?: string
-    responseSuffix?: string
 }
 
 export const buildInteraction = async ({
@@ -88,7 +86,7 @@ export const buildInteraction = async ({
     const followingText = document.getText(
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
-    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix, assistantSuffix } =
+    const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
             followingText,
@@ -126,6 +124,5 @@ export const buildInteraction = async ({
         stopSequences,
         responseTopic: responseTopic || BotResponseMultiplexer.DEFAULT_TOPIC,
         responsePrefix: assistantPrefix,
-        responseSuffix: assistantSuffix,
     }
 }
