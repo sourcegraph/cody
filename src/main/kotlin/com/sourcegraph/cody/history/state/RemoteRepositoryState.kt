@@ -10,4 +10,6 @@ class RemoteRepositoryState : BaseState() {
   @get:OptionTag(tag = "isEnabled", nameAttribute = "") var isEnabled: Boolean by property(true)
 
   @get:OptionTag(tag = "remoteUrl", nameAttribute = "") var remoteUrl: String? by string()
+
+  @get:OptionTag(tag = "codebaseName", nameAttribute = "") var codebaseName: String? by string()
 }

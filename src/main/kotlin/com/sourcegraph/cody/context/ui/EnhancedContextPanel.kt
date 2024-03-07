@@ -18,6 +18,7 @@ import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.RemoteRepositoryState
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.vcs.CodebaseName
 import com.sourcegraph.vcs.convertGitCloneURLToCodebaseNameOrError
 import java.awt.Dimension
 import java.util.concurrent.TimeUnit
@@ -84,7 +85,9 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
     if (!isDotComAccount()) {
       if (contextState != null) {
         contextState.remoteRepositories.forEach { repo ->
-          repo.remoteUrl?.let { remoteUrl -> addRemoteRepository(remoteUrl, repo.isEnabled) }
+          repo.codebaseName?.let { codebaseName ->
+            addRemoteRepository(CodebaseName(codebaseName), repo.isEnabled)
+          }
         }
       } else {
         CodyAgentCodebase.getInstance(project).getUrl().thenApply { repoUrl ->
@@ -93,7 +96,9 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
               .completeOnTimeout(null, 15, TimeUnit.SECONDS)
               .thenApply { repo ->
                 if (repo != null) {
-                  ApplicationManager.getApplication().invokeLater { addRemoteRepository(repoUrl) }
+                  ApplicationManager.getApplication().invokeLater {
+                    addRemoteRepository(codebaseName)
+                  }
                 }
               }
         }
@@ -121,15 +126,16 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   private fun isDotComAccount() =
       CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() ?: false
 
-  private fun getRepoByUrlAndRun(codebaseName: String, consumer: Consumer<Repo>) {
+  private fun getRepoByUrlAndRun(codebaseName: CodebaseName, consumer: Consumer<Repo>) {
     RemoteRepoUtils.getRepository(project, codebaseName).thenApply {
       it?.let { repo -> consumer.accept(repo) }
     }
   }
 
-  private fun enableRemote(codebaseName: String) {
+  private fun enableRemote(codebaseName: CodebaseName) {
     updateContextState { contextState ->
-      contextState.remoteRepositories.find { it.remoteUrl == codebaseName }?.isEnabled = true
+      contextState.remoteRepositories.find { it.codebaseName == codebaseName.value }?.isEnabled =
+          true
     }
     getRepoByUrlAndRun(codebaseName) { repo ->
       chatSession.sendWebviewMessage(
@@ -139,9 +145,10 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   }
 
   @RequiresEdt
-  private fun disableRemote(codebaseName: String) {
+  private fun disableRemote(codebaseName: CodebaseName) {
     updateContextState { contextState ->
-      contextState.remoteRepositories.find { it.remoteUrl == codebaseName }?.isEnabled = false
+      contextState.remoteRepositories.find { it.codebaseName == codebaseName.value }?.isEnabled =
+          false
     }
     getRepoByUrlAndRun(codebaseName) { repo ->
       chatSession.sendWebviewMessage(
@@ -152,7 +159,7 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   @RequiresEdt
   private fun removeRemoteRepository(node: ContextTreeRemoteRepoNode) {
     updateContextState { contextState ->
-      contextState.remoteRepositories.removeIf { it.remoteUrl == node.codebaseName }
+      contextState.remoteRepositories.removeIf { it.codebaseName == node.codebaseName.value }
     }
     remoteContextNode.remove(node)
     if (enhancedContextNode.children().toList().contains(remoteContextNode) &&
@@ -164,14 +171,13 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   }
 
   @RequiresEdt
-  private fun addRemoteRepository(repoUrl: String, isCheckedInitially: Boolean = true) {
-    val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrl)
+  private fun addRemoteRepository(codebaseName: CodebaseName, isCheckedInitially: Boolean = true) {
 
     updateContextState { contextState ->
       val repositories = contextState.remoteRepositories
-      val existingRepo = repositories.find { it.remoteUrl == codebaseName }
+      val existingRepo = repositories.find { it.codebaseName == codebaseName.value }
       val modifiedRepo = existingRepo ?: RemoteRepositoryState()
-      modifiedRepo.remoteUrl = codebaseName
+      modifiedRepo.codebaseName = codebaseName.value
       modifiedRepo.isEnabled = isCheckedInitially
       if (existingRepo == null) repositories.add(modifiedRepo)
     }
@@ -224,7 +230,9 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       toolbarDecorator.setAddActionName(
           CodyBundle.getString("context-panel.button.add-remote-repo"))
       toolbarDecorator.setAddAction {
-        AddRepositoryDialog(project, remoteContextNode) { repoUrl -> addRemoteRepository(repoUrl) }
+        AddRepositoryDialog(project, remoteContextNode) { codebaseName ->
+              addRemoteRepository(codebaseName)
+            }
             .show()
         expandAllNodes()
       }

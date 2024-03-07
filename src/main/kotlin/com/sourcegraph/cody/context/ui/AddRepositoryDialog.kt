@@ -10,6 +10,7 @@ import com.intellij.util.Alarm
 import com.sourcegraph.cody.config.DialogValidationUtils
 import com.sourcegraph.cody.context.RemoteRepoUtils
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.vcs.CodebaseName
 import com.sourcegraph.vcs.convertGitCloneURLToCodebaseNameOrError
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.NotNull
 class AddRepositoryDialog(
     private val project: Project,
     private val remoteContextNode: ContextTreeRemoteRootNode,
-    private val addAction: (String) -> Unit
+    private val addAction: (CodebaseName) -> Unit
 ) : DialogWrapper(project) {
 
   private val repoUrlInputField = TextFieldWithAutoCompletion.create(project, listOf(), false, null)
@@ -36,20 +37,20 @@ class AddRepositoryDialog(
   }
 
   override fun doValidateAll(): List<ValidationInfo> {
+    val text = repoUrlInputField.text.lowercase()
+
     fun validateNonEmpty() =
         DialogValidationUtils.custom(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-empty-url")) {
-              repoUrlInputField.text.isNotBlank()
+              text.isNotBlank()
             }
 
     fun validateValidUrl() =
         DialogValidationUtils.custom(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-invalid-url")) {
-              val url =
-                  if (repoUrlInputField.text.startsWith("http")) repoUrlInputField.text
-                  else "http://" + repoUrlInputField.text
+              val url = if (text.startsWith("http")) text else "http://$text"
               runCatching { URL(url) }.isSuccess
             }
 
@@ -58,8 +59,7 @@ class AddRepositoryDialog(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-no-repo")) {
               val codebaseName =
-                  runCatching { convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text) }
-                      .getOrNull()
+                  runCatching { convertGitCloneURLToCodebaseNameOrError(text) }.getOrNull()
               codebaseName ?: return@custom false
               val repo =
                   RemoteRepoUtils.getRepository(project, codebaseName)
@@ -73,13 +73,12 @@ class AddRepositoryDialog(
             repoUrlInputField,
             CodyBundle.getString("context-panel.add-repo-dialog.error-repo-already-added")) {
               val codebaseName =
-                  runCatching { convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text) }
-                      .getOrNull()
+                  runCatching { convertGitCloneURLToCodebaseNameOrError(text) }.getOrNull()
               remoteContextNode
                   .children()
                   .toList()
                   .filterIsInstance<ContextTreeRemoteRepoNode>()
-                  .none { it.codebaseName == codebaseName?.lowercase() }
+                  .none { it.codebaseName == codebaseName }
             }
 
     return listOfNotNull(
@@ -94,7 +93,9 @@ class AddRepositoryDialog(
   }
 
   override fun doOKAction() {
-    addAction(repoUrlInputField.text.lowercase())
+    runCatching { convertGitCloneURLToCodebaseNameOrError(repoUrlInputField.text.lowercase()) }
+        .getOrNull()
+        ?.let { codebaseName -> addAction(codebaseName) }
     close(OK_EXIT_CODE, true)
   }
 

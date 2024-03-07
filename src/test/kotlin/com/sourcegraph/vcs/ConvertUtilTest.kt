@@ -9,90 +9,96 @@ class ConvertUtilTest : TestCase() {
     assertEquals(
         "dev.azure.com/organization/project/repository",
         convertGitCloneURLToCodebaseNameOrError(
-            "https://dev.azure.com/organization/project/_git/repository"))
+                "https://dev.azure.com/organization/project/_git/repository")
+            .value)
   }
 
   fun `test conversion GitHub SSH URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git"))
+        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git").value)
   }
 
   fun `test conversion GitHub SSH URL with different user`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError(
-            "jdsbcnuqwew@github.com:sourcegraph/sourcegraph.git"))
+                "jdsbcnuqwew@github.com:sourcegraph/sourcegraph.git")
+            .value)
   }
 
   fun `test conversion GitHub SSH URL with the port number`() {
     assertEquals(
         "gitlab-my-company.net/path/repo",
         convertGitCloneURLToCodebaseNameOrError(
-            "ssh://git@gitlab-my-company.net:20022/path/repo.git"))
+                "ssh://git@gitlab-my-company.net:20022/path/repo.git")
+            .value)
   }
 
   fun `test conversion GitHub SSH URL no trailing git`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph"))
+        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph").value)
   }
 
   fun `test conversion GitHub HTTPS URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("https://github.com/sourcegraph/sourcegraph"))
+        convertGitCloneURLToCodebaseNameOrError("https://github.com/sourcegraph/sourcegraph").value)
   }
 
   fun `test conversion Bitbucket HTTPS URL`() {
     assertEquals(
         "bitbucket.org/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError(
-            "https://username@bitbucket.org/sourcegraph/sourcegraph.git"))
+                "https://username@bitbucket.org/sourcegraph/sourcegraph.git")
+            .value)
   }
 
   fun `test conversion Bitbucket SSH URL`() {
     assertEquals(
         "bitbucket.sgdev.org/sourcegraph/sourcegraph",
         convertGitCloneURLToCodebaseNameOrError(
-            "git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git"))
+                "git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git")
+            .value)
   }
 
   fun `test conversion GitLab SSH URL`() {
     assertEquals(
         "gitlab.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("git@gitlab.com:sourcegraph/sourcegraph.git"))
+        convertGitCloneURLToCodebaseNameOrError("git@gitlab.com:sourcegraph/sourcegraph.git").value)
   }
 
   fun `test conversion GitLab HTTPS URL`() {
 
     assertEquals(
         "gitlab.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("https://gitlab.com/sourcegraph/sourcegraph.git"))
+        convertGitCloneURLToCodebaseNameOrError("https://gitlab.com/sourcegraph/sourcegraph.git")
+            .value)
   }
 
   fun `test conversion GitHub SSH URL with Git`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git"))
+        convertGitCloneURLToCodebaseNameOrError("git@github.com:sourcegraph/sourcegraph.git").value)
   }
 
   fun `test conversion Eriks SSH Alias URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("github:sourcegraph/sourcegraph"))
+        convertGitCloneURLToCodebaseNameOrError("github:sourcegraph/sourcegraph").value)
   }
 
   fun `test conversion HTTP URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("http://github.com/sourcegraph/sourcegraph"))
+        convertGitCloneURLToCodebaseNameOrError("http://github.com/sourcegraph/sourcegraph").value)
   }
 
   fun `test conversion URL`() {
     assertEquals(
         "github.com/sourcegraph/sourcegraph",
-        convertGitCloneURLToCodebaseNameOrError("github.com/sourcegraph/sourcegraph"))
+        convertGitCloneURLToCodebaseNameOrError("github.com/sourcegraph/sourcegraph").value)
   }
 
   private fun invalidConversion() = convertGitCloneURLToCodebaseNameOrError("invalid")
@@ -105,6 +111,7 @@ class ConvertUtilTest : TestCase() {
     assertEquals(
         "github.com/philipp-spiess/philippspiess.com",
         convertGitCloneURLToCodebaseNameOrError(
-            "git@github.com:philipp-spiess/philippspiess.com.git"))
+                "git@github.com:philipp-spiess/philippspiess.com.git")
+            .value)
   }
 }

@@ -16,6 +16,8 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.ChatState
+import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
@@ -23,6 +25,7 @@ import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.UserLevelConfig
+import com.sourcegraph.vcs.convertGitCloneURLToCodebaseNameOrError
 import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : Activity {
@@ -35,6 +38,9 @@ class SettingsMigration : Activity {
       migrateAccounts(project)
     }
     RunOnceUtil.runOnceForProject(project, "CodyHistoryLlmMigration") { migrateLlms(project) }
+    RunOnceUtil.runOnceForProject(project, "CodyConvertUrlToCodebaseName") {
+      migrateUrlsToCodebaseNames(project)
+    }
     RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
     RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
       toggleCodyToolbarWindow(project)
@@ -103,6 +109,19 @@ class SettingsMigration : Activity {
           llmState.provider = provider
           it.llm = llmState
         }
+  }
+
+  private fun migrateUrlsToCodebaseNames(project: Project) {
+    val enhancedContextState =
+        HistoryService.getInstance(project).state.defaultEnhancedContext ?: return
+
+    migrateUrlsToCodebaseNames(enhancedContextState)
+
+    HistoryService.getInstance(project)
+        .state
+        .chats
+        .mapNotNull(ChatState::enhancedContext)
+        .forEach(Companion::migrateUrlsToCodebaseNames)
   }
 
   private val modelToProviderAndTitle =
@@ -391,5 +410,23 @@ class SettingsMigration : Activity {
 
   companion object {
     private val LOG = logger<SettingsMigration>()
+
+    fun migrateUrlsToCodebaseNames(enhancedContextState: EnhancedContextState) {
+      val remoteRepositories =
+          enhancedContextState.remoteRepositories
+              .onEach { remoteRepositoryState ->
+                runCatching {
+                      remoteRepositoryState.remoteUrl?.let { remoteUrl ->
+                        convertGitCloneURLToCodebaseNameOrError(remoteUrl)
+                      }
+                    }
+                    .getOrNull()
+                    ?.let { remoteRepositoryState.codebaseName = it.value }
+              }
+              .filter { it.codebaseName != null }
+              .distinctBy { it.codebaseName }
+              .toMutableList()
+      enhancedContextState.remoteRepositories = remoteRepositories
+    }
   }
 }

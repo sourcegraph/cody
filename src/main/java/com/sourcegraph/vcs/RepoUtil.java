@@ -130,7 +130,7 @@ public class RepoUtil {
 
     if (vcsType == VCSType.GIT && repository != null) {
       String cloneURL = GitUtil.getRemoteRepoUrl((GitRepository) repository, project);
-      return convertGitCloneURLToCodebaseNameOrError(cloneURL);
+      return convertGitCloneURLToCodebaseNameOrError(cloneURL).getValue();
     }
 
     if (vcsType == VCSType.PERFORCE) {

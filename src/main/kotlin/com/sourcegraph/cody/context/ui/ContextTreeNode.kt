@@ -2,6 +2,7 @@ package com.sourcegraph.cody.context.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.CheckedTreeNode
+import com.sourcegraph.vcs.CodebaseName
 import java.util.concurrent.atomic.AtomicBoolean
 
 open class ContextTreeNode<T>(value: T, private val onSetChecked: (Boolean) -> Unit = {}) :
@@ -17,8 +18,8 @@ class ContextTreeRootNode(val text: String, onSetChecked: (Boolean) -> Unit) :
 
 class ContextTreeRemoteRootNode(val text: String) : ContextTreeNode<String>(text)
 
-class ContextTreeRemoteRepoNode(val codebaseName: String, onSetChecked: (Boolean) -> Unit) :
-    ContextTreeNode<String>(codebaseName, onSetChecked)
+class ContextTreeRemoteRepoNode(val codebaseName: CodebaseName, onSetChecked: (Boolean) -> Unit) :
+    ContextTreeNode<CodebaseName>(codebaseName, onSetChecked)
 
 open class ContextTreeLocalNode<T>(value: T, private val isEnhancedContextEnabled: AtomicBoolean) :
     ContextTreeNode<T>(value) {
