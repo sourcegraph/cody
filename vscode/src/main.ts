@@ -519,7 +519,7 @@ const register = async (
             void vscode.commands.executeCommand(command, [source])
         }),
         ...setUpCodyIgnore(initialConfig),
-        // Debugging
+        // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode())

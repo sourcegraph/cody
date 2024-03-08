@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { CODY_OUTPUT_CHANNEL } from '../../log'
+import { CODY_OUTPUT_CHANNEL, outputChannel } from '../../log'
 
 /**
  * Exports the output log file to a specified location.
@@ -70,7 +70,7 @@ export function openCodyOutputChannel(): void {
  */
 export function enableDebugMode(): void {
     const workspaceConfig = vscode.workspace.getConfiguration()
-    void workspaceConfig.update('cody.debug.enable', true, vscode.ConfigurationTarget.Global)
+    void workspaceConfig.update('cody.debug.enable', undefined, vscode.ConfigurationTarget.Global)
     void workspaceConfig.update('cody.debug.verbose', true, vscode.ConfigurationTarget.Global)
     openCodyOutputChannel()
 }

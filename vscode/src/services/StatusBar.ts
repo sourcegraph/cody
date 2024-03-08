@@ -201,7 +201,7 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: 'Turn on Debug Mode',
+                tooltip: config.debugEnable ? 'Check Debug Logs' : 'Turn on Debug Mode',
                 onClick: () => enableDebugMode(),
             } as vscode.QuickInputButton,
         ]
