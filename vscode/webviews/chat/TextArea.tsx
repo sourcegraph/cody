@@ -101,6 +101,36 @@ export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         [onKeyUp]
     )
 
+    const onPaste = useCallback(
+        (event: React.ClipboardEvent<HTMLTextAreaElement>): void => {
+            const { clipboardData } = event
+            const textarea = inputRef.current
+            if (clipboardData && textarea) {
+                const language = parseEditorData(clipboardData.getData('vscode-editor-data'))
+
+                if (language) {
+                    event.preventDefault()
+                    event.stopPropagation()
+
+                    const text = clipboardData.getData('text/plain')
+                    if (text.split('\n').length > 1) {
+                        const newText = '```\n' + text.replace(/\n/g, '\n\n') + '\n```\n'
+
+                        const startPos = textarea.selectionStart
+                        const endPos = textarea.selectionEnd
+                        textarea.value =
+                            textarea.value.substring(0, startPos) +
+                            newText +
+                            textarea.value.substring(endPos, textarea.value.length)
+                    }
+                }
+            }
+
+            onInput(event)
+        },
+        [onInput]
+    )
+
     const actualPlaceholder = chatEnabled ? placeholder : disabledPlaceHolder
     const isDisabled = !chatEnabled
 
@@ -128,7 +158,7 @@ export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 onKeyDown={onTextAreaKeyDown}
                 onKeyUp={onTextAreaKeyUp}
                 onFocus={onFocus}
-                onPaste={onInput}
+                onPaste={onPaste}
                 placeholder={actualPlaceholder}
                 aria-label="Chat message"
                 title="" // Set to blank to avoid HTML5 error tooltip "Please fill in this field"
@@ -136,4 +166,16 @@ export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             />
         </div>
     )
+}
+
+function parseEditorData(vscodeEditorData: string): string | null {
+    try {
+        if (vscodeEditorData) {
+            const parsedData = JSON.parse(vscodeEditorData)
+            return parsedData.mode ?? null
+        }
+        return null
+    } catch {
+        return null
+    }
 }
