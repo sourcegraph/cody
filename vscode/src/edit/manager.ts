@@ -15,6 +15,8 @@ import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { editModel } from '../models'
+import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
+import { CodyTaskState } from '../non-stop/utils'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -24,8 +26,6 @@ import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditModelsForUser } from './utils/edit-models'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
-import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
-import { CodyTaskState } from '../non-stop/utils'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -137,7 +137,6 @@ export class EditManager implements vscode.Disposable {
         if (!task) {
             return
         }
-
 
         /**
          * Checks if there is already an active task for the given fixup file

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import { isWindows, testFileUri } from '@sourcegraph/cody-shared'
 
+import { document } from '../../../completions/test-helpers'
 import type { GetLLMInteractionOptions } from '../type'
 import { claude } from './claude'
 import { openai } from './openai'
-import { document } from '../../../completions/test-helpers'
 
 describe('Edit Prompts', () => {
     const followingText = "const text = 'Hello, world!'\n"
@@ -18,7 +18,7 @@ describe('Edit Prompts', () => {
         selectedText,
         precedingText,
         instruction: 'Console log text',
-        document: document(followingText + selectedText + precedingText, 'typescript', uri.toString())
+        document: document(followingText + selectedText + precedingText, 'typescript', uri.toString()),
     }
 
     function normalize(text: string): string {

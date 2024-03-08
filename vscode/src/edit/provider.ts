@@ -46,13 +46,17 @@ export class EditProvider {
                 this.config.authProvider.getAuthStatus(),
                 model
             )
-            const { messages, stopSequences, responseTopic, responsePrefix = '' } =
-                await buildInteraction({
-                    model,
-                    contextWindow,
-                    task: this.config.task,
-                    editor: this.config.editor,
-                })
+            const {
+                messages,
+                stopSequences,
+                responseTopic,
+                responsePrefix = '',
+            } = await buildInteraction({
+                model,
+                contextWindow,
+                task: this.config.task,
+                editor: this.config.editor,
+            })
 
             const multiplexer = new BotResponseMultiplexer()
 

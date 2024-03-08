@@ -92,12 +92,15 @@ export class FixupDocumentEditObserver {
             }
 
             if (task.insertionPoint) {
-                const updatedInsertionPoint = updateRangeMultipleChanges(new vscode.Range(task.insertionPoint, task.insertionPoint), changes, { supportRangeAffix: true}).start
+                const updatedInsertionPoint = updateRangeMultipleChanges(
+                    new vscode.Range(task.insertionPoint, task.insertionPoint),
+                    changes,
+                    { supportRangeAffix: true }
+                ).start
                 if (!updatedInsertionPoint.isEqual(task.insertionPoint)) {
                     task.insertionPoint = updatedInsertionPoint
                 }
             }
-
 
             // We keep track of where the original range should be, so we can re-use it for retries.
             // Note: This range doesn't expand or shrink, it needs to match the original range as applied to `task.original`

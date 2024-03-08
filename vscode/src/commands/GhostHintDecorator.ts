@@ -94,29 +94,24 @@ type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 type EnabledFeatures = Record<GhostVariant, boolean>
 
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
-    const config = vscode.workspace.getConfiguration("cody");
-    const configSettings = config.inspect<boolean>("commandHints.enabled");
-    const settingValue =
-        configSettings?.workspaceValue ?? configSettings?.globalValue;
+    const config = vscode.workspace.getConfiguration('cody')
+    const configSettings = config.inspect<boolean>('commandHints.enabled')
+    const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
         EditOrChat:
             settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyCommandHints
-            )),
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)),
         Document:
             settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyDocumentHints
-            )),
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
          */
         Generate: settingValue ?? true,
-    };
+    }
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
@@ -176,13 +171,10 @@ export class GhostHintDecorator implements vscode.Disposable {
      * Tracks whether the user has recorded an enrollment for each ghost variant.
      * This is _only_ to help us measure usage via an A/B test.
      */
-    private enrollmentRecorded: Record<
-        Exclude<GhostVariant, "Generate">,
-        boolean
-    > = {
+    private enrollmentRecorded: Record<Exclude<GhostVariant, 'Generate'>, boolean> = {
         EditOrChat: false,
         Document: false,
-    };
+    }
 
     constructor(authProvider: AuthProvider) {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
@@ -314,7 +306,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                         return this.setThrottledGhostText(editor, targetPosition, 'EditOrChat')
                     }
                 }
-            ),
+            )
         )
 
         if (enabledFeatures.Generate) {
@@ -415,7 +407,10 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
         const featureEnablement = await getGhostHintEnablement()
-        if (!authStatus.isLoggedIn || !(featureEnablement.Document || featureEnablement.EditOrChat || featureEnablement.Generate)) {
+        if (
+            !authStatus.isLoggedIn ||
+            !(featureEnablement.Document || featureEnablement.EditOrChat || featureEnablement.Generate)
+        ) {
             this.dispose()
             return
         }

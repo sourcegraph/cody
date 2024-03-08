@@ -152,12 +152,16 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
 
             const range = findLast(rangeCaptures, ({ node }) => {
                 return (
-                    (node.startPosition.row <= start.row && node.startPosition.column <= start.column) &&
+                    node.startPosition.row <= start.row &&
+                    node.startPosition.column <= start.column &&
                     (start.column <= node.endPosition.column || start.row <= node.endPosition.row)
                 )
             })
 
-            return [{ node: symbol?.node, name: symbol?.name }, { node: range?.node, name: range?.name }] as const
+            return [
+                { node: symbol?.node, name: symbol?.name },
+                { node: range?.node, name: range?.name },
+            ] as const
         },
     }
 }

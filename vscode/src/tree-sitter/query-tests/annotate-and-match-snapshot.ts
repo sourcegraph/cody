@@ -150,7 +150,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
 
     for (const { name, node } of capturedNodes) {
         if (!name || !node) {
-            continue;
+            continue
         }
 
         const { startPosition: start, endPosition, type } = node
