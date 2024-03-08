@@ -196,7 +196,7 @@ async function getEnhancedContextFromRanker({
         )
 
         const localSearchContextItemsPromise = providers.symf
-            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text, false, 20), 'symf')
             : []
 
         const remoteSearchContextItemsPromise = providers.remoteSearch
@@ -264,7 +264,8 @@ async function searchSymf(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
     userText: string,
-    blockOnIndex = false
+    blockOnIndex = false,
+    numResults = 15
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {
         if (!symf) {
@@ -287,7 +288,7 @@ async function searchSymf(
         // trigger background reindex if the index is stale
         void symf?.reindexIfStale(workspaceRoot)
 
-        const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
+        const r0 = (await symf.getResults(userText, [workspaceRoot], numResults)).flatMap(async results => {
             const items = (await results).flatMap(
                 async (result: Result): Promise<ContextItem[] | ContextItem> => {
                     const range = new vscode.Range(
