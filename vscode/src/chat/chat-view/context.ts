@@ -395,11 +395,11 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
         return [
             {
                 type: 'file',
-                text: visible.content,
+                content: visible.content,
                 uri: fileUri,
                 source: ContextItemSource.Editor,
             },
-        ]
+        ] satisfies ContextItem[]
     })
 }
 
