@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type ContextGroup,
+    type ContextItem,
     type ContextItemFile,
     type ContextSearchResult,
     type ContextStatusProvider,
@@ -11,6 +12,7 @@ import {
     isError,
 } from '@sourcegraph/cody-shared'
 
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { URI } from 'vscode-uri'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 import type * as repofetcher from './repo-fetcher'
@@ -134,23 +136,26 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         if (isError(results)) {
             throw results
         }
-        return (results || []).map(result => ({
-            type: 'file',
-            uri: result.uri,
-            repoName: result.repoName,
-            revision: result.commit,
-            source: 'unified',
-            content: result.content,
-            range: {
-                start: {
-                    line: result.startLine,
-                    character: 0,
-                },
-                end: {
-                    line: result.endLine,
-                    character: 0,
-                },
-            },
-        }))
+        return (results || []).map(
+            result =>
+                ({
+                    type: 'file',
+                    uri: result.uri,
+                    repoName: result.repoName,
+                    revision: result.commit,
+                    source: ContextItemSource.Unified,
+                    content: result.content,
+                    range: {
+                        start: {
+                            line: result.startLine,
+                            character: 0,
+                        },
+                        end: {
+                            line: result.endLine,
+                            character: 0,
+                        },
+                    },
+                }) satisfies ContextItem
+        )
     }
 }
