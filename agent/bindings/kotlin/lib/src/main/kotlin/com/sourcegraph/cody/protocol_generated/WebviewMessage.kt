@@ -251,7 +251,6 @@ data class Symf_indexWebviewMessage(
 data class InsertWebviewMessage(
   val command: CommandEnum? = null, // Oneof: insert
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -262,7 +261,6 @@ data class InsertWebviewMessage(
 data class NewFileWebviewMessage(
   val command: CommandEnum? = null, // Oneof: newFile
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -274,7 +272,6 @@ data class CopyWebviewMessage(
   val command: CommandEnum? = null, // Oneof: copy
   val eventType: EventTypeEnum? = null, // Oneof: Button, Keydown
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

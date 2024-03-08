@@ -279,10 +279,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
-                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'links':
                 void openExternalLinks(message.value)
@@ -294,7 +294,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                handleCodeFromSaveToNewFile(message.text)
                 await this.editor.createWorkspaceFile(message.text)
                 break
             case 'context/get-remote-search-repos': {
