@@ -16,7 +16,6 @@ import {
     getContextFileDisplayText,
     isAtMention,
     isAtRange,
-    isDefined,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
@@ -723,25 +722,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ]
     )
 
-    const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [
-            {
-                speaker: 'assistant',
-                displayText: welcomeText({ welcomeMessage }),
-            },
-            ...transcript,
-        ],
-        [welcomeMessage, transcript]
-    )
-
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
     return (
         <div className={classNames(styles.innerContainer)}>
             {
                 <Transcript
-                    // Remove welcome message after the first message is submitted
-                    transcript={transcript.length ? transcript : transcriptWithWelcome}
+                    transcript={transcript}
+                    welcomeMessage={welcomeMessage}
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}
@@ -1031,20 +1019,6 @@ const FeedbackButtonsContainer: React.FunctionComponent<FeedbackButtonsProps> = 
             )}
         </div>
     )
-}
-
-interface WelcomeTextOptions {
-    /** Provide users with a way to quickly access Cody docs/help.*/
-    helpMarkdown?: string
-    /** Provide additional content to supplement the original message. Example: tips, privacy policy. */
-    welcomeMessage?: string
-}
-
-function welcomeText({
-    helpMarkdown = 'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.',
-    welcomeMessage,
-}: WelcomeTextOptions): string {
-    return [helpMarkdown, welcomeMessage].filter(isDefined).join('\n\n')
 }
 
 export interface UserAccountInfo {
