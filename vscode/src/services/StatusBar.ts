@@ -155,7 +155,10 @@ export function createStatusBar(): CodyStatusBar {
                 undefined,
                 'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
                 'cody.commandHints.enabled',
-                getGhostHintEnablement
+                async () => {
+                    const enablement = await getGhostHintEnablement()
+                    return enablement.Document || enablement.EditOrChat
+                }
             ),
             await createFeatureToggle(
                 'Search Context',

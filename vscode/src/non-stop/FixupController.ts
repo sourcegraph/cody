@@ -1128,7 +1128,7 @@ export class FixupController
         })
     }
 
-    private setTaskState(task: FixupTask, state: CodyTaskState): void {
+    public setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
         if (oldState === state) {
             // Not a transition--nothing to do.

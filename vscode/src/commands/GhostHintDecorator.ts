@@ -90,16 +90,21 @@ function getSymbolDecorationPadding(
     return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
-export async function getGhostHintEnablement(): Promise<boolean> {
+type EnabledFeatures = Record<Exclude<GhostVariant, 'Generate'>, boolean>
+export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
+    const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
-    return (
-        configSettings?.workspaceValue ??
-        configSettings?.globalValue ??
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)
-    )
+    return {
+        EditOrChat:
+            settingValue ??
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)),
+        Document:
+            settingValue ??
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+    }
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
@@ -155,7 +160,18 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecorationRange: vscode.Range | null = null
     private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
     private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
-    private enrollmentListener: vscode.Disposable | null = null
+
+    /**
+     * Tracks whether the user has recorded an enrollment for each ghost variant.
+     * This is _only_ to help us measure usage via an A/B test.
+     */
+    private enrollmentRecorded: Record<
+        Exclude<GhostVariant, "Generate">,
+        boolean
+    > = {
+        EditOrChat: false,
+        Document: false,
+    };
 
     constructor(authProvider: AuthProvider) {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
@@ -186,7 +202,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         })
     }
 
-    private init(): void {
+    private init(enabledFeatures: EnabledFeatures): void {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection(
                 (event: vscode.TextEditorSelectionChangeEvent) => {
@@ -215,68 +231,77 @@ export class GhostHintDecorator implements vscode.Disposable {
                         return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
                     }
 
-                    const [documentableSymbol] = execQueryWrapper(
-                        editor.document,
-                        selection.active,
-                        'getDocumentableNode'
-                    )
+                    if (enabledFeatures.Document) {
+                        this.firePossibleEnrollmentEvent('Document', enabledFeatures)
+                        const [documentableSymbol] = execQueryWrapper(
+                            editor.document,
+                            selection.active,
+                            'getDocumentableNode'
+                        )
 
-                    if (documentableSymbol.node) {
-                        /**
-                         * "Document" code flow.
-                         * Display ghost text above the relevant symbol.
-                         */
-                        const precedingLine = Math.max(0, documentableSymbol.node.startPosition.row - 1)
-                        if (
-                            this.activeDecorationRange &&
-                            this.activeDecorationRange.start.line !== precedingLine
-                        ) {
-                            this.clearGhostText(editor)
-                        }
-                        return this.setThrottledGhostText(
-                            editor,
-                            new vscode.Position(precedingLine, Number.MAX_VALUE),
-                            'Document',
-                            getSymbolDecorationPadding(
-                                editor.document,
-                                editor.document.lineAt(precedingLine),
-                                new vscode.Range(
-                                    documentableSymbol.node.startPosition.row,
-                                    documentableSymbol.node.startPosition.column,
-                                    documentableSymbol.node.endPosition.row,
-                                    documentableSymbol.node.endPosition.column
+                        if (documentableSymbol.node) {
+                            /**
+                             * "Document" code flow.
+                             * Display ghost text above the relevant symbol.
+                             */
+                            const precedingLine = Math.max(
+                                0,
+                                documentableSymbol.node.startPosition.row - 1
+                            )
+                            if (
+                                this.activeDecorationRange &&
+                                this.activeDecorationRange.start.line !== precedingLine
+                            ) {
+                                this.clearGhostText(editor)
+                            }
+                            return this.setThrottledGhostText(
+                                editor,
+                                new vscode.Position(precedingLine, Number.MAX_VALUE),
+                                'Document',
+                                getSymbolDecorationPadding(
+                                    editor.document,
+                                    editor.document.lineAt(precedingLine),
+                                    new vscode.Range(
+                                        documentableSymbol.node.startPosition.row,
+                                        documentableSymbol.node.startPosition.column,
+                                        documentableSymbol.node.endPosition.row,
+                                        documentableSymbol.node.endPosition.column
+                                    )
                                 )
                             )
-                        )
+                        }
                     }
 
-                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                        return this.clearGhostText(editor)
+                    if (enabledFeatures.EditOrChat) {
+                        this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
+                        if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                            // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                            // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
+                            return this.clearGhostText(editor)
+                        }
+
+                        /**
+                         * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
+                         * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
+                         */
+                        const targetPosition = selection.isReversed
+                            ? selection.active
+                            : selection.active.translate(selection.end.character === 0 ? -1 : 0)
+
+                        if (
+                            this.activeDecorationRange &&
+                            this.activeDecorationRange.start.line !== targetPosition.line
+                        ) {
+                            // Active decoration is incorrectly positioned, remove it before continuing
+                            this.clearGhostText(editor)
+                        }
+
+                        /**
+                         * Edit code flow.
+                         * Show alongside a users' active selection
+                         */
+                        return this.setThrottledGhostText(editor, targetPosition, 'EditOrChat')
                     }
-
-                    /**
-                     * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
-                     * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
-                     */
-                    const targetPosition = selection.isReversed
-                        ? selection.active
-                        : selection.active.translate(selection.end.character === 0 ? -1 : 0)
-
-                    if (
-                        this.activeDecorationRange &&
-                        this.activeDecorationRange.start.line !== targetPosition.line
-                    ) {
-                        // Active decoration is incorrectly positioned, remove it before continuing
-                        this.clearGhostText(editor)
-                    }
-
-                    /**
-                     * Edit code flow.
-                     * Show alongside a users' active selection
-                     */
-                    return this.setThrottledGhostText(editor, targetPosition, 'EditOrChat')
                 }
             ),
             vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
@@ -335,60 +360,56 @@ export class GhostHintDecorator implements vscode.Disposable {
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
     }
 
-    private async updateEnablement(authStatus: AuthStatus): Promise<void> {
-        const featureEnabled = await getGhostHintEnablement()
-        this.registerEnrollmentListener(featureEnabled)
+    /**
+     * Fire an additional telemetry enrollment event for when the user has hit a scenario where they would
+     * trigger a possible ghost text variant.
+     * This code is _only_ to be used to support the ongoing A/B tests for ghost hint usage.
+     */
+    private firePossibleEnrollmentEvent(variant: GhostVariant, enablement: EnabledFeatures): void {
+        if (variant === 'Document' && !this.enrollmentRecorded.Document) {
+            const testGroup = enablement.Document ? 'treatment' : 'control'
+            telemetryService.log(
+                'CodyVSCodeExtension:experiment:documentGhostText:enrolled',
+                { variant: testGroup },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.experiment.documentGhostText', 'enrolled', {
+                privateMetadata: { variant: testGroup },
+            })
+            // Mark this enrollment as recorded for the current session
+            // We do not need to repeatedly mark the users' enrollment.
+            this.enrollmentRecorded.Document = true
+        }
 
-        if (!authStatus.isLoggedIn || !featureEnabled) {
+        if (variant === 'EditOrChat') {
+            const testGroup = enablement.EditOrChat ? 'treatment' : 'control'
+            telemetryService.log(
+                'CodyVSCodeExtension:experiment:ghostText:enrolled',
+                { variant: testGroup },
+                { hasV2Event: true }
+            )
+            telemetryRecorder.recordEvent('cody.experiment.ghostText', 'enrolled', {
+                privateMetadata: { variant: testGroup },
+            })
+            // Mark this enrollment as recorded for the current session
+            // We do not need to repeatedly mark the users' enrollment.
+            this.enrollmentRecorded.EditOrChat = true
+        }
+    }
+
+    private async updateEnablement(authStatus: AuthStatus): Promise<void> {
+        const featureEnablement = await getGhostHintEnablement()
+
+        if (!authStatus.isLoggedIn || !(featureEnablement.Document || featureEnablement.EditOrChat)) {
             this.dispose()
             return
         }
 
         if (!this.isActive) {
             this.isActive = true
-            this.init()
+            this.init(featureEnablement)
             return
         }
-    }
-
-    /**
-     * Register a listener for when the user has enrolled in the ghost hint feature.
-     * This code is _only_ to be used to support the ongoing A/B test for ghost hint usage.
-     */
-    private registerEnrollmentListener(featureEnabled: boolean): void {
-        this.enrollmentListener = vscode.window.onDidChangeTextEditorSelection(
-            (event: vscode.TextEditorSelectionChangeEvent) => {
-                const editor = event.textEditor
-
-                /**
-                 * Matches the logic for actually displaying the ghost text.
-                 * This is a temporary check to support an ongoing A/B test,
-                 * that is handled separately as we do this regardless if the ghost text is enabled/disabled
-                 */
-                const ghostTextWouldShow =
-                    editor.document.uri.scheme === 'file' &&
-                    event.selections.length === 1 &&
-                    !isEmptyOrIncompleteSelection(editor.document, event.selections[0])
-
-                if (ghostTextWouldShow) {
-                    // The user will be shown the ghost text in these conditions
-                    // Log a telemetry event for A/B tracking depending on if the text is enabled or disabled for them.
-                    telemetryService.log(
-                        'CodyVSCodeExtension:experiment:ghostText:enrolled',
-                        {
-                            variant: featureEnabled ? 'treatment' : 'control',
-                        },
-                        { hasV2Event: true }
-                    )
-                    telemetryRecorder.recordEvent('cody.experiment.ghostText', 'enrolled', {
-                        privateMetadata: { variant: featureEnabled ? 'treatment' : 'control' },
-                    })
-
-                    // Now that we have fired the enrollment event, we can stop listening
-                    this.enrollmentListener?.dispose()
-                }
-            }
-        )
     }
 
     public dispose(): void {

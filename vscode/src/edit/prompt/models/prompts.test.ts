@@ -5,14 +5,20 @@ import { isWindows, testFileUri } from '@sourcegraph/cody-shared'
 import type { GetLLMInteractionOptions } from '../type'
 import { claude } from './claude'
 import { openai } from './openai'
+import { document } from '../../../completions/test-helpers'
 
 describe('Edit Prompts', () => {
+    const followingText = "const text = 'Hello, world!'\n"
+    const selectedText = 'return text'
+    const precedingText = '\n}'
+    const uri = testFileUri('src/file/index.ts')
     const fixupTask: GetLLMInteractionOptions = {
-        uri: testFileUri('src/file/index.ts'),
-        followingText: "const text = 'Hello, world!'\n",
-        selectedText: 'return text',
-        precedingText: '\n}',
+        uri,
+        followingText,
+        selectedText,
+        precedingText,
         instruction: 'Console log text',
+        document: document(followingText + selectedText + precedingText, 'typescript', uri.toString())
     }
 
     function normalize(text: string): string {
