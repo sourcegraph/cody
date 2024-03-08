@@ -49,8 +49,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.ollamaChat':
                         return true
-                    case 'cody.experimental.ollamaChat.ApiEndpoint':
-                        return ''
+                    case 'cody.experimental.ollamaChatApiEndpoint':
+                        return OLLAMA_DEFAULT_URL
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
@@ -131,7 +131,7 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
-            experimentalOllamaChatApiEndpoint: '',
+            experimentalOllamaChatApiEndpoint: OLLAMA_DEFAULT_URL,
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

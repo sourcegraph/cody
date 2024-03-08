@@ -908,7 +908,7 @@
           "markdownDescription": "Enable local Ollama models for chat and commands",
           "default": false
         },
-        "cody.experimental.ollamaChat.ApiEndpoint": {
+        "cody.experimental.ollamaChatApiEndpoint": {
           "order": 99,
           "type": "string",
           "markdownDescription": "The API endpoint for the Ollama chat models. Defaults to using the localhost server when not set."

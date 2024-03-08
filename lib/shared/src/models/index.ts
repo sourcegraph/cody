@@ -1,3 +1,4 @@
+import type { Configuration } from '../configuration'
 import { logError } from '../logger'
 import { OLLAMA_DEFAULT_URL } from '../ollama'
 import { isDotCom } from '../sourcegraph-api/environments'
@@ -35,11 +36,14 @@ export class ModelProvider {
     private static ollamaProvidersEnabled = false
     private static ollamaProviders: ModelProvider[] = []
 
-    public static onConfigChange(enableOllamaModels: boolean): void {
-        ModelProvider.ollamaProvidersEnabled = enableOllamaModels
+    public static onConfigChange(
+        config: Pick<Configuration, 'experimentalOllamaChat' | 'experimentalOllamaChatApiEndpoint'>
+    ): void {
+        console.log(config, 'onConfigChange')
+        ModelProvider.ollamaProvidersEnabled = config.experimentalOllamaChat
         ModelProvider.ollamaProviders = []
-        if (enableOllamaModels) {
-            ModelProvider.getLocalOllamaModels()
+        if (config.experimentalOllamaChat) {
+            ModelProvider.getLocalOllamaModels(config.experimentalOllamaChatApiEndpoint)
         }
     }
 
@@ -47,7 +51,7 @@ export class ModelProvider {
      * Fetches available Ollama models from the local Ollama server
      * and adds them to the list of ollama providers.
      */
-    public static getLocalOllamaModels(): void {
+    private static getLocalOllamaModels(apiEndpoint?: string): void {
         const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
         // Only fetch local models if user has enabled the config
         if (isAgentTesting || !ModelProvider.ollamaProvidersEnabled) {
@@ -55,7 +59,7 @@ export class ModelProvider {
         }
         // TODO (bee) watch file change to determine if a new model is added
         // to eliminate the needs of restarting the extension to get the new models
-        fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
+        fetch(new URL('/api/tags', apiEndpoint || OLLAMA_DEFAULT_URL).href)
             .then(response => response.json())
             .then(
                 data => {
