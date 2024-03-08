@@ -33,7 +33,7 @@ export async function getContextFilesForUnitTestCommand(file: URI): Promise<Cont
 
         // Search for test files in the current directory
         const currentDirPattern = getSearchPatternForTestFiles(file, searchCurrentDirectoryOnly)
-        const currentDirContext = await getWorkspaceFilesContext(curerntDirPattern, excludePattern, max)
+        const currentDirContext = await getWorkspaceFilesContext(currentDirPattern, excludePattern, max)
 
         contextFiles.push(...testWithSameName, ...currentDirContext)
 
