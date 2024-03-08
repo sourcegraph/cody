@@ -126,7 +126,10 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
-        experimentalOllamaChatApiEndpoint: getHiddenSetting('experimental.ollamaChat.ApiEndpoint', ''),
+        experimentalOllamaChatApiEndpoint: getHiddenSetting<string | undefined>(
+            'experimental.ollamaChat.ApiEndpoint',
+            undefined
+        ),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
