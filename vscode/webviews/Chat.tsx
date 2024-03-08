@@ -743,9 +743,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         <div className={classNames(styles.innerContainer)}>
             {
                 <Transcript
-                    // Only shows welcome message for the first chat submitted.
-                    // Assume this is the first chat if there is not chat history.
-                    transcript={chatIDHistory.length ? transcript : transcriptWithWelcome}
+                    transcript={welcomeMessage ? transcriptWithWelcome : transcript}
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}

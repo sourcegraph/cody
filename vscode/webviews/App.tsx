@@ -206,6 +206,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         return <LoadingPage />
     }
 
+    const noChatHistory = !userHistory.filter(chat => chat.interactions.length)?.length
+
     return (
         <div className="outer-container">
             {view === 'login' || !authStatus.isLoggedIn ? (
@@ -217,12 +219,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices
-                        probablyNewInstall={
-                            !userHistory.filter(chat => chat.interactions.length)?.length
-                        }
-                        vscodeAPI={vscodeAPI}
-                    />
+                    <Notices probablyNewInstall={noChatHistory} vscodeAPI={vscodeAPI} />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}
@@ -260,7 +257,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
-                                        welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        // Only shows welcome message for the first chat submitted.
+                                        welcomeMessage={getWelcomeMessageByOS(config?.os, noChatHistory)}
                                         guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
@@ -294,7 +292,7 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-function getWelcomeMessageByOS(os: string): string {
+function getWelcomeMessageByOS(os: string, noChatHistory: boolean): string | undefined {
     const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
 To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
@@ -307,5 +305,5 @@ You can start a new chat at any time with <span class="keyboard-shortcut"><span>
 
 For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
-    return welcomeMessageMarkdown
+    return noChatHistory ? welcomeMessageMarkdown : undefined
 }
