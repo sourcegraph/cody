@@ -915,11 +915,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const abortController = new AbortController()
         this.completionCanceller = () => abortController.abort()
         try {
-            const stream = this.chatClient.chat(
-                prompt,
-                { model: this.chatModel.modelID },
-                abortController.signal
-            )
+            const completionsParams = {
+                model: this.chatModel.modelID,
+                apiEndpoint: this.config.experimentalOllamaChatApiEndpoint,
+            }
+
+            const stream = this.chatClient.chat(prompt, completionsParams, abortController.signal)
 
             for await (const message of stream) {
                 switch (message.type) {

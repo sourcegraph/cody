@@ -129,6 +129,7 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalOllamaChatApiEndpoint: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

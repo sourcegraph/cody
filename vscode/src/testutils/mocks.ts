@@ -816,6 +816,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
     experimentalOllamaChat: false,
+    experimentalOllamaChatApiEndpoint: '',
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
