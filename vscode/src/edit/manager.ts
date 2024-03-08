@@ -16,7 +16,6 @@ import type { FixupTask } from '../non-stop/FixupTask'
 
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
-import { CodyTaskState } from '../non-stop/utils'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -168,8 +167,6 @@ export class EditManager implements vscode.Disposable {
             privateMetadata: { source },
         })
 
-        const initialState = task.intent === 'test' ? CodyTaskState.pending : CodyTaskState.working
-        this.controller.setTaskState(task, initialState)
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
         return task

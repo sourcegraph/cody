@@ -41,6 +41,7 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = getContextWindowForModel(
                 this.config.authProvider.getAuthStatus(),
@@ -236,7 +237,7 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
-        if (task.state !== CodyTaskState.pending) {
+        if (task.intent === 'test' && task.state !== CodyTaskState.working) {
             return
         }
 

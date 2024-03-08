@@ -11,12 +11,24 @@ import type { CodyCommandArgs } from '../types'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
+/**
+ * Gets the symbol range and preferred insertion point for documentation
+ * at the given document position.
+ *
+ * Checks for a documentable node (e.g. function, class, variable etc.) at the position
+ * using a tree-sitter query. If found, returns the range for the symbol
+ * and an insertion point (typically the line above or below the symbol)
+ * that follows language conventions for documentation.
+ *
+ * Handles some special cases like adjusting the insertion point for Python
+ * functions/classes to comply with PEP 257.
+ */
 function getSymbolRangeAtPosition(
     document: vscode.TextDocument,
     position: vscode.Position
 ): { range?: vscode.Range; insertionPoint?: vscode.Position } {
     const [_, documentableRange] = execQueryWrapper(document, position, 'getDocumentableNode')
-    if (!documentableRange.node) {
+    if (!documentableRange?.node) {
         return {}
     }
 

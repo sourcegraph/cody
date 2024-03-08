@@ -242,7 +242,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                             'getDocumentableNode'
                         )
 
-                        if (documentableSymbol.node) {
+                        if (documentableSymbol?.node) {
                             /**
                              * "Document" code flow.
                              * Display ghost text above the relevant symbol.
@@ -275,13 +275,14 @@ export class GhostHintDecorator implements vscode.Disposable {
                         }
                     }
 
+                    if (isEmptyOrIncompleteSelection(editor.document, selection)) {
+                        // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
+                        // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
+                        return this.clearGhostText(editor)
+                    }
+
                     if (enabledFeatures.EditOrChat) {
                         this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
-                        if (isEmptyOrIncompleteSelection(editor.document, selection)) {
-                            // Empty or incomplete selection, we can technically do an edit/generate here but it is unlikely the user will want to do so.
-                            // Clear existing text and avoid showing anything. We don't want the ghost text to spam the user too much.
-                            return this.clearGhostText(editor)
-                        }
 
                         /**
                          * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.

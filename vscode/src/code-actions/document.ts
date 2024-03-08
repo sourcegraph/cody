@@ -13,7 +13,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
             'getDocumentableNode'
         )
 
-        if (!documentableSymbol.node || !documentableRange.node) {
+        if (!documentableSymbol?.node || !documentableRange?.node) {
             return []
         }
 

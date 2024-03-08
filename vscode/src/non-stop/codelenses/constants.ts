@@ -1,7 +1,6 @@
 import { CodyTaskState } from '../utils'
 
 export const ACTIVE_TASK_STATES = [
-    CodyTaskState.pending,
     CodyTaskState.working,
     CodyTaskState.inserting,
     CodyTaskState.applying,
