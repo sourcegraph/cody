@@ -97,8 +97,8 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the generated code in <CODE5711> XML tags.
-- Your response must start with the <TESTFILE7041> XML tags with a suggested file name for the test code."
+- Enclose only the code for the unit tests between <CODE5711> XML tags.
+- Your response must start with the <TESTFILE7041> XML tags with the suggested file path for the test suite in between, follows by the test code."
 `;
 
 exports[`Edit Prompts > 'openai' builds prompts correctly > add 1`] = `
@@ -198,6 +198,6 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the generated code in <CODE5711> XML tags.
-- Your response must start with the <TESTFILE7041> XML tags with a suggested file name for the test code."
+- Enclose only the code for the unit tests between <CODE5711> XML tags.
+- Your response must start with the <TESTFILE7041> XML tags with the suggested file path for the test suite in between, follows by the test code."
 `;
