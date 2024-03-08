@@ -92,26 +92,31 @@ function getSymbolDecorationPadding(
 
 type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 type EnabledFeatures = Record<GhostVariant, boolean>
+
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
-    const config = vscode.workspace.getConfiguration('cody')
-    const configSettings = config.inspect<boolean>('commandHints.enabled')
-    const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
+    const config = vscode.workspace.getConfiguration("cody");
+    const configSettings = config.inspect<boolean>("commandHints.enabled");
+    const settingValue =
+        configSettings?.workspaceValue ?? configSettings?.globalValue;
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
         EditOrChat:
             settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)),
+            (await featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyCommandHints
+            )),
         Document:
             settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+            (await featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyDocumentHints
+            )),
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
          */
         Generate: settingValue ?? true,
-
-    }
+    };
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
@@ -220,15 +225,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                         return
                     }
 
-                    if (event.selections.length > 1) {
-                        // Multiple selections, it will be confusing to show the ghost text on all of them, or just the first
-                        // Clear existing text and avoid showing anything.
-                        return this.clearGhostText(editor)
-                    }
-
-                    const selection = event.selections[0]
-
-                    if (editor.document.getText().length === 0) {
+                    if (enabledFeatures.Generate && editor.document.getText().length === 0) {
                         this.clearGhostText(editor)
                         /**
                          * Generate code flow.
@@ -236,6 +233,14 @@ export class GhostHintDecorator implements vscode.Disposable {
                          */
                         return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
                     }
+
+                    if (event.selections.length > 1) {
+                        // Multiple selections, it will be confusing to show the ghost text on all of them, or just the first
+                        // Clear existing text and avoid showing anything.
+                        return this.clearGhostText(editor)
+                    }
+
+                    const selection = event.selections[0]
 
                     if (enabledFeatures.Document) {
                         this.firePossibleEnrollmentEvent('Document', enabledFeatures)
@@ -310,27 +315,32 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
                 }
             ),
-            vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
-                if (!editor) {
-                    return
-                }
-
-                if (editor.document.uri.scheme !== 'file') {
-                    // A non-file document, e.g. (an output pane)
-                    // Edit's aren't possible here, so do nothing
-                    return
-                }
-
-                if (editor.document.getText().length === 0) {
-                    this.clearGhostText(editor)
-                    /**
-                     * Generate code flow.
-                     * Show immediately on the first line of empty files.
-                     */
-                    return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
-                }
-            })
         )
+
+        if (enabledFeatures.Generate) {
+            this.disposables.push(
+                vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
+                    if (!editor) {
+                        return
+                    }
+
+                    if (editor.document.uri.scheme !== 'file') {
+                        // A non-file document, e.g. (an output pane)
+                        // Edit's aren't possible here, so do nothing
+                        return
+                    }
+
+                    if (editor.document.getText().length === 0) {
+                        this.clearGhostText(editor)
+                        /**
+                         * Generate code flow.
+                         * Show immediately on the first line of empty files.
+                         */
+                        return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
+                    }
+                })
+            )
+        }
     }
 
     private setGhostText(
@@ -405,8 +415,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
         const featureEnablement = await getGhostHintEnablement()
-
-        if (!authStatus.isLoggedIn || !(featureEnablement.Document || featureEnablement.EditOrChat)) {
+        if (!authStatus.isLoggedIn || !(featureEnablement.Document || featureEnablement.EditOrChat || featureEnablement.Generate)) {
             this.dispose()
             return
         }
