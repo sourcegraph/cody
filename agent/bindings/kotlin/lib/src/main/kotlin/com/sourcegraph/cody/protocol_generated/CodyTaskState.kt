@@ -10,6 +10,5 @@ data class CodyTaskState(
   val applied: Int? = null,
   val finished: Int? = null,
   val error: Int? = null,
-  val pending: Int? = null,
 )
 

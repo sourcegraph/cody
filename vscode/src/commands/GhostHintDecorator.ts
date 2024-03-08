@@ -235,7 +235,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                     const selection = event.selections[0]
 
                     if (enabledFeatures.Document) {
-                        this.firePossibleEnrollmentEvent('Document', enabledFeatures)
                         const [documentableSymbol] = execQueryWrapper(
                             editor.document,
                             selection.active,
@@ -257,6 +256,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                             ) {
                                 this.clearGhostText(editor)
                             }
+                            this.firePossibleEnrollmentEvent('Document', enabledFeatures)
                             return this.setThrottledGhostText(
                                 editor,
                                 new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -282,8 +282,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     if (enabledFeatures.EditOrChat) {
-                        this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
-
                         /**
                          * Sets the target position by determine the adjusted 'active' line filtering out any empty selected lines.
                          * Note: We adjust because VS Code will select the beginning of the next line when selecting a whole line.
@@ -300,6 +298,7 @@ export class GhostHintDecorator implements vscode.Disposable {
                             this.clearGhostText(editor)
                         }
 
+                        this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
                         /**
                          * Edit code flow.
                          * Show alongside a users' active selection
@@ -390,7 +389,7 @@ export class GhostHintDecorator implements vscode.Disposable {
             this.enrollmentRecorded.Document = true
         }
 
-        if (variant === 'EditOrChat') {
+        if (variant === 'EditOrChat' && !this.enrollmentRecorded.EditOrChat) {
             const testGroup = enablement.EditOrChat ? 'treatment' : 'control'
             telemetryService.log(
                 'CodyVSCodeExtension:experiment:ghostText:enrolled',
