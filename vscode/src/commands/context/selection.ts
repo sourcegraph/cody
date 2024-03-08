@@ -5,6 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
@@ -40,9 +41,9 @@ export async function getContextFileFromCursor(): Promise<ContextItem[]> {
                     type: 'file',
                     uri: document.uri,
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
-                    source: 'selection',
+                    source: ContextItemSource.Selection,
                     range: selection,
-                } as ContextItem,
+                } satisfies ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })

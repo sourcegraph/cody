@@ -5,6 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 
@@ -35,9 +36,9 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
                     type: 'file',
                     uri: document.uri,
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
-                    source: 'editor',
+                    source: ContextItemSource.Editor,
                     range: selection,
-                } as ContextItem,
+                } satisfies ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCurrentFile', 'failed', { verbose: error })

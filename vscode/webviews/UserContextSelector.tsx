@@ -145,7 +145,7 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                         const description =
                             match.type === 'file' ? undefined : displayPath(match.uri) + range
                         const warning =
-                            match.type === 'file' && match.title === 'large-file'
+                            match.type === 'file' && match.isTooLarge
                                 ? 'File too large. Type @# to choose a symbol'
                                 : undefined
                         return (

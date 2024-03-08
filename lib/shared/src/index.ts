@@ -45,7 +45,7 @@ export type {
 export type {
     ContextItem,
     ContextItemFile,
-    ContextFileSource,
+    ContextItemSource as ContextFileSource,
     ContextItemSymbol,
     ContextFileType,
     ContextMessage,
