@@ -90,7 +90,8 @@ function getSymbolDecorationPadding(
     return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
-type EnabledFeatures = Record<Exclude<GhostVariant, 'Generate'>, boolean>
+type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
+type EnabledFeatures = Record<GhostVariant, boolean>
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
@@ -104,12 +105,17 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
         Document:
             settingValue ??
             (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+        /**
+         * We're not running an A/B test on the "Opt+K" to generate text.
+         * We can safely set the default of this to `true`.
+         */
+        Generate: settingValue ?? true,
+
     }
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
-type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 
 /**
  * Decorations for showing a "ghost" hint to the user.
