@@ -85,8 +85,8 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
 
             RULES:
             - Do not enclose response with any markdown formatting or triple backticks.
-            - Enclose only the generated code in <${PROMPT_TOPICS.OUTPUT}> XML tags.
-            - Your response must start with the <${PROMPT_TOPICS.FILENAME}> XML tags with a suggested file name for the test code.`,
+            - Enclose only the code for the unit tests between <${PROMPT_TOPICS.OUTPUT}> XML tags.
+            - Your response must start with the <${PROMPT_TOPICS.FILENAME}> XML tags with the suggested file path for the test suite in between, follows by the test code.`,
     },
     doc: {
         system: dedent`
