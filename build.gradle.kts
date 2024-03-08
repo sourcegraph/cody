@@ -1,8 +1,14 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
 import java.net.URL
-import java.nio.file.*
+import java.nio.file.FileSystems
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.PathMatcher
+import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.*
+import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
@@ -199,7 +205,7 @@ tasks {
     return destinationDir
   }
 
-  val codyCommit = "4e5bd02bc6c0fa75e38ef56a20e629ee59a1a6a7"
+  val codyCommit = "c8f5355a88783cce6bf1ac0088c73917e2a29d94"
   fun downloadCody(): File {
     val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
     val destination = githubArchiveCache.resolve("$codyCommit.zip")
