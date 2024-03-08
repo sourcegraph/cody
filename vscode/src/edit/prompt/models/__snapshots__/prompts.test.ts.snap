@@ -97,7 +97,7 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the unit tests between <CODE5711> XML tags..
+- Enclose only the unit tests between <CODE5711> XML tags.
 - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context"
 `;
 
@@ -198,6 +198,6 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the unit tests between <CODE5711> XML tags..
+- Enclose only the unit tests between <CODE5711> XML tags.
 - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context"
 `;
