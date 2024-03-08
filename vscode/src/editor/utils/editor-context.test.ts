@@ -138,14 +138,14 @@ describe('getFileContextFiles', () => {
 
 describe('filterLargeFiles', () => {
     it('filters out files larger than 1MB', async () => {
-        const largeFile = {
+        const largeFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-file.txt'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 1000001,
             type: vscode.FileType.File,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([largeFile])
 
@@ -153,33 +153,37 @@ describe('filterLargeFiles', () => {
     })
 
     it('filters out non-text files', async () => {
-        const binaryFile = {
+        const binaryFile: ContextItemFile = {
             uri: vscode.Uri.file('/binary.bin'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 100,
             type: vscode.FileType.SymbolicLink,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([binaryFile])
 
         expect(filtered).toEqual([])
     })
 
-    it('sets title to large-file for files exceeding token limit', async () => {
-        const largeTextFile = {
+    it('sets isTooLarge for files exceeding token limit', async () => {
+        const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
             type: vscode.FileType.File,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([largeTextFile])
 
-        expect(filtered[0].title).toEqual('large-file')
+        expect(filtered[0]).toEqual<ContextItem>({
+            type: 'file',
+            uri: largeTextFile.uri,
+            isTooLarge: true,
+        })
     })
 })
 

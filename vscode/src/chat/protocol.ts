@@ -12,7 +12,6 @@ import type {
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import type { CodeBlockMeta } from '../../webviews/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
@@ -57,13 +56,12 @@ export type WebviewMessage =
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
-    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'insert'; text: string }
+    | { command: 'newFile'; text: string }
     | {
           command: 'copy'
           eventType: 'Button' | 'Keydown'
           text: string
-          metadata?: CodeBlockMeta
       }
     | {
           command: 'auth'

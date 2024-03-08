@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test'
 
+import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type ExpectedEvents, test } from './helpers'
+import { type DotcomUrlOverride, type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -99,3 +100,23 @@ test('chat input focus', async ({ page, sidebar }) => {
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     await expect(chatInput).toBeFocused()
 })
+
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
+    'chat model selector',
+    async ({ page, sidebar }) => {
+        await sidebarSignin(page, sidebar)
+
+        await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+        const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+        const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+        const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
+
+        // Model selector is initially enabled.
+        await expect(modelSelect).toBeEnabled()
+
+        // Immediately after submitting the first message, the model selector is disabled.
+        await chatInput.fill('Hello')
+        await chatInput.press('Enter')
+        await expect(modelSelect).toBeDisabled()
+    }
+)
