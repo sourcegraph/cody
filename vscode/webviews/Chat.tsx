@@ -21,7 +21,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
-import type { CodeBlockMeta } from './chat/CodeBlocks'
 import { TextArea } from './chat/TextArea'
 import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
@@ -165,7 +164,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const copyButtonOnSubmit = useCallback(
-        (text: string, eventType: 'Button' | 'Keydown' = 'Button', metadata?: CodeBlockMeta) => {
+        (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
             // remove the additional /n added by the text area at the end of the text
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
@@ -174,14 +173,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 command: op,
                 eventType,
                 text: code,
-                metadata,
             })
         },
         [vscodeAPI]
     )
 
     const insertButtonOnSubmit = useCallback(
-        (text: string, newFile = false, metadata?: CodeBlockMeta) => {
+        (text: string, newFile = false) => {
             const op = newFile ? 'newFile' : 'insert'
             const eventType = 'Button'
             // remove the additional /n added by the text area at the end of the text
@@ -191,7 +189,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 command: op,
                 eventType,
                 text: code,
-                metadata,
             })
         },
         [vscodeAPI]

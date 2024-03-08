@@ -8,7 +8,6 @@ data class ChatMessage(
   val text: String? = null,
   val displayText: String? = null,
   val contextFiles: List<ContextItem>? = null,
-  val metadata: ChatMetadata? = null,
   val error: ChatError? = null,
 ) {
 
