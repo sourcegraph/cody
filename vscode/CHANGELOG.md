@@ -9,6 +9,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Fixed an issue where in some cases the entire document instead of just the visible portion would be included as context. [pull/3351](https://github.com/sourcegraph/cody/pull/3351)
+- Chat: Fixed an issue where user aborts was not handled correctly for Claude 3. [pull/3355](https://github.com/sourcegraph/cody/pull/3355)
 
 ### Changed
 
