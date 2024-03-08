@@ -917,7 +917,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const completionsParams = {
                 model: this.chatModel.modelID,
-                apiEndpoint: this.config.experimentalOllamaChatApiEndpoint,
+                apiEndpoint: this.config.experimentalOllamaChatApiEndpoint || undefined,
             }
 
             const stream = this.chatClient.chat(prompt, completionsParams, abortController.signal)

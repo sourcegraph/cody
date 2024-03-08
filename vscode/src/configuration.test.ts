@@ -50,7 +50,7 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.ollamaChat':
                         return true
                     case 'cody.experimental.ollamaChat.ApiEndpoint':
-                        return undefined
+                        return ''
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
@@ -131,7 +131,7 @@ describe('getConfiguration', () => {
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
-            experimentalOllamaChatApiEndpoint: undefined,
+            experimentalOllamaChatApiEndpoint: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
