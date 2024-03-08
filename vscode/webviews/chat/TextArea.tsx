@@ -109,11 +109,10 @@ export const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
                 const language = parseEditorData(clipboardData.getData('vscode-editor-data'))
 
                 if (language) {
-                    event.preventDefault()
-                    event.stopPropagation()
-
                     const text = clipboardData.getData('text/plain')
                     if (text.split('\n').length > 1) {
+                        event.preventDefault()
+                        event.stopPropagation()
                         const newText = '```\n' + text.replace(/\r\n/g, '\n') + '\n```\n'
 
                         const startPos = textarea.selectionStart
