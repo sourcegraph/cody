@@ -1331,11 +1331,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 55053fe9d89428c51f89486b98638610
+    - _id: 34d08a493bd1125714779521a25f5f3a
       _order: 0
       cache: {}
       request:
-        bodySize: 3109
+        bodySize: 3150
         cookies: []
         headers:
           - name: content-type
@@ -1428,19 +1428,20 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-2.0
+            model: anthropic/claude-instant-1.2
             stopSequences:
               - </CODE5711>
+              - describe('test block', () => {
             temperature: 0
             topK: -1
             topP: -1
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 7147
+        bodySize: 10378
         content:
           mimeType: text/event-stream
-          size: 7147
+          size: 10378
           text: >+
             event: completion
 
@@ -1469,202 +1470,257 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vit","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  ","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attemp","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attemp","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but has","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but has error","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but has error\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but has error\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs a set of tests using Vitest\n * Contains 3 test cases:\n * - does 1 - Tests something \n * - does 2 - Tests something else\n * - does something else - Attempts to test usage of performance.now but has error\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1674,13 +1730,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 19:48:38 GMT
+            value: Fri, 08 Mar 2024 11:12:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "145"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1698,12 +1756,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1214
+        headersSize: 1321
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T19:48:35.723Z
+      startedDateTime: 2024-03-08T11:12:05.418Z
       time: 0
       timings:
         blocked: -1
