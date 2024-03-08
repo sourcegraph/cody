@@ -176,6 +176,7 @@ export function createFastPathClient(
                 if (isAbortError(error as Error) && fullResponse) {
                     fullResponse.stopReason = CompletionStopReason.RequestAborted
                     yield { type: 'complete' }
+                    return
                 }
 
                 recordErrorToSpan(span, error as Error)
