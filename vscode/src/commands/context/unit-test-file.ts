@@ -47,6 +47,6 @@ export async function getContextFilesForUnitTestCommand(file: URI): Promise<Cont
         }
 
         // Return valid test files only
-        return contextFiles.filter(f => isValidTestFile(f.uri)).reverse()
+        return contextFiles.filter(f => isValidTestFile(f.uri))
     })
 }
