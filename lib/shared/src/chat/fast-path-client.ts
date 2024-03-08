@@ -185,7 +185,7 @@ export function createFastPathClient(
                     throw error
                 }
 
-                const message = `error parsing streaming CodeCompletionResponse: ${error}`
+                const message = `error parsing completion response: ${error}`
                 log?.onError(message, error)
                 throw new TracedError(message, traceId)
             } finally {
