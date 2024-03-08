@@ -5,6 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
 import { getEditor } from '../../editor/active-editor'
@@ -59,15 +60,13 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
                 const range = new vscode.Range(0, 0, truncatedContent.split('\n').length - 1 || 0, 0)
 
-                const contextFile = {
+                contextFiles.push({
                     type: 'file',
                     uri: fileUri,
                     content: truncatedContent,
-                    source: 'editor',
+                    source: ContextItemSource.Editor,
                     range,
-                } as ContextItem
-
-                contextFiles.push(contextFile)
+                })
 
                 // Limit the number of files to 10
                 const maxResults = 10

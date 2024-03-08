@@ -1,4 +1,5 @@
 import { type ContextItem, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
@@ -13,9 +14,9 @@ export async function createContextFile(file: URI, content: string): Promise<Con
             type: 'file',
             uri: file,
             content: truncatedContent,
-            source: 'editor',
+            source: ContextItemSource.Editor,
             range,
-        } as ContextItem
+        } satisfies ContextItem
     } catch (error) {
         console.error(error)
     }

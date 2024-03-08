@@ -13,6 +13,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 const _exec = promisify(exec)
 
@@ -50,8 +51,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                 content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
-                source: 'terminal',
-            } as ContextItem
+                source: ContextItemSource.Terminal,
+            } satisfies ContextItem
 
             return [file]
         } catch (error) {

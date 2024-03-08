@@ -5,6 +5,7 @@ import {
     type Message,
     isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
@@ -107,7 +108,9 @@ export class PromptBuilder {
             // the last context item to be read by the LLM to avoid confusions where
             // other files also include the selection text in test files.
             const selectionContext = contextItemsAndMessages.find(
-                item => (isContextItem(item) ? item.source : item.file.source) === 'selection'
+                item =>
+                    (isContextItem(item) ? item.source : item.file.source) ===
+                    ContextItemSource.Selection
             )
             if (selectionContext) {
                 contextItemsAndMessages.splice(contextItemsAndMessages.indexOf(selectionContext), 1)
