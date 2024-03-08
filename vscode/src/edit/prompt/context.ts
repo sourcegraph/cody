@@ -47,6 +47,7 @@ const getContextFromIntent = async ({
          * The preceding code is already included as part of the response to better guide the output.
          */
         case 'test':
+            return []
         case 'add': {
             return [
                 {
