@@ -961,7 +961,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
     private addBotMessage(requestID: string, rawResponse: string): void {
-        const displayText = reformatBotMessageForChat(rawResponse, '')
+        const displayText = reformatBotMessageForChat(rawResponse)
         this.chatModel.addBotMessage({ text: rawResponse }, displayText)
         void this.saveSession()
         this.postViewTranscript()

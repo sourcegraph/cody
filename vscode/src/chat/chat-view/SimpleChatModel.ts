@@ -212,7 +212,7 @@ function getDisplayText(message: ChatMessage): string | undefined {
         return createDisplayTextWithFileLinks(message.text, message.contextFiles ?? [])
     }
     if (message.speaker === 'assistant' && message.text) {
-        return reformatBotMessageForChat(message.text, '')
+        return reformatBotMessageForChat(message.text)
     }
     return message.text
 }
