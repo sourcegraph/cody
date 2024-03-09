@@ -210,7 +210,6 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "displayText": " Hi there!",
                 "speaker": "assistant",
                 "text": " Hi there!",
               }

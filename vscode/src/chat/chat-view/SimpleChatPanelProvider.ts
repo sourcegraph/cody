@@ -961,15 +961,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
     private addBotMessage(requestID: string, rawResponse: string): void {
-        const displayText = reformatBotMessageForChat(rawResponse)
-        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+        const messageText = reformatBotMessageForChat(rawResponse)
+        this.chatModel.addBotMessage({ text: messageText })
         void this.saveSession()
         this.postViewTranscript()
 
         const authStatus = this.authProvider.getAuthStatus()
 
         // Count code generated from response
-        const codeCount = countGeneratedCode(rawResponse)
+        const codeCount = countGeneratedCode(messageText)
         if (codeCount?.charCount) {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
@@ -991,7 +991,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? messageText : undefined,
                 },
             })
         }

@@ -4,13 +4,13 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     type Guardrails,
     ModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'

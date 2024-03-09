@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { RangeData } from '@sourcegraph/cody-shared'
+import { type RangeData, getDisplayText } from '@sourcegraph/cody-shared'
 
 export async function openFile(
     uri: vscode.Uri,
@@ -22,16 +22,18 @@ export async function openFile(
     })
 }
 
-export function getChatPanelTitle(lastDisplayText?: string, truncateTitle = true): string {
-    if (!lastDisplayText) {
+export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true): string {
+    if (!lastHumanText) {
         return 'New Chat'
     }
+
+    let displayText = getDisplayText({ speaker: 'human', text: lastHumanText })
     // Regex to remove the markdown formatted links with this format: '[_@FILENAME_]()'
     const MARKDOWN_LINK_REGEX = /\[_(.+?)_]\((.+?)\)/g
-    lastDisplayText = lastDisplayText.replaceAll(MARKDOWN_LINK_REGEX, '$1')?.trim()
+    displayText = displayText.replaceAll(MARKDOWN_LINK_REGEX, '$1')?.trim()
     if (!truncateTitle) {
-        return lastDisplayText
+        return displayText
     }
     // truncate title that is too long
-    return lastDisplayText.length > 25 ? `${lastDisplayText.slice(0, 25).trim()}...` : lastDisplayText
+    return displayText.length > 25 ? `${displayText.slice(0, 25).trim()}...` : displayText
 }
