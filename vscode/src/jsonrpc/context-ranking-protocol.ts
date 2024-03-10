@@ -27,7 +27,7 @@ interface RankerPredictions {
 }
 
 export interface RankerPrediction {
-    documentId: number
+    document_id: number
     score: number
 }
 
@@ -38,12 +38,17 @@ export interface EmbeddingModelQueryParams {
     numResults: number
 }
 
+export interface PrecomputeEmbeddingsParams {
+    query: string
+}
+
 export type Requests = {
     'context-ranking/echo': [string, string]
     'context-ranking/initialize': [InitializeParams, string]
     'context-ranking/compute-features': [ComputeFeaturesParams, string]
     'context-ranking/rank-items': [RankItemsParams, RankerPredictions]
     'context-ranking/context-retriever-embedding': [EmbeddingModelQueryParams, QueryResultSet]
+    'context-ranking/precompute-query-embedding': [PrecomputeEmbeddingsParams, string]
 }
 
 export type Notifications = {

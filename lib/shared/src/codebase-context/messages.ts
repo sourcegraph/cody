@@ -69,7 +69,7 @@ export enum ContextItemSource {
     Terminal = 'terminal',
 
     /** Embeddings from the sentence transformers */
-    RankerSentenceTransformerEmbedding = 'ranker-sentence-transformer-embedding',
+    // RankerSentenceTransformerEmbedding = 'ranker-sentence-transformer-embedding',
 }
 
 /**

@@ -116,9 +116,11 @@ export class ContextRankingController implements ContextRanker {
     }
 
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
-        service.registerNotification('context-ranking/rank-items-logger-payload', (payload: string) => {
-            logDebug('ContextRankingController', 'rank-items-logger-payload', payload)
-        })
+        // The payload is very big to print on console. SKipping print on console for now until we start logging in BQ.
+        // service.registerNotification('context-ranking/rank-items-logger-payload', (payload: string) => {
+        //     logDebug('ContextRankingController', 'rank-items-logger-payload', payload)
+        // })
+
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
@@ -183,7 +185,7 @@ export class ContextRankingController implements ContextRanker {
         rankedItemsOrder.sort((a, b) => b.score - a.score)
         const orderedContextItems: ContextItem[] = []
         for (const item of rankedItemsOrder) {
-            const newIndex = item.documentId
+            const newIndex = item.document_id
             if (newIndex < 0 || newIndex >= contextItems.length) {
                 return contextItems
             }
@@ -221,6 +223,25 @@ export class ContextRankingController implements ContextRanker {
                 captureException(error)
             )
             return []
+        }
+    }
+
+    public async precomputeContextRankingFeatures(query: string): Promise<void> {
+        const repoUri = this.getRepoUri()
+        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
+            return
+        }
+        try {
+            const service = await this.getService()
+            await service.request('context-ranking/precompute-query-embedding', {
+                query: query,
+            })
+        } catch (error) {
+            logDebug(
+                'ContextRankingController',
+                'error in fetching embeddings features',
+                captureException(error)
+            )
         }
     }
 }

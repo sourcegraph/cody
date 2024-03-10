@@ -20,7 +20,6 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { ContentProvider } from '../../non-stop/FixupContentStore'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -195,8 +194,10 @@ async function getEnhancedContextFromRanker({
             'model-specific-embeddings'
         )
 
+        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
+
         const localSearchContextItemsPromise = providers.symf
-            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text, false, 20), 'symf')
+            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
             : []
 
         const remoteSearchContextItemsPromise = providers.remoteSearch
@@ -216,6 +217,7 @@ async function getEnhancedContextFromRanker({
                 embeddingsContextItemsPromise,
                 keywordContextItemsPromise,
                 modelSpecificEmbeddingsContextItemsPromise,
+                precomputeQueryEmbeddingPromise,
             ])
 
         searchContext = searchContext
@@ -264,8 +266,7 @@ async function searchSymf(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
     userText: string,
-    blockOnIndex = false,
-    numResults = 15
+    blockOnIndex = false
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {
         if (!symf) {
@@ -288,7 +289,7 @@ async function searchSymf(
         // trigger background reindex if the index is stale
         void symf?.reindexIfStale(workspaceRoot)
 
-        const r0 = (await symf.getResults(userText, [workspaceRoot], numResults)).flatMap(async results => {
+        const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(
                 async (result: Result): Promise<ContextItem[] | ContextItem> => {
                     const range = new vscode.Range(
@@ -390,7 +391,7 @@ async function searchModelSpecificEmbeddings(
                 uri: result.uri,
                 range,
                 content: result.content,
-                source: ContextItemSource.RankerSentenceTransformerEmbedding,
+                source: ContextItemSource.Embeddings,
             })
         }
         return contextItems

@@ -48,7 +48,7 @@ export interface Result {
 }
 
 export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: URI[], numResults: number): Promise<Promise<Result[]>[]>
+    getResults(query: string, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
 }
 
 /**

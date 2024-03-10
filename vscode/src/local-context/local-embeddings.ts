@@ -560,7 +560,7 @@ export class LocalEmbeddingsController
             const resp = await service.request('embeddings/query', {
                 repoName: lastRepo.repoName,
                 query,
-                numResults
+                numResults,
             })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
             return resp.results.map(result => ({
