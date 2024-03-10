@@ -1,4 +1,9 @@
-import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
+import {
+    type ChatEventSource,
+    type ContextItem,
+    type EditModel,
+    displayLineRange,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
@@ -22,7 +27,7 @@ import { getTestInputItems } from './get-items/test'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
-import { fetchDocumentSymbols, getLabelForContextItem, getTitleRange, removeAfterLastAt } from './utils'
+import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -103,8 +108,7 @@ export const getInput = async (
     const relativeFilePath = vscode.workspace.asRelativePath(document.uri.fsPath)
     let activeTitle: string
     const updateActiveTitle = (newRange: vscode.Range) => {
-        const fileRange = getTitleRange(newRange)
-        activeTitle = `Edit ${relativeFilePath}:${fileRange} with Cody`
+        activeTitle = `Edit ${relativeFilePath}:${displayLineRange(newRange)} with Cody`
     }
     updateActiveTitle(activeRange)
 
