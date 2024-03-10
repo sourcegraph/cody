@@ -49,7 +49,7 @@ export function replaceFileNameWithMarkdownLink(
     const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#-_])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
-            file.toJSON(),
+            file,
             {
                 selection: range,
                 preserveFocus: true,
