@@ -41,25 +41,29 @@ export function verifyContextFilesFromInput(
         }
 
         // Get the line number behind the file name if there is one:
-        // SingleLines Example: foo/bar.ts:1 > 1
-        const singleLines = input.matchAll(new RegExp(atFileName + ':(\\d+)(?!-)', 'g'))
-        // MultiLines example: foo/bar.ts:1-2 > 1, 2
-        const multiLines = input.matchAll(new RegExp(atFileName + ':(\\d+)-(\\d+)', 'g'))
-        // loop all matches and set the range property on the contextFile object
-        for (const match of [...Array.from(singleLines), ...Array.from(multiLines)]) {
+        // SingleLine Example: foo/bar.ts:1
+        const singleLines = input.matchAll(new RegExp(atFileName + ':(\\d+)(?!-)(?!\\d+)', 'g'))
+        for (const match of [...Array.from(singleLines)]) {
             const contextFileMatch = { ...contextFile }
-            const startLine = match[1]
-            const endLine = match[2] ?? startLine
-            // -1 because line number in editor starts with 1 (as input
-            // by the user), but in selection range, it starts with 0.
-            const startLineNum = parseInt(startLine, 10) - 1
-            const endLineNum = parseInt(endLine, 10) - 1
+            const startLine = parseInt(match[1], 10) - 1 // -1 because line number starts with 1
+            contextFileMatch.range = {
+                start: { line: startLine, character: 0 },
+                end: { line: startLine, character: 0 },
+            }
+            userContextFiles.push(contextFileMatch)
+        }
 
-            // Verify if endLineNum is greater or equal to start line
-            if (endLineNum >= startLineNum) {
+        // MultiLine Example: foo/bar.ts:1-2
+        const multiLines = input.matchAll(new RegExp(atFileName + ':(\\d+)-(\\d+)', 'g'))
+        for (const match of [...Array.from(multiLines)]) {
+            const contextFileMatch = { ...contextFile }
+            const startLine = parseInt(match[1], 10) - 1
+            const endLine = parseInt(match[2], 10) - 1
+
+            if (endLine >= startLine) {
                 contextFileMatch.range = {
-                    start: { line: startLineNum, character: 0 },
-                    end: { line: endLineNum, character: 0 },
+                    start: { line: startLine, character: 0 },
+                    end: { line: endLine, character: 0 },
                 }
                 userContextFiles.push(contextFileMatch)
             }
