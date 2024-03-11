@@ -43,5 +43,9 @@ export type Requests = {
     'context-ranking/initialize': [InitializeParams, string]
     'context-ranking/compute-features': [ComputeFeaturesParams, string]
     'context-ranking/rank-items': [RankItemsParams, RankerPredictions]
-    'context-ranking/context-retriver-embedding': [EmbeddingModelQueryParams, QueryResultSet]
+    'context-ranking/context-retriever-embedding': [EmbeddingModelQueryParams, QueryResultSet]
+}
+
+export type Notifications = {
+    'context-ranking/rank-items-logger-payload': [string]
 }

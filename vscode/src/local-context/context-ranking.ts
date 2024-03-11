@@ -116,6 +116,10 @@ export class ContextRankingController implements ContextRanker {
     }
 
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
+        // service.registerNotification('context-ranking/rank-items-logger-payload', (payload: string) => {
+        //     logDebug('ContextRankingController', 'rank-items-logger-payload', payload)
+        // })
+
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
@@ -200,7 +204,7 @@ export class ContextRankingController implements ContextRanker {
         }
         try {
             const service = await this.getService()
-            const resp = await service.request('context-ranking/context-retriver-embedding', {
+            const resp = await service.request('context-ranking/context-retriever-embedding', {
                 repoPath: repoUri.path,
                 query: query,
                 modelName: modelName,
