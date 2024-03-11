@@ -39,7 +39,7 @@ export enum SupportedLanguage {
     yaml = 'yaml',
 }
 
-export const DOCUMENT_LANGUAGE_TO_GRAMMAR = {
+export const DOCUMENT_LANGUAGE_TO_GRAMMAR: Record<SupportedLanguage, string> = {
     [SupportedLanguage['objective-c']]: 'tree-sitter-objc.wasm',
     [SupportedLanguage.c]: 'tree-sitter-c.wasm',
     [SupportedLanguage.cpp]: 'tree-sitter-cpp.wasm',
