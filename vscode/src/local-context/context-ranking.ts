@@ -1,3 +1,4 @@
+import * as os from 'os'
 import * as path from 'path'
 import {
     type ConfigurationWithAccessToken,
@@ -7,6 +8,7 @@ import {
     isDotCom,
     isFileURI,
 } from '@sourcegraph/cody-shared'
+import * as fs from 'fs/promises'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
@@ -117,10 +119,22 @@ export class ContextRankingController implements ContextRanker {
 
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
         // The payload is very big to print on console. SKipping print on console for now until we start logging in BQ.
-        // service.registerNotification('context-ranking/rank-items-logger-payload', (payload: string) => {
-        //     logDebug('ContextRankingController', 'rank-items-logger-payload', payload)
-        // })
-
+        service.registerNotification(
+            'context-ranking/rank-items-logger-payload',
+            async (payload: string) => {
+                const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), ''))
+                if (tempDir.length > 0) {
+                    const tempFile = path.join(tempDir, 'ranker-payload.json')
+                    await fs.writeFile(tempFile, payload)
+                    logDebug(
+                        'ContextRankingController',
+                        'rank-items-logger-payload',
+                        'saving the logging at path',
+                        tempFile
+                    )
+                }
+            }
+        )
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
