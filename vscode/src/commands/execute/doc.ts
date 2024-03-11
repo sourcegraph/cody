@@ -23,12 +23,31 @@ import { execQueryWrapper } from '../../tree-sitter/query-sdk'
  * Handles some special cases like adjusting the insertion point for Python
  * functions/classes to comply with PEP 257.
  */
-function getSymbolRangeAtPosition(
-    document: vscode.TextDocument,
-    position: vscode.Position
-): { range?: vscode.Range; insertionPoint?: vscode.Position } {
-    const [_, documentableRange] = execQueryWrapper(document, position, 'getDocumentableNode')
+function getDocumentableRange(editor: vscode.TextEditor): {
+    range?: vscode.Range
+    insertionPoint?: vscode.Position
+} {
+    const { document, selection } = editor
+    if (!selection.isEmpty) {
+        // The user has made an active selection, use that as the documentable range
+        return {
+            range: editor.selection,
+            insertionPoint: editor.selection.start,
+        }
+    }
+
+    /**
+     * Attempt to get the range of a documentable symbol at the current cursor position.
+     * If present, use this for the edit instead of expanding the range to the nearest block.
+     */
+    const [_, documentableRange] = execQueryWrapper(
+        document,
+        editor.selection.active,
+        'getDocumentableNode'
+    )
     if (!documentableRange?.node) {
+        // No user-provided selection, no documentable range found.
+        // Fallback to expanding the range to the nearest block.
         return {}
     }
 
@@ -91,14 +110,7 @@ export async function executeDocCommand(
             return undefined
         }
 
-        /**
-         * Attempt to get the range of a documentable symbol at the current cursor position.
-         * If present, use this for the edit instead of expanding the range to the nearest block.
-         */
-        const symbolRange = getSymbolRangeAtPosition(editor.document, editor.selection.active)
-
-        const range = symbolRange?.range || editor.selection
-        const insertionPoint = symbolRange?.insertionPoint
+        const { range, insertionPoint } = getDocumentableRange(editor)
 
         return {
             type: 'edit',
