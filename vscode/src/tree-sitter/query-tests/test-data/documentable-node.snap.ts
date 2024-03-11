@@ -167,13 +167,13 @@
 
   type TestTypePropertySignature = {
       test: number
-//    ^^^^ sybmol.identifier[1]
+//    ^^^^ symbol.identifier[1]
 //    ^^^^^^^^^^^^ range.identifier[1]
 //     █
   }
 
 // Nodes types:
-// sybmol.identifier[1]: property_identifier
+// symbol.identifier[1]: property_identifier
 // range.identifier[1]: property_signature
 
 // ------------------------------------

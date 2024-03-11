@@ -18,7 +18,7 @@ describe('getDocumentableNode', () => {
     })
 
     it('python', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Python)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.python)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -29,7 +29,7 @@ describe('getDocumentableNode', () => {
     })
 
     it('go', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Go)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.go)
 
         await annotateAndMatchSnapshot({
             parser,

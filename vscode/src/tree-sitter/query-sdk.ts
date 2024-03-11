@@ -157,22 +157,20 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             const range = findLast(rangeCaptures, ({ node }) => {
                 return (
                     node.startPosition.row <= start.row &&
-                    node.startPosition.column <= start.column &&
-                    (start.column <= node.endPosition.column || start.row <= node.endPosition.row)
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
                 )
             })
 
             let insertion: QueryCapture | undefined
             if (range) {
-                console.log(insertionCaptures)
-                insertion = findLast(insertionCaptures, ({ node }) => {
-                    return (
-                        node.startPosition.row <= range.node.startPosition.row &&
-                        node.startPosition.column <= range.node.startPosition.column &&
-                        (range.node.startPosition.column <= node.endPosition.column ||
-                            range.node.startPosition.row <= node.endPosition.row)
-                    )
-                })
+                // Look for an insertion point within the determined range of the node.
+                // This is primarily used for languages where documentation should be inserted differently
+                // depending on the syntax (e.g. Python PEP 257)
+                insertion = findLast(
+                    insertionCaptures,
+                    ({ node }) =>
+                        node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
+                )
             }
 
             return [
