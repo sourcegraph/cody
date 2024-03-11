@@ -4,6 +4,7 @@ import {
     type ContextMessage,
     type Message,
     isCodyIgnoredFile,
+    toRangeData,
 } from '@sourcegraph/cody-shared'
 import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { SHA256 } from 'crypto-js'
@@ -165,8 +166,12 @@ function contextItem(value: ContextItem | ContextMessage): ContextItem {
 function contextItemId(value: ContextItem | ContextMessage): string {
     const item = contextItem(value)
 
-    if (item.range) {
-        return `${item.uri.toString()}#${item.range.start.line}:${item.range.end.line}`
+    // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
+    // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
+    // bug, so protect against it. See the `toRangeData` docstring for more.
+    const range = toRangeData(item.range)
+    if (range) {
+        return `${item.uri.toString()}#${range.start.line}:${range.end.line}`
     }
 
     if (item.content) {

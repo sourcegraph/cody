@@ -29,6 +29,7 @@ export type {
     ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
+export { getDisplayText, CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {

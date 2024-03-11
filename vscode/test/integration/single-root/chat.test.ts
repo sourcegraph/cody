@@ -28,9 +28,9 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
 
-        assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).displayText || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
         )
     })
 
@@ -42,9 +42,9 @@ suite('Chat', function () {
         await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
 
         // Display text should include file link at the end of message
-        assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).displayText || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
         )
     })
 })
