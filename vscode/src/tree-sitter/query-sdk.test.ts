@@ -28,7 +28,7 @@ describe('getDocumentQuerySDK', () => {
         expect(sdk?.queries.intents).toBeTruthy()
     })
 
-    it.only.each([
+    it.each([
         { languageId: SupportedLanguage.csharp },
         { languageId: SupportedLanguage.cpp },
         { languageId: SupportedLanguage.csharp },
