@@ -366,7 +366,7 @@ async function searchModelSpecificEmbeddings(
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching model specific embeddings')
         const contextItems: ContextItem[] = []
-        const numResults = 15;
+        const numResults = 20
         const modelName = "sentence-transformers/multi-qa-mpnet-base-dot-v1";
         const embeddingsResults = await contextRankingController.retriveEmbeddingBasedContext(
             text,
