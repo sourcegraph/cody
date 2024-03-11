@@ -9,6 +9,7 @@ import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
 /**
@@ -29,10 +30,11 @@ function getDocumentableRange(editor: vscode.TextEditor): {
 } {
     const { document, selection } = editor
     if (!selection.isEmpty) {
+        const lineSelection = getEditLineSelection(editor.document, editor.selection)
         // The user has made an active selection, use that as the documentable range
         return {
-            range: editor.selection,
-            insertionPoint: editor.selection.start,
+            range: lineSelection,
+            insertionPoint: lineSelection.start,
         }
     }
 
