@@ -44,12 +44,14 @@
      val,
      val2
  ):
+# ^ insertion.point[1]
      wrapper()
 #            ^ end range.function[1]
 
 # Nodes types:
 # symbol.function[1]: identifier
 # range.function[1]: function_definition
+# insertion.point[1]: :
 
 # ------------------------------------
 
@@ -134,12 +136,14 @@
 
  def return_statement():
 #^ start range.function[1]
+#                      ^ insertion.point[1]
      return
 #         ^ end range.function[1]
 #         █
 
 # Nodes types:
 # range.function[1]: function_definition
+# insertion.point[1]: :
 
 # ------------------------------------
 

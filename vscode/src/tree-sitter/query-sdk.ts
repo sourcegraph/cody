@@ -134,14 +134,11 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             const captures = queries.documentableNodes.compiled.captures(root, start, end)
             const symbolCaptures = []
             const rangeCaptures = []
-            const insertionCaptures = []
+
             for (const capture of captures) {
-                console.log(capture.name)
                 if (capture.name.startsWith('range')) {
                     rangeCaptures.push(capture)
-                } else if (capture.name.startsWith('insertion')) {
-                    insertionCaptures.push(capture)
-                } else {
+                } else if (capture.name.startsWith('symbol')) {
                     symbolCaptures.push(capture)
                 }
             }
@@ -163,9 +160,12 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
 
             let insertion: QueryCapture | undefined
             if (range) {
-                // Look for an insertion point within the determined range of the node.
+                // Look for an insertion capture within the determined range of the node
                 // This is primarily used for languages where documentation should be inserted differently
                 // depending on the syntax (e.g. Python PEP 257)
+                const insertionCaptures = queries.documentableNodes.compiled
+                    .captures(root, range.node.startPosition, range.node.endPosition)
+                    .filter(({ name }) => name.startsWith('insertion'))
                 insertion = findLast(
                     insertionCaptures,
                     ({ node }) =>
