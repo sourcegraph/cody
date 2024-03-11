@@ -5,7 +5,6 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionBookkeepingEvent } from '../logger'
 
 import type { Position } from 'vscode'
-import { isAlmostTheSameString } from './string-comparator'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -201,11 +200,7 @@ export function trimUntilSuffix(
             break
         }
 
-        if (
-            isSameIndentation &&
-            (isAlmostTheSameString(line, firstNonEmptySuffixLine) ||
-                firstNonEmptySuffixLine.startsWith(line))
-        ) {
+        if (isSameIndentation && firstNonEmptySuffixLine.startsWith(line)) {
             cutOffIndex = i
             break
         }
