@@ -157,7 +157,7 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
             (method_signature name: (property_identifier) @symbol.identifier) @range.identifier))
     (type_alias_declaration
         (object_type
-            (property_signature name: (property_identifier) @sybmol.identifier) @range.identifier))
+            (property_signature name: (property_identifier) @symbol.identifier) @range.identifier))
 `
 
 export const javascriptQueries = {

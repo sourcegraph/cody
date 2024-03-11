@@ -40,7 +40,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
      * Attempt to get the range of a documentable symbol at the current cursor position.
      * If present, use this for the edit instead of expanding the range to the nearest block.
      */
-    const [_, documentableRange] = execQueryWrapper(
+    const [_, documentableRange, documentableInsertionPoint] = execQueryWrapper(
         document,
         editor.selection.active,
         'getDocumentableNode'
@@ -53,25 +53,14 @@ function getDocumentableRange(editor: vscode.TextEditor): {
 
     const {
         node: { startPosition, endPosition },
-        name,
     } = documentableRange
 
-    let insertionPoint = new vscode.Position(
-        startPosition.row,
-        document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
-    )
-
-    if (
-        document.languageId === 'python' &&
-        name &&
-        (name === 'range.function' || name === 'range.class')
-    ) {
-        /**
-         * Adjust the insertion point to be below the symbol position for functions and classes.
-         * This aligns with Python conventions for writing documentation: https://peps.python.org/pep-0257/
-         */
-        insertionPoint = new vscode.Position(startPosition.row + 1, 0)
-    }
+    const insertionPoint = documentableInsertionPoint.node
+        ? new vscode.Position(documentableInsertionPoint.node.startPosition.row + 1, 0)
+        : new vscode.Position(
+              startPosition.row,
+              document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
+          )
 
     return {
         range: new vscode.Range(

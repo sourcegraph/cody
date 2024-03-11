@@ -12,6 +12,15 @@ def test():
 
 # ------------------------------------
 
+def test_multiline_func_declaration(
+    #              |
+    val,
+    val2
+):
+    wrapper()
+
+# ------------------------------------
+
 def test_parameter(val):
     #              |
     wrapper()
@@ -19,6 +28,15 @@ def test_parameter(val):
 # ------------------------------------
 
 class Agent:
+    #   |
+    pass
+
+# ------------------------------------
+
+
+class AgentMultiLine(
+    BaseClass1,
+    BaseClass2):
     #   |
     pass
 

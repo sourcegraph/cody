@@ -134,9 +134,13 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             const captures = queries.documentableNodes.compiled.captures(root, start, end)
             const symbolCaptures = []
             const rangeCaptures = []
+            const insertionCaptures = []
             for (const capture of captures) {
+                console.log(capture.name)
                 if (capture.name.startsWith('range')) {
                     rangeCaptures.push(capture)
+                } else if (capture.name.startsWith('insertion')) {
+                    insertionCaptures.push(capture)
                 } else {
                     symbolCaptures.push(capture)
                 }
@@ -158,9 +162,23 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 )
             })
 
+            let insertion: QueryCapture | undefined
+            if (range) {
+                console.log(insertionCaptures)
+                insertion = findLast(insertionCaptures, ({ node }) => {
+                    return (
+                        node.startPosition.row <= range.node.startPosition.row &&
+                        node.startPosition.column <= range.node.startPosition.column &&
+                        (range.node.startPosition.column <= node.endPosition.column ||
+                            range.node.startPosition.row <= node.endPosition.row)
+                    )
+                })
+            }
+
             return [
                 { node: symbol?.node, name: symbol?.name },
                 { node: range?.node, name: range?.name },
+                { node: insertion?.node, name: insertion?.name },
             ] as const
         },
     }

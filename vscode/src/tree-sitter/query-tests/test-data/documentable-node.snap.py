@@ -33,6 +33,22 @@
 
 # ------------------------------------
 
+ def test_multiline_func_declaration(
+#^ start range.function[1]
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ symbol.function[1]
+#                   █
+     val,
+     val2
+ ):
+     wrapper()
+#            ^ end range.function[1]
+
+# Nodes types:
+# symbol.function[1]: identifier
+# range.function[1]: function_definition
+
+# ------------------------------------
+
  def test_parameter(val):
 #^ start range.function[1]
 #                   █
@@ -53,6 +69,20 @@
 
 # Nodes types:
 # symbol.class[1]: identifier
+# range.class[1]: class_definition
+
+# ------------------------------------
+
+
+ class AgentMultiLine(
+#^ start range.class[1]
+     BaseClass1,
+     BaseClass2):
+#        █
+     pass
+#       ^ end range.class[1]
+
+# Nodes types:
 # range.class[1]: class_definition
 
 # ------------------------------------
