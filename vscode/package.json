@@ -876,6 +876,12 @@
           "default": false,
           "markdownDescription": "Experimental feature for internal use."
         },
+        "cody.experimental.showChatScores": {
+          "order": 9,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental feature to show context scores in chat."
+        },
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",

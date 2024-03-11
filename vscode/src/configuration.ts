@@ -123,6 +123,7 @@ export function getConfiguration(
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
+        experimentalShowChatScores: getHiddenSetting('experimental.showChatScores', false),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),

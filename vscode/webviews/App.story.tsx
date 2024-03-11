@@ -33,6 +33,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 uiKindIsWeb: false,
                 extensionVersion: '0.0.0',
                 experimentalGuardrails: false,
+                experimentalShowChatScores: false,
             },
             authStatus: {
                 ...defaultAuthStatus,

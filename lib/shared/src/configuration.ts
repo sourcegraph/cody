@@ -48,6 +48,7 @@ export interface Configuration {
      */
     experimentalGuardrails: boolean
     experimentalSymfContext: boolean
+    experimentalShowChatScores: boolean
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined

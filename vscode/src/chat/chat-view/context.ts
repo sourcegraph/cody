@@ -276,7 +276,8 @@ async function searchSymf(
         // trigger background reindex if the index is stale
         void symf?.reindexIfStale(workspaceRoot)
 
-        const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
+        const { results, expandedQuery } = symf.getResults(userText, [workspaceRoot])
+        const r0 = (await results).flatMap(async results => {
             const items = (await results).flatMap(
                 async (result: Result): Promise<ContextItem[] | ContextItem> => {
                     const range = new vscode.Range(
@@ -299,12 +300,18 @@ async function searchSymf(
                         )
                         return []
                     }
+                    const metadata = {
+                        blugeScore: result.blugeScore,
+                        otherDisplayInfo: result.heuristicBoostID && `boost:${result.heuristicBoostID}`,
+                        expandedQuery: await expandedQuery,
+                    }
                     return {
                         type: 'file',
                         uri: result.file,
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        metadata,
                     }
                 }
             )

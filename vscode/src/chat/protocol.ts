@@ -173,7 +173,7 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
+        'debugEnable' | 'experimentalGuardrails' | 'experimentalShowChatScores' | 'serverEndpoint'
     > {}
 
 /**

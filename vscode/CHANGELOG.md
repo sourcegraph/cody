@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- New experimental flag `cody.experimental.showChatScores` that shows the search scores of chat context items when enabled.
+
 ### Fixed
 
 ### Changed

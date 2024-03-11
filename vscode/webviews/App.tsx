@@ -14,7 +14,7 @@ import {
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
+import { EnhancedContextEnabled, IncludeScores } from './chat/components/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
@@ -32,7 +32,9 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<
+        (Pick<Configuration, 'debugEnable' | 'experimentalShowChatScores'> & LocalEnv) | null
+    >(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -242,29 +244,31 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         >
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
                                 <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        messageBeingEdited={messageBeingEdited}
-                                        setMessageBeingEdited={setMessageBeingEdited}
-                                        transcript={transcript}
-                                        contextSelection={contextSelection}
-                                        setContextSelection={setContextSelection}
-                                        formInput={formInput}
-                                        setFormInput={setFormInput}
-                                        inputHistory={inputHistory}
-                                        setInputHistory={setInputHistory}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        isTranscriptError={isTranscriptError}
-                                        chatModels={chatModels}
-                                        setChatModels={setChatModels}
-                                        welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        chatIDHistory={chatIDHistory}
-                                        isWebviewActive={isWebviewActive}
-                                    />
+                                    <IncludeScores.Provider value={config.experimentalShowChatScores}>
+                                        <Chat
+                                            chatEnabled={chatEnabled}
+                                            userInfo={userAccountInfo}
+                                            messageInProgress={messageInProgress}
+                                            messageBeingEdited={messageBeingEdited}
+                                            setMessageBeingEdited={setMessageBeingEdited}
+                                            transcript={transcript}
+                                            contextSelection={contextSelection}
+                                            setContextSelection={setContextSelection}
+                                            formInput={formInput}
+                                            setFormInput={setFormInput}
+                                            inputHistory={inputHistory}
+                                            setInputHistory={setInputHistory}
+                                            vscodeAPI={vscodeAPI}
+                                            telemetryService={telemetryService}
+                                            isTranscriptError={isTranscriptError}
+                                            chatModels={chatModels}
+                                            setChatModels={setChatModels}
+                                            welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                            guardrails={attributionEnabled ? guardrails : undefined}
+                                            chatIDHistory={chatIDHistory}
+                                            isWebviewActive={isWebviewActive}
+                                        />
+                                    </IncludeScores.Provider>
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
                         </EnhancedContextEventHandlers.Provider>

@@ -36,6 +36,7 @@ export type Config = Pick<
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'experimentalSymfContext'
+    | 'experimentalShowChatScores'
     | 'editorTitleCommandIcon'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
@@ -192,6 +193,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
+                experimentalShowChatScores: this.config.experimentalShowChatScores,
             }
             const workspaceFolderUris =
                 vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

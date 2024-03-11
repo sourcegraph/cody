@@ -1,10 +1,11 @@
 import type React from 'react'
 
 import { displayLineRange, displayPath } from '@sourcegraph/cody-shared'
-import type { FileLinkProps } from '../chat/components/EnhancedContext'
+import { type FileLinkProps, useIncludeScores } from '../chat/components/EnhancedContext'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import type { ContextItemMetadata } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import styles from './FileLink.module.css'
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({
@@ -14,6 +15,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     repoName,
     title,
     revision,
+    metadata,
 }) => {
     if (source === 'unified') {
         // This is a remote search result.
@@ -29,6 +31,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                 title={tooltip}
                 className={styles.linkButton}
             >
+                {metadata && <MetadataElement metadata={metadata} />}
                 {pathWithRange}
             </a>
         )
@@ -46,7 +49,36 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                 getVSCodeAPI().postMessage({ command: 'openFile', uri, range })
             }}
         >
+            {metadata && <MetadataElement metadata={metadata} />}
             {pathWithRange}
         </button>
+    )
+}
+
+// Pretty-print the score, so that at most 2 sig figs are used, and if a number
+// is greater than one million, 'M' is used, and if a number is between one
+// thousand and one million, 'K' is used
+function prettyPrintScore(score: number): string {
+    if (score > 1000000) {
+        return `${(score / 1_000_000).toFixed(1)}M`
+    }
+    if (score > 1000) {
+        return `${(score / 1_000).toFixed(1)}K`
+    }
+    return score.toFixed(2)
+}
+
+const MetadataElement: React.FunctionComponent<{ metadata: ContextItemMetadata }> = ({ metadata }) => {
+    const includeScores = useIncludeScores()
+    if (!includeScores) {
+        return null
+    }
+    return (
+        <span title={metadata.expandedQuery && `query: ${metadata.expandedQuery}`}>
+            {'{'}
+            {metadata.blugeScore && <span>score: {prettyPrintScore(metadata.blugeScore)}</span>}
+            {metadata.otherDisplayInfo && <span>, {metadata.otherDisplayInfo}</span>}
+            {'} '}
+        </span>
     )
 }

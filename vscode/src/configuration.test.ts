@@ -104,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.showChatScores':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -125,6 +127,7 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSymfContext: true,
+            experimentalShowChatScores: false,
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
