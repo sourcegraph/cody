@@ -1,9 +1,7 @@
 <idea-plugin require-restart="true">
     <id>com.sourcegraph.jetbrains</id>
     <name>Sourcegraph Cody + Code Search</name>
-    <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">
-        Sourcegraph
-    </vendor>
+    <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
     <change-notes>
         <![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
 
@@ -23,19 +21,13 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
-    <depends optional="true" config-file="plugin-perforce.xml">
-        PerforceDirectPlugin
-    </depends>
+    <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService
-                serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
-        <applicationService
-                serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
-        <applicationService
-                serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
-        <httpRequestHandler
-                implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
+        <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
+        <httpRequestHandler implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
                 parentId="tools"
@@ -59,17 +51,13 @@
                 nonDefaultProject="false"
         />
 
-        <applicationService
-                serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
         <notificationGroup id="cody.auth" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
-        <notificationGroup id="Sourcegraph Cody + Code Search plugin updates"
-                           displayType="STICKY_BALLOON"/>
-        <projectService id="sourcegraph.findService"
-                        serviceImplementation="com.sourcegraph.find.FindService"/>
-        <postStartupActivity
-                implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
+        <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
+        <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
 
         <!-- Cody -->
         <toolWindow
@@ -80,17 +68,14 @@
                 factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
 
         <!-- autocomplete -->
-        <editorFactoryListener
-                implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
-        <errorHandler
-                implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
+        <errorHandler implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
 
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
-        <actionPromoter order="last"
-                        implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
+        <actionPromoter order="last" implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
     </extensions>
 
     <applicationListeners>
@@ -103,118 +88,131 @@
     </applicationListeners>
 
     <actions>
-        <!-- sourcegraph -->
         <action
                 id="sourcegraph.openFile"
                 class="com.sourcegraph.website.OpenFileAction"
+                text="Open Selection in Sourcegraph Web"
+                description="Open selection in Sourcegraph Web"
                 icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
                 id="sourcegraph.searchSelection"
                 class="com.sourcegraph.website.SearchSelectionAction"
+                text="Search Selection on Sourcegraph Web"
+                description="Search selection on Sourcegraph web"
                 icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
                 id="sourcegraph.searchRepository"
                 class="com.sourcegraph.website.SearchRepositoryAction"
+                text="Search Selection in Repository on Sourcegraph Web"
+                description="Search selection in repository on Sourcegraph web"
                 icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
                 id="sourcegraph.copy"
                 class="com.sourcegraph.website.CopyAction"
+                text="Copy Sourcegraph File Link"
+                description="Copy Sourcegraph file link"
                 icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
-                id="sourcegraph.website"
+                id="com.sourcegraph.website.OpenRevisionAction"
                 class="com.sourcegraph.website.OpenRevisionAction"
+                text="Open Revision Diff in Sourcegraph Web"
                 icon="/icons/sourcegraphLogo.svg">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
-            <add-to-group group-id="VcsHistoryActionsGroup.Toolbar"
-                          anchor="last"/>
-            <add-to-group group-id="VcsSelectionHistoryDialog.Popup"
-                          anchor="last"/>
+            <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
+            <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
         </action>
         <action
                 id="sourcegraph.openFindPopup"
                 class="com.sourcegraph.find.OpenFindAction"
+                text="Find with Sourcegraph..."
+                description="Search all your repos on Sourcegraph"
                 icon="/icons/sourcegraphLogo.svg">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
-            <add-to-group group-id="FindMenuGroup" anchor="after"
-                          relative-to-action="ReplaceInPath"/>
+            <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
         <action
                 id="sourcegraph.login"
                 class="com.sourcegraph.config.OpenPluginSettingsAction"
+                text="Log in to Sourcegraph"
+                description="Log in to Sourcegraph"
                 icon="/icons/sourcegraphLogo.svg">
         </action>
 
         <!-- autocomplete -->
         <action id="cody.acceptAutocompleteAction"
-                class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction">
+                class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction"
+                text="Accept Autocomplete Suggestion">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
         </action>
         <action id="cody.cycleForwardAutocompleteAction"
-                class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt OPEN_BRACKET"
-                               keymap="$default"/>
+                class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction"
+                text="Cycle Forward Autocomplete Suggestion">
+            <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
         </action>
         <action id="cody.cycleBackAutocompleteAction"
-                class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET"
-                               keymap="$default"/>
+                class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction"
+                text="Cycle Backwards Autocomplete Suggestion">
+            <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
         </action>
 
         <action id="cody.disposeInlays"
-                class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction">
+                class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction"
+                text="Hide Completions">
             <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
         </action>
 
         <action id="cody.triggerAutocomplete"
-                class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt BACK_SLASH"
-                               keymap="$default"/>
+                class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction"
+                text="Autocomplete">
+            <keyboard-shortcut first-keystroke="alt BACK_SLASH" keymap="$default"/>
         </action>
 
-        <!-- chat -->
         <action id="cody.newChat"
                 icon="/icons/chat/newChat.svg"
+                text="New Chat"
                 class="com.sourcegraph.cody.chat.actions.NewChatAction">
             <keyboard-shortcut first-keystroke="alt EQUALS" keymap="$default"/>
         </action>
 
         <action id="cody.openChat"
+                text="Open Chat"
                 class="com.sourcegraph.cody.chat.OpenChatAction">
             <keyboard-shortcut first-keystroke="alt MINUS" keymap="$default"/>
         </action>
 
-        <action id="cody.command.explain"
+        <action id="cody.command.Explain"
                 icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Explain Code'"
                 class="com.sourcegraph.cody.chat.actions.ExplainCommand">
-            <keyboard-shortcut first-keystroke="control shift E"
-                               keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="control shift E" keymap="Mac OS X 10.5+"/>
             <keyboard-shortcut first-keystroke="alt shift 1" keymap="$default"/>
         </action>
 
-        <action id="cody.command.smell"
+        <action id="cody.command.Smell"
                 icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Smell Code'"
                 class="com.sourcegraph.cody.chat.actions.SmellCommand">
-            <keyboard-shortcut first-keystroke="control shift S"
-                               keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="control shift S" keymap="Mac OS X 10.5+"/>
             <keyboard-shortcut first-keystroke="alt shift 2" keymap="$default"/>
         </action>
 
-        <action id="cody.command.test"
+        <action id="cody.command.Test"
                 icon="/icons/chat/newChat.svg"
+                text="Execute Command 'Generate Test'"
                 class="com.sourcegraph.cody.chat.actions.TestCommand">
-            <keyboard-shortcut first-keystroke="control shift T"
-                               keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut first-keystroke="control shift T" keymap="Mac OS X 10.5+"/>
             <keyboard-shortcut first-keystroke="alt shift 3" keymap="$default"/>
         </action>
 
         <action
                 id="cody.restartAgent"
-                class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"/>
+                class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
+                text="Restart Cody Agent"/>
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.newChat"/>
@@ -223,9 +221,9 @@
         <group id="CodyEditorActions" popup="true" text="Cody"
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
-            <reference ref="cody.command.explain"/>
-            <reference ref="cody.command.smell"/>
-            <reference ref="cody.command.test"/>
+            <reference ref="cody.command.Explain"/>
+            <reference ref="cody.command.Smell"/>
+            <reference ref="cody.command.Test"/>
         </group>
 
         <group id="SourcegraphEditor" popup="true" text="Sourcegraph"
@@ -238,15 +236,15 @@
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>
 
-        <group id="CodyStatusBarActions" popup="true" text="Cody"
-               searchable="false"
+        <group id="CodyStatusBarActions" popup="true" text="Cody" searchable="false"
                class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
         </group>
 
-        <group id="cody.accounts.addAccount">
-            <action id="cody.accounts.logInToSourcegraphAction"
+        <group id="Cody.Accounts.AddAccount">
+            <action id="Cody.Accounts.LogInToSourcegraphAction" text="Log In to Sourcegraph"
                     class="com.sourcegraph.cody.config.LogInToSourcegraphAction"/>
-            <action id="cody.accounts.addCodyEnterpriseAccount"
+            <action id="Cody.Accounts.AddCodyEnterpriseAccount"
+                    text="Log In with Token to Sourcegraph Enterprise"
                     class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"/>
 
             <separator/>
