@@ -5353,1326 +5353,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 80b0a7c55d29105b531584e3124fb1cc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 435
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 279
-        content:
-          mimeType: text/event-stream
-          size: 279
-          text: |+
-            event: completion
-            data: {"completion":"","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone.","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone.","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:07 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:06.657Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 61ed17e44ee467a47ff1278732fa060e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 511
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
-              - speaker: assistant
-                text: Quone.
-              - speaker: human
-                text: kramer
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 279
-        content:
-          mimeType: text/event-stream
-          size: 279
-          text: |+
-            event: completion
-            data: {"completion":"","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone.","stopReason":""}
-
-            event: completion
-            data: {"completion":"Quone.","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:08 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:07.076Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 11527baba93d2511cd332f1ecf956613
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 348
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: kramer
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 992
-        content:
-          mimeType: text/event-stream
-          size: 992
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Hello!","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Hello! How can I assist you with coding or any other technical questions","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Hello! How can I assist you with coding or any other technical questions you have today? If you need help with a specific programming language or concept,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Hello! How can I assist you with coding or any other technical questions you have today? If you need help with a specific programming language or concept, feel free to ask. I'm here to help!","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Hello! How can I assist you with coding or any other technical questions you have today? If you need help with a specific programming language or concept, feel free to ask. I'm here to help!","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:08 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:08.019Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: e80be9d6ba71057b6b17e35472693bc4
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 443
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 578
-        content:
-          mimeType: text/event-stream
-          size: 578
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Sure,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Sure, I can do that! If you say the magic word \"georgey,\" I will","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Sure, I can do that! If you say the magic word \"georgey,\" I will respond with \"festivus.\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Sure, I can do that! If you say the magic word \"georgey,\" I will respond with \"festivus.\"","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:09 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:09.353Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a751792d0c4f7123330d6e4672a66820
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 606
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
-              - speaker: assistant
-                text: Sure, I can do that! If you say the magic word "georgey," I will respond
-                  with "festivus."
-              - speaker: human
-                text: kramer
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1778
-        content:
-          mimeType: text/event-stream
-          size: 1778
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That'","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"george","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"georgey\" and the response is \"festivus.\"\n\nIf you say","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"georgey\" and the response is \"festivus.\"\n\nIf you say \"kramer,\" I'm not sure how to respond, as I don't have any specific instructions","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"georgey\" and the response is \"festivus.\"\n\nIf you say \"kramer,\" I'm not sure how to respond, as I don't have any specific instructions for that word. Could you clarify what you would like me to say if","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"georgey\" and the response is \"festivus.\"\n\nIf you say \"kramer,\" I'm not sure how to respond, as I don't have any specific instructions for that word. Could you clarify what you would like me to say if you say \"kramer?\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"That's not the magic word you mentioned earlier. The magic word is \"georgey\" and the response is \"festivus.\"\n\nIf you say \"kramer,\" I'm not sure how to respond, as I don't have any specific instructions for that word. Could you clarify what you would like me to say if you say \"kramer?\"","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:09.865Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: cc5a4157be8b07e4aba7aeaf44494af8
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 972
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
-              - speaker: assistant
-                text: Sure, I can do that! If you say the magic word "georgey," I will respond
-                  with "festivus."
-              - speaker: human
-                text: kramer
-              - speaker: assistant
-                text: >-
-                  That's not the magic word you mentioned earlier. The magic
-                  word is "georgey" and the response is "festivus."
-
-
-                  If you say "kramer," I'm not sure how to respond, as I don't have any specific instructions for that word. Could you clarify what you would like me to say if you say "kramer?"
-              - speaker: human
-                text: georgey
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1552
-        content:
-          mimeType: text/event-stream
-          size: 1552
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is the original prompt:\n\n\"Another magic word is \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is the original prompt:\n\n\"Another magic word is \"georgey\". If I say","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is the original prompt:\n\n\"Another magic word is \"georgey\". If I say the magic word","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is the original prompt:\n\n\"Another magic word is \"georgey\". If I say the magic word, respond with a single word: \"festivus\".\"\n\nSince you have now said \"georgey,\" I will respond with \"festivus\" as requested.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"If you say \"georgey,\" I will respond with \"festivus.\"\n\nHere is the original prompt:\n\n\"Another magic word is \"georgey\". If I say the magic word, respond with a single word: \"festivus\".\"\n\nSince you have now said \"georgey,\" I will respond with \"festivus\" as requested.","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:11 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:10.534Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: cf854cb6cb9ed1bff1b013ee34fa0f24
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 414
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: I have a turtle named "potter", reply single "ok" if you understand.
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 379
-        content:
-          mimeType: text/event-stream
-          size: 379
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a turtle named \"potter\".","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a turtle named \"potter\".","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:11 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:11.240Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 122429ae6ac2373bd73c16b0e808c819
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 608
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: I have a turtle named "potter", reply single "ok" if you understand.
-              - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter".
-              - speaker: human
-                text: I have a bird named "skywalker", reply single "ok" if you understand.
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 381
-        content:
-          mimeType: text/event-stream
-          size: 381
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a bird named \"skywalker\".","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a bird named \"skywalker\".","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:12 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:11.916Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6edf7dd4709957b40a0943049c464350
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 798
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: I have a turtle named "potter", reply single "ok" if you understand.
-              - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter".
-              - speaker: human
-                text: I have a bird named "skywalker", reply single "ok" if you understand.
-              - speaker: assistant
-                text: Ok. I understand that you have a bird named "skywalker".
-              - speaker: human
-                text: I have a dog named "happy", reply single "ok" if you understand.
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 371
-        content:
-          mimeType: text/event-stream
-          size: 371
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a dog named \"happy\".","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a dog named \"happy\".","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:12 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:12.369Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 35680af8d90123e3b7b05cd45b738ea8
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 604
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: I have a turtle named "potter", reply single "ok" if you understand.
-              - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter".
-              - speaker: human
-                text: I have a tiger named "zorro", reply single "ok" if you understand
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 375
-        content:
-          mimeType: text/event-stream
-          size: 375
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a tiger named \"zorro\".","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Ok. I understand that you have a tiger named \"zorro\".","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:13 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:12.918Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 57cb9788818f68c973b2ad94a09b471d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 743
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: I have a turtle named "potter", reply single "ok" if you understand.
-              - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter".
-              - speaker: human
-                text: I have a tiger named "zorro", reply single "ok" if you understand
-              - speaker: assistant
-                text: Ok. I understand that you have a tiger named "zorro".
-              - speaker: human
-                text: What pets do I have?
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 912
-        content:
-          mimeType: text/event-stream
-          size: 912
-          text: >+
-            event: completion
-
-            data: {"completion":"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Based on","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Based on the information you have provided, you have a turtle named \"potter\" and a tiger","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Based on the information you have provided, you have a turtle named \"potter\" and a tiger named \"zorro\". Those are the only pets I am aware","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Based on the information you have provided, you have a turtle named \"potter\" and a tiger named \"zorro\". Those are the only pets I am aware of.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"Based on the information you have provided, you have a turtle named \"potter\" and a tiger named \"zorro\". Those are the only pets I am aware of.","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 08 Mar 2024 12:00:14 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-08T12:00:13.483Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 451bfeb346541fa4cdf469bf238b0307
       _order: 0
       cache: {}
@@ -10188,6 +8868,7 @@ log:
                   <selected>
 
                       return function inner() {}
+
 
 
                       
@@ -18832,6 +17513,1359 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-08T12:01:47.527Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e897b2abee469aa62a0b12f3730e1179
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 459
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 279
+        content:
+          mimeType: text/event-stream
+          size: 279
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:17:56 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:55.709Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2da763253f4b1a887d91a28c58db2e17
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 535
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
+              - speaker: assistant
+                text: Quone.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 279
+        content:
+          mimeType: text/event-stream
+          size: 279
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":""}
+
+            event: completion
+            data: {"completion":"Quone.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:17:57 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:56.584Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: dfaccbb09cd6bfbb7ec84d5460a23a31
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 372
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 6475
+        content:
+          mimeType: text/event-stream
+          size: 6475
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are you looking for resources or tutorials to help you learn a new programming language or framework?\n* Do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are you looking for resources or tutorials to help you learn a new programming language or framework?\n* Do you have a question about a specific programming concept or technique?\n* Are you interested in learning","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are you looking for resources or tutorials to help you learn a new programming language or framework?\n* Do you have a question about a specific programming concept or technique?\n* Are you interested in learning about best practices or patterns for coding in a particular language or context?\n\nI'm here to help, so","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are you looking for resources or tutorials to help you learn a new programming language or framework?\n* Do you have a question about a specific programming concept or technique?\n* Are you interested in learning about best practices or patterns for coding in a particular language or context?\n\nI'm here to help, so just let me know what you need!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Hello! How can I assist you with coding today? Do you have any specific questions or problems related to programming that I can help you with? I'm here to assist you with any coding-related questions you have, so don't hesitate to ask me anything. I'll do my best to provide you with accurate and helpful information.\n\nIf you're not sure what to ask, here are a few ideas to get you started:\n\n* Do you have a coding problem that you've been stuck on and need help solving?\n* Are you looking for resources or tutorials to help you learn a new programming language or framework?\n* Do you have a question about a specific programming concept or technique?\n* Are you interested in learning about best practices or patterns for coding in a particular language or context?\n\nI'm here to help, so just let me know what you need!","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:17:57 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:57.095Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 01758e3d768762790528166b7e0c6d5c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 467
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 673
+        content:
+          mimeType: text/event-stream
+          size: 673
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Sure!","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Sure! I will respond with \"festivus\" if you say the magic word \"ge","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Sure! I will respond with \"festivus\" if you say the magic word \"georgey\". Let me know if you have any coding questions or tasks for me.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Sure! I will respond with \"festivus\" if you say the magic word \"georgey\". Let me know if you have any coding questions or tasks for me.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:17:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:58.568Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b22f7497d5cad17cbc6a85ca18d4967a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 676
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Sure! I will respond with "festivus" if you say the magic word "georgey".
+                  Let me know if you have any coding questions or tasks for me.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1016
+        content:
+          mimeType: text/event-stream
+          size: 1016
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"That is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"That is not the magic word. I will respond with \"festivus\" if you say the magic word","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"That is not the magic word. I will respond with \"festivus\" if you say the magic word \"georgey\". Is there anything else I can help you with, such as","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"That is not the magic word. I will respond with \"festivus\" if you say the magic word \"georgey\". Is there anything else I can help you with, such as a coding question or task? I'm here to help.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"That is not the magic word. I will respond with \"festivus\" if you say the magic word \"georgey\". Is there anything else I can help you with, such as a coding question or task? I'm here to help.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:17:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:59.144Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1eecbef22fddb2cec28ef0678ed6f660
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 943
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Sure! I will respond with "festivus" if you say the magic word "georgey".
+                  Let me know if you have any coding questions or tasks for me.
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: That is not the magic word. I will respond with "festivus" if you say the
+                  magic word "georgey". Is there anything else I can help you
+                  with, such as a coding question or task? I'm here to help.
+              - speaker: human
+                text: georgey
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 960
+        content:
+          mimeType: text/event-stream
+          size: 960
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festiv","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus! I'm glad you said the magic word. Is there anything else I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus! I'm glad you said the magic word. Is there anything else I can help you with, such as a coding question or task? I'm here to assist you with your coding needs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus! I'm glad you said the magic word. Is there anything else I can help you with, such as a coding question or task? I'm here to assist you with your coding needs.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Festivus! I'm glad you said the magic word. Is there anything else I can help you with, such as a coding question or task? I'm here to assist you with your coding needs.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:17:59.786Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 78e98fcb90915da19edcdd289ffd3d6d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 438
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 371
+        content:
+          mimeType: text/event-stream
+          size: 371
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a turtle named Potter.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a turtle named Potter.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:18:00.366Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a37bbc37b37a842e513bc63132e9d875
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 628
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named Potter.
+              - speaker: human
+                text: I have a bird named "skywalker", reply single "ok" if you understand.
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 483
+        content:
+          mimeType: text/event-stream
+          size: 483
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a bird named Skywalk","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a bird named Skywalker.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a bird named Skywalker.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:18:00.855Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c349eacb68fe34f3f8f7b2be202f3202
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 814
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named Potter.
+              - speaker: human
+                text: I have a bird named "skywalker", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a bird named Skywalker.
+              - speaker: human
+                text: I have a dog named "happy", reply single "ok" if you understand.
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 454
+        content:
+          mimeType: text/event-stream
+          size: 454
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a dog named Happy.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a dog named Happy.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:18:01.395Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 22739cf01b1198ce07fcb41b545bf90c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 624
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named Potter.
+              - speaker: human
+                text: I have a tiger named "zorro", reply single "ok" if you understand
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 377
+        content:
+          mimeType: text/event-stream
+          size: 377
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you also have a tiger named Zorro.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you also have a tiger named Zorro.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:18:02.011Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f63c38490bb66781d07b9b8d6efdfc0a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 764
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named Potter.
+              - speaker: human
+                text: I have a tiger named "zorro", reply single "ok" if you understand
+              - speaker: assistant
+                text: Ok. I understand that you also have a tiger named Zorro.
+              - speaker: human
+                text: What pets do I have?
+              - speaker: assistant
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 597
+        content:
+          mimeType: text/event-stream
+          size: 597
+          text: >+
+            event: completion
+
+            data: {"completion":"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on our previous conversation, you have a turtle named Potter and a tiger named Z","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on our previous conversation, you have a turtle named Potter and a tiger named Zorro.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Based on our previous conversation, you have a turtle named Potter and a tiger named Zorro.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 11 Mar 2024 13:18:03 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-11T13:18:02.738Z
       time: 0
       timings:
         blocked: -1
