@@ -147,7 +147,7 @@ const HINT_DECORATIONS: Record<
         }),
     },
     Generate: {
-        text: `${EDIT_SHORTCUT_LABEL} to Generate`,
+        text: `${EDIT_SHORTCUT_LABEL} to Generate Code`,
         decoration: vscode.window.createTextEditorDecorationType({
             after: {
                 color: GHOST_TEXT_COLOR,
