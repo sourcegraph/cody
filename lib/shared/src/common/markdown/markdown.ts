@@ -5,12 +5,15 @@ import { marked } from 'marked'
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
 /**
- * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
+ * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`.
  */
-const escapeHTML = (html: string): string => {
-    const span = document.createElement('span')
-    span.textContent = html
-    return span.innerHTML
+export function escapeHTML(html: string): string {
+    return html
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
 }
 
 /**
