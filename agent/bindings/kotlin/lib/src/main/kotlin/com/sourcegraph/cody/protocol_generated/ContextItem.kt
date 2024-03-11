@@ -29,6 +29,7 @@ data class ContextItemFile(
   val revision: String? = null,
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal
+  val metadata: ContextItemMetadata? = null,
   val type: TypeEnum? = null, // Oneof: file
   val isTooLarge: Boolean? = null,
 ) : ContextItem() {
@@ -46,6 +47,7 @@ data class ContextItemSymbol(
   val revision: String? = null,
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal
+  val metadata: ContextItemMetadata? = null,
   val type: TypeEnum? = null, // Oneof: symbol
   val symbolName: String? = null,
   val kind: SymbolKind? = null, // Oneof: class, function, method
