@@ -44,7 +44,7 @@ const INTENTS_QUERY = dedent`
 
 const DOCUMENTABLE_NODES_QUERY = dedent`
     ; Function definitions
-    ; Note: We also capture @range.body here, as we need to determine
+    ; Note: We also capture @insertion.point here, as we need to determine
     ; the correct start point of the documentation for functions
     ;--------------------------------
     (function_definition
@@ -52,6 +52,8 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
         parameters: _ (":") @insertion.point) @range.function
 
     ; Class definitions
+    ; Note: We also capture @insertion.point here, as we need to determine
+    ; the correct start point of the documentation for classes
     ;--------------------------------
     (class_definition
         name: (identifier) @symbol.class

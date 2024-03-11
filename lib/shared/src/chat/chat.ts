@@ -58,10 +58,11 @@ export class ChatClient {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =
-            // HACK: The fireworks chat inference endpoints requires the last message to be from a
-            // human. This will be the case in most of the prompts but if for some reason we have an
-            // assistant at the end, we slice the last message for now.
-            isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+            params?.model?.startsWith('fireworks/') || useFastPath
+                ? sanitizeMessages(messages)
+                : isLastMessageFromHuman
+                  ? messages.concat([{ speaker: 'assistant' }])
+                  : messages
 
         // We only want to send up the speaker and prompt text, regardless of whatever other fields
         // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
