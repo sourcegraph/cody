@@ -1,13 +1,13 @@
 import { describe, it } from 'vitest'
 
-import { SupportedLanguage } from '../grammars'
 import { initTreeSitterSDK } from '../test-helpers'
 
+import { SupportedLanguage } from '../grammars'
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getIntent', () => {
     it('typescript', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TypeScript)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescript)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -18,7 +18,7 @@ describe('getIntent', () => {
     })
 
     it('typescript incomplete code', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TypeScript)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescript)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -29,7 +29,7 @@ describe('getIntent', () => {
     })
 
     it('javascriptreact', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.JSX)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.javascriptreact)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -40,7 +40,7 @@ describe('getIntent', () => {
     })
 
     it('typescriptreact', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TSX)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescriptreact)
 
         await annotateAndMatchSnapshot({
             parser,
@@ -51,7 +51,7 @@ describe('getIntent', () => {
     })
 
     it('python', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.Python)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.python)
 
         await annotateAndMatchSnapshot({
             parser,

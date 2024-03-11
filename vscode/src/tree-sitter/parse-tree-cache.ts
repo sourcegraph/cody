@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import type { TextDocument } from 'vscode'
 import type { Tree, default as Parser } from 'web-tree-sitter'
 
-import { type SupportedLanguage, getParseLanguage } from './grammars'
+import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { createParser, getParser } from './parser'
 
 const parseTreesPerFile = new LRUCache<string, Tree>({
@@ -55,7 +55,7 @@ export function updateParseTreeCache(document: TextDocument, parser: Parser): vo
 }
 
 function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLanguage | null {
-    const parseLanguage = getParseLanguage(document.languageId)
+    const { languageId } = document
 
     /**
      * 1. Do not use tree-sitter for unsupported languages.
@@ -65,8 +65,8 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
      *
      *    Needs more testing to figure out if we need it. Playing it safe for the initial integration.
      */
-    if (document.lineCount <= 10_000 && parseLanguage) {
-        return parseLanguage
+    if (document.lineCount <= 10_000 && isSupportedLanguage(languageId)) {
+        return languageId
     }
 
     return null

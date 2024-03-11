@@ -1,4 +1,4 @@
-import { Position, Range, type TextDocument } from 'vscode'
+import type { TextDocument } from 'vscode'
 import type { Point, Tree, default as Parser } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
@@ -10,7 +10,6 @@ import {
     type InlineCompletionItemWithAnalytics,
     getMatchingSuffixLength,
 } from './process-inline-completions'
-import { getLastLine, lines } from './utils'
 
 interface CompletionContext {
     completion: InlineCompletionItem
@@ -51,30 +50,17 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     }
 
     const { parser, tree } = parseTreeCache
-
-    const completionEndPosition = position.translate(
-        lines(completion.insertText).length,
-        getLastLine(completion.insertText).length
-    )
-
-    const treeWithCompletion = pasteCompletion({
+    const { treeWithCompletion, completionEndPosition } = pasteCompletion({
         completion,
         document,
         docContext,
         tree,
         parser,
-        completionEndPosition,
     })
 
     const points: ParsedCompletion['points'] = {
-        start: {
-            row: position.line,
-            column: position.character,
-        },
-        end: {
-            row: completionEndPosition.line,
-            column: completionEndPosition.character,
-        },
+        start: asPoint(position),
+        end: completionEndPosition,
     }
 
     if (multilineTriggerPosition) {
@@ -104,10 +90,14 @@ interface PasteCompletionParams {
     docContext: DocumentContext
     tree: Tree
     parser: Parser
-    completionEndPosition: Position
 }
 
-function pasteCompletion(params: PasteCompletionParams): Tree {
+interface PasteCompletionResult {
+    treeWithCompletion: Tree
+    completionEndPosition: Point
+}
+
+function pasteCompletion(params: PasteCompletionParams): PasteCompletionResult {
     const {
         completion: { insertText },
         document,
@@ -120,43 +110,82 @@ function pasteCompletion(params: PasteCompletionParams): Tree {
             positionWithoutInjectedCompletionText = position,
             injectedCompletionText = '',
         },
-        completionEndPosition,
     } = params
 
     const matchingSuffixLength = getMatchingSuffixLength(insertText, currentLineSuffix)
 
-    // Adjust suffix and prefix based on completion insert range.
-    const prefix =
-        document.getText(new Range(new Position(0, 0), positionWithoutInjectedCompletionText)) +
-        injectedCompletionText
-    const suffix = document.getText(
-        new Range(positionWithoutInjectedCompletionText, document.positionAt(document.getText().length))
-    )
-
-    const offset = document.offsetAt(positionWithoutInjectedCompletionText)
-
     // Remove the characters that are being replaced by the completion to avoid having
     // them in the parse tree. It breaks the multiline truncation logic which looks for
     // the increased number of children in the tree.
-    const textWithCompletion = prefix + insertText + suffix.slice(matchingSuffixLength)
+    const { textWithCompletion, edit } = spliceInsertText({
+        currentText: document.getText(),
+        startIndex: document.offsetAt(positionWithoutInjectedCompletionText),
+        lengthRemoved: matchingSuffixLength,
+        insertText: injectedCompletionText + insertText,
+    })
+
+    const treeCopy = tree.copy()
+    treeCopy.edit(edit)
+
+    // TODO(tree-sitter): consider parsing only the changed part of the document to improve performance.
+    // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
+    const treeWithCompletion = parser.parse(textWithCompletion, treeCopy)
     addAutocompleteDebugEvent('paste-completion', {
         text: textWithCompletion,
     })
 
-    const treeCopy = tree.copy()
+    return {
+        treeWithCompletion,
+        completionEndPosition: edit.newEndPosition,
+    }
+}
 
-    treeCopy.edit({
-        startIndex: offset,
-        oldEndIndex: offset,
-        newEndIndex: offset + injectedCompletionText.length + insertText.length,
-        startPosition: asPoint(positionWithoutInjectedCompletionText),
-        oldEndPosition: asPoint(positionWithoutInjectedCompletionText),
-        newEndPosition: asPoint(completionEndPosition),
-    })
+interface SpliceInsertTextParams {
+    currentText: string
+    insertText: string
+    startIndex: number
+    lengthRemoved: number
+}
 
-    // TODO(tree-sitter): consider parsing only the changed part of the document to improve performance.
-    // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
-    return parser.parse(textWithCompletion, treeCopy)
+interface SpliceInsertTextResult {
+    textWithCompletion: string
+    edit: Parser.Edit
+}
+
+function spliceInsertText(params: SpliceInsertTextParams): SpliceInsertTextResult {
+    const { currentText, insertText, startIndex, lengthRemoved } = params
+
+    const oldEndIndex = startIndex + lengthRemoved
+    const newEndIndex = startIndex + insertText.length
+
+    const startPosition = getExtent(currentText.slice(0, startIndex))
+    const oldEndPosition = getExtent(currentText.slice(0, oldEndIndex))
+    const textWithCompletion =
+        currentText.slice(0, startIndex) + insertText + currentText.slice(oldEndIndex)
+
+    const newEndPosition = getExtent(textWithCompletion.slice(0, newEndIndex))
+
+    return {
+        textWithCompletion,
+        edit: {
+            startIndex,
+            startPosition,
+            oldEndIndex,
+            oldEndPosition,
+            newEndIndex,
+            newEndPosition,
+        },
+    }
+}
+
+function getExtent(text: string): Point {
+    let row = 0
+    let index = 0
+    for (index = 0; index !== -1; index = text.indexOf('\n', index)) {
+        index++
+        row++
+    }
+    return { row, column: text.length - index }
 }
 
 export function dropParserFields(completion: ParsedCompletion): InlineCompletionItemWithAnalytics {

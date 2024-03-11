@@ -350,6 +350,9 @@ importers:
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
+      tree-sitter-wasms:
+        specifier: ^0.1.7
+        version: 0.1.7
       unzipper:
         specifier: ^0.10.14
         version: 0.10.14
@@ -363,8 +366,8 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7
       web-tree-sitter:
-        specifier: ^0.20.8
-        version: 0.20.8
+        specifier: ^0.21.0
+        version: 0.21.0
       wink-nlp-utils:
         specifier: ^2.1.0
         version: 2.1.0
@@ -13627,6 +13630,10 @@ packages:
     hasBin: true
     dev: true
 
+  /tree-sitter-wasms@0.1.7:
+    resolution: {integrity: sha512-/EnmSDDqEnSnIuCqVhSOc14T8r792LmiztqlZMFSRg+4ACrgUWNLvEr2AUP1K76XCJrvuH8liSWfkdQpK41hIA==}
+    dev: false
+
   /trim-newlines@4.1.1:
     resolution: {integrity: sha512-jRKj0n0jXWo6kh62nA5TEh3+4igKDXLvzBJcPpiizP7oOolUrYIxmVBG9TOtHYFHoddUk6YvAkGeGoSVTXfQXQ==}
     engines: {node: '>=12'}
@@ -14208,8 +14215,8 @@ packages:
       defaults: 1.0.4
     dev: true
 
-  /web-tree-sitter@0.20.8:
-    resolution: {integrity: sha512-weOVgZ3aAARgdnb220GqYuh7+rZU0Ka9k9yfKtGAzEYMa6GgiCzW9JjQRJyCJakvibQW+dfjJdihjInKuuCAUQ==}
+  /web-tree-sitter@0.21.0:
+    resolution: {integrity: sha512-iJ+QJ6ikN9D9cG7Kh6q3KtAstYFUQbYZ8OjuPEJYWfj2kLrmp5I3C2n6WjE1Y3jvj7nJbkcrJytJGWUEhCxn+g==}
     dev: false
 
   /webidl-conversions@3.0.1:

@@ -18,7 +18,7 @@ for (const isTreeSitterEnabled of cases) {
         describe('python', () => {
             beforeAll(async () => {
                 if (isTreeSitterEnabled) {
-                    await initTreeSitterParser(SupportedLanguage.Python)
+                    await initTreeSitterParser(SupportedLanguage.python)
                 }
             })
 

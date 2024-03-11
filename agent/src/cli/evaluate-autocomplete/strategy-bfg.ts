@@ -4,7 +4,7 @@ import * as fspromises from 'fs/promises'
 
 import * as vscode from 'vscode'
 
-import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
+import { isSupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
@@ -56,8 +56,7 @@ export async function evaluateBfgStrategy(
             }
             const content = (await fspromises.readFile(filePath)).toString()
             const languageid = getLanguageForFileName(file)
-            const language = getParseLanguage(languageid)
-            if (!language) {
+            if (!isSupportedLanguage(languageid)) {
                 continue
             }
             if (

@@ -56,7 +56,7 @@
 //^ end parents[3]
 // Nodes types:
 // at_cursor[1]: {
-// parents[1]: object_type
+// parents[1]: interface_body
 // parents[2]: interface_declaration
 // parents[3]: program
 

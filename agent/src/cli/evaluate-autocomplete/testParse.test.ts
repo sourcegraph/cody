@@ -9,37 +9,37 @@ import { testParses } from './testParse'
 
 const tests: { language: SupportedLanguage; okText: string; errorText: string }[] = [
     {
-        language: SupportedLanguage.TypeScript,
+        language: SupportedLanguage.typescript,
         okText: 'const x = 42\n',
         errorText: 'const x =\n',
     },
     {
-        language: SupportedLanguage.Go,
+        language: SupportedLanguage.go,
         okText: 'type Person struct {\n\tName string\n}\n',
         errorText: 'type Person struct {\n',
     },
     {
-        language: SupportedLanguage.Java,
+        language: SupportedLanguage.java,
         okText: 'class Foo {}\n',
         errorText: 'class Foo {\n',
     },
     {
-        language: SupportedLanguage.Python,
+        language: SupportedLanguage.python,
         okText: 'def foo():\n    pass\n',
         errorText: 'def foo(\n',
     },
     {
-        language: SupportedLanguage.Cpp,
+        language: SupportedLanguage.cpp,
         okText: 'int main() {\n\treturn 0;\n}\n',
         errorText: 'int main() {\n',
     },
     {
-        language: SupportedLanguage.CSharp,
+        language: SupportedLanguage.csharp,
         okText: 'class Foo {\n\tpublic void Bar() {}\n}\n',
         errorText: 'class Foo {\n',
     },
     {
-        language: SupportedLanguage.Php,
+        language: SupportedLanguage.php,
         okText: '<?php\nfunction foo() {\n\treturn 0;\n}\n',
         errorText: '<?php\nfunction foo() {\n',
     },
