@@ -6,7 +6,6 @@ import com.google.gson.annotations.SerializedName
 data class ChatMessage(
   val speaker: SpeakerEnum? = null, // Oneof: human, assistant, system
   val text: String? = null,
-  val displayText: String? = null,
   val contextFiles: List<ContextItem>? = null,
   val error: ChatError? = null,
 ) {
