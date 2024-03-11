@@ -57,7 +57,6 @@ export class ChatClient {
 
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
-        // TODO: Fix this
         const augmentedMessages =
             // HACK: The fireworks chat inference endpoints requires the last message to be from a
             // human. This will be the case in most of the prompts but if for some reason we have an
