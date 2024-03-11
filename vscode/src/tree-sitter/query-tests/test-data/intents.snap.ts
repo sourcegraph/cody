@@ -133,7 +133,7 @@
 //^ end type_declaration.body[1]
 
 // Nodes types:
-// type_declaration.body[1]: object_type
+// type_declaration.body[1]: interface_body
 
 // ------------------------------------
 

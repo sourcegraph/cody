@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import type { Tree, default as Parser } from 'web-tree-sitter'
 
-import { SupportedLanguage, getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
+import { SupportedLanguage, isSupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import { createParser } from '../../../../vscode/src/tree-sitter/parser'
 
 import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'
@@ -30,15 +30,16 @@ export class AutocompleteMatcher {
     ) {}
     private ifSyntax(language: SupportedLanguage): string {
         switch (language) {
-            case SupportedLanguage.Go:
+            case SupportedLanguage.go:
                 return 'if  '
             default:
                 return 'if ()'
         }
     }
     public async matches(text: string): Promise<AutocompleteMatch[] | undefined> {
-        const language = getParseLanguage(this.params.languageid)
-        if (!language) {
+        const { languageid: language } = this.params
+
+        if (!isSupportedLanguage(language)) {
             return undefined
         }
         this.parser = await createParser({ language, grammarDirectory: this.grammarDirectory })
