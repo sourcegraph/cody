@@ -1152,11 +1152,12 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
+    "tree-sitter-wasms": "^0.1.7",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
-    "web-tree-sitter": "^0.20.8",
+    "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {

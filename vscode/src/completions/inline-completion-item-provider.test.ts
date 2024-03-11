@@ -121,7 +121,7 @@ describe('InlineCompletionItemProvider', () => {
             const { document, position } = documentAndPosition('// █', 'typescript')
 
             await initTreeSitterParser()
-            const parser = getParser(SupportedLanguage.TypeScript)
+            const parser = getParser(SupportedLanguage.typescript)
             if (parser) {
                 updateParseTreeCache(document, parser)
             }

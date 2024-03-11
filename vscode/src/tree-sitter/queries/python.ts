@@ -4,7 +4,7 @@ import { SupportedLanguage } from '../grammars'
 import type { QueryName } from '../queries'
 
 export const pythonQueries = {
-    [SupportedLanguage.Python]: {
+    [SupportedLanguage.python]: {
         singlelineTriggers: '',
         intents: dedent`
             ; Cursor dependent intents
