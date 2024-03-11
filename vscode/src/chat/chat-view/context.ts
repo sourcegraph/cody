@@ -20,7 +20,6 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { ContentProvider } from '../../non-stop/FixupContentStore'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -385,7 +384,7 @@ async function searchModelSpecificEmbeddings(
                 uri: result.uri,
                 range,
                 content: result.content,
-                source: ContextItemSource.RankerSentenceTransformerEmbedding,
+                source: ContextItemSource.Embeddings,
             })
         }
         return contextItems
