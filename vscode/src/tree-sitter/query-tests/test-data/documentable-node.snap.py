@@ -90,8 +90,9 @@
      BaseClass2):
 #               ^ insertion.point[1]
 #        █
-     pass
-#       ^ end range.class[1]
+     def __init__(self, name):
+         self.name = name
+#                       ^ end range.class[1]
 
 # Nodes types:
 # range.class[1]: class_definition

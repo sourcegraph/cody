@@ -38,7 +38,8 @@ class AgentMultiLine(
     BaseClass1,
     BaseClass2):
     #   |
-    pass
+    def __init__(self, name):
+        self.name = name
 
 # ------------------------------------
 

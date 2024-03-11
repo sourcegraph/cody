@@ -166,8 +166,7 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 const insertionCaptures = queries.documentableNodes.compiled
                     .captures(root, range.node.startPosition, range.node.endPosition)
                     .filter(({ name }) => name.startsWith('insertion'))
-                insertion = findLast(
-                    insertionCaptures,
+                insertion = insertionCaptures.find(
                     ({ node }) =>
                         node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
                 )
