@@ -9,3 +9,4 @@ dist/
 playwright/**/*.webm
 **/*.iml
 **/*.vsix
+index.scip
