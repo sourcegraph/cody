@@ -55,7 +55,7 @@ export type {
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData } from './common/range'
+export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,

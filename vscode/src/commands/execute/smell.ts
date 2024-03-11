@@ -1,4 +1,4 @@
-import { type ContextItem, displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayLineRange, displayPath, logDebug } from '@sourcegraph/cody-shared'
 import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
@@ -32,7 +32,7 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
 
     const cs = currentSelection[0]
     if (cs) {
-        const range = cs.range && `:${cs.range.start.line + 1}-${cs.range.end.line + 1}`
+        const range = cs.range && `:${displayLineRange(cs.range)}`
         prompt = prompt.replace('the selected code', `@${displayPath(cs.uri)}${range ?? ''} `)
     }
 
