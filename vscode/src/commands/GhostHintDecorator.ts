@@ -1,4 +1,4 @@
-import { type AuthStatus, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { type AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -7,9 +7,9 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-const EDIT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+K' : 'Opt+K'
-const CHAT_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+L' : 'Opt+L'
-const DOC_SHORTCUT_LABEL = process.platform === 'win32' ? 'Alt+D' : 'Opt+D'
+const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
+const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
+const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
