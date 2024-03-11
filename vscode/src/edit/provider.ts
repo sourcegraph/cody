@@ -57,6 +57,9 @@ export class EditProvider {
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
+            }).catch(err => {
+                this.handleError(err)
+                throw err
             })
 
             const multiplexer = new BotResponseMultiplexer()

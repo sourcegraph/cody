@@ -417,6 +417,7 @@ export class FixupController
             this.setTaskState(task, CodyTaskState.formatting)
             await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
+
                 this.formatEdit(
                     visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
                     document,
