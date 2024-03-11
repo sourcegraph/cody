@@ -201,11 +201,7 @@ export function trimUntilSuffix(
             break
         }
 
-        if (
-            isSameIndentation &&
-            (isAlmostTheSameString(line, firstNonEmptySuffixLine) ||
-                firstNonEmptySuffixLine.startsWith(line))
-        ) {
+        if (isSameIndentation && firstNonEmptySuffixLine.startsWith(line)) {
             cutOffIndex = i
             break
         }
