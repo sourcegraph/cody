@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
@@ -12,7 +13,6 @@ import {
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
-    type AuthStatus,
     defaultAuthStatus,
     isLoggedIn as isAuthed,
     isSourcegraphToken,
@@ -23,6 +23,7 @@ import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
+import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
@@ -265,8 +266,8 @@ export class AuthProvider {
             )
         }
 
+        // Configure AuthStatus for DotCom users
         const isCodyEnabled = true
-        const proStatus = await this.client.getCurrentUserCodyProEnabled()
 
         // check first if it's a network error
         if (isError(userInfo)) {
@@ -275,11 +276,11 @@ export class AuthProvider {
             }
             return { ...unauthenticatedStatus, endpoint }
         }
-        const userCanUpgrade =
-            isDotCom &&
-            'codyProEnabled' in proStatus &&
-            typeof proStatus.codyProEnabled === 'boolean' &&
-            !proStatus.codyProEnabled
+
+        const proStatus = await this.client.getCurrentUserCodySubscription()
+        // Pro user without the pending status is the valid pro users
+        const isActiveProUser =
+            'plan' in proStatus && proStatus.plan === 'PRO' && proStatus.status !== 'PENDING'
 
         return newAuthStatus(
             endpoint,
@@ -287,7 +288,7 @@ export class AuthProvider {
             !!userInfo.id,
             userInfo.hasVerifiedEmail,
             isCodyEnabled,
-            userCanUpgrade,
+            !isActiveProUser, // UserCanUpgrade
             version,
             userInfo.avatarURL,
             userInfo.username,
@@ -353,6 +354,8 @@ export class AuthProvider {
         uri: vscode.Uri,
         customHeaders: Record<string, string>
     ): Promise<void> {
+        closeAuthProgressIndicator()
+
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
         const endpoint = this.authStatus.endpoint

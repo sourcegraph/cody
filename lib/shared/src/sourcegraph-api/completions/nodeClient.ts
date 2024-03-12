@@ -8,6 +8,7 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { ollamaChatClient } from '../../ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
@@ -36,6 +37,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ...params,
                     temperature: 0,
                 }
+            }
+
+            if (params.model?.startsWith('ollama')) {
+                ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
             }
 
             const log = this.logger?.startCompletion(params, this.completionsEndpoint)

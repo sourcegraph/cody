@@ -13,13 +13,13 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { viewRangeToRange } from './chat-helpers'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -237,11 +237,11 @@ async function searchRemote(
                 content: result.content,
                 range: new vscode.Range(result.startLine, 0, result.endLine, 0),
                 uri: result.uri,
-                source: 'unified',
+                source: ContextItemSource.Unified,
                 repoName: result.repoName,
                 title: result.path,
                 revision: result.commit,
-            }
+            } satisfies ContextItem
         })
     })
 }
@@ -303,7 +303,7 @@ async function searchSymf(
                         type: 'file',
                         uri: result.file,
                         range,
-                        source: 'search',
+                        source: ContextItemSource.Search,
                         content: text,
                     }
                 }
@@ -342,7 +342,7 @@ async function searchEmbeddingsLocal(
                 uri: result.uri,
                 range,
                 content: result.content,
-                source: 'embeddings',
+                source: ContextItemSource.Embeddings,
             })
         }
         return contextItems
@@ -377,7 +377,7 @@ function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
             content: selection.selectedText,
             uri: selection.fileUri,
             range,
-            source: 'selection',
+            source: ContextItemSource.Selection,
         },
     ]
 }
@@ -395,11 +395,11 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
         return [
             {
                 type: 'file',
-                text: visible.content,
+                content: visible.content,
                 uri: fileUri,
-                source: 'editor',
+                source: ContextItemSource.Editor,
             },
-        ]
+        ] satisfies ContextItem[]
     })
 }
 
@@ -519,8 +519,8 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             type: 'file',
             uri: readmeUri,
             content: truncatedReadmeText,
-            range: viewRangeToRange(range),
-            source: 'editor',
+            range,
+            source: ContextItemSource.Editor,
         },
     ]
 }

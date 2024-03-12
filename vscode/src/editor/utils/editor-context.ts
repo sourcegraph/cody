@@ -10,15 +10,22 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemSymbol,
+    type Editor,
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
     displayPath,
     isCodyIgnoredFile,
+    isDefined,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
+import {
+    ContextItemSource,
+    type ContextItemWithContent,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { toVSCodeRange } from '../../common/range'
 
 const findWorkspaceFiles = async (
     cancellationToken: vscode.CancellationToken
@@ -111,7 +118,7 @@ export async function getFileContextFiles(
                 new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.path, b.obj.uri.path)
             )
         })
-        .flatMap(result => createContextFileFromUri(result.obj.uri, 'user', 'file'))
+        .flatMap(result => createContextFileFromUri(result.obj.uri, ContextItemSource.User, 'file'))
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
@@ -160,7 +167,7 @@ export async function getSymbolContextFiles(
     for (const symbol of symbols) {
         const contextFile = createContextFileFromUri(
             symbol.location.uri,
-            'user',
+            ContextItemSource.User,
             'symbol',
             symbol.location.range,
             // TODO(toolmantim): Update the kinds to match above
@@ -181,7 +188,7 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterLargeFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
-            .flatMap(uri => createContextFileFromUri(uri, 'user', 'file'))
+            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
     )
 }
 
@@ -246,7 +253,7 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets the title to 'large-file' for files contains more characters than the token limit.
+ * Sets {@link ContextItemFile.isTooLarge} for files contains more characters than the token limit.
  */
 export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise<ContextItemFile[]> {
     const filtered = []
@@ -261,12 +268,39 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
             continue
         }
         // Check if file contains more characters than the token limit based on fileStat.size
-        // and set the title of the result as 'large-file' for webview to display file size
+        // and set {@link ContextItemFile.isTooLarge} for webview to display file size
         // warning.
         if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
-            cf.title = 'large-file'
+            cf.isTooLarge = true
         }
         filtered.push(cf)
     }
     return filtered
+}
+
+export async function fillInContextItemContent(
+    editor: Editor,
+    items: ContextItem[]
+): Promise<ContextItemWithContent[]> {
+    return (
+        await Promise.all(
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
+                let content = item.content
+                if (!item.content) {
+                    try {
+                        content = await editor.getTextEditorContentForFile(
+                            item.uri,
+                            toVSCodeRange(item.range)
+                        )
+                    } catch (error) {
+                        void vscode.window.showErrorMessage(
+                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                        )
+                        return null
+                    }
+                }
+                return { ...item, content: content! }
+            })
+        )
+    ).filter(isDefined)
 }

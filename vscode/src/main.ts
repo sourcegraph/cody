@@ -1,9 +1,11 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    ModelProvider,
     PromptMixin,
     featureFlagProvider,
     graphqlClient,
@@ -17,12 +19,7 @@ import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import {
-    ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
-    type AuthStatus,
-    CODY_FEEDBACK_URL,
-} from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -63,7 +60,7 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { exportOutputLog } from './services/utils/export-logs'
+import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -171,7 +168,7 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, platform)
+    } = await configureExternalServices(context, initialConfig, platform, authProvider)
 
     if (symfRunner) {
         disposables.push(symfRunner)
@@ -183,7 +180,6 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
-        symfRunner,
         authProvider,
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
@@ -206,6 +202,7 @@ const register = async (
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
             config,
+            startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
         enterpriseContextFactory,
@@ -230,6 +227,9 @@ const register = async (
         if (oldConfig === JSON.stringify(newConfig)) {
             return Promise.resolve()
         }
+
+        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
 
@@ -302,6 +302,7 @@ const register = async (
     })
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -518,7 +519,10 @@ const register = async (
             void vscode.commands.executeCommand(command, [source])
         }),
         ...setUpCodyIgnore(initialConfig),
-        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
+        // For debugging
+        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
+        vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode())
     )
 
     /**

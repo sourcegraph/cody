@@ -133,6 +133,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const tree = parser.parse(linesWithoutCursorComment.join('\n'))
     const capturedNodes = captures(tree.rootNode, caretPoint, {
         ...caretPoint,
+        row: caretPoint.row + 1,
         column: caretPoint.column + 1,
     })
 
@@ -205,7 +206,7 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
 
     let annotatedCodeSnippet = result.filter(line => !isCursorPositionLine(line, delimiter)).join('\n')
 
-    // Add extra line betwee the annotated code and node types annotations if needed.
+    // Add extra line between the annotated code and node types annotations if needed.
     if (!annotatedCodeSnippet.endsWith('\n\n')) {
         annotatedCodeSnippet += '\n'
     }
@@ -245,7 +246,7 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     // Get the source code and split into snippets.
     const code = fs.readFileSync(path.join(__dirname, sourcesPath), 'utf8')
     // Queries are used on specific parts of the source code (e.g., range of the inserted multiline completion).
-    // Snippets are required to mimick such behavior and test the order of returned captures.
+    // Snippets are required to mimic such behavior and test the order of returned captures.
     const snippets = code.split(separator)
     // Support "// only" to focus on one code sample at a time
     const onlySnippet = findLast(snippets, snippet => snippet.startsWith(`${delimiter} only`))

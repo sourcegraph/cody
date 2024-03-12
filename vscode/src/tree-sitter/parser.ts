@@ -3,8 +3,7 @@ import path from 'path'
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
-import type { Tree } from 'web-tree-sitter'
-import { SupportedLanguage, getParseLanguage } from './grammars'
+import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
@@ -54,7 +53,7 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
         return cachedParser
     }
 
-    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
+    const wasmPath = path.resolve(grammarDirectory, DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
     if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
         return undefined
     }
@@ -65,50 +64,12 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
+    // stop parsing after 50ms to avoid infinite loops
+    // if that happens, tree-sitter throws an error so we can catch and address it
+    parser.setTimeoutMicros(50_000)
     PARSERS_LOCAL_CACHE[language] = parser
 
     initQueries(languageGrammar, language, parser)
 
     return parser
-}
-
-export function parseString(languageId: string, source: string): Tree | null {
-    const parseLanguage = getParseLanguage(languageId)
-
-    if (!parseLanguage) {
-        return null
-    }
-    const parser = getParser(parseLanguage)
-
-    if (!parser) {
-        return null
-    }
-
-    return parser.parse(source)
-}
-
-// TODO: Add grammar type autogenerate script
-// see https://github.com/asgerf/dts-tree-sitter
-type GrammarPath = string
-
-/**
- * Map language to wasm grammar path modules, usually we would have
- * used node bindings for grammar packages, but since VSCode editor
- * runtime doesn't support this we have to work with wasm modules.
- *
- * Note: make sure that dist folder contains these modules when you
- * run VSCode extension.
- */
-const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
-    [SupportedLanguage.JavaScript]: 'tree-sitter-javascript.wasm',
-    [SupportedLanguage.JSX]: 'tree-sitter-javascript.wasm',
-    [SupportedLanguage.TypeScript]: 'tree-sitter-typescript.wasm',
-    [SupportedLanguage.TSX]: 'tree-sitter-tsx.wasm',
-    [SupportedLanguage.Java]: 'tree-sitter-java.wasm',
-    [SupportedLanguage.Go]: 'tree-sitter-go.wasm',
-    [SupportedLanguage.Python]: 'tree-sitter-python.wasm',
-    [SupportedLanguage.Dart]: 'tree-sitter-dart.wasm',
-    [SupportedLanguage.Cpp]: 'tree-sitter-cpp.wasm',
-    [SupportedLanguage.CSharp]: 'tree-sitter-c_sharp.wasm',
-    [SupportedLanguage.Php]: 'tree-sitter-php.wasm',
 }

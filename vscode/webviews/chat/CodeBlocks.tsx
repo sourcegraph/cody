@@ -15,8 +15,8 @@ import {
 import styles from './CodeBlocks.module.css'
 
 export interface CodeBlockActionsProps {
-    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button', metadata?: CodeBlockMeta) => void
-    insertButtonOnSubmit: (text: string, newFile?: boolean, metadata?: CodeBlockMeta) => void
+    copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
+    insertButtonOnSubmit: (text: string, newFile?: boolean) => void
 }
 
 interface CodeBlocksProps {
@@ -28,14 +28,7 @@ interface CodeBlocksProps {
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
-    metadata?: CodeBlockMeta
-
     guardrails?: Guardrails
-}
-
-export interface CodeBlockMeta {
-    source?: string // the name of the executed command that generated the code
-    requestID?: string // id of the request that generated the code
 }
 
 function createButtons(
@@ -43,8 +36,7 @@ function createButtons(
     copyButtonClassName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonClassName?: string,
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
-    metadata?: CodeBlockMeta
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.container
@@ -68,8 +60,7 @@ function createButtons(
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions,
-        copyButtonClassName,
-        metadata
+        copyButtonClassName
     )
     buttons.append(copyButton)
 
@@ -82,8 +73,7 @@ function createButtons(
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName,
-                metadata
+                insertButtonClassName
             )
         )
 
@@ -94,8 +84,7 @@ function createButtons(
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions,
-                insertButtonClassName,
-                metadata
+                insertButtonClassName
             )
         )
     }
@@ -118,8 +107,7 @@ function createCodeBlockActionButton(
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
     },
-    className?: string,
-    metadata?: CodeBlockMeta
+    className?: string
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -134,7 +122,7 @@ function createCodeBlockActionButton(
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = classNames(styleClass, className)
-            codeBlockActions.copy(text, 'Button', metadata)
+            codeBlockActions.copy(text, 'Button')
             setTimeout(() => {
                 button.innerHTML = iconSvg
             }, 5000)
@@ -148,10 +136,10 @@ function createCodeBlockActionButton(
 
     switch (type) {
         case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false, metadata))
+            button.addEventListener('click', () => insertOnSubmit(text, false))
             break
         case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true, metadata))
+            button.addEventListener('click', () => insertOnSubmit(text, true))
             break
     }
 
@@ -256,7 +244,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
         copyButtonOnSubmit,
         insertButtonClassName,
         insertButtonOnSubmit,
-        metadata,
         guardrails,
     }) {
         const rootRef = useRef<HTMLDivElement>(null)
@@ -270,17 +257,12 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
             for (const preElement of preElements) {
                 const preText = preElement.textContent
                 if (preText?.trim() && preElement.parentNode) {
-                    const eventMetadata = {
-                        requestID: metadata?.requestID,
-                        source: metadata?.source,
-                    }
                     const buttons = createButtons(
                         preText,
                         copyButtonClassName,
                         copyButtonOnSubmit,
                         insertButtonClassName,
-                        insertButtonOnSubmit,
-                        eventMetadata
+                        insertButtonOnSubmit
                     )
                     if (guardrails) {
                         const container = document.createElement('div')
@@ -316,7 +298,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                     // capture copy events (right click or keydown) on code block
                     preElement.addEventListener('copy', () => {
                         if (copyButtonOnSubmit) {
-                            copyButtonOnSubmit(preText, 'Keydown', eventMetadata)
+                            copyButtonOnSubmit(preText, 'Keydown')
                         }
                     })
                 }
@@ -326,8 +308,6 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
             insertButtonClassName,
             copyButtonOnSubmit,
             insertButtonOnSubmit,
-            metadata?.requestID,
-            metadata?.source,
             guardrails,
         ])
 

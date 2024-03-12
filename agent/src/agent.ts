@@ -7,6 +7,7 @@ import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
@@ -26,7 +27,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
-import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -754,7 +755,7 @@ export class Agent extends MessageHandler {
                 }
             }
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            await chatHistory.saveChat(authStatus, chatModel.toTranscriptJSON())
+            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',

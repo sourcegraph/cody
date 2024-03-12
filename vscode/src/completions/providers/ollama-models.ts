@@ -15,23 +15,6 @@ interface OllamaPromptContext {
     languageId: string
 }
 
-const EOT_TOKEN = '<EOT>'
-const SHARED_STOP_SEQUENCES = [
-    '// Path:',
-    '\u001E',
-    '\u001C',
-    EOT_TOKEN,
-
-    // Tokens that reduce the quality of multi-line completions but improve performance.
-    '; ',
-    ';\t',
-]
-const SINGLE_LINE_STOP_SEQUENCES = ['\n', ...SHARED_STOP_SEQUENCES]
-// TODO(valery): find the balance between using less stop tokens to get more multiline completions and keeping a good perf.
-// `SHARED_STOP_SEQUENCES` are not included because the number of multiline completions goes down significantly
-// leaving an impression that Ollama provider support only singleline completions.
-const MULTI_LINE_STOP_SEQUENCES: string[] = ['\n\n', EOT_TOKEN /* ...SHARED_STOP_SEQUENCES */]
-
 export interface OllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string
     getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters
@@ -44,8 +27,10 @@ class DefaultOllamaModel implements OllamaModel {
     }
 
     getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<PRE>', '<SUF>', '<MID>', '<EOT>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.2,
             top_k: -1,
             top_p: -1,
@@ -55,12 +40,15 @@ class DefaultOllamaModel implements OllamaModel {
         if (isMultiline) {
             Object.assign(params, {
                 num_predict: 256,
-                stop: MULTI_LINE_STOP_SEQUENCES,
+                stop: ['\n\n', ...stop],
             })
         }
 
         if (isDynamicMultiline) {
-            params.stop = []
+            Object.assign(params, {
+                num_predict: 256,
+                stop,
+            })
         }
 
         return params
@@ -77,8 +65,10 @@ class DeepseekCoder extends DefaultOllamaModel {
     }
 
     getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<｜fim▁begin｜>', '<｜fim▁hole｜>', '<｜fim▁end｜>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.6,
             top_k: 30,
             top_p: 0.2,
@@ -89,15 +79,15 @@ class DeepseekCoder extends DefaultOllamaModel {
 
         if (isMultiline) {
             Object.assign(params, {
-                num_predict: -1,
-                stop: MULTI_LINE_STOP_SEQUENCES,
+                num_predict: 256,
+                stop: ['\n\n', ...stop],
             })
         }
 
         if (isDynamicMultiline) {
             Object.assign(params, {
-                num_predict: -1,
-                stop: [],
+                num_predict: 256,
+                stop: stop,
             })
         }
 
@@ -129,6 +119,46 @@ class CodeLlama extends DefaultOllamaModel {
     }
 }
 
+class StarCoder extends DefaultOllamaModel {
+    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+        const { context, prefix, suffix } = ollamaPrompt
+
+        // `currentFileNameComment` is not included because it causes StarCoder2 to output
+        // invalid suggestions.
+        const infillPrefix = context + prefix
+
+        return `<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+    }
+
+    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>']
+
+        const params = {
+            stop: ['\n', ...stop],
+            temperature: 0.2,
+            top_k: -1,
+            top_p: -1,
+            num_predict: 30,
+        }
+
+        if (isMultiline) {
+            Object.assign(params, {
+                num_predict: 256,
+                stop,
+            })
+        }
+
+        if (isDynamicMultiline) {
+            Object.assign(params, {
+                num_predict: 256,
+                stop,
+            })
+        }
+
+        return params
+    }
+}
+
 export function getModelHelpers(model: string) {
     if (model.includes('codellama')) {
         return new CodeLlama()
@@ -136,6 +166,10 @@ export function getModelHelpers(model: string) {
 
     if (model.includes('deepseek-coder')) {
         return new DeepseekCoder()
+    }
+
+    if (model.includes('starcoder')) {
+        return new StarCoder()
     }
 
     return new DefaultOllamaModel()

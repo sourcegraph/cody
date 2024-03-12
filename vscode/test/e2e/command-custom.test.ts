@@ -1,14 +1,14 @@
 import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
-import { sleep } from '../../src/completions/utils'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { getChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
     test as baseTest,
     withPlatformSlashes,
 } from './helpers'
+import { testGitWorkspace } from './utils/gitWorkspace'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -19,12 +19,16 @@ test.beforeEach(() => {
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyInstalled',
+        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
+        'CodyVSCodeExtension:command:custom:build:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:custom:executed',
@@ -65,13 +69,19 @@ test.extend<ExpectedEvents>({
         .filter({ hasText: /New Custom Command.../ })
         .click()
     // Enter command name
-    await expect(page.getByText('New Custom Cody Command: Command Name')).toBeVisible()
-    await page.keyboard.type(commandName)
-    await page.keyboard.press('Enter')
+    const commandInputTitle = page.getByText('New Custom Cody Command: Command Name')
+    await expect(commandInputTitle).toBeVisible()
+    const commandInputBox = page.getByPlaceholder('e.g. hello')
+    await commandInputBox.fill(commandName)
+    await commandInputBox.press('Enter')
     // Enter prompt
-    await expect(page.getByText('New Custom Cody Command: Prompt')).toBeVisible()
-    await page.keyboard.type(prompt)
-    await page.keyboard.press('Enter')
+    const promptInputTitle = page.getByText('New Custom Cody Command: Prompt')
+    await expect(promptInputTitle).toBeVisible()
+    const promptInputBox = page.getByPlaceholder(
+        'e.g. Create five different test cases for the selected code'
+    )
+    await promptInputBox.fill(prompt)
+    await promptInputBox.press('Enter')
     // Use default context
     await expect(page.getByText('New Custom Cody Command: Context Options')).toBeVisible()
     await page.keyboard.press('Enter')
@@ -85,7 +95,9 @@ test.extend<ExpectedEvents>({
 
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: '.vscode' }).locator('a').click()
+    await page.getByLabel('.vscode', { exact: true }).hover()
+    await page.getByLabel('.vscode', { exact: true }).click()
+    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
     // Click on minimap to scroll to the buttom
@@ -97,9 +109,12 @@ test.extend<ExpectedEvents>({
     // Show the new command in the menu and execute it
     await page.click('.badge[aria-label="Cody"]')
     await page.getByLabel('Custom Commands').locator('a').click()
+    await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     const newCommandMenuItem = page.getByLabel('tools  ATestCommand, The test command has been created')
     const newCommandSidebarItem = page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')
+    await newCommandMenuItem.hover()
+    await newCommandSidebarItem.hover()
     await expect(page.getByText(commandName)).toHaveCount(2) // one in sidebar, and one in menu
     await newCommandMenuItem.hover()
     await expect(newCommandMenuItem).toBeVisible()
@@ -164,11 +179,11 @@ test.extend<ExpectedEvents>({
     await chatPanel.getByText('✨ Context: 61 lines from 5 files').click()
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.locator('span').filter({ hasText: '@.mydotfile:1-2' })).not.toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@error.ts:1-10' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@Main.java:1-10' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.test.ts:1-13' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-16' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-12' })).toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@error.ts:1-9' })).toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@Main.java:1-9' })).toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.test.ts:1-12' })).toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-15' })).toBeVisible()
+    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-11' })).toBeVisible()
 
     /* Test: context.filePath with filePath command */
 
@@ -192,11 +207,11 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 file')).toBeVisible()
     await chatPanel.getByText('✨ Context: 14 lines from 2 file').click()
     await expect(
-        chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1-2') })
+        chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
     await chatPanel
-        .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-2') })
+        .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
@@ -211,9 +226,9 @@ test.extend<ExpectedEvents>({
     // The files from the open tabs should be added as context
     await expect(chatPanel.getByText('✨ Context: 14 lines from 2 files')).toBeVisible()
     await chatPanel.getByText('✨ Context: 14 lines from 2 files').click()
-    await expect(chatPanel.getByRole('button', { name: '@index.html:1-12' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: '@index.html:1-11' })).toBeVisible()
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1-2') })
+        chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
     ).toBeVisible()
 })
 
@@ -280,10 +295,37 @@ test.extend<ExpectedEvents>({
 
     // Open the cody.json from User Settings
     // NOTE: This is expected to fail locally if you currently have User commands configured
-    await sleep(100)
+    await page.waitForTimeout(100)
     await customCommandSidebar.click()
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+    await page.getByRole('tab', { name: 'cody.json, preview' }).hover()
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
+})
+
+testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+    // Open the Source Control View to confirm this is a git workspace
+    // Check the change is showing as a Git file in the sidebar
+    const sourceControlView = page.getByLabel(/Source Control/).nth(2)
+    await sourceControlView.click()
+    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.getByText('index.js').hover()
+    await page.locator('a').filter({ hasText: 'index.js' }).click()
+
+    // Run the custom command that uses terminal output as context
+    await page.getByRole('button', { name: 'Commands' }).click()
+    const menuInputBox = page.getByPlaceholder('Search for a command or enter your question here...')
+    await expect(menuInputBox).toBeVisible()
+    await menuInputBox.fill('shellOutput')
+    await page.keyboard.press('Enter')
+
+    // Check the context list to confirm the terminal output is added as file
+    const panel = getChatPanel(page)
+    await expect(panel.getByText('✨ Context: 1 line from 2 files')).toBeVisible()
+    await panel.getByText('✨ Context: 1 line from 2 files').click()
+    await expect(
+        panel.getByRole('button', { name: withPlatformSlashes('@/terminal-output') })
+    ).toBeVisible()
 })

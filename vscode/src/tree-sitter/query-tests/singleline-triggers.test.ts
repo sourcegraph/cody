@@ -8,8 +8,8 @@ import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('singlelineTriggers', () => {
     it('typescript', async () => {
-        await initTreeSitterParser(SupportedLanguage.TypeScript)
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        await initTreeSitterParser(SupportedLanguage.typescript)
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.typescript)!
 
         await annotateAndMatchSnapshot({
             parser,
@@ -20,8 +20,8 @@ describe('singlelineTriggers', () => {
     })
 
     it('go', async () => {
-        await initTreeSitterParser(SupportedLanguage.Go)
-        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.Go)!
+        await initTreeSitterParser(SupportedLanguage.go)
+        const { language, parser, queries } = getDocumentQuerySDK(SupportedLanguage.go)!
 
         await annotateAndMatchSnapshot({
             parser,

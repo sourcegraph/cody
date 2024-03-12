@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import {
-    type DisplayPathEnvInfo,
-    setDisplayPathEnvInfo,
-} from '@sourcegraph/cody-shared/src/editor/displayPath'
+import { type DisplayPathEnvInfo, setDisplayPathEnvInfo } from '../../editor/displayPath'
 import { replaceFileNameWithMarkdownLink } from './display-text'
 
 describe('replaceFileNameWithMarkdownLink', () => {
@@ -30,11 +26,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('replaces file name with range with markdown link', () => {
         expect(
-            replaceFileNameWithMarkdownLink(
-                'What is @foo.ts:2-2?',
-                URI.file('/foo.ts'),
-                new vscode.Range(1, 0, 2, 0)
-            )
+            replaceFileNameWithMarkdownLink('What is @foo.ts:2-2?', URI.file('/foo.ts'), {
+                start: { line: 1, character: 0 },
+                end: { line: 2, character: 0 },
+            })
         ).toEqual(
             `What is [_@foo.ts:2-2_](command:_cody.vscode.open?${encodeURIComponent(
                 '[{"$mid":1,"path":"/foo.ts","scheme":"file"},{"selection":{"start":{"line":1,"character":0},"end":{"line":2,"character":0}},"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
@@ -47,7 +42,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'What is @e2e/cody.ts:2-2#codySymbol?',
                 URI.file('/e2e/cody.ts'),
-                new vscode.Range(1, 0, 2, 0),
+                { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } },
                 'codySymbol'
             )
         ).toEqual(
@@ -112,11 +107,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles line numbers', () => {
         expect(
-            replaceFileNameWithMarkdownLink(
-                'Error in @test.js:2-2',
-                URI.file('/test.js'),
-                new vscode.Range(1, 0, 2, 0)
-            )
+            replaceFileNameWithMarkdownLink('Error in @test.js:2-2', URI.file('/test.js'), {
+                start: { line: 1, character: 0 },
+                end: { line: 2, character: 0 },
+            })
         ).toEqual(
             `Error in [_@test.js:2-2_](command:_cody.vscode.open?${encodeURIComponent(
                 '[{"$mid":1,"path":"/test.js","scheme":"file"},{"selection":{"start":{"line":1,"character":0},"end":{"line":2,"character":0}},"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
@@ -126,11 +120,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles non alphanumeric characters follows the file name in input', () => {
         expect(
-            replaceFileNameWithMarkdownLink(
-                'What is @test.js:2-2?',
-                URI.file('/test.js'),
-                new vscode.Range(1, 0, 2, 0)
-            )
+            replaceFileNameWithMarkdownLink('What is @test.js:2-2?', URI.file('/test.js'), {
+                start: { line: 1, character: 0 },
+                end: { line: 2, character: 0 },
+            })
         ).toEqual(
             `What is [_@test.js:2-2_](command:_cody.vscode.open?${encodeURIComponent(
                 '[{"$mid":1,"path":"/test.js","scheme":"file"},{"selection":{"start":{"line":1,"character":0},"end":{"line":2,"character":0}},"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
@@ -140,11 +133,10 @@ describe('replaceFileNameWithMarkdownLink', () => {
 
     it('handles edge case where start line at 0 - exclude start line in markdown link', () => {
         expect(
-            replaceFileNameWithMarkdownLink(
-                'Error in @test.js',
-                URI.file('/test.js'),
-                new vscode.Range(0, 0, 0, 0)
-            )
+            replaceFileNameWithMarkdownLink('Error in @test.js', URI.file('/test.js'), {
+                start: { line: 0, character: 0 },
+                end: { line: 0, character: 0 },
+            })
         ).toEqual(
             `Error in [_@test.js_](command:_cody.vscode.open?${encodeURIComponent(
                 '[{"$mid":1,"path":"/test.js","scheme":"file"},{"selection":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}},"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
@@ -157,7 +149,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'Compare and explain @foo.js:2-2 and @bar.js. What does @foo.js:2-2 do?',
                 URI.file('/foo.js'),
-                new vscode.Range(1, 0, 2, 0)
+                { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } }
             )
         ).toEqual(
             `Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?${encodeURIComponent(
@@ -173,7 +165,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
             replaceFileNameWithMarkdownLink(
                 'Compare and explain @foo.js:2-2 and @bar.js. What does @foo.js:2-2#FooBar() do?',
                 URI.file('/foo.js'),
-                new vscode.Range(1, 0, 2, 0)
+                { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } }
             )
         ).toEqual(
             `Compare and explain [_@foo.js:2-2_](command:_cody.vscode.open?${encodeURIComponent(
@@ -188,7 +180,7 @@ describe('replaceFileNameWithMarkdownLink', () => {
         const result = replaceFileNameWithMarkdownLink(
             text,
             URI.file('/vscode/src/logged-rerank.ts'),
-            new vscode.Range(6, 0, 23, 0),
+            { start: { line: 6, character: 0 }, end: { line: 23, character: 0 } },
             'getRerankWithLog()'
         )
 
@@ -196,6 +188,16 @@ describe('replaceFileNameWithMarkdownLink', () => {
             `[_@vscode/src/logged-rerank.ts:7-23#getRerankWithLog()_](command:_cody.vscode.open?${encodeURIComponent(
                 '[{"$mid":1,"path":"/vscode/src/logged-rerank.ts","scheme":"file"},{"selection":{"start":{"line":6,"character":0},"end":{"line":23,"character":0}},"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
             )}) what does this do`
+        )
+    })
+
+    it('preserves trailing non-alphanum', () => {
+        expect(
+            replaceFileNameWithMarkdownLink('Hello @path/to/test.js :-)', URI.file('/path/to/test.js'))
+        ).toEqual(
+            `Hello [_@path/to/test.js_](command:_cody.vscode.open?${encodeURIComponent(
+                '[{"$mid":1,"path":"/path/to/test.js","scheme":"file"},{"preserveFocus":true,"background":false,"preview":true,"viewColumn":-2}]'
+            )}) :-)`
         )
     })
 })

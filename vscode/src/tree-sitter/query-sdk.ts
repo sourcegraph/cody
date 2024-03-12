@@ -10,7 +10,7 @@ import type {
     default as Parser,
 } from 'web-tree-sitter'
 
-import { type SupportedLanguage, getParseLanguage } from './grammars'
+import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { getParser } from './parser'
 import { type CompletionIntent, type QueryName, intentPriority, languages } from './queries'
@@ -66,16 +66,15 @@ export interface DocumentQuerySDK {
 
 /**
  * Returns the query SDK only if the language has queries defined and
- * the relevant laguage parser is initialized.
+ * the relevant language parser is initialized.
  */
 export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
-    const supportedLanguage = getParseLanguage(language)
-    if (!supportedLanguage) {
+    if (!isSupportedLanguage(language)) {
         return null
     }
 
-    const parser = getParser(supportedLanguage)
-    const queries = QUERIES_LOCAL_CACHE[supportedLanguage]
+    const parser = getParser(language)
+    const queries = QUERIES_LOCAL_CACHE[language]
 
     if (!parser || !queries) {
         return null
@@ -84,7 +83,7 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     return {
         parser,
         queries,
-        language: supportedLanguage,
+        language,
     }
 }
 
@@ -350,7 +349,7 @@ export function execQueryWrapper<T extends keyof QueryWrappers>(
     tree?: Tree
 ): ReturnType<QueryWrappers[T]> | never[] {
     const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const documentQuerySDK = getDocumentQuerySDK(document.languageId as SupportedLanguage)
     const { startPoint, endPoint } = queryPoints
     const treeToQuery = tree || parseTreeCache?.tree
 

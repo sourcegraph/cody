@@ -10,7 +10,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
@@ -243,18 +242,6 @@ export class EditProvider {
 
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
-            // an existing test file from codebase
-            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))
-                ?.file?.uri
-            if (cbTestFileUri) {
-                const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
-                const fileExists = await doesFileExist(testFileUri)
-                // create a file uri with untitled scheme that would work on windows
-                const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
-                await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
-                return
-            }
-
             // Create a new untitled file if the suggested file does not exist
             const currentFile = task.fixupFile.uri
             const currentDoc = await workspace.openTextDocument(currentFile)

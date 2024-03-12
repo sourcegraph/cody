@@ -195,7 +195,7 @@ for (const isTreeSitterEnabled of cases) {
             it('adds parse info to single-line completions', async () => {
                 const completions = await getCompletionItems('function sort(█', [
                     'array) {}',
-                    'array) new',
+                    'array new',
                 ])
 
                 expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])
@@ -204,7 +204,7 @@ for (const isTreeSitterEnabled of cases) {
             it('respects completion insert ranges', async () => {
                 const completions = await getCompletionItems('function sort(█)', [
                     'array) {}',
-                    'array) new',
+                    'array new',
                 ])
 
                 expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])

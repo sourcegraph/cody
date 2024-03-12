@@ -251,7 +251,6 @@ data class Symf_indexWebviewMessage(
 data class InsertWebviewMessage(
   val command: CommandEnum? = null, // Oneof: insert
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -262,7 +261,6 @@ data class InsertWebviewMessage(
 data class NewFileWebviewMessage(
   val command: CommandEnum? = null, // Oneof: newFile
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -274,7 +272,6 @@ data class CopyWebviewMessage(
   val command: CommandEnum? = null, // Oneof: copy
   val eventType: EventTypeEnum? = null, // Oneof: Button, Keydown
   val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -289,7 +286,7 @@ data class CopyWebviewMessage(
 
 data class AuthWebviewMessage(
   val command: CommandEnum? = null, // Oneof: auth
-  val authKind: AuthKindEnum? = null, // Oneof: signin, signout, support, callback, simplified-onboarding, simplified-onboarding-exposure
+  val authKind: AuthKindEnum? = null, // Oneof: signin, signout, support, callback, simplified-onboarding
   val endpoint: String? = null,
   val value: String? = null,
   val authMethod: AuthMethod? = null, // Oneof: dotcom, github, gitlab, google
@@ -305,7 +302,6 @@ data class AuthWebviewMessage(
     @SerializedName("support") Support,
     @SerializedName("callback") Callback,
     @SerializedName("simplified-onboarding") `Simplified-onboarding`,
-    @SerializedName("simplified-onboarding-exposure") `Simplified-onboarding-exposure`,
   }
 }
 

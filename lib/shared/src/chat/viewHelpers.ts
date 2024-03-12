@@ -1,9 +1,10 @@
-// If the bot message ends with some prefix of the `Human:` stop
-// sequence, trim if from the end.
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
-export function reformatBotMessageForChat(text: string, prefix: string): string {
-    let reformattedMessage = prefix + text.trimEnd()
+/**
+ * If the bot message ends with some prefix of the `Human:` stop sequence, trim if from the end.
+ */
+export function reformatBotMessageForChat(text: string): string {
+    let reformattedMessage = text.trimEnd()
 
     const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
     if (stopSequenceMatch) {

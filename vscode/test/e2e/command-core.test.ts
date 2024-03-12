@@ -158,9 +158,5 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
     // Code lens should be at the start of the function (range expanded from click position)
-    expect(
-        await page.getByText(
-            '<title>Goodbye Cody < /title>export function fizzbuzz() {const fizzbuzz = []for '
-        )
-    ).toBeVisible()
+    await expect(page.getByText('* Mocked doc string')).toBeVisible()
 })

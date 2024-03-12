@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 
 import {
+    type ContextItem,
     type ContextItemFile,
+    type Editor,
     MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
@@ -10,7 +13,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { filterLargeFiles, getFileContextFiles } from './editor-context'
+import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -135,14 +138,14 @@ describe('getFileContextFiles', () => {
 
 describe('filterLargeFiles', () => {
     it('filters out files larger than 1MB', async () => {
-        const largeFile = {
+        const largeFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-file.txt'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 1000001,
             type: vscode.FileType.File,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([largeFile])
 
@@ -150,32 +153,63 @@ describe('filterLargeFiles', () => {
     })
 
     it('filters out non-text files', async () => {
-        const binaryFile = {
+        const binaryFile: ContextItemFile = {
             uri: vscode.Uri.file('/binary.bin'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: 100,
             type: vscode.FileType.SymbolicLink,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([binaryFile])
 
         expect(filtered).toEqual([])
     })
 
-    it('sets title to large-file for files exceeding token limit', async () => {
-        const largeTextFile = {
+    it('sets isTooLarge for files exceeding token limit', async () => {
+        const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
-        } as ContextItemFile
+        }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
             type: vscode.FileType.File,
-        } as any)
+        } as vscode.FileStat)
 
         const filtered = await filterLargeFiles([largeTextFile])
 
-        expect(filtered[0].title).toEqual('large-file')
+        expect(filtered[0]).toEqual<ContextItem>({
+            type: 'file',
+            uri: largeTextFile.uri,
+            isTooLarge: true,
+        })
+    })
+})
+
+describe('fillInContextItemContent', () => {
+    it('omits files that could not be read', async () => {
+        // Fixes https://github.com/sourcegraph/cody/issues/2390.
+        const mockEditor: Partial<Editor> = {
+            getTextEditorContentForFile(uri) {
+                if (uri.path === '/a.txt') {
+                    return Promise.resolve('a')
+                }
+                throw new Error('error')
+            },
+        }
+        const contextItems = await fillInContextItemContent(mockEditor as Editor, [
+            {
+                type: 'file',
+                uri: URI.parse('file:///a.txt'),
+            },
+            {
+                type: 'file',
+                uri: URI.parse('file:///error.txt'),
+            },
+        ])
+        expect(contextItems).toEqual<ContextItem[]>([
+            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+        ])
     })
 })

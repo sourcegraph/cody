@@ -1,13 +1,13 @@
 import { describe, it } from 'vitest'
 
-import { SupportedLanguage } from '../grammars'
 import { initTreeSitterSDK } from '../test-helpers'
 
+import { SupportedLanguage } from '../grammars'
 import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getDocumentableNode', () => {
     it('typescript', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.TypeScript)
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescript)
 
         await annotateAndMatchSnapshot({
             parser,

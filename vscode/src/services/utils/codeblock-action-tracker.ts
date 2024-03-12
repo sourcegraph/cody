@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import type { CodeBlockMeta } from '../../../webviews/chat/CodeBlocks'
-
 import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
 import { telemetryRecorder } from '../telemetry-v2'
@@ -77,7 +75,7 @@ async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
  * Replace selection if there is one and then log insert event
  * Note: Using workspaceEdit instead of 'editor.action.insertSnippet' as the later reformats the text incorrectly
  */
-export async function handleCodeFromInsertAtCursor(text: string, meta?: CodeBlockMeta): Promise<void> {
+export async function handleCodeFromInsertAtCursor(text: string): Promise<void> {
     const editor = getEditor()
     const activeEditor = editor.active
     const selectionRange = activeEditor?.selection
@@ -93,31 +91,27 @@ export async function handleCodeFromInsertAtCursor(text: string, meta?: CodeBloc
     // Log insert event
     const op = 'insert'
     const eventName = `${op}Button`
-    setLastStoredCode(text, eventName, meta?.source, meta?.requestID)
+    setLastStoredCode(text, eventName)
 }
 
 /**
  * Handles insert event to insert text from code block to new file
  */
-export function handleCodeFromSaveToNewFile(text: string, meta?: CodeBlockMeta): void {
+export function handleCodeFromSaveToNewFile(text: string): void {
     const eventName = 'saveButton'
-    setLastStoredCode(text, eventName, meta?.source, meta?.requestID)
+    setLastStoredCode(text, eventName)
 }
 
 /**
  * Handles copying code and detecting a paste event.
  */
-export async function handleCopiedCode(
-    text: string,
-    isButtonClickEvent: boolean,
-    meta?: CodeBlockMeta
-): Promise<void> {
+export async function handleCopiedCode(text: string, isButtonClickEvent: boolean): Promise<void> {
     // If it's a Button event, then the text is already passed in from the whole code block
     const copiedCode = isButtonClickEvent ? text : await vscode.env.clipboard.readText()
     const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown:Copy'
     // Set for tracking
     if (copiedCode) {
-        setLastStoredCode(copiedCode, eventName, meta?.source, meta?.requestID)
+        setLastStoredCode(copiedCode, eventName)
     }
 }
 

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     BotResponseMultiplexer,
+    type ChatMessage,
     type CompletionParameters,
     type EditModel,
     type Message,
@@ -12,7 +13,6 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import type { EditIntent } from '../types'
 
-import type { MessageWithContext } from '../../chat/chat-view/SimpleChatModel'
 import { PromptBuilder } from '../../prompt-builder'
 import { getContext } from './context'
 import { claude } from './models/claude'
@@ -23,6 +23,8 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-2.0': claude,
     'anthropic/claude-2.1': claude,
     'anthropic/claude-instant-1.2': claude,
+    'anthropic/claude-3-opus-20240229': claude,
+    'anthropic/claude-3-sonnet-20240229': claude,
     'openai/gpt-3.5-turbo': openai,
     'openai/gpt-4-1106-preview': openai,
 } as const
@@ -95,27 +97,26 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble()
+    const preamble = getSimplePreamble(model)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: prompt } }]
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
     if (assistantText) {
-        transcript.push({ message: { speaker: 'assistant', text: assistantText } })
+        transcript.push({ speaker: 'assistant', text: assistantText })
     }
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    const contextItems = await getContext({
+    const contextItemsAndMessages = await getContext({
         intent: task.intent,
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
-        userContextFiles: task.userContextFiles,
-        contextMessages: task.contextMessages,
+        userContextItems: task.userContextItems,
         editor,
         followingText,
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext(contextItems)
+    promptBuilder.tryAddContext(contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),

@@ -1,10 +1,9 @@
-import assert from 'assert'
-
-import { beforeEach, describe, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import type { AuthStatus } from '../chat/protocol'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 
+import { URI } from 'vscode-uri'
 import { localStorage } from './LocalStorageProvider'
 
 describe('LocalStorageProvider', () => {
@@ -22,21 +21,16 @@ describe('LocalStorageProvider', () => {
         localStorageData = {}
     })
 
-    it('converts chat history without context files upon loading', async () => {
+    it('sets and gets chat history', async () => {
         await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
             chat: { a: null as any },
-            input: ['a', 'b', 'c'] as any, // API expects new format so cast any.
+            input: [{ inputText: 'a', inputContextFiles: [{ type: 'file', uri: URI.file('a') }] }],
         })
 
         const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
-        assert.deepStrictEqual(loadedHistory, {
-            chat: { a: null },
-            input: [
-                // Expect new format with context files.
-                { inputText: 'a', inputContextFiles: [] },
-                { inputText: 'b', inputContextFiles: [] },
-                { inputText: 'c', inputContextFiles: [] },
-            ],
+        expect(loadedHistory).toEqual({
+            chat: { a: null as any },
+            input: [{ inputText: 'a', inputContextFiles: [{ type: 'file', uri: URI.file('a') }] }],
         })
     })
 })

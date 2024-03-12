@@ -1,8 +1,8 @@
 import type { URI } from 'vscode-uri'
 
 import type {
+    AuthStatus,
     ChatMessage,
-    CodyLLMSiteConfiguration,
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
@@ -12,7 +12,6 @@ import type {
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import type { CodeBlockMeta } from '../../webviews/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
@@ -57,23 +56,16 @@ export type WebviewMessage =
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
-    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'insert'; text: string }
+    | { command: 'newFile'; text: string }
     | {
           command: 'copy'
           eventType: 'Button' | 'Keydown'
           text: string
-          metadata?: CodeBlockMeta
       }
     | {
           command: 'auth'
-          authKind:
-              | 'signin'
-              | 'signout'
-              | 'support'
-              | 'callback'
-              | 'simplified-onboarding'
-              | 'simplified-onboarding-exposure'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
           endpoint?: string
           value?: string
           authMethod?: AuthMethod
@@ -198,37 +190,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-/**
- * The status of a users authentication, whether they're authenticated and have a
- * verified email.
- */
-export interface AuthStatus {
-    username: string
-    endpoint: string | null
-    isDotCom: boolean
-    isLoggedIn: boolean
-    showInvalidAccessTokenError: boolean
-    authenticated: boolean
-    hasVerifiedEmail: boolean
-    requiresVerifiedEmail: boolean
-    siteHasCodyEnabled: boolean
-    siteVersion: string
-    configOverwrites?: CodyLLMSiteConfiguration
-    showNetworkError?: boolean
-    primaryEmail: string
-    displayName?: string
-    avatarURL: string
-    /**
-     * Whether the users account can be upgraded.
-     *
-     * This is `true` if the user is on dotCom and has
-     * not already upgraded. It is used to customise
-     * rate limit messages and show additional upgrade
-     * buttons in the UI.
-     */
-    userCanUpgrade: boolean
-}
 
 export const defaultAuthStatus = {
     endpoint: '',

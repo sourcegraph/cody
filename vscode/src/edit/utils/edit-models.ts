@@ -1,6 +1,5 @@
-import { ModelProvider } from '@sourcegraph/cody-shared'
+import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
 import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import type { AuthStatus } from '../../chat/protocol'
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
@@ -20,9 +19,9 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
     switch (intent) {
         case 'doc':
         case 'fix':
-        case 'test':
             // Edit commands have only been tested with Claude 2. Default to that for now.
             return 'anthropic/claude-2.0'
+        case 'test':
         case 'add':
         case 'edit':
             // Support all model usage for add and edit intents.

@@ -4,16 +4,14 @@ export { ModelProvider } from './models'
 export type { ChatModel, EditModel } from './models/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { createClient, type Client } from './chat/client'
-export type { ChatContextStatus } from './chat/context'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
 export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
-export { Transcript } from './chat/transcript'
-export type { TranscriptJSON } from './chat/transcript'
-export { Interaction } from './chat/transcript/interaction'
-export type { InteractionJSON } from './chat/transcript/interaction'
+export type {
+    SerializedChatInteraction,
+    SerializedChatTranscript,
+} from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
 export {
     getAtMentionQuery,
@@ -24,18 +22,16 @@ export {
     isAtRange,
 } from './chat/input'
 export type {
-    ChatButton,
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatMessage,
     ChatInputHistory,
-    InteractionMessage,
+    ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
+export { getDisplayText, CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
-export { CodebaseContext } from './codebase-context'
 export type {
     ContextGroup,
     ContextProvider,
@@ -47,22 +43,19 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export { createContextMessageByFile, getContextMessageWithResponse } from './codebase-context/messages'
 export type {
     ContextItem,
     ContextItemFile,
-    ContextFileSource,
+    ContextItemSource as ContextFileSource,
     ContextItemSymbol,
     ContextFileType,
     ContextMessage,
-    HoverContext,
-    PreciseContext,
     SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData } from './common/range'
+export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
@@ -111,7 +104,6 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export type { GraphContextFetcher } from './graph-context'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
@@ -134,7 +126,12 @@ export type {
     SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
-export { createOllamaClient, type OllamaGenerateParams } from './ollama/ollama-client'
+export {
+    createOllamaClient,
+    ollamaChatClient,
+    type OllamaGenerateParams,
+    OLLAMA_DEFAULT_URL,
+} from './ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
@@ -205,3 +202,6 @@ export { testFileUri } from './test/path-helpers'
 export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
+export * from './auth/types'
+export * from './auth/tokens'
+export * from './chat/sse-iterator'

@@ -26,7 +26,7 @@ const JS_INTENTS_QUERY = dedent`
         parameters: (formal_parameters ("(") @function.parameters.cursor) @function.parameters
         body: (statement_block ("{") @function.body.cursor) @function.body)
 
-    (function
+    (function_expression
         name: (identifier) @function.name!
         parameters: (formal_parameters ("(") @function.parameters.cursor) @function.parameters
         body: (statement_block ("{") @function.body.cursor) @function.body)
@@ -107,7 +107,7 @@ const TS_INTENTS_QUERY = dedent`
 
     (interface_declaration
         name: (type_identifier) @type_declaration.name!
-        body: (object_type ("{") @type_declaration.body.cursor) @type_declaration.body)
+        body: (interface_body ("{") @type_declaration.body.cursor) @type_declaration.body)
 
     (type_alias_declaration
         name: (type_identifier) @type_declaration.name!
@@ -121,7 +121,7 @@ const TSX_INTENTS_QUERY = dedent`
 `
 
 const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
-    (interface_declaration (object_type ("{") @block_start)) @trigger
+    (interface_declaration (interface_body ("{") @block_start)) @trigger
     (type_alias_declaration (object_type ("{") @block_start)) @trigger
 `
 
@@ -155,11 +155,11 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ;--------------------------------
     ((call_signature) @signature)
     (interface_declaration
-        (object_type
+        (interface_body
             (property_signature
                 name: (property_identifier) @signature.property)))
     (interface_declaration
-        (object_type
+        (interface_body
             (method_signature
                 name: (property_identifier) @signature.property)))
     (type_alias_declaration
@@ -180,25 +180,25 @@ const TS_BFG_IDENTIFIERS_QUERY = dedent`
 `
 
 export const javascriptQueries = {
-    [SupportedLanguage.JavaScript]: {
+    [SupportedLanguage.javascript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
         bfgIdentifiers: JS_BFG_IDENTIFIERS_QUERY,
     },
-    [SupportedLanguage.JSX]: {
+    [SupportedLanguage.javascriptreact]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
         bfgIdentifiers: JS_BFG_IDENTIFIERS_QUERY,
     },
-    [SupportedLanguage.TypeScript]: {
+    [SupportedLanguage.typescript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
         bfgIdentifiers: TS_BFG_IDENTIFIERS_QUERY,
     },
-    [SupportedLanguage.TSX]: {
+    [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
