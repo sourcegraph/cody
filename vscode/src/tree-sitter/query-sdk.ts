@@ -53,7 +53,7 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
 
     QUERIES_LOCAL_CACHE[languageId] = {
         ...queries,
-        ...getLanguageSpecificQueryWrappers(queries, parser),
+        ...getLanguageSpecificQueryWrappers(queries, parser, languageId),
     }
 }
 
@@ -107,7 +107,7 @@ interface QueryWrappers {
 /**
  * Query wrappers with custom post-processing logic.
  */
-function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
+function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser, languageId: SupportedLanguage): QueryWrappers {
     return {
         getSinglelineTrigger: (root, start, end) => {
             const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
@@ -159,10 +159,14 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             })
 
             let insertion: QueryCapture | undefined
-            if (range) {
-                // Look for an insertion capture within the determined range of the node
-                // This is primarily used for languages where documentation should be inserted differently
-                // depending on the syntax (e.g. Python PEP 257)
+            if (languageId === 'python' && range) {
+                /**
+                 * Python is a special case for generating documentation.
+                 * The insertion point of the documentation should differ if the symbol is a function or class.
+                 * We need to query again for an insertion point, this time using the correct determined range.
+                 *
+                 * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
+                 */
                 const insertionCaptures = queries.documentableNodes.compiled
                     .captures(root, range.node.startPosition, range.node.endPosition)
                     .filter(({ name }) => name.startsWith('insertion'))
