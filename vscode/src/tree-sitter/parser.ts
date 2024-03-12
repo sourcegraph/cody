@@ -65,9 +65,9 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
-    // stop parsing after 50ms to avoid infinite loops
+    // stop parsing after 70ms to avoid infinite loops
     // if that happens, tree-sitter throws an error so we can catch and address it
-    parser.setTimeoutMicros(50_000)
+    parser.setTimeoutMicros(70_000)
     PARSERS_LOCAL_CACHE[language] = parser
 
     initQueries(languageGrammar, language, parser)
