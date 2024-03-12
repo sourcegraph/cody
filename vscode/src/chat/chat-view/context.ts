@@ -184,10 +184,20 @@ async function getEnhancedContextFromRanker({
         // Get all possible context items to rank
         let searchContext = getVisibleEditorContext(editor)
 
+        const numResults = 50
         const embeddingsContextItemsPromise = retrieveContextGracefully(
-            searchEmbeddingsLocal(providers.localEmbeddings, text),
+            searchEmbeddingsLocal(providers.localEmbeddings, text, numResults),
             'local-embeddings'
         )
+
+        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
+            ? retrieveContextGracefully(
+                  contextRanking.searchModelSpecificEmbeddings(text, numResults),
+                  'model-specific-embeddings'
+              )
+            : []
+
+        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
 
         const localSearchContextItemsPromise = providers.symf
             ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
@@ -205,12 +215,18 @@ async function getEnhancedContextFromRanker({
             ...(await remoteSearchContextItemsPromise),
         ])()
 
-        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
-            embeddingsContextItemsPromise,
-            keywordContextItemsPromise,
-        ])
+        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
+            await Promise.all([
+                embeddingsContextItemsPromise,
+                keywordContextItemsPromise,
+                modelSpecificEmbeddingsContextItemsPromise,
+                precomputeQueryEmbeddingPromise,
+            ])
 
-        searchContext = searchContext.concat(keywordContextItems).concat(embeddingsContextItems)
+        searchContext = searchContext
+            .concat(keywordContextItems)
+            .concat(embeddingsContextItems)
+            .concat(modelEmbeddingContextItems)
         const editorContext = await getPriorityContext(text, editor, searchContext)
         const allContext = editorContext.concat(searchContext)
         if (!contextRanking) {
@@ -317,7 +333,8 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string
+    text: string,
+    numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async () => {
         if (!localEmbeddings) {
@@ -326,10 +343,7 @@ async function searchEmbeddingsLocal(
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(
-            text,
-            NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-        )
+        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
 
         for (const result of embeddingsResults) {
             const range = new vscode.Range(

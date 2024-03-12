@@ -1,12 +1,20 @@
 import * as path from 'path'
+import {
+    type ConfigurationWithAccessToken,
+    type ContextItem,
+    type EmbeddingsSearchResult,
+    type FileURI,
+    isDotCom,
+    isFileURI,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import * as fspromises from 'fs/promises'
 import * as vscode from 'vscode'
-import { logDebug } from '../log'
-
-import { type ConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
-import { type ContextItem, type FileURI, isFileURI } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
+import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
@@ -110,7 +118,37 @@ export class ContextRankingController implements ContextRanker {
         return this.service
     }
 
+    private async createLogsFile(dirPath: string): Promise<string> {
+        await fspromises.mkdir(dirPath, { recursive: true })
+        const fileName = 'ranker-payload.jsonl'
+        const filePath = path.join(dirPath, fileName)
+        if (
+            !(await fspromises
+                .access(filePath)
+                .then(() => true)
+                .catch(() => false))
+        ) {
+            await fspromises.writeFile(filePath, '')
+        }
+        return filePath
+    }
+
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
+        // The payload is very big to print on console. SKipping print on console for now until we start logging in BQ.
+        service.registerNotification(
+            'context-ranking/rank-items-logger-payload',
+            async (payload: string) => {
+                const indexPath = getIndexLibraryPath()
+                const logsFile = await this.createLogsFile(path.join(indexPath.fsPath, 'ranker-logs'))
+                fspromises.appendFile(logsFile, payload + '\n')
+                logDebug(
+                    'ContextRankingController',
+                    'rank-items-logger-payload',
+                    'appending logs at the path',
+                    logsFile
+                )
+            }
+        )
         let indexPath = getIndexLibraryPath()
         // Tests may override the index library path
         if (this.indexLibraryPath) {
@@ -160,7 +198,7 @@ export class ContextRankingController implements ContextRanker {
         contextItems: ContextItem[]
     ): RankContextItem[] {
         const rankContextItems = contextItems.map((item, index) => ({
-            document_id: index,
+            documentId: index,
             filePath: item.uri?.path ? path.relative(baseRepoPath, item.uri?.path) : '',
             content: item.content ?? '',
             source: item.source,
@@ -182,5 +220,90 @@ export class ContextRankingController implements ContextRanker {
             orderedContextItems.push(contextItems[newIndex])
         }
         return orderedContextItems
+    }
+
+    public async retrieveEmbeddingBasedContext(
+        query: string,
+        numResults: number,
+        modelName: string
+    ): Promise<EmbeddingsSearchResult[]> {
+        const repoUri = this.getRepoUri()
+        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
+            return []
+        }
+        try {
+            const service = await this.getService()
+            const resp = await service.request('context-ranking/context-retriever-embedding', {
+                repoPath: repoUri.path,
+                query: query,
+                modelName: modelName,
+                numResults: numResults,
+            })
+            const model_specific_embedding_items = resp.results.map(result => ({
+                ...result,
+                uri: vscode.Uri.joinPath(repoUri, result.fileName),
+            }))
+            return model_specific_embedding_items
+        } catch (error) {
+            logDebug(
+                'ContextRankingController',
+                'error in fetching embeddings features',
+                captureException(error)
+            )
+            return []
+        }
+    }
+
+    public async precomputeContextRankingFeatures(query: string): Promise<void> {
+        const repoUri = this.getRepoUri()
+        if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
+            return
+        }
+        try {
+            const service = await this.getService()
+            await service.request('context-ranking/precompute-query-embedding', {
+                query: query,
+            })
+        } catch (error) {
+            logDebug(
+                'ContextRankingController',
+                'error in fetching embeddings features',
+                captureException(error)
+            )
+        }
+    }
+
+    public async searchModelSpecificEmbeddings(
+        text: string,
+        numResults: number
+    ): Promise<ContextItem[]> {
+        return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {
+            logDebug(
+                'SimpleChatPanelProvider',
+                'getEnhancedContext > searching model specific embeddings'
+            )
+            const contextItems: ContextItem[] = []
+            const modelName = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
+            const embeddingsResults = await this.retrieveEmbeddingBasedContext(
+                text,
+                numResults,
+                modelName
+            )
+            for (const result of embeddingsResults) {
+                const range = new vscode.Range(
+                    new vscode.Position(result.startLine, 0),
+                    new vscode.Position(result.endLine, 0)
+                )
+
+                contextItems.push({
+                    type: 'file',
+                    uri: result.uri,
+                    range,
+                    content: result.content,
+                    source: ContextItemSource.Embeddings,
+                })
+            }
+            return contextItems
+        })
     }
 }
