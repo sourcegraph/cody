@@ -29,6 +29,7 @@ export type {
     ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
+export { getDisplayText, CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
@@ -45,7 +46,7 @@ export type {
 export type {
     ContextItem,
     ContextItemFile,
-    ContextFileSource,
+    ContextItemSource as ContextFileSource,
     ContextItemSymbol,
     ContextFileType,
     ContextMessage,
@@ -54,7 +55,7 @@ export type {
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData } from './common/range'
+export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,

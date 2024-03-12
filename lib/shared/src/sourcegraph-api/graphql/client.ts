@@ -759,7 +759,8 @@ export class SourcegraphGraphQLAPIClient {
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
-        } else if (this.anonymousUserID) {
+        }
+        if (this.anonymousUserID) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
 

@@ -279,10 +279,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
-                await handleCodeFromInsertAtCursor(message.text, message.metadata)
+                await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button', message.metadata)
+                await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'links':
                 void openExternalLinks(message.value)
@@ -294,7 +294,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await openLocalFileWithRange(message.filePath, message.range)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text, message.metadata)
+                handleCodeFromSaveToNewFile(message.text)
                 await this.editor.createWorkspaceFile(message.text)
                 break
             case 'context/get-remote-search-repos': {
@@ -961,15 +961,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
     private addBotMessage(requestID: string, rawResponse: string): void {
-        const displayText = reformatBotMessageForChat(rawResponse, '')
-        this.chatModel.addBotMessage({ text: rawResponse }, displayText)
+        const messageText = reformatBotMessageForChat(rawResponse)
+        this.chatModel.addBotMessage({ text: messageText })
         void this.saveSession()
         this.postViewTranscript()
 
         const authStatus = this.authProvider.getAuthStatus()
 
         // Count code generated from response
-        const codeCount = countGeneratedCode(rawResponse)
+        const codeCount = countGeneratedCode(messageText)
         if (codeCount?.charCount) {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
@@ -991,7 +991,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? rawResponse : undefined,
+                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? messageText : undefined,
                 },
             })
         }

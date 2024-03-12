@@ -2147,207 +2147,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 567f59caa10337c11fa091c022af16df
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 147
-        cookies: []
-        headers:
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: x-sourcegraph-actor-anonymous-uid
-            value: enterpriseClientabcde1234
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "147"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 328
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query FeatureFlags {
-                      evaluatedFeatureFlags() {
-                          name
-                          value
-                        }
-                  }
-            variables: {}
-        queryString:
-          - name: FeatureFlags
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?FeatureFlags
-      response:
-        bodySize: 38
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 38
-          text: |
-            Private mode requires authentication.
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 06 Mar 2024 08:51:31 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "38"
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1212
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-03-06T08:51:30.946Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 4dbefd8423aa4bbffa24e8a2c4b36c6f
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 147
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "147"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - _fromType: array
-            name: connection
-            value: close
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 339
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |2
-              
-                  query FeatureFlags {
-                      evaluatedFeatureFlags() {
-                          name
-                          value
-                        }
-                  }
-            variables: {}
-        queryString:
-          - name: FeatureFlags
-            value: null
-        url: https://demo.sourcegraph.com/.api/graphql?FeatureFlags
-      response:
-        bodySize: 135
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 135
-          text: "[\"H4sIAAAAAAAAAxTLwQmAMBAEwF72rQ1cAWlCfCxk8ZOonBdRQnoX5z8dmUFYh26WxlBOY\
-            jRXKtwu2NKxswqGUFFV+DvrOQ8PTPiLYOFNYx3jAwAA//8D\",\"AHxh3HJNAAAA\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 06 Mar 2024 08:51:32 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1243
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-06T08:51:32.014Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: da094df7da629505b79bccf78f47a535
       _order: 0
       cache: {}
@@ -2643,7 +2442,115 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f7d661532c6712bfc5b6aa473be89de8
+    - _id: d4359c67ff24d596934bf24e9c3487f7
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 346
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "346"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 337
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasFile
+                  feature: cody.codyIgnore
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.2
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 08 Mar 2024 19:49:27 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-08T19:49:27.478Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d1cd4f4795ab1636fe0d989450f29fa3
       _order: 0
       cache: {}
       request:
@@ -2699,7 +2606,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2720,7 +2627,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:52 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2751,7 +2658,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.634Z
+      startedDateTime: 2024-03-08T19:49:27.524Z
       time: 0
       timings:
         blocked: -1
@@ -2761,7 +2668,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b656fa8b4a7bf9f6055a3cd2bb5829b8
+    - _id: e9c38ab66f404a55958836052f4f794c
       _order: 0
       cache: {}
       request:
@@ -2817,7 +2724,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2838,7 +2745,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2869,7 +2776,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.669Z
+      startedDateTime: 2024-03-08T19:49:27.527Z
       time: 0
       timings:
         blocked: -1
@@ -2879,7 +2786,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0651bd1ac11f26c328e6c84e300c548e
+    - _id: 018a011dee81a2af9225a289f91b320b
       _order: 0
       cache: {}
       request:
@@ -2935,7 +2842,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2956,7 +2863,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2987,7 +2894,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.670Z
+      startedDateTime: 2024-03-08T19:49:27.528Z
       time: 0
       timings:
         blocked: -1
@@ -2997,7 +2904,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: dc482c3bddc864b4b6450112dad79a31
+    - _id: 052d6130f6ee1fca4da31d8ee177f1d7
       _order: 0
       cache: {}
       request:
@@ -3053,7 +2960,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3074,7 +2981,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3105,7 +3012,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.819Z
+      startedDateTime: 2024-03-08T19:49:27.679Z
       time: 0
       timings:
         blocked: -1
@@ -3115,7 +3022,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: acaaab5bba099cb56a2935493c6f397e
+    - _id: 41bdb98bccf33cf50c4c28b3100c6498
       _order: 0
       cache: {}
       request:
@@ -3171,7 +3078,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3192,7 +3099,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3223,7 +3130,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.830Z
+      startedDateTime: 2024-03-08T19:49:27.691Z
       time: 0
       timings:
         blocked: -1
@@ -3233,7 +3140,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 12f01789446e073746df1a886bdc0a13
+    - _id: ad9a41686e8b9bd8d94a0f30156ab6cd
       _order: 0
       cache: {}
       request:
@@ -3289,7 +3196,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3310,7 +3217,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3341,7 +3248,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.834Z
+      startedDateTime: 2024-03-08T19:49:27.695Z
       time: 0
       timings:
         blocked: -1
@@ -3351,7 +3258,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 00ce0a526f87250d2bf7e97c929071f3
+    - _id: 88760d8b30b22a204a5400aedbfc64ec
       _order: 0
       cache: {}
       request:
@@ -3407,7 +3314,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.0
+                    clientVersion: 1.8.2
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3428,7 +3335,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 23:46:53 GMT
+            value: Fri, 08 Mar 2024 19:49:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3459,7 +3366,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T23:46:52.837Z
+      startedDateTime: 2024-03-08T19:49:27.697Z
       time: 0
       timings:
         blocked: -1
@@ -4289,6 +4196,103 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-06T08:51:31.146Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ad22e9eaa01bebade8a4333120346c0f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - _fromType: array
+            name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 334
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 07 Mar 2024 00:09:37 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-07T00:09:37.302Z
       time: 0
       timings:
         blocked: -1

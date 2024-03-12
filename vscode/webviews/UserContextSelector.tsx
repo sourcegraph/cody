@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayLineRange, displayPath } from '@sourcegraph/cody-shared'
 
 import styles from './UserContextSelector.module.css'
 
@@ -139,13 +139,11 @@ export const UserContextSelectorComponent: React.FunctionComponent<
                                   ? 'symbol-structure'
                                   : 'symbol-method'
                         const title = match.type === 'file' ? displayPath(match.uri) : match.symbolName
-                        const range = match.range
-                            ? `:${match.range.start.line + 1}-${match.range.end.line + 1}`
-                            : ''
+                        const range = match.range ? `:${displayLineRange(match.range)}` : ''
                         const description =
                             match.type === 'file' ? undefined : displayPath(match.uri) + range
                         const warning =
-                            match.type === 'file' && match.title === 'large-file'
+                            match.type === 'file' && match.isTooLarge
                                 ? 'File too large. Type @# to choose a symbol'
                                 : undefined
                         return (

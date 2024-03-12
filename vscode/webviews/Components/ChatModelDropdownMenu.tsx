@@ -91,6 +91,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 className={styles.dropdownContainer}
                 onChange={handleChange}
                 selectedIndex={currentModelIndex}
+                aria-label="Choose a model"
                 {...(!disabled && enabledDropdownProps)}
             >
                 {models?.map((option, index) => (

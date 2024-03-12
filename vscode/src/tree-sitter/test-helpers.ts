@@ -12,7 +12,7 @@ const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
  * Should be used in tests only.
  */
 export function initTreeSitterParser(
-    language = SupportedLanguage.TypeScript
+    language = SupportedLanguage.typescript
 ): Promise<Parser | undefined> {
     return createParser({
         language,
@@ -24,7 +24,7 @@ export function initTreeSitterParser(
  * Should be used in tests only.
  */
 export async function initTreeSitterSDK(
-    language = SupportedLanguage.TypeScript
+    language = SupportedLanguage.typescript
 ): Promise<DocumentQuerySDK> {
     await initTreeSitterParser(language)
     const sdk = getDocumentQuerySDK(language)

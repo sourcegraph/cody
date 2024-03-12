@@ -1,7 +1,28 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
+import type { ContextItem } from '../../codebase-context/messages'
+import type { RangeData } from '../../common/range'
+import { displayPath } from '../../editor/displayPath'
+import { reformatBotMessageForChat } from '../viewHelpers'
+import type { ChatMessage } from './messages'
 
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
-import { trailingNonAlphaNumericRegex } from './test-commands'
+/**
+ * Process the message's text to produce the text that should be displayed to the user. This lets us
+ * fix any unclosed Markdown code blocks, remove any erroneous `Human:` suffixes, and do any other
+ * cleanup that we determine to be necessary from LLM outputs.
+ */
+export function getDisplayText(message: ChatMessage): string {
+    if (!message.text) {
+        return ''
+    }
+    if (message.speaker === 'human') {
+        return createDisplayTextWithFileLinks(message.text, message.contextFiles ?? [])
+    }
+    if (message.speaker === 'assistant') {
+        return reformatBotMessageForChat(message.text)
+    }
+    throw new Error(`unable to get display text for message with speaker '${message.speaker}'`)
+}
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -15,7 +36,7 @@ export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
 /**
  * Creates display text for the given context files by replacing file names with markdown links.
  */
-export function createDisplayTextWithFileLinks(humanInput: string, files: ContextItem[]): string {
+function createDisplayTextWithFileLinks(humanInput: string, files: ContextItem[]): string {
     let formattedText = humanInput
     for (const file of files) {
         // +1 on the end line numbers because we want to make sure to include everything on the end line by
@@ -23,7 +44,12 @@ export function createDisplayTextWithFileLinks(humanInput: string, files: Contex
         formattedText = replaceFileNameWithMarkdownLink(
             formattedText,
             file.uri,
-            file.range && new vscode.Range(file.range.start.line, 0, file.range.end.line + 1, 0),
+            file.range
+                ? {
+                      start: { line: file.range.start.line, character: 0 },
+                      end: { line: file.range.end.line + 1, character: 0 },
+                  }
+                : undefined,
             file.type === 'symbol' ? file.symbolName : undefined
         )
     }
@@ -36,8 +62,8 @@ export function createDisplayTextWithFileLinks(humanInput: string, files: Contex
  */
 export function replaceFileNameWithMarkdownLink(
     humanInput: string,
-    file: vscode.Uri,
-    range?: vscode.Range,
+    file: URI,
+    range?: RangeData,
     symbolName?: string
 ): string {
     const inputRepr = inputRepresentation(humanInput, file, range, symbolName)
@@ -49,13 +75,13 @@ export function replaceFileNameWithMarkdownLink(
     const textToBeReplaced = new RegExp(`\\s*@${fileAsInput}(?![\S#-_])`, 'g')
     const markdownText = `[_@${inputRepr}_](command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
-            file.toJSON(),
+            file,
             {
                 selection: range,
                 preserveFocus: true,
                 background: false,
                 preview: true,
-                viewColumn: vscode.ViewColumn.Beside,
+                viewColumn: -2 satisfies vscode.ViewColumn.Beside,
             },
         ])
     )})`
@@ -67,14 +93,16 @@ export function replaceFileNameWithMarkdownLink(
     return (text + trailingNonAlphanum).trim()
 }
 
+const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/
+
 /**
  * Generates a string representation of the given file, range, and symbol name
  * to use when linking to locations in code.
  */
 function inputRepresentation(
     humanInput: string,
-    file: vscode.Uri,
-    range?: vscode.Range,
+    file: URI,
+    range?: RangeData,
     symbolName?: string
 ): string {
     const fileName = displayPath(file)

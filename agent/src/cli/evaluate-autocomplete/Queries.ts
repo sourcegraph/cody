@@ -101,7 +101,7 @@ function compileQuery(query: UncompiledQuery, parser: Parser): CompiledQuery {
 }
 
 const grammarInheritance: Partial<Record<SupportedLanguage, SupportedLanguage[]>> = {
-    [SupportedLanguage.TypeScript]: [SupportedLanguage.JavaScript],
-    [SupportedLanguage.JSX]: [SupportedLanguage.JavaScript],
-    [SupportedLanguage.TSX]: [SupportedLanguage.TypeScript, SupportedLanguage.JavaScript],
+    [SupportedLanguage.typescript]: [SupportedLanguage.javascript],
+    [SupportedLanguage.javascriptreact]: [SupportedLanguage.javascript],
+    [SupportedLanguage.typescriptreact]: [SupportedLanguage.typescript, SupportedLanguage.javascript],
 }

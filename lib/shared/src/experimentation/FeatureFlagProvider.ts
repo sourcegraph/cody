@@ -100,7 +100,7 @@ export class FeatureFlagProvider {
         endpoint = this.apiClient.endpoint
     ): Promise<boolean> {
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
-            if (process.env.BENCHMARK_DISABLE_FEATURE_FLAGS) {
+            if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
             }
 
@@ -138,9 +138,12 @@ export class FeatureFlagProvider {
     public async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
             const endpoint = this.apiClient.endpoint
-            const data = await this.apiClient.getEvaluatedFeatureFlags()
+            const data = process.env.DISABLE_FEATURE_FLAGS
+                ? {}
+                : await this.apiClient.getEvaluatedFeatureFlags()
 
             this.exposedFeatureFlags[endpoint] = isError(data) ? {} : data
+
             this.lastRefreshTimestamp = Date.now()
             this.notifyFeatureFlagChanged()
 

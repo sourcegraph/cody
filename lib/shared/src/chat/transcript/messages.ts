@@ -5,9 +5,7 @@ import type { SerializedChatTranscript } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
-    displayText?: string
     contextFiles?: ContextItem[]
-    metadata?: ChatMetadata
     error?: ChatError
 }
 
@@ -29,12 +27,6 @@ export interface ChatError {
     // Prevent Error from being passed as ChatError.
     // Errors should be converted using errorToChatError.
     isChatErrorGuard: 'isChatErrorGuard'
-}
-
-interface ChatMetadata {
-    source?: ChatEventSource
-    requestID?: string
-    chatModel?: string
 }
 
 export interface UserLocalHistory {

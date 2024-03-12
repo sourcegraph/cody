@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, getDisplayText } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ChatButtonProps } from '../Chat'
@@ -89,6 +89,12 @@ export const TranscriptItem: React.FunctionComponent<
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
 
+    // Memoize based on the content, not the object reference, so that the displayText is not
+    // recomputed each time any other message in the parent transcript changes.
+    const messageJSON = useMemo((): string => JSON.stringify(message), [message])
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Our use of `message` is safe because we depend on `messageJSON`.
+    const displayText = useMemo((): string => getDisplayText(message), [messageJSON])
+
     return (
         <div
             className={classNames(
@@ -139,14 +145,13 @@ export const TranscriptItem: React.FunctionComponent<
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
-                {message.displayText ? (
+                {displayText ? (
                     <CodeBlocks
-                        displayText={message.displayText}
+                        displayText={displayText}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        metadata={message.metadata}
                         guardrails={guardrails}
                     />
                 ) : (
