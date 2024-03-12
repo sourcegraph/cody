@@ -1,4 +1,3 @@
-import * as os from 'os'
 import * as path from 'path'
 import {
     type ConfigurationWithAccessToken,
@@ -7,8 +6,10 @@ import {
     type FileURI,
     isDotCom,
     isFileURI,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as fs from 'fs/promises'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import * as fspromises from 'fs/promises'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
@@ -117,22 +118,35 @@ export class ContextRankingController implements ContextRanker {
         return this.service
     }
 
+    private async createLogsFile(dirPath: string): Promise<string> {
+        await fspromises.mkdir(dirPath, { recursive: true })
+        const fileName = 'ranker-payload.jsonl'
+        const filePath = path.join(dirPath, fileName)
+        if (
+            !(await fspromises
+                .access(filePath)
+                .then(() => true)
+                .catch(() => false))
+        ) {
+            await fspromises.writeFile(filePath, '')
+        }
+        return filePath
+    }
+
     private setupContextRankingService = async (service: MessageHandler): Promise<void> => {
         // The payload is very big to print on console. SKipping print on console for now until we start logging in BQ.
         service.registerNotification(
             'context-ranking/rank-items-logger-payload',
             async (payload: string) => {
-                const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), ''))
-                if (tempDir.length > 0) {
-                    const tempFile = path.join(tempDir, 'ranker-payload.json')
-                    await fs.writeFile(tempFile, payload)
-                    logDebug(
-                        'ContextRankingController',
-                        'rank-items-logger-payload',
-                        'saving the logging at path',
-                        tempFile
-                    )
-                }
+                const indexPath = getIndexLibraryPath()
+                const logsFile = await this.createLogsFile(path.join(indexPath.fsPath, 'ranker-logs'))
+                fspromises.appendFile(logsFile, payload + '\n')
+                logDebug(
+                    'ContextRankingController',
+                    'rank-items-logger-payload',
+                    'appending logs at the path',
+                    logsFile
+                )
             }
         )
         let indexPath = getIndexLibraryPath()
@@ -257,5 +271,39 @@ export class ContextRankingController implements ContextRanker {
                 captureException(error)
             )
         }
+    }
+
+    public async searchModelSpecificEmbeddings(
+        text: string,
+        numResults: number
+    ): Promise<ContextItem[]> {
+        return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {
+            logDebug(
+                'SimpleChatPanelProvider',
+                'getEnhancedContext > searching model specific embeddings'
+            )
+            const contextItems: ContextItem[] = []
+            const modelName = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
+            const embeddingsResults = await this.retrieveEmbeddingBasedContext(
+                text,
+                numResults,
+                modelName
+            )
+            for (const result of embeddingsResults) {
+                const range = new vscode.Range(
+                    new vscode.Position(result.startLine, 0),
+                    new vscode.Position(result.endLine, 0)
+                )
+
+                contextItems.push({
+                    type: 'file',
+                    uri: result.uri,
+                    range,
+                    content: result.content,
+                    source: ContextItemSource.Embeddings,
+                })
+            }
+            return contextItems
+        })
     }
 }

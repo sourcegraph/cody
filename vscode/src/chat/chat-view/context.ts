@@ -184,15 +184,18 @@ async function getEnhancedContextFromRanker({
         // Get all possible context items to rank
         let searchContext = getVisibleEditorContext(editor)
 
+        const numResults = 50
         const embeddingsContextItemsPromise = retrieveContextGracefully(
-            searchEmbeddingsLocal(providers.localEmbeddings, text),
+            searchEmbeddingsLocal(providers.localEmbeddings, text, numResults),
             'local-embeddings'
         )
 
-        const modelSpecificEmbeddingsContextItemsPromise = retrieveContextGracefully(
-            searchModelSpecificEmbeddings(contextRanking, text),
-            'model-specific-embeddings'
-        )
+        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
+            ? retrieveContextGracefully(
+                  contextRanking.searchModelSpecificEmbeddings(text, numResults),
+                  'model-specific-embeddings'
+              )
+            : []
 
         const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
 
@@ -330,7 +333,8 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string
+    text: string,
+    numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async () => {
         if (!localEmbeddings) {
@@ -339,47 +343,8 @@ async function searchEmbeddingsLocal(
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(
-            text,
-            NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-        )
+        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
 
-        for (const result of embeddingsResults) {
-            const range = new vscode.Range(
-                new vscode.Position(result.startLine, 0),
-                new vscode.Position(result.endLine, 0)
-            )
-
-            contextItems.push({
-                type: 'file',
-                uri: result.uri,
-                range,
-                content: result.content,
-                source: ContextItemSource.Embeddings,
-            })
-        }
-        return contextItems
-    })
-}
-
-async function searchModelSpecificEmbeddings(
-    contextRankingController: ContextRankingController | null,
-    text: string
-): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {
-        if (!contextRankingController) {
-            return []
-        }
-
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching model specific embeddings')
-        const contextItems: ContextItem[] = []
-        const numResults = 20
-        const modelName = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
-        const embeddingsResults = await contextRankingController.retrieveEmbeddingBasedContext(
-            text,
-            numResults,
-            modelName
-        )
         for (const result of embeddingsResults) {
             const range = new vscode.Range(
                 new vscode.Position(result.startLine, 0),
