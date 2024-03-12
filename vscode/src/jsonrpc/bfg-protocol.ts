@@ -2,7 +2,7 @@
  * This file declares the protocol for communicating between Cody and BFG (Blazingly Fast Graph), a Rust implementation
  * of the "Graph Context" feature flag.
  */
-import type { Position, Range } from './agent-protocol'
+import type { Position } from './agent-protocol'
 
 interface BFGFileContextSnippet {
     fileName: string

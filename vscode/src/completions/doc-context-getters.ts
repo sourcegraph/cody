@@ -56,7 +56,11 @@ export function getCompletionIntent(params: GetCompletionIntentParams): Completi
           }
 
     const queryPoints = positionToQueryPoints(positionBeforeCursor)
-    const [completionIntent] = execQueryWrapper(document, queryPoints, 'getCompletionIntent')
+    const [completionIntent] = execQueryWrapper({
+        document,
+        queryPoints,
+        queryWrapper: 'getCompletionIntent',
+    })
 
     return completionIntent?.name
 }
@@ -89,7 +93,7 @@ export function getLastNBfgIdentifiersFromDocument(
         }),
     }
 
-    const identifiers = execQueryWrapper(document, queryPoints, 'getBfgIdentifiers')
+    const identifiers = execQueryWrapper({ document, queryPoints, queryWrapper: 'getBfgIdentifiers' })
         .map(identifier => identifier.node.text)
         .filter(identifier => identifier.length > 2)
 
@@ -100,7 +104,8 @@ interface GetLastNBfgIdentifiersFromStringParams {
     n: number
     document: vscode.TextDocument
     position: vscode.Position
-    currentLinePrefix: string /**
+    currentLinePrefix: string
+    /**
      * Parse this source string to get the tree for the tree-sitter query
      * instead of using `document.getText()`
      */
@@ -129,7 +134,12 @@ export function getLastNBfgIdentifiersFromString(
         return []
     }
 
-    const identifiers = execQueryWrapper(document, queryPoints, 'getBfgIdentifiers', tree)
+    const identifiers = execQueryWrapper({
+        languageId: document.languageId,
+        queryPoints,
+        queryWrapper: 'getBfgIdentifiers',
+        tree,
+    })
         .map(identifier => identifier.node.text)
         .filter(identifier => identifier.length > 2)
 

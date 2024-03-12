@@ -8,7 +8,6 @@ import type { ContextSnippet } from '../types'
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 import { fuseResults } from './reciprocal-rank-fusion'
-import { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 
 interface GetContextOptions {
     document: vscode.TextDocument
@@ -63,10 +62,6 @@ export interface GetContextResult {
  */
 export class ContextMixer implements vscode.Disposable {
     constructor(private strategyFactory: ContextStrategyFactory) {}
-
-    public isBfgRetrieverEnabled(): boolean {
-        return this.strategyFactory.graphRetriever instanceof BfgRetriever
-    }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()

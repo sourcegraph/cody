@@ -3,7 +3,8 @@ import path from 'path'
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
-import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage } from './grammars'
+import { Tree } from 'web-tree-sitter'
+import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
@@ -72,4 +73,18 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     initQueries(languageGrammar, language, parser)
 
     return parser
+}
+
+export function parseString(languageId: string, source: string): Tree | null {
+    if (!isSupportedLanguage(languageId)) {
+        return null
+    }
+
+    const parser = getParser(languageId)
+
+    if (!parser) {
+        return null
+    }
+
+    return parser.parse(source)
 }

@@ -342,16 +342,42 @@ export function positionToQueryPoints(position: Pick<Position, 'line' | 'charact
     return { startPoint, endPoint }
 }
 
+type ExecQueryWrapperParams<T> = {
+    queryWrapper: T
+} & (
+    | {
+          document: TextDocument
+          queryPoints: QueryPoints
+      }
+    | {
+          document: TextDocument
+          position: Pick<Position, 'line' | 'character'>
+      }
+    | {
+          tree: Tree
+          languageId: string
+          queryPoints: QueryPoints
+      }
+    | {
+          tree: Tree
+          languageId: string
+          position: Pick<Position, 'line' | 'character'>
+      }
+)
+
 export function execQueryWrapper<T extends keyof QueryWrappers>(
-    document: TextDocument,
-    queryPoints: QueryPoints,
-    queryWrapper: T,
-    tree?: Tree
+    params: ExecQueryWrapperParams<T>
 ): ReturnType<QueryWrappers[T]> | never[] {
-    const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId as SupportedLanguage)
+    const { queryWrapper } = params
+
+    const treeToQuery =
+        'document' in params ? getCachedParseTreeForDocument(params.document)?.tree : params.tree
+    const languageId = 'document' in params ? params.document.languageId : params.languageId
+    const documentQuerySDK = getDocumentQuerySDK(languageId as SupportedLanguage)
+
+    const queryPoints =
+        'position' in params ? positionToQueryPoints(params.position) : params.queryPoints
     const { startPoint, endPoint } = queryPoints
-    const treeToQuery = tree || parseTreeCache?.tree
 
     if (documentQuerySDK && treeToQuery) {
         return documentQuerySDK.queries[queryWrapper](
