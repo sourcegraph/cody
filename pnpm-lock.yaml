@@ -326,6 +326,9 @@ importers:
       detect-indent:
         specifier: ^7.0.1
         version: 7.0.1
+      diff:
+        specifier: ^5.2.0
+        version: 5.2.0
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
@@ -402,6 +405,9 @@ importers:
       '@types/dedent':
         specifier: ^0.7.0
         version: 0.7.0
+      '@types/diff':
+        specifier: ^5.0.9
+        version: 5.0.9
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -421,8 +427,8 @@ importers:
         specifier: ^4.14.195
         version: 4.14.195
       '@types/mocha':
-        specifier: ^10.0.1
-        version: 10.0.1
+        specifier: ^10.0.6
+        version: 10.0.6
       '@types/pako':
         specifier: ^2.0.3
         version: 2.0.3
@@ -6026,8 +6032,8 @@ packages:
     resolution: {integrity: sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==}
     dev: true
 
-  /@types/mocha@10.0.1:
-    resolution: {integrity: sha512-/fvYntiO1GeICvqbQ3doGDIP97vWmvFt83GKguJ6prmQM2iXZfFcq6YE8KteFyRtX2/h5Hf91BYvPodJKFYv5Q==}
+  /@types/mocha@10.0.6:
+    resolution: {integrity: sha512-dJvrYWxP/UcXm36Qn36fxhUKu8A/xMRXVT2cliFF1Z7UA9liG5Psj3ezNSZw+5puH2czDXRLcXQxf8JbJt0ejg==}
     dev: true
 
   /@types/node-fetch@2.6.4:
@@ -7937,7 +7943,6 @@ packages:
   /diff@5.2.0:
     resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
     engines: {node: '>=0.3.1'}
-    dev: true
 
   /dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
