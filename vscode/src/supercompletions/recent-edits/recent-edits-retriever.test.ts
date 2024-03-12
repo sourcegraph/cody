@@ -37,7 +37,6 @@ describe('RecentEditsRetriever', () => {
     })
 
     it('tracks document changes and creates a git diff', () => {
-        // This document is in the state _after_ the completion was inserted
         const doc = document(dedent`
             function foo() {
                 console.log('foo')
@@ -108,7 +107,7 @@ describe('RecentEditsRetriever', () => {
         `)
     })
 
-    it.only('does not yield changes that are older than the configured timeout', () => {
+    it('does not yield changes that are older than the configured timeout', () => {
         const doc = document(dedent`
             function foo() {
                 console.log('foo')
