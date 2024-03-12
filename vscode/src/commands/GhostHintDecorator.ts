@@ -1,6 +1,7 @@
 import { type AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
+import type { SyntaxNode } from 'web-tree-sitter'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -157,6 +158,7 @@ const HINT_DECORATIONS: Record<
     },
 }
 
+const DOCUMENTABLE_SYMBOL_THROTTLE = 50
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
 
@@ -166,6 +168,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     private activeDecorationRange: vscode.Range | null = null
     private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
     private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
+    private getThrottledDocumentableSymbol: DebouncedFunc<typeof this.getDocumentableSymbol>
 
     /**
      * Tracks whether the user has recorded an enrollment for each ghost variant.
@@ -187,6 +190,14 @@ export class GhostHintDecorator implements vscode.Disposable {
             {
                 leading: true,
                 trailing: false,
+            }
+        )
+        this.getThrottledDocumentableSymbol = throttle(
+            this.getDocumentableSymbol.bind(this),
+            DOCUMENTABLE_SYMBOL_THROTTLE,
+            {
+                leading: true,
+                trailing: true,
             }
         )
 
@@ -235,21 +246,17 @@ export class GhostHintDecorator implements vscode.Disposable {
                     const selection = event.selections[0]
 
                     if (enabledFeatures.Document) {
-                        const [documentableSymbol] = execQueryWrapper(
+                        const documentableSymbol = this.getThrottledDocumentableSymbol(
                             editor.document,
-                            selection.active,
-                            'getDocumentableNode'
+                            selection.active
                         )
 
-                        if (documentableSymbol?.node) {
+                        if (documentableSymbol) {
                             /**
                              * "Document" code flow.
                              * Display ghost text above the relevant symbol.
                              */
-                            const precedingLine = Math.max(
-                                0,
-                                documentableSymbol.node.startPosition.row - 1
-                            )
+                            const precedingLine = Math.max(0, documentableSymbol.startPosition.row - 1)
                             if (
                                 this.activeDecorationRange &&
                                 this.activeDecorationRange.start.line !== precedingLine
@@ -265,10 +272,10 @@ export class GhostHintDecorator implements vscode.Disposable {
                                     editor.document,
                                     editor.document.lineAt(precedingLine),
                                     new vscode.Range(
-                                        documentableSymbol.node.startPosition.row,
-                                        documentableSymbol.node.startPosition.column,
-                                        documentableSymbol.node.endPosition.row,
-                                        documentableSymbol.node.endPosition.column
+                                        documentableSymbol.startPosition.row,
+                                        documentableSymbol.startPosition.column,
+                                        documentableSymbol.endPosition.row,
+                                        documentableSymbol.endPosition.column
                                     )
                                 )
                             )
@@ -353,6 +360,14 @@ export class GhostHintDecorator implements vscode.Disposable {
                 renderOptions: { after: { contentText: decorationText } },
             },
         ])
+    }
+
+    private getDocumentableSymbol(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): SyntaxNode | undefined {
+        const [documentableSymbol] = execQueryWrapper(document, position, 'getDocumentableNode')
+        return documentableSymbol.node
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
