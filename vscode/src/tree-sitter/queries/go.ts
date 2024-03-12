@@ -12,7 +12,7 @@ export const goQueries = {
         intents: '',
         documentableNodes: '',
         graphContextIdentifiers: dedent`
-            (identifier) @identifier
+            (call_expression (identifier) @identifier)
             (qualified_type (type_identifier) @identifier)
             (type_spec (type_identifier) @identifier)
             (selector_expression (field_identifier)) @identifier

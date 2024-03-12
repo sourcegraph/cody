@@ -45,6 +45,6 @@ export const pythonQueries = {
             (return_statement (_) @return_statement.value!)
         `,
         documentableNodes: '',
-        graphContextIdentifiers: '(identifier) @identifier',
+        graphContextIdentifiers: '(call (identifier) @identifier)',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
