@@ -329,32 +329,24 @@ class CodyAutocompleteManager {
       triggerKind: InlineCompletionTriggerKind,
   ) {
     val project = editor.project
-    if (project != null && System.getProperty("cody.autocomplete.enableFormatting") != "false") {
-      items.map { item ->
-        if (item.insertText.lines().size > 1) {
-          item.insertText =
-              item.insertText.lines()[0] +
-                  CodyFormatter.formatStringBasedOnDocument(
-                      item.insertText.lines().drop(1).joinToString(separator = "\n"),
-                      project,
-                      editor.document,
-                      offset)
-        }
-      }
-    }
-
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
-    val lines = defaultItem.insertText.lines()
-    val insertTextFirstLine: String = lines.firstOrNull() ?: ""
-    val multilineInsertText: String = lines.drop(1).joinToString(separator = "\n")
 
-    // Run Myers diff between the existing text in the document and the first line of the
-    // `insertText` that is returned from the agent.
+    val formattedInsertText =
+        if (project == null ||
+            System.getProperty("cody.autocomplete.enableFormatting") == "false") {
+          defaultItem.insertText
+        } else {
+          CodyFormatter.formatStringBasedOnDocument(
+              defaultItem.insertText, project, editor.document, range, offset)
+        }
+
+    // Run Myers diff between the existing text in the document and the `insertText` that is
+    // returned from the agent.
     // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
     // need to make to the document.
-    val patch = diff(originalText, insertTextFirstLine)
+    val patch = diff(originalText, defaultItem.insertText)
     if (!patch.deltas.all { delta -> delta.type == Delta.TYPE.INSERT }) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
           UserLevelConfig.isVerboseLoggingEnabled()) {
@@ -371,26 +363,29 @@ class CodyAutocompleteManager {
       }
     }
 
-    // Insert one inlay hint per delta in the first line.
-    for (delta in patch.deltas) {
-      val text = delta.revised.lines.joinToString("")
-      inlayModel.addInlineElement(
-          range.startOffset + delta.original.position,
-          true,
-          CodyAutocompleteSingleLineRenderer(text, items, editor, AutocompleteRendererType.INLINE))
-    }
+    defaultItem.insertText = formattedInsertText
+    val completionText = formattedInsertText.removePrefix(originalText)
 
-    // Insert remaining lines of multiline completions as a single block element under the
-    // (potentially false?) assumption that we don't need to compute diffs for them. My
-    // understanding of multiline completions is that they are only supposed to be triggered in
-    // situations where we insert a large block of code in an empty block.
-    if (multilineInsertText.isNotEmpty()) {
+    val lineBreaks = listOf("\r\n", "\n", "\r")
+    val startsInline = lineBreaks.none { separator -> completionText.startsWith(separator) }
+
+    if (startsInline) {
+      val renderer =
+          CodyAutocompleteSingleLineRenderer(
+              completionText.lines().first(), items, editor, AutocompleteRendererType.INLINE)
+      inlayModel.addInlineElement(offset, /* relatesToPrecedingText = */ true, renderer)
+    }
+    val lines = completionText.lines()
+    if (lines.size > 1) {
+      val text =
+          (if (startsInline) lines.drop(1) else lines).dropWhile { it.isBlank() }.joinToString("\n")
+      val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
       inlayModel.addBlockElement(
-          offset,
-          true,
-          false,
-          Int.MAX_VALUE,
-          CodyAutocompleteBlockElementRenderer(multilineInsertText, items, editor))
+          /* offset = */ offset,
+          /* relatesToPrecedingText = */ true,
+          /* showAbove = */ false,
+          /* priority = */ Int.MAX_VALUE,
+          /* renderer = */ renderer)
     }
   }
 
