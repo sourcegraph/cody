@@ -29,7 +29,7 @@ data class ChatMessage(
     val speaker: Speaker,
     val text: String?,
     val displayText: String? = null,
-    val contextFiles: List<ContextFile>? = null,
+    val contextFiles: List<ContextItem>? = null,
     val error: ChatError? = null
 ) {
   fun actualMessage(): String = displayText ?: text ?: ""

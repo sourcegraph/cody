@@ -2,7 +2,7 @@ package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.ChatError
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.ContextFile
+import com.sourcegraph.cody.agent.protocol.ContextItem
 import com.sourcegraph.cody.agent.protocol.Repo
 
 /**
@@ -14,7 +14,7 @@ data class WebviewMessage(
     val text: String? = null,
     val submitType: String? = null, // One of: "user", "suggestion", "example"
     val addEnhancedContext: Boolean? = null,
-    val contextFiles: List<ContextFile>? = null,
+    val contextFiles: List<ContextItem>? = null,
     val error: ChatError? = null,
     val query: String? = null,
     val model: String? = null,
@@ -35,7 +35,7 @@ data class ExtensionMessage(
     val chatID: String? = null,
     val isTranscriptError: Boolean? = null,
     val customPrompts: List<List<Any>>? = null,
-    val userContextFiles: List<ContextFile>? = null,
+    val userContextFiles: List<ContextItem>? = null,
     val errors: String?,
     val query: String? = null,
     val configFeatures: ConfigFeatures? = null,

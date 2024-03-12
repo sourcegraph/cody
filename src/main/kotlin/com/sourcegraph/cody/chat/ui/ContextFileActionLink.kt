@@ -4,21 +4,21 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.AnActionLink
-import com.sourcegraph.cody.agent.protocol.ContextFileFile
+import com.sourcegraph.cody.agent.protocol.ContextItemFile
 import java.awt.Color
 import java.awt.Graphics
 
 class ContextFileActionLink(
     project: Project,
-    contextFileFile: ContextFileFile,
+    contextItemFile: ContextItemFile,
     anAction: AnAction
 ) : AnActionLink("", anAction) {
   private val localFileBackground = JBColor(Color(182, 210, 242), Color(56, 85, 112))
-  private val isReferringToLocalFile = contextFileFile.isLocal()
+  private val isReferringToLocalFile = contextItemFile.isLocal()
 
   init {
-    text = contextFileFile.getLinkActionText(project.basePath)
-    toolTipText = contextFileFile.uri.path
+    text = contextItemFile.getLinkActionText(project.basePath)
+    toolTipText = contextItemFile.uri.path
   }
 
   override fun paintComponent(g: Graphics) {

@@ -3,9 +3,9 @@ package com.sourcegraph.cody.agent.protocol
 import java.net.URI
 import junit.framework.TestCase
 
-class ContextFileTest : TestCase() {
-  private val localContextFileFile =
-      ContextFileFile(
+class ContextItemTest : TestCase() {
+  private val localContextItemFile =
+      ContextItemFile(
           uri =
               URI(
                   "file:///Users/mkondratek/runIdeProjects/jetbrains/src/main/java/com/sourcegraph/cody/agent/CodyAgentClient.java?#"),
@@ -13,8 +13,8 @@ class ContextFileTest : TestCase() {
           revision = null,
           range = Range(Position(83, 11), Position(83, 22)),
       )
-  private val remoteContextFileFile =
-      ContextFileFile(
+  private val remoteContextItemFile =
+      ContextItemFile(
           uri =
               URI(
                   "https://sourcegraph.sourcegraph.com//github.com/sourcegraph/jetbrains@8229d82c29fd52eda812f182741a3a0bfc1a547e/-/blob/TESTING.md?L49-56"),
@@ -26,13 +26,13 @@ class ContextFileTest : TestCase() {
   private val projectPath = "/Users/mkondratek/runIdeProjects/jetbrains/"
 
   fun `testGetLinkActionText - local file`() {
-    val linkActionText = localContextFileFile.getLinkActionText(projectPath)
+    val linkActionText = localContextItemFile.getLinkActionText(projectPath)
     assertEquals(
         "@src/main/java/com/sourcegraph/cody/agent/CodyAgentClient.java:84", linkActionText)
   }
 
   fun `testGetLinkActionText - remote file`() {
-    val linkActionText = remoteContextFileFile.getLinkActionText(projectPath = null)
+    val linkActionText = remoteContextItemFile.getLinkActionText(projectPath = null)
     assertEquals("jetbrains TESTING.md:49-56", linkActionText)
   }
 }

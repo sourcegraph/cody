@@ -186,7 +186,7 @@ private constructor(
                 // VSC has many `=== null` checks that return false for undefined fields.
                 .serializeNulls()
                 .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
-                .registerTypeAdapter(ContextFile::class.java, contextFileDeserializer)
+                .registerTypeAdapter(ContextItem::class.java, ContextItem.deserializer)
                 .registerTypeAdapter(Speaker::class.java, speakerDeserializer)
                 .registerTypeAdapter(Speaker::class.java, speakerSerializer)
                 .registerTypeAdapter(URI::class.java, uriDeserializer)

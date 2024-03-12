@@ -10,8 +10,8 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.ContextFile
-import com.sourcegraph.cody.agent.protocol.ContextFileFile
+import com.sourcegraph.cody.agent.protocol.ContextItem
+import com.sourcegraph.cody.agent.protocol.ContextItemFile
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH
 import com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN
@@ -33,19 +33,19 @@ class ContextFilesPanel(
     updateContentWith(chatMessage.contextFiles)
   }
 
-  fun updateContentWith(contextFiles: List<ContextFile>?) {
-    val contextFileFiles = contextFiles?.mapNotNull { it as? ContextFileFile }
+  fun updateContentWith(contextItems: List<ContextItem>?) {
+    val contextItemFiles = contextItems?.mapNotNull { it as? ContextItemFile }
 
-    if (contextFileFiles.isNullOrEmpty()) {
+    if (contextItemFiles.isNullOrEmpty()) {
       return
     }
 
-    val title = deriveAccordionTitle(contextFileFiles)
+    val title = deriveAccordionTitle(contextItemFiles)
     val margin = JBInsets.create(Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN))
     val accordionSection = AccordionSection(title)
     accordionSection.isOpaque = false
     accordionSection.border = EmptyBorder(margin)
-    contextFileFiles.forEachIndexed { index, contextFile: ContextFileFile ->
+    contextItemFiles.forEachIndexed { index, contextFile: ContextItemFile ->
       val filePanel = createFileWithLinkPanel(contextFile)
       accordionSection.contentPanel.add(filePanel, index)
     }
@@ -55,10 +55,10 @@ class ContextFilesPanel(
     add(accordionSection, BorderLayout.CENTER)
   }
 
-  private fun deriveAccordionTitle(contextFileFiles: List<ContextFileFile>): String {
-    val filteredFiles = contextFileFiles.distinctBy { it.uri }
+  private fun deriveAccordionTitle(contextItemFiles: List<ContextItemFile>): String {
+    val filteredFiles = contextItemFiles.distinctBy { it.uri }
     val prefix = "✨ Context: "
-    val lineCount = contextFileFiles.sumOf { it.range?.length() ?: 0 }
+    val lineCount = contextItemFiles.sumOf { it.range?.length() ?: 0 }
     val fileCount = filteredFiles.size
     val lines = "$lineCount line${if (lineCount > 1) "s" else ""}"
     val files = "$fileCount file${if (fileCount > 1) "s" else ""}"
@@ -73,19 +73,19 @@ class ContextFilesPanel(
   }
 
   @RequiresEdt
-  private fun createFileWithLinkPanel(contextFileFile: ContextFileFile): JPanel {
+  private fun createFileWithLinkPanel(contextItemFile: ContextItemFile): JPanel {
     val anAction =
         object : DumbAwareAction() {
           override fun actionPerformed(anActionEvent: AnActionEvent) {
-            if (contextFileFile.isLocal()) {
-              openInEditor(contextFileFile)
+            if (contextItemFile.isLocal()) {
+              openInEditor(contextItemFile)
             } else {
-              openInBrowser(project, contextFileFile.uri)
+              openInBrowser(project, contextItemFile.uri)
             }
           }
         }
 
-    val goToFile = ContextFileActionLink(project, contextFileFile, anAction)
+    val goToFile = ContextFileActionLink(project, contextItemFile, anAction)
     val panel = JPanel(BorderLayout())
     panel.isOpaque = false
     panel.border = JBUI.Borders.empty(3, 3, 0, 0)
@@ -93,9 +93,9 @@ class ContextFilesPanel(
     return panel
   }
 
-  private fun openInEditor(contextFileFile: ContextFileFile) {
-    val logicalLine = contextFileFile.range?.start?.line ?: 0
-    val contextFilePath = contextFileFile.getPath()
+  private fun openInEditor(contextItemFile: ContextItemFile) {
+    val logicalLine = contextItemFile.range?.start?.line ?: 0
+    val contextFilePath = contextItemFile.getPath()
     ApplicationManager.getApplication().executeOnPooledThread {
       val findFileByNioFile = LocalFileSystem.getInstance().findFileByNioFile(contextFilePath)
       if (findFileByNioFile != null) {

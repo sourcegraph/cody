@@ -16,7 +16,7 @@ import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
 import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
-import com.sourcegraph.cody.agent.protocol.ContextFile
+import com.sourcegraph.cody.agent.protocol.ContextItem
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.chat.ui.LlmDropdownData
@@ -97,7 +97,7 @@ private constructor(
   private val logger = LoggerFactory.getLogger(ChatSession::class.java)
 
   @RequiresEdt
-  override fun sendMessage(text: String, contextFiles: List<ContextFile>) {
+  override fun sendMessage(text: String, contextItems: List<ContextItem>) {
     val displayText = XmlStringUtil.escapeString(text)
     val humanMessage =
         ChatMessage(
@@ -115,10 +115,10 @@ private constructor(
         )
     addMessageAtIndex(responsePlaceholder, index = messages.count(), shouldAddBlinkingCursor = true)
 
-    submitMessageToAgent(humanMessage, contextFiles)
+    submitMessageToAgent(humanMessage, contextItems)
   }
 
-  private fun submitMessageToAgent(humanMessage: ChatMessage, contextFiles: List<ContextFile>) {
+  private fun submitMessageToAgent(humanMessage: ChatMessage, contextItems: List<ContextItem>) {
     CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
       val message =
           WebviewMessage(
@@ -126,7 +126,7 @@ private constructor(
               text = humanMessage.actualMessage(),
               submitType = "user",
               addEnhancedContext = chatPanel.isEnhancedContextEnabled(),
-              contextFiles = contextFiles)
+              contextFiles = contextItems)
 
       try {
         val request =

@@ -1,25 +1,51 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.*
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonSerializer
 import java.lang.reflect.Type
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
 
-sealed class ContextFile {
-  abstract val type: String
+typealias ContextFileSource =
+    String // One of: embeddings, user, keyword, editor, filename, search, unified, selection,
+// terminal
+
+typealias SymbolKind = String // One of: class, function, method
+
+sealed class ContextItem {
+  abstract val type: String // Oneof: file, symbol
   abstract val uri: URI
-  abstract val repoName: String?
-  abstract val revision: String?
+
+  companion object {
+    val deserializer: JsonDeserializer<ContextItem> =
+        JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
+          when (element.asJsonObject.get("type").asString) {
+            "file" -> context.deserialize<ContextItemFile>(element, ContextItemFile::class.java)
+            "symbol" ->
+                context.deserialize<ContextItemSymbol>(element, ContextItemSymbol::class.java)
+            else -> throw Exception("Unknown discriminator ${element}")
+          }
+        }
+  }
 }
 
-data class ContextFileFile(
+data class ContextItemFile(
+    override val type: String = "file",
     override val uri: URI,
-    override val repoName: String?,
-    override val revision: String?,
     val range: Range? = null,
-) : ContextFile() {
-  override val type: String = "file"
+    val repoName: String? = null,
+    val revision: String? = null,
+    val title: String? = null,
+    val source: ContextFileSource? =
+        null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection,
+    // terminal
+    val content: String? = null
+) : ContextItem() {
 
   fun isLocal() = repoName == null
 
@@ -53,25 +79,20 @@ data class ContextFileFile(
   }
 }
 
-val contextFileDeserializer =
-    JsonDeserializer { jsonElement: JsonElement, _: Type, context: JsonDeserializationContext ->
-      val jsonObject = jsonElement.asJsonObject
-      when (jsonObject["type"]?.asString) {
-        "file" -> {
-          val uri = context.deserialize<URI>(jsonObject["uri"], URI::class.java)
-          val repoName = jsonObject["repoName"]?.asString
-          val revision = jsonObject["revision"]?.asString
-          val range = gsonMapper.fromJson(jsonObject["range"], Range::class.java)
-          ContextFileFile(uri, repoName, revision, range)
-        }
-
-        // TODO(beyang): should throw an exception here, but we don't because the context field is
-        // overloaded in the protocol
-        else -> null
-      }
-    }
-
-private val gsonMapper = GsonBuilder().create()
+data class ContextItemSymbol(
+    override val type: String = "symbol",
+    override val uri: URI,
+    val range: Range? = null,
+    val repoName: String? = null,
+    val revision: String? = null,
+    val title: String? = null,
+    val source: ContextFileSource? =
+        null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection,
+    // terminal
+    val content: String? = null,
+    val symbolName: String? = null,
+    val kind: SymbolKind? = null, // Oneof: class, function, method
+) : ContextItem()
 
 val uriDeserializer =
     JsonDeserializer { jsonElement: JsonElement?, _: Type, _: JsonDeserializationContext ->
