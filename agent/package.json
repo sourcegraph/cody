@@ -19,7 +19,8 @@
     "agent": "pnpm run build && node dist/index.js",
     "agent:debug": "pnpm run build && node --inspect --enable-source-maps ./dist/index.js",
     "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
+    "build-agent-binaries": "pnpm run build && cp dist/index.js dist/agent.js && pkg --assets=dist/*.wasm -t latest-linux-arm64,latest-linux-x64,latest-macos-arm64,latest-macos-x64,latest-win-x64 dist/agent.js --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
+    "test-agent-binary": "esbuild ./scripts/test-agent-binary.ts --bundle --platform=node --alias:vscode=./src/vscode-shim.ts --outdir=dist && node ./dist/test-agent-binary.js",
     "test": "vitest"
   },
   "dependencies": {

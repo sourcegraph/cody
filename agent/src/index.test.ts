@@ -160,7 +160,7 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        // for sombody on the Sourcegraph team to help you update the HTTP requests.
+        // for somebody on the Sourcegraph team to help you update the HTTP requests.
         expect(valid?.username).toStrictEqual('philippspiess')
     }, 10_000)
 
