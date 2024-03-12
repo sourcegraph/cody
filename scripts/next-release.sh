@@ -7,6 +7,12 @@
 # https://docs.google.com/document/d/11cw-7dAp93JmasITNSNCtx31xrQsNB1L2OoxVE6zrTc/edit#bookmark=id.ufwe0bqp83z1
 set -eu
 
+# Check the number of arguments
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 [--major | --minor | --path]"
+  exit 1
+fi
+
 if [[ "$(uname)" == "Darwin" ]]; then
   if ! command -v gdate &>/dev/null; then
     echo "Command not found: gdate"
@@ -32,17 +38,31 @@ if ! command -v gh &>/dev/null; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/sourcegraph --limit 20 --exclude-drafts --exclude-pre-releases | sed 's/Latest//' | awk '$3 ~ /v[0-9]+\.[0-9]+\.0$/ { print $3, $4; exit }')
-MAJOR_MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1,2)
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/jetbrains --limit 20 --exclude-drafts --exclude-pre-releases | sed 's/Latest//' | awk '$2 ~ /v[0-9]+\.[0-9]+\.[0-9]+$/ { print $2, $3; exit }')
+MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1)
+MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f2)
 LAST_RELEASE_TIMESTAMP=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $2 }')
 
-# Current year
-MILLIS_START_YEAR="$(date_program -d "$LAST_RELEASE_TIMESTAMP" +%s%3N)"
-MILLIS_NOW="$(date_program +%s%3N)"
-BUILDNUM_MILLIS="$(($MILLIS_NOW - $MILLIS_START_YEAR))"
-MILLIS_IN_ONE_MINUTE=60000
-MINUTES_IN_ONE_YEAR=525600 # assuming 365 days
-MAX_SEMVER_PATCH_NUMBER=65535 # per Microsoft guidelines
-BUILDNUM_MINUTES="$(($BUILDNUM_MILLIS / $MILLIS_IN_ONE_MINUTE))"
-BUILDNUM="$(($BUILDNUM_MINUTES * $MAX_SEMVER_PATCH_NUMBER / $MINUTES_IN_ONE_YEAR ))"
-echo "$MAJOR_MINOR.$BUILDNUM"
+NEXT_RELEASE_ARG="$1"
+# Check the argument and take appropriate action
+if [ "$NEXT_RELEASE_ARG" == "--major" ]; then
+  MAJOR=$(($MAJOR+1))
+  echo "$MAJOR.0.0"
+elif [ "$NEXT_RELEASE_ARG" == "--minor" ]; then
+  MINOR=$((MINOR+1))
+  echo "$MAJOR.$MINOR.0"
+elif [ "$NEXT_RELEASE_ARG" == "--patch" ]; then
+  # Current year
+  MILLIS_START_YEAR="$(date_program -d "$LAST_RELEASE_TIMESTAMP" +%s%3N)"
+  MILLIS_NOW="$(date_program +%s%3N)"
+  BUILDNUM_MILLIS="$(($MILLIS_NOW - $MILLIS_START_YEAR))"
+  MILLIS_IN_ONE_MINUTE=60000
+  MINUTES_IN_ONE_YEAR=525600 # assuming 365 days
+  MAX_SEMVER_PATCH_NUMBER=65535 # per Microsoft guidelines
+  BUILDNUM_MINUTES="$(($BUILDNUM_MILLIS / $MILLIS_IN_ONE_MINUTE))"
+  BUILDNUM="$(($BUILDNUM_MINUTES * $MAX_SEMVER_PATCH_NUMBER / $MINUTES_IN_ONE_YEAR ))"
+  echo "$MAJOR.$MINOR.$BUILDNUM"
+else
+  echo "Invalid argument. Usage: $0 [--major | --minor | --path]"
+  exit 1
+fi
