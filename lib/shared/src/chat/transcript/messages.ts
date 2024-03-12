@@ -5,7 +5,6 @@ import type { SerializedChatTranscript } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
-    displayText?: string
     contextFiles?: ContextItem[]
     error?: ChatError
 }
