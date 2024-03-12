@@ -11,7 +11,7 @@ export const goQueries = {
         `,
         intents: '',
         documentableNodes: '',
-        bfgIdentifiers: dedent`
+        graphContextIdentifiers: dedent`
             (identifier) @identifier
             (qualified_type (type_identifier) @identifier)
             (type_spec (type_identifier) @identifier)

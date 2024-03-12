@@ -107,7 +107,7 @@ interface QueryWrappers {
         | readonly [
               { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
           ]
-    getBfgIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
+    getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
 /**
@@ -158,8 +158,8 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 },
             ] as const
         },
-        getBfgIdentifiers: (root, start, end) => {
-            return queries.bfgIdentifiers.compiled.captures(root, start, end)
+        getGraphContextIdentifiers: (root, start, end) => {
+            return queries.graphContextIdentifiers.compiled.captures(root, start, end)
         },
     }
 }

@@ -65,7 +65,7 @@ export function getCompletionIntent(params: GetCompletionIntentParams): Completi
     return completionIntent?.name
 }
 
-interface GetLastNBfgIdentifiersFromDocumentParams {
+interface GetLastNGraphContextFromDocumentParams {
     n: number
     document: vscode.TextDocument
     position: vscode.Position
@@ -77,8 +77,8 @@ interface GetLastNBfgIdentifiersFromDocumentParams {
     source?: string
 }
 
-export function getLastNBfgIdentifiersFromDocument(
-    params: GetLastNBfgIdentifiersFromDocumentParams
+export function getLastNGraphContextFromDocument(
+    params: GetLastNGraphContextFromDocumentParams
 ): string[] {
     const { document, currentLinePrefix, position, n } = params
 
@@ -93,14 +93,18 @@ export function getLastNBfgIdentifiersFromDocument(
         }),
     }
 
-    const identifiers = execQueryWrapper({ document, queryPoints, queryWrapper: 'getBfgIdentifiers' })
+    const identifiers = execQueryWrapper({
+        document,
+        queryPoints,
+        queryWrapper: 'getGraphContextIdentifiers',
+    })
         .map(identifier => identifier.node.text)
         .filter(identifier => identifier.length > 2)
 
     return Array.from(new Set(identifiers.reverse())).slice(0, n)
 }
 
-interface GetLastNBfgIdentifiersFromStringParams {
+interface GetLastNGraphContextFromStringParams {
     n: number
     document: vscode.TextDocument
     position: vscode.Position
@@ -112,9 +116,7 @@ interface GetLastNBfgIdentifiersFromStringParams {
     source: string
 }
 
-export function getLastNBfgIdentifiersFromString(
-    params: GetLastNBfgIdentifiersFromStringParams
-): string[] {
+export function getLastNGraphContextFromString(params: GetLastNGraphContextFromStringParams): string[] {
     const { document, source, n } = params
 
     const queryPoints = {
@@ -137,7 +139,7 @@ export function getLastNBfgIdentifiersFromString(
     const identifiers = execQueryWrapper({
         languageId: document.languageId,
         queryPoints,
-        queryWrapper: 'getBfgIdentifiers',
+        queryWrapper: 'getGraphContextIdentifiers',
         tree,
     })
         .map(identifier => identifier.node.text)

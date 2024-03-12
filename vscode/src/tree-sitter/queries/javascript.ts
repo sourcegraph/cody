@@ -168,12 +168,12 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
                 name: (property_identifier) @signature.property)))
 `
 
-const JS_BFG_IDENTIFIERS_QUERY = dedent`
+const JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
     (identifier) @identifier
     (member_expression (property_identifier) @identifier)
 `
 
-const TS_BFG_IDENTIFIERS_QUERY = dedent`
+const TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
     (identifier) @identifier
     (type_identifier) @identifier
     (member_expression (property_identifier) @identifier)
@@ -184,24 +184,24 @@ export const javascriptQueries = {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
-        bfgIdentifiers: JS_BFG_IDENTIFIERS_QUERY,
+        graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.javascriptreact]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
-        bfgIdentifiers: JS_BFG_IDENTIFIERS_QUERY,
+        graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.typescript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
-        bfgIdentifiers: TS_BFG_IDENTIFIERS_QUERY,
+        graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
-        bfgIdentifiers: TS_BFG_IDENTIFIERS_QUERY,
+        graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

@@ -6,12 +6,12 @@ import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
 import { gitAPI } from '../../../../repository/repositoryHelpers'
 import { captureException } from '../../../../services/sentry/sentry'
-import {
-    getLastNBfgIdentifiersFromDocument,
-    getLastNBfgIdentifiersFromString,
-} from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
 
+import {
+    getLastNGraphContextIdentifiersFromDocument,
+    getLastNGraphContextIdentifiersFromString,
+} from '../graph/identifiers'
 import { type SimpleRepository, inferGitRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
@@ -197,7 +197,7 @@ export class BfgRetriever implements ContextRetriever {
                 new Set([
                     // Get last 10 identifiers from the last candidate insert text
                     // in hopes that LLM partially guessed the right completion.
-                    ...getLastNBfgIdentifiersFromString({
+                    ...getLastNGraphContextIdentifiersFromString({
                         n: 10,
                         document,
                         position,
@@ -205,7 +205,7 @@ export class BfgRetriever implements ContextRetriever {
                         source: lastCandidateCurrentLine,
                     }),
                     // Get last 10 identifiers from the current document prefix.
-                    ...getLastNBfgIdentifiersFromDocument({
+                    ...getLastNGraphContextIdentifiersFromDocument({
                         n: 10,
                         document,
                         position,
