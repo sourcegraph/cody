@@ -552,7 +552,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 126497b9739b7acf8c73db372d6a0b57
+    - _id: 73c610275dd64079cb1736fce4cdbfcc
       _order: 0
       cache: {}
       request:
@@ -607,7 +607,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -660,7 +660,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73399d451ae841eb293cab5a3c36ea70
+    - _id: e47e42fe51d4790e7e948cf76c8ff1d1
       _order: 0
       cache: {}
       request:
@@ -716,7 +716,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
