@@ -36,6 +36,28 @@ interface ContextItemCommon {
      * The source of this context item.
      */
     source?: ContextItemSource
+
+    metadata?: ContextItemMetadata
+}
+
+/**
+ * Metadata associated with a context item, such as an expanded search query or relevance score.
+ */
+export interface ContextItemMetadata {
+    /**
+     * The expanded keyword query that was used to generate this context item.
+     */
+    expandedQuery?: string
+
+    /**
+     * The relevance score of the context item from Bluge (bubbled up from symf)
+     */
+    blugeScore?: number
+
+    /**
+     * Other information relevant to the ranking of this context item
+     */
+    otherDisplayInfo?: string
 }
 
 /**

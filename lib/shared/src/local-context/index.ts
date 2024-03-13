@@ -35,7 +35,7 @@ interface Range {
     endPoint: Point
 }
 
-export interface Result {
+export interface Result extends ResultMetadata {
     fqname: string
     name: string
     type: string
@@ -47,8 +47,26 @@ export interface Result {
     summary: string
 }
 
+export interface ResultMetadata {
+    blugeScore: number
+    blugeExplanation?: BlugeExplanation
+    heuristicBoostID?: string
+}
+
+interface BlugeExplanation {
+    value: number
+    message: string
+    children?: BlugeExplanation[]
+}
+
 export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
+    getResults(
+        query: string,
+        scopeDirs: URI[]
+    ): {
+        expandedQuery: Promise<string>
+        results: Promise<Promise<Result[]>[]>
+    }
 }
 
 /**

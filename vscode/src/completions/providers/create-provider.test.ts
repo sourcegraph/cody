@@ -22,6 +22,7 @@ const getVSCodeConfigurationWithAccessToken = (
     ...config,
     serverEndpoint: 'https://example.com',
     accessToken: 'foobar',
+    experimentalShowChatScores: config.experimentalShowChatScores || false,
 })
 
 const dummyCodeCompletionsClient: CodeCompletionsClient = {

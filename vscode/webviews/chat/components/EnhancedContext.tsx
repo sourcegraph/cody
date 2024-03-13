@@ -4,12 +4,20 @@ import type { URI } from 'vscode-uri'
 
 import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
 
+import type { ContextItemMetadata } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { FileLink } from '../../Components/FileLink'
 import { TranscriptAction } from '../actions/TranscriptAction'
 
 export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
 
 export function useEnhancedContextEnabled(): boolean {
     return React.useContext(EnhancedContextEnabled)
+}
+
+export const IncludeScores: React.Context<boolean> = React.createContext(false)
+
+export function useIncludeScores(): boolean {
+    return React.useContext(IncludeScores)
 }
 
 export interface FileLinkProps {
@@ -19,13 +27,13 @@ export interface FileLinkProps {
     source?: string
     range?: RangeData
     title?: string
+    metadata?: ContextItemMetadata
 }
 
 export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextItem[]
-    fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
+}> = React.memo(function ContextFilesContent({ contextFiles, className }) {
     if (!contextFiles.length) {
         return
     }
@@ -66,6 +74,7 @@ export const EnhancedContext: React.FunctionComponent<{
                         source={file.source}
                         range={file.range}
                         title={file.title}
+                        metadata={file.metadata}
                     />
                 ),
             }))}

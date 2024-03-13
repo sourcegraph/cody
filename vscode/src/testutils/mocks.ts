@@ -818,6 +818,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalOllamaChat: false,
     experimentalSymfContext: true,
     experimentalTracing: false,
+    experimentalShowChatScores: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

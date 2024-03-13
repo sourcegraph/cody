@@ -184,7 +184,6 @@ export const Transcript: React.FunctionComponent<
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
                         EditButtonContainer={EditButtonContainer}
-                        fileLinkComponent={fileLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}
@@ -232,7 +231,6 @@ export const Transcript: React.FunctionComponent<
                         message={welcomeTranscriptMessage}
                         beingEdited={undefined}
                         inProgress={false}
-                        fileLinkComponent={fileLinkComponent}
                         setBeingEdited={() => {}}
                         showEditButton={false}
                         showFeedbackButtons={false}
@@ -249,7 +247,6 @@ export const Transcript: React.FunctionComponent<
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        fileLinkComponent={fileLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}

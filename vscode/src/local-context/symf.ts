@@ -108,13 +108,22 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return { accessToken, serverEndpoint, symfPath }
     }
 
-    public getResults(userQuery: string, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
+    public getResults(
+        userQuery: string,
+        scopeDirs: vscode.Uri[]
+    ): {
+        expandedQuery: Promise<string>
+        results: Promise<Promise<Result[]>[]>
+    } {
         const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
-        return Promise.resolve(
-            scopeDirs
-                .filter(isFileURI)
-                .map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
-        )
+        return {
+            expandedQuery,
+            results: Promise.resolve(
+                scopeDirs
+                    .filter(isFileURI)
+                    .map(scopeDir => this.getResultsForScopeDir(expandedQuery, scopeDir))
+            ),
+        }
     }
 
     /**
@@ -546,7 +555,20 @@ function parseSymfStdout(stdout: string): Result[] {
     }
     const results = JSON.parse(stdout) as RawSymfResult[]
     return results.map(result => {
-        const { fqname, name, type, doc, exported, lang, file: fsPath, range, summary } = result
+        const {
+            fqname,
+            name,
+            type,
+            doc,
+            exported,
+            lang,
+            file: fsPath,
+            range,
+            summary,
+            blugeExplanation,
+            blugeScore,
+            heuristicBoostID,
+        } = result
 
         const { row: startRow, col: startColumn } = range.startPoint
         const { row: endRow, col: endColumn } = range.endPoint
@@ -575,6 +597,9 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
+            blugeExplanation,
+            blugeScore,
+            heuristicBoostID,
         } satisfies Result
     })
 }

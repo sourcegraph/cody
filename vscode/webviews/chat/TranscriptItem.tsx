@@ -14,7 +14,7 @@ import type { CodeBlockActionsProps } from './CodeBlocks'
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
+import { EnhancedContext } from './components/EnhancedContext'
 
 import styles from './TranscriptItem.module.css'
 
@@ -42,7 +42,6 @@ export const TranscriptItem: React.FunctionComponent<
         setBeingEdited: (index?: number) => void
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
-        fileLinkComponent: React.FunctionComponent<FileLinkProps>
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
@@ -63,7 +62,6 @@ export const TranscriptItem: React.FunctionComponent<
     inProgress,
     beingEdited,
     setBeingEdited,
-    fileLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -164,7 +162,6 @@ export const TranscriptItem: React.FunctionComponent<
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext
                             contextFiles={message.contextFiles}
-                            fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
                         />
                     ) : (

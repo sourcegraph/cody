@@ -311,8 +311,8 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
         await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
             const cumulativeResults: SearchPanelFile[] = []
             this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
-            const resultSets = await symf.getResults(query, scopeDirs)
-            for (const resultSet of resultSets) {
+            const { results: resultSets } = symf.getResults(query, scopeDirs)
+            for (const resultSet of await resultSets) {
                 try {
                     cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
                     await this.webview?.postMessage({

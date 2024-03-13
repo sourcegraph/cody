@@ -4,6 +4,7 @@ package com.sourcegraph.cody.protocol_generated
 data class ConfigParams(
   val debugEnable: Boolean? = null,
   val experimentalGuardrails: Boolean? = null,
+  val experimentalShowChatScores: Boolean? = null,
   val serverEndpoint: String? = null,
   val os: String? = null,
   val arch: String? = null,
