@@ -132,7 +132,6 @@ export function params(
         position,
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
-        dynamicMultilineCompletions: false,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -357,7 +356,7 @@ expect.extend({
         }
     },
     /**
-     * Checks if `CompletionParameters[]` contains three items with multi-line stop sequences.
+     * Checks if `CompletionParameters[]` contains one item with multi-line stop sequences.
      */
     toBeMultiLine(requests: CompletionParameters[], _) {
         const { isNot } = this

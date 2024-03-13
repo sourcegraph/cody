@@ -20,8 +20,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    // Dynamically decide wether to show a single line or multiple lines for completions.
-    CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     // Completion requests will be cancelled as soon as a new request comes in and the debounce time
     // will be reduced to try and counter the latency impact.
     CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',

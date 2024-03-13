@@ -36,9 +36,13 @@ import {
 } from '@sourcegraph/cody-shared/src/tracing'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
-import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
@@ -99,10 +103,8 @@ function getMaxContextTokens(model: FireworksModel): number {
     }
 }
 
-const MAX_RESPONSE_TOKENS = 256
-
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n'],
+    singlelineStopSequences: [],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
@@ -197,13 +199,11 @@ class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                timeouts: this.timeouts,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            timeouts: this.timeouts,
+            lineNumberDependentCompletionParams,
+        })
 
         const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
@@ -230,7 +230,7 @@ class FireworksProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,

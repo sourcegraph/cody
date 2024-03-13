@@ -22,7 +22,6 @@ const testDocContext = getCurrentDocContext({
     position: testPosition,
     maxPrefixLength: 100,
     maxSuffixLength: 0,
-    dynamicMultilineCompletions: false,
 })
 
 const DEFAULT_HINTS = {
@@ -171,7 +170,6 @@ describe('JaccardSimilarityRetriever', () => {
             position: testPosition,
             maxPrefixLength: 100,
             maxSuffixLength: 0,
-            dynamicMultilineCompletions: false,
         })
 
         const snippets = await retriever.retrieve({

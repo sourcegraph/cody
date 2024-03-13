@@ -237,7 +237,6 @@ async function doGetInlineCompletions(
             docContext: lastAcceptedCompletionItem.requestParams.docContext,
             insertText: lastAcceptedCompletionItem.analyticsItem.insertText,
             languageId: lastAcceptedCompletionItem.requestParams.document.languageId,
-            dynamicMultilineCompletions: false,
         })
         if (
             docContext.prefix === docContextOfLastAcceptedAndInsertedCompletionItem.prefix &&
@@ -408,7 +407,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         docContext,
         document,
         position,
-        dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
         // For now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1500,
