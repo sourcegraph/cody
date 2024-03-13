@@ -107,7 +107,11 @@ interface QueryWrappers {
 /**
  * Query wrappers with custom post-processing logic.
  */
-function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser, languageId: SupportedLanguage): QueryWrappers {
+function getLanguageSpecificQueryWrappers(
+    queries: ResolvedQueries,
+    _parser: Parser,
+    languageId: SupportedLanguage
+): QueryWrappers {
     return {
         getSinglelineTrigger: (root, start, end) => {
             const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
@@ -131,7 +135,12 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
         },
         getDocumentableNode: (root, start, end) => {
-            const captures = queries.documentableNodes.compiled.captures(root, start, end)
+            const captures = queries.documentableNodes.compiled.captures(
+                root,
+                { ...start, column: 0 },
+                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
+            )
+            console.log(captures)
             const symbolCaptures = []
             const rangeCaptures = []
 
