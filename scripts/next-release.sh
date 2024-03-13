@@ -9,7 +9,7 @@ set -eu
 
 # Check the number of arguments
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 [--major | --minor | --path]"
+  echo "Usage: $0 [--major | --minor | --patch]"
   exit 1
 fi
 
@@ -38,7 +38,7 @@ if ! command -v gh &>/dev/null; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/jetbrains --limit 20 --exclude-drafts --exclude-pre-releases | sed 's/Latest//' | awk '$2 ~ /v[0-9]+\.[0-9]+\.[0-9]+$/ { print $2, $3; exit }')
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/jetbrains --limit 20 --exclude-drafts | sed 's/Latest//' | sed 's/Pre-release//' | awk '$2 ~ /v[0-9]+\.[0-9]+\.[0-9]+$/ { print $2, $3; exit }')
 MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1)
 MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f2)
 LAST_RELEASE_TIMESTAMP=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $2 }')
@@ -63,6 +63,6 @@ elif [ "$NEXT_RELEASE_ARG" == "--patch" ]; then
   BUILDNUM="$(($BUILDNUM_MINUTES * $MAX_SEMVER_PATCH_NUMBER / $MINUTES_IN_ONE_YEAR ))"
   echo "$MAJOR.$MINOR.$BUILDNUM"
 else
-  echo "Invalid argument. Usage: $0 [--major | --minor | --path]"
+  echo "Invalid argument. Usage: $0 [--major | --minor | --patch]"
   exit 1
 fi

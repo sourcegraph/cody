@@ -13,12 +13,15 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ### Prerequisites
 
-- Java 11: we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`.
+- Java 11: we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed,
+  run `sdk use java 11.0.15-tem`.
   Confirm that you have Java 11 installed with `java -version`.
 - Set up the Cody agent dev environment.
-  - Clone `https://github.com/sourcegraph/cody` in a sibling directory.
-  - Install its dependencies. The easiest way is [with `asdf`](https://github.com/sourcegraph/cody/blob/main/doc/dev/index.md). If not using `asdf`, you just need to install the dependency versions listed in the `.tool-versions` file in that repository.
-  - From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
+    - Clone `https://github.com/sourcegraph/cody` in a sibling directory.
+    - Install its dependencies. The easiest way
+      is [with `asdf`](https://github.com/sourcegraph/cody/blob/main/doc/dev/index.md). If not using `asdf`, you just
+      need to install the dependency versions listed in the `.tool-versions` file in that repository.
+    - From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
 
 ### Running
 
@@ -46,8 +49,10 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 Few tips and tricks regarding versioning of the tooling:
 
-- If you are using macOS and chose not to use `asdf`, use `corepack`, not `brew`, to install `pnpm`  version `8.6.7`: `corepack install --global pnpm@8.6.7`
-  Currently `brew` does not allow you to pick custom `pnpm` version which is causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
+- If you are using macOS and chose not to use `asdf`, use `corepack`, not `brew`, to install `pnpm`
+  version `8.6.7`: `corepack install --global pnpm@8.6.7`
+  Currently `brew` does not allow you to pick custom `pnpm` version which is
+  causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
 - Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
 - If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
   Otherwise you won't see effects of your changes.
@@ -93,16 +98,23 @@ We plan to make releases every other Monday. Nightly version can be released as 
 
 First, choose whether to publish a new version of nightly or stable.
 
-Use the following command for a **nightly** release:
+Use the following command for a **patch** release:
 
 ```shell
-./scripts/push-git-tag-for-next-release.sh --nightly
+./scripts/push-git-tag-for-next-release.sh --patch
 ```
 
-Or this one for a **stable** release:
+Or this one for a **minor** release:
 
 ```shell
-./scripts/push-git-tag-for-next-release.sh --stable
+./scripts/push-git-tag-for-next-release.sh --minor
+```
+
+Or this one for a **major** release
+(note it should be user only on special occasions):
+
+```shell
+./scripts/push-git-tag-for-next-release.sh --major
 ```
 
 This script runs `verify-release.sh`, which takes a long time to run with a clean cache, which is why we don't run it in
@@ -157,10 +169,10 @@ On the agent (TypeScript) side, and also on the plugin (Java/Kotlin) side.
 There are two supported configurations for debugging this way:
 
 1. The Cody extension spawns the agent subprocess normally, but adds `--inspect`
-   - JetBrains can connect and debug the agent via port 9229
+    - JetBrains can connect and debug the agent via port 9229
 2. Or, JetBrains spawns the agent in debug mode
-   - The agent will listen on port 3113
-   - The Cody extension connects via socket to the "remote" agent
+    - The agent will listen on port 3113
+    - The Cody extension connects via socket to the "remote" agent
 
 Option 1 is the simplest, and probably makes the most sense for you
 to use if you are uncertain which method to use for debugging.
@@ -182,8 +194,9 @@ For both debugging setups (Cody-spawns and JB-spawned), you will need:
 
 You'll always have at least 2 IntelliJ project windows open: One for
 debugging the Java side, and one for the TS side.
-  - also a 3rd intellij window pops up when you run your plugin,
-    though this is a new instance completely
+
+- also a 3rd intellij window pops up when you run your plugin,
+  though this is a new instance completely
 
 If you check `Store as project file` and use the default, it will
 remember your configuration between sessions.

@@ -23,7 +23,7 @@ fi
 
 # Check the number of arguments
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 [--major | --minor | --path]"
+  echo "Usage: $0 [--major | --minor | --patch]"
   exit 1
 fi
 

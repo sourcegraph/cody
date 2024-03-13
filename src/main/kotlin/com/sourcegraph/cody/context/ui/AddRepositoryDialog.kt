@@ -12,7 +12,6 @@ import com.sourcegraph.cody.context.RemoteRepoUtils
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.vcs.CodebaseName
 import com.sourcegraph.vcs.convertGitCloneURLToCodebaseNameOrError
-import org.jetbrains.annotations.NotNull
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.net.URL
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeUnit
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
+import org.jetbrains.annotations.NotNull
 
 class AddRepositoryDialog(
     private val project: Project,
