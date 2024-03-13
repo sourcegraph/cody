@@ -1,5 +1,6 @@
 import type { Agent } from 'http'
 
+
 /**
  * By hard-requiring isomorphic-fetch, we ensure that even in newer Node environments that include
  * `fetch` by default, we still use the `node-fetch` polyfill and have access to the networking code
@@ -23,7 +24,7 @@ import {
  */
 export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
-export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
+export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {        
     if (customUserAgent) {
         init = init ?? {}
         const headers = new Headers(init?.headers)

@@ -1,6 +1,6 @@
-import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
+import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
@@ -229,6 +229,7 @@ interface EvaluateFeatureFlagResponse {
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
     if (isError(response)) {
+        console.error("IS ERROR RESPONSE", response)
         return response
     }
     if (response.errors && response.errors.length > 0) {
@@ -767,7 +768,7 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
-        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+       const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -853,9 +854,9 @@ export class ConfigFeaturesSingleton {
         // Initiate the first fetch and set up a recurring fetch every 30 seconds
         this.refreshConfigFeatures()
         // Fetch config features periodically every 30 seconds only if isDotCom is false
-        if (!graphqlClient.isDotCom()) {
-            setInterval(() => this.refreshConfigFeatures(), 30000)
-        }
+        // if (!graphqlClient.isDotCom()) {
+        //     setInterval(() => this.refreshConfigFeatures(), 30000)
+        // }
     }
 
     // Static method to get the singleton instance
@@ -867,14 +868,17 @@ export class ConfigFeaturesSingleton {
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    private refreshConfigFeatures(): void {
+    private refreshConfigFeatures(): void {        
         const previousConfigFeatures = this.configFeatures
+        console.error(`previous features: ${previousConfigFeatures}`)
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
             if (
                 !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
             ) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
+            } else{
+                console.error("HELLOOOOOO")
             }
             // In case of an error, return previously fetched value
             return previousConfigFeatures
@@ -888,9 +892,11 @@ export class ConfigFeaturesSingleton {
     // Fetches the config features from the server and handles errors
     private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
         // Execute the GraphQL query to fetch the configuration features
+        console.error("GETTING CONFIG FEATURES")
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {
             // If there's an error, throw it to be caught in refreshConfigFeatures
+            console.error("THROWING FEATURES")
             throw features
         }
         // If the fetch is successful, store the fetched configuration features
@@ -898,7 +904,7 @@ export class ConfigFeaturesSingleton {
     }
 }
 
-async function verifyResponseCode(response: Response): Promise<Response> {
+async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

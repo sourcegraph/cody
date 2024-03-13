@@ -1,8 +1,6 @@
 import http from 'http'
 import https from 'https'
 
-import { SocksProxyAgent } from 'socks-proxy-agent'
-
 import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { agent } from '@sourcegraph/cody-shared/src/fetch'
@@ -17,23 +15,16 @@ const pacProxyAgent = 'PacProxyAgent'
 /**
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
-const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-let socksProxyAgent: SocksProxyAgent
 
-function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
-    return ({ protocol }) => {
-        if (proxy?.startsWith('socks') && !socksProxyAgent) {
-            socksProxyAgent = new SocksProxyAgent(proxy, {
-                keepAlive: true,
-                keepAliveMsecs: 60000,
-            })
-            return socksProxyAgent
-        }
-        if (protocol === 'http:') {
-            return httpAgent
-        }
-        return httpsAgent
+https.globalAgent.options.keepAlive= true
+https.globalAgent.options.keepAliveMsecs=60000
+
+function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {   
+    return ({ protocol }) => {        
+        if (protocol === 'http:') {         
+            return http.globalAgent
+        }        
+        return https.globalAgent
     }
 }
 
