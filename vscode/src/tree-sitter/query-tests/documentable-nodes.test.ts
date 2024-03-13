@@ -17,6 +17,28 @@ describe('getDocumentableNode', () => {
         })
     })
 
+    it('typescriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescriptreact)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getDocumentableNode,
+            sourcesPath: 'test-data/documentable-node.tsx',
+        })
+    })
+
+    it('javascriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.javascriptreact)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getDocumentableNode,
+            sourcesPath: 'test-data/documentable-node.jsx',
+        })
+    })
+
     it('python', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.python)
 

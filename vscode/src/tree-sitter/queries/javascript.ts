@@ -126,9 +126,21 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 `
 
 const JS_DOCUMENTABLE_NODES_QUERY = dedent`
-    ; Identifiers
+    ; Functions
     ;--------------------------------
-    (_ name: (identifier) @symbol.identifier) @range.identifier
+    (function_declaration
+        name: (identifier) @symbol.function) @range.function
+    (generator_function_declaration
+        name: (identifier) @symbol.function) @range.function
+    (function_expression
+        name: (identifier) @symbol.function) @range.function
+
+    ; Variables
+    ;--------------------------------
+    (variable_declarator
+        name: (identifier) @symbol.identifier) @range.identifier
+    (class_declaration
+        name: (_) @symbol.identifier) @range.identifier
 
     ; Property Identifiers
     ;--------------------------------
@@ -141,14 +153,25 @@ const JS_DOCUMENTABLE_NODES_QUERY = dedent`
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ${JS_DOCUMENTABLE_NODES_QUERY}
 
+    ; Property identifiers
+    ;--------------------------------
+    (public_field_definition
+        name: (property_identifier) @symbol.identifier) @range.identifier
+
     ; Type Identifiers
     ;--------------------------------
-    (_
+    (interface_declaration
         name: (type_identifier) @symbol.identifier) @range.identifier
+    (type_alias_declaration
+        name: (type_identifier) @symbol.identifier) @range.identifier
+    (enum_declaration
+        name: (identifier) @symbol.identifier) @range.identifier
 
     ; Type Signatures
     ;--------------------------------
     ((call_signature) @symbol.function) @range.function
+    (function_signature
+        name: (identifier) @symbol.function) @range.function
     (interface_declaration
         (interface_body
             (property_signature name: (property_identifier) @symbol.identifier) @range.identifier))

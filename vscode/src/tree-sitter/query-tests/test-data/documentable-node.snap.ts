@@ -8,42 +8,42 @@
   function wrapper() {
       console.log('wrapper')
       function test() {
-//    ^ start range.identifier[1]
-//             ^^^^ symbol.identifier[1]
+//    ^ start range.function[1]
+//             ^^^^ symbol.function[1]
 //                █
       }
-//    ^ end range.identifier[1]
+//    ^ end range.function[1]
   }
 
 // Nodes types:
-// symbol.identifier[1]: identifier
-// range.identifier[1]: function_declaration
+// symbol.function[1]: identifier
+// range.function[1]: function_declaration
 
 // ------------------------------------
 
   function testFunc() {
-//^ start range.identifier[1]
-//         ^^^^^^^^ symbol.identifier[1]
+//^ start range.function[1]
+//         ^^^^^^^^ symbol.function[1]
 //              █
       wrapper
   }
-//^ end range.identifier[1]
+//^ end range.function[1]
 
 // Nodes types:
-// symbol.identifier[1]: identifier
-// range.identifier[1]: function_declaration
+// symbol.function[1]: identifier
+// range.function[1]: function_declaration
 
 // ------------------------------------
 
   function testParameter(val) {
-//^ start range.identifier[1]
+//^ start range.function[1]
 //                       █
       wrapper
   }
-//^ end range.identifier[1]
+//^ end range.function[1]
 
 // Nodes types:
-// range.identifier[1]: function_declaration
+// range.function[1]: function_declaration
 
 // ------------------------------------
 
@@ -104,13 +104,13 @@
 // ------------------------------------
 
   function signature()
-//^^^^^^^^^^^^^^^^^^^^ range.identifier[1]
-//         ^^^^^^^^^ symbol.identifier[1]
+//^^^^^^^^^^^^^^^^^^^^ range.function[1]
+//         ^^^^^^^^^ symbol.function[1]
 //             █
 
 // Nodes types:
-// symbol.identifier[1]: identifier
-// range.identifier[1]: function_signature
+// symbol.function[1]: identifier
+// range.function[1]: function_signature
 
 // ------------------------------------
 
