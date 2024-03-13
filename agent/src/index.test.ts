@@ -180,9 +180,7 @@ describe('Agent', () => {
           [
             "   return a + b;",
           ]
-        `,
-                explainPollyError
-            )
+        `)
             client.notify('autocomplete/completionAccepted', {
                 completionID: completions.items[0].id,
             })
@@ -214,9 +212,7 @@ describe('Agent', () => {
                 "speaker": "assistant",
                 "text": " Hi there!",
               }
-            `,
-                explainPollyError
-            )
+            `)
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
@@ -502,9 +498,7 @@ describe('Agent', () => {
             expect(texts).toMatchInlineSnapshot(
                 `
               []
-            `,
-                explainPollyError
-            )
+            `)
         }, 10_000)
 
         it('chat/submitMessage on an ignored file (addEnhancedContext: true)', async () => {
