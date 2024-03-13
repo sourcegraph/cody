@@ -209,11 +209,13 @@ export class GhostHintDecorator implements vscode.Disposable {
         authProvider.addChangeListener(authStatus => this.updateEnablement(authStatus))
 
         // Listen to configuration changes (e.g. if the setting is disabled)
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('cody')) {
-                this.updateEnablement(authProvider.getAuthStatus())
-            }
-        })
+        this.disposables.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('cody')) {
+                    this.updateEnablement(authProvider.getAuthStatus())
+                }
+            })
+        )
     }
 
     private init(enabledFeatures: EnabledFeatures): void {
@@ -245,7 +247,10 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                     const selection = event.selections[0]
 
-                    if (enabledFeatures.Document) {
+                    const isDirtyTyping =
+                        event.kind === vscode.TextEditorSelectionChangeKind.Keyboard &&
+                        editor.document.isDirty
+                    if (enabledFeatures.Document && !isDirtyTyping) {
                         const documentableSymbol = this.getThrottledDocumentableSymbol(
                             editor.document,
                             selection.active
