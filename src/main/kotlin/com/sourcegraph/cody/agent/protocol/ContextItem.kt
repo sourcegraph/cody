@@ -1,11 +1,7 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonNull
-import com.google.gson.JsonObject
-import com.google.gson.JsonSerializer
+import com.google.gson.*
+import java.io.File
 import java.lang.reflect.Type
 import java.net.URI
 import java.nio.file.Path
@@ -32,6 +28,19 @@ sealed class ContextItem {
           }
         }
   }
+
+  // TODO(beyang): temporary displayPath implementation. This should be replaced by acquiring the
+  // display path from the agent
+  // Current behavior: if the path contains more than three components, display the last three.
+  fun displayPath(): String {
+    val path = uri.path
+    val pathComponents = path.split("/") // uri path is posix-style
+    if (pathComponents.size > 3) {
+      return "...${File.separator}${pathComponents.subList(pathComponents.size - 3, pathComponents.size).joinToString(
+                File.separator)}"
+    }
+    return path.replace("/", File.separator)
+  }
 }
 
 data class ContextItemFile(
@@ -44,7 +53,8 @@ data class ContextItemFile(
     val source: ContextFileSource? =
         null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection,
     // terminal
-    val content: String? = null
+    val content: String? = null,
+    val isTooLarge: Boolean? = null
 ) : ContextItem() {
 
   fun isLocal() = repoName == null

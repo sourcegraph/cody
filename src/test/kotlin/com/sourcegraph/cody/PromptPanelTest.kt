@@ -41,7 +41,7 @@ class PromptPanelTest : TestCase() {
         )
 
     for (case in cases) {
-      assertEquals(case.expected, findAtExpressions(case.text))
+      assertEquals(case.expected, PromptPanel.findAtExpressions(case.text))
     }
   }
 }
