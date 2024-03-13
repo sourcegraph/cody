@@ -6,7 +6,7 @@ import type { FixupControlApplicator } from './non-stop/strategies'
 // which components are used depending on the client's capabilities.
 export interface ExtensionClient {
     // Create the component which decorates FixupTasks with controls.
-    createFixupControlApplicator(files: FixupActor & FixupFileCollection): FixupControlApplicator
+    createFixupControlApplicator(fixups: FixupActor & FixupFileCollection): FixupControlApplicator
 }
 
 export function defaultVSCodeExtensionClient(): ExtensionClient {

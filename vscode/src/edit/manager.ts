@@ -38,7 +38,7 @@ export interface EditManagerOptions {
 // generic FixupTasks, and pairs a FixupTask with an EditProvider to generate
 // a completion.
 export class EditManager implements vscode.Disposable {
-    private controller: FixupController
+    private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
     private models: ModelProvider[] = []
