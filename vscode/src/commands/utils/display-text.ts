@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath, toRangeData } from '@sourcegraph/cody-shared'
 import { trailingNonAlphaNumericRegex } from './test-commands'
 
 /**
@@ -20,12 +20,19 @@ export function createDisplayTextWithFileLinks(humanInput: string, files: Contex
     for (const file of files) {
         // +1 on the end line numbers because we want to make sure to include everything on the end line by
         // including the next line at position 0.
-        formattedText = replaceFileNameWithMarkdownLink(
-            formattedText,
-            file.uri,
-            file.range && new vscode.Range(file.range.start.line, 0, file.range.end.line + 1, 0),
-            file.type === 'symbol' ? file.symbolName : undefined
-        )
+        try {
+            const range = file.range ? toRangeData(file.range) : undefined
+            formattedText = replaceFileNameWithMarkdownLink(
+                formattedText,
+                file.uri,
+                range && new vscode.Range(range.start.line, 0, range.end.line + 1, 0),
+                file.type === 'symbol' ? file.symbolName : undefined
+            )
+        } catch (error) {
+            console.error('createDisplayTextWithFileLinks error:', error)
+            // Just use text without links as a fallback. This can happen on chat history that was
+            // serialized using an old and unrecognized format, which is a subtle bug.
+        }
     }
     return formattedText
 }
