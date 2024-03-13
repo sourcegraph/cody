@@ -30,9 +30,7 @@
     "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
   },
   "devDependencies": {
-    "@babel/traverse": ">=7.23.2",
     "@biomejs/biome": "1.5.2",
-    "@koa/cors": ">=5.0.0",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^7.0.26",
     "@storybook/addon-interactions": "^7.0.26",
@@ -43,23 +41,16 @@
     "@types/react": "18.2.42",
     "@types/react-dom": "18.2.17",
     "@vitejs/plugin-react": "^4.0.2",
-    "axios": ">=1.6.0",
-    "decode-uri-component": ">=0.2.1",
     "esbuild": "^0.18.11",
-    "follow-redirects": ">=1.15.4",
-    "http-cache-semantics": ">=4.1.1",
-    "ip": ">=2.0.1",
     "jsdom": "^22.1.0",
     "knip": "^3.13.2",
-    "semver": ">=7.6.0",
     "storybook": "^7.0.26",
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "vite": "^5.1.4",
-    "vitest": "^1.2.0",
-    "word-wrap": ">=1.2.4"
+    "vitest": "^1.2.0"
   },
   "dependencies": {
     "ignore": "^5.2.4",
@@ -68,7 +59,17 @@
   },
   "packageManager": "pnpm@8.6.7",
   "resolutions": {
-    "tslib": "2.1.0"
+    "@babel/traverse": ">=7.23.2",
+    "@koa/cors": ">=5.0.0",
+    "axios": ">=1.6.0",
+    "decode-uri-component": ">=0.2.1",
+    "follow-redirects": ">=1.15.4",
+    "http-cache-semantics": ">=4.1.1",
+    "ip": ">=2.0.1",
+    "semver": ">=7.6.0",
+    "tslib": "2.1.0",
+    "vitest": "^1.2.0",
+    "word-wrap": ">=1.2.4"
   },
   "pnpm": {
     "packageExtensions": {
