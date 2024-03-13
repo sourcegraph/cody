@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+/*
 export enum CodyTaskState {
     idle = 'idle',
     working = 'working',
@@ -10,6 +11,19 @@ export enum CodyTaskState {
     finished = 'finished',
     error = 'error',
     pending = 'pending',
+}
+*/
+
+export enum CodyTaskState {
+    idle = 0,
+    working = 1,
+    inserting = 2,
+    applying = 3,
+    formatting = 4,
+    applied = 5,
+    finished = 6,
+    error = 7,
+    pending = 8,
 }
 
 /**

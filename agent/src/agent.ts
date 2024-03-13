@@ -38,17 +38,12 @@ import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
-import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
-import { FixupCodeLenses } from '../../vscode/src/non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
-import {
-    type FixupControlApplicator,
-    NullFixupControlApplicator,
-} from '../../vscode/src/non-stop/strategies'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentCodeLenses } from './AgentCodeLenses'
+import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
@@ -165,6 +160,16 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     return agent
 }
 
+export function errorToCodyError(error?: Error): CodyError | undefined {
+    return error
+        ? {
+              message: error.message,
+              stack: error.stack,
+              cause: error.cause instanceof Error ? errorToCodyError(error.cause) : undefined,
+          }
+        : undefined
+}
+
 export class Agent extends MessageHandler implements ExtensionClient {
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
@@ -207,12 +212,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     })
 
     public webPanels = new AgentWebviewPanels()
-
-    // A map that mirrors `FixupController.tasks`. There's no clean API to
-    // access `FixupController` so we mirror it here instead. It would be nice
-    // to clean this up in the future so we have only a single source of truth
-    // for ongoing fixup tasks.
-    public tasks = new Map<string, FixupTask>()
 
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
@@ -717,6 +716,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        // TODO: JetBrains is buggy and serializes 'string' as ['string'].
+        // The params[0] unpacking here only works because of the type punning
+        // params: string means params[0]: string too. Fix JetBrains client to
+        // send string values as strings; or encode these parameter values as
+        // an object holding a string.
+        this.registerAuthenticatedRequest('editTask/accept', params => {
+            this.fixups?.accept(params[0])
+            return Promise.resolve(null)
+        })
+        this.registerAuthenticatedRequest('editTask/undo', params => {
+            this.fixups?.undo(params[0])
+            return Promise.resolve(null)
+        })
+        this.registerAuthenticatedRequest('editTask/cancel', params => {
+            this.fixups?.cancel(params[0])
+            return Promise.resolve(null)
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
@@ -870,13 +887,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     // ExtensionClient callbacks.
 
+    private fixups: AgentFixupControls | undefined
+
     public createFixupControlApplicator(
         files: FixupActor & FixupFileCollection
     ): FixupControlApplicator {
-        return this.clientInfo?.capabilities?.codeLenses === 'enabled' &&
-            this.clientInfo?.capabilities?.fixupControls === 'lenses'
-            ? new FixupCodeLenses(files)
-            : new NullFixupControlApplicator()
+        this.fixups = new AgentFixupControls(files, this.notify.bind(this))
+        return this.fixups
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
@@ -1059,36 +1076,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
             )
         }
-        this.tasks.set(result.task.id, result.task)
-        const { id } = result.task
-        const disposable = result.task.onDidStateChange(newState => {
-            this.notify('editTaskState/didChange', {
-                id,
-                state: newState,
-                error: this.codyError(result.task?.error),
-            })
-            switch (newState) {
-                case CodyTaskState.finished:
-                case CodyTaskState.error:
-                    disposable.dispose()
-                    break
-            }
-        })
         return {
-            id,
-            state: result.task?.state,
-            error: this.codyError(result.task?.error),
+            id: result.task.id,
+            state: result.task.state,
+            error: errorToCodyError(result.task.error),
         }
-    }
-
-    private codyError(error?: Error): CodyError | undefined {
-        return error
-            ? {
-                  message: error.message,
-                  stack: error.stack,
-                  cause: error.cause instanceof Error ? this.codyError(error.cause) : undefined,
-              }
-            : undefined
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
