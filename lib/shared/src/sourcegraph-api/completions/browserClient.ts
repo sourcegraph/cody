@@ -39,7 +39,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                     try {
                         errorMessage = await response.text()
                     } catch (error) {
-                        // We show the generic error message in this case                        
+                        // We show the generic error message in this case
                         console.error(error)
                     }
                     const error = new Error(

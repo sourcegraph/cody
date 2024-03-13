@@ -75,7 +75,9 @@ export class OpenTelemetryService {
 
         // Add the default tracer exporter used in production.
         this.tracerProvider.addSpanProcessor(
-            new BatchSpanProcessor(new OTLPTraceExporter({ url: traceUrl,httpAgentOptions:{rejectUnauthorized:false} }))
+            new BatchSpanProcessor(
+                new OTLPTraceExporter({ url: traceUrl, httpAgentOptions: { rejectUnauthorized: false } })
+            )
         )
 
         // Add the console exporter used in development for verbose logging and debugging.
