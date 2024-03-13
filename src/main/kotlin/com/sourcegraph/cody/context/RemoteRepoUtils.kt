@@ -8,14 +8,18 @@ import com.sourcegraph.vcs.CodebaseName
 import java.util.concurrent.CompletableFuture
 
 object RemoteRepoUtils {
-  fun getRepository(project: Project, codebaseName: CodebaseName): CompletableFuture<Repo?> {
-    val result = CompletableFuture<Repo?>()
+  fun getRepositories(
+      project: Project,
+      codebaseNames: List<CodebaseName>
+  ): CompletableFuture<List<Repo>> {
+    val result = CompletableFuture<List<Repo>>()
     CodyAgentService.withAgent(project) { agent ->
       try {
-        val repos = agent.server.getRepoIds(GetRepoIdsParam(listOf(codebaseName.value), 1)).get()
-        result.complete(repos?.repos?.firstOrNull())
+        val param = GetRepoIdsParam(codebaseNames.map { it.value }, codebaseNames.size)
+        val repos = agent.server.getRepoIds(param).get()
+        result.complete(repos?.repos ?: emptyList())
       } catch (e: Exception) {
-        result.complete(null)
+        result.complete(emptyList())
       }
     }
     return result

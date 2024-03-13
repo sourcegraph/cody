@@ -92,10 +92,10 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       } else {
         CodyAgentCodebase.getInstance(project).getUrl().thenApply { repoUrl ->
           val codebaseName = convertGitCloneURLToCodebaseNameOrError(repoUrl)
-          RemoteRepoUtils.getRepository(project, codebaseName)
+          RemoteRepoUtils.getRepositories(project, listOf(codebaseName))
               .completeOnTimeout(null, 15, TimeUnit.SECONDS)
-              .thenApply { repo ->
-                if (repo != null) {
+              .thenApply { repos ->
+                if (repos?.size == 1) {
                   ApplicationManager.getApplication().invokeLater {
                     addRemoteRepository(codebaseName)
                   }
@@ -126,10 +126,11 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   private fun isDotComAccount() =
       CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() ?: false
 
-  private fun getRepoByUrlAndRun(codebaseName: CodebaseName, consumer: Consumer<Repo>) {
-    RemoteRepoUtils.getRepository(project, codebaseName).thenApply {
-      it?.let { repo -> consumer.accept(repo) }
-    }
+  private fun getReposByUrlAndRun(
+      codebaseNames: List<CodebaseName>,
+      consumer: Consumer<List<Repo>>
+  ) {
+    RemoteRepoUtils.getRepositories(project, codebaseNames).thenApply { consumer.accept(it) }
   }
 
   private fun enableRemote(codebaseName: CodebaseName) {
@@ -137,10 +138,17 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       contextState.remoteRepositories.find { it.codebaseName == codebaseName.value }?.isEnabled =
           true
     }
-    getRepoByUrlAndRun(codebaseName) { repo ->
+
+    val enabledCodebases =
+        getContextState()
+            ?.remoteRepositories
+            ?.filter { it.isEnabled }
+            ?.mapNotNull { it.codebaseName }
+            ?.map { CodebaseName(it) } ?: listOf()
+
+    getReposByUrlAndRun(enabledCodebases) { repos ->
       chatSession.sendWebviewMessage(
-          WebviewMessage(
-              command = "context/choose-remote-search-repo", explicitRepos = listOf(repo)))
+          WebviewMessage(command = "context/choose-remote-search-repo", explicitRepos = repos))
     }
   }
 
@@ -150,9 +158,12 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
       contextState.remoteRepositories.find { it.codebaseName == codebaseName.value }?.isEnabled =
           false
     }
-    getRepoByUrlAndRun(codebaseName) { repo ->
-      chatSession.sendWebviewMessage(
-          WebviewMessage(command = "context/remove-remote-search-repo", repoId = repo.id))
+
+    getReposByUrlAndRun(listOf(codebaseName)) { repos ->
+      repos.firstOrNull()?.let { repo ->
+        chatSession.sendWebviewMessage(
+            WebviewMessage(command = "context/remove-remote-search-repo", repoId = repo.id))
+      }
     }
   }
 
