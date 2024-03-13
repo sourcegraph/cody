@@ -170,6 +170,9 @@ export class GhostHintDecorator implements vscode.Disposable {
     private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
     private getThrottledDocumentableSymbol: DebouncedFunc<typeof this.getDocumentableSymbol>
 
+    /** Store the last line that the user typed on, we want to avoid showing the text here */
+    private lastLineTyped: number | null = null
+
     /**
      * Tracks whether the user has recorded an enrollment for each ghost variant.
      * This is _only_ to help us measure usage via an A/B test.
@@ -214,6 +217,16 @@ export class GhostHintDecorator implements vscode.Disposable {
                 if (e.affectsConfiguration('cody')) {
                     this.updateEnablement(authProvider.getAuthStatus())
                 }
+            }),
+            vscode.workspace.onDidChangeTextDocument(event => {
+                if (event.document !== vscode.window.activeTextEditor?.document) {
+                    return
+                }
+                this.lastLineTyped = event.contentChanges[0]?.range.end.line ?? null
+            }),
+            vscode.window.onDidChangeActiveTextEditor(() => {
+                // Clear any stored line when switching to a new editor
+                this.lastLineTyped = null
             })
         )
     }
@@ -247,10 +260,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                     const selection = event.selections[0]
 
-                    const isDirtyTyping =
-                        event.kind === vscode.TextEditorSelectionChangeKind.Keyboard &&
-                        editor.document.isDirty
-                    if (enabledFeatures.Document && !isDirtyTyping) {
+                    if (enabledFeatures.Document && selection.active.line !== this.lastLineTyped) {
                         const documentableSymbol = this.getThrottledDocumentableSymbol(
                             editor.document,
                             selection.active
