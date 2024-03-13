@@ -228,8 +228,7 @@ interface EvaluateFeatureFlagResponse {
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
-    if (isError(response)) {
-        console.error("IS ERROR RESPONSE", response)
+    if (isError(response)) {        
         return response
     }
     if (response.errors && response.errors.length > 0) {
@@ -869,17 +868,14 @@ export class ConfigFeaturesSingleton {
 
     // Refreshes the config features by fetching them from the server and caching the result
     private refreshConfigFeatures(): void {        
-        const previousConfigFeatures = this.configFeatures
-        console.error(`previous features: ${previousConfigFeatures}`)
+        const previousConfigFeatures = this.configFeatures        
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
             if (
                 !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
             ) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
-            } else{
-                console.error("HELLOOOOOO")
-            }
+            } 
             // In case of an error, return previously fetched value
             return previousConfigFeatures
         })
@@ -891,12 +887,10 @@ export class ConfigFeaturesSingleton {
 
     // Fetches the config features from the server and handles errors
     private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
-        // Execute the GraphQL query to fetch the configuration features
-        console.error("GETTING CONFIG FEATURES")
+        // Execute the GraphQL query to fetch the configuration features        
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {
-            // If there's an error, throw it to be caught in refreshConfigFeatures
-            console.error("THROWING FEATURES")
+            // If there's an error, throw it to be caught in refreshConfigFeatures            
             throw features
         }
         // If the fetch is successful, store the fetched configuration features
