@@ -55,6 +55,7 @@ import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
+import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
@@ -739,6 +740,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         void this.postMessage({ type: 'errors', errors: error.message })
+        captureException(error)
     }
 
     private postChatModels(): void {
