@@ -14,7 +14,10 @@ import type * as contextRanking from './context-ranking-protocol'
 import type * as embeddings from './embeddings-protocol'
 
 type Requests = bfg.Requests & agent.Requests & embeddings.Requests & contextRanking.Requests
-type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
+type Notifications = bfg.Notifications &
+    agent.Notifications &
+    embeddings.Notifications &
+    contextRanking.Notifications
 
 // This file is a standalone implementation of JSON-RPC for Node.js
 // ReadStream/WriteStream, which conventionally map to stdin/stdout.

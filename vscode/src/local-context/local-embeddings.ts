@@ -547,7 +547,7 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }
@@ -560,6 +560,7 @@ export class LocalEmbeddingsController
             const resp = await service.request('embeddings/query', {
                 repoName: lastRepo.repoName,
                 query,
+                numResults,
             })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
             return resp.results.map(result => ({
