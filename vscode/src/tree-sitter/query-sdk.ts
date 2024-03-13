@@ -140,7 +140,6 @@ function getLanguageSpecificQueryWrappers(
                 { ...start, column: 0 },
                 end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
             )
-            console.log(captures)
             const symbolCaptures = []
             const rangeCaptures = []
 
