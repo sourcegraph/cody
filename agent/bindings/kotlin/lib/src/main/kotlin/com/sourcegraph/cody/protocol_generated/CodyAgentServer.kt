@@ -68,6 +68,8 @@ interface CodyAgentServer {
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null>
   @JsonRequest("webview/receiveMessage")
   fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null>
+  @JsonRequest("workspace/foldingRanges")
+  fun workspace_foldingRanges(params: Workspace_FoldingRangesParams): CompletableFuture<List<FoldingRange>>
   @JsonRequest("testing/progress")
   fun testing_progress(params: Testing_ProgressParams): CompletableFuture<Testing_ProgressResult>
   @JsonRequest("testing/networkRequests")
