@@ -14,7 +14,7 @@ export default defineProjectWithDefaults(__dirname, {
         target: 'esnext',
         assetsDir: '.',
         minify: false,
-        sourcemap: true,
+        sourcemap: false,
         reportCompressedSize: false,
         rollupOptions: {
             watch: {
