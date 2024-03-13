@@ -53,16 +53,7 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
         return cachedParser
     }
 
-    let wasmPath: string
-    if ('pkg' in process && process.pkg) {
-        console.log({ pkg: process.pkg })
-        console.log(process.execPath)
-        console.log(path.dirname(process.execPath))
-        wasmPath = path.join(path.dirname(process.execPath), DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
-    } else {
-        wasmPath = path.resolve(grammarDirectory, DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
-    }
-    console.log({ wasmPath })
+    const wasmPath = path.resolve(grammarDirectory, DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
 
     if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
         return undefined

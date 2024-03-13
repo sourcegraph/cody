@@ -59,6 +59,9 @@ async function main() {
         throw new Error('Failed to open document')
     }
 
+    // Wait some time so that WASM can init
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
     const completions = await client.request('autocomplete/execute', {
         uri: sumUri.toString(),
         position: { line: 1, character: 3 },
