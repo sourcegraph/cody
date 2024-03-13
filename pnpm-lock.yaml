@@ -353,6 +353,9 @@ importers:
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
+      parse-git-diff:
+        specifier: ^0.0.14
+        version: 0.0.14
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
@@ -11627,7 +11630,6 @@ packages:
 
   /parse-git-diff@0.0.14:
     resolution: {integrity: sha512-UHNB4IWZ0dae4Z9aKgQTAm1gTBqBpmqKwoLx2/iEaVY9hQlqstDnvdWsq5fJjF2iC6368OvAB6LWUJab5wk9VQ==}
-    dev: true
 
   /parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}

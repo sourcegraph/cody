@@ -1195,6 +1195,7 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-git-diff": "^0.0.14",
     "socks-proxy-agent": "^8.0.1",
     "tree-sitter-wasms": "^0.1.7",
     "unzipper": "^0.10.14",
