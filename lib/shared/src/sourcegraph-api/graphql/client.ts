@@ -853,9 +853,9 @@ export class ConfigFeaturesSingleton {
         // Initiate the first fetch and set up a recurring fetch every 30 seconds
         this.refreshConfigFeatures()
         // Fetch config features periodically every 30 seconds only if isDotCom is false
-        // if (!graphqlClient.isDotCom()) {
-        //     setInterval(() => this.refreshConfigFeatures(), 30000)
-        // }
+        if (!graphqlClient.isDotCom()) {
+            setInterval(() => this.refreshConfigFeatures(), 30000)
+        }
     }
 
     // Static method to get the singleton instance
