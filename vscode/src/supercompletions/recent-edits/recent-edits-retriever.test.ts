@@ -177,9 +177,7 @@ describe('RecentEditsRetriever', () => {
 
     it('handles deletions', () => {
         replaceFooLogWithNumber()
-
         onDidDeleteFiles({ files: [testDocument.uri] })
-
         expect(retriever.getDiff(testDocument.uri)).toBe(null)
     })
 })
