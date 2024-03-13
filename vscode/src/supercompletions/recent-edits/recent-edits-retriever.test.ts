@@ -1,3 +1,4 @@
+import { testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
@@ -36,20 +37,18 @@ describe('RecentEditsRetriever', () => {
         retriever.dispose()
     })
 
-    it('tracks document changes and creates a git diff', () => {
-        const doc = document(dedent`
-            function foo() {
-                console.log('foo')
-            }
+    const testDocument = document(dedent`
+        function foo() {
+            console.log('foo')
+        }
 
-            function bar() {
-                console.log('bar')
-            }
-        `)
-
-        // replace
+        function bar() {
+            console.log('bar')
+        }
+    `)
+    function replaceFooLogWithNumber(document = testDocument) {
         onDidChangeTextDocument({
-            document: doc,
+            document,
             contentChanges: [
                 {
                     range: range(1, 16, 1, 21),
@@ -60,10 +59,10 @@ describe('RecentEditsRetriever', () => {
             ],
             reason: undefined,
         })
-
-        // delete
+    }
+    function deleteBarLog(document = testDocument) {
         onDidChangeTextDocument({
-            document: doc,
+            document,
             contentChanges: [
                 {
                     range: range(5, 0, 5, 23),
@@ -74,10 +73,10 @@ describe('RecentEditsRetriever', () => {
             ],
             reason: undefined,
         })
-
-        // add
+    }
+    function addNumberLog(document = testDocument) {
         onDidChangeTextDocument({
-            document: doc,
+            document,
             contentChanges: [
                 {
                     range: range(5, 0, 5, 0),
@@ -88,8 +87,16 @@ describe('RecentEditsRetriever', () => {
             ],
             reason: undefined,
         })
+    }
 
-        expect(retriever.getDiff(doc.uri)).toMatchInlineSnapshot(`
+    it('tracks document changes and creates a git diff', () => {
+        replaceFooLogWithNumber()
+
+        deleteBarLog()
+
+        addNumberLog()
+
+        expect(retriever.getDiff(testDocument.uri)).toMatchInlineSnapshot(`
           "--- a//test.ts
           +++ b//test.ts
           @@ -1,7 +1,7 @@
@@ -108,60 +115,15 @@ describe('RecentEditsRetriever', () => {
     })
 
     it('does not yield changes that are older than the configured timeout', () => {
-        const doc = document(dedent`
-            function foo() {
-                console.log('foo')
-            }
-
-            function bar() {
-                console.log('bar')
-            }
-        `)
-
-        onDidChangeTextDocument({
-            document: doc,
-            contentChanges: [
-                {
-                    range: range(1, 16, 1, 21),
-                    text: '1337',
-                    rangeLength: 5,
-                    rangeOffset: 33,
-                },
-            ],
-            reason: undefined,
-        })
+        replaceFooLogWithNumber()
 
         vi.advanceTimersByTime(3 * 60 * 1000)
-
-        onDidChangeTextDocument({
-            document: doc,
-            contentChanges: [
-                {
-                    range: range(5, 0, 5, 23),
-                    text: '',
-                    rangeLength: 23,
-                    rangeOffset: 59,
-                },
-            ],
-            reason: undefined,
-        })
+        deleteBarLog()
 
         vi.advanceTimersByTime(3 * 60 * 1000)
+        addNumberLog()
 
-        onDidChangeTextDocument({
-            document: doc,
-            contentChanges: [
-                {
-                    range: range(5, 0, 5, 0),
-                    text: '    console.log(1338)\n',
-                    rangeLength: 0,
-                    rangeOffset: 59,
-                },
-            ],
-            reason: undefined,
-        })
-
-        expect(retriever.getDiff(doc.uri)).toMatchInlineSnapshot(`
+        expect(retriever.getDiff(testDocument.uri)).toMatchInlineSnapshot(`
           "--- a//test.ts
           +++ b//test.ts
           @@ -2,6 +2,6 @@
@@ -175,5 +137,49 @@ describe('RecentEditsRetriever', () => {
           \\ No newline at end of file
           "
         `)
+    })
+
+    it('handles renames', () => {
+        replaceFooLogWithNumber()
+
+        vi.advanceTimersByTime(3 * 60 * 1000)
+        deleteBarLog()
+
+        const newUri = testFileUri('test2.ts')
+        onDidRenameFiles({
+            files: [
+                {
+                    oldUri: testDocument.uri,
+                    newUri,
+                },
+            ],
+        })
+        const renamedDoc = { ...testDocument, uri: newUri }
+
+        vi.advanceTimersByTime(3 * 60 * 1000)
+        addNumberLog(renamedDoc)
+
+        expect(retriever.getDiff(newUri)).toMatchInlineSnapshot(`
+          "--- a//test2.ts
+          +++ b//test2.ts
+          @@ -2,6 +2,6 @@
+               console.log(1337)
+           }
+
+           function bar() {
+          -    console.log('bar')
+          +    console.log(1338)
+           }
+          \\ No newline at end of file
+          "
+        `)
+    })
+
+    it('handles deletions', () => {
+        replaceFooLogWithNumber()
+
+        onDidDeleteFiles({ files: [testDocument.uri] })
+
+        expect(retriever.getDiff(testDocument.uri)).toBe(null)
     })
 })
