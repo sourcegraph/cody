@@ -61,7 +61,6 @@ export interface Configuration {
     /**
      * Experimental autocomplete
      */
-    autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalDynamicMultilineCompletions?: boolean
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null

@@ -995,11 +995,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
         "cody.autocomplete.experimental.dynamicMultilineCompletions": {
           "type": "boolean",
           "default": false,

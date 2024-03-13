@@ -81,8 +81,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.autocomplete.disableInsideComments':
                         return false
-                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return true
                     case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
                         return false
                     case 'cody.autocomplete.experimental.hotStreak':
