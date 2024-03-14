@@ -42,15 +42,23 @@ export function parseLineRangeInMention(text: string): {
     range?: RangeData
 } {
     const match = text.match(/:(\d+)-(\d+)$/)
-    return match !== null
-        ? {
-              textWithoutRange: text.slice(0, -match[0].length),
-              range: {
-                  start: { line: parseInt(match[1], 10) - 1, character: 0 },
-                  end: { line: parseInt(match[2], 10), character: 0 },
-              },
-          }
-        : { textWithoutRange: text }
+    if (match === null) {
+        return { textWithoutRange: text }
+    }
+
+    let startLine = parseInt(match[1], 10)
+    let endLine = parseInt(match[2], 10)
+    if (startLine > endLine) {
+        // Reverse range so that startLine is always before endLine.
+        ;[startLine, endLine] = [endLine, startLine]
+    }
+    return {
+        textWithoutRange: text.slice(0, -match[0].length),
+        range: {
+            start: { line: startLine - 1, character: 0 },
+            end: { line: endLine, character: 0 },
+        },
+    }
 }
 
 const AT_MENTIONS_REGEXP = new RegExp(
