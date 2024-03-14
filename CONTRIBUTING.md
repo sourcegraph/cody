@@ -90,6 +90,28 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
       Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
       anymore.
 
+## Updating Cody version
+
+To upgrade Cody to the newer version you need to update the `cody.commit` hash in `gradle.properties`.
+After doing that:
+
+1. Run on the `sourcegraph/cody` repo: `git diff --name-status OLD_HASH..NEW_HASH -- agent`  
+   It will print you a list of files changed between updates.  
+   Changes in tests or bindings might require adjustments in the jetbrains codebase, so please inspect those carefully.
+2. Check if the main features are working before sending it for the full QA.  
+   Please pay special attention to areas with potential changes indicated by point 1):
+    * autocomplete
+    * chat
+    * chat history
+    * context fixes in chat responses
+    * @-files in chat prompt
+    * enhanced remote context
+    * commands from context menu and commands tab
+    * login / account switch
+
+   You don't need to cover all corner cases and do a full QA, but make sure basic features still work.  
+   Cody version updates tends to break them completely or not at all, so it should allow us to catch most issues early.
+
 ## Publishing a New Release
 
 We plan to make releases every other Monday. Nightly version can be released as often as there is a need.
