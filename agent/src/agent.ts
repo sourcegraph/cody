@@ -734,6 +734,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(null)
         })
 
+        this.registerAuthenticatedRequest('editCommands/code', params => {
+            const args = { configuration: { ...params } }
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.edit-code', args)
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
