@@ -77,9 +77,10 @@ const Item: FunctionComponent<{
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
     const title = item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName
     const range = item.range ? displayLineRange(item.range) : ''
+    const dirname = displayPathDirname(item.uri)
     const description =
         item.type === 'file'
-            ? `${range ? `Lines ${range} · ` : ''}${displayPathDirname(item.uri)}`
+            ? `${range ? `Lines ${range} · ` : ''}${dirname === '.' ? '' : dirname}`
             : displayPath(item.uri) + `:${range}`
     const warning =
         item.type === 'file' && item.isTooLarge

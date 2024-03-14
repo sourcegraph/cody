@@ -59,9 +59,14 @@
 
 .option-item {
     cursor: pointer;
+    border-radius: 3px;
 }
 
-.option-item:hover, .option-item.selected {
+.option-item.selected {
+    color: var(--vscode-list-activeSelectionForeground);
+    background-color: var(--vscode-list-activeSelectionBackground);
+}
+.option-item:hover:not(.selected) {
     color: var(--vscode-list-hoverForeground);
     background-color: var(--vscode-list-hoverBackground);
 }
