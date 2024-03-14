@@ -160,6 +160,20 @@ function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptE
     }
 }
 
+/**
+ * This version string is stored in {@link SerializedPromptEditorState} to indicate the schema
+ * version of the value.
+ *
+ * This code must preserve (1) backward-compatibility, so that values written by older versions can
+ * be read by newer versions and (2) forward-compatibility, so that values written by newer versions
+ * can be partially read by older versions (such as supporting the text but not rich formatting).
+ *
+ * If you need to make a breaking change to the {@link SerializedPromptEditorState} schema, follow
+ * these guidelines and consult with a tech lead first. There should be a period of time (at least 1
+ * month) where both the old and new schemas are supported for reading, and the old schema is
+ * written. Then you can switch to having it write the new schema (knowing that even clients ~1
+ * month old can read that schema).
+ */
 const STATE_VERSION_CURRENT = 'lexical-v0' as const
 
 /**

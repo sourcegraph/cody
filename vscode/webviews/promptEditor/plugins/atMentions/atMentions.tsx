@@ -93,14 +93,14 @@ export class MentionTypeaheadOption extends MenuOption {
 
     constructor(public readonly item: ContextItem) {
         super(
-            [
+            JSON.stringify([
                 `${item.type}`,
                 `${item.uri.toString()}`,
                 `${item.type === 'symbol' ? item.symbolName : ''}`,
                 item.range
                     ? `${item.range.start.line}:${item.range.start.character}-${item.range.end.line}:${item.range.end.character}`
                     : '',
-            ].join(':')
+            ])
         )
         this.displayPath = displayPath(item.uri)
     }

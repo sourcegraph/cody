@@ -82,6 +82,7 @@ vscode-button::part(control) {
     --vscode-problemsErrorIcon-foreground: #f48771;
     --vscode-quickInput-background: #222222;
     --vscode-quickInput-foreground: #cccccc;
+    --vscode-pickerGroup-border: #3c3c3c;
     --vscode-sideBar-background: #181818;
     --vscode-sideBar-foreground: #cccccc;
     --vscode-sideBarSectionHeader-border: #ffffff33;
@@ -93,7 +94,6 @@ vscode-button::part(control) {
     --vscode-widget-shadow: rgba(0 0 0 0.2);
     --vscode-widget-border: #555555;
     --vscode-dropdown-background: #222222;
-    --vscode-pickerGroup-border: #3c3c3c;
     --vscode-dropdown-foreground: #cccccc;
     --vscode-dropdown-listBackground: #1f1f1f;
     --vscode-quickInputList-focusBackground: #2222dd;
