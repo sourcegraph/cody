@@ -26,10 +26,10 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
     }
 
     return showActionNotification({
-        message: 'Continue setting up Cody',
+        message: 'Sign in to Cody to get started',
         actions: [
             {
-                label: 'Setup',
+                label: 'Sign In',
                 onClick: () => vscode.commands.executeCommand('cody.focus'),
             },
             {
