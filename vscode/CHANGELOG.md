@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Added support links for Cody Pro and Enterprise users. [pull/3330](https://github.com/sourcegraph/cody/pull/3330)
+
 ### Fixed
 
 ### Changed
