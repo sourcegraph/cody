@@ -48,11 +48,11 @@ export function parseLineRangeInMention(text: string): {
 }
 
 const AT_MENTIONS_REGEXP = new RegExp(
-    '(^|\\s|\\()(' +
+    '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
         '[' +
         TRIGGERS +
         ']' +
-        '(#?(?:' +
+        '(?<matchingString>#?(?:' +
         VALID_CHARS +
         '){0,' +
         MAX_LENGTH +
@@ -67,17 +67,15 @@ const SUGGESTION_LIST_LENGTH_LIMIT = 20
 function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextMatch | null {
     const match = AT_MENTIONS_REGEXP.exec(text)
 
-    if (match !== null) {
-        // The strategy ignores leading whitespace but we need to know it's
-        // length to add it to the leadOffset
-        const maybeLeadingWhitespace = match[1]
-
-        const matchingString = match[3]
+    if (match?.groups) {
+        const maybeLeadingWhitespace = match.groups.maybeLeadingWhitespace
+        const replaceableString = match.groups.replaceableString
+        const matchingString = match.groups.matchingString
         if (matchingString.length >= minMatchLength) {
             return {
                 leadOffset: match.index + maybeLeadingWhitespace.length,
                 matchingString,
-                replaceableString: match[2],
+                replaceableString,
             }
         }
     }
