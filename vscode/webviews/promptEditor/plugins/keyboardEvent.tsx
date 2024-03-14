@@ -1,6 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND, KEY_ENTER_COMMAND, KEY_ESCAPE_COMMAND } from 'lexical'
-import { type FunctionComponent, useLayoutEffect } from 'react'
+import { type FunctionComponent, useEffect } from 'react'
 import { editorSelectionStart } from '../BaseEditor'
 
 export interface KeyboardEventPluginProps {
@@ -16,7 +16,7 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
 }) => {
     const [editor] = useLexicalComposerContext()
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const disposables: (() => void)[] = []
         if (onKeyDown) {
             disposables.push(
