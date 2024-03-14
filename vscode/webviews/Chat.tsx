@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -188,6 +188,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const setInputFocus = useCallback((focus: boolean): void => {
         editorRef.current?.setFocus(focus)
+        if (focus) {
+            setIsEnhancedContextOpen(false)
+        }
     }, [])
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
@@ -404,6 +407,21 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
+    // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
+    // is open). This makes it so that the user can immediately start typing to Cody after invoking
+    // `Cody: Focus on Chat View` with the keyboard.
+    useEffect(() => {
+        const handleFocus = (): void => {
+            if (document.getSelection()?.isCollapsed && !isEnhancedContextOpen) {
+                setInputFocus(true)
+            }
+        }
+        window.addEventListener('focus', handleFocus)
+        return () => {
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [setInputFocus, isEnhancedContextOpen])
+
     const onCancelEditClick = useCallback(() => setEditMessageState(), [setEditMessageState])
     const onEditLastMessageClick = useCallback(
         () => setEditMessageState(lastHumanMessageIndex),
@@ -486,7 +504,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             containerClassName={styles.editorInnerContainer}
                             placeholder={placeholder}
                             onChange={onEditorChange}
-                            onFocus={() => setIsEnhancedContextOpen(false)}
                             disabled={!chatEnabled}
                             onKeyDown={onEditorKeyDown}
                             onEnterKey={onEditorEnterKey}

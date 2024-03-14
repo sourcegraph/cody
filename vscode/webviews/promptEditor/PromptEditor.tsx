@@ -3,7 +3,7 @@ import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cod
 import classNames from 'classnames'
 import { $getRoot, CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -21,8 +21,6 @@ interface Props extends KeyboardEventPluginProps {
 
     initialEditorState?: SerializedPromptEditorState
     onChange?: (value: SerializedPromptEditorValue) => void
-
-    onFocus?: () => void
 
     disabled?: boolean
 
@@ -44,7 +42,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     placeholder,
     initialEditorState,
     onChange,
-    onFocus,
     disabled,
     editorRef: ref,
 
@@ -104,28 +101,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
         [onChange]
     )
 
-    // Focus the textarea when the webview gains focus (unless there is text selected). This makes
-    // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
-    // View` with the keyboard.
-    useEffect(() => {
-        const handleFocus = (): void => {
-            if (document.getSelection()?.isCollapsed) {
-                editorRef.current?.focus()
-            }
-        }
-        window.addEventListener('focus', handleFocus)
-        return () => {
-            window.removeEventListener('focus', handleFocus)
-        }
-    }, [])
-
     return (
         <div className={classNames(styles.container, containerClassName)}>
             <BaseEditor
                 className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
                 initialEditorState={initialEditorState?.lexicalEditorState ?? null}
                 onChange={onBaseEditorChange}
-                onFocus={onFocus}
                 editorRef={editorRef}
                 placeholder={placeholder}
                 disabled={disabled}
