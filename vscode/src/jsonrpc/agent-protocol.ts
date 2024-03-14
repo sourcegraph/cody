@@ -78,6 +78,7 @@ export type ClientRequests = {
     'editCommands/code': [{ params: { instruction: string } }, EditTask]
     'editCommands/test': [null, EditTask]
     'commands/document': [null, EditTask] // TODO: rename to editCommands/document
+
     // If the task is "applied", discards the task.
     'editTask/accept': [FixupTaskID, null]
     // If the task is "applied", attempts to revert the task's edit, then
@@ -85,6 +86,10 @@ export type ClientRequests = {
     'editTask/undo': [FixupTaskID, null]
     // Discards the task. Applicable to tasks in any state.
     'editTask/cancel': [FixupTaskID, null]
+
+    // Utility for clients that don't have language-neutral folding-range support.
+    // Provides a list of all the computed folding ranges in the specified document.
+    'editTask/getFoldingRanges': [GetFoldingRangeParams, GetFoldingRangeResult]
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -677,4 +682,12 @@ export interface CustomChatCommandResult {
 export interface CustomEditCommandResult {
     type: 'edit'
     editResult: EditTask
+}
+
+export interface GetFoldingRangeParams {
+    uri: string
+}
+
+export interface GetFoldingRangeResult {
+    ranges: Range[]
 }
