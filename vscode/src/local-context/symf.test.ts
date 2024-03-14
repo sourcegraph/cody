@@ -19,7 +19,7 @@ describe('symf', () => {
             // because then Polly won't be able to associate the HTTP requests between record mode
             // and replay mode.
             process.env.SRC_ACCESS_TOKEN ??
-            'REDACTED_fcd18a71f8312de1bb1943330093f68eb0ff057ea9f57d04e0d1132ae1970d20',
+            'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
         debugEnable: true,
