@@ -44,12 +44,21 @@ export const FileSearchNoMatches: StoryObj<typeof OptionsList> = {
 export const FileSearchMatches: StoryObj<typeof OptionsList> = {
     args: {
         query: 'd',
-        options: toOptions(
-            Array.from(new Array(10).keys()).map(i => ({
-                uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
+        options: toOptions([
+            { uri: URI.file('a/b/ddddddd.go'), type: 'file' },
+            {
+                uri: URI.file('a/b/x.go'),
                 type: 'file',
-            }))
-        ),
+                range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
+            },
+            ...Array.from(new Array(10).keys()).map(
+                i =>
+                    ({
+                        uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
+                        type: 'file',
+                    }) satisfies ContextItem
+            ),
+        ]),
     },
 }
 

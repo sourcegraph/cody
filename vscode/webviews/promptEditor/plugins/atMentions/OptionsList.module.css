@@ -8,6 +8,7 @@
     --item-height: 22px; /* match VS Code quickpick item height */
     --item-padding-y: 0.2rem;
     --item-padding-x: 11px; /* match VS Code quickpick padding */
+    --description-font-size: 0.9em; /* match VS Code quickpick description */
 }
 
 .list {
@@ -74,9 +75,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
 /* Option item content */
 .option-item {
     display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    gap: 0.25rem;
+    align-items: flex-end;
+    gap: 0.35rem;
 }
 .option-item-title, .option-item-description {
     white-space: nowrap;
@@ -87,7 +87,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
     opacity: 0.7;
 }
 .option-item-description {
-    opacity: 0.75;
+    font-size: var(--description-font-size);
+    opacity: 0.7;
     flex: 1;
 }
 .option-item-warning {

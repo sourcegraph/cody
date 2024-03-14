@@ -1,5 +1,10 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { displayLineRange, displayPath } from '@sourcegraph/cody-shared'
+import {
+    displayLineRange,
+    displayPath,
+    displayPathBasename,
+    displayPathDirname,
+} from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import styles from './OptionsList.module.css'
@@ -70,10 +75,12 @@ const Item: FunctionComponent<{
     const item = option.item
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.type === 'file' ? displayPath(item.uri) : item.symbolName
+    const title = item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName
     const range = item.range ? displayLineRange(item.range) : ''
     const description =
-        item.type === 'file' ? (range ? `Lines ${range}` : '') : displayPath(item.uri) + `:${range}`
+        item.type === 'file'
+            ? `${range ? `Lines ${range} · ` : ''}${displayPathDirname(item.uri)}`
+            : displayPath(item.uri) + `:${range}`
     const warning =
         item.type === 'file' && item.isTooLarge
             ? 'File too large. Type @# to choose a symbol.'
