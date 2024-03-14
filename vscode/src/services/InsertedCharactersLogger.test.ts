@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { KeystrokeTracker } from './keystroke-tracker'
+import { InsertedCharactersLogger } from './InsertedCharactersLogger'
 
-describe('KeystrokeTracker', () => {
-    let tracker: KeystrokeTracker
+describe('InsertedCharactersLogger', () => {
+    let tracker: InsertedCharactersLogger
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     beforeEach(() => {
-        tracker = new KeystrokeTracker({
+        tracker = new InsertedCharactersLogger({
             onDidChangeTextDocument(listener) {
                 onDidChangeTextDocument = listener
                 return { dispose: () => {} }
