@@ -37,6 +37,7 @@ import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -56,6 +57,7 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    GetFoldingRangeResult,
     ProtocolCommand,
     TextEdit,
 } from './protocol-alias'
@@ -732,6 +734,23 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editTask/cancel', params => {
             this.fixups?.cancel(params[0])
             return Promise.resolve(null)
+        })
+
+        this.registerAuthenticatedRequest('editTask/getFoldingRanges', async (params): Promise<GetFoldingRangeResult> => {
+            const uri = vscode.Uri.parse(params.uri)
+            const document = this.workspace.getDocument(uri)
+            if (!document) {
+                logError(
+                    'Agent',
+                    'editTask/getFoldingRanges',
+                    'No document found for file path',
+                    params.uri,
+                    [...this.workspace.allUris()]
+                )
+                return Promise.resolve({ ranges: [] })
+            }
+            const ranges = await getDocumentSections(document)
+            return { ranges: ranges }
         })
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
