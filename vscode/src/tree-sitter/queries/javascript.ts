@@ -137,8 +137,12 @@ const JS_DOCUMENTABLE_NODES_QUERY = dedent`
 
     ; Variables
     ;--------------------------------
-    (variable_declarator
-        name: (identifier) @symbol.identifier) @range.identifier
+    (lexical_declaration
+        (variable_declarator
+            name: (identifier) @symbol.identifier)) @range.identifier
+    (variable_declaration
+        (variable_declarator
+            name: (identifier) @symbol.identifier)) @range.identifier
     (class_declaration
         name: (_) @symbol.identifier) @range.identifier
 

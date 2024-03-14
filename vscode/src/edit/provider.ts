@@ -202,7 +202,7 @@ export class EditProvider {
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
             this.config.task.id,
-            contentSanitizer(response),
+            contentSanitizer(response, isMessageInProgress),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }

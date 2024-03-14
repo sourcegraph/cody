@@ -381,7 +381,26 @@ export class GhostHintDecorator implements vscode.Disposable {
         document: vscode.TextDocument,
         position: vscode.Position
     ): SyntaxNode | undefined {
-        const [documentableSymbol] = execQueryWrapper(document, position, 'getDocumentableNode')
+        const [documentableSymbol, documentableRange] = execQueryWrapper(
+            document,
+            position,
+            'getDocumentableNode'
+        )
+
+        if (!documentableSymbol.node || !documentableRange.node) {
+            return
+        }
+
+        const isAtRoot =
+            !documentableRange.node.parent ||
+            documentableRange.node.parent.equals(documentableRange.node.tree.rootNode)
+
+        const isFunction = documentableSymbol.name?.includes('function')
+
+        if (!isAtRoot && !isFunction) {
+            return
+        }
+
         return documentableSymbol.node
     }
 

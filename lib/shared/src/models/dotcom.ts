@@ -44,6 +44,14 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
+        title: 'Claude 3 Haiku',
+        model: 'anthropic/claude-3-haiku-20240307',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
         title: 'GPT-3.5 Turbo',
         model: 'openai/gpt-3.5-turbo',
         provider: 'OpenAI',

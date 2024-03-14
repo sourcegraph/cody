@@ -49,8 +49,8 @@
 
   function arrowWrapper() {
       const arrow = (value: string) => {
+//    ^ start range.identifier[1]
 //          ^^^^^ symbol.identifier[1]
-//          ^ start range.identifier[1]
 //            █
       }
 //    ^ end range.identifier[1]
@@ -58,20 +58,20 @@
 
 // Nodes types:
 // symbol.identifier[1]: identifier
-// range.identifier[1]: variable_declarator
+// range.identifier[1]: lexical_declaration
 
 // ------------------------------------
 
   const arrowFunc = (value: string) => {
+//^ start range.identifier[1]
 //      ^^^^^^^^^ symbol.identifier[1]
-//      ^ start range.identifier[1]
 //        █
   }
 //^ end range.identifier[1]
 
 // Nodes types:
 // symbol.identifier[1]: identifier
-// range.identifier[1]: variable_declarator
+// range.identifier[1]: lexical_declaration
 
 // ------------------------------------
 
@@ -202,13 +202,13 @@
 // ------------------------------------
 
   const name = 'test'
+//^^^^^^^^^^^^^^^^^^^ range.identifier[1]
 //      ^^^^ symbol.identifier[1]
-//      ^^^^^^^^^^^^^ range.identifier[1]
 //       █
 
 // Nodes types:
 // symbol.identifier[1]: identifier
-// range.identifier[1]: variable_declarator
+// range.identifier[1]: lexical_declaration
 
 // ------------------------------------
 
