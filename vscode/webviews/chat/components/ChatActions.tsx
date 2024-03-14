@@ -43,6 +43,7 @@ export const ChatActions: React.FunctionComponent<{
     const actions: {
         name: string
         keyLabel: string
+        keyRequiresFocus?: boolean
         onClick?: () => void
         focus: boolean
         when: boolean
@@ -50,9 +51,10 @@ export const ChatActions: React.FunctionComponent<{
         {
             name: 'Cancel Edit',
             keyLabel: 'ESC',
+            keyRequiresFocus: true,
             onClick: onCancelEditClick,
             focus: false,
-            when: isEditing && !isEmptyChat && isEditorFocused,
+            when: isEditing && !isEmptyChat,
         },
         {
             name: '← Return to Previous Chat',
@@ -71,9 +73,10 @@ export const ChatActions: React.FunctionComponent<{
         {
             name: 'Edit Last Message',
             keyLabel: '↑',
+            keyRequiresFocus: true,
             onClick: onEditLastMessageClick,
             focus: true,
-            when: !isEmptyChat && isEmptyEditorValue && !isEditing && isEditorFocused,
+            when: !isEmptyChat && isEmptyEditorValue && !isEditing,
         },
     ]
 
@@ -139,7 +142,7 @@ export const ChatActions: React.FunctionComponent<{
                     >
                         <span className={styles.chatActionButtonTitle}>
                             {action.name}
-                            {isWebviewActive && (
+                            {isWebviewActive && (!action.keyRequiresFocus || isEditorFocused) && (
                                 <span className={styles.chatActionKeybind}> {action.keyLabel}</span>
                             )}
                         </span>
