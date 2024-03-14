@@ -1076,11 +1076,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
             )
         }
-        return {
-            id: result.task.id,
-            state: result.task.state,
-            error: errorToCodyError(result.task.error),
-        }
+        return AgentFixupControls.serialize(result.task)
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {

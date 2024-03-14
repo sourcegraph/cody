@@ -604,6 +604,7 @@ export interface EditTask {
     id: string
     state: CodyTaskState
     error?: CodyError
+    selectionRange: Range
 }
 
 export interface CodyError {
