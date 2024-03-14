@@ -75,8 +75,9 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
+    'editCommands/code': [{ params: { instruction: string } }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
+    'commands/document': [null, EditTask] // TODO: rename to editCommands/document
     // If the task is "applied", discards the task.
     'editTask/accept': [FixupTaskID, null]
     // If the task is "applied", attempts to revert the task's edit, then
