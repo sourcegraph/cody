@@ -13,6 +13,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Upgrade tree-sitter and expand language support. [pull/3373](https://github.com/sourcegraph/cody/pull/3373)
 - Autocomplete: Do not cut off completions when they are almost identical to the following non-empty line. [pull/3377](https://github.com/sourcegraph/cody/pull/3377)
 
+## [1.8.3]
+
+### Fixed
+
+- Fix crash upon initialization in the stable build if a prerelease version of the VS Code extension was used for chat after 2024-03-08. [pull/3394](https://github.com/sourcegraph/cody/pull/3394)
+
 ## [1.8.2]
 
 ### Added

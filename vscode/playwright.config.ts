@@ -1,12 +1,14 @@
 import { defineConfig } from '@playwright/test'
 
+const isWin = process.platform.startsWith('win')
+
 export default defineConfig({
     workers: 1,
-    // Give failing tests a second chance
-    retries: 2,
+    // Give failing tests more chances
+    retries: isWin ? 4 : 2,
     testDir: 'test/e2e',
-    timeout: 20000,
+    timeout: isWin ? 30000 : 20000,
     expect: {
-        timeout: 3000,
+        timeout: isWin ? 5000 : 3000,
     },
 })

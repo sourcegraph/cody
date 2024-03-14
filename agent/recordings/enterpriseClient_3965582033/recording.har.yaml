@@ -2442,7 +2442,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d4359c67ff24d596934bf24e9c3487f7
+    - _id: b996202da3d78d08251fe82f15f8c992
       _order: 0
       cache: {}
       request:
@@ -2497,7 +2497,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2550,7 +2550,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d1cd4f4795ab1636fe0d989450f29fa3
+    - _id: 4468c697c55f4347db856887a93a7c8c
       _order: 0
       cache: {}
       request:
@@ -2606,7 +2606,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2668,7 +2668,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e9c38ab66f404a55958836052f4f794c
+    - _id: cbbade19633bba30d71ad36f2aa318bf
       _order: 0
       cache: {}
       request:
@@ -2724,7 +2724,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2786,7 +2786,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 018a011dee81a2af9225a289f91b320b
+    - _id: 6c916b1fd4909fbcd881700c49756de2
       _order: 0
       cache: {}
       request:
@@ -2842,7 +2842,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2904,7 +2904,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 052d6130f6ee1fca4da31d8ee177f1d7
+    - _id: b1acf717e18c687807efcfa46ceb739c
       _order: 0
       cache: {}
       request:
@@ -2960,7 +2960,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3022,7 +3022,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 41bdb98bccf33cf50c4c28b3100c6498
+    - _id: 033f76e69a48dee85e42ef6f1b213298
       _order: 0
       cache: {}
       request:
@@ -3078,7 +3078,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3140,7 +3140,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ad9a41686e8b9bd8d94a0f30156ab6cd
+    - _id: d4aff5332e9241ad1cd2cd6743a60db9
       _order: 0
       cache: {}
       request:
@@ -3196,7 +3196,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3258,7 +3258,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 88760d8b30b22a204a5400aedbfc64ec
+    - _id: 7edfa3fe730e4676ab175e72013840a1
       _order: 0
       cache: {}
       request:
@@ -3314,7 +3314,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.8.2
+                    clientVersion: 1.8.3
         queryString:
           - name: RecordTelemetryEvents
             value: null
