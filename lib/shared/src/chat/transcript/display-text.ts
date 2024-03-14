@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 import type { ContextItem } from '../../codebase-context/messages'
-import type { RangeData } from '../../common/range'
+import { type RangeData, toRangeData } from '../../common/range'
 import { displayPath } from '../../editor/displayPath'
 import { reformatBotMessageForChat } from '../viewHelpers'
 import type { ChatMessage } from './messages'
@@ -41,17 +41,24 @@ function createDisplayTextWithFileLinks(humanInput: string, files: ContextItem[]
     for (const file of files) {
         // +1 on the end line numbers because we want to make sure to include everything on the end line by
         // including the next line at position 0.
-        formattedText = replaceFileNameWithMarkdownLink(
-            formattedText,
-            file.uri,
-            file.range
-                ? {
-                      start: { line: file.range.start.line, character: 0 },
-                      end: { line: file.range.end.line + 1, character: 0 },
-                  }
-                : undefined,
-            file.type === 'symbol' ? file.symbolName : undefined
-        )
+        const range = file.range ? toRangeData(file.range) : undefined
+        try {
+            formattedText = replaceFileNameWithMarkdownLink(
+                formattedText,
+                file.uri,
+                range
+                    ? {
+                          start: { line: range.start.line, character: 0 },
+                          end: { line: range.end.line + 1, character: 0 },
+                      }
+                    : undefined,
+                file.type === 'symbol' ? file.symbolName : undefined
+            )
+        } catch (error) {
+            console.error('createDisplayTextWithFileLinks error:', error)
+            // Just use text without links as a fallback. This can happen on chat history that was
+            // serialized using an old and unrecognized format, which is a subtle bug.
+        }
     }
     return formattedText
 }
