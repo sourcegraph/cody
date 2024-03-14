@@ -80,14 +80,14 @@ export const LongScrolling: StoryObj<typeof OptionsList> = {
     },
 }
 
-export const SymbolSearchNoMatches: StoryObj<typeof OptionsList> = {
+export const SymbolSearchNoMatchesWarning: StoryObj<typeof OptionsList> = {
     args: {
         query: '#a',
         options: toOptions([]),
     },
 }
 
-export const SymbolSearchNoMatchesWarning: StoryObj<typeof OptionsList> = {
+export const SymbolSearchNoMatches: StoryObj<typeof OptionsList> = {
     args: {
         query: '#abcdefg',
         options: toOptions([]),

@@ -29,12 +29,13 @@ export const OptionsList: FunctionComponent<
                             ? 'Search for a symbol to include...'
                             : `No symbols found${
                                   query.length <= 2
-                                      ? ' (check if language extensions are installed)'
+                                      ? ' (try installing language extensions and opening a file)'
                                       : ''
                               }`
                       : options.length > 0
                           ? 'Search for a file to include...'
                           : 'No files found'}
+                <br />
             </h3>
             {options.length > 0 && (
                 <ul ref={ref} className={styles.list}>
