@@ -45,6 +45,7 @@ const LANGUAGES_WITH_MULTILINE_SUPPORT = [
     'java',
     'javascript',
     'javascriptreact',
+    'kotlin',
     'php',
     'python',
     'rust',
