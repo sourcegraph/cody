@@ -4,11 +4,12 @@ import { getConfiguration } from '../configuration'
 import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
-const LOG_INTERVAL = 5 * 60 * 1000 // 5 minutes
+export const LOG_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
-export class InsertedCharactersLogger implements vscode.Disposable {
+export class CharactersLogger implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private counter = 0
+    private inserted = 0
+    private deleted = 0
     private nextTimeoutId: NodeJS.Timeout | null = null
 
     constructor(workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace) {
@@ -18,19 +19,23 @@ export class InsertedCharactersLogger implements vscode.Disposable {
 
     public flush(): void {
         this.nextTimeoutId = null
-        const characters = this.counter
-        this.counter = 0
+        const insertedCharacters = this.inserted
+        const deletedCharacters = this.deleted
+        this.inserted = 0
+        this.deleted = 0
 
         const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
         telemetryService.log(
-            `${logPrefix(extDetails.ide)}:insertedCharacters`,
-            { characters },
+            `${logPrefix(extDetails.ide)}:characters`,
+            { insertedCharacters, deletedCharacters },
             {
                 agent: true,
                 hasV2Event: true,
             }
         )
-        telemetryRecorder.recordEvent('cody', 'insertedCharacters', { metadata: { characters } })
+        telemetryRecorder.recordEvent('cody', 'characters', {
+            metadata: { insertedCharacters, deletedCharacters },
+        })
 
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
     }
@@ -39,7 +44,8 @@ export class InsertedCharactersLogger implements vscode.Disposable {
             return
         }
         for (const change of event.contentChanges) {
-            this.counter += change.text.length
+            this.inserted += change.text.length
+            this.deleted += change.range.end.character - change.range.start.character
         }
     }
 
