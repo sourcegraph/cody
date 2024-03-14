@@ -5,8 +5,14 @@ import {
     MenuOption,
     type MenuTextMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+    $createTextNode,
+    COMMAND_PRIORITY_NORMAL,
+    KEY_SPACE_COMMAND,
+    type LexicalEditor,
+    type TextNode,
+} from 'lexical'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
@@ -171,28 +177,65 @@ export default function MentionsPlugin(): JSX.Element | null {
                 { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }
             ) =>
                 anchorElementRef.current && (
-                    <FloatingPortal root={anchorElementRef.current}>
-                        <div
-                            ref={refs.setFloating}
-                            style={{
-                                position: strategy,
-                                top: y ?? 0,
-                                left: x ?? 0,
-                                width: 'max-content',
-                            }}
-                            className={classNames(styles.popover)}
-                        >
-                            <OptionsList
-                                query={query}
-                                options={options}
-                                selectedIndex={selectedIndex}
-                                setHighlightedIndex={setHighlightedIndex}
-                                selectOptionAndCleanUp={selectOptionAndCleanUp}
-                            />
-                        </div>
-                    </FloatingPortal>
+                    <>
+                        <SpaceKeyTrigger
+                            editor={editor}
+                            options={options}
+                            selectedIndex={selectedIndex}
+                            selectOptionAndCleanUp={selectOptionAndCleanUp}
+                        />
+                        <FloatingPortal root={anchorElementRef.current}>
+                            <div
+                                ref={refs.setFloating}
+                                style={{
+                                    position: strategy,
+                                    top: y ?? 0,
+                                    left: x ?? 0,
+                                    width: 'max-content',
+                                }}
+                                className={classNames(styles.popover)}
+                            >
+                                <OptionsList
+                                    query={query}
+                                    options={options}
+                                    selectedIndex={selectedIndex}
+                                    setHighlightedIndex={setHighlightedIndex}
+                                    selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                />
+                            </div>
+                        </FloatingPortal>
+                    </>
                 )
             }
         />
     )
+}
+
+/**
+ * Makes it so that typing <Space> also triggers selection of the option (just like Enter and Tab).
+ */
+const SpaceKeyTrigger: FunctionComponent<{
+    editor: LexicalEditor
+    options: MentionTypeaheadOption[]
+    selectedIndex: number | null
+    selectOptionAndCleanUp: (option: MentionTypeaheadOption) => void
+}> = ({ editor, options, selectedIndex, selectOptionAndCleanUp }) => {
+    useEffect(() => {
+        return editor.registerCommand(
+            KEY_SPACE_COMMAND,
+            (event: KeyboardEvent | null) => {
+                if (options === null || selectedIndex === null || options[selectedIndex] == null) {
+                    return false
+                }
+                if (event !== null) {
+                    event.preventDefault()
+                    event.stopImmediatePropagation()
+                }
+                selectOptionAndCleanUp(options[selectedIndex])
+                return true
+            },
+            COMMAND_PRIORITY_NORMAL
+        )
+    }, [editor, options, selectedIndex, selectOptionAndCleanUp])
+    return null
 }
