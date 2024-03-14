@@ -1,6 +1,7 @@
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { type InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
@@ -20,7 +21,6 @@ import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import { OnFocusPlugin } from './plugins/onFocus'
-import { RefPlugin } from './plugins/ref'
 
 interface Props extends KeyboardEventPluginProps {
     initialEditorState: SerializedEditorState | null
@@ -88,7 +88,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     <AutoFocusPlugin />
                     <OnFocusPlugin onFocus={onFocus} />
-                    {editorRef && <RefPlugin editorRef={editorRef} />}
+                    {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin
                         onKeyDown={onKeyDown}
                         onEnterKey={onEnterKey}

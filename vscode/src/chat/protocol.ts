@@ -150,7 +150,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
 
-    /** @see {ChatMessage.editorState} */
+    /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown
 }
 
@@ -158,7 +158,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     text: string
     index?: number
 
-    /** @see {ChatMessage.editorState} */
+    /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown
 }
 

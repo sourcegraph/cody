@@ -23,6 +23,11 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                 editor.registerCommand(
                     KEY_DOWN_COMMAND,
                     event => {
+                        // HACK(sqs): Without the `setTimeout` wrap, pressing UpArrow in an empty
+                        // editor does not populate the editor with the contents of the last human
+                        // message, and the following error is thrown: `BaseEditor.tsx:58 TypeError:
+                        // Cannot assign to read only property 'dirty' of object
+                        // '#<_RangeSelection>'`.
                         setTimeout(() =>
                             onKeyDown?.(event, editorSelectionStart(editor.getEditorState()) ?? 0)
                         )
@@ -49,7 +54,7 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                 editor.registerCommand(
                     KEY_ESCAPE_COMMAND,
                     () => {
-                        setTimeout(() => onEscapeKey?.())
+                        onEscapeKey?.()
                         return false
                     },
                     COMMAND_PRIORITY_LOW
