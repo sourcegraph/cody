@@ -20,10 +20,12 @@ import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
+import { OnFocusChangePlugin } from './plugins/onFocus'
 
 interface Props extends KeyboardEventPluginProps {
     initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState, editor: LexicalEditor) => void
+    onFocusChange?: (focused: boolean) => void
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
     disabled?: boolean
@@ -37,6 +39,7 @@ interface Props extends KeyboardEventPluginProps {
 export const BaseEditor: FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
+    onFocusChange,
     editorRef,
     placeholder,
     disabled,
@@ -84,6 +87,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <MentionsPlugin />
                     <CodeHighlightPlugin />
                     <AutoFocusPlugin />
+                    {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin
                         onKeyDown={onKeyDown}

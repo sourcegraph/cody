@@ -442,6 +442,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [chatIDHistory, postMessage]
     )
 
+    const [isEditorFocused, setIsEditorFocused] = useState(false)
+
     const isNewChat = transcript.length === 0
     const TIPS = '(@ for files, @# for symbols)'
     const placeholder = chatEnabled
@@ -492,6 +494,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     isMessageInProgress={!!messageInProgress?.speaker}
                     isEditing={transcript.length > 1 && messageBeingEdited !== undefined}
                     isEmptyEditorValue={isEmptyEditorValue}
+                    isEditorFocused={isEditorFocused}
                     onChatResetClick={onChatResetClick}
                     onCancelEditClick={onCancelEditClick}
                     onEditLastMessageClick={onEditLastMessageClick}
@@ -504,6 +507,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             containerClassName={styles.editorInnerContainer}
                             placeholder={placeholder}
                             onChange={onEditorChange}
+                            onFocusChange={setIsEditorFocused}
                             disabled={!chatEnabled}
                             onKeyDown={onEditorKeyDown}
                             onEnterKey={onEditorEnterKey}

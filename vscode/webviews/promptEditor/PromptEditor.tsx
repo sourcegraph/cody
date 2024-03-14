@@ -21,6 +21,7 @@ interface Props extends KeyboardEventPluginProps {
 
     initialEditorState?: SerializedPromptEditorState
     onChange?: (value: SerializedPromptEditorValue) => void
+    onFocusChange?: (focused: boolean) => void
 
     disabled?: boolean
 
@@ -42,6 +43,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     placeholder,
     initialEditorState,
     onChange,
+    onFocusChange,
     disabled,
     editorRef: ref,
 
@@ -107,6 +109,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
                 initialEditorState={initialEditorState?.lexicalEditorState ?? null}
                 onChange={onBaseEditorChange}
+                onFocusChange={onFocusChange}
                 editorRef={editorRef}
                 placeholder={placeholder}
                 disabled={disabled}

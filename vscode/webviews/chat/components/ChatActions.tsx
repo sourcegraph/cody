@@ -9,6 +9,7 @@ export const ChatActions: React.FunctionComponent<{
     isMessageInProgress: boolean
     isEmptyChat: boolean
     isEmptyEditorValue: boolean
+    isEditorFocused: boolean
     onChatResetClick: () => void
     onCancelEditClick: () => void
     onEditLastMessageClick: () => void
@@ -18,6 +19,7 @@ export const ChatActions: React.FunctionComponent<{
     isEditing,
     isEmptyChat,
     isEmptyEditorValue,
+    isEditorFocused,
     isMessageInProgress,
     onChatResetClick,
     onCancelEditClick,
@@ -50,7 +52,7 @@ export const ChatActions: React.FunctionComponent<{
             keyLabel: 'ESC',
             onClick: onCancelEditClick,
             focus: false,
-            when: isEditing && !isEmptyChat,
+            when: isEditing && !isEmptyChat && isEditorFocused,
         },
         {
             name: '← Return to Previous Chat',
@@ -71,7 +73,7 @@ export const ChatActions: React.FunctionComponent<{
             keyLabel: '↑',
             onClick: onEditLastMessageClick,
             focus: true,
-            when: !isEmptyChat && isEmptyEditorValue && !isEditing,
+            when: !isEmptyChat && isEmptyEditorValue && !isEditing && isEditorFocused,
         },
     ]
 
