@@ -6,6 +6,7 @@ import {
     ACCOUNT_USAGE_URL,
     CODY_DOC_URL,
     CODY_FEEDBACK_URL,
+    CODY_SUPPORT_URL,
     DISCORD_URL,
 } from '../chat/protocol'
 import { releaseNotesURL } from '../release'
@@ -59,6 +60,10 @@ export function registerSidebarCommands(): vscode.Disposable[] {
         vscode.commands.registerCommand('cody.sidebar.documentation', () => {
             logSidebarClick('documentation')
             void vscode.commands.executeCommand('vscode.open', CODY_DOC_URL.href)
+        }),
+        vscode.commands.registerCommand('cody.sidebar.support', () => {
+            logSidebarClick('support')
+            void vscode.commands.executeCommand('vscode.open', CODY_SUPPORT_URL.href)
         }),
         vscode.commands.registerCommand('cody.sidebar.feedback', () => {
             logSidebarClick('feedback')

@@ -17,8 +17,8 @@ const pacProxyAgent = 'PacProxyAgent'
 /**
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
-const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-const httpsAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+let httpAgent: http.Agent
+let httpsAgent: https.Agent
 let socksProxyAgent: SocksProxyAgent
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
@@ -45,6 +45,12 @@ export function setCustomAgent(
 }
 
 export function initializeNetworkAgent(): void {
+    httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+    httpsAgent = new https.Agent({
+        ...https.globalAgent.options,
+        keepAlive: true,
+        keepAliveMsecs: 60000,
+    })
     const customAgent = setCustomAgent(getConfiguration())
 
     /**

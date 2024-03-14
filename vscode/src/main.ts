@@ -276,6 +276,8 @@ const register = async (
         )
     }
 
+    const statusBar = createStatusBar()
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
@@ -299,10 +301,13 @@ const register = async (
 
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        statusBar.syncAuthStatus(authStatus)
     })
+
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    statusBar.syncAuthStatus(authProvider.getAuthStatus())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -348,8 +353,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
-
-    const statusBar = createStatusBar()
 
     disposables.push(
         // Tests
