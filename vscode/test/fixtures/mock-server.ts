@@ -329,6 +329,23 @@ export class MockServer {
                             })
                         )
                         break
+                    case 'CurrentUserCodySubscription':
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    currentUser: {
+                                        codySubscription: {
+                                            status: 'ACTIVE',
+                                            plan: codyPro ? 'PRO' : 'FREE',
+                                            applyProRateLimits: codyPro,
+                                            currentPeriodStartAt: '2021-01-01T00:00:00Z',
+                                            currentPeriodEndAt: '2022-01-01T00:00:00Z',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
                     case 'CurrentUserCodyProEnabled':
                         res.send(
                             JSON.stringify({
