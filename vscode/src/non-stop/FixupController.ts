@@ -984,7 +984,7 @@ export class FixupController
         if (this.needsDiffUpdate_.size === 0) {
             void this.scheduler.scheduleIdle(() => this.updateDiffs())
         }
-        if (!this.needsDiffUpdate_.has(task)) {
+        if (task.mode === 'edit' && !this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
         }
     }
