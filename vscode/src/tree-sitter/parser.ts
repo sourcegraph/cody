@@ -55,6 +55,7 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     }
 
     const wasmPath = path.resolve(grammarDirectory, DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
+
     if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
         return undefined
     }
