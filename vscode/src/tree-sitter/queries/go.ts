@@ -45,5 +45,11 @@ export const goQueries = {
         singlelineTriggers: SINGLE_LINE_TRIGGERS,
         intents: '',
         documentableNodes: DOCUMENTABLE_NODES,
+        graphContextIdentifiers: dedent`
+            (call_expression (identifier) @identifier)
+            (qualified_type (type_identifier) @identifier)
+            (type_spec (type_identifier) @identifier)
+            (selector_expression (field_identifier)) @identifier
+        `,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

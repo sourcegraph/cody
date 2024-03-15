@@ -20,7 +20,7 @@ export interface CodeBlockActionsProps {
 }
 
 interface CodeBlocksProps {
-    displayText: string
+    displayMarkdown: string
 
     copyButtonClassName?: string
     insertButtonClassName?: string
@@ -239,7 +239,7 @@ class GuardrailsStatusController {
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
     function CodeBlocksContent({
-        displayText,
+        displayMarkdown,
         copyButtonClassName,
         copyButtonOnSubmit,
         insertButtonClassName,
@@ -318,11 +318,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
                     dangerouslySetInnerHTML={{
                         // wrapLinksWithCodyCommand opens all links using the _cody.vscode.open command
-                        __html: renderCodyMarkdown(displayText, { wrapLinksWithCodyCommand: true }),
+                        __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand: true }),
                     }}
                 />
             ),
-            [displayText]
+            [displayMarkdown]
         )
     }
 )

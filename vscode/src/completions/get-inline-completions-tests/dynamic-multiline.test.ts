@@ -25,7 +25,6 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             console.log(5)█`,
             {
                 delayBetweenChunks: 50,
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 
@@ -47,10 +46,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
                 }
 
                 return value█
-            }`,
-            {
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
-            }
+            }`
         )
 
         expect(items[0].insertText).toMatchInlineSnapshot(`
@@ -69,10 +65,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             )
 
             const compeltion = new InlineCompletion(result)█
-            console.log(completion)`,
-            {
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
-            }
+            console.log(completion)`
         )
 
         expect(items[0].insertText).toMatchInlineSnapshot(`
@@ -94,10 +87,7 @@ describe('[getInlineCompletions] dynamic multiline', () => {
                 9,
             ]█
 
-            console.log(oddNumbers)`,
-            {
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
-            }
+            console.log(oddNumbers)`
         )
 
         expect(items[0].insertText).toMatchInlineSnapshot(`
@@ -111,25 +101,6 @@ describe('[getInlineCompletions] dynamic multiline', () => {
         `)
     })
 
-    it('does not use dynamic multiline for certain black listed cases', async () => {
-        const { items } = await getInlineCompletionsWithInlinedChunks(
-            `class █Test {
-                constructor() {
-                    console.log(1)
-                █   console.log(2)
-                    console.log(3)
-                    console.█log(4)
-                }
-            }
-            console.log(5)█`,
-            {
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
-            }
-        )
-
-        expect(items[0]?.insertText).toMatchInlineSnapshot('"Test {"')
-    })
-
     it('does not use dynamic multiline completions for certain languages', async () => {
         const { items } = await getInlineCompletionsWithInlinedChunks(
             `
@@ -140,7 +111,6 @@ describe('[getInlineCompletions] dynamic multiline', () => {
             {
                 delayBetweenChunks: 50,
                 languageId: 'markdown',
-                configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
             }
         )
 

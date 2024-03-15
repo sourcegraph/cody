@@ -8,7 +8,6 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 interface CanUsePartialCompletionParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion: boolean
 }
 
 /**

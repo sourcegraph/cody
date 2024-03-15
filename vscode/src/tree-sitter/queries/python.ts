@@ -70,5 +70,6 @@ export const pythonQueries = {
         singlelineTriggers: '',
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
+        graphContextIdentifiers: '(call (identifier) @identifier)',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

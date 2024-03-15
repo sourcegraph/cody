@@ -7,11 +7,11 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
     public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
 
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] {
-        const [documentableSymbol, documentableRange] = execQueryWrapper(
+        const [documentableSymbol, documentableRange] = execQueryWrapper({
             document,
-            range.start,
-            'getDocumentableNode'
-        )
+            position: range.start,
+            queryWrapper: 'getDocumentableNode',
+        })
 
         if (!documentableSymbol?.node || !documentableRange?.node) {
             return []

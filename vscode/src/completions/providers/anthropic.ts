@@ -28,9 +28,13 @@ import {
     zipGenerators,
 } from '../utils'
 
-import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
@@ -41,14 +45,13 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-const MAX_RESPONSE_TOKENS = 256
+export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
-export const SINGLE_LINE_STOP_SEQUENCES = [
+export const MULTI_LINE_STOP_SEQUENCES = [
     anthropic.HUMAN_PROMPT,
     CLOSING_CODE_TAG,
     MULTILINE_STOP_SEQUENCE,
 ]
-export const MULTI_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
     singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
@@ -170,12 +173,10 @@ class AnthropicProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            lineNumberDependentCompletionParams,
+        })
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
@@ -229,7 +230,7 @@ class AnthropicProvider extends Provider {
                 }
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,

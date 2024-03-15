@@ -95,21 +95,22 @@ function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): v
 }
 
 // Defines the signature for functions that annotate nodes.
-type Captures = (
+export type Captures = (
     node: SyntaxNode,
     startPosition: Point,
     endPosition?: Point
 ) => readonly Readonly<Partial<Parser.QueryCapture>>[]
 
-interface AnnotateSnippetsParams {
+interface AnnotateSnippetParams {
     code: string
     language: SupportedLanguage
     parser: Parser
     captures: Captures
+    isOnly: boolean
 }
 
-function annotateSnippets(params: AnnotateSnippetsParams): string {
-    const { code, language, captures, parser } = params
+function annotateSnippet(params: AnnotateSnippetParams): string {
+    const { code, language, captures, parser, isOnly } = params
 
     const { delimiter, indent } = getCommentDelimiter(language)
     const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
@@ -133,12 +134,13 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
     const tree = parser.parse(linesWithoutCursorComment.join('\n'))
     const capturedNodes = captures(tree.rootNode, caretPoint, {
         ...caretPoint,
-        row: caretPoint.row + 1,
         column: caretPoint.column + 1,
     })
 
+    const debugTree = `\n${commentOutLines(tree.rootNode.toString(), delimiter)}`
+
     if (!capturedNodes || capturedNodes.length === 0) {
-        return code
+        return code + (isOnly ? debugTree : '')
     }
 
     // Matrix with annotations for each character in the code snippet.
@@ -215,7 +217,11 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
         annotatedCodeSnippet += '\n'
     }
 
-    const nodeTypesAnnotation = `${delimiter} Nodes types:\n${nodeTypes.join('\n')}\n\n`
+    let nodeTypesAnnotation = `${delimiter} Nodes types:\n${nodeTypes.join('\n')}\n\n`
+
+    if (isOnly) {
+        nodeTypesAnnotation += debugTree
+    }
     return annotatedCodeSnippet + nodeTypesAnnotation
 }
 
@@ -262,7 +268,13 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
 
     const annotated = (onlySnippet ? [onlySnippet] : snippets)
         .map(snippet => {
-            return annotateSnippets({ code: snippet, language, parser, captures })
+            return annotateSnippet({
+                code: snippet,
+                language,
+                parser,
+                captures,
+                isOnly: Boolean(onlySnippet),
+            })
         })
         .join(separator)
 
