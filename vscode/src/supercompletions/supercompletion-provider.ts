@@ -2,6 +2,7 @@ import type { ChatClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { Supercompletion, getSupercompletions } from './get-supercompletion'
+import { createGitDiff } from './recent-edits/create-git-diff'
 import { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 
 const EDIT_HISTORY = 5 * 60 * 1000
@@ -121,6 +122,13 @@ class MyCodeLensProvider implements vscode.CodeLensProvider {
         this.emitter.fire()
     }
 
+    public removeCodeLens(uri: vscode.Uri, codeLens: vscode.CodeLens): void {
+        const existingCodeLenses = this.lenses.get(uri.toString()) || []
+        existingCodeLenses.splice(existingCodeLenses.indexOf(codeLens), 1)
+        this.lenses.set(uri.toString(), existingCodeLenses)
+        this.emitter.fire()
+    }
+
     async provideCodeLenses(document: vscode.TextDocument): Promise<vscode.CodeLens[]> {
         return this.lenses.get(document.uri.toString()) || []
     }
@@ -131,52 +139,89 @@ function renderSupercompletion(
     lensProvider: MyCodeLensProvider,
     supercompletion: Supercompletion
 ): void {
+    const id = Math.random().toString(36).substr(2, 9)
     const range = supercompletion.location.range
 
-    // if (range.isEmpty) {
-    // const decorationType = vscode.window.createTextEditorDecorationType({
-    //     backgroundColor: 'green',
-    //     border: '5px solid white',
-    //     before: {
-    //         contentText: `✨ ${supercompletion.summary} [Apply]\nWow!`,
-    //         margin: '0 0 0 0.5em',
-    //         color: 'white',
-    //         border: '1px solid red',
-    //     },
-    // })
-    // editor.setDecorations(decorationType, [supercompletion.location.range])
+    const disposables: vscode.Disposable[] = []
 
-    // const lens = new vscode.CodeLens(range, {
-    //     command: 'cody.supercompletion.apply',
-    //     title: `✨ ${supercompletion.summary} [Apply]\nWow!`,
-    //     tooltip: 'What is that?',
-    // } as vscode.Command)
-    // lensProvider.addCodeLens(editor.document.uri, lens)
-    // lensProvider.addCodeLens(editor.document.uri, lens)
+    const decorationType = vscode.window.createTextEditorDecorationType({
+        backgroundColor: 'rgba(118,80,237,0.2)',
+        border: '1px solid rgba(188,94,84)',
+    })
+    disposables.push(decorationType)
+    editor.setDecorations(decorationType, [supercompletion.location.range])
 
-    const MyInlineEditProvider = class {
-        public provideInlineCompletionEdits(
-            document: vscode.TextDocument,
-            _context: any,
-            token: vscode.CancellationToken
-        ): vscode.ProviderResult<any> {
-            console.log({ _context })
-
-            return new (vscode as any).InlineEdit(supercompletion.updated, range)
-        }
-    }
-    ;(vscode.languages as any).registerInlineEditProvider(
-        '*' as vscode.DocumentSelector,
-        new MyInlineEditProvider()
+    const summary = new vscode.CodeLens(range, {
+        command: `cody.supercompletion.apply.${id}`,
+        title: `$(cody-logo) ${supercompletion.summary}`,
+    } as vscode.Command)
+    lensProvider.addCodeLens(editor.document.uri, summary)
+    disposables.push(
+        new vscode.Disposable(() => lensProvider.removeCodeLens(editor.document.uri, summary))
     )
 
-    vscode.commands.executeCommand('editor.action.inlineEdit.trigger')
+    const apply = new vscode.CodeLens(range, {
+        command: `cody.supercompletion.apply.${id}`,
+        title: 'Apply ⌥A',
+    } as vscode.Command)
+    lensProvider.addCodeLens(editor.document.uri, apply)
+    disposables.push(
+        new vscode.Disposable(() => lensProvider.removeCodeLens(editor.document.uri, apply))
+    )
+
+    const cancel = new vscode.CodeLens(range, {
+        command: 'cody.supercompletion.cancel',
+        title: 'Cancel ⌥R',
+    } as vscode.Command)
+    lensProvider.addCodeLens(editor.document.uri, cancel)
+    disposables.push(
+        new vscode.Disposable(() => lensProvider.removeCodeLens(editor.document.uri, cancel))
+    )
+
+    const renderableDiff = createGitDiff(
+        vscode.workspace.asRelativePath(supercompletion.location.uri.path),
+        supercompletion.current,
+        supercompletion.updated
+    )
+
+    const markdownString = new vscode.MarkdownString()
+    markdownString.supportHtml = true
+    markdownString.appendMarkdown(
+        `✨ ${supercompletion.summary} <a href="#">Apply ⌥A</a> <a href="#">Cancel ⌥R</a>`
+    )
+    markdownString.appendText('\n\n')
+    markdownString.appendMarkdown(`\`\`\`diff\n${renderableDiff}\n\`\`\``)
+    markdownString.appendText('\n\n')
+    markdownString.appendText('Supercompletion by Cody')
+
+    disposables.push(
+        vscode.languages.registerHoverProvider('*', {
+            provideHover(document, position, token) {
+                if (document.uri.toString() !== editor.document.uri.toString()) {
+                    return
+                }
+                if (!supercompletion.location.range.contains(position)) {
+                    return
+                }
+                return {
+                    contents: [markdownString],
+                }
+            },
+        })
+    )
+
+    vscode.commands.registerCommand(`cody.supercompletion.apply.${id}`, async () => {
+        await applySupercompletion(editor, supercompletion)
+        for (const disposable of disposables) {
+            disposable.dispose()
+        }
+    })
 
     return
-    // }
-    // const decorationType = vscode.window.createTextEditorDecorationType({
-    //     backgroundColor: 'green',
-    //     border: '5px solid white',
-    // })
-    // editor.setDecorations(decorationType, [supercompletion.location.range])
+}
+
+async function applySupercompletion(editor: vscode.TextEditor, supercompletion: Supercompletion) {
+    editor.edit(editBuilder => {
+        editBuilder.replace(supercompletion.location.range, supercompletion.updated)
+    })
 }

@@ -172,7 +172,7 @@ function parseRawChange(
 
     // Filter out trivial changes. This is mostly to filter out when the LLM
     // includes the recent change as a proposed changed
-    if (levenshtein(current, updated) < 4) {
+    if (levenshtein(current, updated) < 2) {
         console.log('skipped trivial change')
         return null
     }
