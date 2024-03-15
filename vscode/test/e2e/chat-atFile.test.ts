@@ -16,6 +16,10 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:file:executed',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
+    // This test requires that the window be focused in the OS window manager because it deals with
+    // focus.
+    await page.bringToFront()
+
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
@@ -92,7 +96,11 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
-    await chatInput.pressSequentially('and @visualize.go')
+    await chatInput.focus()
+    await chatInput.pressSequentially('and @vgo')
+    await expect(
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('visualize.go') })
+    ).toBeVisible()
     await chatInput.press('ArrowDown') // second item (visualize.go)
     await chatInput.press('ArrowDown') // third item (.vscode/settings.json)
     await chatInput.press('ArrowDown') // wraps back to first item

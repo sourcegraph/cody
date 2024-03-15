@@ -603,7 +603,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             })
         }
 
+        // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
+        this.contextFilesQueryCancellation?.cancel()
+        this.contextFilesQueryCancellation = cancellation
 
         try {
             const MAX_RESULTS = 20
@@ -636,11 +639,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
         } catch (error) {
             this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            // Cancel any previous search request after we update the UI
-            // to avoid a flash of empty results as you type
-            this.contextFilesQueryCancellation?.cancel()
-            this.contextFilesQueryCancellation = cancellation
         }
     }
 
