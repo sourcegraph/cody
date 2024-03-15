@@ -261,7 +261,7 @@ export function createStatusBar(): CodyStatusBar {
         // initialized yet
         if (authStatus && !authStatus.isLoggedIn) {
             statusBarItem.text = 'Sign in to Cody'
-            statusBarItem.tooltip = 'You need to sign in to use Cody'
+            statusBarItem.tooltip = 'Sign in to get started with Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             return
         }
