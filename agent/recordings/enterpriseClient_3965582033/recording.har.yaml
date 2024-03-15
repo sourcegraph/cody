@@ -102,1297 +102,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 541a40f5b0b77d7ada0eb8181cfe9b71
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3115
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - name: user-agent
-            value: enterpriseClient / v1
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 265
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file src/example.test.tsin repository
-                  undefined:
-
-<<<<<<< HEAD
-                  | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-
-                  | `pnpm test agent/src/index.test.ts`                                                                                  | Run agent tests in replay mode                                                                                                                                |
-
-                  | `source agent/scripts/export-cody-http-recording-tokens.sh`                                                          | Export access tokens to enable recording mode                                                                                                                 |
-
-                  | `pnpm update-agent-tests`                                                                                            | Update HTTP recordings for all tests. Run this before opening a PR                                                                                            |
-
-                  | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts`                 | Run this when iterating on a feature and you only want to run an individual test via `it.only`. Remember to run `pnpm update-agent-tests` before sending a PR |
-
-                  | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
-
-
-                  ## Debugging the agent
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What is Squirrel?
-              - speaker: assistant
-            model: anthropic/claude-2
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://demo.sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 61396
-        content:
-          mimeType: text/event-stream
-          size: 61396
-          text: >+
-            event: completion
-
-            data: {"completion":" Based","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-s","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide ho","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Inter","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mock","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the c","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interf","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-s","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 06 Mar 2024 08:52:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1214
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-06T08:52:19.460Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 34d08a493bd1125714779521a25f5f3a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3150
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - name: user-agent
-            value: enterpriseClient / v1
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 265
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |+
-                  Use the following code snippet from file: src/example.test.ts:
-=======
->>>>>>> main
-                  import { expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - describe('test block', () => {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://demo.sourcegraph.com/.api/completions/stream
-      response:
-<<<<<<< HEAD
-        bodySize: 6487
-        content:
-          mimeType: text/event-stream
-          size: 6487
-=======
-        bodySize: 6248
-        content:
-          mimeType: text/event-stream
-          size: 6248
->>>>>>> main
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that","stopReason":""}
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.now","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.now`","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n*/","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.now`\n */","stopReason":""}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n*/\n","stopReason":""}
->>>>>>> main
-
-
-            event: completion
-
-<<<<<<< HEAD
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.now`\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that will error due to incorrect usage of `performance.now`\n */\n","stopReason":"stop_sequence"}
-=======
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n*/\n","stopReason":"stop_sequence"}
->>>>>>> main
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-<<<<<<< HEAD
-            value: Fri, 08 Mar 2024 11:41:55 GMT
-=======
-            value: Thu, 14 Mar 2024 23:55:29 GMT
->>>>>>> main
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1214
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-08T11:41:52.477Z
-=======
-      startedDateTime: 2024-03-14T23:55:26.860Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 04a003a70be4dca9be6480df34125967
       _order: 0
       cache: {}
@@ -2739,7 +1448,367 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-14T23:55:29.878Z
->>>>>>> main
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 22c82ba0ddd9fabe405cac42641552a4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3156
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - name: user-agent
+            value: enterpriseClient / v1
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 265
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file src/example.test.tsin repository
+                  undefined:
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to geneerate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-instant-1.2
+            stopSequences:
+              - </CODE5711>
+              - describe('test block', () => {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 5846
+        content:
+          mimeType: text/event-stream
+          size: 5846
+          text: >+
+            event: completion
+
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 15 Mar 2024 09:08:03 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1214
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-15T09:08:01.777Z
       time: 0
       timings:
         blocked: -1

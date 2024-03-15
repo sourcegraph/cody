@@ -1,4 +1,4 @@
-import { FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
+import { AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'

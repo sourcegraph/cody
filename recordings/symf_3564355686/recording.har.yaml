@@ -5,11 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-<<<<<<< HEAD
-    - _id: 6d05a4a0e9fdaebe5e7882d2c8f92849
-=======
     - _id: 8f85234992664e43a41b9158d12d2e4a
->>>>>>> main
       _order: 0
       cache: {}
       request:
@@ -22,11 +18,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-<<<<<<< HEAD
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-=======
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
->>>>>>> main
           - name: host
             value: sourcegraph.com
         headersSize: 231
@@ -1208,11 +1200,7 @@ log:
         cookies: []
         headers:
           - name: date
-<<<<<<< HEAD
-            value: Mon, 11 Mar 2024 13:19:39 GMT
-=======
             value: Fri, 15 Mar 2024 01:24:14 GMT
->>>>>>> main
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1241,11 +1229,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-11T13:19:36.219Z
-=======
       startedDateTime: 2024-03-15T01:24:13.267Z
->>>>>>> main
       time: 0
       timings:
         blocked: -1
@@ -1255,11 +1239,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-<<<<<<< HEAD
-    - _id: a7867bb53bdc7177002e13ba3ae06dcd
-=======
     - _id: ca1c5912d3ea774c33fabc5ee68ee582
->>>>>>> main
       _order: 0
       cache: {}
       request:
@@ -1272,11 +1252,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-<<<<<<< HEAD
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-=======
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
->>>>>>> main
           - name: host
             value: sourcegraph.com
         headersSize: 231
@@ -2084,11 +2060,7 @@ log:
         cookies: []
         headers:
           - name: date
-<<<<<<< HEAD
-            value: Mon, 11 Mar 2024 13:19:43 GMT
-=======
             value: Fri, 15 Mar 2024 01:24:17 GMT
->>>>>>> main
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2117,11 +2089,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-11T13:19:40.657Z
-=======
       startedDateTime: 2024-03-15T01:24:16.491Z
->>>>>>> main
       time: 0
       timings:
         blocked: -1
@@ -2131,11 +2099,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-<<<<<<< HEAD
-    - _id: 559d04514b68bfc1e86c4da9f57c0e58
-=======
     - _id: 5cf1cf114d493fed67ae906e2be8cbeb
->>>>>>> main
       _order: 0
       cache: {}
       request:
@@ -2148,11 +2112,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-<<<<<<< HEAD
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-=======
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
->>>>>>> main
           - name: host
             value: sourcegraph.com
         headersSize: 231
@@ -2755,11 +2715,7 @@ log:
         cookies: []
         headers:
           - name: date
-<<<<<<< HEAD
-            value: Mon, 11 Mar 2024 13:19:46 GMT
-=======
             value: Fri, 15 Mar 2024 01:24:19 GMT
->>>>>>> main
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2788,11 +2744,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-11T13:19:44.387Z
-=======
       startedDateTime: 2024-03-15T01:24:18.807Z
->>>>>>> main
       time: 0
       timings:
         blocked: -1
@@ -2802,11 +2754,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-<<<<<<< HEAD
-    - _id: df58f369a0a9b56538efb2acf2010447
-=======
     - _id: ffcce0cfbcc5f0916b581609919a7e9b
->>>>>>> main
       _order: 0
       cache: {}
       request:
@@ -2819,11 +2767,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-<<<<<<< HEAD
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-=======
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
->>>>>>> main
           - name: host
             value: sourcegraph.com
         headersSize: 231
@@ -3600,11 +3544,7 @@ log:
         cookies: []
         headers:
           - name: date
-<<<<<<< HEAD
-            value: Mon, 11 Mar 2024 13:19:49 GMT
-=======
             value: Fri, 15 Mar 2024 01:24:22 GMT
->>>>>>> main
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3633,11 +3573,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-11T13:19:46.525Z
-=======
       startedDateTime: 2024-03-15T01:24:20.967Z
->>>>>>> main
       time: 0
       timings:
         blocked: -1
@@ -3647,11 +3583,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-<<<<<<< HEAD
-    - _id: f5c3567bb9c2c8e4328da577309c47cb
-=======
     - _id: 752ff98cdeb8766d3dfc1e331c20fbfb
->>>>>>> main
       _order: 0
       cache: {}
       request:
@@ -3664,11 +3596,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-<<<<<<< HEAD
-              REDACTED_dd694bf94505e2119a9bd0b9dc9df373dba47f4f76bff895f84eb51fa3664b9e
-=======
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
->>>>>>> main
           - name: host
             value: sourcegraph.com
         headersSize: 231
@@ -4655,11 +4583,7 @@ log:
         cookies: []
         headers:
           - name: date
-<<<<<<< HEAD
-            value: Mon, 11 Mar 2024 13:19:51 GMT
-=======
             value: Fri, 15 Mar 2024 01:24:24 GMT
->>>>>>> main
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -4688,11 +4612,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-<<<<<<< HEAD
-      startedDateTime: 2024-03-11T13:19:49.796Z
-=======
       startedDateTime: 2024-03-15T01:24:23.344Z
->>>>>>> main
       time: 0
       timings:
         blocked: -1

@@ -243,21 +243,13 @@ describe('Agent', () => {
 
               - System.out.println prints the text "Hello World!" to the console/standard output.
 
-              - The code is wrapped in a class called Main. This class contains the main method where the program execution begins.
-
-              - The main method has a String array parameter called args. This contains any command line arguments passed to the program.
-
-              - Inside the main method, we call System.out.println("Hello World"); to print the text "Hello World!" to the console.
-
-              - The println method handles printing the text and moving to a new line after.
-
-              So this program simply prints "Hello World!" when run. To execute it from the command line:
+              To run this:
 
               - Save the code in a file called Main.java
               - Compile it with: javac Main.java
               - Run it with: java Main
 
-              And you'll see the output printed to the console."
+              This will print "Hello World!" to the console when executed."
             `,
                 explainPollyError
             )
@@ -339,7 +331,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `" I don't have a specific model name or version. I was created by Anthropic to be an AI assistant that is helpful, harmless, and honest."`,
+                `" I'm an AI assistant created by Anthropic. I don't have a specific model name."`,
                 explainPollyError
             )
         }, 30_000)
@@ -709,7 +701,7 @@ describe('Agent', () => {
 
               It has three members:
 
-              1. name - This will be a string property to store the animal's name.
+              1. name - A string property to store the animal's name.
 
               2. makeAnimalSound() - A method that returns a string representing the sound the animal makes. Classes implementing Animal must define this method.
 
@@ -947,11 +939,10 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   *
-                   * @param a - The first number to sum.
-                   * @param b - The second number to sum.
-                   * @returns The sum of a and b.
+                   * Sums two numbers
+                   * @param a The first number to sum
+                   * @param b The second number to sum
+                   * @returns The sum of a and b
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -971,9 +962,9 @@ describe('Agent', () => {
                       export class TestClass {
                           constructor(private shouldGreet: boolean) {}
 
-                          /**
-                           * If the shouldGreet property is true, logs a greeting to the console.
-                           */
+                              /**
+                               * Logs a greeting message to the console if the shouldGreet property is true.
+                               */
                           public functionName() {
                               if (this.shouldGreet) {
                                   console.log(/* CURSOR */ 'Hello World!')
@@ -992,8 +983,8 @@ describe('Agent', () => {
                     expect(obtained).toMatchInlineSnapshot(`
                       "const foo = 42
                       /**
-                       * Starts logging by calling the recordLog function.
-                      */
+                       * Starts logging operations. Logs a message when recordLog is called.
+                       */
                       export const TestLogger = {
                           startLogging: () => {
                               // Do some stuff
@@ -1020,11 +1011,15 @@ describe('Agent', () => {
                       import { describe } from 'vitest'
 
                       /**
-                       * A test block with 3 test cases:
-                       * - Checks that true equals true
-                       * - Checks that true equals true again
-                       * - Attempts to record start time but errors due to invalid usage of performance.now
-                      */
+                       * Test block for some functionality
+                       *
+                       * Contains three test cases:
+                       *
+                       * - does 1: Tests some assertion
+                       * - does 2: Tests some other assertion
+                       * - does something else: Tests using performance.now()
+                       *  (currently errors due to incorrect usage)
+                       */
                       describe('test block', () => {
                           it('does 1', () => {
                               expect(true).toBe(true)
@@ -1092,7 +1087,7 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              " Here is the selected TypeScript code translated to Python:
+              " Here is the TypeScript code translated to Python:
 
               \`\`\`python
               from typing import NamedTuple
@@ -1374,11 +1369,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 test cases:
+                   * Test block that runs 3 tests:
                    * - Does test 1
                    * - Does test 2
                    * - Does something else that errors due to incorrect usage of \`performance.now\`
-                  */
+                   */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
