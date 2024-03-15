@@ -261,6 +261,7 @@ async function doGetInlineCompletions(
                   handleDidPartiallyAcceptCompletionItem,
               })
             : null
+
     if (resultToReuse) {
         return resultToReuse
     }
@@ -308,9 +309,11 @@ async function doGetInlineCompletions(
 
     if (smartThrottleService) {
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+
         if (throttledRequest === null) {
             return null
         }
+
         requestParams = throttledRequest
     }
 
@@ -345,6 +348,7 @@ async function doGetInlineCompletions(
                 docContext,
                 abortSignal,
                 maxChars: providerConfig.contextSizeHints.totalChars,
+                lastCandidate,
             })
         ),
         remainingInterval > 0

@@ -155,7 +155,9 @@ test
 
     // Search the embeddings. This test uses the "stub" embedding model, which
     // is deterministic, but the searches are not semantic.
-    await chatFrame.locator('textarea').type('hello world\n')
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await chatInput.fill('hello world')
+    await chatInput.press('Enter')
     await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({
         timeout: 10000,
     })

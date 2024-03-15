@@ -97,39 +97,10 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     padding: 0.75rem;
 }
 
-/* Both elements need the same styling so the height matches */
-.chat-input,
-.chat-input-container::after {
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-}
-
-.chat-input-container {
-    width: 100%;
-    height: 100%;
+.editor-outer-container {
     position: relative;
-}
-
-.chat-input {
     width: 100%;
-    height: 100%;
-    resize: none;
-    border-color: var(--vscode-input-border, transparent);
 }
-
-.chat-input:focus,
-.chat-input:focus-visible,
-.chat-input:focus-within {
-    outline: 1px solid var(--vscode-focusBorder);
-    outline-offset: -1px;
-}
-
-.textarea-disabled {
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    opacity: 0.5;
-}
-
 
 .chat-input-actions {
     position: absolute;

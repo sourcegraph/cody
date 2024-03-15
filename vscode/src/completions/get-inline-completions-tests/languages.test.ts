@@ -5,7 +5,7 @@ import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
 import { completion } from '../test-helpers'
 
-import { getInlineCompletionsInsertText, params } from './helpers'
+import { getInlineCompletionsInsertText, getInlineCompletionsWithInlinedChunks, params } from './helpers'
 
 describe('[getInlineCompletions] languages', () => {
     it('works with python', async () => {
@@ -303,5 +303,42 @@ describe('[getInlineCompletions] languages', () => {
                       print('ODD $i');
                   }"
             `)
+    })
+
+    it('works with kotlin', async () => {
+        const requests: CompletionParameters[] = []
+        const result = await getInlineCompletionsWithInlinedChunks(
+            `fun main() {
+                for (i in 0..10) {
+                    if (i % 2 == 0) {
+                        █println(i)
+                    } else if (i % 3 == 0) {
+                        println("Multiple of 3: $i")
+                    } else {
+                        println("ODD $i")
+                    }
+                }
+
+                for (i in 0..11) {
+                    println("unrelated")
+                }
+            }█`,
+            {
+                languageId: 'kotlin',
+                onNetworkRequest(params) {
+                    requests.push(params)
+                },
+            }
+        )
+
+        expect(requests).toBeMultiLine()
+        expect(result.items[0].insertText).toMatchInlineSnapshot(`
+          "println(i)
+                  } else if (i % 3 == 0) {
+                      println("Multiple of 3: $i")
+                  } else {
+                      println("ODD $i")
+                  }"
+        `)
     })
 })

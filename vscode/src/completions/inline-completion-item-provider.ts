@@ -157,6 +157,7 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+
         if (completionProviderConfig.smartThrottle) {
             this.smartThrottleService = new SmartThrottleService()
             this.disposables.push(this.smartThrottleService)

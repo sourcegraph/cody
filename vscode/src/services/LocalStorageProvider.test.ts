@@ -3,7 +3,6 @@ import type * as vscode from 'vscode'
 
 import type { AuthStatus } from '@sourcegraph/cody-shared'
 
-import { URI } from 'vscode-uri'
 import { localStorage } from './LocalStorageProvider'
 
 describe('LocalStorageProvider', () => {
@@ -24,13 +23,11 @@ describe('LocalStorageProvider', () => {
     it('sets and gets chat history', async () => {
         await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
             chat: { a: null as any },
-            input: [{ inputText: 'a', inputContextFiles: [{ type: 'file', uri: URI.file('a') }] }],
         })
 
         const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
         expect(loadedHistory).toEqual({
             chat: { a: null as any },
-            input: [{ inputText: 'a', inputContextFiles: [{ type: 'file', uri: URI.file('a') }] }],
         })
     })
 })

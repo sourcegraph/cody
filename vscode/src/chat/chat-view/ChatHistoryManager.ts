@@ -1,9 +1,4 @@
-import type {
-    AuthStatus,
-    ChatInputHistory,
-    SerializedChatTranscript,
-    UserLocalHistory,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -19,14 +14,10 @@ export class ChatHistoryManager {
 
     public async saveChat(
         authStatus: AuthStatus,
-        chat: SerializedChatTranscript,
-        input?: ChatInputHistory
+        chat: SerializedChatTranscript
     ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
-        if (input) {
-            history.input.push(input)
-        }
         await localStorage.setChatHistory(authStatus, history)
         return history
     }

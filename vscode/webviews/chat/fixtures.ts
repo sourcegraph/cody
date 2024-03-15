@@ -1,9 +1,10 @@
 import { URI } from 'vscode-uri'
 
 import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
 export const FIXTURE_TRANSCRIPT: Record<
-    'simple' | 'simple2' | 'codeQuestion' | 'explainCode',
+    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2',
     ChatMessage[]
 > = {
     simple: [
@@ -59,6 +60,32 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'assistant',
             text: "Here is the rewritten code using only hexadecimal encoding:\n\n```\nprivate getNonce(): string {\n  let text = ''\n  const possible = '0123456789ABCDEF'\n  for (let i = 0; i < 32; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length))\n  }\n  return text\n}\n```",
+        },
+    ],
+    explainCode2: [
+        {
+            speaker: 'human',
+            text: 'What does @#Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.',
+            editorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
+            contextFiles: [
+                {
+                    type: 'symbol',
+                    uri: URI.file('dir/dir/file-a-1.py'),
+                    symbolName: 'Symbol1',
+                    kind: 'function',
+                    range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
+                },
+                { type: 'file', uri: URI.file('dir/dir/file-a-1.py') },
+                {
+                    type: 'file',
+                    uri: URI.file('README.md'),
+                    range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
+                },
+            ],
+        },
+        {
+            speaker: 'assistant',
+            text: 'This code is very cool.',
         },
     ],
 }

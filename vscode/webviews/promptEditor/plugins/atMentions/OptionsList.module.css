@@ -1,0 +1,105 @@
+.container {
+    min-width: 180px;
+    font-size: var(--vscode-font-size);
+    padding: 0 5px 5px 5px; /* match VS Code quickpick padding */
+}
+
+:root {
+    --item-height: 22px; /* match VS Code quickpick item height */
+    --item-padding-y: 0.2rem;
+    --item-padding-x: 11px; /* match VS Code quickpick padding */
+    --description-font-size: 0.9em; /* match VS Code quickpick description */
+}
+
+.list {
+    max-height: calc(8*var(--item-height));
+    overflow-y: scroll;
+    list-style: none;
+    padding: var(--list-padding-y) 0;
+    margin: 0;
+
+    border-top: 1px solid var(--vscode-pickerGroup-border);
+    margin-top: -1px;
+}
+
+.item {
+    height: calc(var(--item-height) - 2*var(--item-padding-y));
+    padding: var(--item-padding-y) var(--item-padding-x);
+}
+
+.help-item {
+    opacity: 0.75;
+    padding: 5px var(--item-padding-x);
+    user-select: none;
+    font-size: inherit;
+    font-weight: normal;
+    margin: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Hide scrollbar */
+.list {
+    scrollbar-width: none;
+}
+.list::-webkit-scrollbar {
+    display: none;
+}
+
+/* Scroll snap */
+.list {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: auto;
+}
+.option-item {
+    scroll-snap-align: end;
+}
+
+
+.option-item {
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.option-item.selected {
+    color: var(--vscode-list-activeSelectionForeground);
+    background-color: var(--vscode-list-activeSelectionBackground);
+}
+.option-item:hover:not(.selected) {
+    color: var(--vscode-list-hoverForeground);
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .option-item.selected,
+body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
+    outline: 1px dashed var(--vscode-contrastActiveBorder);
+    outline-offset: -1px;
+}
+
+/* Option item content */
+.option-item {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.35rem;
+}
+.option-item-title, .option-item-description {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.option-item-title--with-warning {
+    opacity: 0.7;
+}
+.option-item-description {
+    font-size: var(--description-font-size);
+    opacity: 0.7;
+    flex: 1;
+}
+.option-item-warning {
+    font-weight: bold;
+    font-size: 90%;
+    white-space: nowrap;
+    padding-left: 0.25rem;
+}
+
