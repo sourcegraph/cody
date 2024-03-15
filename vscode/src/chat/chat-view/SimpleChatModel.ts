@@ -38,7 +38,7 @@ export class SimpleChatModel {
         lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+    public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
         if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }

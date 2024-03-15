@@ -1,12 +1,9 @@
 import {
     type ContextItem,
     type ContextMessage,
-    ProgrammingLanguage,
-    languageFromFilename,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
-    populateMarkdownContextTemplate,
 } from '@sourcegraph/cody-shared'
 import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
@@ -31,8 +28,6 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         messageText = populateContextTemplateFromText(templateText, contextItem.content, uri)
     } else if (contextItem.source === ContextItemSource.Terminal) {
         messageText = contextItem.content
-    } else if (languageFromFilename(uri) === ProgrammingLanguage.Markdown) {
-        messageText = populateMarkdownContextTemplate(contextItem.content, uri, contextItem.repoName)
     } else {
         messageText = populateCodeContextTemplate(contextItem.content, uri, contextItem.repoName)
     }

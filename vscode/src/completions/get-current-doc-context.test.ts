@@ -24,7 +24,6 @@ function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletio
         maxPrefixLength: 100,
         maxSuffixLength: 100,
         context,
-        dynamicMultilineCompletions: false,
     })
 }
 
@@ -199,8 +198,7 @@ describe('getCurrentDocContext', () => {
 
         interface PrepareTestParams {
             code: string
-            dynamicMultilineCompletions: boolean
-            langaugeId?: string
+            languageId?: string
         }
 
         interface PrepareTestResult {
@@ -209,8 +207,8 @@ describe('getCurrentDocContext', () => {
         }
 
         function prepareTest(params: PrepareTestParams): PrepareTestResult {
-            const { dynamicMultilineCompletions, code, langaugeId } = params
-            const { document, position } = documentAndPosition(code, langaugeId)
+            const { code, languageId } = params
+            const { document, position } = documentAndPosition(code, languageId)
 
             const tree = parser.parse(document.getText())
             const docContext = getCurrentDocContext({
@@ -218,7 +216,6 @@ describe('getCurrentDocContext', () => {
                 position,
                 maxPrefixLength: 100,
                 maxSuffixLength: 100,
-                dynamicMultilineCompletions,
             })
 
             return { tree, docContext }
@@ -236,114 +233,85 @@ describe('getCurrentDocContext', () => {
             resetParsersCache()
         })
 
-        describe('with enabled dynamicMultilineCompletions', () => {
-            it.each([
-                dedent`
+        it.each([
+            dedent`
                     def greatest_common_divisor(a, b):█
                 `,
-                dedent`
+            dedent`
                     def greatest_common_divisor(a, b):
                         if a == 0:█
                 `,
-                dedent`
+            dedent`
                     def bubbleSort(arr):
                         n = len(arr)
                         for i in range(n-1):
                             █
                 `,
-            ])('detects the multiline trigger for python', code => {
-                const {
-                    tree,
-                    docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultilineCompletions: true, langaugeId: 'python' })
+        ])('detects the multiline trigger for python', code => {
+            const {
+                tree,
+                docContext: { multilineTrigger, multilineTriggerPosition },
+            } = prepareTest({ code, languageId: 'python' })
 
-                const triggerNode = tree.rootNode.descendantForPosition(
-                    asPoint(multilineTriggerPosition!)
-                )
-                expect(multilineTrigger).toBe(triggerNode.text)
-            })
+            const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
+            expect(multilineTrigger).toBe(triggerNode.text)
+        })
 
-            it.each([
-                'const results = {█',
-                'const result = {\n  █',
-                'const result = {\n    █',
-                'const something = true\nfunction bubbleSort(█)',
-            ])('returns correct multiline trigger position', code => {
-                const {
-                    tree,
-                    docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultilineCompletions: true })
+        it.each([
+            'const results = {█',
+            'const result = {\n  █',
+            'const result = {\n    █',
+            'const something = true\nfunction bubbleSort(█)',
+        ])('returns correct multiline trigger position', code => {
+            const {
+                tree,
+                docContext: { multilineTrigger, multilineTriggerPosition },
+            } = prepareTest({ code })
 
-                const triggerNode = tree.rootNode.descendantForPosition(
-                    asPoint(multilineTriggerPosition!)
-                )
-                expect(multilineTrigger).toBe(triggerNode.text)
-            })
+            const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
+            expect(multilineTrigger).toBe(triggerNode.text)
+        })
 
-            it.each([
-                dedent`
+        it.each([
+            dedent`
                     detectMultilineTrigger(
                         █
                     )
                 `,
-                dedent`
+            dedent`
                     const oddNumbers = [
                         █
                     ]
                 `,
-                dedent`
+            dedent`
                     type Whatever = {
                         █
                     }
                 `,
-            ])('detects the multiline trigger on the new line inside of parentheses', code => {
+        ])('detects the multiline trigger on the new line inside of parentheses', code => {
+            const {
+                tree,
+                docContext: { multilineTrigger, multilineTriggerPosition },
+            } = prepareTest({ code })
+
+            const triggerNode = tree.rootNode.descendantForPosition(asPoint(multilineTriggerPosition!))
+            expect(triggerNode.text).toBe(multilineTrigger)
+        })
+
+        it.each(['const oddNumbers = [█]', 'const result = {█}'])(
+            'detects the multiline trigger on the current line inside of parentheses',
+            code => {
                 const {
                     tree,
                     docContext: { multilineTrigger, multilineTriggerPosition },
-                } = prepareTest({ code, dynamicMultilineCompletions: true })
+                } = prepareTest({ code })
 
                 const triggerNode = tree.rootNode.descendantForPosition(
                     asPoint(multilineTriggerPosition!)
                 )
                 expect(triggerNode.text).toBe(multilineTrigger)
-            })
-        })
-
-        describe('with disabled dynamicMultilineCompletions', () => {
-            it.each([
-                dedent`
-                    detectMultilineTrigger(
-                        █
-                    )
-                `,
-                dedent`
-                    const oddNumbers = [
-                        █
-                    ]
-                `,
-            ])('does not detect the multiline trigger on the new line inside of parentheses', code => {
-                const { multilineTrigger } = prepareTest({
-                    code,
-                    dynamicMultilineCompletions: false,
-                }).docContext
-                expect(multilineTrigger).toBeNull()
-            })
-
-            it.each(['detectMultilineTrigger(█)', 'const oddNumbers = [█]', 'const result = {█}'])(
-                'detects the multiline trigger on the current line inside of parentheses',
-                code => {
-                    const {
-                        tree,
-                        docContext: { multilineTrigger, multilineTriggerPosition },
-                    } = prepareTest({ code, dynamicMultilineCompletions: true })
-
-                    const triggerNode = tree.rootNode.descendantForPosition(
-                        asPoint(multilineTriggerPosition!)
-                    )
-                    expect(triggerNode.text).toBe(multilineTrigger)
-                }
-            )
-        })
+            }
+        )
     })
 })
 
@@ -372,7 +340,6 @@ describe('getContextRange', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            dynamicMultilineCompletions: false,
         })
         const contextRange = getContextRange(document, docContext)
 
@@ -405,7 +372,6 @@ describe('insertCompletionIntoDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            dynamicMultilineCompletions: false,
         })
 
         const insertText = "console.log('hello')\n    console.log('world')"
@@ -414,7 +380,6 @@ describe('insertCompletionIntoDocContext', () => {
             docContext,
             insertText,
             languageId: document.languageId,
-            dynamicMultilineCompletions: false,
         })
 
         expect(updatedDocContext).toEqual({
@@ -449,7 +414,6 @@ describe('insertCompletionIntoDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            dynamicMultilineCompletions: false,
         })
 
         const insertText = "'hello', 'world')"
@@ -457,7 +421,6 @@ describe('insertCompletionIntoDocContext', () => {
             docContext,
             insertText,
             languageId: document.languageId,
-            dynamicMultilineCompletions: false,
         })
 
         expect(updatedDocContext).toEqual({
@@ -492,7 +455,6 @@ describe('insertCompletionIntoDocContext', () => {
             position,
             maxPrefixLength: 140,
             maxSuffixLength: 60,
-            dynamicMultilineCompletions: false,
         })
 
         const insertText = '\n        propA: foo,\n        propB: bar,\n    }, 2)'
@@ -500,7 +462,6 @@ describe('insertCompletionIntoDocContext', () => {
             docContext,
             insertText,
             languageId: document.languageId,
-            dynamicMultilineCompletions: false,
         })
 
         expect(updatedDocContext).toEqual({

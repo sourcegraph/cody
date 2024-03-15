@@ -26,7 +26,14 @@ suite('Chat', function () {
     test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.panel.new')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
+        await chatView.handleUserMessageSubmission(
+            'test',
+            'hello from the human',
+            'user',
+            [],
+            undefined,
+            false
+        )
 
         assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
         await waitUntil(async () =>
@@ -39,7 +46,14 @@ suite('Chat', function () {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.panel.new')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
+        await chatView.handleUserMessageSubmission(
+            'test',
+            'hello from the human',
+            'user',
+            [],
+            undefined,
+            false
+        )
 
         // Display text should include file link at the end of message
         assert.match((await getTranscript(0)).text || '', /^hello from the human$/)

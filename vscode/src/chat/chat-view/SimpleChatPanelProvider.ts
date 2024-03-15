@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     type ChatEventSource,
-    type ChatInputHistory,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
@@ -55,6 +54,7 @@ import { TestSupport } from '../../test-support'
 import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
+import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
@@ -251,6 +251,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.submitType,
                     message.contextFiles ?? [],
+                    message.editorState,
                     message.addEnhancedContext ?? false,
                     'chat'
                 )
@@ -262,6 +263,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.text,
                     message.index,
                     message.contextFiles ?? [],
+                    message.editorState,
                     message.addEnhancedContext || false
                 )
                 break
@@ -393,6 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: string,
         submitType: ChatSubmitType,
         userContextFiles: ContextItem[],
+        editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
         source?: ChatEventSource
     ): Promise<void> {
@@ -440,8 +443,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     await this.clearAndRestartSession()
                 }
 
-                this.chatModel.addHumanMessage({ text: inputText })
-                await this.saveSession({ inputText, inputContextFiles: userContextFiles })
+                this.chatModel.addHumanMessage({ text: inputText, editorState })
+                await this.saveSession()
 
                 this.postEmptyMessageInProgress()
 
@@ -533,8 +536,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleEdit(
         requestID: string,
         text: string,
-        index?: number,
-        contextFiles: ContextItem[] = [],
+        index: number | undefined,
+        contextFiles: ContextItem[],
+        editorState: ChatMessage['editorState'],
         addEnhancedContext = true
     ): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
@@ -553,6 +557,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 text,
                 'user',
                 contextFiles,
+                editorState,
                 addEnhancedContext
             )
         } catch {
@@ -598,7 +603,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             })
         }
 
+        // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
+        this.contextFilesQueryCancellation?.cancel()
+        this.contextFilesQueryCancellation = cancellation
 
         try {
             const MAX_RESULTS = 20
@@ -631,11 +639,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
         } catch (error) {
             this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            // Cancel any previous search request after we update the UI
-            // to avoid a flash of empty results as you type
-            this.contextFilesQueryCancellation?.cancel()
-            this.contextFilesQueryCancellation = cancellation
         }
     }
 
@@ -739,6 +742,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         void this.postMessage({ type: 'errors', errors: error.message })
+        captureException(error)
     }
 
     private postChatModels(): void {
@@ -1042,11 +1046,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.postViewTranscript()
     }
 
-    private async saveSession(humanInput?: ChatInputHistory): Promise<void> {
+    private async saveSession(): Promise<void> {
         const allHistory = await this.history.saveChat(
             this.authProvider.getAuthStatus(),
-            this.chatModel.toSerializedChatTranscript(),
-            humanInput
+            this.chatModel.toSerializedChatTranscript()
         )
         if (allHistory) {
             void this.postMessage({

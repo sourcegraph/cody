@@ -3,7 +3,8 @@ import path from 'path'
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
-import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage } from './grammars'
+import type { Tree } from 'web-tree-sitter'
+import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
@@ -65,12 +66,26 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
-    // stop parsing after 50ms to avoid infinite loops
+    // stop parsing after 70ms to avoid infinite loops
     // if that happens, tree-sitter throws an error so we can catch and address it
-    parser.setTimeoutMicros(50_000)
+    parser.setTimeoutMicros(70_000)
     PARSERS_LOCAL_CACHE[language] = parser
 
     initQueries(languageGrammar, language, parser)
 
     return parser
+}
+
+export function parseString(languageId: string, source: string): Tree | null {
+    if (!isSupportedLanguage(languageId)) {
+        return null
+    }
+
+    const parser = getParser(languageId)
+
+    if (!parser) {
+        return null
+    }
+
+    return parser.parse(source)
 }
