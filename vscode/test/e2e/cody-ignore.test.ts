@@ -66,7 +66,7 @@ test.extend<ExpectedEvents>({
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
-        chatPanel.getByRole('option', { name: withPlatformSlashes('.cody/ignore') })
+        chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()
     await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 

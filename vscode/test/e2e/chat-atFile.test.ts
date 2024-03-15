@@ -55,14 +55,14 @@ test.extend<ExpectedEvents>({
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
     await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
     ).toBeVisible()
 
     // Backslashes
     if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
-            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('lib/batches/env/var.go') })
+            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
         ).toBeVisible()
     }
 
@@ -88,7 +88,7 @@ test.extend<ExpectedEvents>({
     // Keyboard nav through context files
     await chatInput.fill('Explain @var.go')
     await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
     ).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))

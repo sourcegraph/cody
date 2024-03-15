@@ -67,7 +67,7 @@ test.extend<ExpectedEvents>({
     await chatPanel.getByText('Context: 20 lines from 1 file').click()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
-    const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
+    const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message/ })
     // Edit button and Edit Last Message are shown on all command messages.
     await expect(disabledEditButtons).toHaveCount(0)
     await expect(editLastMessageButton).toBeVisible()
