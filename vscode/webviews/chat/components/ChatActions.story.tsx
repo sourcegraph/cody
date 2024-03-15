@@ -42,6 +42,7 @@ export const EditingMessage: StoryObj<typeof meta> = {
 export const EmptyChat: StoryObj<typeof meta> = {
     args: {
         isEmptyChat: true,
+        isEditorFocused: true,
     },
 }
 

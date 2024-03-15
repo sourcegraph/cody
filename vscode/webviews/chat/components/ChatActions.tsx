@@ -8,6 +8,8 @@ export const ChatActions: React.FunctionComponent<{
     isEditing: boolean
     isMessageInProgress: boolean
     isEmptyChat: boolean
+    isEmptyEditorValue: boolean
+    isEditorFocused: boolean
     onChatResetClick: () => void
     onCancelEditClick: () => void
     onEditLastMessageClick: () => void
@@ -16,6 +18,8 @@ export const ChatActions: React.FunctionComponent<{
 }> = React.memo(function ContextFilesContent({
     isEditing,
     isEmptyChat,
+    isEmptyEditorValue,
+    isEditorFocused,
     isMessageInProgress,
     onChatResetClick,
     onCancelEditClick,
@@ -36,34 +40,43 @@ export const ChatActions: React.FunctionComponent<{
     // The "Edit Last Message" and "New Chat" actions are available when isEditing is false,
     // indicating that the user is not editing a message and can either edit their last message
     // or start a new chat session via these buttons that also have keyboard shortcuts associated with them.
-    const actions = [
+    const actions: {
+        name: string
+        keyLabel: string
+        keyRequiresFocus?: boolean
+        onClick?: () => void
+        focus: boolean
+        when: boolean
+    }[] = [
         {
             name: 'Cancel Edit',
-            keybind: 'ESC',
+            keyLabel: 'ESC',
+            keyRequiresFocus: true,
             onClick: onCancelEditClick,
             focus: false,
             when: isEditing && !isEmptyChat,
         },
         {
-            name: 'Edit Last Message',
-            keybind: `${osIcon}K`,
-            onClick: onEditLastMessageClick,
-            focus: true,
-            when: !isEmptyChat && !isEditing,
-        },
-        {
             name: '← Return to Previous Chat',
-            keybind: '',
+            keyLabel: '',
             onClick: onRestoreLastChatClick,
             focus: false,
             when: isEmptyChat && onRestoreLastChatClick !== undefined,
         },
         {
             name: 'Start New Chat',
-            keybind: `${osIcon}/`,
+            keyLabel: `${osIcon}/`,
             onClick: onChatResetClick,
             focus: false,
             when: !isEmptyChat && !isEditing,
+        },
+        {
+            name: 'Edit Last Message',
+            keyLabel: '↑',
+            keyRequiresFocus: true,
+            onClick: onEditLastMessageClick,
+            focus: true,
+            when: !isEmptyChat && isEmptyEditorValue && !isEditing,
         },
     ]
 
@@ -129,8 +142,8 @@ export const ChatActions: React.FunctionComponent<{
                     >
                         <span className={styles.chatActionButtonTitle}>
                             {action.name}
-                            {isWebviewActive && (
-                                <span className={styles.chatActionKeybind}> {action.keybind}</span>
+                            {isWebviewActive && (!action.keyRequiresFocus || isEditorFocused) && (
+                                <span className={styles.chatActionKeybind}> {action.keyLabel}</span>
                             )}
                         </span>
                     </button>

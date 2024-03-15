@@ -85,6 +85,7 @@ data class SubmitWebviewMessage(
   val contextFiles: List<ContextItem>? = null,
   val text: String? = null,
   val submitType: ChatSubmitType? = null, // Oneof: user, user-newchat
+  val editorState: Any? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -194,6 +195,7 @@ data class EditWebviewMessage(
   val contextFiles: List<ContextItem>? = null,
   val text: String? = null,
   val index: Int? = null,
+  val editorState: Any? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

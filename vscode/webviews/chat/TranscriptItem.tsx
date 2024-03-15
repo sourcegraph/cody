@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type Guardrails, getDisplayText } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ChatButtonProps } from '../Chat'
@@ -16,6 +16,7 @@ import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
 /**
@@ -89,11 +90,7 @@ export const TranscriptItem: React.FunctionComponent<
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
 
-    // Memoize based on the content, not the object reference, so that the displayText is not
-    // recomputed each time any other message in the parent transcript changes.
-    const messageJSON = useMemo((): string => JSON.stringify(message), [message])
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Our use of `message` is safe because we depend on `messageJSON`.
-    const displayText = useMemo((): string => getDisplayText(message), [messageJSON])
+    const displayMarkdown = useDisplayMarkdown(message)
 
     return (
         <div
@@ -145,9 +142,9 @@ export const TranscriptItem: React.FunctionComponent<
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
-                {displayText ? (
+                {displayMarkdown ? (
                     <CodeBlocks
-                        displayText={displayText}
+                        displayMarkdown={displayMarkdown}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
@@ -194,3 +191,13 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 })
+
+/**
+ * React hook for returning the Markdown for rendering a chat message's text.
+ */
+function useDisplayMarkdown(message: ChatMessage): string {
+    if (message.speaker === 'assistant') {
+        return reformatBotMessageForChat(message.text ?? '')
+    }
+    return serializedPromptEditorStateFromChatMessage(message).html
+}
