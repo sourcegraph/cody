@@ -9666,6 +9666,7 @@ log:
 
 
 
+
                       
                   </selected>
               - speaker: assistant
@@ -17801,1113 +17802,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b6b27fd2cc4315a38d0aa2768d7bdae6
+    - _id: 29995f66f46573160240f85311dbfbc9
       _order: 0
       cache: {}
       request:
-        bodySize: 2923
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  const foo = 42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestClass.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>    public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  }</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - "    public functionName() {"
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1829
-        content:
-          mimeType: text/event-stream
-          size: 1829
-          text: >+
-            event: completion
-
-            data: {"completion":"\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Condition","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the console","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the console\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the console\n     */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the console\n     */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n    /** \n     * Conditionally logs a greeting message to the console\n     */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 15:21:07 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "2"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1404
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T15:21:06.368Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 8961a8ede88d148c637b993e659e2660
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2930
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file src/TestLogger.tsin repository
-                  undefined:
-
-                  const foo = 42
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestLogger.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
-
-                          function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
-
-                          recordLog()
-                      },
-                  }
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - export const TestLogger = {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 3337
-        content:
-          mimeType: text/event-stream
-          size: 3337
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the messag","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing som","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work.\n*/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work.\n*/ ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work.\n*/ \n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Starts recording the log. Logs the message \"Recording the log\" after doing some initial setup work.\n*/ \n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 15:21:09 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T15:21:07.866Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: d1bd7ceb4c707609889eb3d648d1da28
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3155
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file src/example.test.tsin repository
-                  undefined:
-
-                  import { expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - describe('test block', () => {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 20644
-        content:
-          mimeType: text/event-stream
-          size: 20644
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attemp","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *     ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a require","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a required argument","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a required argument\n*/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a required argument\n*/\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Tests for an example component \n * \n * This block describes a set of tests for an example component, \n * with three example test cases:\n * \n * - \"does 1\" - Tests a simple true check \n * - \"does 2\" - Another simple true check\n * - \"does something else\" - Attempts to get a performance timing but is missing \n *      a required argument\n*/\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 15:21:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T15:21:09.454Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 90f6a2b3896be9c4af214f4aeb3a0b98
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2648
+        bodySize: 2646
         cookies: []
         headers:
           - name: content-type
@@ -18963,9 +17862,7 @@ log:
 
                   <SELECTEDCODE7662>export function sum(a: number, b: number): number {
                       /* CURSOR */
-                  }
-
-                  </SELECTEDCODE7662>
+                  }</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -18989,10 +17886,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 4184
+        bodySize: 5426
         content:
           mimeType: text/event-stream
-          size: 4184
+          size: 5426
           text: >+
             event: completion
 
@@ -19056,102 +17953,127 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number ","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in th","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b Th","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b Th","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns Th","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in th","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a and","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a and b","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns Th","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a and b\n */","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a and b\n */\n","stopReason":""}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number \n * @param b The second number\n * @returns The sum of a and b\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -19161,7 +18083,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 15 Mar 2024 15:25:46 GMT
+            value: Fri, 15 Mar 2024 16:50:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -19190,7 +18112,684 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-15T15:25:41.308Z
+      startedDateTime: 2024-03-15T16:50:55.228Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 582ec1d4d07385ec49cfb74bdda77e47
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2912
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Codebase context from file src/TestClass.tsin repository undefined:
+
+                  t foo = 42
+
+
+                  export class TestClass {
+
+                  \    constructor(private shouldGreet:
+                  boolean) {}
+
+
+                  \    "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/TestClass.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }</SELECTEDCODE7662>
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-instant-1.2
+            stopSequences:
+              - </CODE5711>
+              - public functionName() {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1759
+        content:
+          mimeType: text/event-stream
+          size: 1759
+          text: >+
+            event: completion
+
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldG","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 15 Mar 2024 16:50:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-15T16:50:57.011Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: da84ec33509faaa8f9e6c5ce26e7f2ef
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2881
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Codebase context from file src/TestLogger.tsin repository undefined:
+
+                  o = 42
+
+                  export const TestLogger = {
+
+                  \    startLogging: () => {
+
+                  \        // Do some stuff
+
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/TestLogger.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }</SELECTEDCODE7662>
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-instant-1.2
+            stopSequences:
+              - </CODE5711>
+              - function recordLog() {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1122
+        content:
+          mimeType: text/event-stream
+          size: 1122
+          text: >+
+            event: completion
+
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to the console","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to the console\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to the console\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Records a log message to the console\n */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 15 Mar 2024 16:50:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-15T16:50:58.493Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7347e410fb6a9c6e45e3c07eb55ec9ce
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3150
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Codebase context from file src/example.test.tsin repository undefined:
+
+                  \ expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+
+                  \    it('does 1', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does 2', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does something else', () => {
+
+                  \        // This line will error due to
+                  incorrect usage of `performance.now`
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  - You are an AI programming assistant who is an expert in
+                  updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
+
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-instant-1.2
+            stopSequences:
+              - </CODE5711>
+              - const startTime = performance.now(/* CURSOR */)
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 1239
+        content:
+          mimeType: text/event-stream
+          size: 1239
+          text: >+
+            event: completion
+
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Me","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test begins","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test begins running","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test begins running */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test begins running */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/** Measures the time when this test begins running */\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 15 Mar 2024 16:51:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-15T16:50:59.961Z
       time: 0
       timings:
         blocked: -1
