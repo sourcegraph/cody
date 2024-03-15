@@ -59,6 +59,13 @@ export function dumpUse(use: Uint8Array, a: string, b: string): void {
 // TODO: Use a cheaper representation than strings for the operations.
 type Op = '*' | 'I' | 'X' | '-' | 'R'
 
+/**
+ * Chromimum limits JavaScript arrays to 128mb.
+ * We cannot exceed this limit.
+ * https://bugs.chromium.org/p/v8/issues/detail?id=3505
+ */
+const MAXIMUM_COMPARISON_LENGTH = 128 * 1024 * 1024
+
 // Computes the longest common subsequence of strings a and b.
 // Returns a boolean program of |b|+1 rows and |a|+1 columns in
 // row-major format. The 0th row and column can be ignored. If
@@ -82,8 +89,12 @@ export function longestCommonSubsequence(a: string, b: string): Uint8Array {
     // Construct a dynamic program of edits.
     const lenA = a.length
     const lenB = b.length
-    const program = new Uint16Array((lenA + 1) * (lenB + 1))
-    const ops = new Array<Op>((lenA + 1) * (lenB + 1))
+    const combinedLen = (lenA + 1) * (lenB + 1)
+    if (combinedLen >= MAXIMUM_COMPARISON_LENGTH) {
+        return new Uint8Array(0)
+    }
+    const program = new Uint16Array(combinedLen)
+    const ops = new Array<Op>(combinedLen)
     ops[0] = '*'
     // Top row: Delete all of the characters in A.
     for (let i = 1; i <= lenA; i++) {
@@ -109,7 +120,7 @@ export function longestCommonSubsequence(a: string, b: string): Uint8Array {
         }
     }
     // dumpProgram(program, ops, a, b)
-    const use = new Uint8Array((lenA + 1) * (lenB + 1))
+    const use = new Uint8Array(combinedLen)
     let i = lenA
     let j = lenB
     while (i !== 0 || j !== 0) {
