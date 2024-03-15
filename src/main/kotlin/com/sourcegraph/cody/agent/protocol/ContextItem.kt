@@ -1,11 +1,18 @@
 package com.sourcegraph.cody.agent.protocol
 
-import com.google.gson.*
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonSerializer
+import com.intellij.openapi.vfs.StandardFileSystems
+import com.intellij.openapi.vfs.VfsUtil
 import java.io.File
 import java.lang.reflect.Type
 import java.net.URI
 import java.nio.file.Path
-import java.nio.file.Paths
+import kotlin.io.path.toPath
 
 typealias ContextFileSource =
     String // One of: embeddings, user, keyword, editor, filename, search, unified, selection,
@@ -59,8 +66,11 @@ data class ContextItemFile(
 
   fun isLocal() = repoName == null
 
-  fun getPath(): Path {
-    return Paths.get(uri.path).toAbsolutePath()
+  fun getPath(): Path? {
+    val newUri = uri.toString().substringBefore("?")
+    val fileProtocol = StandardFileSystems.FILE_PROTOCOL_PREFIX
+    val uriWithFileProtocol = if (newUri.startsWith(fileProtocol)) newUri else fileProtocol + newUri
+    return VfsUtil.toUri(uriWithFileProtocol)?.toPath()
   }
 
   fun getLinkActionText(projectPath: String?): String {

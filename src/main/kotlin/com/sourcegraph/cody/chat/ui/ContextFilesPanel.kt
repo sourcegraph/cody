@@ -95,7 +95,7 @@ class ContextFilesPanel(
 
   private fun openInEditor(contextItemFile: ContextItemFile) {
     val logicalLine = contextItemFile.range?.start?.line ?: 0
-    val contextFilePath = contextItemFile.getPath()
+    val contextFilePath = contextItemFile.getPath() ?: return
     ApplicationManager.getApplication().executeOnPooledThread {
       val findFileByNioFile = LocalFileSystem.getInstance().findFileByNioFile(contextFilePath)
       if (findFileByNioFile != null) {
