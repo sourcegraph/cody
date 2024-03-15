@@ -6,6 +6,7 @@ import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-
 import type { DocumentContext } from '../get-current-doc-context'
 import type { InlineCompletionItem } from '../types'
 
+import type { WrappedParser } from '../../tree-sitter/parser'
 import {
     type InlineCompletionItemWithAnalytics,
     getMatchingSuffixLength,
@@ -89,7 +90,7 @@ interface PasteCompletionParams {
     document: TextDocument
     docContext: DocumentContext
     tree: Tree
-    parser: Parser
+    parser: WrappedParser
 }
 
 interface PasteCompletionResult {
@@ -129,7 +130,7 @@ function pasteCompletion(params: PasteCompletionParams): PasteCompletionResult {
 
     // TODO(tree-sitter): consider parsing only the changed part of the document to improve performance.
     // parser.parse(textWithCompletion, tree, { includedRanges: [...]})
-    const treeWithCompletion = parser.parse(textWithCompletion, treeCopy)
+    const treeWithCompletion = parser.observableParse(textWithCompletion, treeCopy)
     addAutocompleteDebugEvent('paste-completion', {
         text: textWithCompletion,
     })

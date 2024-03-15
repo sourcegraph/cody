@@ -12,7 +12,7 @@ import type {
 
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
-import { getParser } from './parser'
+import { type WrappedParser, getParser } from './parser'
 import { type CompletionIntent, type QueryName, intentPriority, languages } from './queries'
 
 interface ParsedQuery {
@@ -59,7 +59,7 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
 }
 
 export interface DocumentQuerySDK {
-    parser: Parser
+    parser: WrappedParser
     queries: ResolvedQueries & QueryWrappers
     language: SupportedLanguage
 }

@@ -4,7 +4,7 @@ import type { TextDocument } from 'vscode'
 import type { Tree, default as Parser } from 'web-tree-sitter'
 
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'
-import { createParser, getParser } from './parser'
+import { type WrappedParser, createParser, getParser } from './parser'
 
 const parseTreesPerFile = new LRUCache<string, Tree>({
     max: 10,
@@ -12,7 +12,7 @@ const parseTreesPerFile = new LRUCache<string, Tree>({
 
 interface ParseTreeCache {
     tree: Tree
-    parser: Parser
+    parser: WrappedParser
     cacheKey: string
 }
 
@@ -49,7 +49,7 @@ async function parseDocument(document: TextDocument): Promise<void> {
     updateParseTreeCache(document, parser)
 }
 
-export function updateParseTreeCache(document: TextDocument, parser: Parser): void {
+export function updateParseTreeCache(document: TextDocument, parser: WrappedParser): void {
     const tree = parser.parse(document.getText())
     parseTreesPerFile.set(document.uri.toString(), tree)
 }

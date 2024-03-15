@@ -8,6 +8,7 @@ import type { Point, SyntaxNode, default as Parser } from 'web-tree-sitter'
 
 import type { SupportedLanguage } from '../grammars'
 import { getLanguageConfig } from '../language'
+import type { WrappedParser } from '../parser'
 
 interface CommentSymbolInfo {
     delimiter: string
@@ -104,7 +105,7 @@ export type Captures = (
 interface AnnotateSnippetParams {
     code: string
     language: SupportedLanguage
-    parser: Parser
+    parser: WrappedParser
     captures: Captures
     isOnly: boolean
 }
@@ -235,7 +236,7 @@ function commentOutLines(text: string, commentSymbol: string): string {
 
 interface AnnotateAndMatchParams {
     sourcesPath: string
-    parser: Parser
+    parser: WrappedParser
     language: SupportedLanguage
     captures: Captures
 }
