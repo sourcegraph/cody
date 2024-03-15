@@ -162,9 +162,12 @@ export function createStatusBar(): CodyStatusBar {
             await createFeatureToggle(
                 'Command Hints',
                 undefined,
-                'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
+                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
                 'cody.commandHints.enabled',
-                getGhostHintEnablement
+                async () => {
+                    const enablement = await getGhostHintEnablement()
+                    return enablement.Document || enablement.EditOrChat || enablement.Generate
+                }
             ),
             await createFeatureToggle(
                 'Search Context',

@@ -24,7 +24,7 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type taskID } from './FixupTask'
-import { ACTIONABLE_TASK_STATES, CANCELABLE_TASK_STATES } from './codelenses/constants'
+import { ACTIONABLE_TASK_STATES, ACTIVE_TASK_STATES } from './codelenses/constants'
 import { FixupCodeLenses } from './codelenses/provider'
 import { type Diff, computeDiff } from './diff'
 import type { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -141,7 +141,7 @@ export class FixupController
                 return this.skipFormatting(id)
             }),
             vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
-                const nearestTask = this.getNearestTask({ filter: { states: CANCELABLE_TASK_STATES } })
+                const nearestTask = this.getNearestTask({ filter: { states: ACTIVE_TASK_STATES } })
                 if (!nearestTask) {
                     return
                 }
@@ -272,7 +272,8 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         source?: ChatEventSource,
-        destinationFile?: vscode.Uri
+        destinationFile?: vscode.Uri,
+        insertionPoint?: vscode.Position
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -284,9 +285,17 @@ export class FixupController
             mode,
             model,
             source,
-            destinationFile
+            destinationFile,
+            insertionPoint
         )
         this.tasks.set(task.id, task)
+        return task
+    }
+
+    /**
+     * Starts a Fixup task by moving the task state from "idle" to "working"
+     */
+    public startTask(task: FixupTask): FixupTask {
         const state = task.intent === 'test' ? CodyTaskState.pending : CodyTaskState.working
         this.setTaskState(task, state)
         return task
@@ -449,6 +458,7 @@ export class FixupController
             this.setTaskState(task, CodyTaskState.formatting)
             await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
+
                 this.formatEdit(
                     visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
                     document,
@@ -629,13 +639,15 @@ export class FixupController
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'inserting')
         const text = task.replacement
-        const range = task.selectionRange
+        // If we have specified a dedicated insertion point - use that.
+        // Otherwise fall back to using the start of the selection range.
+        const insertionPoint = task.insertionPoint || task.selectionRange.start
         if (!text) {
             return false
         }
 
         // add correct indentation based on first non empty character index
-        const nonEmptyStartIndex = document.lineAt(range.start.line).firstNonWhitespaceCharacterIndex
+        const nonEmptyStartIndex = document.lineAt(insertionPoint.line).firstNonWhitespaceCharacterIndex
         // add indentation to each line
         const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
         // join text with new lines, and then remove everything after the last new line if it only contains white spaces
@@ -643,12 +655,12 @@ export class FixupController
 
         // Insert updated text at selection range
         if (edit instanceof vscode.WorkspaceEdit) {
-            edit.insert(document.uri, range.start, replacementText)
+            edit.insert(document.uri, insertionPoint, replacementText)
             return vscode.workspace.applyEdit(edit)
         }
 
         return edit(editBuilder => {
-            editBuilder.insert(range.start, replacementText)
+            editBuilder.insert(insertionPoint, replacementText)
         }, options)
     }
 
@@ -658,7 +670,13 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        const rangeToFormat = task.selectionRange
+        // Expand the range to include full lines to reduce the likelihood of formatting issues
+        const rangeToFormat = new vscode.Range(
+            task.selectionRange.start.line,
+            0,
+            task.selectionRange.end.line,
+            Number.MAX_VALUE
+        )
 
         if (!rangeToFormat) {
             return false

@@ -939,11 +939,10 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   *
-                   * @param a - The first number to sum.
-                   * @param b - The second number to sum.
-                   * @returns The sum of a and b.
+                   * Adds two numbers
+                   * @param a The first number
+                   * @param b The second number
+                   * @returns The sum of a and b
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -963,9 +962,9 @@ describe('Agent', () => {
                       export class TestClass {
                           constructor(private shouldGreet: boolean) {}
 
-                          /**
-                           * If the shouldGreet property is true, logs a greeting to the console.
-                           */
+                              /**
+                               * Conditionally logs a greeting message to the console
+                               */
                           public functionName() {
                               if (this.shouldGreet) {
                                   console.log(/* CURSOR */ 'Hello World!')
@@ -984,7 +983,7 @@ describe('Agent', () => {
                     expect(obtained).toMatchInlineSnapshot(`
                       "const foo = 42
                       /**
-                       * Starts logging by calling the recordLog function.
+                       * Starts recording the log. Logs the message "Recording the log" after doing some initial setup work.
                       */
                       export const TestLogger = {
                           startLogging: () => {
@@ -1012,10 +1011,15 @@ describe('Agent', () => {
                       import { describe } from 'vitest'
 
                       /**
-                       * A test block with 3 test cases:
-                       * - Checks that true equals true
-                       * - Checks that true equals true again
-                       * - Attempts to record start time but errors due to invalid usage of performance.now
+                       * Tests for an example component
+                       *
+                       * This block describes a set of tests for an example component,
+                       * with three example test cases:
+                       *
+                       * - "does 1" - Tests a simple true check
+                       * - "does 2" - Another simple true check
+                       * - "does something else" - Attempts to get a performance timing but is missing
+                       *      a required argument
                       */
                       describe('test block', () => {
                           it('does 1', () => {
@@ -1366,10 +1370,10 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 test cases:
+                   * Test block that runs 3 test cases:
                    * - Does test 1
                    * - Does test 2
-                   * - Does something else that errors due to incorrect usage of \`performance.now\`
+                   * - Does something else, contains incorrect usage of performance.now
                   */
                   describe('test block', () => {
                       it('does 1', () => {
