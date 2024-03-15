@@ -28,12 +28,14 @@ async function main() {
         recursive: true,
     })
 
+    const osArch = getOSArch()
+
     const client = new TestClient(
         {
             name: 'defaultClient',
             accessToken,
         },
-        './dist/agent-macos-arm64'
+        './dist/agent-' + osArch
     )
 
     await client.initialize({
@@ -75,3 +77,36 @@ async function main() {
 }
 
 main().catch(console.error)
+
+// Supported agent builds:
+//
+// - agent-linux-arm64
+// - agent-linux-x64
+// - agent-macos-arm64
+// - agent-macos-x64
+// - agent-win-x64.exe
+function getOSArch(): string {
+    const platform = os.platform()
+    const arch = os.arch()
+
+    const nodePlatformToPlatform: { [key: string]: string } = {
+        darwin: 'macos',
+        linux: 'linux',
+        win32: 'win',
+    }
+    const nodeMachineToArch: { [key: string]: string } = {
+        arm64: 'arm64',
+        aarch64: 'arm64',
+        x86_64: 'x64',
+        x64: 'x64',
+    }
+
+    const platformName = nodePlatformToPlatform[platform]
+    const archName = nodeMachineToArch[arch]
+
+    if (!platformName || !archName) {
+        throw new Error(`Unsupported platform: ${platform} ${arch}`)
+    }
+
+    return `${platformName}-${archName}` + (platform === 'win32' ? '.exe' : '')
+}
