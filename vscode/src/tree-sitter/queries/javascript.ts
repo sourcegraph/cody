@@ -168,25 +168,58 @@ const TS_DOCUMENTABLE_NODES_QUERY = dedent`
                 name: (property_identifier) @signature.property)))
 `
 
+const JS_SHARED_CONTEXT_IDENTIFIERS_QUERY = dedent`
+    (import_clause (identifier) @identifier)
+    (import_specifier (identifier) @identifier)
+    (call_expression function: (identifier) @identifier)
+    (expression_statement (identifier) @identifier)
+    (member_expression (property_identifier) @identifier)
+`
+
+const JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
+    ${JS_SHARED_CONTEXT_IDENTIFIERS_QUERY}
+    (class_heritage (identifier) @identifier)
+`
+
+const JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
+    ${JS_SHARED_CONTEXT_IDENTIFIERS_QUERY}
+    (jsx_attribute (property_identifier) @identifier)
+`
+
+const TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
+    ${JS_SHARED_CONTEXT_IDENTIFIERS_QUERY}
+    (extends_clause (identifier) @identifier)
+    (type_annotation (type_identifier) @identifier)
+`
+
+const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
+    ${TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY}
+    (jsx_attribute (property_identifier) @identifier)
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.javascript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.javascriptreact]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        graphContextIdentifiers: JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.typescript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
     [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        graphContextIdentifiers: TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

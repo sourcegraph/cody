@@ -6,6 +6,7 @@ import type {
     Query,
     QueryCapture,
     SyntaxNode,
+    Tree,
     default as Parser,
 } from 'web-tree-sitter'
 
@@ -106,6 +107,7 @@ interface QueryWrappers {
         | readonly [
               { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
           ]
+    getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
 /**
@@ -155,6 +157,9 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                     name: cursorCapture.name === 'export' ? 'documentableExport' : 'documentableNode',
                 },
             ] as const
+        },
+        getGraphContextIdentifiers: (root, start, end) => {
+            return queries.graphContextIdentifiers.compiled.captures(root, start, end)
         },
     }
 }
@@ -322,7 +327,7 @@ interface QueryPoints {
     endPoint: Point
 }
 
-function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
     const startPoint = {
         row: position.line,
         column: position.character,
@@ -337,19 +342,46 @@ function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): 
     return { startPoint, endPoint }
 }
 
-export function execQueryWrapper<T extends keyof QueryWrappers>(
-    document: TextDocument,
-    position: Pick<Position, 'line' | 'character'>,
+type ExecQueryWrapperParams<T> = {
     queryWrapper: T
+} & (
+    | {
+          document: TextDocument
+          queryPoints: QueryPoints
+      }
+    | {
+          document: TextDocument
+          position: Pick<Position, 'line' | 'character'>
+      }
+    | {
+          tree: Tree
+          languageId: string
+          queryPoints: QueryPoints
+      }
+    | {
+          tree: Tree
+          languageId: string
+          position: Pick<Position, 'line' | 'character'>
+      }
+)
+
+export function execQueryWrapper<T extends keyof QueryWrappers>(
+    params: ExecQueryWrapperParams<T>
 ): ReturnType<QueryWrappers[T]> | never[] {
-    const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId as SupportedLanguage)
+    const { queryWrapper } = params
 
-    const { startPoint, endPoint } = positionToQueryPoints(position)
+    const treeToQuery =
+        'document' in params ? getCachedParseTreeForDocument(params.document)?.tree : params.tree
+    const languageId = 'document' in params ? params.document.languageId : params.languageId
+    const documentQuerySDK = getDocumentQuerySDK(languageId as SupportedLanguage)
 
-    if (documentQuerySDK && parseTreeCache) {
+    const queryPoints =
+        'position' in params ? positionToQueryPoints(params.position) : params.queryPoints
+    const { startPoint, endPoint } = queryPoints
+
+    if (documentQuerySDK && treeToQuery) {
         return documentQuerySDK.queries[queryWrapper](
-            parseTreeCache.tree.rootNode,
+            treeToQuery.rootNode,
             startPoint,
             endPoint
         ) as ReturnType<QueryWrappers[T]>
