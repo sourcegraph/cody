@@ -50,9 +50,11 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
                 onClick: async () => {
                     localStorage.set('notification.setupDismissed', 'true')
                     telemetryService.log(
-                        'CodyVSCodeExtension:signInNotification:doNotShow:Clicked',
+                        'CodyVSCodeExtension:signInNotification:doNotShow:clicked',
                         undefined,
-                        { hasV2Event: true }
+                        {
+                            hasV2Event: true,
+                        }
                     )
                     telemetryRecorder.recordEvent('cody.signInNotification.doNotShow', 'clicked')
                 },
