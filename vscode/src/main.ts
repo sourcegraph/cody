@@ -536,7 +536,7 @@ const register = async (
         if (removeAuthStatusBarError) {
             removeAuthStatusBarError()
             removeAuthStatusBarError = undefined
-            statusBar.clearOnStatusBarClick()
+            statusBar.setOnClick(undefined)
         }
         if (!authProvider.getAuthStatus().isLoggedIn) {
             removeAuthStatusBarError = statusBar.addError({
@@ -550,7 +550,7 @@ const register = async (
                     void vscode.commands.executeCommand('cody.focus')
                 },
             })
-            statusBar.setOnStatusBarClick(() => {
+            statusBar.setOnClick(() => {
                 // Bring up the sidebar view
                 void vscode.commands.executeCommand('cody.focus')
             })
