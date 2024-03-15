@@ -29,6 +29,8 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
+    setOnStatusBarClick(callback: (() => void) | undefined): void
+    clearOnStatusBarClick(): void
     syncAuthStatus(newStatus: AuthStatus): void
 }
 
@@ -54,7 +56,12 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.show()
 
     let authStatus: AuthStatus | undefined
+    let onStatusBarClick: (() => void) | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
+        if (onStatusBarClick) {
+            onStatusBarClick()
+            return
+        }
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
@@ -326,6 +333,16 @@ export function createStatusBar(): CodyStatusBar {
         },
         syncAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
+        },
+        /**
+         * Set a custom statusbar click handler. If unset, the default settings
+         * quickpick will be shown on click.
+         */
+        setOnStatusBarClick(callback: () => void) {
+            onStatusBarClick = callback
+        },
+        clearOnStatusBarClick() {
+            onStatusBarClick = undefined
         },
         dispose() {
             statusBarItem.dispose()
