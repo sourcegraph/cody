@@ -346,18 +346,14 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              export class Dog implements Animal {
+              class Dog implements Animal {
                 name: string;
 
-                constructor(name: string) {
-                  this.name = name;
+                makeAnimalSound(): string {
+                  return "Bark!";
                 }
 
-                makeAnimalSound() {
-                  return "Woof!";
-                }
-
-                isMammal = true;
+                isMammal: boolean = true;
               }
               \`\`\`"
             `)
@@ -900,8 +896,7 @@ describe('Agent', () => {
                     expect(obtained).toMatchInlineSnapshot(`
                       "const foo = 42
                       /**
-                       * Starts logging by performing setup actions like initializing variables,
-                       * then calls an internal \`recordLog()\` function to write the first log message.
+                       * Logs messages to the console for testing purposes.
                        */
                       export const TestLogger = {
                           startLogging: () => {
@@ -929,10 +924,9 @@ describe('Agent', () => {
                       import { describe } from 'vitest'
 
                       /**
-                       * A test block that contains 3 tests:
-                       * - Test 1 verifies that true equals true
-                       * - Test 2 verifies that true equals true
-                       * - Test 3 verifies usage of performance.now but will error due to missing params
+                       * Test suite with 3 test cases.
+                       * The first 2 test cases assert true equals true.
+                       * The 3rd test case will error due to incorrect usage of performance.now().
                       */
                       describe('test block', () => {
                           it('does 1', () => {
@@ -1282,7 +1276,7 @@ describe('Agent', () => {
                    * Test block that contains 3 test cases:
                    * - Does test 1
                    * - Does test 2
-                   * - Attempts to do something else but will error due to invalid usage of \`performance.now()\`
+                   * - Does something else that errors due to incorrect usage of \`performance.now\`
                   */
                   describe('test block', () => {
                       it('does 1', () => {
