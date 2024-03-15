@@ -66,6 +66,7 @@ export interface Configuration {
     autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
+    autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean
 
     /**
@@ -215,4 +216,16 @@ export interface OllamaGenerateParameters {
      * (default: 1)
      */
     tfs_z?: number
+}
+
+export interface FireworksOptions {
+    url: string
+    token: string
+    model: string
+    parameters?: {
+        temperature?: number
+        top_k?: number
+        top_p?: number
+        stop?: string[]
+    }
 }

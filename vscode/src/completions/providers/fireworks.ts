@@ -54,7 +54,10 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
-    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'accessToken' | 'autocompleteExperimentalFireworksOptions'
+    >
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
@@ -113,6 +116,7 @@ class FireworksProvider extends Provider {
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
 
     constructor(
         options: ProviderOptions,
@@ -134,6 +138,11 @@ class FireworksProvider extends Provider {
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
                 : undefined
+
+        if (config.autocompleteExperimentalFireworksOptions?.token) {
+            this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
+            this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
+        }
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -311,7 +320,9 @@ class FireworksProvider extends Provider {
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
 
-        const url = `${gatewayUrl}/v1/completions/fireworks`
+        const url = this.fireworksConfig
+            ? this.fireworksConfig.url
+            : `${gatewayUrl}/v1/completions/fireworks`
         const log = this.client.logger?.startCompletion(requestParams, url)
 
         // The async generator can not use arrow function syntax so we close over the context
@@ -325,14 +336,19 @@ class FireworksProvider extends Provider {
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {
-                    model: requestParams.model?.replace(/^fireworks\//, ''),
+                    model:
+                        self.fireworksConfig?.model || requestParams.model?.replace(/^fireworks\//, ''),
                     prompt,
                     max_tokens: requestParams.maxTokensToSample,
                     echo: false,
-                    temperature: requestParams.temperature,
-                    top_p: requestParams.topP,
-                    top_k: requestParams.topK,
-                    stop: requestParams.stopSequences,
+                    temperature:
+                        self.fireworksConfig?.parameters?.temperature || requestParams.temperature,
+                    top_p: self.fireworksConfig?.parameters?.top_p || requestParams.topP,
+                    top_k: self.fireworksConfig?.parameters?.top_k || requestParams.topK,
+                    stop: [
+                        ...(requestParams.stopSequences || []),
+                        ...(self.fireworksConfig?.parameters?.stop || []),
+                    ],
                     stream: true,
                 }
 
@@ -340,7 +356,10 @@ class FireworksProvider extends Provider {
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
-                headers.set('Content-Type', 'application/json; charset=utf-8')
+                headers.set(
+                    'Content-Type',
+                    `application/json${self.fireworksConfig ? '' : '; charset=utf-8'}`
+                )
                 headers.set('Authorization', `Bearer ${self.fastPathAccessToken}`)
                 headers.set('X-Sourcegraph-Feature', 'code_completions')
                 addTraceparent(headers)
