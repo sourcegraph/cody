@@ -1,7 +1,7 @@
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { CodyStatusBar } from '../services/StatusBar'
-import { getSupercompletions } from './get-supercompletion'
+import { Supercompletion, getSupercompletions } from './get-supercompletion'
 import { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 
 const EDIT_HISTORY = 5 * 60 * 1000
@@ -11,6 +11,7 @@ export class SupercompletionProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private trackedTimeouts: Map<string, AbortController> = new Map()
     private recentEditsRetriever: RecentEditsRetriever
+    private lensProvider: MyCodeLensProvider
 
     constructor(
         private readonly config: {
@@ -25,6 +26,10 @@ export class SupercompletionProvider implements vscode.Disposable {
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
+        this.lensProvider = new MyCodeLensProvider()
+        this.disposables.push(
+            vscode.languages.registerCodeLensProvider({ scheme: 'file' }, this.lensProvider)
+        )
         this.recentEditsRetriever = new RecentEditsRetriever(EDIT_HISTORY, workspace)
     }
 
@@ -32,15 +37,20 @@ export class SupercompletionProvider implements vscode.Disposable {
         document: vscode.TextDocument,
         abortController: AbortController
     ): Promise<void> {
+        // Todo: Can't assume it's the active editor, need another way to find it
+        const editor = vscode.window.activeTextEditor!
+
         const cancel = this.config.statusBar.startLoading('Loading supercompletions...')
         try {
-            await getSupercompletions({
+            for await (const supercompletion of getSupercompletions({
                 document,
                 abortSignal: abortController.signal,
 
                 recentEditsRetriever: this.recentEditsRetriever,
                 chat: this.config.chat,
-            })
+            })) {
+                renderSupercompletion(editor, this.lensProvider, supercompletion)
+            }
         } finally {
             cancel()
         }
@@ -97,4 +107,76 @@ export class SupercompletionProvider implements vscode.Disposable {
             clearTimeout(interval)
         })
     }
+}
+
+class MyCodeLensProvider implements vscode.CodeLensProvider {
+    private emitter = new vscode.EventEmitter<void>()
+    public onDidChangeCodeLenses = this.emitter.event
+
+    private lenses: Map<string, vscode.CodeLens[]> = new Map()
+    public addCodeLens(uri: vscode.Uri, codeLens: vscode.CodeLens): void {
+        const existingCodeLenses = this.lenses.get(uri.toString()) || []
+        existingCodeLenses.push(codeLens)
+        this.lenses.set(uri.toString(), existingCodeLenses)
+        this.emitter.fire()
+    }
+
+    async provideCodeLenses(document: vscode.TextDocument): Promise<vscode.CodeLens[]> {
+        return this.lenses.get(document.uri.toString()) || []
+    }
+}
+
+function renderSupercompletion(
+    editor: vscode.TextEditor,
+    lensProvider: MyCodeLensProvider,
+    supercompletion: Supercompletion
+): void {
+    const range = supercompletion.location.range
+
+    // if (range.isEmpty) {
+    // const decorationType = vscode.window.createTextEditorDecorationType({
+    //     backgroundColor: 'green',
+    //     border: '5px solid white',
+    //     before: {
+    //         contentText: `✨ ${supercompletion.summary} [Apply]\nWow!`,
+    //         margin: '0 0 0 0.5em',
+    //         color: 'white',
+    //         border: '1px solid red',
+    //     },
+    // })
+    // editor.setDecorations(decorationType, [supercompletion.location.range])
+
+    // const lens = new vscode.CodeLens(range, {
+    //     command: 'cody.supercompletion.apply',
+    //     title: `✨ ${supercompletion.summary} [Apply]\nWow!`,
+    //     tooltip: 'What is that?',
+    // } as vscode.Command)
+    // lensProvider.addCodeLens(editor.document.uri, lens)
+    // lensProvider.addCodeLens(editor.document.uri, lens)
+
+    const MyInlineEditProvider = class {
+        public provideInlineCompletionEdits(
+            document: vscode.TextDocument,
+            _context: any,
+            token: vscode.CancellationToken
+        ): vscode.ProviderResult<any> {
+            console.log({ _context })
+
+            return new (vscode as any).InlineEdit(supercompletion.updated, range)
+        }
+    }
+    ;(vscode.languages as any).registerInlineEditProvider(
+        '*' as vscode.DocumentSelector,
+        new MyInlineEditProvider()
+    )
+
+    vscode.commands.executeCommand('editor.action.inlineEdit.trigger')
+
+    return
+    // }
+    // const decorationType = vscode.window.createTextEditorDecorationType({
+    //     backgroundColor: 'green',
+    //     border: '5px solid white',
+    // })
+    // editor.setDecorations(decorationType, [supercompletion.location.range])
 }

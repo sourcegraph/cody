@@ -47,6 +47,7 @@ export class OpenTelemetryService {
         if (!isEnabled) {
             return
         }
+        return
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
         if (this.lastTraceUrl === traceUrl) {

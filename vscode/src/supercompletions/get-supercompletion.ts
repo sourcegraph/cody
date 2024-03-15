@@ -1,8 +1,17 @@
-import { type ChatClient, type Message, getSimplePreamble } from '@sourcegraph/cody-shared'
+import {
+    type ChatClient,
+    type Message,
+    getSimplePreamble,
+    isAbortError,
+    logDebug,
+} from '@sourcegraph/cody-shared'
 import levenshtein from 'js-levenshtein'
-import parseGitDiff from 'parse-git-diff'
 import * as vscode from 'vscode'
+import { getEditorIndentString } from '../utils'
+import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
 import type { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
+import { fixIndentation } from './utils/fix-indentation'
+import { fuzzyFindLocation } from './utils/fuzzy-find-location'
 export interface SuperCompletionsParams {
     document: vscode.TextDocument
     abortSignal: AbortSignal
@@ -12,211 +21,247 @@ export interface SuperCompletionsParams {
     chat: ChatClient
 }
 
-interface Supercompletion {
+export interface Supercompletion {
     location: vscode.Location
-    content: string
+    summary: string
+    current: string
+    updated: string
 }
 
-const MODEL = 'anthropic/claude-3-opus-20240229'
-
-export async function getSupercompletions({
+export async function* getSupercompletions({
     document,
     abortSignal,
 
     recentEditsRetriever,
     chat,
-}: SuperCompletionsParams): Promise<Supercompletion[] | null> {
+}: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
     const diff = recentEditsRetriever.getDiff(document.uri)
     if (diff === null) {
         return null
     }
 
     const messages = buildInteraction(document, diff)
-    const { topic, nextChanges } = await getRawResponse(chat, messages)
 
-    const parsedDiff = parseGitDiff('diff --git a/rename.md b/rename.md' + nextChanges)
-
-    if (!parsedDiff) {
-        return null
-    }
-    if (!parsedDiff.files[0]) {
-        return null
-    }
-
-    const chunks = parsedDiff.files[0].chunks
-
-    const edits: Supercompletion[] = []
-    for (const chunk of chunks) {
-        if (chunk.type !== 'Chunk') {
+    for await (const rawChange of generateRawChanges(chat, messages)) {
+        const supercompletion = parseRawChange(document, rawChange)
+        if (!supercompletion) {
             continue
         }
-        const prev = chunk.changes
-            .filter(c => c.type !== 'AddedLine')
-            .map(c => c.content)
-            .join('\n')
-        const next = chunk.changes
-            .filter(c => c.type === 'DeletedLine')
-            .map(c => c.content)
-            .join('\n')
-
-        const location = fuzzyFindLocation(document, prev)
-
-        if (!location) {
-            continue
-        }
-
-        edits.push({
-            location,
-            content: next,
-        })
+        logDebug('supercompletions', 'candidate', { verbose: supercompletion })
+        yield supercompletion
     }
-
-    return edits
 }
 
-async function getRawResponse(
-    chat: ChatClient,
-    messages: Message[]
-): Promise<{ topic: string; nextChanges: string }> {
-    return {
-        topic: 'Adding support for the UUID data type in the schema.',
-        nextChanges: `
---- a/lib/shared/src/schema.ts
-+++ b/lib/shared/src/schema.ts
-@@ -40,6 +40,9 @@ export function inferType(value: unknown): { type: Type; nullable: boolean } {
-   if (typeof value === "string") {
-     // String need to be non-nullable so we can use an ngram index
-     return { type: "String", nullable: false };
-+  }
-+  if (typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-+    return { type: "UUID", nullable: true };
-   }
-   throw new Error(\`Unsupported type $\{typeof value}\`);
- }
-@@ -83,6 +86,7 @@ export async function schemaFromDescribeTable(
-       case "Float64":
-       case "String":
-       case "DateTime64":
-+      case "UUID":
-         schema[name] = {
-           type: normalizedType,
-           nullable: !!nullable,
-@@ -185,6 +189,7 @@ export function defaultIndexType(type: Type): string {
-     case "DateTime64":
-     case "Float64":
-       return "minmax GRANULARITY 4";
-+    case "UUID":
-     case "String":
-       return "ngrambf_v1(3, 256, 3, 0) GRANULARITY 2";
-     default:
-`,
+interface RawChange {
+    summary: string
+    change: string
+}
+async function* generateRawChanges(chat: ChatClient, messages: Message[]): AsyncGenerator<RawChange> {
+    const abortController = new AbortController()
+    const stream = chat.chat(
+        messages,
+        { model: MODEL, temperature: 0.1, maxTokensToSample: 1000 },
+        abortController.signal
+    )
+
+    let processedLastIndex = 0
+    for await (const message of stream) {
+        switch (message.type) {
+            case 'change': {
+                const completion = message.text
+
+                const match = completion
+                    .slice(processedLastIndex)
+                    .match(/<next-change>(.*)<\/next-change>/s)
+
+                if (match?.index) {
+                    processedLastIndex = processedLastIndex + match.index + match[0].length
+                    const change = match[1]
+                    const summaryMatch = change.match(/<summary>(.*)<\/summary>/s)
+                    const changeMatch = change.match(/<change>(.*)<\/change>/s)
+
+                    if (!summaryMatch || !changeMatch) {
+                        logDebug('supercompletions', 'error', 'invalid change block', {
+                            verbose: change,
+                        })
+                        continue
+                    }
+
+                    yield {
+                        summary: summaryMatch[1],
+                        change: changeMatch[1],
+                    }
+                }
+                break
+            }
+            case 'complete': {
+                break
+            }
+            case 'error': {
+                if (isAbortError(message.error)) {
+                    return
+                }
+                throw message.error
+            }
+        }
     }
-    // const abortController = new AbortController()
-    // const stream = chat.chat(
-    //     messages,
-    //     { model: MODEL, stopSequences: ['</next-changes>'] },
-    //     abortController.signal
-    // )
+}
 
-    // let completion = ''
-    // for await (const message of stream) {
-    //     switch (message.type) {
-    //         case 'change': {
-    //             completion = message.text
-    //             break
-    //         }
-    //         case 'complete': {
-    //             break
-    //         }
-    //         case 'error': {
-    //             if (isAbortError(message.error)) {
-    //                 break
-    //             }
+const START_DELIMINATOR = /^[<]{6,8} ORIGINAL$/
+const MIDDLE_DELIMINATOR = /^[=]{6,8}$/
+const END_DELIMINATOR = /^[>]{6,8} UPDATED$/
+function parseRawChange(
+    document: vscode.TextDocument,
+    { change, summary }: RawChange
+): Supercompletion | null {
+    const lines = change.split('\n')
+    const originalLines = []
+    const updatedLines = []
+    let state: null | 'original' | 'updated' | 'complete' = null
+    for (const line of lines) {
+        if (state === null) {
+            if (START_DELIMINATOR.test(line)) {
+                state = 'original'
+                continue
+            }
+            continue
+        }
+        if (state === 'original') {
+            if (MIDDLE_DELIMINATOR.test(line)) {
+                state = 'updated'
+                continue
+            }
+            originalLines.push(line)
+            continue
+        }
+        if (state === 'updated') {
+            if (END_DELIMINATOR.test(line)) {
+                state = 'complete'
+                continue
+            }
+            updatedLines.push(line)
+        }
+    }
 
-    //             console.error(`Supercompletion request failed: ${message.error.message}`)
-    //             break
-    //         }
-    //     }
-    // }
+    if (state !== 'complete') {
+        logDebug(
+            'supercompletions',
+            'error',
+            'could not find change deliminators',
+            { state },
+            {
+                verbose: change,
+            }
+        )
+        return null
+    }
 
-    // const topic = completion.match(/<topic>(.*)<\/topic>?/)?.[1]
-    // const nextChanges = completion.match(/<next-changes>(.*)$/s)?.[1]
+    const original = originalLines.join('\n')
+    let updated = updatedLines.join('\n')
 
-    // return { topic: topic ?? '', nextChanges: nextChanges ?? '' }
+    const result = fuzzyFindLocation(document, original)
+    if (!result) {
+        return null
+    }
+    const { location, distance } = result
+    const current = document.getText(location.range)
+
+    if (distance > 0) {
+        updated = fixIndentation(current, original, updated)
+    }
+
+    // Filter out trivial changes. This is mostly to filter out when the LLM
+    // includes the recent change as a proposed changed
+    if (levenshtein(current, updated) < 4) {
+        console.log('skipped trivial change')
+        return null
+    }
+
+    const fullSupercompletion = {
+        location,
+        summary,
+        current,
+        updated,
+    }
+
+    return fullSupercompletion //removeOverlappingChanges(document, fullSupercompletion)
 }
 
 function buildInteraction(document: vscode.TextDocument, diff: string): Message[] {
-    const system = `You are an expert at editing code. You will receive a source file inside <source></source> tags and a list of recent changes in git diff format inside <changes></changes> tags.
+    const indentation = getEditorIndentString(document.uri)
 
-Your task is to do two things:
+    const preamble = getSimplePreamble(MODEL, SYSTEM.replaceAll('____', indentation))
 
-1. Infer the action the user is trying to do and summarize it inside <topic></topic> tags.
-2. Prepare the next edits for the user as git diffs inside <next-changes></next-changes> tags.
+    const prompt = PROMPT.replace('{filename}', vscode.workspace.asRelativePath(document.uri.path))
+        .replace('{source}', document.getText())
+        .replace('{git-diff}', diff)
+        .replaceAll('____', indentation)
 
-Example question:
-
-<source file="magic.ts">
-export function getMagicNumber(): string {
-  return "1337";
-}
-</source>
-<changes>
---- a/magic.ts
-+++ b/magic.ts
-@@ -1,3 +1,3 @@
--export function getMagicNumber(): string {
-+export function getMagicNumber(): number {
-   return "1337";
- }
-</changes>
-
-Example response:
-
-<topic>Changing the return type of the \`getMagicNumber()\` function from \`string\` to \`number\`.</topic>
-<next-changes>
---- a/magic.ts
-+++ b/magic.ts
-@@ -1,3 +1,3 @@
- export function getMagicNumber(): number {
--  return "1337";
-+  return 1337;
- }
-</next-changes>
-`
-    const preamble = getSimplePreamble(MODEL, system)
-
-    const source = `<source file="${vscode.workspace.asRelativePath(document.uri.path)}">
-${document.getText()}
-</source>\n`
-
-    const changes = `<changes>
-${diff}
-</changes>`
-
-    return [...preamble, { speaker: 'human', text: source + changes }]
+    return [
+        ...preamble,
+        { speaker: 'human', text: HUMAN_EXAMPLE.replaceAll('____', indentation) },
+        { speaker: 'assistant', text: ASSISTANT_EXAMPLE.replaceAll('____', indentation) },
+        { speaker: 'human', text: prompt },
+    ]
 }
 
-function fuzzyFindLocation(document: vscode.TextDocument, snippet: string): vscode.Location | null {
-    const lines = document.getText().split('\n')
-    const snippetLines = snippet.split('\n')
+// This function takes a supercompletion and adjusts the location to remove context
+// rows (rows which are the same in both the current and the updated text).
+function removeOverlappingChanges(
+    document: vscode.TextDocument,
+    supercompletion: Supercompletion
+): Supercompletion {
+    const currentLines = supercompletion.current.split('\n')
+    const updatedLines = supercompletion.updated.split('\n')
 
-    const candidates: [number, number][] = []
-    for (let i = 0; i < lines.length - snippetLines.length; i++) {
-        const window = lines.slice(i, i + snippetLines.length).join('\n')
-        const distance = levenshtein(window, snippet)
-        candidates.push([distance, i])
+    let newCurrent = supercompletion.current
+    let newUpdated = supercompletion.updated
+    // let newRange = supercompletion.location.range
+    console.log('initial range', supercompletion.location.range)
+
+    const minLines = Math.min(currentLines.length, updatedLines.length)
+
+    let startLine = supercompletion.location.range.start.line
+    let endLine = supercompletion.location.range.end.line
+
+    // Start from beginning. We can use the same index for both arrays
+    for (let i = 0; i < minLines; i++) {
+        if (currentLines[i] !== updatedLines[i] || startLine === endLine) {
+            break
+        }
+
+        newCurrent = newCurrent.slice(currentLines[i].length + 1)
+        newUpdated = newUpdated.slice(updatedLines[i].length + 1)
+        startLine++
     }
+    // console.log(0, supercompletion)
+    // console.log(1, { newCurrent, newUpdated })
 
-    const sortedCandidates = candidates.sort((a, b) => a[0] - b[0])
-    if (sortedCandidates.length === 0) {
-        return null
+    // Start from the end. Calculate the indexes independently
+    for (let i = 0; i < minLines; i++) {
+        const ci = currentLines.length - i - 1
+        const ui = updatedLines.length - i - 1
+        if (currentLines[ci] !== updatedLines[ui] || startLine === endLine) {
+            break
+        }
+
+        newCurrent = newCurrent.slice(0, -currentLines[ci].length - 1)
+        newUpdated = newUpdated.slice(0, -updatedLines[ui].length - 1)
+        endLine--
     }
-    const [, index] = sortedCandidates[0]
+    // console.log(2, { newCurrent, newUpdated })
+    // console.log('updated current', newCurrent)
 
-    const startLine = index
-    const endLine = index + snippetLines.length - 1
-    const start = new vscode.Position(startLine, 0)
-    const end = new vscode.Position(endLine, lines[endLine].length)
+    const newRange =
+        startLine === endLine
+            ? new vscode.Range(startLine, 0, startLine, 0)
+            : new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
 
-    return new vscode.Location(document.uri, new vscode.Range(start, end))
+    console.log('updated range', newRange)
+    return {
+        ...supercompletion,
+        location: new vscode.Location(supercompletion.location.uri, newRange),
+        current: newCurrent,
+        updated: newUpdated,
+    }
 }
