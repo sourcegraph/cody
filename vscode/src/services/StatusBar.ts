@@ -6,6 +6,8 @@ import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
+import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
 import { enableDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
@@ -29,7 +31,6 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
-    setOnClick(callback: (() => void) | undefined): void
     syncAuthStatus(newStatus: AuthStatus): void
 }
 
@@ -55,12 +56,22 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.show()
 
     let authStatus: AuthStatus | undefined
-    let onClick: (() => void) | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
-        if (onClick) {
-            onClick()
+        telemetryService.log(
+            'CodyVSCodeExtension:statusBarIcon:clicked',
+            { loggedIn: Boolean(authStatus?.isLoggedIn) },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
+            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
+        })
+
+        if (!authStatus?.isLoggedIn) {
+            // Bring up the sidebar view
+            void vscode.commands.executeCommand('cody.focus')
             return
         }
+
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
@@ -246,6 +257,13 @@ export function createStatusBar(): CodyStatusBar {
             statusBarItem.tooltip = DEFAULT_TOOLTIP
         }
 
+        if (!authStatus?.isLoggedIn) {
+            statusBarItem.text = 'Sign in to Cody'
+            statusBarItem.tooltip = 'You need to sign in to use Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+            return
+        }
+
         if (errors.length > 0) {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             statusBarItem.tooltip = errors[0].error.title
@@ -332,13 +350,6 @@ export function createStatusBar(): CodyStatusBar {
         },
         syncAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
-        },
-        /**
-         * Set a custom statusbar click handler. If unset, the default settings
-         * quickpick will be shown on click.
-         */
-        setOnClick(callback: () => void) {
-            onClick = callback
         },
         dispose() {
             statusBarItem.dispose()
