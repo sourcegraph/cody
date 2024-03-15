@@ -15,6 +15,8 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
     // Enable Llama Code 13b as the default model via Fireworks
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
+    // Enable StarCoder2 7b and 15b as the default model via Fireworks
+    CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',

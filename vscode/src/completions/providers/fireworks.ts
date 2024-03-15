@@ -74,6 +74,8 @@ const MODEL_MAP = {
     starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
+    'starcoder2-15b': 'fireworks/starcoder2-15b',
+    'starcoder2-7b': 'fireworks/starcoder2-7b',
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
@@ -83,10 +85,15 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
+    // `starcoder2-hybrid` uses the 15b model for multiline requests and the 7b model for single line
+    | 'starcoder2-hybrid'
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder':
+        case 'starcoder2-hybrid':
+        case 'starcoder2-15b':
+        case 'starcoder2-7b':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b': {
@@ -212,9 +219,11 @@ class FireworksProvider extends Provider {
             temperature: 0.2,
             topK: 0,
             model:
-                this.model === 'starcoder-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : MODEL_MAP[this.model],
+                this.model === 'starcoder2-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder2-15b' : 'starcoder2-7b']
+                    : this.model === 'starcoder-hybrid'
+                      ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                      : MODEL_MAP[this.model],
         }
 
         tracer?.params(requestParams)
