@@ -83,8 +83,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.syntacticPostProcessing':
                         return true
-                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
-                        return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
                     case 'cody.autocomplete.experimental.ollamaOptions':
@@ -143,7 +141,6 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
-            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,

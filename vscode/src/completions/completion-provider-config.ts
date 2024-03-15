@@ -11,7 +11,6 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
@@ -48,13 +47,6 @@ class CompletionProviderConfig {
         }
 
         return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
-    }
-
-    public get dynamicMultilineCompletions(): boolean {
-        return (
-            this.config.autocompleteExperimentalDynamicMultilineCompletions ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions)
-        )
     }
 
     public get hotStreak(): boolean {

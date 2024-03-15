@@ -296,7 +296,6 @@ export class InlineCompletionItemProvider
                 maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
             })
 
             const completionIntent = getCompletionIntent({
