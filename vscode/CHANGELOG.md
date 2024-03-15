@@ -14,6 +14,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Autocomplete: Upgrade tree-sitter and expand language support. [pull/3373](https://github.com/sourcegraph/cody/pull/3373)
 - Autocomplete: Do not cut off completions when they are almost identical to the following non-empty line. [pull/3377](https://github.com/sourcegraph/cody/pull/3377)
+- Chat: The <kbd>UpArrow</kbd> key in an empty chat editor now edits the most recently sent message instead of populating the editor with the last message's text.
+- Chat: The chat editor uses a new rich editor component. If you open an old chat added before this version and edit a message in the transcript with @-mentions, the @-mentions will show up as plain text and will not actually include the mentioned files unless you re-type them.
+
 
 ## [1.8.3]
 
