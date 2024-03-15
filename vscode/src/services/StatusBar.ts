@@ -256,7 +256,10 @@ export function createStatusBar(): CodyStatusBar {
             statusBarItem.tooltip = DEFAULT_TOOLTIP
         }
 
-        if (!authStatus?.isLoggedIn) {
+        // Only show this if authStatus is present, otherwise you get a flash of
+        // yellow status bar icon when extension first loads but login hasn't
+        // initialized yet
+        if (authStatus && !authStatus.isLoggedIn) {
             statusBarItem.text = 'Sign in to Cody'
             statusBarItem.tooltip = 'You need to sign in to use Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
@@ -346,6 +349,7 @@ export function createStatusBar(): CodyStatusBar {
         },
         syncAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
+            rerender()
         },
         dispose() {
             statusBarItem.dispose()
