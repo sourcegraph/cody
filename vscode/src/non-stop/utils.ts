@@ -47,6 +47,12 @@ export enum CodyTaskState {
      * - Making an edit within the range of the response (implied acceptance)
      */
     error = 8,
+    /**
+     * Additional state currently only used for the `test` command.
+     * This state is used to signify that an Edit is no longer idle, but waiting for
+     * some additional information before it is started (e.g. a file name from the LLM)
+     */
+    pending = 9,
 }
 
 /**

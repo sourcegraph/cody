@@ -1457,11 +1457,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 22c82ba0ddd9fabe405cac42641552a4
+    - _id: 19f1a7fb63476ff41d8a4fc46e52135b
       _order: 0
       cache: {}
       request:
-        bodySize: 3156
+        bodySize: 3155
         cookies: []
         headers:
           - name: content-type
@@ -1546,7 +1546,7 @@ log:
                   </SELECTEDCODE7662>
 
 
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
+                  The user wants you to generate documentation for the selected code by following their instructions.
 
                   Provide your generated documentation using the following instructions:
 
@@ -1567,10 +1567,10 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 5846
+        bodySize: 5187
         content:
           mimeType: text/event-stream
-          size: 5846
+          size: 5187
           text: >+
             event: completion
 
@@ -1609,167 +1609,152 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that runs 3 tests:\n * - Does test 1\n * - Does test 2 \n * - Does something else that errors due to incorrect usage of `performance.now`\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1779,7 +1764,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 15 Mar 2024 09:08:03 GMT
+            value: Fri, 15 Mar 2024 15:21:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1808,7 +1793,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-15T09:08:01.777Z
+      startedDateTime: 2024-03-15T15:21:14.667Z
       time: 0
       timings:
         blocked: -1
