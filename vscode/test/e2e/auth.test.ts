@@ -22,6 +22,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:logout:clicked',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:Auth:disconnected',
+        'CodyVSCodeExtension:statusBarIcon:clicked',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
@@ -49,13 +50,9 @@ test.extend<ExpectedEvents>({
         sidebarFrame.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
     ).toBeVisible()
 
-    // Click on Cody at the bottom menu to open the Cody Settings Menu and click on Sign In.
-    await page.getByRole('button', { name: 'cody-logo-heavy, Sign in to use Cody' }).click()
-    await page
-        .getByLabel('alert  Sign In to Use Cody, You need to sign in to use Cody., notice')
-        .locator('a')
-        .first()
-        .click()
+    // Click on Cody at the bottom menu to open sign in
+    await page.getByRole('button', { name: 'Sign in to Cody, You need to sign in to use Cody' }).click()
+
     // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
     // instead of the chat panel.
     await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
