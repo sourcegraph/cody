@@ -54,7 +54,7 @@ export interface TelemetryEventProperties {
         | undefined
         | string[]
         | TelemetryEventProperties[]
-        | TelemetryEventProperties,
+        | TelemetryEventProperties
     /**
      * `hasV2Event` is a disallowed property.
      * Did you mean to provide this as a telemetry option?
