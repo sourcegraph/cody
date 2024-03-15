@@ -146,6 +146,10 @@ function getLanguageSpecificQueryWrappers(
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
         },
         getDocumentableNode: (root, start, end) => {
+            if (start.column !== undefined) {
+                return []
+            }
+            console.log('CALLED!')
             const captures = queries.documentableNodes.compiled.captures(
                 root,
                 { ...start, column: 0 },

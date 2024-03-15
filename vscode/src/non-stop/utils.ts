@@ -47,6 +47,10 @@ export enum CodyTaskState {
      * - Making an edit within the range of the response (implied acceptance)
      */
     error = 8,
+    /**
+     * Currently only used for the test command
+     */
+    pending = 9,
 }
 
 /**

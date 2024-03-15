@@ -93,7 +93,6 @@ export const buildInteraction = async ({
             precedingText,
             selectedText,
             instruction: task.instruction,
-            document,
         })
 
     const promptBuilder = new PromptBuilder(contextWindow)

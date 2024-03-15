@@ -41,7 +41,7 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
-            this.config.controller.startTask(this.config.task)
+            // this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = getContextWindowForModel(
                 this.config.authProvider.getAuthStatus(),
@@ -57,9 +57,6 @@ export class EditProvider {
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
-            }).catch(err => {
-                this.handleError(err)
-                throw err
             })
 
             const multiplexer = new BotResponseMultiplexer()
@@ -240,7 +237,7 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
-        if (task.intent === 'test' && task.state !== CodyTaskState.working) {
+        if (task.state !== CodyTaskState.pending) {
             return
         }
 
@@ -254,7 +251,9 @@ export class EditProvider {
             // Create a new untitled file if the suggested file does not exist
             const currentFile = task.fixupFile.uri
             const currentDoc = await workspace.openTextDocument(currentFile)
-            const newDoc = await workspace.openTextDocument({ language: currentDoc?.languageId })
+            const newDoc = await workspace.openTextDocument({
+                language: currentDoc?.languageId,
+            })
             await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newDoc.uri)
             return
         }
@@ -280,7 +279,11 @@ export class EditProvider {
             try {
                 await this.insertionPromise
             } catch (error) {
-                this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
+                this.handleError(
+                    new Error('Cody failed to generate unit tests', {
+                        cause: error,
+                    })
+                )
             } finally {
                 this.insertionPromise = null
             }

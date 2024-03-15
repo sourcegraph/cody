@@ -410,8 +410,12 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private _fireDisplayEvent(variant: GhostVariant): void {
-        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant })
-        telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
+        telemetryService.log('CodyVSCodeExtension:ghostText:visible', {
+            variant,
+        })
+        telemetryRecorder.recordEvent('cody.ghostText', 'visible', {
+            privateMetadata: { variant },
+        })
     }
 
     /**
