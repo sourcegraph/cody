@@ -169,11 +169,16 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                ...countCode(response),
-                source: this.config.task.source,
-                hasV2Event: true,
-            })
+            telemetryService.log(
+                'CodyVSCodeExtension:fixupResponse:hasCode',
+                {
+                    ...countCode(response),
+                    source: this.config.task.source,
+                },
+                {
+                    hasV2Event: true,
+                }
+            )
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
             const responseText = endpoint && isDotCom(endpoint) ? response : undefined
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
