@@ -126,46 +126,65 @@ const TS_SINGLELINE_TRIGGERS_QUERY = dedent`
 `
 
 const JS_DOCUMENTABLE_NODES_QUERY = dedent`
-    ; Identifiers
+    ; Functions
     ;--------------------------------
-    (_
-        name: (identifier) @identifier)
+    (function_declaration
+        name: (identifier) @symbol.function) @range.function
+    (generator_function_declaration
+        name: (identifier) @symbol.function) @range.function
+    (function_expression
+        name: (identifier) @symbol.function) @range.function
+
+    ; Variables
+    ;--------------------------------
+    (lexical_declaration
+        (variable_declarator
+            name: (identifier) @symbol.identifier)) @range.identifier
+    (variable_declaration
+        (variable_declarator
+            name: (identifier) @symbol.identifier)) @range.identifier
+    (class_declaration
+        name: (_) @symbol.identifier) @range.identifier
 
     ; Property Identifiers
     ;--------------------------------
     (method_definition
-        name: (property_identifier) @identifier.property)
+        name: (property_identifier) @symbol.function) @range.function
     (pair
-        key: (property_identifier) @identifier.property)
-
-    ; Exports
-    ;--------------------------------
-    ((export_statement) @export)
+        key: (property_identifier) @symbol.identifier) @range.identifier
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
     ${JS_DOCUMENTABLE_NODES_QUERY}
 
+    ; Property identifiers
+    ;--------------------------------
+    (public_field_definition
+        name: (property_identifier) @symbol.identifier) @range.identifier
+
     ; Type Identifiers
     ;--------------------------------
-    (_
-        name: (type_identifier) @identifier)
+    (interface_declaration
+        name: (type_identifier) @symbol.identifier) @range.identifier
+    (type_alias_declaration
+        name: (type_identifier) @symbol.identifier) @range.identifier
+    (enum_declaration
+        name: (identifier) @symbol.identifier) @range.identifier
 
     ; Type Signatures
     ;--------------------------------
-    ((call_signature) @signature)
+    ((call_signature) @symbol.function) @range.function
+    (function_signature
+        name: (identifier) @symbol.function) @range.function
     (interface_declaration
         (interface_body
-            (property_signature
-                name: (property_identifier) @signature.property)))
+            (property_signature name: (property_identifier) @symbol.identifier) @range.identifier))
     (interface_declaration
         (interface_body
-            (method_signature
-                name: (property_identifier) @signature.property)))
+            (method_signature name: (property_identifier) @symbol.identifier) @range.identifier))
     (type_alias_declaration
         (object_type
-            (property_signature
-                name: (property_identifier) @signature.property)))
+            (property_signature name: (property_identifier) @symbol.identifier) @range.identifier))
 `
 
 const JS_SHARED_CONTEXT_IDENTIFIERS_QUERY = dedent`

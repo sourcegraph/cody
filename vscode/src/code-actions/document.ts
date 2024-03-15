@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { ExecuteEditArguments } from '../edit/execute'
+import type { CodyCommandArgs } from '../commands/types'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {
@@ -12,23 +12,29 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
             position: range.start,
             queryWrapper: 'getDocumentableNode',
         })
-
         if (!documentableNode) {
             return []
         }
 
-        const { node, name } = documentableNode
-        // Expand the range from the node to include the full line
-        const documentableRange = new vscode.Range(
-            document.lineAt(node.startPosition.row).range.start,
-            document.lineAt(node.endPosition.row).range.end
-        )
-        const displayText =
-            name === 'documentableNode'
-                ? `Ask Cody to Document: ${node.text}`
-                : 'Ask Cody to Document This Export'
+        const { range: documentableRange, symbol: documentableSymbol } = documentableNode
+        if (!documentableSymbol || !documentableRange) {
+            return []
+        }
 
-        return [this.createCommandCodeAction(document, documentableRange, displayText)]
+        // Expand the range from the node to include the full line
+        const editorRange = new vscode.Range(
+            documentableRange.node.startPosition.row,
+            documentableRange.node.startPosition.column,
+            documentableRange.node.endPosition.row,
+            documentableRange.node.endPosition.column
+        )
+        return [
+            this.createCommandCodeAction(
+                document,
+                editorRange,
+                `Ask Cody to Document: ${documentableSymbol.node.text}`
+            ),
+        ]
     }
 
     private createCommandCodeAction(
@@ -39,29 +45,10 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
         const source = 'code-action:document'
         action.command = {
-            command: 'cody.command.edit-code',
-            arguments: [
-                {
-                    configuration: {
-                        instruction: this.instruction,
-                        range,
-                        intent: 'doc',
-                        document,
-                        mode: 'insert',
-                    },
-                    source,
-                } satisfies ExecuteEditArguments,
-            ],
+            command: 'cody.command.document-code',
+            arguments: [{ source } satisfies Partial<CodyCommandArgs>],
             title: displayText,
         }
         return action
     }
-
-    /**
-     * Edit instruction for generating documentation.
-     * Note: This is a clone of the hard coded instruction in `lib/shared/src/chat/prompts/cody.json`.
-     * TODO: (umpox) Consider moving top level instructions out of the JSON format.
-     */
-    private readonly instruction =
-        'Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not output any other code or comments besides the documentation. Output only the comment and do not enclose it in markdown.'
 }
