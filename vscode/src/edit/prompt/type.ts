@@ -6,7 +6,6 @@ export interface LLMInteraction {
     responseTopic?: string
     assistantText?: string
     assistantPrefix?: string
-    assistantSuffix?: string
 }
 
 export interface GetLLMInteractionOptions {

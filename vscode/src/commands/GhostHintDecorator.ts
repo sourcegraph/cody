@@ -1,4 +1,4 @@
-import { type AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
@@ -381,16 +381,22 @@ export class GhostHintDecorator implements vscode.Disposable {
         document: vscode.TextDocument,
         position: vscode.Position
     ): SyntaxNode | undefined {
-        const [documentableSymbol, documentableRange] = execQueryWrapper(
+        const [documentableSymbol, documentableRange] = execQueryWrapper({
             document,
             position,
-            'getDocumentableNode'
-        )
+            queryWrapper: 'getDocumentableNode',
+        })
 
         if (!documentableSymbol.node || !documentableRange.node) {
             return
         }
 
+        /**
+         * TODO: Update this completely
+         * 1. Is the documentableRange the highest one, if so then we should show the hint
+         * 2. Is the documentableSymbol a funcion? if so, show the hint regardless of #1
+         * also update changelog lol
+         */
         const isAtRoot =
             !documentableRange.node.parent ||
             documentableRange.node.parent.equals(documentableRange.node.tree.rootNode)

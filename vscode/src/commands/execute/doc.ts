@@ -42,11 +42,11 @@ function getDocumentableRange(editor: vscode.TextEditor): {
      * Attempt to get the range of a documentable symbol at the current cursor position.
      * If present, use this for the edit instead of expanding the range to the nearest block.
      */
-    const [_, documentableRange, documentableInsertionPoint] = execQueryWrapper(
+    const [_, documentableRange, documentableInsertionPoint] = execQueryWrapper({
         document,
-        editor.selection.active,
-        'getDocumentableNode'
-    )
+        position: editor.selection.active,
+        queryWrapper: 'getDocumentableNode',
+    })
     if (!documentableRange?.node) {
         // No user-provided selection, no documentable range found.
         // Fallback to expanding the range to the nearest block.
