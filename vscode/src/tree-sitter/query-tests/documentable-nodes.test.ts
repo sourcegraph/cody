@@ -2,17 +2,35 @@ import { describe, it } from 'vitest'
 
 import { initTreeSitterSDK } from '../test-helpers'
 
+import type { QueryCapture } from 'web-tree-sitter'
 import { SupportedLanguage } from '../grammars'
-import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
+import type { QueryWrappers } from '../query-sdk'
+import { type Captures, annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getDocumentableNode', () => {
+    const queryWrapper =
+        (query: QueryWrappers['getDocumentableNode']): Captures =>
+        (node, start, end) => {
+            const [documentableNode] = query(node, start, end)
+            if (!documentableNode) {
+                return []
+            }
+            const captures = [
+                documentableNode.symbol,
+                documentableNode.range,
+                documentableNode.insertionPoint,
+            ].filter((capture): capture is QueryCapture => capture !== undefined)
+
+            return captures
+        }
+
     it('typescript', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescript)
 
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.ts',
         })
     })
@@ -23,7 +41,7 @@ describe('getDocumentableNode', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.tsx',
         })
     })
@@ -34,7 +52,7 @@ describe('getDocumentableNode', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.jsx',
         })
     })
@@ -45,7 +63,7 @@ describe('getDocumentableNode', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.py',
         })
     })
@@ -56,7 +74,7 @@ describe('getDocumentableNode', () => {
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.go',
         })
     })

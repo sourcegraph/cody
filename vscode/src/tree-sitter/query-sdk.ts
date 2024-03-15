@@ -87,7 +87,7 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     }
 }
 
-interface QueryWrappers {
+export interface QueryWrappers {
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -102,7 +102,16 @@ interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly { readonly node?: SyntaxNode; readonly name?: string }[]
+    ) =>
+        | []
+        | readonly [
+              {
+                  symbol?: QueryCapture
+                  range?: QueryCapture
+                  insertionPoint?: QueryCapture
+                  meta: { showHint: boolean }
+              },
+          ]
     getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
@@ -161,14 +170,15 @@ function getLanguageSpecificQueryWrappers(
                 )
             })
 
-            const range = findLast(rangeCaptures, ({ node }) => {
+            const documentableRanges = rangeCaptures.filter(({ node }) => {
                 return (
                     node.startPosition.row <= start.row &&
                     (start.column <= node.endPosition.column || start.row < node.endPosition.row)
                 )
             })
+            const range = documentableRanges.at(-1)
 
-            let insertion: QueryCapture | undefined
+            let insertionPoint: QueryCapture | undefined
             if (languageId === 'python' && range) {
                 /**
                  * Python is a special case for generating documentation.
@@ -180,17 +190,29 @@ function getLanguageSpecificQueryWrappers(
                 const insertionCaptures = queries.documentableNodes.compiled
                     .captures(root, range.node.startPosition, range.node.endPosition)
                     .filter(({ name }) => name.startsWith('insertion'))
-                insertion = insertionCaptures.find(
+                insertionPoint = insertionCaptures.find(
                     ({ node }) =>
                         node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
                 )
             }
 
+            /**
+             * Heuristic to determine if we should show a prominent hint for the symbol.
+             * 1. If there is only one documentable range for this position, we can be confident it makes sense to document. Show the hint.
+             * 2. Otherwise, only show the hint if the symbol is a function
+             */
+            const showHint = Boolean(
+                documentableRanges.length === 1 || symbol?.name.includes('function')
+            )
+
             return [
-                { node: symbol?.node, name: symbol?.name },
-                { node: range?.node, name: range?.name },
-                { node: insertion?.node, name: insertion?.name },
-            ] as const
+                {
+                    symbol,
+                    range,
+                    insertionPoint,
+                    meta: { showHint },
+                },
+            ]
         },
         getGraphContextIdentifiers: (root, start, end) => {
             return queries.graphContextIdentifiers.compiled.captures(root, start, end)

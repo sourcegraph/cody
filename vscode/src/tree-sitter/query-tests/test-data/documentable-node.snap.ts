@@ -212,10 +212,6 @@
 
 // ------------------------------------
 
-  let changingName = 'test'
-  changingName = 'other'
-//   █
-
-// Nodes types:
-
-
+let changingName = 'test'
+changingName = 'other'
+// |

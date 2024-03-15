@@ -99,7 +99,7 @@ export type Captures = (
     node: SyntaxNode,
     startPosition: Point,
     endPosition?: Point
-) => readonly Readonly<Partial<Parser.QueryCapture>>[]
+) => readonly Readonly<Parser.QueryCapture>[]
 
 interface AnnotateSnippetParams {
     code: string

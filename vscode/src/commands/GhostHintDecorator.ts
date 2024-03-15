@@ -381,29 +381,20 @@ export class GhostHintDecorator implements vscode.Disposable {
         document: vscode.TextDocument,
         position: vscode.Position
     ): SyntaxNode | undefined {
-        const [documentableSymbol, documentableRange] = execQueryWrapper({
+        const [documentableNode] = execQueryWrapper({
             document,
             position,
             queryWrapper: 'getDocumentableNode',
         })
-
-        if (!documentableSymbol.node || !documentableRange.node) {
+        if (!documentableNode) {
             return
         }
 
-        /**
-         * TODO: Update this completely
-         * 1. Is the documentableRange the highest one, if so then we should show the hint
-         * 2. Is the documentableSymbol a funcion? if so, show the hint regardless of #1
-         * also update changelog lol
-         */
-        const isAtRoot =
-            !documentableRange.node.parent ||
-            documentableRange.node.parent.equals(documentableRange.node.tree.rootNode)
-
-        const isFunction = documentableSymbol.name?.includes('function')
-
-        if (!isAtRoot && !isFunction) {
+        const {
+            symbol: documentableSymbol,
+            meta: { showHint },
+        } = documentableNode
+        if (!documentableSymbol || !showHint) {
             return
         }
 
