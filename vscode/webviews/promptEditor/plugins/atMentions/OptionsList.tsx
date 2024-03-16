@@ -4,6 +4,7 @@ import {
     displayPath,
     displayPathBasename,
     displayPathDirname,
+    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { type FunctionComponent, useEffect, useRef } from 'react'
@@ -24,16 +25,18 @@ export const OptionsList: FunctionComponent<
         setHighlightedIndex(0)
     }, [options])
 
+    const mentionQuery = parseMentionQuery(query)
+
     return (
         <div className={styles.container}>
             <h3 className={classNames(styles.item, styles.helpItem)}>
-                {query === ''
+                {mentionQuery.type === 'empty'
                     ? 'Search for a file to include, or type # for symbols...'
-                    : query.startsWith('#')
+                    : mentionQuery.type === 'symbol'
                       ? options.length > 0
                             ? 'Search for a symbol to include...'
                             : `No symbols found${
-                                  query.length <= 2
+                                  mentionQuery.text.length <= 2
                                       ? ' (try installing language extensions and opening a file)'
                                       : ''
                               }`
