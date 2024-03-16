@@ -25,42 +25,43 @@ export const OptionsList: FunctionComponent<
     }, [options])
 
     return (
-        <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
-                {query === ''
-                    ? 'Search for a file to include, or type # for symbols...'
-                    : query.startsWith('#')
-                      ? options.length > 0
-                            ? 'Search for a symbol to include...'
-                            : `No symbols found${
-                                  query.length <= 2
-                                      ? ' (try installing language extensions and opening a file)'
-                                      : ''
-                              }`
-                      : options.length > 0
-                          ? 'Search for a file to include...'
-                          : 'No files found'}
-                <br />
-            </h3>
-            {options.length > 0 && (
-                <ul ref={ref} className={styles.list}>
-                    {options.map((option, i) => (
-                        <Item
-                            isSelected={selectedIndex === i}
-                            onClick={() => {
-                                setHighlightedIndex(i)
-                                selectOptionAndCleanUp(option)
-                            }}
-                            onMouseEnter={() => {
-                                setHighlightedIndex(i)
-                            }}
-                            key={option.key}
-                            option={option}
-                            className={styles.item}
-                        />
-                    ))}
-                </ul>
-            )}
+        <div className={styles.outerContainer}>
+            <div className={styles.visibleContainer}>
+                <h3 className={classNames(styles.item, styles.helpItem)}>
+                    {query === ''
+                        ? 'Search for a file to include, or type # for symbols...'
+                        : query === '#'
+                          ? 'Search for a symbol to include...'
+                          : options.length === 0
+                              ? query.startsWith('#')
+                                    ? `No symbols found${
+                                          query.length <= 2
+                                              ? ' (try installing language extensions and opening a file)'
+                                              : ''
+                                      }`
+                                    : 'No files found'
+                              : null}
+                </h3>
+                {options.length > 0 && (
+                    <ul ref={ref} className={styles.list}>
+                        {options.map((option, i) => (
+                            <Item
+                                isSelected={selectedIndex === i}
+                                onClick={() => {
+                                    setHighlightedIndex(i)
+                                    selectOptionAndCleanUp(option)
+                                }}
+                                onMouseEnter={() => {
+                                    setHighlightedIndex(i)
+                                }}
+                                key={option.key}
+                                option={option}
+                                className={styles.item}
+                            />
+                        ))}
+                    </ul>
+                )}
+            </div>
         </div>
     )
 }
