@@ -1,4 +1,9 @@
-import type { ContextItem, ContextItemSymbol, SymbolKind } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextItemSymbol,
+    type SymbolKind,
+    parseMentionQuery,
+} from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { ChatContextClient } from './chatContextClient'
 
@@ -11,7 +16,8 @@ export const dummyChatContextClient: ChatContextClient = {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
         query = query.toLowerCase()
-        return query.startsWith('#')
+        const mentionQuery = parseMentionQuery(query)
+        return mentionQuery.type === 'symbol'
             ? DUMMY_SYMBOLS.filter(
                   f =>
                       f.symbolName.toLowerCase().includes(query.slice(1)) ||

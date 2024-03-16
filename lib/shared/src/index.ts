@@ -199,3 +199,8 @@ export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/clie
 export * from './auth/types'
 export * from './auth/tokens'
 export * from './chat/sse-iterator'
+export {
+    parseMentionQuery,
+    type MentionQuery,
+    scanForMentionTriggerInUserTextInput,
+} from './mentions/query'

@@ -1,10 +1,6 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import {
-    LexicalTypeaheadMenuPlugin,
-    MenuOption,
-    type MenuTextMatch,
-} from '@lexical/react/LexicalTypeaheadMenuPlugin'
+import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     $createTextNode,
     COMMAND_PRIORITY_NORMAL,
@@ -15,22 +11,16 @@ import {
 import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
-import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type RangeData,
+    displayPath,
+    scanForMentionTriggerInUserTextInput,
+} from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
-
-const PUNCTUATION = ',\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]!%\'"~=<>:;'
-
-const TRIGGERS = ['@'].join('')
-
-// Chars we expect to see in a mention (non-space, non-punctuation).
-const VALID_CHARS = '[^' + TRIGGERS + PUNCTUATION + '\\s]'
-
-const MAX_LENGTH = 75
-
-const RANGE_REGEXP = '(?::\\d+-\\d+)?'
 
 /**
  * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
@@ -61,44 +51,7 @@ export function parseLineRangeInMention(text: string): {
     }
 }
 
-const AT_MENTIONS_REGEXP = new RegExp(
-    '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
-        '[' +
-        TRIGGERS +
-        ']' +
-        '(?<matchingString>#?(?:' +
-        VALID_CHARS +
-        '){0,' +
-        MAX_LENGTH +
-        '}' +
-        RANGE_REGEXP +
-        ')' +
-        ')$'
-)
-
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
-
-function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextMatch | null {
-    const match = AT_MENTIONS_REGEXP.exec(text)
-
-    if (match?.groups) {
-        const maybeLeadingWhitespace = match.groups.maybeLeadingWhitespace
-        const replaceableString = match.groups.replaceableString
-        const matchingString = match.groups.matchingString
-        if (matchingString.length >= minMatchLength) {
-            return {
-                leadOffset: match.index + maybeLeadingWhitespace.length,
-                matchingString,
-                replaceableString,
-            }
-        }
-    }
-    return null
-}
-
-export function getPossibleQueryMatch(text: string): MenuTextMatch | null {
-    return checkForAtSignMentions(text, 0)
-}
 
 export class MentionTypeaheadOption extends MenuOption {
     public displayPath: string
@@ -169,7 +122,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
             onQueryChange={onQueryChange}
             onSelectOption={onSelectOption}
-            triggerFn={getPossibleQueryMatch}
+            triggerFn={scanForMentionTriggerInUserTextInput}
             options={options}
             anchorClassName={styles.resetAnchor}
             commandPriority={

@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import { type ContextItem, type MentionQuery, parseMentionQuery } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import {
     getFileContextFiles,
@@ -11,27 +11,28 @@ export async function getChatContextItemsForMention(
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
-        withType: (type: 'symbol' | 'file') => void
+        withType: (type: MentionQuery['type']) => void
     }
 ): Promise<ContextItem[]> {
+    const mentionQuery = parseMentionQuery(query)
+
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    const queryType = query.startsWith('#') ? 'symbol' : 'file'
-    if (query === '') {
+    if (mentionQuery.type === 'empty') {
         telemetryRecorder?.empty()
     } else if (query.length === 1) {
-        telemetryRecorder?.withType(queryType)
+        telemetryRecorder?.withType(mentionQuery.type)
     }
 
-    if (query.length === 0) {
+    if (mentionQuery.type === 'empty') {
         return getOpenTabsContextFile()
     }
 
     const MAX_RESULTS = 20
-    if (query.startsWith('#')) {
+    if (mentionQuery.type === 'symbol') {
         // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
-        return getSymbolContextFiles(query.slice(1), MAX_RESULTS)
+        return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
     }
-    return getFileContextFiles(query, MAX_RESULTS, cancellationToken)
+    return getFileContextFiles(mentionQuery.text, MAX_RESULTS, cancellationToken)
 }
