@@ -60,6 +60,7 @@ import type {
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
+    Range,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -332,15 +333,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
+            function isEmpty(range: Range | undefined): boolean {
+                return !range || range === new vscode.Range(0, 0, 0, 0)
+            }
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             // If the caller elided the content, as is the sensible thing to do, reconstruct it here.
-            if (!document.content) {
-                const cachedDocument = this.workspace.getDocumentFromUriString(
-                    documentWithUri.uri.toString()
-                )
+            const cachedDocument = this.workspace.getDocumentFromUriString(
+                documentWithUri.uri.toString()
+            )
+            if (!documentWithUri.underlying.content) {
                 if (cachedDocument?.content != null) {
-                    document.content = cachedDocument.content
+                    documentWithUri.underlying.content = cachedDocument.content
                 }
+            }
+            // Similarly, don't let this notification blow away our cached selection.
+            if (isEmpty(document.selection) && !isEmpty(cachedDocument?.protocolDocument.selection)) {
+                document.selection = cachedDocument?.protocolDocument.selection
             }
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
