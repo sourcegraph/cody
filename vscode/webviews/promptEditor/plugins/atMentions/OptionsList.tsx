@@ -100,18 +100,20 @@ const Item: FunctionComponent<{
             onMouseEnter={onMouseEnter}
             onClick={onClick}
         >
-            {item.type === 'symbol' && icon && (
-                <i className={`codicon codicon-${icon}`} title={item.kind} />
-            )}
-            <span
-                className={classNames(
-                    styles.optionItemTitle,
-                    warning && styles.optionItemTitleWithWarning
+            <div className={styles.optionItemRow}>
+                {item.type === 'symbol' && icon && (
+                    <i className={`codicon codicon-${icon}`} title={item.kind} />
                 )}
-            >
-                {title}
-            </span>
-            {description && <span className={styles.optionItemDescription}>{description}</span>}
+                <span
+                    className={classNames(
+                        styles.optionItemTitle,
+                        warning && styles.optionItemTitleWithWarning
+                    )}
+                >
+                    {title}
+                </span>
+                {description && <span className={styles.optionItemDescription}>{description}</span>}
+            </div>
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
         </li>
     )
