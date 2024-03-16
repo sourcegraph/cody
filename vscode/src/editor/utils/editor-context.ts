@@ -24,29 +24,16 @@ import {
     type ContextItemWithContent,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
-
-const findWorkspaceFiles = async (
-    cancellationToken: vscode.CancellationToken
-): Promise<vscode.Uri[]> => {
-    // TODO(toolmantim): Add support for the search.exclude option, e.g.
-    // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
-    // {}))
-    const fileExcludesPattern =
-        '**/{*.env,.git/,.class,out/,dist/,build/,snap,node_modules/,__pycache__/}**'
-    // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
-    return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
-}
+import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
 // but could also be junk (`bin/` in .NET). If a file path contains a segment matching any of these
 // items it will be ranked low unless the users query contains the exact segment.
 const lowScoringPathSegments = ['bin']
 
-// This is expensive for large repos (e.g. Chromium), so we only do it max once
-// every 10 seconds. It also handily supports a cancellation callback to use
-// with the cancellation token to discard old requests.
+// This is expensive for large repos (e.g. Chromium), so we only do it max once every 10 seconds.
 const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
 
 /**
@@ -63,12 +50,8 @@ export async function getFileContextFiles(
     if (!query.trim()) {
         return []
     }
-    token.onCancellationRequested(() => {
-        throttledFindFiles.cancel()
-    })
 
     const uris = await throttledFindFiles(token)
-
     if (!uris) {
         return []
     }
@@ -133,7 +116,11 @@ export async function getSymbolContextFiles(
         return []
     }
 
-    const queryResults = await getWorkspaceSymbols(query) // doesn't support cancellation tokens :(
+    // doesn't support cancellation tokens :(
+    const queryResults = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+        'vscode.executeWorkspaceSymbolProvider',
+        query
+    )
 
     const relevantQueryResults = queryResults?.filter(
         symbol =>
