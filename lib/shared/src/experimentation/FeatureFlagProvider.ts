@@ -47,6 +47,9 @@ export enum FeatureFlag {
 
     // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
     CodyDocumentHints = 'cody-document-hints',
+
+    /** Support @-mentioning URLs in chat to add context from web pages. */
+    URLContext = 'cody-url-context',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
