@@ -3,6 +3,8 @@ import {
     type ContextItem,
     type EditModel,
     displayLineRange,
+    parseMentionQuery,
+    scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -17,7 +19,12 @@ import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
-import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
+import {
+    FILE_HELP_LABEL,
+    NO_MATCHES_LABEL,
+    OTHER_MENTION_HELP_LABEL,
+    SYMBOL_HELP_LABEL,
+} from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
@@ -357,23 +364,28 @@ export const getInput = async (
                     return
                 }
 
-                const isFileSearch = value.endsWith('@')
-                const isSymbolSearch = value.endsWith('@#')
+                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionQuery = mentionTrigger
+                    ? parseMentionQuery(mentionTrigger.matchingString)
+                    : undefined
 
                 // If we have the beginning of a file or symbol match, show a helpful label
-                if (isFileSearch) {
-                    input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                    return
-                }
-                if (isSymbolSearch) {
-                    input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
+                if (mentionQuery?.text === '') {
+                    if (mentionQuery.type === 'empty' || mentionQuery.type === 'file') {
+                        input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
+                        return
+                    }
+                    if (mentionQuery.type === 'symbol') {
+                        input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
+                        return
+                    }
+                    input.items = [{ alwaysShow: true, label: OTHER_MENTION_HELP_LABEL }]
                     return
                 }
 
-                const matchingContext = await getMatchingContext(value)
+                const matchingContext = mentionQuery ? await getMatchingContext(mentionQuery) : null
                 if (matchingContext === null) {
                     // Nothing to match, re-render existing items
-                    // eslint-disable-next-line no-self-assign
                     input.items = getEditInputItems(
                         input.value,
                         activeRangeItem,
