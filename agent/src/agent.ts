@@ -35,9 +35,9 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -59,6 +59,7 @@ import type {
     ExtensionConfiguration,
     GetFoldingRangeResult,
     ProtocolCommand,
+    ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -330,11 +331,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('textDocument/didFocus', document => {
-            this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(
-                    this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(document))
+        this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+            // If the caller elided the content, as is the sensible thing to do, reconstruct it here.
+            if (!document.content) {
+                const cachedDocument = this.workspace.getDocumentFromUriString(
+                    documentWithUri.uri.toString()
                 )
+                if (cachedDocument?.content != null) {
+                    document.content = cachedDocument.content
+                }
+            }
+            this.workspace.setActiveTextEditor(
+                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
             )
         })
 
@@ -736,22 +745,25 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(null)
         })
 
-        this.registerAuthenticatedRequest('editTask/getFoldingRanges', async (params): Promise<GetFoldingRangeResult> => {
-            const uri = vscode.Uri.parse(params.uri)
-            const document = this.workspace.getDocument(uri)
-            if (!document) {
-                logError(
-                    'Agent',
-                    'editTask/getFoldingRanges',
-                    'No document found for file path',
-                    params.uri,
-                    [...this.workspace.allUris()]
-                )
-                return Promise.resolve({ ranges: [] })
+        this.registerAuthenticatedRequest(
+            'editTask/getFoldingRanges',
+            async (params): Promise<GetFoldingRangeResult> => {
+                const uri = vscode.Uri.parse(params.uri)
+                const document = this.workspace.getDocument(uri)
+                if (!document) {
+                    logError(
+                        'Agent',
+                        'editTask/getFoldingRanges',
+                        'No document found for file path',
+                        params.uri,
+                        [...this.workspace.allUris()]
+                    )
+                    return Promise.resolve({ ranges: [] })
+                }
+                const ranges = await getDocumentSections(document)
+                return { ranges: ranges }
             }
-            const ranges = await getDocumentSections(document)
-            return { ranges: ranges }
-        })
+        )
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const args = { configuration: { ...params } }
