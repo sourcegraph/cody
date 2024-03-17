@@ -38,7 +38,8 @@ import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult } from '../../vscode/src/main'
+import type { CommandResult, EditCommandResult } from '../../vscode/src/main'
+import { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -775,9 +776,30 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const args = { configuration: { ...params } }
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.edit-code', args)
+            const taskThenable = vscode.commands.executeCommand<FixupTask | undefined>(
+                'cody.command.edit-code',
+                args
             )
+            // Wrap the task in a Thenable that returns a CommandResult, required by createEditTask().
+            const commandResultThenable: Thenable<CommandResult | undefined> = new Promise(
+                (resolve, reject) => {
+                    taskThenable.then(
+                        task => {
+                            if (task) {
+                                const editCommandResult: EditCommandResult = { type: 'edit', task: task }
+                                resolve(editCommandResult)
+                            } else {
+                                resolve(undefined)
+                            }
+                        },
+                        error => {
+                            reject(error)
+                        }
+                    )
+                }
+            )
+
+            return this.createEditTask(commandResultThenable)
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
