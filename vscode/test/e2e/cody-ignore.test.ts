@@ -65,7 +65,35 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
-    await page.waitForTimeout(1000) // seems to make it less flaky on Windows
+    console.log(
+        'XXXXXX TEST before wait',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
+    await page.waitForTimeout(500)
+    console.log(
+        'XXXXXX TEST after wait 500',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
+    await page.waitForTimeout(500)
+    console.log(
+        'XXXXXX TEST after wait 500',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
+    await page.waitForTimeout(500)
+    console.log(
+        'XXXXXX TEST after wait 500',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
+    await page.waitForTimeout(500)
+    console.log(
+        'XXXXXX TEST after wait 500',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
+    await page.waitForTimeout(500)
+    console.log(
+        'XXXXXX TEST after wait 500',
+        JSON.stringify(await chatPanel.getByRole('option').allInnerTexts())
+    )
     await expect(
         chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()
