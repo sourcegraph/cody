@@ -51,7 +51,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // Click on Cody at the bottom menu to open sign in
-    await page.getByRole('button', { name: 'Sign in to Cody, Sign in to get started with Cody' }).click()
+    await page.getByRole('button', { name: 'Sign In, Sign in to get started with Cody' }).click()
 
     // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
     // instead of the chat panel.
