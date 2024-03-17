@@ -6,12 +6,15 @@ import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
+import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
 import { enableDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
     description: string
     errorType: StatusBarErrorName
+    removeAfterSelected: boolean
     onShow?: () => void
     onSelect?: () => void
 }
@@ -53,6 +56,21 @@ export function createStatusBar(): CodyStatusBar {
 
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
+        telemetryService.log(
+            'CodyVSCodeExtension:statusBarIcon:clicked',
+            { loggedIn: Boolean(authStatus?.isLoggedIn) },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
+            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
+        })
+
+        if (!authStatus?.isLoggedIn) {
+            // Bring up the sidebar view
+            void vscode.commands.executeCommand('cody.focus')
+            return
+        }
+
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
@@ -111,9 +129,11 @@ export function createStatusBar(): CodyStatusBar {
                           detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
                           onSelect(): Promise<void> {
                               error.error.onSelect?.()
-                              const index = errors.indexOf(error)
-                              errors.splice(index)
-                              rerender()
+                              if (error.error.removeAfterSelected) {
+                                  const index = errors.indexOf(error)
+                                  errors.splice(index)
+                                  rerender()
+                              }
                               return Promise.resolve()
                           },
                       })),
@@ -239,6 +259,16 @@ export function createStatusBar(): CodyStatusBar {
             statusBarItem.tooltip = DEFAULT_TOOLTIP
         }
 
+        // Only show this if authStatus is present, otherwise you get a flash of
+        // yellow status bar icon when extension first loads but login hasn't
+        // initialized yet
+        if (authStatus && !authStatus.isLoggedIn) {
+            statusBarItem.text = 'Sign In'
+            statusBarItem.tooltip = 'Sign in to get started with Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+            return
+        }
+
         if (errors.length > 0) {
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             statusBarItem.tooltip = errors[0].error.title
@@ -322,6 +352,7 @@ export function createStatusBar(): CodyStatusBar {
         },
         syncAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
+            rerender()
         },
         dispose() {
             statusBarItem.dispose()
