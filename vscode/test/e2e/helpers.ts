@@ -152,11 +152,11 @@ export const test = base
                 await page.click('[aria-label="Cody"]')
             }
             // Ensure that we remove the hover from the activity icon
-            await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
+            await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
             // Wait for Cody to become activated
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await page.waitForTimeout(500)
 
             // Ensure we're signed out.
             if (await page.isVisible('[aria-label="User Settings"]')) {

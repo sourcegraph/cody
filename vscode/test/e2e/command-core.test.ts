@@ -32,12 +32,11 @@ test.extend<ExpectedEvents>({
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
     // Wait for index.html to fully open
-    await page.getByRole('tab', { name: 'index.html' }).hover()
+    await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
 
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
 
-    await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()
 
     // Find the chat iframe
@@ -105,14 +104,14 @@ test.extend<ExpectedEvents>({
     await sidebarExplorer(page).click()
     // Open the buzz.ts file from the tree view
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'buzz.ts' })).toBeVisible()
 
     // Click on the Cody command code lenses to execute the unit test command
     await page.getByRole('button', { name: 'A Cody' }).click()
     await page.getByText('Generate Unit Tests').click()
 
     // The test file for the buzz.ts file should be opened automatically
-    await page.getByText('buzz.test.ts').hover()
+    await expect(page.getByText('buzz.test.ts')).toBeVisible()
 
     // Code lens should be visible
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
@@ -142,7 +141,7 @@ test.extend<ExpectedEvents>({
 
     // Open the buzz.ts file from the tree view
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'buzz.ts' })).toBeVisible()
 
     // Click on some code within the function
     await page.getByText("fizzbuzz.push('Buzz')").click()
@@ -151,7 +150,6 @@ test.extend<ExpectedEvents>({
     await page.click('.badge[aria-label="Cody"]')
 
     // Trigger the documentaton command
-    await page.getByText('Document Code').hover()
     await page.getByText('Document Code').click()
 
     // Code lens should be visible

@@ -58,6 +58,5 @@ test.extend<ExpectedEvents>({
         .click()
     // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
     // instead of the chat panel.
-    await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
     await page.getByRole('heading', { name: 'Cody: Chat' }).click()
 })

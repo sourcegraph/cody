@@ -33,13 +33,12 @@ test.extend<ExpectedEvents>({
     // Open the file that is on the .cody/ignore list from the tree view
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'ignoredByCody.css' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'ignoredByCody.css' }).hover()
+    await expect(page.getByRole('tab', { name: 'ignoredByCody.css' })).toBeVisible()
 
     // Cody icon in the status bar should shows that the file is being ignored
     const statusBarButton = page.getByRole('button', {
         name: 'cody-logo-heavy, Current file is ignored by Cody',
     })
-    await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
     await page.click('.badge[aria-label="Cody"]')
@@ -72,7 +71,6 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
-    await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()

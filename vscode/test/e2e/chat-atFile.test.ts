@@ -165,7 +165,6 @@ test.extend<ExpectedEvents>({
     const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
     await chatInput.pressSequentially(' @abcdefg')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
-    await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
     await expect(noMatches).toBeVisible()
@@ -279,7 +278,6 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await expect(mentionLink).toBeVisible()
     await mentionLink.click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
-    await previewTab.hover()
     await expect(previewTab).toBeVisible()
 })
 
@@ -293,7 +291,6 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
     // Type a file with range.
     await chatInput.fill('@buzz.ts:2-4')
-    await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
 
@@ -301,13 +298,10 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
 
     // @-file range with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('✨ Context: 3 lines from 1 file').hover()
     await chatPanelFrame.getByText('✨ Context: 3 lines from 1 file').click()
     const chatContext = chatPanelFrame.locator('details').last()
-    await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
-    await previewTab.hover()
     await expect(previewTab).toBeVisible()
 })
 
@@ -328,7 +322,7 @@ test.extend<ExpectedEvents>({
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'buzz.ts' })).toBeVisible()
 
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
@@ -339,11 +333,10 @@ test.extend<ExpectedEvents>({
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.fill('@#fizzb')
-    await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible({
+    await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click({
         // Longer timeout because sometimes tsserver takes a while to become ready.
         timeout: 15000,
     })
-    await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
 
     // Submit the message
@@ -354,12 +347,9 @@ test.extend<ExpectedEvents>({
     await pinnedTab.getByRole('button', { name: /^Close/ }).click()
 
     // @-file with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').hover()
     await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').click()
     const chatContext = chatPanelFrame.locator('details').last()
-    await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
-    await previewTab.hover()
     await expect(previewTab).toBeVisible()
 })

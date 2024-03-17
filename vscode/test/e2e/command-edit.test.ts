@@ -25,7 +25,7 @@ test.extend<ExpectedEvents>({
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
     // Wait for index.html to fully open
-    await page.getByRole('tab', { name: 'index.html' }).hover()
+    await expect(page.getByRole('tab', { name: 'index.html' })).toBeVisible()
 
     // Find the text hello cody, and then highlight the text
     await page.getByText('<title>Hello Cody</title>').click()

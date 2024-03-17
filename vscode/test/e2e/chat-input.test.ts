@@ -54,14 +54,13 @@ test('chat input focus', async ({ page, sidebar }) => {
     // and then submit a chat question from the command menu.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'buzz.ts' })).toBeVisible()
 
     // Open a new chat panel before opening the file to make sure
     // the chat panel is right next to the document. This helps to save loading time
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     await page.click('.badge[aria-label="Cody"]')
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
@@ -70,7 +69,6 @@ test('chat input focus', async ({ page, sidebar }) => {
     const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
 
     // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).hover()
     await page.getByLabel(/Commands \(/).click()
     await page.waitForTimeout(100)
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
@@ -86,7 +84,6 @@ test('chat input focus', async ({ page, sidebar }) => {
     await page.getByText("fizzbuzz.push('Buzz')").click()
     await expect(chatInput).not.toBeFocused()
     // once the response is 'Done', check the input focus
-    await chatInput.hover()
     await expect(chatPanel.getByText('Done')).toBeVisible()
     await expect(chatInput).not.toBeFocused()
 

@@ -15,8 +15,7 @@ test('Start a new chat from Cody Command Menu', async ({ page, sidebar }) => {
     // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
     // Wait for index.html to fully open
-    await page.getByRole('tab', { name: 'index.html' }).hover()
-    await page.getByText('<title>Hello Cody</title>').hover()
+    await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
     await page.getByRole('tab', { name: 'index.html' }).click()
 
     // Submit a chat question via command menu using "New Chat" option in Command Menu
@@ -25,15 +24,13 @@ test('Start a new chat from Cody Command Menu', async ({ page, sidebar }) => {
     await expect(commandInputBox).toBeVisible()
     await commandInputBox.fill('new chat submitted from command menu')
     // this will fail if more than 1 New Chat item in the menu is found
-    await page.getByLabel('comment  New Chat, Start a new chat', { exact: true }).hover()
     await expect(page.getByLabel('comment  New Chat, Start a new chat', { exact: true })).toBeVisible()
-    await page.getByLabel('wand  Edit Code, Start a code edit', { exact: true }).hover()
     await expect(page.getByLabel('wand  Edit Code, Start a code edit', { exact: true })).toBeVisible()
     await page.getByLabel('Start a new chat').locator('a').click()
 
     // the question should show up in the chat panel on submit
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    await chatPanel.getByText('hello from the assistant').hover()
+    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
     const expectedEvents = [
         'CodyVSCodeExtension:menu:command:default:clicked',

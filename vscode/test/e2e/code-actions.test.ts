@@ -1,3 +1,4 @@
+import { expect } from 'playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarExplorer, sidebarSignin } from './common'
@@ -22,7 +23,7 @@ test.extend<ExpectedEvents>({
     // Open the error.ts file from the tree view
     await page.getByRole('treeitem', { name: 'error.ts' }).locator('a').click()
     // Wait for error.ts to fully open
-    await page.getByRole('tab', { name: 'error.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'error.ts' })).toBeVisible()
 
     // Remove the comment that suppresses the type error
     await page.getByText('// @ts-nocheck').click({ clickCount: 3 })
@@ -55,7 +56,7 @@ test.extend<ExpectedEvents>({
     // Open the error.ts file from the tree view
     await page.getByRole('treeitem', { name: 'error.ts' }).locator('a').click()
     // Wait for error.ts to fully open
-    await page.getByRole('tab', { name: 'error.ts' }).hover()
+    await expect(page.getByRole('tab', { name: 'error.ts' })).toBeVisible()
 
     // Remove the comment that suppresses the type error
     await page.getByText('// @ts-nocheck').click({ clickCount: 3 })

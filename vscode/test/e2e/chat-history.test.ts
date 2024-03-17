@@ -65,14 +65,12 @@ test.extend<ExpectedEvents>({
     // NOTE: Action buttons may only appear when we're hovering a chat.
     // Deleting a chat should also close its associated chat panel
     await heyTreeItem.hover()
-    await heyTreeItem.getByLabel('Delete Chat').hover()
     await heyTreeItem.getByLabel('Delete Chat').click()
     await page.waitForTimeout(100)
     expect(heyTreeItem).not.toBeVisible()
     await expect(page.getByRole('tab', { name: 'Hey' })).not.toBeVisible()
 
     await holaTreeItem.hover()
-    await holaTreeItem.getByLabel('Delete Chat').hover()
     await holaTreeItem.getByLabel('Delete Chat').click()
     await page.waitForTimeout(100)
     expect(holaTreeItem).not.toBeVisible()
@@ -80,7 +78,6 @@ test.extend<ExpectedEvents>({
 
     // Once the chat history is empty, the 'New Chat' button should show up
     await page.waitForSelector('div[class*="welcome-view-content"]')
-    await page.locator('.welcome-view-content').hover()
-    await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
+    await expect(page.locator('.welcome-view-content')).toBeVisible()
     await expect(page.getByRole('button', { name: 'New Chat', exact: true })).toBeVisible()
 })
