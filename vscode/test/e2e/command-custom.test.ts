@@ -210,8 +210,9 @@ test.extend<ExpectedEvents>({
         chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
-    await chatPanel
-        .getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
+    const chatContext = chatPanel.locator('details').last()
+    await chatContext
+        .getByRole('link', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
@@ -226,9 +227,9 @@ test.extend<ExpectedEvents>({
     // The files from the open tabs should be added as context
     await expect(chatPanel.getByText('✨ Context: 12 lines from 2 files')).toBeVisible()
     await chatPanel.getByText('✨ Context: 12 lines from 2 files').click()
-    await expect(chatPanel.getByRole('button', { name: '@index.html:1-11' })).toBeVisible()
+    await expect(chatContext.getByRole('link', { name: '@index.html:1-11' })).toBeVisible()
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
     ).toBeVisible()
 })
 
@@ -325,7 +326,8 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     const panel = getChatPanel(page)
     await expect(panel.getByText('✨ Context: 1 line from 2 files')).toBeVisible()
     await panel.getByText('✨ Context: 1 line from 2 files').click()
+    const chatContext = panel.locator('details').last()
     await expect(
-        panel.getByRole('button', { name: withPlatformSlashes('@/terminal-output') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('@/terminal-output') })
     ).toBeVisible()
 })

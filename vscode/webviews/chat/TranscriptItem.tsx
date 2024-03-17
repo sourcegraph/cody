@@ -145,6 +145,7 @@ export const TranscriptItem: React.FunctionComponent<
                 {displayMarkdown ? (
                     <CodeBlocks
                         displayMarkdown={displayMarkdown}
+                        wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
