@@ -53,7 +53,8 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
     // Click on the file link in chat
-    await chatPanel.getByRole('button', { name: '@index.html' }).click()
+    const chatContext = chatPanel.locator('details').last()
+    await chatContext.getByRole('link', { name: '@index.html' }).click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()

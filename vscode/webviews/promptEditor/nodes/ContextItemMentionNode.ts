@@ -5,9 +5,9 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemSymbol,
-    commandURIForVSCodeOpen,
     displayLineRange,
     displayPath,
+    webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 import {
     $applyNodeReplacement,
@@ -130,7 +130,14 @@ export class ContextItemMentionNode extends TextNode {
         element.className = ContextItemMentionNode.CLASS_NAMES
 
         const link = document.createElement('a')
-        link.href = commandURIForVSCodeOpen(URI.parse(this.contextItem.uri), this.contextItem.range)
+        const { href, target } = webviewOpenURIForContextItem({
+            uri: URI.parse(this.contextItem.uri),
+            range: this.contextItem.range,
+        })
+        link.href = href
+        if (target) {
+            link.target = target
+        }
         link.textContent = this.__text
         element.appendChild(link)
 
