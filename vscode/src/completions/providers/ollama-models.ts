@@ -99,7 +99,7 @@ class CodeLlama extends DefaultOllamaModel {
     }
 }
 
-class StarCoder extends DefaultOllamaModel {
+class StarCoder2 extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string {
         const { context, prefix, suffix } = ollamaPrompt
 
@@ -111,7 +111,7 @@ class StarCoder extends DefaultOllamaModel {
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
-        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>']
+        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
 
         const params = {
             stop: ['\n', ...stop],
@@ -138,8 +138,8 @@ export function getModelHelpers(model: string) {
         return new DeepseekCoder()
     }
 
-    if (model.includes('starcoder')) {
-        return new StarCoder()
+    if (model.includes('starcoder2')) {
+        return new StarCoder2()
     }
 
     return new DefaultOllamaModel()
