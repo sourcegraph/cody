@@ -931,6 +931,12 @@
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
         },
+        "cody.experimental.supercompletions": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable Supercompletions",
+          "default": false
+        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",

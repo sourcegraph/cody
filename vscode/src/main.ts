@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     type ChatEventSource,
     ConfigFeaturesSingleton,
+    Configuration,
     type ConfigurationWithAccessToken,
     ModelProvider,
     PromptMixin,
@@ -264,6 +265,8 @@ const register = async (
         })
     )
 
+    const statusBar = createStatusBar()
+
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
@@ -278,7 +281,9 @@ const register = async (
         )
     }
 
-    const statusBar = createStatusBar()
+    if (config.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
@@ -528,7 +533,6 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
-        new SupercompletionProvider({ statusBar, chat: chatClient }),
         new CharactersLogger()
     )
 
