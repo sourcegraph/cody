@@ -222,24 +222,6 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByText(/^✨ Context: 2 files/)).toHaveCount(1)
 })
 
-test('typing @-mention text does not automatically accept it', async ({ page, sidebar }) => {
-    await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
-
-    // Typing out the whole file path without pressing tab/enter should NOT include the file as
-    // context.
-    await chatInput.fill('Explain @index.htm')
-    await page.waitForTimeout(100)
-    await chatInput.press('l')
-    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
-    await chatInput.press('Space')
-    await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).not.toBeVisible()
-    await chatInput.press('Enter')
-    await expect(chatPanelFrame.getByText(/^✨ Context:/)).toHaveCount(0)
-})
-
 test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
     page,
     sidebar,

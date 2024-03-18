@@ -56,16 +56,11 @@ const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
 })
 
-const publishOptions = {
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', {
     gaxOpts: {
         timeout: 120000,
     },
-}
-
-const topicPublisher = pubSubClient.topic(
-    'projects/sourcegraph-telligent-testing/topics/e2e-testing',
-    publishOptions
-)
+})
 
 //#region GraphQL Mocks
 
@@ -479,7 +474,7 @@ export class MockServer {
 const loggedTestRun: Record<string, boolean> = {}
 
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
-    if (process.env.CI === undefined) {
+    if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 
