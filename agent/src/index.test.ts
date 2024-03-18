@@ -664,24 +664,9 @@ describe('Agent', () => {
                 const task = await documentClient.request('commands/document', null)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
-                expect(lenses).toHaveLength(4) // Show diff, accept, retry , undo
-                const acceptCommand = lenses.find(
-                    ({ command }) => command?.command === 'cody.fixup.codelens.accept'
-                )
-                if (acceptCommand === undefined || acceptCommand.command === undefined) {
-                    throw new Error(
-                        `Expected accept command, found none. Lenses ${JSON.stringify(lenses, null, 2)}`
-                    )
-                }
+                expect(lenses).toHaveLength(0) // Code lenses are now handled client side
 
-                // Check the command is corrected parsed by the agent
-                expect(acceptCommand.command.title.text).toBe(' Accept')
-                expect(acceptCommand.command.title.icons).toStrictEqual([
-                    { position: 0, value: '$(cody-logo)' },
-                ])
-
-                await documentClient.request('command/execute', acceptCommand.command)
-                expect(documentClient.codeLenses.get(uri.toString()) ?? []).toHaveLength(0)
+                await documentClient.request('editTask/accept', task.id)
                 const newContent = documentClient.workspace.getDocument(uri)?.content
                 assertion(trimEndOfLine(newContent))
             },
