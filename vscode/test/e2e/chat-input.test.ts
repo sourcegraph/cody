@@ -45,10 +45,6 @@ test.extend<ExpectedEvents>({
 })
 
 test('chat input focus', async ({ page, sidebar }) => {
-    // This test requires that the window be focused in the OS window manager because it deals with
-    // focus.
-    await page.bringToFront()
-
     await sidebarSignin(page, sidebar)
     // Open the buzz.ts file from the tree view,
     // and then submit a chat question from the command menu.

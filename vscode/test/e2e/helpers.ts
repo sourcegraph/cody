@@ -167,13 +167,15 @@ export const test = base
 
             // Critical test to prevent event logging regressions.
             // Do not remove without consulting data analytics team.
-            try {
-                await assertEvents(loggedEvents, expectedEvents)
-            } catch (error) {
-                console.error('Expected events do not match actual events!')
-                console.log('Expected:', expectedEvents)
-                console.log('Logged:', loggedEvents)
-                throw error
+            if (testInfo.expectedStatus !== 'skipped') {
+                try {
+                    await assertEvents(loggedEvents, expectedEvents)
+                } catch (error) {
+                    console.error('Expected events do not match actual events!')
+                    console.log('Expected:', expectedEvents)
+                    console.log('Logged:', loggedEvents)
+                    throw error // TODO(sqs)
+                }
             }
             resetLoggedEvents()
 
@@ -258,7 +260,9 @@ async function buildWorkSpaceSettings(
     extraSettings: WorkspaceSettings
 ): Promise<void> {
     const settings = {
-        'cody.serverEndpoint': `http://localhost:4930${process.env.VITEST_POOL_ID || 0}`,
+        'cody.serverEndpoint': `http://localhost:4930${
+            process.env.VITEST_POOL_ID ?? process.env.TEST_PARALLEL_INDEX ?? 0
+        }`,
         'cody.commandCodeLenses': true,
         'cody.editorTitleCommandIcon': true,
         ...extraSettings,
@@ -298,7 +302,12 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
 export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect.poll(() => loggedEvents).toEqual(expect.arrayContaining(expectedEvents))
+    await expect
+        .poll(() => {
+            console.log('XX', loggedEvents)
+            return loggedEvents
+        })
+        .toEqual(expect.arrayContaining(expectedEvents))
 }
 
 // Creates a temporary directory, calls `f`, and then deletes the temporary

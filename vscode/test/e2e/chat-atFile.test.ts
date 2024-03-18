@@ -16,10 +16,6 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:file:executed',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
-    // This test requires that the window be focused in the OS window manager because it deals with
-    // focus.
-    await page.bringToFront()
-
     await sidebarSignin(page, sidebar)
 
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()

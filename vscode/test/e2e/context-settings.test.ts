@@ -15,17 +15,23 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
     ],
-})('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
-    // This test requires that the window be focused in the OS window manager because it deals with
-    // focus.
-    await page.bringToFront()
+})('enhanced context selector is keyboard accessible', async ({ page, sidebar }, testInfo) => {
+    // This test requires that the window be focused in the OS's window manager. This
+    // does not work when other tests are running in parallel. TODO(sqs): make this testable in parallel.
+    const isParallelTest = process.env.TEST_PARALLEL_INDEX !== undefined
+    if (isParallelTest) {
+        testInfo.skip()
+        return
+    }
 
+    await page.bringToFront()
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
     await contextSettingsButton.focus()
 
     await page.keyboard.press('Space')
+
     // Opening the enhanced context settings should focus the checkbox for toggling it.
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
     await expect(enhancedContextCheckbox).toBeFocused()
