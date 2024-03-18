@@ -1,18 +1,29 @@
-.container {
+.outer-container {
     min-width: 180px;
+    max-width: 85vw;
+    overflow: hidden;
+    height: calc(9*var(--item-height));
+}
+
+.visible-container {
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     font-size: var(--vscode-font-size);
-    padding: 0 5px 5px 5px; /* match VS Code quickpick padding */
+    padding: 5px; /* match VS Code quickpick padding */
+    border-radius: 6px; /* match VS Code */
 }
 
 :root {
     --item-height: 22px; /* match VS Code quickpick item height */
     --item-padding-y: 0.2rem;
-    --item-padding-x: 11px; /* match VS Code quickpick padding */
+    --item-padding-x: 6px; /* match VS Code quickpick padding */
     --description-font-size: 0.9em; /* match VS Code quickpick description */
 }
 
 .list {
-    max-height: calc(8*var(--item-height));
+    height: calc(8*var(--item-height));
     overflow-y: scroll;
     list-style: none;
     padding: var(--list-padding-y) 0;
@@ -20,6 +31,9 @@
 
     border-top: 1px solid var(--vscode-pickerGroup-border);
     margin-top: -1px;
+}
+.help-item:empty + .list {
+    border-top: none;
 }
 
 .item {
@@ -29,7 +43,6 @@
 
 .help-item {
     opacity: 0.75;
-    padding: 5px var(--item-padding-x);
     user-select: none;
     font-size: inherit;
     font-weight: normal;
@@ -37,6 +50,9 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+}
+.help-item:empty {
+    display: none;
 }
 
 /* Hide scrollbar */

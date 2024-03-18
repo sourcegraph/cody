@@ -16,7 +16,6 @@ import { type FunctionComponent, useCallback, useEffect, useMemo, useState } fro
 import styles from './atMentions.module.css'
 
 import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
 import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
@@ -201,7 +200,6 @@ export default function MentionsPlugin(): JSX.Element | null {
                                     left: x ?? 0,
                                     width: 'max-content',
                                 }}
-                                className={classNames(styles.popover)}
                             >
                                 <OptionsList
                                     query={query}

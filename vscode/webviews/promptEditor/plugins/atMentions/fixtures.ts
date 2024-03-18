@@ -8,7 +8,7 @@ import type { ChatContextClient } from './chatContextClient'
  */
 export const dummyChatContextClient: ChatContextClient = {
     async getChatContextItems(query) {
-        await new Promise<void>(resolve => setTimeout(resolve, 250))
+        await new Promise<void>(resolve => setTimeout(resolve, 100))
 
         query = query.toLowerCase()
         return query.startsWith('#')
