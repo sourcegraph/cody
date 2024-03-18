@@ -33,15 +33,6 @@ export async function getSmartSelection(
 }
 
 /**
- * Searches for workspace symbols matching the given query string.
- * @param query - The search query string.
- * @returns A promise resolving to the array of SymbolInformation objects representing the matched workspace symbols.
- */
-export async function getWorkspaceSymbols(query = ''): Promise<vscode.SymbolInformation[]> {
-    return vscode.commands.executeCommand('vscode.executeWorkspaceSymbolProvider', query)
-}
-
-/**
  * Returns an array of URI's for all unique open editor tabs.
  *
  * Loops through all open tab groups and tabs, collecting the URI

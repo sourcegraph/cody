@@ -102,8 +102,7 @@ test.extend<ExpectedEvents>({
         chatPanelFrame.getByRole('option', { name: withPlatformSlashes('visualize.go') })
     ).toBeVisible()
     await chatInput.press('ArrowDown') // second item (visualize.go)
-    await chatInput.press('ArrowDown') // third item (.vscode/settings.json)
-    await chatInput.press('ArrowDown') // wraps back to first item
+    await chatInput.press('ArrowDown') // wraps back to first item (var.go)
     await chatInput.press('ArrowDown') // second item again
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
