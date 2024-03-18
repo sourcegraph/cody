@@ -966,7 +966,8 @@ describe('Agent', () => {
                 client,
                 'commands/document (Method as part of a class)',
                 'TestClass.ts',
-                obtained => expect(obtained).toMatchInlineSnapshot(`
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
 
                   export class TestClass {
@@ -989,7 +990,8 @@ describe('Agent', () => {
                 client,
                 'commands/document (Function within a property)',
                 'TestLogger.ts',
-                obtained => expect(obtained).toMatchInlineSnapshot(`
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "const foo = 42
                   export const TestLogger = {
                       startLogging: () => {
@@ -1013,7 +1015,8 @@ describe('Agent', () => {
                 client,
                 'commands/document (nested test case)',
                 'example.test.ts',
-                obtained => expect(obtained).toMatchInlineSnapshot(`
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
                   "import { expect } from 'vitest'
                   import { it } from 'vitest'
                   import { describe } from 'vitest'
@@ -1362,7 +1365,8 @@ describe('Agent', () => {
             enterpriseClient,
             'commands/document (enterprise client)',
             'example.test.ts',
-            obtained => expect(obtained).toMatchInlineSnapshot(`
+            obtained =>
+                expect(obtained).toMatchInlineSnapshot(`
               "import { expect } from 'vitest'
               import { it } from 'vitest'
               import { describe } from 'vitest'
