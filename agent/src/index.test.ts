@@ -353,7 +353,7 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(`
               " \`\`\`typescript
-              export class Dog implements Animal {
+              class Dog implements Animal {
                 name: string;
 
                 makeAnimalSound() {
@@ -966,78 +966,76 @@ describe('Agent', () => {
                 client,
                 'commands/document (Method as part of a class)',
                 'TestClass.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "const foo = 42
+                obtained => expect(obtained).toMatchInlineSnapshot(`
+                  "const foo = 42
 
-                      export class TestClass {
-                          constructor(private shouldGreet: boolean) {}
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
 
-                              /**
-                           * Logs a greeting message if the shouldGreet flag is true
-                           */
-                      public functionName() {
-                              if (this.shouldGreet) {
-                                  console.log(/* CURSOR */ 'Hello World!')
-                              }
+                          /**
+                       * Logs a greeting message if the shouldGreet flag is true.
+                       */
+                  public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
                           }
                       }
-                      "
-                    `)
+                  }
+                  "
+                `)
             )
 
             checkDocumentCommand(
                 client,
                 'commands/document (Function within a property)',
                 'TestLogger.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "const foo = 42
-                      export const TestLogger = {
-                          startLogging: () => {
-                              // Do some stuff
+                obtained => expect(obtained).toMatchInlineSnapshot(`
+                  "const foo = 42
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
 
-                                      /**
-                               * Records a log message to the console
-                               */
-                      function recordLog() {
-                                  console.log(/* CURSOR */ 'Recording the log')
-                              }
+                                  /**
+                           * Logs a message to indicate when logging activity begins.
+                           */
+                  function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
 
-                              recordLog()
-                          },
-                      }
-                      "
-                    `)
+                          recordLog()
+                      },
+                  }
+                  "
+                `)
             )
 
             checkDocumentCommand(
                 client,
                 'commands/document (nested test case)',
                 'example.test.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "import { expect } from 'vitest'
-                      import { it } from 'vitest'
-                      import { describe } from 'vitest'
+                obtained => expect(obtained).toMatchInlineSnapshot(`
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-                      describe('test block', () => {
-                          it('does 1', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does 2', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does something else', () => {
-                              // This line will error due to incorrect usage of \`performance.now\`
-                                      /** Measures the time when this test begins running */
-                      const startTime = performance.now(/* CURSOR */)
-                          })
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
                       })
-                      "
-                    `)
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                                  // Record start time for performance measurement
+                          const startTime = performance.now();
+                  const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `)
             )
         })
     })
@@ -1364,34 +1362,33 @@ describe('Agent', () => {
             enterpriseClient,
             'commands/document (enterprise client)',
             'example.test.ts',
-            obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+            obtained => expect(obtained).toMatchInlineSnapshot(`
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block that runs 3 test cases:
-                   * - Does test 1
-                   * - Does test 2
-                   * - Does something else, contains incorrect usage of performance.now
-                  */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              /**
+               * Test block that contains 3 test cases:
+               * - Does test 1
+               * - Does test 2
+               * - Does something else (has incorrect usage of \`performance.now\`)
+               */
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `)
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `)
         )
 
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword

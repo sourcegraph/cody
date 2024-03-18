@@ -2954,451 +2954,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 36bcdb23e7fb6ac27ff0a0894e957932
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3196
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  const foo = 42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  }
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  const foo = 42
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-                      constructor(private shouldGreet: boolean) {}
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  "My selected TypeScript code from file `src/animal.ts`:
-                  <selected>
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Write a class Dog that implements the Animal interface in my workspace.
-                  Show the code only, no explanation needed.
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 6035
-        content:
-          mimeType: text/event-stream
-          size: 6035
-          text: >+
-            event: completion
-
-            data: {"completion":" ```","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```types","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  make","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound()","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Wo","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\";","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isM","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMam","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal =","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}\n```","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" ```typescript\nexport class Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}\n```","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:41:35 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T03:41:32.927Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: e57db4d79e10dedf9c63eea18a391057
       _order: 0
       cache: {}
@@ -4476,806 +4031,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-15T03:41:36.519Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: da9cd3d452a3c1428c9b530aeda6e2e6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 890
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What is Squirrel?
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 55645
-        content:
-          mimeType: text/event-stream
-          size: 55645
-          text: >+
-            event: completion
-
-            data: {"completion":" Based","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mock","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Source","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to actual","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to actual squir","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to actual squirrels","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to actual squirrels.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code and comment provided, Squirrel is an interface that does not actually have anything to do with squirrels. It is used to mock something related to implementing precise code navigation in Sourcegraph. Specifically, the comment states:\n\n```\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels. \n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo Squirrel is an interface used for testing/mocking purposes in Sourcegraph's codebase, and does not represent a real squirrel. It's named Squirrel for presumably arbitrary reasons, even though it is unrelated to actual squirrels.","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:41:42 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T03:41:41.220Z
       time: 0
       timings:
         blocked: -1
@@ -7479,365 +6234,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2b185d7bf230f06153c02aa4e166e0a7
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1263
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/multiple-selections.tsin
-                  repository undefined:
-
-                  ```typescript
-
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-
-                  /* SELECTION_2_START */
-
-                  function anotherFunction() {}
-
-                  /* SELECTION_2_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What files contain SELECTION_START?
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 6436
-        content:
-          mimeType: text/event-stream
-          size: 6436
-          text: >+
-            event: completion
-
-            data: {"completion":" Based","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SE","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n-","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SE","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in those","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in those two","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in those two files","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in those two files.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START is contained in those two files.","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:42:01 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T03:41:59.387Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 38f46564b22ecb1aceb5bc9e77fb9371
       _order: 0
       cache: {}
@@ -9359,376 +7755,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-15T03:42:05.308Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: fce8129dee01be937d5396d835f044d0
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1815
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/multiple-selections.tsin
-                  repository undefined:
-
-                  ```typescript
-
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-
-                  /* SELECTION_2_START */
-
-                  function anotherFunction() {}
-
-                  /* SELECTION_2_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  "My selected TypeScript code from file
-                  `src/multiple-selections.ts`:
-
-                  <selected>
-
-
-                  function anotherFunction() {}
-
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What is the name of the function that I have selected? Only answer with
-                  the name of the function, nothing else
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 252
-        content:
-          mimeType: text/event-stream
-          size: 252
-          text: |+
-            event: completion
-            data: {"completion":" another","stopReason":""}
-
-            event: completion
-            data: {"completion":" anotherFunction","stopReason":""}
-
-            event: completion
-            data: {"completion":" anotherFunction","stopReason":"stop_sequence"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:42:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T03:42:08.323Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 427970be8116e7a0f0f69e4671445726
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1820
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/TestClass.tsin repository
-                  undefined:
-
-                  ```typescript
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/multiple-selections.tsin
-                  repository undefined:
-
-                  ```typescript
-
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-
-                  /* SELECTION_2_START */
-
-                  function anotherFunction() {}
-
-                  /* SELECTION_2_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/animal.tsin repository
-                  undefined:
-
-                  ```typescript
-
-                  /* SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  "My selected TypeScript code from file
-                  `src/multiple-selections.ts`:
-
-                  <selected>
-
-                      return function inner() {}
-
-
-
-
-
-                      
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: What is the name of the function that I have selected? Only answer with
-                  the name of the function, nothing else
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 165
-        content:
-          mimeType: text/event-stream
-          size: 165
-          text: |+
-            event: completion
-            data: {"completion":" inner","stopReason":""}
-
-            event: completion
-            data: {"completion":" inner","stopReason":"stop_sequence"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:42:16 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T03:42:13.952Z
       time: 0
       timings:
         blocked: -1
@@ -18122,11 +16148,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 582ec1d4d07385ec49cfb74bdda77e47
+    - _id: f5c079a4dd4bc8cd7fc9b06b12440076
       _order: 0
       cache: {}
       request:
-        bodySize: 2912
+        bodySize: 3205
         cookies: []
         headers:
           - name: content-type
@@ -18154,7 +16180,1316 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Codebase context from file src/TestClass.tsin repository undefined:
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  const foo = 42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  const foo = 42
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+                      constructor(private shouldGreet: boolean) {}
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/animal.ts`:
+                  <selected>
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Write a class Dog that implements the Animal interface in my workspace.
+                  Show the code only, no explanation needed.
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 5702
+        content:
+          mimeType: text/event-stream
+          size: 5702
+          text: >+
+            event: completion
+
+            data: {"completion":" ```","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```types","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  make","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n   ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Wo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\";","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isM","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMam","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal =","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}\n```","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" ```typescript\nclass Dog implements Animal {\n  name: string;\n\n  makeAnimalSound() {\n    return \"Woof!\"; \n  }\n\n  isMammal = true;\n}\n```","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 18 Mar 2024 17:48:31 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-18T17:48:27.301Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 410cfc70139c7d42b0eee6c6e73c554e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 892
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is Squirrel?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 20054
+        content:
+          mimeType: text/event-stream
+          size: 20054
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squir","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels just","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels just for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels just for fun","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels just for fun.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code and comments provided, Squirrel is an interface that does not actually relate to squirrels. The comment indicates it is used to mock something unrelated, specifically related to implementing precise code navigation in Sourcegraph. So Squirrel appears to be an interface used internally in Sourcegraph to enable code navigation features, but is named after squirrels just for fun.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 18 Mar 2024 17:48:35 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-18T17:48:33.935Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ce1eacfc599a8d1dc3185f8bf52b6cdb
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1266
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/multiple-selections.ts in
+                  repository undefined:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What files contain SELECTION_START?
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 7146
+        content:
+          mimeType: text/event-stream
+          size: 7146
+          text: >+
+            event: completion
+
+            data: {"completion":" Based","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in 2 files","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in 2 files total","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in 2 files total.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the code snippets you provided, SELECTION_START appears in the following files:\n\n- src/multiple-selections.ts\n- src/animal.ts\n\nSo SELECTION_START appears in 2 files total.","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 18 Mar 2024 17:48:44 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-18T17:48:41.098Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d6fe029f0810088cadff6bbf9ded6ffb
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2913
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Codebase context from file src/TestClass.ts in repository undefined:
 
                   t foo = 42
 
@@ -18222,10 +17557,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 1759
+        bodySize: 1887
         content:
           mimeType: text/event-stream
-          size: 1759
+          size: 1887
           text: >+
             event: completion
 
@@ -18299,17 +17634,22 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */\n","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18319,7 +17659,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 15 Mar 2024 16:50:58 GMT
+            value: Mon, 18 Mar 2024 17:48:55 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18348,7 +17688,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-15T16:50:57.011Z
+      startedDateTime: 2024-03-18T17:48:52.049Z
       time: 0
       timings:
         blocked: -1
@@ -18358,11 +17698,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: da84ec33509faaa8f9e6c5ce26e7f2ef
+    - _id: 27666dc77fd32ed695dd5c043c75a4d6
       _order: 0
       cache: {}
       request:
-        bodySize: 2881
+        bodySize: 2882
         cookies: []
         headers:
           - name: content-type
@@ -18390,7 +17730,7 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Codebase context from file src/TestLogger.tsin repository undefined:
+                text: "Codebase context from file src/TestLogger.ts in repository undefined:
 
                   o = 42
 
@@ -18456,10 +17796,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 1122
+        bodySize: 1547
         content:
           mimeType: text/event-stream
-          size: 1122
+          size: 1547
           text: >+
             event: completion
 
@@ -18473,52 +17813,67 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records","stopReason":""}
+            data: {"completion":"\n/**\n * Logs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to indicate","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to the","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to indicate when","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to the console","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to the console\n */","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to the console\n */\n","stopReason":""}
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Records a log message to the console\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18528,7 +17883,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 15 Mar 2024 16:50:59 GMT
+            value: Mon, 18 Mar 2024 17:48:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18557,7 +17912,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-15T16:50:58.493Z
+      startedDateTime: 2024-03-18T17:48:56.238Z
       time: 0
       timings:
         blocked: -1
@@ -18567,11 +17922,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7347e410fb6a9c6e45e3c07eb55ec9ce
+    - _id: f57278b9d4d3da95638437bab80c574e
       _order: 0
       cache: {}
       request:
-        bodySize: 3150
+        bodySize: 3151
         cookies: []
         headers:
           - name: content-type
@@ -18599,7 +17954,7 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Codebase context from file src/example.test.tsin repository undefined:
+                text: "Codebase context from file src/example.test.ts in repository undefined:
 
                   \ expect } from 'vitest'
 
@@ -18683,74 +18038,64 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 1239
+        bodySize: 1172
         content:
           mimeType: text/event-stream
-          size: 1239
+          size: 1172
           text: >+
             event: completion
 
-            data: {"completion":"\n/**","stopReason":""}
+            data: {"completion":"\n//","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Me","stopReason":""}
+            data: {"completion":"\n// Record","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures","stopReason":""}
+            data: {"completion":"\n// Record start","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the","stopReason":""}
+            data: {"completion":"\n// Record start time","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time","stopReason":""}
+            data: {"completion":"\n// Record start time for","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when","stopReason":""}
+            data: {"completion":"\n// Record start time for performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when this","stopReason":""}
+            data: {"completion":"\n// Record start time for performance measurement","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when this test","stopReason":""}
+            data: {"completion":"\n// Record start time for performance measurement\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when this test begins","stopReason":""}
+            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when this test begins running","stopReason":""}
+            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/** Measures the time when this test begins running */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/** Measures the time when this test begins running */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/** Measures the time when this test begins running */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -18760,7 +18105,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 15 Mar 2024 16:51:01 GMT
+            value: Mon, 18 Mar 2024 17:48:58 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -18789,7 +18134,373 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-15T16:50:59.961Z
+      startedDateTime: 2024-03-18T17:48:57.757Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a327ce72966a8092d3ae0846993efbd3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1819
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/multiple-selections.ts in
+                  repository undefined:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  "My selected TypeScript code from file
+                  `src/multiple-selections.ts`:
+
+                  <selected>
+
+
+                  function anotherFunction() {}
+
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is the name of the function that I have selected? Only answer with
+                  the name of the function, nothing else
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 252
+        content:
+          mimeType: text/event-stream
+          size: 252
+          text: |+
+            event: completion
+            data: {"completion":" another","stopReason":""}
+
+            event: completion
+            data: {"completion":" anotherFunction","stopReason":""}
+
+            event: completion
+            data: {"completion":" anotherFunction","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 18 Mar 2024 17:51:28 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-18T17:51:25.727Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 52a5e3612fc6f9e0f8a685fa7408c516
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1824
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 263
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/TestClass.ts in repository
+                  undefined:
+
+                  ```typescript
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/multiple-selections.ts in
+                  repository undefined:
+
+                  ```typescript
+
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+
+                  /* SELECTION_2_START */
+
+                  function anotherFunction() {}
+
+                  /* SELECTION_2_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/animal.ts in repository
+                  undefined:
+
+                  ```typescript
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  "My selected TypeScript code from file
+                  `src/multiple-selections.ts`:
+
+                  <selected>
+
+                      return function inner() {}
+
+                      
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: What is the name of the function that I have selected? Only answer with
+                  the name of the function, nothing else
+              - speaker: assistant
+            model: anthropic/claude-2.0
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 165
+        content:
+          mimeType: text/event-stream
+          size: 165
+          text: |+
+            event: completion
+            data: {"completion":" inner","stopReason":""}
+
+            event: completion
+            data: {"completion":" inner","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 18 Mar 2024 17:51:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-18T17:51:42.783Z
       time: 0
       timings:
         blocked: -1
