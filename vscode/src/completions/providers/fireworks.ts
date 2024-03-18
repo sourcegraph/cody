@@ -122,6 +122,7 @@ class FireworksProvider extends Provider {
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private isLocalInstance: boolean
 
     constructor(
         options: ProviderOptions,
@@ -133,12 +134,16 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.isLocalInstance = Boolean(
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+                this.authStatus.endpoint?.includes('localhost')
+        )
 
         const isNode = typeof process !== 'undefined'
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            this.authStatus.isDotCom &&
+            (this.authStatus.isDotCom || this.isLocalInstance) &&
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
@@ -313,10 +318,7 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const isLocalInstance =
-            this.authStatus.endpoint?.includes('sourcegraph.test') ||
-            this.authStatus.endpoint?.includes('localhost')
-        const gatewayUrl = isLocalInstance
+        const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
 
@@ -384,7 +386,7 @@ class FireworksProvider extends Provider {
                         new NetworkError(
                             response,
                             (await response.text()) +
-                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                                (self.isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
                             traceId
                         )
                     )
@@ -498,8 +500,8 @@ export function createProviderConfig({
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid'
-              ? 'starcoder-hybrid'
+            : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
+              ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
                   ? (model as keyof typeof MODEL_MAP)
                   : null
