@@ -105,7 +105,6 @@ describe('BfgRetriever', async () => {
             position,
             maxPrefixLength: 10_000,
             maxSuffixLength: 1_000,
-            dynamicMultilineCompletions: false,
         })
         const maxChars = 1_000
         const maxMs = 100

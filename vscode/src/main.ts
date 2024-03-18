@@ -530,30 +530,6 @@ const register = async (
         new CharactersLogger()
     )
 
-    /**
-     * Signed out status bar indicator
-     */
-    let removeAuthStatusBarError: undefined | (() => void)
-    function updateAuthStatusBarIndicator(): void {
-        if (removeAuthStatusBarError) {
-            removeAuthStatusBarError()
-            removeAuthStatusBarError = undefined
-        }
-        if (!authProvider.getAuthStatus().isLoggedIn) {
-            removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In to Use Cody',
-                errorType: 'auth',
-                description: 'You need to sign in to use Cody.',
-                onSelect: () => {
-                    // Bring up the sidebar view
-                    void vscode.commands.executeCommand('cody.focus')
-                },
-            })
-        }
-    }
-    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
-    updateAuthStatusBarIndicator()
-
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
     let autocompleteDisposables: vscode.Disposable[] = []

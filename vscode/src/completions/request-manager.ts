@@ -90,15 +90,13 @@ export class RequestManager {
         const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
             FeatureFlag.CodyAutocompleteEagerCancellation
         )
-        const smartThrottle = completionProviderConfig.smartThrottle
-
         this.latestRequestParams = params
 
         const { requestParams, provider, context, tracer } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = eagerCancellation || smartThrottle
+        const shouldHonorCancellation = eagerCancellation || completionProviderConfig.smartThrottle
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests

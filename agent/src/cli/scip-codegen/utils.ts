@@ -13,6 +13,7 @@ export function typescriptKeywordSyntax(symbol: string): string | undefined {
         case 'scip-typescript npm typescript . number#':
             return 'Int'
         case 'scip-typescript npm typescript . any#':
+        case 'scip-typescript npm typescript . unknown#':
             return 'Any'
         default:
             return undefined

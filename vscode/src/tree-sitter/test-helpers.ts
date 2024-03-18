@@ -1,9 +1,9 @@
 import path from 'path'
 
-import type { QueryCapture, QueryMatch, default as Parser } from 'web-tree-sitter'
+import type { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
-import { createParser } from './parser'
+import { type WrappedParser, createParser } from './parser'
 import { type DocumentQuerySDK, getDocumentQuerySDK } from './query-sdk'
 
 const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
@@ -13,7 +13,7 @@ const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
  */
 export function initTreeSitterParser(
     language = SupportedLanguage.typescript
-): Promise<Parser | undefined> {
+): Promise<WrappedParser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
@@ -53,7 +53,7 @@ interface FormattedCapture {
     text: string
 }
 
-function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
+export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
     return captures.map(capture => ({
         name: capture.name,
         text: capture.node.text,

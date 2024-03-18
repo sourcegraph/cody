@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import type { DocumentContext } from './get-current-doc-context'
+import type { LastInlineCompletionCandidate } from './get-inline-completions'
 
 /**
  * @see vscode.InlineCompletionItem
@@ -39,6 +40,7 @@ export interface ContextRetrieverOptions {
         maxChars: number
         maxMs: number
     }
+    lastCandidate?: LastInlineCompletionCandidate
     abortSignal?: AbortSignal
 }
 

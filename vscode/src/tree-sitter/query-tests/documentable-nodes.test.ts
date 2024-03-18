@@ -2,18 +2,80 @@ import { describe, it } from 'vitest'
 
 import { initTreeSitterSDK } from '../test-helpers'
 
+import type { QueryCapture } from 'web-tree-sitter'
 import { SupportedLanguage } from '../grammars'
-import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
+import type { QueryWrappers } from '../query-sdk'
+import { type Captures, annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getDocumentableNode', () => {
+    const queryWrapper =
+        (query: QueryWrappers['getDocumentableNode']): Captures =>
+        (node, start, end) => {
+            const [documentableNode] = query(node, start, end)
+            if (!documentableNode) {
+                return []
+            }
+            const captures = [
+                documentableNode.symbol,
+                documentableNode.range,
+                documentableNode.insertionPoint,
+            ].filter((capture): capture is QueryCapture => capture !== undefined)
+
+            return captures
+        }
+
     it('typescript', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescript)
 
         await annotateAndMatchSnapshot({
             parser,
             language,
-            captures: queries.getDocumentableNode,
+            captures: queryWrapper(queries.getDocumentableNode),
             sourcesPath: 'test-data/documentable-node.ts',
+        })
+    })
+
+    it('typescriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescriptreact)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.tsx',
+        })
+    })
+
+    it('javascriptreact', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.javascriptreact)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.jsx',
+        })
+    })
+
+    it('python', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.python)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.py',
+        })
+    })
+
+    it('go', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.go)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.go',
         })
     })
 })

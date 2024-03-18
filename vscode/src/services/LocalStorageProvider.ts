@@ -1,12 +1,7 @@
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type {
-    AuthStatus,
-    ChatHistory,
-    ChatInputHistory,
-    UserLocalHistory,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { isSourcegraphToken } from '../chat/protocol'
 
@@ -17,7 +12,6 @@ type AccountKeyedChatHistory = {
 
 interface PersistedUserLocalHistory {
     chat: ChatHistory
-    input: ChatInputHistory[]
 }
 
 class LocalStorage {
@@ -98,7 +92,7 @@ class LocalStorage {
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
-        return history?.[accountKey] ?? { chat: {}, input: [] }
+        return history?.[accountKey] ?? { chat: {} }
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
@@ -137,7 +131,7 @@ class LocalStorage {
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
-            await this.setChatHistory(authStatus, { chat: {}, input: [] })
+            await this.setChatHistory(authStatus, { chat: {} })
         } catch (error) {
             console.error(error)
         }

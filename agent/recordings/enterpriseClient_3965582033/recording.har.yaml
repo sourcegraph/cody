@@ -102,11 +102,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a9664e40a303b139e2ef31626a8d4fb8
+    - _id: 04a003a70be4dca9be6480df34125967
       _order: 0
       cache: {}
       request:
-        bodySize: 10762
+        bodySize: 10467
         cookies: []
         headers:
           - name: content-type
@@ -135,9 +135,8 @@ log:
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/internal/symbols/client.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file /internal/symbols/client.goin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -149,14 +148,15 @@ log:
                   			//
                   			// This is weird, and maybe not intentional, but things break if we return an error.
                   			return nil, nil
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >
-                  Use the following text from file `/doc/cloud/index.md` in
-                  repository `github.com/sourcegraph/sourcegraph`:
+                text: >-
+                  Codebase context from file /doc/cloud/index.mdin repository
+                  github.com/sourcegraph/sourcegraph:
+
+                  ```markdown
 
 
                   The below are for example purposes only:
@@ -172,13 +172,17 @@ log:
                   - searching for all matches of “squirrel” in all OSS repos returns 1.7million results in 30000ms
 
                   - In the case of other features, latency of Sourcegraph directly depends on latency / uptime / rate-limits of customer managed systems, ex. for:
+
+                  ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >
-                  Use the following text from file
-                  `/doc/admin/deploy/kubernetes/troubleshoot.md` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                text: >-
+                  Codebase context from file
+                  /doc/admin/deploy/kubernetes/troubleshoot.mdin repository
+                  github.com/sourcegraph/sourcegraph:
+
+                  ```markdown
 
                   SYMBOLS_URL=http:symbols:3184
 
@@ -194,13 +198,14 @@ log:
                   <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/212374098-dc2dfe69-4d26-4f5e-a78b-37a53c19ef22.png"/>
 
                   The issue described is related to the Code Intel hover feature, where it may get stuck in a loading state or return a 502 error with the message `Squirrel.LocalCodeIntel http status 502`. This is caused by the same issue described in [Symbols sidebar and hovers are not working](#symbols-sidebar-and-hovers-are-not-working"). See that section for solution.
+
+                  ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/util.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file /cmd/symbols/squirrel/util.goin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -213,15 +218,13 @@ log:
                   	"path/filepath"
                   	"runtime"
                   	"strings"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/service.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file /cmd/symbols/squirrel/service.goin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -234,15 +237,14 @@ log:
                   	"os"
                   	"runtime"
                   	"strconv"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/service_test.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/service_test.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -255,27 +257,29 @@ log:
                   	"path/filepath"
                   	"slices"
                   	"sort"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >
-                  Use the following text from file
-                  `/cmd/symbols/squirrel/README.md` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                text: >-
+                  Codebase context from file /cmd/symbols/squirrel/README.mdin
+                  repository github.com/sourcegraph/sourcegraph:
+
+                  ```markdown
 
                   # Squirrel
 
 
                   Squirrel is an HTTP server for fast and precise local code intelligence using tree-sitter.
+
+                  ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/lang_starlark.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/lang_starlark.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -288,15 +292,14 @@ log:
                   	"strings"
 
                   	sitter "github.com/smacker/go-tree-sitter"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/lang_python.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/lang_python.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -309,15 +312,14 @@ log:
                   	"path/filepath"
                   	"strings"
 
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/lang_java.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/lang_java.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -330,15 +332,14 @@ log:
                   	"path/filepath"
                   	"sort"
                   	"strings"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/hover_test.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/hover_test.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -351,15 +352,13 @@ log:
                   	"testing"
 
                   	"github.com/sourcegraph/sourcegraph/internal/types"
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/BUILD.bazel` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file /cmd/symbols/squirrel/BUILD.bazelin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```bazel
 
@@ -373,15 +372,14 @@ log:
                       srcs = [
                           "breadcrumbs.go",
                           "hover.go",
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/squirrel/breadcrumbs.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/squirrel/breadcrumbs.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
 
@@ -394,15 +392,14 @@ log:
                   	"os"
                   	"strings"
 
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/cmd/symbols/internal/api/handler_cgo.go` in repository
-                  `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /cmd/symbols/internal/api/handler_cgo.goin repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```go
                   	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
@@ -415,15 +412,14 @@ log:
                   	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
                   		return status.New(codes.InvalidArgument, err.Error())
                   	}
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/client/web/src/enterprise/codeintel/useSearchBasedCodeIntel.ts`
-                  in repository `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /client/web/src/enterprise/codeintel/useSearchBasedCodeIntel.tsin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```typescript
                               }))
@@ -436,15 +432,14 @@ log:
                       options: UseSearchBasedCodeIntelOptions
                   ): Promise<Location[] | undefined> {
                       const { repo, position, path, commit, fileContent } = options
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/client/shared/src/codeintel/legacy-extensions/search/providers.ts`
-                  in repository `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file
+                  /client/shared/src/codeintel/legacy-extensions/search/providers.tsin
+                  repository github.com/sourcegraph/sourcegraph:
 
                   ```typescript
 
@@ -465,14 +460,13 @@ log:
 
                   /** The number of files whose content can be cached at once. */
 
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file `/.bazelignore` in
-                  repository `github.com/sourcegraph/sourcegraph`:
+                  Codebase context from file /.bazelignorein repository
+                  github.com/sourcegraph/sourcegraph:
 
                   ```
 
@@ -491,15 +485,14 @@ log:
                   # Generated by local tools
 
 
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
                 text: >-
-                  Use the following code snippet from file
-                  `/agent/src/__tests__/example-ts/src/squirrel.ts` in
-                  repository `github.com/sourcegraph/cody`:
+                  Codebase context from file
+                  /agent/src/__tests__/example-ts/src/squirrel.tsin repository
+                  github.com/sourcegraph/cody:
 
                   ```typescript
 
@@ -509,14 +502,15 @@ log:
                    */
                   export interface Squirrel {}
 
-
                   ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >+
-                  Use the following text from file `/agent/README.md` in
-                  repository `github.com/sourcegraph/cody`:
+                text: >-
+                  Codebase context from file /agent/README.mdin repository
+                  github.com/sourcegraph/cody:
+
+                  ```markdown
 
                   | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
@@ -533,6 +527,8 @@ log:
 
                   ## Debugging the agent
 
+
+                  ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -545,10 +541,10 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 61396
+        bodySize: 85717
         content:
           mimeType: text/event-stream
-          size: 61396
+          size: 85717
           text: >+
             event: completion
 
@@ -567,722 +563,852 @@ log:
 
             event: completion
 
-            data: {"completion":" Based on the code","stopReason":""}
+            data: {"completion":" Based on the context","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets","stopReason":""}
+            data: {"completion":" Based on the context provided","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and","stopReason":""}
+            data: {"completion":" Based on the context provided:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSqu","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquir","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squ","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squir","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Source","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-s","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-s","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squir","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide ho","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Source","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like ho","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Source","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Inter","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Source","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Star","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starl","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mock","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by lever","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-s","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the c","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"prec","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\"","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Source","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary,","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squ","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n-","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squir","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Source","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squir","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Source","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph code","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interf","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squir","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-s","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Source","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":""}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":" Based on the code snippets and text you asked me to reference, Squirrel seems to be:\n\n- An HTTP server for providing local code intelligence using tree-sitter, as described in the README.md\n- Used to provide hovers, definitions, references etc for code navigation in Sourcegraph, as referenced in several client code files.\n- Interfaces with Sourcegraph's code intelligence features to provide this local code navigation.\n- Mocked in an example test file in the cody repo, implying it's an important component that needs to be tested against.\n\nSo in summary, Squirrel is a service used by Sourcegraph to enable fast and precise code intelligence for code navigation by interfacing with tree-sitter parsers.","stopReason":"stop_sequence"}
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Source","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/product","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/productivity","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/productivity features","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/productivity features.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":" Based on the context provided:\n\nSquirrel is an HTTP server developed by Sourcegraph for providing fast and precise local code intelligence using tree-sitter. \n\nSome key things about Squirrel:\n\n- It is used to power code intelligence features in Sourcegraph like hovers, definitions, references etc. by analyzing code locally.\n\n- It supports multiple languages like Java, Python, Starlark etc.\n\n- It surfaces code intelligence by leveraging tree-sitter parsers.\n\n- There are multiple references to it being used to provide \"precise code navigation\" in Sourcegraph.\n\n- There are tests and other infrastructure set up around Squirrel in the Sourcegraph codebase.\n\nSo in summary, Squirrel is Sourcegraph's internal tool for enabling accurate and fast code intelligence for various languages. It powers Sourcegraph's code navigation/productivity features.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1292,7 +1418,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:52:23 GMT
+            value: Thu, 14 Mar 2024 23:55:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1321,7 +1447,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:52:19.460Z
+      startedDateTime: 2024-03-14T23:55:29.878Z
       time: 0
       timings:
         blocked: -1
@@ -1331,11 +1457,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 55053fe9d89428c51f89486b98638610
+    - _id: 19f1a7fb63476ff41d8a4fc46e52135b
       _order: 0
       cache: {}
       request:
-        bodySize: 3109
+        bodySize: 3155
         cookies: []
         headers:
           - name: content-type
@@ -1363,12 +1489,15 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: |+
-                  Use the following code snippet from file: src/example.test.ts:
-                  import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+                text: >+
+                  Codebase context from file src/example.test.tsin repository
+                  undefined:
 
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
 
               - speaker: assistant
                 text: Ok.
@@ -1417,7 +1546,7 @@ log:
                   </SELECTEDCODE7662>
 
 
-                  The user wants you to geneerate documentation for the selected code by following their instructions.
+                  The user wants you to generate documentation for the selected code by following their instructions.
 
                   Provide your generated documentation using the following instructions:
 
@@ -1428,19 +1557,20 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-2.0
+            model: anthropic/claude-instant-1.2
             stopSequences:
               - </CODE5711>
+              - describe('test block', () => {
             temperature: 0
             topK: -1
             topP: -1
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 7147
+        bodySize: 5187
         content:
           mimeType: text/event-stream
-          size: 7147
+          size: 5187
           text: >+
             event: completion
 
@@ -1469,202 +1599,162 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  ","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * -","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attemp","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage","stopReason":""}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2  \n * - Attempts to do something else but will error due to invalid usage of `performance.now()`\n*/\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Test block that runs 3 test cases: \n * - Does test 1\n * - Does test 2\n * - Does something else, contains incorrect usage of performance.now\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1674,7 +1764,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 19:48:38 GMT
+            value: Fri, 15 Mar 2024 15:21:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1703,7 +1793,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T19:48:35.723Z
+      startedDateTime: 2024-03-15T15:21:14.667Z
       time: 0
       timings:
         blocked: -1
@@ -3367,6 +3457,111 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-08T19:49:27.697Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7dff941dfa6c21b42b65737c883afa5f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 352
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "352"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 318
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: shown
+                  feature: cody.signInNotification
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.8.3
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 15 Mar 2024 11:57:08 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1217
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-03-15T11:57:08.460Z
       time: 0
       timings:
         blocked: -1

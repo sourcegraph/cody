@@ -38,12 +38,7 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
-  "categories": [
-    "Programming Languages",
-    "Machine Learning",
-    "Snippets",
-    "Education"
-  ],
+  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
     "ai",
     "openai",
@@ -94,11 +89,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": [
-    "onLanguage",
-    "onStartupFinished",
-    "onWebviewPanel:cody.chatPanel"
-  ],
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
   "contributes": {
     "walkthroughs": [
       {
@@ -554,6 +545,11 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
+        "command": "cody.command.document-code",
+        "key": "alt+d",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",
@@ -820,20 +816,12 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": [
-            "https://github.com/sourcegraph/cody",
-            "ssh://git@github.com/sourcegraph/cody"
-          ]
+          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
         },
         "cody.useContext": {
           "order": 99,
           "type": "string",
-          "enum": [
-            "embeddings",
-            "keyword",
-            "blended",
-            "none"
-          ],
+          "enum": ["embeddings", "keyword", "blended", "none"],
           "default": "blended",
           "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
@@ -897,9 +885,7 @@
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
-          "examples": [
-            "Answer all my questions in Spanish."
-          ]
+          "examples": ["Answer all my questions in Spanish."]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -912,7 +898,7 @@
           "order": 12,
           "title": "Cody Command Hints",
           "type": "boolean",
-          "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+          "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
@@ -964,27 +950,15 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": [
-            "all",
-            "off"
-          ],
-          "enumDescriptions": [
-            "Sends usage data and errors.",
-            "Disables all extension telemetry."
-          ],
+          "enum": ["all", "off"],
+          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "anthropic",
-            "fireworks",
-            "unstable-openai",
-            "experimental-ollama"
-          ],
+          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
@@ -998,12 +972,7 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "starcoder-16b",
-            "starcoder-7b",
-            "llama-code-13b"
-          ],
+          "enum": [null, "starcoder-16b", "starcoder-7b", "starcoder2-hybrid", "llama-code-13b"],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1023,26 +992,13 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": [
-            "lsp",
-            "indentation-based"
-          ],
+          "enum": ["lsp", "indentation-based"],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
           ],
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
-        },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
-        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
@@ -1057,12 +1013,44 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "bfg",
-            "bfg-mixed"
-          ],
+          "enum": [null, "bfg", "bfg-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.autocomplete.experimental.fireworksOptions": {
+          "type": "object",
+          "markdownDescription": "Experimental options for the direct-Fireworks autocomplete provider.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Fireworks API.",
+              "default": "https://api.fireworks.ai/inference/v1/completions"
+            },
+            "token": {
+              "type": "string",
+              "description": "The access token of the Fireworks API."
+            },
+            "model": {
+              "type": "string",
+              "description": "The model ID can be acquired from `firectl list deployments`",
+              "default": "accounts/sourcegraph/models/starcoder2-7b"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for querying the the model.",
+              "properties": {
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number",
+                "stop": {
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         },
         "cody.autocomplete.experimental.ollamaOptions": {
           "type": "object",
@@ -1162,6 +1150,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@floating-ui/react": "^0.26.9",
+    "@lexical/code": "^0.13.1",
+    "@lexical/html": "^0.13.1",
+    "@lexical/react": "^0.13.1",
     "@mdi/js": "^7.2.96",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
@@ -1191,6 +1183,7 @@
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
+    "lexical": "^0.13.1",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
