@@ -39,7 +39,7 @@ import { getDocumentSections } from '../../vscode/src/editor/utils/document-sect
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult, EditCommandResult } from '../../vscode/src/main'
-import { FixupTask } from '../../vscode/src/non-stop/FixupTask'
+import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
