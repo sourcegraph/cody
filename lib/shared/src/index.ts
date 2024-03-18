@@ -22,7 +22,7 @@ export type {
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
-    commandURIForVSCodeOpen,
+    webviewOpenURIForContextItem,
 } from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'

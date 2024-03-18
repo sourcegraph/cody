@@ -129,9 +129,10 @@ test.extend<ExpectedEvents>({
     // both main.java and var.go should be used
     await expect(chatFrame.getByText(/Context: 2 files/)).toBeVisible()
     await chatFrame.getByText(/Context: 2 files/).click()
-    await expect(chatFrame.getByRole('button', { name: 'Main.java' })).toBeVisible()
+    const chatContext = chatFrame.locator('details').last()
+    await expect(chatContext.getByRole('link', { name: 'Main.java' })).toBeVisible()
     await expect(
-        chatFrame.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 
     // Meta+/ also creates a new chat session

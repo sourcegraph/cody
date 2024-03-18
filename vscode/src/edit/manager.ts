@@ -15,6 +15,7 @@ import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { editModel } from '../models'
+import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -117,7 +118,8 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 source,
-                configuration.destinationFile
+                configuration.destinationFile,
+                configuration.insertionPoint
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -132,6 +134,23 @@ export class EditManager implements vscode.Disposable {
         }
 
         if (!task) {
+            return
+        }
+
+        /**
+         * Checks if there is already an active task for the given fixup file
+         * that has the same instruction and selection range as the current task.
+         */
+        const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
+            return (
+                ACTIVE_TASK_STATES.includes(activeTask.state) &&
+                activeTask.instruction === task!.instruction &&
+                activeTask.selectionRange.isEqual(task!.selectionRange)
+            )
+        })
+
+        if (activeTask) {
+            this.controller.cancelTask(task)
             return
         }
 

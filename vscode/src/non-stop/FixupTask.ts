@@ -63,7 +63,8 @@ export class FixupTask {
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
-        public destinationFile?: vscode.Uri
+        public destinationFile?: vscode.Uri,
+        public insertionPoint?: vscode.Position
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

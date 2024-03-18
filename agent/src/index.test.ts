@@ -106,7 +106,9 @@ describe('Agent', () => {
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Confirm .cody/ignore is active at start up
-        const codyIgnore = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+        const codyIgnore = await client.request('check/isCodyIgnoredFile', {
+            urls: [ignoredPath],
+        })
         expect(codyIgnore).toBeTruthy()
     }, 10_000)
 
@@ -160,7 +162,6 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        // for sombody on the Sourcegraph team to help you update the HTTP requests.
         expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
     }, 10_000)
 
@@ -483,7 +484,9 @@ describe('Agent', () => {
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
 
-            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            const result = await client.request('check/isCodyIgnoredFile', {
+                urls: [ignoredPath],
+            })
             expect(result).toBeTruthy()
         }, 10_000)
 
@@ -519,7 +522,9 @@ describe('Agent', () => {
             expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
             // Ignored file should not be included in context files
             const contextFilesUrls = contextFiles.map(f => f.uri?.path)
-            const result = await client.request('check/isCodyIgnoredFile', { urls: contextFilesUrls })
+            const result = await client.request('check/isCodyIgnoredFile', {
+                urls: contextFilesUrls,
+            })
             expect(result).toBeFalsy()
             // Files that are not ignored should be used as context files
             expect(contextFiles.length).toBeGreaterThan(0)
@@ -542,7 +547,9 @@ describe('Agent', () => {
             // Since no enhanced context is requested, no context files should be included
             expect(contextFiles.length).toBe(0)
             // Ignored file should not be included in context files
-            const result = await client.request('check/isCodyIgnoredFile', { urls: contextUrls })
+            const result = await client.request('check/isCodyIgnoredFile', {
+                urls: contextUrls,
+            })
             expect(result).toBeFalsy()
         }, 30_000)
 
@@ -569,14 +576,18 @@ describe('Agent', () => {
 
         it('ignore rule is not case sensitive', async () => {
             const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
-            const result = await client.request('check/isCodyIgnoredFile', { urls: [alsoIgnoredPath] })
+            const result = await client.request('check/isCodyIgnoredFile', {
+                urls: [alsoIgnoredPath],
+            })
             expect(result).toBeTruthy()
         })
 
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
             // as it should stay active for each workspace session.
-            const result = await client.request('check/isCodyIgnoredFile', { urls: [ignoredPath] })
+            const result = await client.request('check/isCodyIgnoredFile', {
+                urls: [ignoredPath],
+            })
             expect(result).toBeTruthy()
 
             // Check the network requests to ensure no requests include context from ignored files
@@ -939,11 +950,10 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers.
-                   *
-                   * @param a - The first number to sum.
-                   * @param b - The second number to sum.
-                   * @returns The sum of a and b.
+                   * Adds two numbers
+                   * @param a The first number in the addition
+                   * @param b The second number in the addition
+                   * @returns The sum of a and b
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -963,10 +973,10 @@ describe('Agent', () => {
                       export class TestClass {
                           constructor(private shouldGreet: boolean) {}
 
-                          /**
-                           * If the shouldGreet property is true, logs a greeting to the console.
+                              /**
+                           * Logs a greeting message if the shouldGreet flag is true
                            */
-                          public functionName() {
+                      public functionName() {
                               if (this.shouldGreet) {
                                   console.log(/* CURSOR */ 'Hello World!')
                               }
@@ -983,14 +993,14 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
                       "const foo = 42
-                      /**
-                       * Starts logging by calling the recordLog function.
-                      */
                       export const TestLogger = {
                           startLogging: () => {
                               // Do some stuff
 
-                              function recordLog() {
+                                      /**
+                               * Records a log message to the console
+                               */
+                      function recordLog() {
                                   console.log(/* CURSOR */ 'Recording the log')
                               }
 
@@ -1011,12 +1021,6 @@ describe('Agent', () => {
                       import { it } from 'vitest'
                       import { describe } from 'vitest'
 
-                      /**
-                       * A test block with 3 test cases:
-                       * - Checks that true equals true
-                       * - Checks that true equals true again
-                       * - Attempts to record start time but errors due to invalid usage of performance.now
-                      */
                       describe('test block', () => {
                           it('does 1', () => {
                               expect(true).toBe(true)
@@ -1028,7 +1032,8 @@ describe('Agent', () => {
 
                           it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
-                              const startTime = performance.now(/* CURSOR */)
+                                      /** Measures the time when this test begins running */
+                      const startTime = performance.now(/* CURSOR */)
                           })
                       })
                       "
@@ -1366,10 +1371,10 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 test cases:
+                   * Test block that runs 3 test cases:
                    * - Does test 1
                    * - Does test 2
-                   * - Does something else that errors due to incorrect usage of \`performance.now\`
+                   * - Does something else, contains incorrect usage of performance.now
                   */
                   describe('test block', () => {
                       it('does 1', () => {

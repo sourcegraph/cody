@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
+import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
 
 /**
@@ -15,7 +16,7 @@ export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
  * Return a `command:` URI for use within VS Code webviews that invokes `vscode.open` (proxied via
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}).
  */
-export function commandURIForVSCodeOpen(resource: URI, range?: RangeData): string {
+function commandURIForVSCodeOpen(resource: URI, range?: RangeData): string {
     return `command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
             resource,
@@ -28,4 +29,22 @@ export function commandURIForVSCodeOpen(resource: URI, range?: RangeData): strin
             },
         ])
     )}`
+}
+
+/**
+ * Return the URI that opens the given context item in the webview. For most context items, this
+ * just calls {@link commandURIForVSCodeOpen}. However, if {@link resource} is a web page (`http` or
+ * `https` protocol), then the URL itself is used with `target="_blank"`.
+ */
+export function webviewOpenURIForContextItem(item: Pick<ContextItem, 'uri' | 'range'>): {
+    href: string
+    target: '_blank' | undefined
+} {
+    if (item.uri.scheme === 'http' || item.uri.scheme === 'https') {
+        return {
+            href: item.uri.toString(),
+            target: '_blank',
+        }
+    }
+    return { href: commandURIForVSCodeOpen(item.uri, item.range), target: undefined }
 }

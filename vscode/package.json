@@ -545,6 +545,11 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
+        "command": "cody.command.document-code",
+        "key": "alt+d",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",
@@ -893,7 +898,7 @@
           "order": 12,
           "title": "Cody Command Hints",
           "type": "boolean",
-          "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+          "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
@@ -994,11 +999,6 @@
           ],
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
-        },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",

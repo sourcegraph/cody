@@ -303,8 +303,9 @@ test('@-mention file range', async ({ page, sidebar }) => {
     // @-file range with the correct line range shows up in the chat view and it opens on click
     await chatPanelFrame.getByText('✨ Context: 3 lines from 1 file').hover()
     await chatPanelFrame.getByText('✨ Context: 3 lines from 1 file').click()
-    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:2-4' }).hover()
-    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:2-4' }).click()
+    const chatContext = chatPanelFrame.locator('details').last()
+    await chatContext.getByRole('link', { name: '@buzz.ts:2-4' }).hover()
+    await chatContext.getByRole('link', { name: '@buzz.ts:2-4' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
     await previewTab.hover()
     await expect(previewTab).toBeVisible()
@@ -355,8 +356,9 @@ test.extend<ExpectedEvents>({
     // @-file with the correct line range shows up in the chat view and it opens on click
     await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').hover()
     await chatPanelFrame.getByText('✨ Context: 15 lines from 1 file').click()
-    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:1-15' }).hover()
-    await chatPanelFrame.getByRole('button', { name: '@buzz.ts:1-15' }).click()
+    const chatContext = chatPanelFrame.locator('details').last()
+    await chatContext.getByRole('link', { name: '@buzz.ts:1-15' }).hover()
+    await chatContext.getByRole('link', { name: '@buzz.ts:1-15' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
     await previewTab.hover()
     await expect(previewTab).toBeVisible()
