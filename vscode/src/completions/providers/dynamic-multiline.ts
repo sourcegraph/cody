@@ -21,7 +21,6 @@ export function getDynamicMultilineDocContext(
     const updatedDocContext = insertIntoDocContext({
         languageId,
         insertText: getFirstLine(insertText),
-        dynamicMultilineCompletions: true,
         docContext,
     })
 

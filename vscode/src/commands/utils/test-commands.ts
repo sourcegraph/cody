@@ -30,9 +30,6 @@ export function isValidTestFile(uri: URI): boolean {
     return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
 }
 
-// REGEX for trailing non-alphanumeric characters
-export const trailingNonAlphaNumericRegex = /[^\d#@A-Za-z]+$/
-
 /**
  * Checks if the given test file path matches the path of the original file
  * by comparing stripped down versions of the paths.

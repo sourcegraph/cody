@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ChatButtonProps } from '../Chat'
@@ -16,6 +16,7 @@ import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
 /**
@@ -89,6 +90,8 @@ export const TranscriptItem: React.FunctionComponent<
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
 
+    const displayMarkdown = useDisplayMarkdown(message)
+
     return (
         <div
             className={classNames(
@@ -139,9 +142,10 @@ export const TranscriptItem: React.FunctionComponent<
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
-                {message.displayText ? (
+                {displayMarkdown ? (
                     <CodeBlocks
-                        displayText={message.displayText}
+                        displayMarkdown={displayMarkdown}
+                        wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
@@ -188,3 +192,13 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 })
+
+/**
+ * React hook for returning the Markdown for rendering a chat message's text.
+ */
+function useDisplayMarkdown(message: ChatMessage): string {
+    if (message.speaker === 'assistant') {
+        return reformatBotMessageForChat(message.text ?? '')
+    }
+    return serializedPromptEditorStateFromChatMessage(message).html
+}

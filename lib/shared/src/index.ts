@@ -13,22 +13,17 @@ export type {
     SerializedChatTranscript,
 } from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
-export {
-    getAtMentionQuery,
-    getAtMentionedInputText,
-    getContextFileDisplayText,
-    verifyContextFilesFromInput,
-    isAtMention,
-    isAtRange,
-} from './chat/input'
 export type {
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatInputHistory,
     ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
+export {
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
+    webviewOpenURIForContextItem,
+} from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
@@ -54,13 +49,13 @@ export type {
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData } from './common/range'
+export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
 } from './common/languages'
-export { renderMarkdown } from './common/markdown'
+export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {

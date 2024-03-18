@@ -15,7 +15,6 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
     type FetchCompletionResult,
-    fetchAndProcessCompletions,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
 import { type OllamaModel, getModelHelpers } from './ollama-models'
@@ -121,7 +120,6 @@ class ExperimentalOllamaProvider extends Provider {
         // Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
         const isMultiline = this.options.multiline
-        const isDynamicMultiline = Boolean(this.options.dynamicMultilineCompletions)
 
         const timeoutMs = 5_0000
         const modelHelpers = getModelHelpers(this.ollamaOptions.model)
@@ -131,7 +129,7 @@ class ExperimentalOllamaProvider extends Provider {
             prompt: modelHelpers.getPrompt(promptContext),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
-            options: modelHelpers.getRequestOptions(isMultiline, isDynamicMultiline),
+            options: modelHelpers.getRequestOptions(isMultiline),
         } satisfies OllamaGenerateParams
 
         if (this.ollamaOptions.parameters) {
@@ -141,9 +139,6 @@ class ExperimentalOllamaProvider extends Provider {
         // TODO(valery): remove `any` casts
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
-        const fetchAndProcessCompletionsImpl = isDynamicMultiline
-            ? fetchAndProcessDynamicMultilineCompletions
-            : fetchAndProcessCompletions
 
         const completionsGenerators = Array.from({
             length: this.options.n,
@@ -156,7 +151,7 @@ class ExperimentalOllamaProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: insertText => insertText.trim(),

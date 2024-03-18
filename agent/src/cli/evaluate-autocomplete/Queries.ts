@@ -1,9 +1,10 @@
 import * as path from 'path'
 import * as fspromises from 'fs/promises'
 
-import type { Query, default as Parser } from 'web-tree-sitter'
+import type { Query } from 'web-tree-sitter'
 
 import { SupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
+import type { WrappedParser } from '../../../../vscode/src/tree-sitter/parser'
 
 type QueryName = 'context'
 
@@ -19,7 +20,7 @@ export class Queries {
     private cache: CompiledQuery[] = []
     constructor(private queriesDirectory: string) {}
     public async loadQuery(
-        parser: Parser,
+        parser: WrappedParser,
         language: SupportedLanguage,
         name: QueryName
     ): Promise<Query | undefined> {
@@ -38,7 +39,7 @@ export class Queries {
     }
 
     private async compileQuery(
-        parser: Parser,
+        parser: WrappedParser,
         language: SupportedLanguage,
         name: QueryName
     ): Promise<Query | undefined> {
@@ -93,7 +94,7 @@ interface CompiledQuery extends UncompiledQuery {
     compiledQuery: Query
 }
 
-function compileQuery(query: UncompiledQuery, parser: Parser): CompiledQuery {
+function compileQuery(query: UncompiledQuery, parser: WrappedParser): CompiledQuery {
     return {
         ...query,
         compiledQuery: parser.getLanguage().query(query.queryString),
@@ -101,7 +102,7 @@ function compileQuery(query: UncompiledQuery, parser: Parser): CompiledQuery {
 }
 
 const grammarInheritance: Partial<Record<SupportedLanguage, SupportedLanguage[]>> = {
-    [SupportedLanguage.TypeScript]: [SupportedLanguage.JavaScript],
-    [SupportedLanguage.JSX]: [SupportedLanguage.JavaScript],
-    [SupportedLanguage.TSX]: [SupportedLanguage.TypeScript, SupportedLanguage.JavaScript],
+    [SupportedLanguage.typescript]: [SupportedLanguage.javascript],
+    [SupportedLanguage.javascriptreact]: [SupportedLanguage.javascript],
+    [SupportedLanguage.typescriptreact]: [SupportedLanguage.typescript, SupportedLanguage.javascript],
 }

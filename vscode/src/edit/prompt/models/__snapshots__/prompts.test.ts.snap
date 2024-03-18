@@ -35,7 +35,7 @@ This is part of the file: src/file/index.ts
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
-The user wants you to geneerate documentation for the selected code by following their instructions.
+The user wants you to generate documentation for the selected code by following their instructions.
 Provide your generated documentation using the following instructions:
 <INSTRUCTIONS7390>
 Console log text
@@ -136,7 +136,7 @@ This is part of the file: src/file/index.ts
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
-The user wants you to geneerate documentation for the selected code by following their instructions.
+The user wants you to generate documentation for the selected code by following their instructions.
 Provide your generated documentation using the following instructions:
 <INSTRUCTIONS7390>
 Console log text

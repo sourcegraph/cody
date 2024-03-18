@@ -15,13 +15,13 @@ export enum FeatureFlag {
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
     // Enable Llama Code 13b as the default model via Fireworks
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
+    // Enable StarCoder2 7b and 15b as the default model via Fireworks
+    CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    // Dynamically decide wether to show a single line or multiple lines for completions.
-    CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     // Completion requests will be cancelled as soon as a new request comes in and the debounce time
     // will be reduced to try and counter the latency impact.
     CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',
@@ -46,6 +46,9 @@ export enum FeatureFlag {
 
     // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
     CodyCommandHints = 'cody-command-hints',
+
+    // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
+    CodyDocumentHints = 'cody-document-hints',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

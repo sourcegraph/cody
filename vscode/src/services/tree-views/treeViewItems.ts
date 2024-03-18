@@ -18,6 +18,7 @@ export interface CodySidebarTreeItem {
     requireFeature?: FeatureFlag
     requireUpgradeAvailable?: boolean
     requireDotCom?: boolean
+    requirePaid?: boolean
 }
 
 /**
@@ -67,6 +68,12 @@ const supportItems: CodySidebarTreeItem[] = [
         title: 'Documentation',
         icon: 'book',
         command: { command: 'cody.sidebar.documentation' },
+    },
+    {
+        title: 'Support',
+        icon: 'question',
+        command: { command: 'cody.sidebar.support' },
+        requirePaid: true,
     },
     {
         title: 'Feedback',

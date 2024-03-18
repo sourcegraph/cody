@@ -17,7 +17,7 @@ interface OllamaPromptContext {
 
 export interface OllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters
 }
 
 class DefaultOllamaModel implements OllamaModel {
@@ -26,7 +26,7 @@ class DefaultOllamaModel implements OllamaModel {
         return context + currentFileNameComment + prefix
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
         const stop = ['<PRE>', '<SUF>', '<MID>', '<EOT>']
 
         const params = {
@@ -34,21 +34,11 @@ class DefaultOllamaModel implements OllamaModel {
             temperature: 0.2,
             top_k: -1,
             top_p: -1,
-            num_predict: 30,
+            num_predict: 256,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop: ['\n\n', ...stop],
-            })
-        }
-
-        if (isDynamicMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop,
-            })
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -64,7 +54,7 @@ class DeepseekCoder extends DefaultOllamaModel {
         return `<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
         const stop = ['<｜fim▁begin｜>', '<｜fim▁hole｜>', '<｜fim▁end｜>']
 
         const params = {
@@ -72,23 +62,13 @@ class DeepseekCoder extends DefaultOllamaModel {
             temperature: 0.6,
             top_k: 30,
             top_p: 0.2,
-            num_predict: 30,
+            num_predict: 256,
             num_gpu: 99,
             repeat_penalty: 1.1,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop: ['\n\n', ...stop],
-            })
-        }
-
-        if (isDynamicMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop: stop,
-            })
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -119,7 +99,7 @@ class CodeLlama extends DefaultOllamaModel {
     }
 }
 
-class StarCoder extends DefaultOllamaModel {
+class StarCoder2 extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string {
         const { context, prefix, suffix } = ollamaPrompt
 
@@ -130,29 +110,19 @@ class StarCoder extends DefaultOllamaModel {
         return `<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
-        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>']
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
 
         const params = {
             stop: ['\n', ...stop],
             temperature: 0.2,
             top_k: -1,
             top_p: -1,
-            num_predict: 30,
+            num_predict: 256,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop,
-            })
-        }
-
-        if (isDynamicMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop,
-            })
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -168,8 +138,8 @@ export function getModelHelpers(model: string) {
         return new DeepseekCoder()
     }
 
-    if (model.includes('starcoder')) {
-        return new StarCoder()
+    if (model.includes('starcoder2')) {
+        return new StarCoder2()
     }
 
     return new DefaultOllamaModel()

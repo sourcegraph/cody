@@ -64,6 +64,7 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     addAutocompleteDebugEvent('truncate', {
         currentLinePrefix: docContext.currentLinePrefix,
         text: insertText,
+        position: points.trigger || points.start,
     })
 
     let fixedCompletion = completion
@@ -90,7 +91,9 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     )
 
     let textToInsert =
-        nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text
+        nodeToInsert?.grammarId === fixedCompletion.tree!.rootNode.grammarId
+            ? 'root'
+            : nodeToInsert?.text
     if (textToInsert && document.getText().endsWith(textToInsert.slice(-100))) {
         textToInsert = 'till the end of the document'
     }
@@ -124,7 +127,7 @@ export function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point):
 
     while (
         current?.parent?.startPosition.row === initial?.startPosition.row &&
-        current.parent.id !== root.id
+        current.parent.grammarId !== root.grammarId
     ) {
         current = current.parent
     }

@@ -3,7 +3,11 @@ import { goQueries } from './queries/go'
 import { javascriptQueries } from './queries/javascript'
 import { pythonQueries } from './queries/python'
 
-export type QueryName = 'singlelineTriggers' | 'intents' | 'documentableNodes'
+export type QueryName =
+    | 'singlelineTriggers'
+    | 'intents'
+    | 'documentableNodes'
+    | 'graphContextIdentifiers'
 
 /**
  * Completion intents sorted by priority.

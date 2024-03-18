@@ -41,16 +41,25 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = getContextWindowForModel(
                 this.config.authProvider.getAuthStatus(),
                 model
             )
-            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+            const {
+                messages,
+                stopSequences,
+                responseTopic,
+                responsePrefix = '',
+            } = await buildInteraction({
                 model,
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
+            }).catch(err => {
+                this.handleError(err)
+                throw err
             })
 
             const multiplexer = new BotResponseMultiplexer()
@@ -160,11 +169,16 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                ...countCode(response),
-                source: this.config.task.source,
-                hasV2Event: true,
-            })
+            telemetryService.log(
+                'CodyVSCodeExtension:fixupResponse:hasCode',
+                {
+                    ...countCode(response),
+                    source: this.config.task.source,
+                },
+                {
+                    hasV2Event: true,
+                }
+            )
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
             const responseText = endpoint && isDotCom(endpoint) ? response : undefined
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {

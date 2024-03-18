@@ -8,11 +8,9 @@ import {
     type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
-    reformatBotMessageForChat,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import { createDisplayTextWithFileLinks } from '../../commands/utils/display-text'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -40,14 +38,14 @@ export class SimpleChatModel {
         lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>): void {
+    public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
         if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messages.push({ ...message, speaker: 'human' })
     }
 
-    public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
+    public addBotMessage(message: Omit<Message, 'speaker'>): void {
         const lastMessage = this.messages.at(-1)
         let error: any
         // If there is no text, it could be a placeholder message for an error
@@ -60,7 +58,6 @@ export class SimpleChatModel {
         this.messages.push({
             ...message,
             speaker: 'assistant',
-            displayText,
             error,
         })
     }
@@ -117,11 +114,7 @@ export class SimpleChatModel {
             return this.customChatTitle
         }
         const lastHumanMessage = this.getLastHumanMessage()
-        const text = lastHumanMessage && getDisplayText(lastHumanMessage)
-        if (text) {
-            return getChatPanelTitle(text)
-        }
-        return 'New Chat'
+        return getChatPanelTitle(lastHumanMessage?.text ?? '')
     }
 
     public getCustomChatTitle(): string | undefined {
@@ -183,36 +176,16 @@ function messageToSerializedChatInteraction(
         )
     }
 
-    function toSerializedInteractionMessage(message: ChatMessage): ChatMessage {
-        return { ...message, displayText: getDisplayText(message) }
-    }
-    return {
-        humanMessage: toSerializedInteractionMessage(humanMessage),
-        assistantMessage: assistantMessage ? toSerializedInteractionMessage(assistantMessage) : null,
-    }
+    return { humanMessage, assistantMessage: assistantMessage ?? null }
 }
 
 export function prepareChatMessage(message: ChatMessage): ChatMessage {
     return {
         ...message,
-        displayText: getDisplayText(message),
         contextFiles: message.contextFiles?.map(item => ({
             ...item,
             // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
             range: toRangeData(item.range),
         })),
     }
-}
-
-function getDisplayText(message: ChatMessage): string | undefined {
-    if (message.displayText) {
-        return message.displayText
-    }
-    if (message.speaker === 'human' && message.text) {
-        return createDisplayTextWithFileLinks(message.text, message.contextFiles ?? [])
-    }
-    if (message.speaker === 'assistant' && message.text) {
-        return reformatBotMessageForChat(message.text, '')
-    }
-    return message.text
 }

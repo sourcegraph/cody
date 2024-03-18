@@ -14,6 +14,7 @@ export interface GetLLMInteractionOptions {
     selectedText: string
     followingText: string
     uri: vscode.Uri
+    document: vscode.TextDocument
 }
 
 type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction

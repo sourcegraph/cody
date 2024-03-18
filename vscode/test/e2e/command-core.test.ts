@@ -47,13 +47,14 @@ test.extend<ExpectedEvents>({
     // When no selection is made, we will try to create smart selection from the cursor position
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
-    await chatPanel.getByText('Context: 12 lines from 1 file').click()
+    await chatPanel.getByText('Context: 11 lines from 1 file').click()
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
     // Click on the file link in chat
-    await chatPanel.getByRole('button', { name: '@index.html' }).click()
+    const chatContext = chatPanel.locator('details').last()
+    await chatContext.getByRole('link', { name: '@index.html' }).click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
@@ -64,10 +65,10 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await chatPanel.getByText('Context: 21 lines from 1 file').click()
+    await chatPanel.getByText('Context: 20 lines from 1 file').click()
     await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
-    const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message / })
+    const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message/ })
     // Edit button and Edit Last Message are shown on all command messages.
     await expect(disabledEditButtons).toHaveCount(0)
     await expect(editLastMessageButton).toBeVisible()

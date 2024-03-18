@@ -16,6 +16,7 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
         case 'java':
         case 'javascript':
         case 'javascriptreact':
+        case 'kotlin':
         case 'php':
         case 'rust':
         case 'svelte':

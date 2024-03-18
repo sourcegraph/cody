@@ -87,7 +87,6 @@ function docState(prefix: string, suffix = ';', uriString?: string): RequestPara
             position,
             maxPrefixLength: 100,
             maxSuffixLength: 100,
-            dynamicMultilineCompletions: false,
         }),
         selectedCompletionInfo: undefined,
     }
