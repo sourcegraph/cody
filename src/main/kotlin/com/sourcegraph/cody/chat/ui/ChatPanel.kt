@@ -74,16 +74,12 @@ class ChatPanel(
   fun isEnhancedContextEnabled(): Boolean = contextView.isEnhancedContextEnabled.get()
 
   @RequiresEdt
-  fun addOrUpdateMessage(
-      message: ChatMessage,
-      index: Int,
-      shouldAddBlinkingCursor: Boolean = true
-  ) {
+  fun addOrUpdateMessage(message: ChatMessage, index: Int) {
     if (messagesPanel.componentCount == 1) {
       llmDropdown.updateAfterFirstMessage()
       promptPanel.updateEmptyTextAfterFirstMessage()
     }
-    messagesPanel.addOrUpdateMessage(message, index, shouldAddBlinkingCursor)
+    messagesPanel.addOrUpdateMessage(message, index)
   }
 
   @RequiresEdt

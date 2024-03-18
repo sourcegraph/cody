@@ -20,11 +20,12 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
   }
 
   @RequiresEdt
-  fun addOrUpdateMessage(message: ChatMessage, index: Int, shouldAddBlinkingCursor: Boolean) {
-    removeBlinkingCursor()
-
+  fun addOrUpdateMessage(message: ChatMessage, index: Int) {
     val indexAfterHelloMessage = index + 1
     val messageToUpdate = components.getOrNull(indexAfterHelloMessage).let { it as? JPanel }
+
+    if (message.speaker == Speaker.ASSISTANT) removeBlinkingCursor()
+
     if (messageToUpdate != null) {
       val singleMessagePanel = messageToUpdate.getComponent(0) as? SingleMessagePanel
       val contextFilesPanel = messageToUpdate.getComponent(1) as? ContextFilesPanel
@@ -34,7 +35,7 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
       addChatMessageAsComponent(message)
     }
 
-    if (shouldAddBlinkingCursor) {
+    if (message.speaker == Speaker.ASSISTANT && message.actualMessage().isBlank()) {
       add(BlinkingCursorComponent.instance)
     }
 

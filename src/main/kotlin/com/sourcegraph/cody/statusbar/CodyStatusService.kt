@@ -61,6 +61,8 @@ class CodyStatusService : CodyStatusListener, Disposable {
             CodyStatus.CodyDisabled
           } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
             CodyStatus.AutocompleteDisabled
+          } else if (CodyAgentService.agentError.get() != null) {
+            CodyStatus.AgentError
           } else if (!CodyAgentService.isConnected(project)) {
             CodyStatus.CodyAgentNotRunning
           } else if (token == null) {
@@ -68,8 +70,6 @@ class CodyStatusService : CodyStatusListener, Disposable {
           } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
               UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
             CodyStatus.RateLimitError
-          } else if (CodyAgentService.agentError.get() != null) {
-            CodyStatus.AgentError
           } else {
             CodyStatus.Ready
           }

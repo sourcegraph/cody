@@ -23,12 +23,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     try {
       if (events.isNotEmpty()) {
         val event = events.first()
-        val error =
-            CodyError(
-                title = getTitle(event),
-                version = getVersion(),
-                logs = getLogs(event, additionalInfo))
-        val url = getEncodedUrl(error)
+        val url = getEncodedUrl(event.throwableText, additionalInfo)
         BrowserUtil.browse(url)
       }
     } catch (e: Exception) {
@@ -39,8 +34,18 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return true
   }
 
-  private fun getTitle(event: IdeaLoggingEvent): String {
-    val title = trimPostfix(event.throwableText.lines().first(), 128)
+  public fun getEncodedUrl(throwableText: String, additionalInfo: String? = null): String {
+    return "https://github.com/sourcegraph/jetbrains/issues/new" +
+        "?template=bug_report.yml" +
+        "&labels=bug,team/jetbrains" +
+        "&projects=sourcegraph/381" +
+        "&title=${encode(getTitle(throwableText))}" +
+        "&version=${encode(getVersion())}" +
+        "&logs=${encode(formatLogs(throwableText, additionalInfo))}"
+  }
+
+  private fun getTitle(throwableText: String): String {
+    val title = trimPostfix(throwableText.lines().first(), 128)
     return "bug: $title"
   }
 
@@ -49,9 +54,9 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
           "Plugin version" to pluginDescriptor?.version,
           "IDE version" to ApplicationInfo.getInstance().build.toString())
 
-  private fun getLogs(event: IdeaLoggingEvent, additionalInfo: String?) =
+  private fun formatLogs(throwableText: String, additionalInfo: String?) =
       formatAttributes(
-          "Stacktrace" to trimPostfix(event.throwableText, 6500), // max total length is 8192
+          "Stacktrace" to trimPostfix(throwableText, 6500), // max total length is 8192
           "Additional info" to additionalInfo)
 
   private fun trimPostfix(text: String, maxLength: Int): String {
@@ -66,15 +71,6 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
 
   private fun formatAttribute(label: String, text: String) =
       if (text.lines().size != 1) "$label:\n```text\n$text\n```" else "$label: ```$text```"
-
-  private fun getEncodedUrl(error: CodyError): String =
-      "https://github.com/sourcegraph/jetbrains/issues/new" +
-          "?template=bug_report.yml" +
-          "&labels=bug,team/jetbrains" +
-          "&projects=sourcegraph/381" +
-          "&title=${encode(error.title)}" +
-          "&version=${encode(error.version)}" +
-          "&logs=${encode(error.logs)}"
 
   private fun encode(text: String) = URLEncoder.encode(text, "UTF-8")
 }

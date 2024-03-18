@@ -6,11 +6,14 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
 import com.intellij.xml.util.XmlStringUtil
 import com.jetbrains.rd.util.AtomicReference
+import com.jetbrains.rd.util.getThrowableText
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentException
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.ExtensionMessage
 import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
+import com.sourcegraph.cody.agent.protocol.ChatError
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
@@ -23,6 +26,7 @@ import com.sourcegraph.cody.chat.ui.LlmDropdownData
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
+import com.sourcegraph.cody.error.CodyErrorSubmitter
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
@@ -105,7 +109,7 @@ private constructor(
             text,
             displayText,
         )
-    addMessageAtIndex(humanMessage, index = messages.count(), shouldAddBlinkingCursor = null)
+    addMessageAtIndex(humanMessage, index = messages.count())
 
     val responsePlaceholder =
         ChatMessage(
@@ -113,95 +117,114 @@ private constructor(
             text = "",
             displayText = "",
         )
-    addMessageAtIndex(responsePlaceholder, index = messages.count(), shouldAddBlinkingCursor = true)
+    addMessageAtIndex(responsePlaceholder, index = messages.count())
 
     submitMessageToAgent(humanMessage, contextItems)
   }
 
   private fun submitMessageToAgent(humanMessage: ChatMessage, contextItems: List<ContextItem>) {
-    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-      val message =
-          WebviewMessage(
-              command = "submit",
-              text = humanMessage.actualMessage(),
-              submitType = "user",
-              addEnhancedContext = chatPanel.isEnhancedContextEnabled(),
-              contextFiles = contextItems)
+    CodyAgentService.withAgentRestartIfNeeded(
+        project,
+        callback = { agent ->
+          val message =
+              WebviewMessage(
+                  command = "submit",
+                  text = humanMessage.actualMessage(),
+                  submitType = "user",
+                  addEnhancedContext = chatPanel.isEnhancedContextEnabled(),
+                  contextFiles = contextItems)
 
-      try {
-        val request =
-            agent.server.chatSubmitMessage(
-                ChatSubmitMessageParams(connectionId.get().get(), message))
+          try {
+            val request =
+                agent.server.chatSubmitMessage(
+                    ChatSubmitMessageParams(connectionId.get().get(), message))
 
-        GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
+            GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
 
-        ApplicationManager.getApplication().invokeLater {
-          createCancellationToken(
-              onCancel = { request.cancel(true) },
-              onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
-        }
-      } catch (e: Exception) {
-        createCancellationToken(onCancel = {}, onFinish = {})
-        getCancellationToken().abort()
-        throw e
-      }
-    }
+            ApplicationManager.getApplication().invokeLater {
+              createCancellationToken(
+                  onCancel = { request.cancel(true) },
+                  onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
+            }
+          } catch (e: Exception) {
+            createCancellationToken(onCancel = {}, onFinish = {})
+            handleException(e)
+            throw e
+          }
+        },
+        onFailure = { e ->
+          createCancellationToken(onCancel = {}, onFinish = {})
+          handleException(e)
+        })
   }
 
   @Throws(ExecutionException::class, InterruptedException::class)
   override fun receiveMessage(extensionMessage: ExtensionMessage) {
-
     try {
       val lastMessage = extensionMessage.messages?.lastOrNull()
-
       if (lastMessage?.error != null && extensionMessage.isMessageInProgress == false) {
-
-        getCancellationToken().dispose()
-        val rateLimitError = lastMessage.error.toRateLimitError()
-        if (rateLimitError != null) {
-          RateLimitStateManager.reportForChat(project, rateLimitError)
-
-          val text =
-              when {
-                rateLimitError.upgradeIsAvailable ->
-                    CodyBundle.getString("chat.rate-limit-error.upgrade")
-                else -> CodyBundle.getString("chat.rate-limit-error.explain")
-              }
-
-          addErrorMessageAsAssistantMessage(text, index = extensionMessage.messages.count() - 1)
-        } else {
-          val message = CodyBundle.getString("chat.general-error").fmt(lastMessage.error.message)
-          CodyAgentService.setAgentError(project, lastMessage.error.message)
-          addErrorMessageAsAssistantMessage(message, index = extensionMessage.messages.count() - 1)
-        }
+        handleChatError(lastMessage.error)
       } else {
         RateLimitStateManager.invalidateForChat(project)
         if (extensionMessage.messages?.isNotEmpty() == true &&
             extensionMessage.isMessageInProgress == false) {
           getCancellationToken().dispose()
         } else {
-
           if (extensionMessage.chatID != null && extensionMessage.messages != null) {
-            messages.zip(extensionMessage.messages).forEachIndexed { index, messagesPair ->
-              val (sessionMessage, responseMessage) = messagesPair
-              if (sessionMessage != responseMessage) {
+            extensionMessage.messages.forEachIndexed { index, incomingMessage ->
+              val sessionMessage = messages.getOrNull(index)
+              if (sessionMessage != incomingMessage) {
                 ApplicationManager.getApplication().invokeLater {
-                  addMessageAtIndex(responseMessage, index)
+                  addMessageAtIndex(incomingMessage, index)
                 }
               }
             }
           }
         }
       }
-    } catch (error: Exception) {
-      getCancellationToken().abort()
-      logger.error(CodyBundle.getString("chat-session.error-title"), error)
+    } catch (exception: Exception) {
+      handleException(exception)
     }
   }
 
-  private fun addErrorMessageAsAssistantMessage(stringMessage: String, index: Int) {
+  private fun handleChatError(chatError: ChatError) {
+    try {
+      CodyAgentService.setAgentError(project, chatError.message)
+
+      val rateLimitError = chatError.toRateLimitError()
+      val errorMessage =
+          if (rateLimitError != null) {
+            RateLimitStateManager.reportForChat(project, rateLimitError)
+            when {
+              rateLimitError.upgradeIsAvailable ->
+                  CodyBundle.getString("chat.rate-limit-error.upgrade")
+              else -> CodyBundle.getString("chat.rate-limit-error.explain")
+            }
+          } else CodyBundle.getString("chat.general-error").fmt(chatError.message, "")
+
+      addErrorMessageAsAssistantMessage(errorMessage)
+    } finally {
+      getCancellationToken().abort()
+    }
+  }
+
+  private fun handleException(e: Exception) {
+    try {
+      CodyAgentService.setAgentError(project, e)
+
+      val message = ((e.cause as? CodyAgentException) ?: e).message ?: e.toString()
+      val errorReportLink = CodyErrorSubmitter().getEncodedUrl(e.getThrowableText(), message)
+      val errorReportMsg = CodyBundle.getString("chat.general-error.report").fmt(errorReportLink)
+      addErrorMessageAsAssistantMessage(
+          CodyBundle.getString("chat.general-error").fmt(message, errorReportMsg))
+    } finally {
+      getCancellationToken().abort()
+    }
+  }
+
+  private fun addErrorMessageAsAssistantMessage(chatMessage: String) {
     UIUtil.invokeLaterIfNeeded {
-      addMessageAtIndex(ChatMessage(Speaker.ASSISTANT, stringMessage), index)
+      addMessageAtIndex(ChatMessage(Speaker.ASSISTANT, chatMessage), messages.count() - 1)
     }
   }
 
@@ -226,21 +249,15 @@ private constructor(
   }
 
   @RequiresEdt
-  private fun addMessageAtIndex(
-      message: ChatMessage,
-      index: Int,
-      shouldAddBlinkingCursor: Boolean? = null
-  ) {
+  private fun addMessageAtIndex(message: ChatMessage, index: Int) {
     val messageToUpdate = messages.getOrNull(index)
     if (messageToUpdate != null) {
       messages[index] = message
     } else {
       messages.add(message)
     }
-    chatPanel.addOrUpdateMessage(
-        message,
-        index,
-        shouldAddBlinkingCursor = shouldAddBlinkingCursor ?: message.actualMessage().isBlank())
+
+    chatPanel.addOrUpdateMessage(message, index)
     HistoryService.getInstance(project).updateChatMessages(internalId, messages)
   }
 

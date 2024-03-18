@@ -13,9 +13,9 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
-import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 @Service(Service.Level.PROJECT)
 class CodyAgentService(project: Project) : Disposable {
@@ -58,20 +58,26 @@ class CodyAgentService(project: Project) : Disposable {
   fun startAgent(project: Project): CompletableFuture<CodyAgent> {
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
-        val agent = CodyAgent.create(project).get(25, TimeUnit.SECONDS)
+        val agent = CodyAgent.create(project).get(45, TimeUnit.SECONDS)
         if (!agent.isConnected()) {
           val msg = "Failed to connect to agent Cody agent"
           logger.error(msg)
-          codyAgent.completeExceptionally(Exception(msg))
+          codyAgent.completeExceptionally(CodyAgentException(msg))
         } else {
           synchronized(startupActions) { startupActions.forEach { action -> action(agent) } }
           codyAgent.complete(agent)
           CodyStatusService.resetApplication(project)
         }
+      } catch (e: TimeoutException) {
+        val msg = "Failed to start Cody agent in timely manner, please run any Cody action to retry"
+        logger.warn(msg, e)
+        setAgentError(project, msg)
+        codyAgent.completeExceptionally(CodyAgentException(msg, e))
       } catch (e: Exception) {
         val msg = "Failed to start Cody agent"
         logger.error(msg, e)
-        codyAgent.completeExceptionally(Exception(msg, e))
+        setAgentError(project, msg)
+        codyAgent.completeExceptionally(CodyAgentException(msg, e))
       }
     }
 
@@ -111,6 +117,11 @@ class CodyAgentService(project: Project) : Disposable {
     }
 
     @JvmStatic
+    fun setAgentError(project: Project, e: Exception) {
+      setAgentError(project, ((e.cause as? CodyAgentException) ?: e).message ?: e.toString())
+    }
+
+    @JvmStatic
     fun setAgentError(project: Project, errorMsg: String?) {
       agentError.set(errorMsg)
       project.let { CodyStatusService.resetApplication(it) }
@@ -120,45 +131,55 @@ class CodyAgentService(project: Project) : Disposable {
     private fun withAgent(
         project: Project,
         restartIfNeeded: Boolean,
-        callback: Consumer<CodyAgent>
+        callback: Consumer<CodyAgent>,
+        onFailure: Consumer<Exception> = Consumer {}
     ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
-        setAgentError(project, null)
         ApplicationManager.getApplication().executeOnPooledThread {
-          val instance = getInstance(project)
-          val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
-          val agent =
-              if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
-              else instance.codyAgent
           try {
+            val instance = getInstance(project)
+            val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
+            val agent =
+                if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
+                else instance.codyAgent
+
             callback.accept(agent.get())
+            setAgentError(project, null)
           } catch (e: Exception) {
             logger.warn("Failed to execute call to agent", e)
-            val responseErrorException = e.cause as? ResponseErrorException
-            if (responseErrorException != null) {
-              setAgentError(
-                  project, responseErrorException.message ?: responseErrorException.toString())
-            }
-            if (restartIfNeeded) {
-              instance.restartAgent(project)
-              withAgent(project, restartIfNeeded = false, callback)
-            }
+            onFailure.accept(e)
+            if (restartIfNeeded) getInstance(project).restartAgent(project)
           }
         }
       }
     }
 
     @JvmStatic
-    fun withAgent(project: Project, callback: Consumer<CodyAgent>) =
-        withAgent(project, restartIfNeeded = false, callback = callback)
+    fun withAgent(
+        project: Project,
+        callback: Consumer<CodyAgent>,
+    ) = withAgent(project, restartIfNeeded = false, callback = callback)
 
     @JvmStatic
-    fun withAgentRestartIfNeeded(project: Project, callback: Consumer<CodyAgent>) =
-        withAgent(project, restartIfNeeded = true, callback = callback)
+    fun withAgentRestartIfNeeded(
+        project: Project,
+        callback: Consumer<CodyAgent>,
+    ) = withAgent(project, restartIfNeeded = true, callback = callback)
+
+    @JvmStatic
+    fun withAgentRestartIfNeeded(
+        project: Project,
+        callback: Consumer<CodyAgent>,
+        onFailure: Consumer<Exception>
+    ) = withAgent(project, restartIfNeeded = true, callback = callback, onFailure = onFailure)
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {
-      return getInstance(project).codyAgent.getNow(null)?.isConnected() == true
+      return try {
+        getInstance(project).codyAgent.getNow(null)?.isConnected() == true
+      } catch (e: Exception) {
+        false
+      }
     }
   }
 }

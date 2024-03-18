@@ -1,13 +1,11 @@
 package com.sourcegraph.cody.agent;
 
-import java.io.IOException;
-
 public class CodyAgentException extends Exception {
   public CodyAgentException(String message) {
     super(message);
   }
 
-  public CodyAgentException(String message, IOException e) {
+  public CodyAgentException(String message, Exception e) {
     super(message, e);
   }
 
