@@ -38,7 +38,7 @@ export async function getContextFilesForUnitTestCommand(file: URI): Promise<Cont
         contextFiles.push(...testWithSameName, ...currentDirContext)
 
         // If no test files found in the current directory, search the entire workspace
-        if (contextFiles.length < 3) {
+        if (!contextFiles.length) {
             // Will try to look for half the max number of files in the workspace for faster results
             const wsTestPattern = getSearchPatternForTestFiles(file, !searchCurrentDirectoryOnly)
             const codebaseFiles = await getWorkspaceFilesContext(wsTestPattern, excludePattern, max / 2)

@@ -42,13 +42,17 @@ const getContextFromIntent = async ({
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
         /**
+         * The context for the test intent is handled by the executeTestEditCommand function,
+         * we don't need to add additional context here to avoid duplication.
+         */
+        case 'test':
+            return []
+        /**
          * Very broad set of possible instructions.
          * Fetch context from the users' instructions and use context from current file.
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
-        case 'test':
-            return []
         case 'add': {
             return [
                 {
