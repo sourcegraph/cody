@@ -18,7 +18,7 @@ import type * as vscode from 'vscode'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
-import { FixupTaskID } from '../non-stop/FixupTask'
+import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/utils'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
