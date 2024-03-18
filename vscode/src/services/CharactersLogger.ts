@@ -50,7 +50,8 @@ export class CharactersLogger implements vscode.Disposable {
 
             const rangeLength = change.range.end.character - change.range.start.character
             if (existingTextAtRange.length < rangeLength) {
-                // The document already have updated changes with some characters deleted
+                // The document already has the updated changes applied with some characters deleted
+                // These will not be included in the diff below and thus we count them here
                 this.deleted += Math.max(0, rangeLength - existingTextAtRange.length)
             }
 
