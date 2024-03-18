@@ -140,6 +140,10 @@ export function getConfiguration(
                 model: 'codellama:7b-code',
             }
         ),
+        autocompleteExperimentalFireworksOptions: getHiddenSetting(
+            'autocomplete.experimental.fireworksOptions',
+            undefined
+        ),
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',
             false
