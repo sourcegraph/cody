@@ -16,11 +16,16 @@ body:
         Thanks for taking the time to fill out this bug report! Please include as much information as possible to help us fix the issue. 
 
         Tip: You can attach images or videos by dragging it into the text box.
-  - id: version
-    type: textarea
+  - type: input
     attributes:
-      label: Installation Information
-      description: Trigger the action "About", click on "Copy and Close" and paste the output here.
+      label: Cody Version
+      description: Please specify the exact Cody extension version you're reporting for.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: IDE Information
+      description: Trigger the action "About" (Shift Shift -> Actions), click on "Copy and Close" and paste the output here.
     validations:
       required: true
   - type: textarea
