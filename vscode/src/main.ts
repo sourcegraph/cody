@@ -49,6 +49,7 @@ import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
+import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -525,7 +526,8 @@ const register = async (
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
-        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode())
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        new CharactersLogger()
     )
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
