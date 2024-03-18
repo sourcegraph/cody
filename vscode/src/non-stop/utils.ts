@@ -1,6 +1,5 @@
 import type * as vscode from 'vscode'
 
-/*
 export enum CodyTaskState {
     /**
      * The task has been created, but not yet started.
@@ -54,19 +53,6 @@ export enum CodyTaskState {
      * some additional information before it is started (e.g. a file name from the LLM)
      */
     pending = 9,
-}
-*/
-
-export enum CodyTaskState {
-    idle = 0,
-    working = 1,
-    inserting = 2,
-    applying = 3,
-    formatting = 4,
-    applied = 5,
-    finished = 6,
-    error = 7,
-    pending = 8,
 }
 
 /**
