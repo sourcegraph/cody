@@ -23,7 +23,7 @@ export function getSearchPatternForTestFiles(
     const fileExtension = Utils.extname(file)
     const fileWithoutExt = posix.parse(file.path).name
 
-    const testPattern = `*{test,spec}*${fileExtension}`
+    const testPattern = `**{test,spec}**${fileExtension}`
     const nameMatchPattern = `*{test_${fileWithoutExt},${fileWithoutExt}_test,test.${fileWithoutExt},${fileWithoutExt}.test,${fileWithoutExt}Test,spec_${fileWithoutExt},${fileWithoutExt}_spec,spec.${fileWithoutExt},${fileWithoutExt}.spec,${fileWithoutExt}Spec}${fileExtension}`
 
     // pattern to search for test files with the same name as current file

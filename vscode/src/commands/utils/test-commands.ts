@@ -40,8 +40,11 @@ export function isValidTestFile(uri: URI): boolean {
  */
 export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
     // Assume not a test file for the current file if they are in different directories
+    // and the testFile's file path do not include test(s)
     if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
-        return false
+        if (!/test/i.test(Utils.dirname(testFile)?.path)) {
+            return false
+        }
     }
 
     const regex = /[^a-zA-Z0-9]/g
