@@ -169,6 +169,9 @@ export function getConfiguration(
         testingLocalEmbeddingsModel: isTesting
             ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
             : undefined,
+        testingLocalEmbeddingsDimension: isTesting
+            ? getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
+            : undefined,
         testingLocalEmbeddingsEndpoint: isTesting
             ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
             : undefined,

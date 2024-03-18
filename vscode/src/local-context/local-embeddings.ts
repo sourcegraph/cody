@@ -33,6 +33,7 @@ export type LocalEmbeddingsConfig = Pick<
     'serverEndpoint' | 'accessToken'
 > & {
     testingLocalEmbeddingsModel: string | undefined
+    testingLocalEmbeddingsDimension: number | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
@@ -63,6 +64,7 @@ export class LocalEmbeddingsController
 
     // These properties are constants, but may be overridden for testing.
     private readonly model: string
+    private readonly dimension: number
     private readonly endpoint: string
     private readonly indexLibraryPath: FileURI | undefined
 
@@ -111,6 +113,7 @@ export class LocalEmbeddingsController
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
         this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
+        this.dimension = config.testingLocalEmbeddingsDimension || 1536
         this.endpoint =
             config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
         this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
@@ -355,7 +358,7 @@ export class LocalEmbeddingsController
         logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
         await this.indexRequest({
             repoPath: repoPath.fsPath,
-            mode: { type: 'new', model: this.model, dimension: 1536 },
+            mode: { type: 'new', model: this.model, dimension: this.dimension },
         })
     }
 

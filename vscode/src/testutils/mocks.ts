@@ -844,6 +844,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         singleline: undefined,
     },
     testingLocalEmbeddingsEndpoint: undefined,
+    testingLocalEmbeddingsDimension: undefined,
     testingLocalEmbeddingsIndexLibraryPath: undefined,
     testingLocalEmbeddingsModel: undefined,
     experimentalChatContextRanker: false,
