@@ -139,7 +139,10 @@ class FireworksProvider extends Provider {
                 ? dotcomTokenToGatewayToken(config.accessToken)
                 : undefined
 
-        if (config.autocompleteExperimentalFireworksOptions?.token) {
+        if (
+            process.env.NODE_ENV === 'development' &&
+            config.autocompleteExperimentalFireworksOptions?.token
+        ) {
             this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
             this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
         }
