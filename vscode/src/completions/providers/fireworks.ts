@@ -77,6 +77,8 @@ const MODEL_MAP = {
     starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
+    'starcoder2-15b': 'fireworks/starcoder2-15b',
+    'starcoder2-7b': 'fireworks/starcoder2-7b',
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
@@ -86,10 +88,15 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
+    // `starcoder2-hybrid` uses the 15b model for multiline requests and the 7b model for single line
+    | 'starcoder2-hybrid'
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder':
+        case 'starcoder2-hybrid':
+        case 'starcoder2-15b':
+        case 'starcoder2-7b':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b': {
@@ -118,6 +125,7 @@ class FireworksProvider extends Provider {
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private isLocalInstance: boolean
     private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
 
     constructor(
@@ -130,12 +138,16 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.isLocalInstance = Boolean(
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+                this.authStatus.endpoint?.includes('localhost')
+        )
 
         const isNode = typeof process !== 'undefined'
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            this.authStatus.isDotCom &&
+            (this.authStatus.isDotCom || this.isLocalInstance) &&
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
@@ -218,15 +230,27 @@ class FireworksProvider extends Provider {
         })
 
         const { multiline } = this.options
-        const requestParams: CodeCompletionsParams = {
+        const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
             topK: 0,
             model:
-                this.model === 'starcoder-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : MODEL_MAP[this.model],
+                this.model === 'starcoder2-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder2-15b' : 'starcoder2-7b']
+                    : this.model === 'starcoder-hybrid'
+                      ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                      : MODEL_MAP[this.model],
+        } satisfies CodeCompletionsParams
+
+        if (requestParams.model.includes('starcoder2')) {
+            requestParams.stopSequences?.push(
+                '<fim_prefix>',
+                '<fim_suffix>',
+                '<fim_middle>',
+                '<|endoftext|>',
+                '<file_sep>'
+            )
         }
 
         tracer?.params(requestParams)
@@ -316,10 +340,7 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const isLocalInstance =
-            this.authStatus.endpoint?.includes('sourcegraph.test') ||
-            this.authStatus.endpoint?.includes('localhost')
-        const gatewayUrl = isLocalInstance
+        const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
 
@@ -397,7 +418,7 @@ class FireworksProvider extends Provider {
                         new NetworkError(
                             response,
                             (await response.text()) +
-                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                                (self.isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
                             traceId
                         )
                     )
@@ -511,8 +532,8 @@ export function createProviderConfig({
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid'
-              ? 'starcoder-hybrid'
+            : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
+              ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
                   ? (model as keyof typeof MODEL_MAP)
                   : null

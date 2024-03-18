@@ -3,16 +3,19 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
+    type AuthStatus,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
     type Configuration,
+    type ConfigurationWithAccessToken,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
-import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
+import { defaultAuthStatus } from '../../chat/protocol'
+import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
@@ -30,8 +33,9 @@ import {
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
-    createProviderConfig,
+    createProviderConfig as createAnthropicProviderConfig,
 } from '../providers/anthropic'
+import { createProviderConfig as createFireworksProviderConfig } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
@@ -44,6 +48,16 @@ import { sleep } from '../utils'
 export const T = '\t'
 
 const URI_FIXTURE = testFileUri('test.ts')
+
+const dummyAuthStatus: AuthStatus = defaultAuthStatus
+const getVSCodeConfigurationWithAccessToken = (
+    config: Partial<Configuration> = {}
+): ConfigurationWithAccessToken => ({
+    ...DEFAULT_VSCODE_SETTINGS,
+    ...config,
+    serverEndpoint: 'https://example.com',
+    accessToken: 'foobar',
+})
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
@@ -85,6 +99,7 @@ export function params(
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
         providerOptions,
+        configuration,
         ...restParams
     } = params
 
@@ -94,7 +109,7 @@ export function params(
         resolveCompletionResponseGenerator = resolve
     })
 
-    const client: Pick<CodeCompletionsClient, 'complete'> = {
+    const client: CodeCompletionsClient = {
         async *complete(completeParams) {
             onNetworkRequest?.(completeParams)
 
@@ -113,11 +128,25 @@ export function params(
 
             return responses[requestCounter++] || { completion: '', stopReason: 'unknown' }
         },
+        onConfigurationChange() {},
+        logger: undefined,
     }
 
+    // TODO: add support for `createProviderConfig` from `vscode/src/completions/providers/create-provider.ts`
+    const createProviderConfig =
+        configuration?.autocompleteAdvancedProvider === 'fireworks' &&
+        configuration.autocompleteAdvancedModel
+            ? createFireworksProviderConfig
+            : createAnthropicProviderConfig
+
+    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
+        timeouts: {},
+        authStatus: dummyAuthStatus,
+        model: configuration?.autocompleteAdvancedModel!,
+        config: configWithAccessToken,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
@@ -160,6 +189,7 @@ export function params(
             prefix: docContext.prefix,
         }),
         isDotComUser,
+        configuration,
         ...restParams,
 
         // Test-specific helpers
