@@ -832,7 +832,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
     autocompleteDisableInsideComments: false,
-    autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalSmartThrottle: false,

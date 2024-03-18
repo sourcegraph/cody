@@ -50,21 +50,13 @@ interface GetCurrentDocContextParams {
     /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
     context?: vscode.InlineCompletionContext
-    dynamicMultilineCompletions: boolean
 }
 
 /**
  * Get the current document context based on the cursor position in the current document.
  */
 export function getCurrentDocContext(params: GetCurrentDocContextParams): DocumentContext {
-    const {
-        document,
-        position,
-        maxPrefixLength,
-        maxSuffixLength,
-        context,
-        dynamicMultilineCompletions,
-    } = params
+    const { document, position, maxPrefixLength, maxSuffixLength, context } = params
     const offset = document.offsetAt(position)
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
@@ -130,7 +122,6 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     return getDerivedDocContext({
         position,
         languageId: document.languageId,
-        dynamicMultilineCompletions,
         documentDependentContext: {
             prefix,
             suffix,
@@ -143,7 +134,6 @@ interface GetDerivedDocContextParams {
     languageId: string
     position: vscode.Position
     documentDependentContext: DocumentDependentContext
-    dynamicMultilineCompletions: boolean
 }
 
 /**
@@ -151,13 +141,12 @@ interface GetDerivedDocContextParams {
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
 function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
-    const { position, documentDependentContext, languageId, dynamicMultilineCompletions } = params
+    const { position, documentDependentContext, languageId } = params
     const linesContext = getLinesContext(documentDependentContext)
 
     const { multilineTrigger, multilineTriggerPosition } = detectMultiline({
         docContext: { ...linesContext, ...documentDependentContext },
         languageId,
-        dynamicMultilineCompletions,
         position,
     })
 
@@ -192,14 +181,12 @@ interface InsertIntoDocContextParams {
     docContext: DocumentContext
     insertText: string
     languageId: string
-    dynamicMultilineCompletions: boolean
 }
 
 export function insertIntoDocContext(params: InsertIntoDocContextParams): DocumentContext {
     const {
         insertText,
         languageId,
-        dynamicMultilineCompletions,
         docContext,
         docContext: { position, prefix, suffix, currentLineSuffix },
     } = params
@@ -214,7 +201,6 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
     const updatedDocContext = getDerivedDocContext({
         languageId,
         position: updatedPosition,
-        dynamicMultilineCompletions,
         documentDependentContext: {
             prefix: prefix + insertText,
             // Remove the characters that are being replaced by the completion

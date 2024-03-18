@@ -8,6 +8,7 @@ data class ChatMessage(
   val text: String? = null,
   val contextFiles: List<ContextItem>? = null,
   val error: ChatError? = null,
+  val editorState: Any? = null,
 ) {
 
   enum class SpeakerEnum {

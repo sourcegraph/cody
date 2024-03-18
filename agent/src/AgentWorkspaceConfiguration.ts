@@ -85,9 +85,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.verboseDebug ?? false
             case 'cody.experimental.tracing':
                 return extensionConfig?.verboseDebug ?? false
-            case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                // False because we don't embed WASM with the agent yet.
-                return false
             case 'cody.useContext':
                 // Disable embeddings by default.
                 return 'keyword'

@@ -89,7 +89,7 @@ export interface ContextItemFile extends ContextItemCommon {
 /**
  * A symbol (which is a range within a file) that is included as context in a chat message.
  */
-export type ContextItemSymbol = ContextItemCommon & {
+export interface ContextItemSymbol extends ContextItemCommon {
     type: 'symbol'
 
     /** The name of the symbol, used for presentation only (not semantically meaningful). */

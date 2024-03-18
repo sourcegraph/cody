@@ -62,13 +62,14 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(chatPanel.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
+    await page.waitForTimeout(1000) // seems to make it less flaky on Windows
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore') })
+        chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()
-    await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
+    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain Code').hover()

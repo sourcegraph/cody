@@ -41,7 +41,14 @@ export const EnhancedContext: React.FunctionComponent<{
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
     const lineCount = contextFiles.reduce(
-        (total, file) => total + (file.range ? file.range?.end?.line - file.range?.start?.line + 1 : 0),
+        (total, file) =>
+            total +
+            (file.range
+                ? // Don't count a line with no characters included (character == 0).
+                  (file.range.end.character === 0 ? file.range.end.line - 1 : file.range.end.line) -
+                  file.range.start?.line +
+                  1
+                : 0),
         0
     )
     const fileCount = new Set(contextFiles.map(file => file.uri.toString())).size

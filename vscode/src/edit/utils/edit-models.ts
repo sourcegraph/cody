@@ -17,10 +17,11 @@ export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
 
 export function getOverridenModelForIntent(intent: EditIntent, currentModel: EditModel): EditModel {
     switch (intent) {
-        case 'doc':
         case 'fix':
             // Edit commands have only been tested with Claude 2. Default to that for now.
             return 'anthropic/claude-2.0'
+        case 'doc':
+            return 'anthropic/claude-instant-1.2'
         case 'test':
         case 'add':
         case 'edit':

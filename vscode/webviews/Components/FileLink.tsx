@@ -1,9 +1,7 @@
 import type React from 'react'
 
-import { displayLineRange, displayPath } from '@sourcegraph/cody-shared'
+import { displayLineRange, displayPath, webviewOpenURIForContextItem } from '@sourcegraph/cody-shared'
 import type { FileLinkProps } from '../chat/components/EnhancedContext'
-
-import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import styles from './FileLink.module.css'
 
@@ -37,16 +35,10 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     const pathToDisplay = `@${displayPath(uri)}`
     const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
     const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
+    const { href, target } = webviewOpenURIForContextItem({ uri, range })
     return (
-        <button
-            className={styles.linkButton}
-            type="button"
-            title={tooltip}
-            onClick={() => {
-                getVSCodeAPI().postMessage({ command: 'openFile', uri, range })
-            }}
-        >
+        <a className={styles.linkButton} title={tooltip} href={href} target={target}>
             {pathWithRange}
-        </button>
+        </a>
     )
 }

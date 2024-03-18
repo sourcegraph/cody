@@ -20,8 +20,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    // Dynamically decide wether to show a single line or multiple lines for completions.
-    CodyAutocompleteDynamicMultilineCompletions = 'cody-autocomplete-dynamic-multiline-completions',
     // Completion requests will be cancelled as soon as a new request comes in and the debounce time
     // will be reduced to try and counter the latency impact.
     CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',
@@ -46,6 +44,9 @@ export enum FeatureFlag {
 
     // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
     CodyCommandHints = 'cody-command-hints',
+
+    // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
+    CodyDocumentHints = 'cody-document-hints',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

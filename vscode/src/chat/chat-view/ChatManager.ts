@@ -133,6 +133,7 @@ export class ChatManager implements vscode.Disposable {
             args.text,
             args?.submitType,
             args?.contextFiles ?? [],
+            args?.editorState,
             args?.addEnhancedContext ?? true,
             args?.source
         )

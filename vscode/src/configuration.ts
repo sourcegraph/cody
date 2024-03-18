@@ -129,10 +129,6 @@ export function getConfiguration(
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
-        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
-            'autocomplete.experimental.dynamicMultilineCompletions',
-            false
-        ),
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false

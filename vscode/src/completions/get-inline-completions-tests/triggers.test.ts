@@ -143,7 +143,7 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function looksLegit() {\n  █', [], {
-                    languageId: 'elixir',
+                    languageId: 'julia',
                     onNetworkRequest(params) {
                         requests.push(params)
                     },
