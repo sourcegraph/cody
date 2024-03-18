@@ -3,7 +3,9 @@ import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/teleme
 import { logError } from '../../logger'
 import { isError } from '../../utils'
 
-const MOCK_URL = 'http://localhost:49300'
+const MOCK_URL = `http://localhost:4930${
+    process.env.VITEST_POOL_ID ?? process.env.TEST_PARALLEL_INDEX ?? 0
+}/`
 const ENDPOINT = '/.api/mockEventRecording'
 
 /**

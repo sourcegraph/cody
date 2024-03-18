@@ -810,7 +810,9 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
-        const url = 'http://localhost:49300/.api/testLogging'
+        const url = `http://localhost:4930${
+            process.env.VITEST_POOL_ID ?? process.env.TEST_PARALLEL_INDEX ?? 0
+        }/.api/testLogging`
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
