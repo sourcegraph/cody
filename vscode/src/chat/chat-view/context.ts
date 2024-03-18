@@ -243,7 +243,7 @@ async function searchRemote(
     remoteSearch: RemoteSearch | null,
     userText: string
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.remote', async () => {
+    return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
