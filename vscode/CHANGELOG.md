@@ -12,6 +12,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Document: Added a shortcut (`Alt+D`) to immediately execute the document command. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Edit: Added a ghost text hint ("Alt+K to Generate Code") that shows on empty files. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Chat: Add Claude 3 Haiku for Pro users. [pull/3423](https://github.com/sourcegraph/cody/pull/3423)
+- Autocomplete: Add StarCoder2 experimental support. [pull/61207](https://github.com/sourcegraph/cody/pull/61207)
 
 ### Fixed
 
