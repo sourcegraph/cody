@@ -28,14 +28,17 @@ describe('CharactersLogger', () => {
         vi.clearAllTimers()
     })
 
-    function createInsertion(text: string): vscode.TextDocumentChangeEvent {
+    function createInsertion(
+        text: string,
+        insertRange: vscode.Range = range(0, 0, 0, 0)
+    ): vscode.TextDocumentChangeEvent {
         return {
             document: testDocument,
             reason: undefined,
             contentChanges: [
                 {
                     text,
-                    range: range(0, 0, 0, 0),
+                    range: insertRange,
                     rangeLength: 0,
                     rangeOffset: 0,
                 },
@@ -94,6 +97,19 @@ describe('CharactersLogger', () => {
             metadata: {
                 insertedCharacters: 0,
                 deletedCharacters: 6,
+            },
+        })
+    })
+
+    it('calculates the number of actually changed characters', () => {
+        // replacing `foo` with `fob` should result in 1 addition and 1 deletion
+        onDidChangeTextDocument(createInsertion('fob', range(0, 0, 0, 3)))
+        vi.advanceTimersByTime(LOG_INTERVAL)
+
+        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+            metadata: {
+                insertedCharacters: 1,
+                deletedCharacters: 1,
             },
         })
     })

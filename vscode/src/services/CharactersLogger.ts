@@ -1,10 +1,12 @@
 import { isFileURI } from '@sourcegraph/cody-shared'
+import { diffChars } from 'diff'
 import * as vscode from 'vscode'
+
 import { getConfiguration } from '../configuration'
 import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
-export const LOG_INTERVAL = 5 * 60 * 1000 // 5 minutes
+export const LOG_INTERVAL = 15000 //5 * 60 * 1000 // 5 minutes
 
 export class CharactersLogger implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -44,8 +46,23 @@ export class CharactersLogger implements vscode.Disposable {
             return
         }
         for (const change of event.contentChanges) {
-            this.inserted += change.text.length
-            this.deleted += change.range.end.character - change.range.start.character
+            const existingTextAtRange = event.document.getText(change.range)
+
+            const rangeLength = change.range.end.character - change.range.start.character
+            if (existingTextAtRange.length < rangeLength) {
+                // The document already have updated changes with some characters deleted
+                this.deleted += Math.max(0, rangeLength - existingTextAtRange.length)
+            }
+
+            const diff = diffChars(existingTextAtRange, change.text)
+            for (const charChange of diff) {
+                if (charChange.added) {
+                    this.inserted += charChange.value.length
+                }
+                if (charChange.removed) {
+                    this.deleted += charChange.value.length
+                }
+            }
         }
     }
 
