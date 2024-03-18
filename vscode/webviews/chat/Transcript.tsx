@@ -147,7 +147,7 @@ export const Transcript: React.FunctionComponent<
 
     const lastHumanMessageIndex = findLastIndex(
         transcript,
-        message => message.speaker === 'human' && message.displayText !== undefined
+        message => message.speaker === 'human' && message.text !== undefined
     )
     let earlierMessages: ChatMessage[] = []
     let lastInteractionMessages = transcript
@@ -159,7 +159,7 @@ export const Transcript: React.FunctionComponent<
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
-            if (!message?.displayText && !message.error) {
+            if (!message.text && !message.error) {
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
@@ -174,11 +174,12 @@ export const Transcript: React.FunctionComponent<
                         index={keyIndex}
                         key={keyIndex}
                         message={message}
-                        inProgress={
+                        inProgress={Boolean(
                             offsetIndex &&
-                            messageInProgress?.speaker === 'assistant' &&
-                            !messageInProgress?.displayText
-                        }
+                                messageInProgress &&
+                                messageInProgress.speaker === 'assistant' &&
+                                !messageInProgress.text
+                        )}
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
@@ -205,7 +206,7 @@ export const Transcript: React.FunctionComponent<
         }
 
     const welcomeTranscriptMessage = useMemo(
-        (): ChatMessage => ({ speaker: 'assistant', displayText: welcomeText({ welcomeMessage }) }),
+        (): ChatMessage => ({ speaker: 'assistant', text: welcomeText({ welcomeMessage }) }),
         [welcomeMessage]
     )
 

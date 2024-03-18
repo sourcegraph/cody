@@ -3,17 +3,19 @@ import path from 'path'
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
-import { SupportedLanguage } from './grammars'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import type { Tree } from 'web-tree-sitter'
+import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
 
 /*
- * Loading wasm grammar and creation parser instance everytime we trigger
+ * Loading wasm grammar and creation parser instance every time we trigger
  * pre- and post-process might be a performance problem, so we create instance
  * and load language grammar only once, first time we need parser for a specific
  * language, next time we read it from this cache.
  */
-const PARSERS_LOCAL_CACHE: Partial<Record<SupportedLanguage, Parser>> = {}
+const PARSERS_LOCAL_CACHE: Partial<Record<SupportedLanguage, WrappedParser>> = {}
 
 interface ParserSettings {
     language: SupportedLanguage
@@ -25,7 +27,7 @@ interface ParserSettings {
     grammarDirectory?: string
 }
 
-export function getParser(language: SupportedLanguage): Parser | undefined {
+export function getParser(language: SupportedLanguage): WrappedParser | undefined {
     return PARSERS_LOCAL_CACHE[language]
 }
 
@@ -44,7 +46,14 @@ async function isRegularFile(uri: vscode.Uri): Promise<boolean> {
     }
 }
 
-export async function createParser(settings: ParserSettings): Promise<Parser | undefined> {
+export type WrappedParser = Pick<Parser, 'parse' | 'getLanguage'> & {
+    /**
+     * Wraps `parser.parse()` call into an OpenTelemetry span.
+     */
+    observableParse: Parser['parse']
+}
+
+export async function createParser(settings: ParserSettings): Promise<WrappedParser | undefined> {
     const { language, grammarDirectory = __dirname } = settings
 
     const cachedParser = PARSERS_LOCAL_CACHE[language]
@@ -53,7 +62,8 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
         return cachedParser
     }
 
-    const wasmPath = path.resolve(grammarDirectory, SUPPORTED_LANGUAGES[language])
+    const wasmPath = path.resolve(grammarDirectory, DOCUMENT_LANGUAGE_TO_GRAMMAR[language])
+
     if (!(await isRegularFile(vscode.Uri.file(wasmPath)))) {
         return undefined
     }
@@ -64,35 +74,36 @@ export async function createParser(settings: ParserSettings): Promise<Parser | u
     const languageGrammar = await ParserImpl.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
-    PARSERS_LOCAL_CACHE[language] = parser
 
+    // Disable the timeout in unit tests to avoid timeout errors.
+    if (!process.env.VITEST) {
+        // Stop parsing after 70ms to avoid infinite loops.
+        // If that happens, tree-sitter throws an error so we can catch and address it.
+        parser.setTimeoutMicros(70_000)
+    }
+
+    const wrappedParser: WrappedParser = {
+        getLanguage: () => parser.getLanguage(),
+        parse: (...args) => parser.parse(...args),
+        observableParse: (...args) => wrapInActiveSpan('parser.parse', () => parser.parse(...args)),
+    }
+
+    PARSERS_LOCAL_CACHE[language] = wrappedParser
     initQueries(languageGrammar, language, parser)
 
-    return parser
+    return wrappedParser
 }
 
-// TODO: Add grammar type autogenerate script
-// see https://github.com/asgerf/dts-tree-sitter
-type GrammarPath = string
+export function parseString(languageId: string, source: string): Tree | null {
+    if (!isSupportedLanguage(languageId)) {
+        return null
+    }
 
-/**
- * Map language to wasm grammar path modules, usually we would have
- * used node bindings for grammar packages, but since VSCode editor
- * runtime doesn't support this we have to work with wasm modules.
- *
- * Note: make sure that dist folder contains these modules when you
- * run VSCode extension.
- */
-const SUPPORTED_LANGUAGES: Record<SupportedLanguage, GrammarPath> = {
-    [SupportedLanguage.JavaScript]: 'tree-sitter-javascript.wasm',
-    [SupportedLanguage.JSX]: 'tree-sitter-javascript.wasm',
-    [SupportedLanguage.TypeScript]: 'tree-sitter-typescript.wasm',
-    [SupportedLanguage.TSX]: 'tree-sitter-tsx.wasm',
-    [SupportedLanguage.Java]: 'tree-sitter-java.wasm',
-    [SupportedLanguage.Go]: 'tree-sitter-go.wasm',
-    [SupportedLanguage.Python]: 'tree-sitter-python.wasm',
-    [SupportedLanguage.Dart]: 'tree-sitter-dart.wasm',
-    [SupportedLanguage.Cpp]: 'tree-sitter-cpp.wasm',
-    [SupportedLanguage.CSharp]: 'tree-sitter-c_sharp.wasm',
-    [SupportedLanguage.Php]: 'tree-sitter-php.wasm',
+    const parser = getParser(languageId)
+
+    if (!parser) {
+        return null
+    }
+
+    return parser.parse(source)
 }

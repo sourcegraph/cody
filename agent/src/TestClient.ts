@@ -77,7 +77,8 @@ export class TestClient extends MessageHandler {
             areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
             logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
             onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
-        }
+        },
+        private bin = 'node'
     ) {
         super()
         this.serverEndpoint = params.serverEndpoint ?? 'https://sourcegraph.com'
@@ -637,7 +638,10 @@ ${patch}`
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-        return spawn('node', ['--enable-source-maps', agentScript, 'jsonrpc'], {
+        const bin = this.bin
+        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
+
+        return spawn(bin, args, {
             stdio: 'pipe',
             cwd: agentDir,
             env: {

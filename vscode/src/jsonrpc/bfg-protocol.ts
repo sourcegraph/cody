@@ -2,7 +2,7 @@
  * This file declares the protocol for communicating between Cody and BFG (Blazingly Fast Graph), a Rust implementation
  * of the "Graph Context" feature flag.
  */
-import type { Position, Range } from './agent-protocol'
+import type { Position } from './agent-protocol'
 
 interface BFGFileContextSnippet {
     fileName: string
@@ -16,8 +16,12 @@ interface BFGSymbolContextSnippet extends BFGFileContextSnippet {
 export type Requests = {
     'bfg/initialize': [{ clientName: string }, { serverVersion: string }]
     'bfg/contextAtPosition': [
-        { uri: string; content: string; position: Position; maxChars: number; contextRange?: Range },
+        { uri: string; content: string; position: Position; maxSnippets: number; maxDepth: number },
         { symbols?: BFGSymbolContextSnippet[]; files?: BFGFileContextSnippet[] },
+    ]
+    'bfg/contextForIdentifiers': [
+        { uri: string; identifiers: string[]; maxSnippets: number; maxDepth: number },
+        { symbols?: BFGSymbolContextSnippet[] },
     ]
     // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]
@@ -28,6 +32,7 @@ export type Requests = {
 
     'embeddings/hello': [null, string]
 }
+
 export type Notifications = {
     'bfg/placeholderNotification': [null]
 }

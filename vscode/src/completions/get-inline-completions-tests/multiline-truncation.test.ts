@@ -18,7 +18,7 @@ for (const isTreeSitterEnabled of cases) {
         describe('python', () => {
             beforeAll(async () => {
                 if (isTreeSitterEnabled) {
-                    await initTreeSitterParser(SupportedLanguage.Python)
+                    await initTreeSitterParser(SupportedLanguage.python)
                 }
             })
 
@@ -312,27 +312,27 @@ for (const isTreeSitterEnabled of cases) {
                 expect(items[1]).toBe("console.log('foo')")
             })
 
-            it('cuts-off the whole completions when suffix is very similar to suffix line', async () => {
+            it('does not cut off the whole completion when the suffix is very similar to the suffix line', async () => {
                 expect(
                     (
                         await getInlineCompletionsInsertText(
                             params(
                                 dedent`
-                    function() {
-                        █
-                        console.log('bar')
-                    }
-                `,
+                                    function() {
+                                        █
+                                        console.log('bar')
+                                    }
+                                `,
                                 [
                                     completion`
-                        ├console.log('foo')
-                        console.log('bar')
-                    }┤`,
+                                        ├console.log('foo')
+                                        console.log('bar')
+                                    }┤`,
                                 ]
                             )
                         )
-                    ).length
-                ).toBe(0)
+                    )[0]
+                ).toBe("console.log('foo')")
             })
 
             it('skips over empty lines', async () => {
@@ -756,7 +756,6 @@ for (const isTreeSitterEnabled of cases) {
                             }
                             console.log(5)┤`
                         },
-                        configuration: { autocompleteExperimentalDynamicMultilineCompletions: true },
                     })
 
                     const [insertText] = await getInlineCompletionsInsertText(requestParams)

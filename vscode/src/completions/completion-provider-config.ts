@@ -11,7 +11,6 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
@@ -50,13 +49,6 @@ class CompletionProviderConfig {
         return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
     }
 
-    public get dynamicMultilineCompletions(): boolean {
-        return (
-            this.config.autocompleteExperimentalDynamicMultilineCompletions ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions)
-        )
-    }
-
     public get hotStreak(): boolean {
         return (
             this.config.autocompleteExperimentalHotStreak ||
@@ -89,6 +81,10 @@ class CompletionProviderConfig {
 
     public get smartThrottle(): boolean {
         return (
+            // smart throttle is required for the bfg-mixed context strategy
+            // because it allows us to update the completion based on the identifiers
+            // user typed in the current line.
+            this.contextStrategy === 'bfg-mixed' ||
             this.config.autocompleteExperimentalSmartThrottle ||
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
         )

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.8.1",
+  "version": "1.8.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -545,6 +545,11 @@
         "when": "cody.activated && !editorReadonly"
       },
       {
+        "command": "cody.command.document-code",
+        "key": "alt+d",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.menu.commands",
         "key": "alt+c",
         "mac": "alt+c",
@@ -893,7 +898,7 @@
           "order": 12,
           "title": "Cody Command Hints",
           "type": "boolean",
-          "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+          "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
@@ -972,7 +977,7 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
+          "enum": [null, "starcoder-16b", "starcoder-7b", "starcoder2-hybrid", "llama-code-13b"],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1000,16 +1005,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
-        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
-        },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
           "default": false,
@@ -1025,6 +1020,42 @@
           "default": null,
           "enum": [null, "bfg", "bfg-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.autocomplete.experimental.fireworksOptions": {
+          "type": "object",
+          "markdownDescription": "Experimental options for the direct-Fireworks autocomplete provider.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Fireworks API.",
+              "default": "https://api.fireworks.ai/inference/v1/completions"
+            },
+            "token": {
+              "type": "string",
+              "description": "The access token of the Fireworks API."
+            },
+            "model": {
+              "type": "string",
+              "description": "The model ID can be acquired from `firectl list deployments`",
+              "default": "accounts/sourcegraph/models/starcoder2-7b"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for querying the the model.",
+              "properties": {
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number",
+                "stop": {
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         },
         "cody.autocomplete.experimental.ollamaOptions": {
           "type": "object",
@@ -1124,6 +1155,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@floating-ui/react": "^0.26.9",
+    "@lexical/code": "^0.13.1",
+    "@lexical/html": "^0.13.1",
+    "@lexical/react": "^0.13.1",
     "@mdi/js": "^7.2.96",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
@@ -1152,16 +1187,18 @@
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
+    "lexical": "^0.13.1",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
+    "tree-sitter-wasms": "^0.1.7",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
-    "web-tree-sitter": "^0.20.8",
+    "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {

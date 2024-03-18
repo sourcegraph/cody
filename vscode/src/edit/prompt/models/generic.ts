@@ -105,7 +105,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             The user has the following code in their selection:
             <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
-            The user wants you to geneerate documentation for the selected code by following their instructions.
+            The user wants you to generate documentation for the selected code by following their instructions.
             Provide your generated documentation using the following instructions:
             <${PROMPT_TOPICS.INSTRUCTIONS}>
             {instruction}

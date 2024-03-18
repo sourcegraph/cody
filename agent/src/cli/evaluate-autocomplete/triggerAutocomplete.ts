@@ -1,12 +1,13 @@
 import { calcPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import type { Tree, default as Parser } from 'web-tree-sitter'
+import type { Tree } from 'web-tree-sitter'
 
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import type { AutocompleteResult } from '../../protocol-alias'
 
+import type { WrappedParser } from '../../../../vscode/src/tree-sitter/parser'
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
 import type { EvaluationDocument } from './EvaluationDocument'
 import type { TestParameters } from './TestParameters'
@@ -15,7 +16,7 @@ import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 
 export interface AutocompleteParameters {
-    parser?: Parser
+    parser?: WrappedParser
     originalTree?: Tree
     originalTreeIsErrorFree?: boolean
     client: MessageHandler
