@@ -4,9 +4,8 @@ import type { ProviderOptions } from './provider'
 
 export const MAX_RESPONSE_TOKENS = 256
 
-type LineNumberDependentCompletionParams = Pick<
-    CodeCompletionsParams,
-    'maxTokensToSample' | 'stopSequences' | 'timeoutMs'
+type LineNumberDependentCompletionParams = Required<
+    Pick<CodeCompletionsParams, 'maxTokensToSample' | 'stopSequences' | 'timeoutMs'>
 >
 
 interface LineNumberDependentCompletionParamsByType {
@@ -55,11 +54,11 @@ export function getCompletionParams(
 
     const useExtendedGeneration = isMultiline || hotStreak
 
-    const partialRequestParams: Omit<CodeCompletionsParams, 'messages'> = {
+    const partialRequestParams = {
         ...(useExtendedGeneration ? multilineParams : singlelineParams),
         temperature: 0.2,
         topK: 0,
-    }
+    } satisfies Omit<CodeCompletionsParams, 'messages'>
 
     // Apply custom multiline timeouts if they are defined.
     if (timeouts?.multiline && useExtendedGeneration) {

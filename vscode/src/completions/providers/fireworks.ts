@@ -218,7 +218,7 @@ class FireworksProvider extends Provider {
         })
 
         const { multiline } = this.options
-        const requestParams: CodeCompletionsParams = {
+        const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
@@ -229,6 +229,16 @@ class FireworksProvider extends Provider {
                     : this.model === 'starcoder-hybrid'
                       ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                       : MODEL_MAP[this.model],
+        } satisfies CodeCompletionsParams
+
+        if (requestParams.model.includes('starcoder2')) {
+            requestParams.stopSequences?.push(
+                '<fim_prefix>',
+                '<fim_suffix>',
+                '<fim_middle>',
+                '<|endoftext|>',
+                '<file_sep>'
+            )
         }
 
         tracer?.params(requestParams)
