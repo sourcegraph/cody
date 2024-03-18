@@ -6,7 +6,7 @@ import { getConfiguration } from '../configuration'
 import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
-export const LOG_INTERVAL = 15000 //5 * 60 * 1000 // 5 minutes
+export const LOG_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 export class CharactersLogger implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
