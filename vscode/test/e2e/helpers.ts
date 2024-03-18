@@ -258,7 +258,7 @@ async function buildWorkSpaceSettings(
     extraSettings: WorkspaceSettings
 ): Promise<void> {
     const settings = {
-        'cody.serverEndpoint': 'http://localhost:49300',
+        'cody.serverEndpoint': `http://localhost:4930${process.env.VITEST_POOL_ID || 0}`,
         'cody.commandCodeLenses': true,
         'cody.editorTitleCommandIcon': true,
         ...extraSettings,

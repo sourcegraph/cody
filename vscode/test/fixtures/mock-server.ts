@@ -18,9 +18,8 @@ interface MockRequest {
     }
 }
 
-const SERVER_PORT = 49300
-
-export const SERVER_URL = 'http://localhost:49300'
+const SERVER_PORT = Number(`4930${process.env.VITEST_POOL_ID || 0}`)
+export const SERVER_URL = `http://localhost:${SERVER_PORT}`
 export const VALID_TOKEN = 'sgp_1234567890123456789012345678901234567890'
 
 const responses = {
