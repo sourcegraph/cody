@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs/promises'
 import process from 'process'
 
 import { build } from 'esbuild'
@@ -23,4 +24,14 @@ import { build } from 'esbuild'
         },
     }
     const res = await build(esbuildOptions)
+
+    // Copy all .wasm files to the dist/ directory
+    const distDir = path.join(process.cwd(), '..', 'vscode', 'dist')
+    const files = await fs.readdir(distDir)
+    const wasmFiles = files.filter(file => file.endsWith('.wasm'))
+    for (const file of wasmFiles) {
+        const src = path.join(distDir, file)
+        const dest = path.join(process.cwd(), 'dist', file)
+        await fs.copyFile(src, dest)
+    }
 })()

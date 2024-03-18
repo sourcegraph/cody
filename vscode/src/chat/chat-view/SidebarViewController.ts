@@ -78,12 +78,17 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                                 async (token, endpoint) => {
                                     closeAuthProgressIndicator()
                                     const authStatus = await this.authProvider.auth(endpoint, token)
-                                    telemetryService.log('CodyVSCodeExtension:auth:fromTokenReceiver', {
-                                        type: 'callback',
-                                        from: 'web',
-                                        success: Boolean(authStatus?.isLoggedIn),
-                                        hasV2Event: true,
-                                    })
+                                    telemetryService.log(
+                                        'CodyVSCodeExtension:auth:fromTokenReceiver',
+                                        {
+                                            type: 'callback',
+                                            from: 'web',
+                                            success: Boolean(authStatus?.isLoggedIn),
+                                        },
+                                        {
+                                            hasV2Event: true,
+                                        }
+                                    )
                                     telemetryRecorder.recordEvent(
                                         'cody.auth.fromTokenReceiver.web',
                                         'succeeded',

@@ -13,23 +13,17 @@ export type {
     SerializedChatTranscript,
 } from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
-export {
-    getAtMentionQuery,
-    getAtMentionedInputText,
-    getContextFileDisplayText,
-    verifyContextFilesFromInput,
-    isAtMention,
-    isAtRange,
-} from './chat/input'
 export type {
     ChatError,
     ChatEventSource,
     ChatHistory,
-    ChatInputHistory,
     ChatMessage,
     UserLocalHistory,
 } from './chat/transcript/messages'
-export { getDisplayText, CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from './chat/transcript/display-text'
+export {
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
+    webviewOpenURIForContextItem,
+} from './chat/transcript/display-text'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
@@ -61,7 +55,7 @@ export {
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
 } from './common/languages'
-export { renderMarkdown } from './common/markdown'
+export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
@@ -205,3 +199,8 @@ export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/clie
 export * from './auth/types'
 export * from './auth/tokens'
 export * from './chat/sse-iterator'
+export {
+    parseMentionQuery,
+    type MentionQuery,
+    scanForMentionTriggerInUserTextInput,
+} from './mentions/query'

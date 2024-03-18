@@ -107,14 +107,6 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
     await page.keyboard.type('\n')
     await expect(repoPicker).not.toBeVisible()
     await expect(chooseReposButton).toBeVisible()
-    // We need a delay here because the enhanced context settings widget was
-    // dismissing after a rerender.
-    await new Promise(resolve => setTimeout(resolve, 250))
-
-    // TODO: When https://github.com/sourcegraph/cody/issues/2938 is fixed,
-    // expect the choose repos button to be visible.
-    await expect(chooseReposButton).not.toBeVisible()
-    await chatFrame.getByTitle('Configure Enhanced Context').click()
 
     // The chosen repo should appear in the picker.
     await expect(chatFrame.getByTitle('repo/foo').getByText(/^foo$/)).toBeVisible()

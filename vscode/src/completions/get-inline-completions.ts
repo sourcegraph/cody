@@ -237,7 +237,6 @@ async function doGetInlineCompletions(
             docContext: lastAcceptedCompletionItem.requestParams.docContext,
             insertText: lastAcceptedCompletionItem.analyticsItem.insertText,
             languageId: lastAcceptedCompletionItem.requestParams.document.languageId,
-            dynamicMultilineCompletions: false,
         })
         if (
             docContext.prefix === docContextOfLastAcceptedAndInsertedCompletionItem.prefix &&
@@ -262,6 +261,7 @@ async function doGetInlineCompletions(
                   handleDidPartiallyAcceptCompletionItem,
               })
             : null
+
     if (resultToReuse) {
         return resultToReuse
     }
@@ -309,9 +309,11 @@ async function doGetInlineCompletions(
 
     if (smartThrottleService) {
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+
         if (throttledRequest === null) {
             return null
         }
+
         requestParams = throttledRequest
     }
 
@@ -346,6 +348,7 @@ async function doGetInlineCompletions(
                 docContext,
                 abortSignal,
                 maxChars: providerConfig.contextSizeHints.totalChars,
+                lastCandidate,
             })
         ),
         remainingInterval > 0
@@ -408,7 +411,6 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         docContext,
         document,
         position,
-        dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
         // For now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout: 1500,

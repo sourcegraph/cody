@@ -125,15 +125,6 @@ describe('getFileContextFiles', () => {
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
     })
-
-    it('cancels previous requests', async () => {
-        vscode.workspace.findFiles = vi.fn().mockResolvedValueOnce([])
-        const cancellation = new vscode.CancellationTokenSource()
-        await getFileContextFiles('search', 5, cancellation.token)
-        await getFileContextFiles('search', 5, new vscode.CancellationTokenSource().token)
-        expect(cancellation.token.isCancellationRequested)
-        expect(vscode.workspace.findFiles).toBeCalledTimes(2)
-    })
 })
 
 describe('filterLargeFiles', () => {

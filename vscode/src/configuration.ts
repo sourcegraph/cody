@@ -129,10 +129,6 @@ export function getConfiguration(
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
-        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
-            'autocomplete.experimental.dynamicMultilineCompletions',
-            false
-        ),
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
@@ -143,6 +139,10 @@ export function getConfiguration(
                 url: OLLAMA_DEFAULT_URL,
                 model: 'codellama:7b-code',
             }
+        ),
+        autocompleteExperimentalFireworksOptions: getHiddenSetting(
+            'autocomplete.experimental.fireworksOptions',
+            undefined
         ),
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',

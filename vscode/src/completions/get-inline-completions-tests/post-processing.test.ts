@@ -227,12 +227,14 @@ for (const isTreeSitterEnabled of cases) {
 
                 expect(completion).toMatchInlineSnapshot(`
                   {
-                    "insertText": "array) {",
+                    "insertText": "array) {
+                  return array.sort()
+                  }",
                     "nodeTypes": {
                       "atCursor": "(",
                       "grandparent": "function_signature",
                       "greatGrandparent": "program",
-                      "lastAncestorOnTheSameLine": "function_signature",
+                      "lastAncestorOnTheSameLine": "program",
                       "parent": "formal_parameters",
                     },
                     "nodeTypesWithCompletion": {
