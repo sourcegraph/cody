@@ -1016,6 +1016,42 @@
           "enum": [null, "bfg", "bfg-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
+        "cody.autocomplete.experimental.fireworksOptions": {
+          "type": "object",
+          "markdownDescription": "Experimental options for the direct-Fireworks autocomplete provider.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Fireworks API.",
+              "default": "https://api.fireworks.ai/inference/v1/completions"
+            },
+            "token": {
+              "type": "string",
+              "description": "The access token of the Fireworks API."
+            },
+            "model": {
+              "type": "string",
+              "description": "The model ID can be acquired from `firectl list deployments`",
+              "default": "accounts/sourcegraph/models/starcoder2-7b"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for querying the the model.",
+              "properties": {
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number",
+                "stop": {
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "cody.autocomplete.experimental.ollamaOptions": {
           "type": "object",
           "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
