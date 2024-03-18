@@ -16,7 +16,7 @@ export function populateCodeContextTemplate(
             : 'Codebase context from file {filePath}{inRepo}:\n```{languageID}\n{text}```'
 
     return template
-        .replace('{inRepo}', `in repository ${repoName}`)
+        .replace('{inRepo}', ` in repository ${repoName}`)
         .replace('{filePath}', displayPath(fileUri))
         .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
         .replace('{text}', code)
