@@ -5,7 +5,7 @@ import type * as Parser from 'web-tree-sitter'
 
 import { range } from '../testutils/textDocument'
 import { asPoint } from '../tree-sitter/parse-tree-cache'
-import { resetParsersCache } from '../tree-sitter/parser'
+import { type WrappedParser, resetParsersCache } from '../tree-sitter/parser'
 
 import { getContextRange } from './doc-context-getters'
 import {
@@ -194,7 +194,7 @@ describe('getCurrentDocContext', () => {
     })
 
     describe('multiline triggers', () => {
-        let parser: Parser
+        let parser: WrappedParser
 
         interface PrepareTestParams {
             code: string
