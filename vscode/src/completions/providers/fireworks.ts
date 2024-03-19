@@ -244,13 +244,14 @@ class FireworksProvider extends Provider {
         } satisfies CodeCompletionsParams
 
         if (requestParams.model.includes('starcoder2')) {
-            requestParams.stopSequences?.push(
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
                 '<fim_prefix>',
                 '<fim_suffix>',
                 '<fim_middle>',
                 '<|endoftext|>',
-                '<file_sep>'
-            )
+                '<file_sep>',
+            ]
         }
 
         tracer?.params(requestParams)
