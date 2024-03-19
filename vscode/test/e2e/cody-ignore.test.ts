@@ -61,14 +61,14 @@ test.extend<ExpectedEvents>({
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.fill('@ignoredByCody')
+    await chatInput.pressSequentially('@ignoredByCody', { delay: 10 })
     await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
-    await chatInput.fill('@ignore')
+    await chatInput.pressSequentially('@ignore', { delay: 10 })
+    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
     await expect(
         chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()
-    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain Code').hover()
