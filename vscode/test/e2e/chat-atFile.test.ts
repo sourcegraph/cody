@@ -97,13 +97,16 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
     await chatInput.focus()
-    await chatInput.pressSequentially('and @vgo')
-    await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('visualize.go') })
-    ).toBeVisible()
+    await chatInput.pressSequentially('and ')
+    await chatInput.pressSequentially('@vgo', { delay: 10 })
+    await expect(chatPanelFrame.getByRole('option', { name: 'visualize.go' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/var\.go/)
     await chatInput.press('ArrowDown') // second item (visualize.go)
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('ArrowDown') // wraps back to first item (var.go)
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/var\.go/)
     await chatInput.press('ArrowDown') // second item again
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
         withPlatformSlashes(
@@ -129,7 +132,7 @@ test.extend<ExpectedEvents>({
     // https://github.com/sourcegraph/cody/issues/2200
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.pressSequentially('@Main.java')
+    await chatInput.pressSequentially('@Main.java', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java ')
@@ -137,7 +140,7 @@ test.extend<ExpectedEvents>({
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
-    await chatInput.pressSequentially('and @Main.ja', { delay: 50 })
+    await chatInput.pressSequentially('and @Main.ja', { delay: 10 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java and @Main.java ')
 
@@ -151,7 +154,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowLeft') // 'Explain the |file'
     await chatInput.press('ArrowLeft') // 'Explain the| file'
     await chatInput.press('Space') // 'Explain the | file'
-    await chatInput.pressSequentially('@Main')
+    await chatInput.pressSequentially('@Main', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain the @Main.java file')
