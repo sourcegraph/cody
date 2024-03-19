@@ -71,5 +71,6 @@ export const pythonQueries = {
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: '(call (identifier) @identifier)',
+        enclosingFunction: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

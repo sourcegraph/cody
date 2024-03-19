@@ -51,5 +51,6 @@ export const goQueries = {
             (type_spec (type_identifier) @identifier)
             (selector_expression (field_identifier)) @identifier
         `,
+        enclosingFunction: '',
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

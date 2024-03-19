@@ -113,6 +113,7 @@ export interface QueryWrappers {
               },
           ]
     getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
+    getEnclosingFunction: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
 /**
