@@ -577,10 +577,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
-        // Cancel previously in-flight query.
-        const cancellation = new vscode.CancellationTokenSource()
+        // Cancel & dispose previously in-flight query.
         this.contextFilesQueryCancellation?.cancel()
-        this.contextFilesQueryCancellation = cancellation
+        this.contextFilesQueryCancellation?.dispose()
 
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
@@ -598,25 +597,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
         }
 
-        try {
-            const items = await getChatContextItemsForMention(
-                query,
-                cancellation.token,
-                scopedTelemetryRecorder
-            )
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            void this.postMessage({
-                type: 'userContextFiles',
-                userContextFiles: items,
+        const cancellation = new vscode.CancellationTokenSource()
+        this.contextFilesQueryCancellation = cancellation
+        getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
+            .then(items => {
+                this.postMessage({
+                    type: 'userContextFiles',
+                    userContextFiles: items,
+                })
             })
-        } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        }
+            .catch(error => {
+                cancellation.cancel()
+                this.postError(new Error(`Error retrieving context files: ${error}`))
+            })
+            .finally(() => cancellation.dispose())
     }
 
     private async handleSymfIndex(): Promise<void> {
