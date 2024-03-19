@@ -77,7 +77,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows]
+        include:
+          # only shard ubuntu
+          - runner: windows
+          - runner: ubuntu
+            shard: 1/5
+          - runner: ubuntu
+            shard: 2/5
+          - runner: ubuntu
+            shard: 3/5
+          - runner: ubuntu
+            shard: 4/5
+          - runner: ubuntu
+            shard: 5/5
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     permissions:
@@ -107,7 +119,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: xvfb-run -a pnpm -C vscode run test:e2e
+      - run: xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner != 'ubuntu'
