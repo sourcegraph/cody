@@ -578,7 +578,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         // Cancel & dispose previously in-flight query.
-        this.contextFilesQueryCancellation?.cancel()
         this.contextFilesQueryCancellation?.dispose()
 
         const source = 'chat'
