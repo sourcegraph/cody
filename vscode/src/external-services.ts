@@ -5,9 +5,7 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
-    type IntentDetector,
     SourcegraphGuardrailsClient,
-    SourcegraphIntentDetectorClient,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -22,7 +20,6 @@ import { logDebug, logger } from './log'
 import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
-    intentDetector: IntentDetector
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
@@ -97,7 +94,6 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
         chatClient,
         codeCompletionsClient,
         guardrails,

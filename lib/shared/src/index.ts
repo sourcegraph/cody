@@ -107,8 +107,6 @@ export {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
-export type { IntentClassificationOption, IntentDetector } from './intent-detector'
-export { SourcegraphIntentDetectorClient } from './intent-detector/client'
 export type {
     ContextResult,
     FilenameContextFetcher,
