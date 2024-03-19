@@ -67,54 +67,58 @@ export function createFastPathClient(
             headers.set('X-Sourcegraph-Feature', 'chat_completions')
             addTraceparent(headers)
 
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(request),
-                headers,
-                signal: abortSignal,
-            })
-
-            logResponseHeadersToSpan(span, response)
-
-            const traceId = getActiveTraceAndSpanId()?.traceId
-
-            // When rate-limiting occurs, the response is an error message The response here is almost
-            // identical to the SG instance response but does not contain information on whether a user
-            // is eligible to upgrade to the pro plan. We get this from the authState instead.
-            if (response.status === 429) {
-                const upgradeIsAvailable = authStatus.userCanUpgrade
-
-                throw recordErrorToSpan(
-                    span,
-                    await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-                )
-            }
-
-            if (!response.ok) {
-                throw recordErrorToSpan(
-                    span,
-                    new NetworkError(
-                        response,
-                        (await response.text()) +
-                            (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
-                        traceId
-                    )
-                )
-            }
-
-            if (response.body === null) {
-                throw recordErrorToSpan(span, new TracedError('No response body', traceId))
-            }
-
-            const isStreamingResponse = response.headers
-                .get('content-type')
-                ?.startsWith('text/event-stream')
-            if (!isStreamingResponse || !isNodeResponse(response)) {
-                throw recordErrorToSpan(span, new TracedError('No streaming response given', traceId))
-            }
-
             let fullResponse: CompletionResponse | undefined
+            let traceId: string | undefined
             try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify(request),
+                    headers,
+                    signal: abortSignal,
+                })
+
+                logResponseHeadersToSpan(span, response)
+
+                traceId = getActiveTraceAndSpanId()?.traceId
+
+                // When rate-limiting occurs, the response is an error message The response here is almost
+                // identical to the SG instance response but does not contain information on whether a user
+                // is eligible to upgrade to the pro plan. We get this from the authState instead.
+                if (response.status === 429) {
+                    const upgradeIsAvailable = authStatus.userCanUpgrade
+
+                    throw recordErrorToSpan(
+                        span,
+                        await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                    )
+                }
+
+                if (!response.ok) {
+                    throw recordErrorToSpan(
+                        span,
+                        new NetworkError(
+                            response,
+                            (await response.text()) +
+                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                            traceId
+                        )
+                    )
+                }
+
+                if (response.body === null) {
+                    throw recordErrorToSpan(span, new TracedError('No response body', traceId))
+                }
+
+                const isStreamingResponse = response.headers
+                    .get('content-type')
+                    ?.startsWith('text/event-stream')
+                if (!isStreamingResponse || !isNodeResponse(response)) {
+                    throw recordErrorToSpan(
+                        span,
+                        new TracedError('No streaming response given', traceId)
+                    )
+                }
+
                 const iterator = createSSEIterator(response.body)
                 for await (const { event, data } of iterator) {
                     if (event === 'error') {
@@ -173,8 +177,10 @@ export function createFastPathClient(
                 // In case of the abort error and non-empty completion response, we can
                 // consider the completion partially completed and want to log it to
                 // the Cody output channel via `log.onComplete()` instead of erroring.
-                if (isAbortError(error as Error) && fullResponse) {
-                    fullResponse.stopReason = CompletionStopReason.RequestAborted
+                if (isAbortError(error as Error)) {
+                    if (fullResponse) {
+                        fullResponse.stopReason = CompletionStopReason.RequestAborted
+                    }
                     yield { type: 'complete' }
                     return
                 }
