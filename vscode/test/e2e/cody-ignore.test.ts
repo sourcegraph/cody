@@ -1,4 +1,3 @@
-import path from 'path'
 import { expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
@@ -61,14 +60,13 @@ test.extend<ExpectedEvents>({
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.pressSequentially('@ignoredByCody', { delay: 10 })
+    await chatInput.pressSequentially('@ignoredByCody', { delay: 20 })
     await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
-    await chatInput.pressSequentially('@ignore', { delay: 10 })
+    await chatInput.focus()
+    await chatInput.pressSequentially('@ignore', { delay: 20 })
     await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
-    await expect(
-        chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
-    ).toBeVisible()
+    await chatPanel.getByText('ignore.cody').hover()
 
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain Code').hover()
@@ -78,7 +76,3 @@ test.extend<ExpectedEvents>({
     // A system message shows up to notify users that the file is ignored
     await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
 })
-
-function withPlatformSlashes(input: string) {
-    return input.replaceAll(path.posix.sep, path.sep)
-}
