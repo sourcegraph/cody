@@ -39,8 +39,10 @@ test.extend<ExpectedEvents>({
     // Submit three new messages
     await chatInput.fill('One')
     await chatInput.press('Enter')
+    await chatInput.click()
     await chatInput.fill('Two')
     await chatInput.press('Enter')
+    await chatInput.click()
     await chatInput.fill('Three')
     await chatInput.press('Enter')
 
