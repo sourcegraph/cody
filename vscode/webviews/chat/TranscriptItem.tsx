@@ -200,5 +200,10 @@ function useDisplayMarkdown(message: ChatMessage): string {
     if (message.speaker === 'assistant') {
         return reformatBotMessageForChat(message.text ?? '')
     }
-    return serializedPromptEditorStateFromChatMessage(message).html
+    return hackToDisplayCodeBlocksInLexicalHTML(serializedPromptEditorStateFromChatMessage(message).html)
+}
+
+function hackToDisplayCodeBlocksInLexicalHTML(html: string): string {
+    /// <span style="white-space: pre-wrap;">```</span>
+    return html.replaceAll('<span style="white-space: pre-wrap;">```</span>', '```')
 }
