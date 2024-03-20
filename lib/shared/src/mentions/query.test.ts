@@ -37,6 +37,17 @@ describe('parseMentionQuery', () => {
             text: '@baz',
         })
     })
+
+    test('url query with http:// prefix', () => {
+        expect(parseMentionQuery('http://example.com/p')).toEqual<MentionQuery>({
+            type: 'url',
+            text: 'http://example.com/p',
+        })
+        expect(parseMentionQuery('https://example.com/p')).toEqual<MentionQuery>({
+            type: 'url',
+            text: 'https://example.com/p',
+        })
+    })
 })
 
 describe('scanForMentionTriggerInUserTextInput', () => {
@@ -55,6 +66,15 @@ describe('scanForMentionTriggerInUserTextInput', () => {
             leadOffset: 6,
             matchingString: '#abc',
             replaceableString: '@#abc',
+        }))
+
+    test('@-mention URL', () =>
+        expect(
+            scanForMentionTriggerInUserTextInput('Hello @https://example.com/p')
+        ).toEqual<MentionTrigger | null>({
+            leadOffset: 6,
+            matchingString: 'https://example.com/p',
+            replaceableString: '@https://example.com/p',
         }))
 
     describe('special chars', () => {
@@ -90,9 +110,6 @@ describe('scanForMentionTriggerInUserTextInput', () => {
     })
 
     test('with range', () => {
-        expect(scanForMentionTriggerInUserTextInput('a @b/c:')).toBeNull()
-        expect(scanForMentionTriggerInUserTextInput('a @b/c:1')).toBeNull()
-        expect(scanForMentionTriggerInUserTextInput('a @b/c:12-')).toBeNull()
         expect(scanForMentionTriggerInUserTextInput('a @b/c:12-34')).toEqual<MentionTrigger>({
             leadOffset: 2,
             matchingString: 'b/c:12-34',

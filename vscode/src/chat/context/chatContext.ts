@@ -1,5 +1,12 @@
-import { type ContextItem, type MentionQuery, parseMentionQuery } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
+import {
+    type ContextItem,
+    FeatureFlag,
+    type MentionQuery,
+    featureFlagProvider,
+    getURLContextItems,
+    parseMentionQuery,
+} from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -34,7 +41,30 @@ export async function getChatContextItemsForMention(
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
         case 'file':
             return getFileContextFiles(mentionQuery.text, MAX_RESULTS, cancellationToken)
+        case 'url':
+            return (await isURLContextFeatureFlagEnabled())
+                ? getURLContextItems(
+                      mentionQuery.text,
+                      convertCancellationTokenToAbortSignal(cancellationToken)
+                  )
+                : []
         default:
             return []
     }
+}
+
+export async function isURLContextFeatureFlagEnabled(): Promise<boolean> {
+    return (
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true ||
+        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.URLContext))
+    )
+}
+
+function convertCancellationTokenToAbortSignal(token: vscode.CancellationToken): AbortSignal {
+    const controller = new AbortController()
+    const disposable = token.onCancellationRequested(() => {
+        controller.abort()
+        disposable.dispose()
+    })
+    return controller.signal
 }
