@@ -33,13 +33,12 @@ function getMetaDataInfo(options: EvaluateAutocompleteOptions): [string, Strateg
 export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
-): Promise<boolean> {
+): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     await createEmbeddings(client, options)
     await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
     await simulateWorkspaceChat(client, options)
     await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
-    return true
 }
 
 // ================== Handle embeddings creation =====================

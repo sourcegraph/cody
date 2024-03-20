@@ -301,7 +301,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 )
         )
 
-        const concurrencyLimit = 1
+        const concurrencyLimit = 5
         const semaphore = new Semaphore(concurrencyLimit)
         // await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
         // let remainingWorkspaces = workspacesToRun.length;
@@ -316,12 +316,12 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
                 const [_, release] = await semaphore.acquire()
                 try {
                     await evaluateWorkspace(workspace)
-                    await new Promise(resolve => setTimeout(resolve, 1000)) // Sleep for 1 second
                 } finally {
                     release()
                 }
             })
         )
+        process.exit(0)
     })
 
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
@@ -370,20 +370,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
                     20 * 60 * 1000
                 ) // 10 minutes
             })
-            const out = await Promise.race([
-                evaluateSimpleChatStrategy(client, options),
-                timeoutPromise
-            ])
-            if(out) {
-                console.log('Simple chat evaluation completed')
-            } else {
-                console.log('Operation timeout for simple chat evaluation')
-            }
-            await client.request('shutdown', null)
-            client.notify('exit', null)
-
-            // todo: b/c of adding timeoutPromise, it always waits 10 mins, exit manually for now.
-            process.exit(0)
+            await Promise.race([evaluateSimpleChatStrategy(client, options), timeoutPromise])
         }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)
