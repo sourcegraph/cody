@@ -1,0 +1,56 @@
+{
+  "1997-08-02T10:00:00.000Z": {
+    "chatModel": "anthropic/claude-2.0",
+    "id": "1997-08-02T10:00:00.000Z",
+    "interactions": [
+      {
+        "assistantMessage": {
+          "speaker": "assistant",
+          "text": " I'm Claude, an AI assistant created by Anthropic.",
+        },
+        "humanMessage": {
+          "contextFiles": [],
+          "speaker": "human",
+          "text": "What model are you?",
+        },
+      },
+    ],
+    "lastInteractionTimestamp": "1997-08-02T10:00:00.000Z",
+  },
+  "1997-08-02T10:01:00.000Z": {
+    "chatModel": "anthropic/claude-2.0",
+    "id": "1997-08-02T10:01:00.000Z",
+    "interactions": [
+      {
+        "assistantMessage": {
+          "speaker": "assistant",
+          "text": " I'm Claude, an AI assistant created by Anthropic.",
+        },
+        "humanMessage": {
+          "contextFiles": [],
+          "speaker": "human",
+          "text": "What model are you?",
+        },
+      },
+    ],
+    "lastInteractionTimestamp": "1997-08-02T10:01:00.000Z",
+  },
+  "1997-08-02T10:02:00.000Z": {
+    "chatModel": "anthropic/claude-2.0",
+    "id": "1997-08-02T10:02:00.000Z",
+    "interactions": [
+      {
+        "assistantMessage": {
+          "speaker": "assistant",
+          "text": " I'm Claude, an AI assistant created by Anthropic.",
+        },
+        "humanMessage": {
+          "contextFiles": [],
+          "speaker": "human",
+          "text": "What model are you?",
+        },
+      },
+    ],
+    "lastInteractionTimestamp": "1997-08-02T10:02:00.000Z",
+  },
+}

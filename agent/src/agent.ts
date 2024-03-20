@@ -10,6 +10,7 @@ import {
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
+    type ChatHistory,
     FeatureFlag,
     ModelProvider,
     NoOpTelemetryRecorderProvider,
@@ -857,6 +858,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: panel.models ?? [] }
         })
 
+        this.registerAuthenticatedRequest('chat/export', async ({ id }): Promise<ChatHistory> => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await this.receiveWebviewMessage(id, {
+                command: 'history',
+                action: 'export',
+            })
+            return panel.chatHistory || {} // todo: proper handling
+        })
+
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await this.receiveWebviewMessage(id, { command: 'context/get-remote-search-repos' })
@@ -1097,6 +1107,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                 } else if (message.type === 'chatModels') {
                     panel.models = message.models
+                } else if (message.type === 'history') {
+                    panel.chatHistory = message.localHistory?.chat
                 } else if (message.type === 'context/remote-repos') {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {

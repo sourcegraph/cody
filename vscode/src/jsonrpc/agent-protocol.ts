@@ -2,6 +2,7 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    ChatHistory,
     ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
@@ -52,6 +53,7 @@ export type ClientRequests = {
     'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/export': [{ id: string }, ChatHistory]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage

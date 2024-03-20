@@ -119,6 +119,7 @@ describe('Agent', () => {
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = vscode.Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
+    const historyPath = path.join(workspaceRootPath, 'src', 'history.json')
     const animalUri = vscode.Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
     const squirrelUri = vscode.Uri.file(squirrelPath)
@@ -335,6 +336,45 @@ describe('Agent', () => {
                 `" I'm an AI assistant created by Anthropic. I don't have a specific model name."`,
                 explainPollyError
             )
+        }, 30_000)
+
+        it('chat/restore (multiple) & export', async () => {
+            const date = new Date(1997, 7, 2, 12, 0, 0, 0)
+
+            // Step 1: Create a chat session asking what model is used.
+            const id1 = await client.request('chat/new', null)
+            const reply1 = asTranscriptMessage(
+                await client.request('chat/submitMessage', {
+                    id: id1,
+                    message: {
+                        command: 'submit',
+                        text: 'What model are you?',
+                        submitType: 'user',
+                        addEnhancedContext: false,
+                    },
+                })
+            )
+
+            // Step 2: Restore multiple chats
+            const NUMBER_OF_CHATS_TO_RESTORE = 3
+            for (let i = 0; i < NUMBER_OF_CHATS_TO_RESTORE; i++) {
+                await client.request('chat/restore', {
+                    messages: reply1.messages,
+                    chatID: date.toISOString(), // Create new Chat ID with a different timestamp
+                })
+                date.setTime(date.getTime() + 60 * 1000)
+            }
+
+            // Step 3: export history
+            const exportHistoryChatId = await client.request('chat/new', null)
+            const chatHistory = await client.request('chat/export', {
+                id: exportHistoryChatId,
+            })
+
+            // Step 4: delete the chat that corresponds to `exportHistoryChatId` as its id cannot be predicted or mocked
+            const key = Object.keys(chatHistory).find(x => !chatHistory[x].id.startsWith('1997'))
+            if (key) delete chatHistory[key]
+            await expect(chatHistory).toMatchFileSnapshot(historyPath)
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {

@@ -1,7 +1,7 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { ChatHistory, ModelProvider } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
@@ -40,6 +40,7 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
     public chatID: string | undefined // also known as `sessionID` in some parts of the Cody codebase
     public models: ModelProvider[] | undefined
+    public chatHistory: ChatHistory | undefined
     public remoteRepos: Repo[] | undefined
     public isInitialized = false
     public isMessageInProgress: undefined | boolean
