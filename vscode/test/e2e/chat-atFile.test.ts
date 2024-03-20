@@ -1,9 +1,11 @@
+import * as http from 'http'
 import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
+import type { AddressInfo } from 'net'
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, type ExtraWorkspaceSettings, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
@@ -97,13 +99,16 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
     await chatInput.focus()
-    await chatInput.pressSequentially('and @vgo')
-    await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('visualize.go') })
-    ).toBeVisible()
+    await chatInput.pressSequentially('and ')
+    await chatInput.pressSequentially('@vgo', { delay: 10 })
+    await expect(chatPanelFrame.getByRole('option', { name: 'visualize.go' })).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/var\.go/)
     await chatInput.press('ArrowDown') // second item (visualize.go)
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('ArrowDown') // wraps back to first item (var.go)
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/var\.go/)
     await chatInput.press('ArrowDown') // second item again
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
         withPlatformSlashes(
@@ -129,7 +134,7 @@ test.extend<ExpectedEvents>({
     // https://github.com/sourcegraph/cody/issues/2200
     await chatInput.focus()
     await chatInput.clear()
-    await chatInput.pressSequentially('@Main.java')
+    await chatInput.pressSequentially('@Main.java', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java ')
@@ -137,7 +142,7 @@ test.extend<ExpectedEvents>({
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
-    await chatInput.pressSequentially('and @Main.ja', { delay: 50 })
+    await chatInput.pressSequentially('and @Main.ja', { delay: 10 })
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java and @Main.java ')
 
@@ -151,7 +156,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowLeft') // 'Explain the |file'
     await chatInput.press('ArrowLeft') // 'Explain the| file'
     await chatInput.press('Space') // 'Explain the | file'
-    await chatInput.pressSequentially('@Main')
+    await chatInput.pressSequentially('@Main', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain the @Main.java file')
@@ -170,8 +175,8 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowRight')
     await expect(noMatches).toBeVisible()
-    await chatInput.press('?')
-    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg?file')
+    await chatInput.press('$')
+    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg$file')
     await expect(noMatches).not.toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
@@ -183,8 +188,8 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.fill('@unknown')
     await expect(noMatches).toBeVisible()
-    await chatInput.press('?')
-    await expect(chatInput).toHaveText('@unknown?')
+    await chatInput.press('$')
+    await expect(chatInput).toHaveText('@unknown$')
     await expect(noMatches).not.toBeVisible()
     await chatInput.press('Backspace')
     await expect(noMatches).toBeVisible()
@@ -343,4 +348,50 @@ test.extend<ExpectedEvents>({
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
     await previewTab.hover()
     await expect(previewTab).toBeVisible()
+})
+
+test.extend<ExtraWorkspaceSettings>({
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
+    extraWorkspaceSettings: async ({}, use) => {
+        use({ 'cody.experimental.urlContext': true })
+    },
+})('@-mention URL', async ({ page, sidebar }) => {
+    // Start an HTTP server to serve up the web page that we will @-mention.
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end(`<h1>Hello from URL ${req.url}</h1>`)
+    })
+    const serverURL = await new Promise<URL>(resolve => {
+        server.listen(0, () => {
+            const addr = server.address() as AddressInfo
+            resolve(new URL(`http://localhost:${addr.port}`))
+        })
+    })
+
+    try {
+        await sidebarSignin(page, sidebar)
+
+        // Open chat.
+        await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+        const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+        const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+
+        // Type @-mention of the URL.
+        const mentionURL = new URL('/foo', serverURL)
+        await chatInput.fill(`@${mentionURL}`)
+        const optionTitle = `foo ${serverURL}`
+        await expect(chatPanelFrame.getByRole('option', { name: optionTitle })).toBeVisible()
+        await chatPanelFrame.getByRole('option', { name: optionTitle }).click()
+        await expect(chatInput).toHaveText(`@${mentionURL} `)
+
+        // Submit the message
+        await chatInput.press('Enter')
+
+        // URL context item shows up and is clickable.
+        await chatPanelFrame.getByText('✨ Context: 1 file').click()
+        const chatContext = chatPanelFrame.locator('details').last()
+        await chatContext.getByRole('link', { name: `@${mentionURL}` }).click()
+    } finally {
+        server.close()
+    }
 })

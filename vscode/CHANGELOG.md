@@ -14,12 +14,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Add Claude 3 Haiku for Pro users. [pull/3423](https://github.com/sourcegraph/cody/pull/3423)
 - Autocomplete: Add StarCoder2 experimental support. [pull/61207](https://github.com/sourcegraph/cody/pull/61207)
 - Autocomplete: Add `cody.autocomplete.experimental.fireworksOptions` for local debugging with Fireworks. [pull/3415](https://github.com/sourcegraph/cody/pull/3415)
+- Chat: Upgrade GPT 4 turbo model. [pull/3468](https://github.com/sourcegraph/cody/pull/3468)
+- Chat: Added experimental support for including web pages as context by @-mentioning a URL (when the undocumented `cody.experimental.urlContext` VS Code setting is enabled). [pull/3436](https://github.com/sourcegraph/cody/pull/3436)
 
 ### Fixed
 
 - Document: Fixed an issue where the generated documentation would be incorrectly inserted for Python. Cody will now follow PEP 257 – Docstring Conventions. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Edit: Fixed incorrect decorations being shown for edits that only insert new code. [pull/3424](https://github.com/sourcegraph/cody/pull/3424)
 - When `@`-mentioning files in chat and edits, the list of fuzzy-matching files is shown much faster (which is especially noticeable in large workspaces).
+- Chat: Fix abort related error messages with Claude 3. [pull/3466](https://github.com/sourcegraph/cody/pull/3466)
 
 ### Changed
 
@@ -31,6 +34,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Document: Upgraded to use a faster model. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Autocomplete: Wrap tree-sitter parse calls in OpenTelemetry spans. [pull/3419](https://github.com/sourcegraph/cody/pull/3419)
 - Autocomplete: Improve StarCoder2 Ollama support. [pull/3452](https://github.com/sourcegraph/cody/pull/3452)
+- Command: Enhanced the context provided to the Test command to help the language model determine the appropriate testing framework to use. [pull/3344](https://github.com/sourcegraph/cody/pull/3344)
+- Autocomplete: Upgrade tree-sitter grammars and add Dart support. [pull/3476](https://github.com/sourcegraph/cody/pull/3476)
+- Properly throw an error when attempting to parse an incomplete SSE stream with the nodeClient. [pull/3479](https://github.com/sourcegraph/cody/pull/3479)
 
 ## [1.8.3]
 

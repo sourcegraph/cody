@@ -154,8 +154,11 @@ test.extend<ExpectedEvents>({
     await page.getByText('Document Code').hover()
     await page.getByText('Document Code').click()
 
-    // Code lens should be visible
-    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
+    // Code lens should be visible.
+    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible({
+        // Wait a bit longer because formatting can sometimes be slow.
+        timeout: 10000,
+    })
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
     // Code lens should be at the start of the function (range expanded from click position)

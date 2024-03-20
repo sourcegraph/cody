@@ -53,6 +53,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             // Keep track if we have send any message to the completion callbacks
             let didSendMessage = false
             let didSendError = false
+            let didReceiveAnyEvent = false
 
             // Call the error callback only once per request.
             const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
@@ -63,6 +64,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     didSendError = true
                 }
             }
+
+            // Text which has not been decoded as a server-sent event (SSE)
+            let bufferText = ''
 
             const request = requestFn(
                 this.completionsEndpoint,
@@ -150,10 +154,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         return
                     }
 
-                    // By tes which have not been decoded as UTF-8 text
+                    // Bytes which have not been decoded as UTF-8 text
                     let bufferBin = Buffer.of()
-                    // Text which has not been decoded as a server-sent event (SSE)
-                    let bufferText = ''
 
                     res.on('data', chunk => {
                         if (!(chunk instanceof Buffer)) {
@@ -176,6 +178,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
 
                         didSendMessage = true
+                        didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
                         log?.onEvents(parseResult.events)
                         this.sendEvents(parseResult.events, cb, span)
                         bufferText = parseResult.remainingBuffer
@@ -203,6 +206,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             //
             // We still want to close the request.
             request.on('close', () => {
+                if (!didReceiveAnyEvent) {
+                    logError(
+                        'SourcegraphNodeCompletionsClient',
+                        "request.on('close')",
+                        'Connection closed without receiving any events',
+                        { verbose: { bufferText } }
+                    )
+                    onErrorOnce(new Error('Connection closed without receiving any events'))
+                }
                 if (!didSendMessage) {
                     onErrorOnce(new Error('Connection unexpectedly closed'))
                 }

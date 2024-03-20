@@ -270,12 +270,16 @@ export class EditProvider {
         const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
-        const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+        const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
+
+        // Get workspace uri using the current file uri
+        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
+        const currentDirUri = Utils.joinPath(currentFileUri, '..')
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
+        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {

@@ -163,7 +163,6 @@ const register = async (
     void featureFlagProvider.syncAuthStatus()
 
     const {
-        intentDetector,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -193,7 +192,6 @@ const register = async (
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
-        intentDetector,
         guardrails,
         editor,
         authProvider,

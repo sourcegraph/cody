@@ -26,7 +26,7 @@ export function getContextWindowForModel(
         return 28000 // 7000 tokens * 4 bytes per token
     }
 
-    if (modelID === 'openai/gpt-4-1106-preview') {
+    if (modelID === 'openai/gpt-4-turbo-preview') {
         return 28000 // 7000 tokens * 4 bytes per token
     }
     if (modelID === 'openai/gpt-3.5-turbo') {

@@ -90,9 +90,6 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
-    // Gives time for the command to be saved to the workspace settings
-    await page.waitForTimeout(500)
-
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
     await page.getByLabel('.vscode', { exact: true }).hover()

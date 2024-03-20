@@ -5,7 +5,7 @@ export interface MentionQuery {
     /**
      * The type of context item to search for.
      */
-    type: 'file' | 'symbol' | 'empty'
+    type: 'file' | 'symbol' | 'url' | 'empty'
 
     /**
      * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
@@ -31,10 +31,13 @@ export function parseMentionQuery(query: string): MentionQuery {
     if (query.startsWith('#')) {
         return { type: 'symbol', text: query.slice(1) }
     }
+    if (query.startsWith('http://') || query.startsWith('https://')) {
+        return { type: 'url', text: query }
+    }
     return { type: 'file', text: query }
 }
 
-const PUNCTUATION = ',\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]!%\'"~=<>:;'
+const PUNCTUATION = ',\\+\\*\\$\\@\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
 
 const TRIGGERS = '@'
 
