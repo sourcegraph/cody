@@ -133,7 +133,7 @@ export {
     SURROUNDING_LINES,
     tokensToChars,
 } from './prompt/constants'
-export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
+export { PromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
 export {
     truncateText,

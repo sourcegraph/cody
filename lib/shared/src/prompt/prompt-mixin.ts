@@ -1,9 +1,13 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 
+// Reminds Cody of its identity.
 const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
-const hallucinate =
-    'If context is available: never make any assumptions nor provide any misleading or hypothetical examples.'
-const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
+// Helps with hallucinations.
+const hallucinate = 'Never make assumptions nor provide misleading or hypothetical examples.'
+// To avoid starting responses with "Unfortunately..." when context is available.
+const rule = 'Answer in high-level using shared context. If more context needed, note that at the end.'
+
+const CODY_INTRO_PROMPT = `(${identity} ${hallucinate})`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -11,30 +15,24 @@ const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static customMixin: PromptMixin[] = []
-    // The prompt that instructs Cody to identify itself and avoid hallucinations.
-    private static defaultMixin: PromptMixin = new PromptMixin(CODY_INTRO_PROMPT)
+    private static defaultMixin: PromptMixin = new PromptMixin(rule || CODY_INTRO_PROMPT)
 
-    /**
-     * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
-     * and any new change could replace the old one.
-     */
-    public static addCustom(mixin: PromptMixin): void {
-        PromptMixin.customMixin = [mixin]
+    public static addMixin(prompt: string): void {
+        if (prompt) {
+            PromptMixin.mixins = [new PromptMixin(prompt)]
+        }
     }
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      */
     public static mixInto(humanMessage: ChatMessage): ChatMessage {
-        // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
-        const mixins = [...PromptMixin.mixins, ...PromptMixin.customMixin, PromptMixin.defaultMixin]
-            .map(mixin => mixin.prompt)
-            .join('\n\n')
+        // The default mixin is added at the end so that it cannot be overriden by a custom mixins.
+        const mixins = [...PromptMixin.mixins, PromptMixin.defaultMixin].map(m => m.prompt).join(' ')
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
-            // Note we do not reflect them in `text`.
-            return { ...humanMessage, text: `${mixins}${humanMessage.text}` }
+            // NOTE: we do not reflect mixins in `displayText`.
+            return { ...humanMessage, text: `${mixins} ${humanMessage.text}` }
         }
         return humanMessage
     }
@@ -43,8 +41,4 @@ export class PromptMixin {
      * Creates a mixin with the given, fixed prompt to insert.
      */
     constructor(private readonly prompt: string) {}
-}
-
-export function newPromptMixin(text: string): PromptMixin {
-    return new PromptMixin(text)
 }

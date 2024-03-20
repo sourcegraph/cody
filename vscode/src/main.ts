@@ -10,7 +10,6 @@ import {
     featureFlagProvider,
     graphqlClient,
     isDotCom,
-    newPromptMixin,
     setLogger,
 } from '@sourcegraph/cody-shared'
 
@@ -95,9 +94,7 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                if (config.chatPreInstruction) {
-                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-                }
+                PromptMixin.addMixin(config.chatPreInstruction)
             }
         })
     )
@@ -132,10 +129,7 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-
-    if (config.chatPreInstruction) {
-        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-    }
+    PromptMixin.addMixin(config.chatPreInstruction)
 
     parseAllVisibleDocuments()
 
