@@ -144,6 +144,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
@@ -592,8 +593,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
         }
 
+        // Cancel & dispose previously in-flight query.
+        this.contextFilesQueryCancellation?.cancel()
+        this.contextFilesQueryCancellation?.dispose()
+
         const cancellation = new vscode.CancellationTokenSource()
-        cancellation.token.onCancellationRequested(() => cancellation.cancel())
+        this.contextFilesQueryCancellation = cancellation
         getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
             .then(items => {
                 this.postMessage({
