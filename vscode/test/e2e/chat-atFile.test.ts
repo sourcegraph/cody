@@ -55,7 +55,6 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
-    await chatInput.clear()
     await chatInput.fill('@.')
     await expect(chatPanelFrame.getByRole('option', { name: '.mydotfile' })).toBeVisible()
 
