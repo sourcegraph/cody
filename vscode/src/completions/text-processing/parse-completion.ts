@@ -59,6 +59,10 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
         parser,
     })
 
+    if (!treeWithCompletion) {
+        return completion
+    }
+
     const points: ParsedCompletion['points'] = {
         start: asPoint(position),
         end: completionEndPosition,
@@ -94,7 +98,7 @@ interface PasteCompletionParams {
 }
 
 interface PasteCompletionResult {
-    treeWithCompletion: Tree
+    treeWithCompletion?: Tree
     completionEndPosition: Point
 }
 
