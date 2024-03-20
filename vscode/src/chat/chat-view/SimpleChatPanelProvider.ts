@@ -144,6 +144,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
+    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
@@ -576,6 +577,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+        // Cancel and dispose in-flight query
+        this.contextFilesQueryCancellation?.cancel()
+        this.contextFilesQueryCancellation?.dispose()
+
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
@@ -595,10 +600,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const cancellation = new vscode.CancellationTokenSource()
         getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
             .then(items => {
-                this.postMessage({
-                    type: 'userContextFiles',
-                    userContextFiles: items,
-                })
+                if (!cancellation.token.isCancellationRequested) {
+                    this.postMessage({
+                        type: 'userContextFiles',
+                        userContextFiles: items,
+                    })
+                }
             })
             .catch(error => {
                 cancellation.cancel()
