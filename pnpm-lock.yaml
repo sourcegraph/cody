@@ -314,6 +314,9 @@ importers:
       '@sourcegraph/telemetry':
         specifier: ^0.16.0
         version: 0.16.0
+      '@sourcegraph/tree-sitter-wasms':
+        specifier: ^0.1.9
+        version: 0.1.9
       '@storybook/preview-api':
         specifier: ^7.6.2
         version: 7.6.2
@@ -371,9 +374,6 @@ importers:
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
-      tree-sitter-wasms:
-        specifier: ^0.1.7
-        version: 0.1.7
       unzipper:
         specifier: ^0.10.14
         version: 0.10.14
@@ -5128,6 +5128,10 @@ packages:
     resolution: {integrity: sha512-/LTbGWwscy/iNOYc0JS2Sl5Q21WOaiIhABlGynwJLMfPYy0YoJQfEtrCEGTSYWY735dSdUBW3wcTgCOCz8EEjA==}
     dependencies:
       rxjs: 7.8.1
+    dev: false
+
+  /@sourcegraph/tree-sitter-wasms@0.1.9:
+    resolution: {integrity: sha512-XfA6A+p7QDitsuc3EDSspH1hi8K+NieTyHFXmE3rmdqlRloC1xWhqKzGtOi7PJvN2IkMJTn6rLWJVtW6kQyLXQ==}
     dev: false
 
   /@sourcegraph/tsconfig@4.0.1:
@@ -13958,10 +13962,6 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
     dev: true
-
-  /tree-sitter-wasms@0.1.7:
-    resolution: {integrity: sha512-/EnmSDDqEnSnIuCqVhSOc14T8r792LmiztqlZMFSRg+4ACrgUWNLvEr2AUP1K76XCJrvuH8liSWfkdQpK41hIA==}
-    dev: false
 
   /trim-newlines@4.1.1:
     resolution: {integrity: sha512-jRKj0n0jXWo6kh62nA5TEh3+4igKDXLvzBJcPpiizP7oOolUrYIxmVBG9TOtHYFHoddUk6YvAkGeGoSVTXfQXQ==}

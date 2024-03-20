@@ -1189,7 +1189,7 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "socks-proxy-agent": "^8.0.1",
-    "tree-sitter-wasms": "^0.1.7",
+    "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
