@@ -1,17 +1,10 @@
 import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
 import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { addEnterpriseChatModel } from '../../models/utilts'
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    if (authStatus?.configOverwrites?.chatModel) {
-        ModelProvider.add(
-            new ModelProvider(authStatus.configOverwrites.chatModel, [
-                ModelUsage.Chat,
-                // TODO: Add configOverwrites.editModel for separate edit support
-                ModelUsage.Edit,
-            ])
-        )
-    }
+    addEnterpriseChatModel(authStatus)
     return ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
 }
 

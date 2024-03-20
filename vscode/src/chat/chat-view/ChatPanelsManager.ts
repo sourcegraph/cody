@@ -217,11 +217,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
             ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
+                new ModelProvider(
+                    authStatus.configOverwrites.chatModel,
+                    [
+                        ModelUsage.Chat,
+                        // TODO: Add configOverwrites.editModel for separate edit support
+                        ModelUsage.Edit,
+                    ],
+                    authStatus.configOverwrites?.chatModelMaxTokens
+                )
             )
         }
         const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)

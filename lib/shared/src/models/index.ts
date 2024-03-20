@@ -1,7 +1,11 @@
 import { logError } from '../logger'
 import { OLLAMA_DEFAULT_URL } from '../ollama'
 import { isDotCom } from '../sourcegraph-api/environments'
-import { DEFAULT_DOT_COM_MODELS } from './dotcom'
+import {
+    DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+    DEFAULT_DOT_COM_MODELS,
+    DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+} from './dotcom'
 import { ModelUsage } from './types'
 import { getProviderName } from './utils'
 
@@ -15,16 +19,18 @@ export class ModelProvider {
     public codyProOnly = false
     public provider: string
     public readonly title: string
+    public readonly contextWindow: number
 
     constructor(
         public readonly model: string,
         public readonly usage: ModelUsage[],
-        isDefaultModel = true
+        tokenLimit?: number
     ) {
         const splittedModel = model.split('/')
         this.provider = getProviderName(splittedModel[0])
         this.title = splittedModel[1]?.replaceAll('-', ' ')
-        this.default = isDefaultModel
+        this.default = true
+        this.contextWindow = tokenLimit ? tokenLimit * 4 : DEFAULT_FAST_MODEL_TOKEN_LIMIT
     }
 
     // Providers available for non-dotcom instances
@@ -119,5 +125,13 @@ export class ModelProvider {
                 default: model.model === currentModel,
             }
         })
+    }
+
+    public static getContextWindow(modelID: string): number {
+        return (
+            ModelProvider.privateProviders.get(modelID)?.contextWindow ||
+            ModelProvider.dotComProviders.find(model => model.model === modelID)?.contextWindow ||
+            DEFAULT_CHAT_MODEL_TOKEN_LIMIT
+        )
     }
 }
