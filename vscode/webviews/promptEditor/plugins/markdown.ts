@@ -2,7 +2,7 @@ import { $createCodeNode, $isCodeNode, CodeNode } from '@lexical/code'
 import type { ElementTransformer, TextFormatTransformer } from '@lexical/markdown'
 import type { ElementNode, LexicalNode } from 'lexical'
 
-export const CODE: ElementTransformer = {
+export const CODE2: ElementTransformer = {
     dependencies: [CodeNode],
     export: (node: LexicalNode) => {
         if (!$isCodeNode(node)) {
@@ -13,11 +13,17 @@ export const CODE: ElementTransformer = {
             '```' + (node.getLanguage() || '') + (textContent ? '\n' + textContent : '') + '\n' + '```'
         )
     },
-    regExp: /^``x`(\w{1,10})?\s/,
+    regExp: /^```z/,
     replace: createBlockNode(match => {
         return $createCodeNode(match ? match[1] : undefined)
     }),
     type: 'element',
+}
+
+export const CODE: TextFormatTransformer = {
+    format: ['code'],
+    tag: '```',
+    type: 'text-format',
 }
 
 export const INLINE_CODE: TextFormatTransformer = {
