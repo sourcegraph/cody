@@ -335,10 +335,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             function isEmpty(range: Range | undefined): boolean {
-                return !range || range === new vscode.Range(0, 0, 0, 0)
+                return !range || range == new vscode.Range(0, 0, 0, 0)
             }
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            // If the caller elided the content, as is the sensible thing to do, reconstruct it here.
+            // If the caller elided the content, reconstruct it here.
             const cachedDocument = this.workspace.getDocumentFromUriString(
                 documentWithUri.uri.toString()
             )
