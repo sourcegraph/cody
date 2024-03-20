@@ -61,7 +61,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'GPT-4 Turbo Preview',
-        model: 'openai/gpt-4-1106-preview',
+        model: 'openai/gpt-4-turbo-preview',
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
