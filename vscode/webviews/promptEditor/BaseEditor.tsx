@@ -4,6 +4,7 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
+import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import classNames from 'classnames'
@@ -20,7 +21,10 @@ import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
+import { CODE, INLINE_CODE } from './plugins/markdown'
 import { OnFocusChangePlugin } from './plugins/onFocus'
+
+const MARKDOWN_TRANSFORMERS = [CODE, INLINE_CODE]
 
 interface Props extends KeyboardEventPluginProps {
     initialEditorState: SerializedEditorState | null
@@ -94,6 +98,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         onEnterKey={onEnterKey}
                         onEscapeKey={onEscapeKey}
                     />
+                    <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
                 </LexicalComposer>
             </div>
         </div>
