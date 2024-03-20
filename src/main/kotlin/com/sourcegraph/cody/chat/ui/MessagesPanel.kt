@@ -22,15 +22,16 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
   @RequiresEdt
   fun addOrUpdateMessage(message: ChatMessage, index: Int) {
     val indexAfterHelloMessage = index + 1
-    val messageToUpdate = components.getOrNull(indexAfterHelloMessage).let { it as? JPanel }
+    val messageToUpdate =
+        components.getOrNull(indexAfterHelloMessage).let { it as? ChatMessageWrapper }
 
-    if (message.speaker == Speaker.ASSISTANT) removeBlinkingCursor()
+    if (message.speaker == Speaker.ASSISTANT) {
+      removeBlinkingCursor()
+    }
 
     if (messageToUpdate != null) {
-      val singleMessagePanel = messageToUpdate.getComponent(0) as? SingleMessagePanel
-      val contextFilesPanel = messageToUpdate.getComponent(1) as? ContextFilesPanel
-      singleMessagePanel?.updateContentWith(message.actualMessage())
-      contextFilesPanel?.updateContentWith(message.contextFiles)
+      messageToUpdate.singleMessagePanel.updateContentWith(message.actualMessage())
+      messageToUpdate.contextFilesPanel.updateContentWith(message.contextFiles)
     } else {
       addChatMessageAsComponent(message)
     }
@@ -63,11 +64,18 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
         SingleMessagePanel(
             message, project, this, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, chatSession)
     val contextFilesPanel = ContextFilesPanel(project, message)
-    val wrapper = JPanel()
-    wrapper.add(singleMessagePanel)
-    wrapper.add(contextFilesPanel)
-    wrapper.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
-    add(wrapper)
+    add(ChatMessageWrapper(singleMessagePanel, contextFilesPanel))
+  }
+
+  private class ChatMessageWrapper(
+      val singleMessagePanel: SingleMessagePanel,
+      val contextFilesPanel: ContextFilesPanel
+  ) : JPanel() {
+    init {
+      add(singleMessagePanel)
+      add(contextFilesPanel)
+      layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
+    }
   }
 
   private fun getLastMessage(): SingleMessagePanel? {
