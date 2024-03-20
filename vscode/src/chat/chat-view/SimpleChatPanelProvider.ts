@@ -598,6 +598,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         const cancellation = new vscode.CancellationTokenSource()
+        this.contextFilesQueryCancellation = cancellation
         getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
             .then(items => {
                 if (!cancellation.token.isCancellationRequested) {
