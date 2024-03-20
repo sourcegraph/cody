@@ -14,8 +14,10 @@ import {
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
     displayPath,
+    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
+    isURLContextItem,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
@@ -25,6 +27,7 @@ import {
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getOpenTabsUris } from '.'
+import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -275,10 +278,17 @@ export async function fillInContextItemContent(
                 let content = item.content
                 if (!item.content) {
                     try {
-                        content = await editor.getTextEditorContentForFile(
-                            item.uri,
-                            toVSCodeRange(item.range)
-                        )
+                        if (isURLContextItem(item)) {
+                            if (await isURLContextFeatureFlagEnabled()) {
+                                content =
+                                    (await fetchContentForURLContextItem(item.uri.toString())) ?? ''
+                            }
+                        } else {
+                            content = await editor.getTextEditorContentForFile(
+                                item.uri,
+                                toVSCodeRange(item.range)
+                            )
+                        }
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
