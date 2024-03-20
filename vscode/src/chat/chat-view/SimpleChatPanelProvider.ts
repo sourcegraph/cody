@@ -578,8 +578,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         // Cancel and dispose in-flight query
+        const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
         this.contextFilesQueryCancellation?.dispose()
+        this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
@@ -597,9 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
         }
 
-        const cancellation = new vscode.CancellationTokenSource()
-        this.contextFilesQueryCancellation = cancellation
-        getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
+        await getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
             .then(items => {
                 if (!cancellation.token.isCancellationRequested) {
                     this.postMessage({
