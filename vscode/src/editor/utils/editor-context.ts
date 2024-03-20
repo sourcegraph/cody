@@ -1,5 +1,5 @@
 import path from 'path'
-
+import fs from 'fs/promises'    
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
@@ -268,31 +268,38 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
     return filtered
 }
 
-export async function fillInContextItemContent(
-    editor: Editor,
-    items: ContextItem[]
-): Promise<ContextItemWithContent[]> {
-    return (
-        await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let content = item.content
-                if (!item.content) {
-                    try {
-                        if (isURLContextItem(item)) {
-                            if (await isURLContextFeatureFlagEnabled()) {
-                                content =
-                                    (await fetchContentForURLContextItem(item.uri.toString())) ?? ''
-                            }
-                        } else {
-                            content = await editor.getTextEditorContentForFile(
-                                item.uri,
-                                toVSCodeRange(item.range)
-                            )
-                        }
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
+async function fillInContextItemContent(
+    item: ContextItem,
+    editor: TextEditorInterface
+): Promise<ContextItem> {
+    let content = item.content
+    if (!item.content) {
+        try {
+            if (isURLContextItem(item)) {
+                if (await isURLContextFeatureFlagEnabled()) {
+                    content = (await fetchContentForURLContextItem(item.uri.toString())) ?? ''
+                    
+                    // Get the root folder of the currently open project
+                    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+                    if (workspaceFolder) {
+                        const rootPath = workspaceFolder.uri.fsPath
+                        const fetchedFolderPath = path.join(rootPath, '.fetched')
+                        await fs.mkdir(fetchedFolderPath, { recursive: true })
+                        const filename = `${Date.now()}-${item.uri.toString().replace(/\W+/g, '-')}.txt`
+                        const filePath = path.join(fetchedFolderPath, filename)
+                        await fs.writeFile(filePath, content)
+                    }
+                }
+            } else {
+                content = await editor.getTextEditorContentForFile(
+                    item.uri,
+                    toVSCodeRange(item.range)
+                )
+            }
+        } catch (error) {
+            void vscode.window.showErrorMessage(
+                `Cody could not include context from ${item.uri}. (Reason: ${error})`
+            )
                         return null
                     }
                 }
