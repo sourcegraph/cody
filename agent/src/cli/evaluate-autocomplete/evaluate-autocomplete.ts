@@ -362,7 +362,28 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.SimpleChat) {
-            await evaluateSimpleChatStrategy(client, options)
+            const timeoutPromise = new Promise<void>(resolve => {
+                setTimeout(
+                    () => {
+                        resolve()
+                    },
+                    20 * 60 * 1000
+                ) // 10 minutes
+            })
+            const out = await Promise.race([
+                evaluateSimpleChatStrategy(client, options),
+                timeoutPromise
+            ])
+            if(out) {
+                console.log('Simple chat evaluation completed')
+            } else {
+                console.log('Operation timeout for simple chat evaluation')
+            }
+            await client.request('shutdown', null)
+            client.notify('exit', null)
+
+            // todo: b/c of adding timeoutPromise, it always waits 10 mins, exit manually for now.
+            process.exit(0)
         }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)

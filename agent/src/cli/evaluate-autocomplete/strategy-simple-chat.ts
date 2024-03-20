@@ -33,32 +33,19 @@ function getMetaDataInfo(options: EvaluateAutocompleteOptions): [string, Strateg
 export async function evaluateSimpleChatStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
-): Promise<void> {
+): Promise<boolean> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-
-    const timeoutPromise = new Promise<void>(resolve => {
-        setTimeout(
-            () => {
-                resolve()
-            },
-            10 * 60 * 1000
-        ) // 10 minutes
-    })
-
-    const embeddingFlag = await Promise.race([timeoutPromise, createEmbeddings(client, options)])
+    await createEmbeddings(client, options)
     await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
-
-    if (embeddingFlag) {
-        await simulateWorkspaceChat(client, options)
-        chatLogs.writeLog(repoDisplayName, `Simulation chat done for repo: ${repoDisplayName}`)
-    }
+    await simulateWorkspaceChat(client, options)
+    await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
+    return true
 }
 
 // ================== Handle embeddings creation =====================
 
 interface EmbeddingFlag {
     isEmbeddingReady: boolean
-    isNumItemNeedIndexZero: boolean
     isSearchIndexReady: boolean
 }
 
@@ -68,21 +55,10 @@ async function createEmbeddings(
 ): Promise<EmbeddingFlag> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     const { workspace } = options
-    // const SymfPath = path.resolve('~/.local/share/Cody-nodejs/symf/indexroot', workspace);
-
-    // let doesSymfIndexExist = false;
-    // try {
-    //     await fspromises.access(SymfPath);
-    //     doesSymfIndexExist = true;
-    // } catch (error) {
-    //     doesSymfIndexExist = false;
-    // }
 
     const embeddingDoneFlag: EmbeddingFlag = {
         isEmbeddingReady: false,
-        isNumItemNeedIndexZero: false,
         isSearchIndexReady: true,
-        // isSearchIndexReady: doesSymfIndexExist,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
 
@@ -167,7 +143,7 @@ function registerEmbeddingsHandlers(
                     const indexHealthObj = JSON.parse(jsonString)
                     if (indexHealthObj.numItemsNeedEmbedding === 0) {
                         await addRepoToCompletedRepoLogs(workspaceName, repoDisplayName)
-                        embeddingDoneFlag.isNumItemNeedIndexZero = true
+                        embeddingDoneFlag.isEmbeddingReady = true
                         await chatLogs.writeLog(
                             repoDisplayName,
                             `embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
@@ -243,7 +219,6 @@ function registerEmbeddingsHandlers(
 
                 // Make all true, don't get stuck
                 embeddingDoneFlag.isEmbeddingReady = true
-                embeddingDoneFlag.isNumItemNeedIndexZero = true
                 // embeddingDoneFlag.isSearchIndexReady = true
 
                 // exit(1)
@@ -264,18 +239,16 @@ function registerEmbeddingsHandlers(
                     repoDisplayName,
                     '--------- --------- --------- --------- --------- --------- ---------'
                 )
-                embeddingDoneFlag.isNumItemNeedIndexZero = true
+                embeddingDoneFlag.isEmbeddingReady = true
                 exit(1)
             } else if (
                 debug_message.startsWith('█ LocalEmbeddingsController') &&
                 debug_message.includes('error')
             ) {
                 embeddingDoneFlag.isEmbeddingReady = true
-                embeddingDoneFlag.isNumItemNeedIndexZero = true
                 // embeddingDoneFlag.isSearchIndexReady = true
             } else if (debug_message.startsWith('█ symf: symf index creation failed EvalError')) {
                 embeddingDoneFlag.isEmbeddingReady = true
-                embeddingDoneFlag.isNumItemNeedIndexZero = true
                 embeddingDoneFlag.isSearchIndexReady = true
             }
         }
