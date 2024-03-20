@@ -770,7 +770,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     return Promise.resolve({ ranges: [] })
                 }
                 const ranges = await getDocumentSections(document)
-                return { ranges: ranges }
+                return { ranges }
             }
         )
 
