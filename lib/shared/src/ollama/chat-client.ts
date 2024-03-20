@@ -72,11 +72,13 @@ export function ollamaChatClient(
 
             const textDecoder = new TextDecoder()
             const decoded = textDecoder.decode(value, { stream: true })
-            const parsedLine = JSON.parse(decoded) as OllamaGenerateResponse
-
-            if (parsedLine.message) {
-                insertText += parsedLine.message.content
-                cb.onChange(insertText)
+            // handle one or more ndjson records
+            const parsedLines = decoded.match(/.+/g).map(JSON.parse)
+            for (const parsedLine of parsedLines) {
+                if (parsedLine.message) {
+                    insertText += parsedLine.message.content
+                    cb.onChange(insertText)
+                }
             }
         }
 
