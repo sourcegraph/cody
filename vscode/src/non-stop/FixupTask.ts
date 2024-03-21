@@ -9,10 +9,10 @@ import type { FixupFile } from './FixupFile'
 import type { Diff } from './diff'
 import { CodyTaskState } from './utils'
 
-export type FixupTaskID = string
+export type taskID = string
 
 export class FixupTask {
-    public id: FixupTaskID
+    public id: taskID
     public state_: CodyTaskState = CodyTaskState.idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
@@ -56,7 +56,6 @@ export class FixupTask {
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
-        /* The range being edited. This range is tracked and updates as the user (or Cody) edits code. */
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,

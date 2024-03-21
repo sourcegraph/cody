@@ -5,6 +5,5 @@ data class EditTask(
   val id: String? = null,
   val state: CodyTaskState? = null,
   val error: CodyError? = null,
-  val selectionRange: Range? = null,
 )
 

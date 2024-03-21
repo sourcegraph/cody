@@ -17,7 +17,7 @@
     "build": "pnpm run build:root && pnpm run build:agent",
     "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build && node dist/index.js",
-    "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js",
+    "agent:debug": "pnpm run build && node --inspect --enable-source-maps ./dist/index.js",
     "build-ts": "tsc --build",
     "build-agent-binaries": "pnpm run build && pkg  --compress GZip --no-bytecode --public-packages \"*\" --public . --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "test-agent-binary": "esbuild ./scripts/test-agent-binary.ts --bundle --platform=node --alias:vscode=./src/vscode-shim.ts --outdir=dist && node ./dist/test-agent-binary.js",

@@ -32,9 +32,6 @@ interface EditProviderOptions extends EditManagerOptions {
     controller: FixupController
 }
 
-// Initiates a completion and responds to the result from the LLM. Implements
-// "tools" like directing the response into a specific file. Code is forwarded
-// to the FixupTask.
 export class EditProvider {
     private insertionResponse: string | null = null
     private insertionInProgress = false

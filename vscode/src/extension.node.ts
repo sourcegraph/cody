@@ -5,7 +5,6 @@ import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import type { ExtensionApi } from './extension-api'
-import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import {
@@ -20,20 +19,12 @@ import {
 import { SymfRunner } from './local-context/symf'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { NodeSentryService } from './services/sentry/sentry.node'
-
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).
  */
-export function activate(
-    context: vscode.ExtensionContext,
-    extensionClient?: ExtensionClient
-): Promise<ExtensionApi> {
+export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
     initializeNetworkAgent()
-
-    // When activated by VSCode, we are only passed the extension context.
-    // Create the default client for VSCode.
-    extensionClient ||= defaultVSCodeExtensionClient()
 
     // NOTE: local embeddings are only going to be supported in VSC for now.
     // Until we revisit this decision, we disable local embeddings for all agent
@@ -58,6 +49,5 @@ export function activate(
         startTokenReceiver: (...args) => startTokenReceiver(...args),
 
         onConfigurationChange: setCustomAgent,
-        extensionClient,
     })
 }

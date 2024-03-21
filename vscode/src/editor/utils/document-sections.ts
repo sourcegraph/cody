@@ -14,7 +14,6 @@ export async function getDocumentSections(
     // Remove imports, comments, and regions from the folding ranges
     const foldingRanges = await getFoldingRanges(doc.uri).then(r => r?.filter(r => !r.kind))
     if (!foldingRanges?.length) {
-        console.warn('No indentation-based folding ranges found', doc.uri)
         return []
     }
 

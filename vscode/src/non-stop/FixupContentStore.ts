@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { FixupTaskID } from './FixupTask'
+import type { taskID } from './FixupTask'
 
 type fileName = string
 type fileContent = string
@@ -11,9 +11,9 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     // This stores the content of the document for each task ID
     // The content is initialized by the fixup task with the original content
     // and then updated by the fixup task with the replacement content
-    private contentStore = new Map<FixupTaskID, fileContent>()
+    private contentStore = new Map<taskID, fileContent>()
     // This tracks the task IDs belong toe each file path
-    private tasksByFilePath = new Map<fileName, FixupTaskID[]>()
+    private tasksByFilePath = new Map<fileName, taskID[]>()
     private _onDidChange = new vscode.EventEmitter<vscode.Uri>()
     private _disposables: vscode.Disposable
 
@@ -70,7 +70,7 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     public dispose(): void {
         this._disposables.dispose()
         this._onDidChange.dispose()
-        this.contentStore = new Map<FixupTaskID, fileContent>()
-        this.tasksByFilePath = new Map<fileName, FixupTaskID[]>()
+        this.contentStore = new Map<taskID, fileContent>()
+        this.tasksByFilePath = new Map<fileName, taskID[]>()
     }
 }

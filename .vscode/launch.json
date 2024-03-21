@@ -63,13 +63,6 @@
       "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
     },
     {
-      "name": "Attach to Agent",
-      "port": 9229,
-      "request": "attach",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node"
-    },
-    {
       "type": "node",
       "request": "launch",
       "name": "Debug Current File with vitest",

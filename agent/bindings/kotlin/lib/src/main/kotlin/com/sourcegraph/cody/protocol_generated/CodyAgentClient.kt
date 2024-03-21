@@ -28,10 +28,8 @@ interface CodyAgentClient {
   // =============
   @JsonNotification("debug/message")
   fun debug_message(params: DebugMessage)
-  @JsonNotification("editTask/didUpdate")
-  fun editTask_didUpdate(params: EditTask)
-  @JsonNotification("editTask/didDelete")
-  fun editTask_didDelete(params: EditTask)
+  @JsonNotification("editTaskState/didChange")
+  fun editTaskState_didChange(params: EditTask)
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("webview/postMessage")

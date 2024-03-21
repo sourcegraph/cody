@@ -7,13 +7,13 @@ import {
     type ModelProvider,
 } from '@sourcegraph/cody-shared'
 
+import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -29,23 +29,20 @@ import { getEditLineSelection, getEditSmartSelection } from './utils/edit-select
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
+    contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
     authProvider: AuthProvider
-    extensionClient: ExtensionClient
 }
 
-// EditManager handles translating specific edit intents (document, edit) into
-// generic FixupTasks, and pairs a FixupTask with an EditProvider to generate
-// a completion.
 export class EditManager implements vscode.Disposable {
-    private readonly controller: FixupController
+    private controller: FixupController
     private disposables: vscode.Disposable[] = []
-    private editProviders = new WeakMap<FixupTask, EditProvider>()
+    private editProviders = new Map<FixupTask, EditProvider>()
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
         this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
-        this.controller = new FixupController(options.authProvider, options.extensionClient)
+        this.controller = new FixupController(options.authProvider)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand('cody.command.edit-code', (args: ExecuteEditArguments) =>
@@ -153,7 +150,7 @@ export class EditManager implements vscode.Disposable {
         })
 
         if (activeTask) {
-            this.controller.cancel(task)
+            this.controller.cancelTask(task)
             return
         }
 
@@ -175,7 +172,7 @@ export class EditManager implements vscode.Disposable {
         return task
     }
 
-    private getProviderForTask(task: FixupTask): EditProvider {
+    public getProviderForTask(task: FixupTask): EditProvider {
         let provider = this.editProviders.get(task)
 
         if (!provider) {

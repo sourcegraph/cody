@@ -35,17 +35,13 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
-import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
-import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult, EditCommandResult } from '../../vscode/src/main'
+import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
-import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
-import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
+import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentCodeLenses } from './AgentCodeLenses'
-import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
@@ -58,10 +54,7 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
-    GetFoldingRangeResult,
     ProtocolCommand,
-    ProtocolTextDocument,
-    Range,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -70,10 +63,7 @@ import * as vscode_shim from './vscode-shim'
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
 
-export async function initializeVscodeExtension(
-    workspaceRoot: vscode.Uri,
-    extensionClient: ExtensionClient
-): Promise<void> {
+export async function initializeVscodeExtension(workspaceRoot: vscode.Uri): Promise<void> {
     const paths = envPaths('Cody')
     try {
         const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
@@ -119,7 +109,7 @@ export async function initializeVscodeExtension(
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     }
 
-    await activate(context, extensionClient)
+    await activate(context)
 }
 
 export async function newAgentClient(
@@ -165,17 +155,7 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     return agent
 }
 
-export function errorToCodyError(error?: Error): CodyError | undefined {
-    return error
-        ? {
-              message: error.message,
-              stack: error.stack,
-              cause: error.cause instanceof Error ? errorToCodyError(error.cause) : undefined,
-          }
-        : undefined
-}
-
-export class Agent extends MessageHandler implements ExtensionClient {
+export class Agent extends MessageHandler {
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
@@ -217,6 +197,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
     })
 
     public webPanels = new AgentWebviewPanels()
+
+    // A map that mirrors `FixupController.tasks`. There's no clean API to
+    // access `FixupController` so we mirror it here instead. It would be nice
+    // to clean this up in the future so we have only a single source of truth
+    // for ongoing fixup tasks.
+    public tasks = new Map<string, FixupTask>()
 
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
@@ -294,7 +280,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       path: clientInfo.workspaceRootPath,
                   })
             try {
-                await initializeVscodeExtension(this.workspace.workspaceRootUri, this)
+                await initializeVscodeExtension(this.workspace.workspaceRootUri)
                 this.registerWebviewHandlers()
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
@@ -333,26 +319,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
-            function isEmpty(range: Range | undefined): boolean {
-                return !range || range === new vscode.Range(0, 0, 0, 0)
-            }
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            // If the caller elided the content, as is the sensible thing to do, reconstruct it here.
-            const cachedDocument = this.workspace.getDocumentFromUriString(
-                documentWithUri.uri.toString()
-            )
-            if (!documentWithUri.underlying.content) {
-                if (cachedDocument?.content != null) {
-                    documentWithUri.underlying.content = cachedDocument.content
-                }
-            }
-            // Similarly, don't let this notification blow away our cached selection.
-            if (isEmpty(document.selection) && !isEmpty(cachedDocument?.protocolDocument.selection)) {
-                document.selection = cachedDocument?.protocolDocument.selection
-            }
+        this.registerNotification('textDocument/didFocus', document => {
             this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
+                this.workspace.newTextEditor(
+                    this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(document))
+                )
             )
         })
 
@@ -736,72 +707,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        // TODO: JetBrains is buggy and serializes 'string' as ['string'].
-        // The params[0] unpacking here only works because of the type punning
-        // params: string means params[0]: string too. Fix JetBrains client to
-        // send string values as strings; or encode these parameter values as
-        // an object holding a string.
-        this.registerAuthenticatedRequest('editTask/accept', params => {
-            this.fixups?.accept(params[0])
-            return Promise.resolve(null)
-        })
-        this.registerAuthenticatedRequest('editTask/undo', params => {
-            this.fixups?.undo(params[0])
-            return Promise.resolve(null)
-        })
-        this.registerAuthenticatedRequest('editTask/cancel', params => {
-            this.fixups?.cancel(params[0])
-            return Promise.resolve(null)
-        })
-
-        this.registerAuthenticatedRequest(
-            'editTask/getFoldingRanges',
-            async (params): Promise<GetFoldingRangeResult> => {
-                const uri = vscode.Uri.parse(params.uri)
-                const document = this.workspace.getDocument(uri)
-                if (!document) {
-                    logError(
-                        'Agent',
-                        'editTask/getFoldingRanges',
-                        'No document found for file path',
-                        params.uri,
-                        [...this.workspace.allUris()]
-                    )
-                    return Promise.resolve({ ranges: [] })
-                }
-                const ranges = await getDocumentSections(document)
-                return { ranges }
-            }
-        )
-
-        this.registerAuthenticatedRequest('editCommands/code', params => {
-            const args = { configuration: { ...params } }
-            const taskThenable = vscode.commands.executeCommand<FixupTask | undefined>(
-                'cody.command.edit-code',
-                args
-            )
-            // Wrap the task in a Thenable that returns a CommandResult, required by createEditTask().
-            const commandResultThenable: Thenable<CommandResult | undefined> = new Promise(
-                (resolve, reject) => {
-                    taskThenable.then(
-                        task => {
-                            if (task) {
-                                const editCommandResult: EditCommandResult = { type: 'edit', task: task }
-                                resolve(editCommandResult)
-                            } else {
-                                resolve(undefined)
-                            }
-                        },
-                        error => {
-                            reject(error)
-                        }
-                    )
-                }
-            )
-
-            return this.createEditTask(commandResultThenable)
-        })
-
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
@@ -951,17 +856,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 limitHit: result?.attribution?.limitHit || false,
             }
         })
-    }
-
-    // ExtensionClient callbacks.
-
-    private fixups: AgentFixupControls | undefined
-
-    public createFixupControlApplicator(
-        files: FixupActor & FixupFileCollection
-    ): FixupControlApplicator {
-        this.fixups = new AgentFixupControls(files, this.notify.bind(this))
-        return this.fixups
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
@@ -1144,7 +1038,36 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
             )
         }
-        return AgentFixupControls.serialize(result.task)
+        this.tasks.set(result.task.id, result.task)
+        const { id } = result.task
+        const disposable = result.task.onDidStateChange(newState => {
+            this.notify('editTaskState/didChange', {
+                id,
+                state: newState,
+                error: this.codyError(result.task?.error),
+            })
+            switch (newState) {
+                case CodyTaskState.finished:
+                case CodyTaskState.error:
+                    disposable.dispose()
+                    break
+            }
+        })
+        return {
+            id,
+            state: result.task?.state,
+            error: this.codyError(result.task?.error),
+        }
+    }
+
+    private codyError(error?: Error): CodyError | undefined {
+        return error
+            ? {
+                  message: error.message,
+                  stack: error.stack,
+                  cause: error.cause instanceof Error ? this.codyError(error.cause) : undefined,
+              }
+            : undefined
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {

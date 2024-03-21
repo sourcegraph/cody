@@ -215,9 +215,9 @@ const register = async (
     const editorManager = new EditManager({
         chat: chatClient,
         editor,
+        contextProvider,
         ghostHintDecorator,
         authProvider,
-        extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 

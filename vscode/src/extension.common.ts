@@ -15,7 +15,6 @@ import './editor/displayPathEnvInfo' // import for side effects
 
 import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
-import type { ExtensionClient } from './extension-client'
 import type { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
@@ -45,7 +44,6 @@ export interface PlatformContext {
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void
-    extensionClient: ExtensionClient
 }
 
 export async function activate(
@@ -53,6 +51,7 @@ export async function activate(
     platformContext: PlatformContext
 ): Promise<ExtensionApi> {
     const api = new ExtensionApi(context.extensionMode)
+
     try {
         const disposable = await start(context, platformContext)
         if (!context.globalState.get('extension.hasActivatedPreviously')) {
@@ -67,5 +66,6 @@ export async function activate(
         captureException(error)
         console.error(error)
     }
+
     return api
 }

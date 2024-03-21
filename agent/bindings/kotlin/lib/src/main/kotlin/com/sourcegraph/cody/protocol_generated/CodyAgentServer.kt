@@ -34,20 +34,10 @@ interface CodyAgentServer {
   fun commands_smell(params: Null): CompletableFuture<String>
   @JsonRequest("commands/custom")
   fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
-  @JsonRequest("editCommands/code")
-  fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
   @JsonRequest("editCommands/test")
   fun editCommands_test(params: Null): CompletableFuture<EditTask>
   @JsonRequest("commands/document")
   fun commands_document(params: Null): CompletableFuture<EditTask>
-  @JsonRequest("editTask/accept")
-  fun editTask_accept(params: FixupTaskID): CompletableFuture<Null>
-  @JsonRequest("editTask/undo")
-  fun editTask_undo(params: FixupTaskID): CompletableFuture<Null>
-  @JsonRequest("editTask/cancel")
-  fun editTask_cancel(params: FixupTaskID): CompletableFuture<Null>
-  @JsonRequest("editTask/getFoldingRanges")
-  fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
   fun command_execute(params: ExecuteCommandParams): CompletableFuture<Any>
   @JsonRequest("autocomplete/execute")

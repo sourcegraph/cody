@@ -18,7 +18,6 @@ import type * as vscode from 'vscode'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
-import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/utils'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
@@ -75,21 +74,8 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
-    'editCommands/code': [{ params: { instruction: string } }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/document
-
-    // If the task is "applied", discards the task.
-    'editTask/accept': [FixupTaskID, null]
-    // If the task is "applied", attempts to revert the task's edit, then
-    // discards the task.
-    'editTask/undo': [FixupTaskID, null]
-    // Discards the task. Applicable to tasks in any state.
-    'editTask/cancel': [FixupTaskID, null]
-
-    // Utility for clients that don't have language-neutral folding-range support.
-    // Provides a list of all the computed folding ranges in the specified document.
-    'editTask/getFoldingRanges': [GetFoldingRangeParams, GetFoldingRangeResult]
+    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -258,15 +244,7 @@ export type ClientNotifications = {
 export type ServerNotifications = {
     'debug/message': [DebugMessage]
 
-    // Certain properties of the task are updated:
-    // - State
-    // - The associated range has changed because the document was edited
-    // Only sent if client capabilities fixupControls === 'events'
-    'editTask/didUpdate': [EditTask]
-    // The task is deleted because it has been accepted or cancelled.
-    // Only sent if client capabilities fixupControls === 'events'.
-    'editTask/didDelete': [EditTask]
-
+    'editTaskState/didChange': [EditTask]
     'codeLenses/display': [DisplayCodeLensParams]
 
     // Low-level webview notification for the given chat session ID (created via
@@ -610,7 +588,6 @@ export interface EditTask {
     id: string
     state: CodyTaskState
     error?: CodyError
-    selectionRange: Range
 }
 
 export interface CodyError {
@@ -682,12 +659,4 @@ export interface CustomChatCommandResult {
 export interface CustomEditCommandResult {
     type: 'edit'
     editResult: EditTask
-}
-
-export interface GetFoldingRangeParams {
-    uri: string
-}
-
-export interface GetFoldingRangeResult {
-    ranges: Range[]
 }

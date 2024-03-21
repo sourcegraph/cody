@@ -12,7 +12,6 @@ import * as vscode from 'vscode'
 import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
-import { defaultVSCodeExtensionClient } from '../../../vscode/src/extension-client'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -35,7 +34,7 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        await initializeVscodeExtension(vscode.Uri.file(process.cwd()), defaultVSCodeExtensionClient())
+        await initializeVscodeExtension(vscode.Uri.file(process.cwd()))
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
