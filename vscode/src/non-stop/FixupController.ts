@@ -16,7 +16,6 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { showEditInput } from '../editor-input/edit'
-import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
 import { FixupDecorator } from './FixupDecorator'
@@ -151,23 +150,62 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.finished)
     }
 
+    // public async retry(id: taskID): Promise<void> {
+    //     const task = this.tasks.get(id)
+    //     if (!task) {
+    //         return
+    //     }
+
+    //     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+    //     // Prompt the user for a new instruction, and create a new fixup
+    //     const input = await showEditInput(document, this.authProvider, {
+    //         initialInputValue: task.instruction,
+    //         initialRange: task.selectionRange,
+    //         initialSelectedContextFiles: task.userContextFiles,
+    //         initialModel: task.model,
+    //         initialIntent: task.intent,
+    //     })
+    //     if (!input) {
+    //         return
+    //     }
+
+    //     /**
+    //      * If the selected range is the same as what we provided, we actually want the original
+    //      * range, which is the range which will be left in the document after the task is undone.
+    //      *
+    //      * Otherwise, use the new selected range.
+    //      */
+    //     const updatedRange = input.range.isEqual(task.selectionRange) ? task.originalRange : input.range
+
+    //     // Revert and remove the previous task
+    //     await this.undoTask(task)
+
+    //     void executeEdit({
+    //         configuration: {
+    //             range: updatedRange,
+    //             instruction: input.instruction,
+    //             userContextFiles: input.userContextFiles,
+    //             document,
+    //             intent: input.intent,
+    //             mode: task.mode,
+    //             model: input.model,
+    //         },
+    //         source: 'code-lens',
+    //     })
+    // }
+
     // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
     public async retry(task: FixupTask, source: ChatEventSource): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        const input = await getInput(
-            document,
-            this.authProvider,
-            {
-                initialInputValue: task.instruction,
-                initialRange: task.selectionRange,
-                initialSelectedContextItems: task.userContextItems,
-                initialModel: task.model,
-                initialIntent: task.intent,
-            },
-            source
-        )
+        const input = await showEditInput(document, this.authProvider, {
+            initialInputValue: task.instruction,
+            initialRange: task.selectionRange,
+            initialSelectedContextItems: task.userContextItems,
+            initialModel: task.model,
+            initialIntent: task.intent,
+        })
         if (!input) {
             return
         }

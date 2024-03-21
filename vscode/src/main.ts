@@ -223,7 +223,7 @@ const register = async (
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
     // The in-editor input, used for chat and commands.
-    const editorInput = registerEditorInput(authProvider, editorManager, chatManager)
+    const editorInput = registerEditorInput(authProvider)
     disposables.push(editorInput)
 
     let oldConfig = JSON.stringify(initialConfig)

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import type { InputType } from '../..'
 import type { EditorInputType } from '../create-input'
 import type { GetItemsResult } from '../quick-pick'
 import { getItemLabel } from '../utils'
@@ -17,7 +16,6 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 
 export const getSharedInputItems = (
     type: EditorInputType,
-    inputType: InputType,
     activeValue: string,
     activeRangeItem: vscode.QuickPickItem,
     activeModelItem: vscode.QuickPickItem | undefined,
@@ -25,13 +23,6 @@ export const getSharedInputItems = (
     additionalItems: vscode.QuickPickItem[] = []
 ): GetItemsResult => {
     const hasActiveValue = activeValue.trim().length > 0
-
-    const hintItems =
-        inputType === 'NoPrefix' || inputType === 'Hybrid' || hasActiveValue
-            ? []
-            : type === 'Chat'
-              ? [{ label: 'Enter chat message (@ to include code)', alwaysShow: true }]
-              : [{ label: 'Enter edit instructions (@ to include code)', alwaysShow: true }]
 
     const submitItems = hasActiveValue
         ? [
@@ -59,7 +50,7 @@ export const getSharedInputItems = (
             : null,
     ]
 
-    const items = [...hintItems, ...submitItems, ...optionItems, ...additionalItems].filter(
+    const items = [...submitItems, ...optionItems, ...additionalItems].filter(
         Boolean
     ) as vscode.QuickPickItem[]
 

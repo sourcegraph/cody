@@ -1,4 +1,4 @@
-import { type ContextItem, displayPath, AuthStatus } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath, type AuthStatus } from '@sourcegraph/cody-shared'
 import { ModelProvider } from '@sourcegraph/cody-shared'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { displayLineRange } from '@sourcegraph/cody-shared'
@@ -9,6 +9,7 @@ import {
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
 } from './constants'
 import type { EditorInputType } from './create-input'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 
 /**
  * Removes the string after the last '@' character in the given string.
@@ -77,4 +78,28 @@ export function getModelsForUser(authStatus: AuthStatus, type: EditorInputType):
         )
     }
     return ModelProvider.get(EditorInputTypeToModelType[type].type, authStatus.endpoint)
+}
+
+export const GENERIC_EDITOR_INPUT_TITLE = `Cody${!isRunningInsideAgent() ? ' (⌥C)' : ''}`
+export const EDIT_EDITOR_INPUT_TITLE = `Cody Edit${!isRunningInsideAgent() ? ' (⌥K)' : ''}`
+export const CHAT_EDITOR_INPUT_TITLE = `Cody Chat${!isRunningInsideAgent() ? ' (⌥L)' : ''}`
+
+export function getInputLabels(inputType: EditorInputType): { title: string; placeHolder: string } {
+    switch (inputType) {
+        case 'Combined':
+            return {
+                title: GENERIC_EDITOR_INPUT_TITLE,
+                placeHolder: 'Enter instruction (@ to include code)',
+            }
+        case 'Edit':
+            return {
+                title: EDIT_EDITOR_INPUT_TITLE,
+                placeHolder: 'Enter edit instruction (@ to include code)',
+            }
+        case 'Chat':
+            return {
+                title: CHAT_EDITOR_INPUT_TITLE,
+                placeHolder: 'Enter chat message (@ to include code)',
+            }
+    }
 }

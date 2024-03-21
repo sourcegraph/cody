@@ -1,7 +1,10 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    parseMentionQuery,
+    scanForMentionTriggerInUserTextInput,
+} from '@sourcegraph/cody-shared'
 import type { ChatModel, EditModel } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
-import { INPUT_TITLE, type InputType } from '..'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import type { EditIntent } from '../../edit/types'
 import { isGenerateIntent } from '../../edit/utils/edit-intent'
@@ -12,6 +15,7 @@ import {
     EditorInputTypeToModelType,
     FILE_HELP_LABEL,
     NO_MATCHES_LABEL,
+    OTHER_MENTION_HELP_LABEL,
     PREVIEW_RANGE_DECORATION,
     SYMBOL_HELP_LABEL,
 } from './constants'
@@ -25,28 +29,35 @@ import type { ModelItem, RangeItem } from './items/types'
 import { createQuickPick } from './quick-pick'
 import {
     fetchDocumentSymbols,
+    getInputLabels,
     getLabelForContextItem,
     getModelsForUser,
     removeAfterLastAt,
 } from './utils'
 
-export type EditorInputType = 'Chat' | 'Edit'
+export type EditorInputType = 'Combined' | 'Chat' | 'Edit'
 
 interface GenericInitialValues {
     initialRange: vscode.Range
     initialExpandedRange?: vscode.Range
     initialInputValue?: string
-    initialSelectedContextFiles?: ContextItem[]
+    initialSelectedContextItems?: ContextItem[]
+    initialModel: ChatModel | EditModel
+}
+
+interface ChatInitialValues extends GenericInitialValues {
+    initialModel: ChatModel
+}
+
+interface EditInitialValues extends GenericInitialValues {
+    initialModel: EditModel
+    initialIntent: EditIntent
 }
 
 export interface InitialValues {
-    Chat: {
-        initialModel: ChatModel
-    } & GenericInitialValues
-    Edit: {
-        initialModel: EditModel
-        initialIntent: EditIntent
-    } & GenericInitialValues
+    Combined: GenericInitialValues
+    Chat: ChatInitialValues
+    Edit: EditInitialValues
 }
 
 interface GenericOutputValues {
@@ -58,26 +69,25 @@ interface GenericOutputValues {
     range: vscode.Range
 }
 
+interface ChatOutputValues extends GenericOutputValues {
+    model: ChatModel
+}
+
+interface EditOutputValues extends GenericOutputValues {
+    model: EditModel
+    intent: EditIntent
+}
+
+interface CombinedOutputValues extends GenericOutputValues {}
+
 export interface OutputValues {
-    Chat: {
-        /** The LLM that the user has selected */
-        model: ChatModel
-    } & GenericOutputValues
-    Edit: {
-        /** The LLM that the user has selected */
-        model: EditModel
-        /**
-         * The derived intent from the users instructions
-         * This will effectively only change if the user switching from a "selection" to a "cursor"
-         * position, or vice-versa.
-         */
-        intent: EditIntent
-    } & GenericOutputValues
+    Combined: CombinedOutputValues
+    Chat: ChatOutputValues
+    Edit: EditOutputValues
 }
 
 export async function showEditorInput<T extends EditorInputType>({
     type,
-    inputType,
     document,
     authProvider,
     initialValues,
@@ -85,7 +95,6 @@ export async function showEditorInput<T extends EditorInputType>({
     onDidAccept,
 }: {
     type: T
-    inputType: InputType
     document: vscode.TextDocument
     authProvider: AuthProvider
     initialValues: InitialValues[T]
@@ -97,6 +106,7 @@ export async function showEditorInput<T extends EditorInputType>({
         return
     }
 
+    const { title, placeHolder } = getInputLabels(type)
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
     let activeRangeItem =
@@ -121,7 +131,7 @@ export async function showEditorInput<T extends EditorInputType>({
 
     // Initialize the selectedContextItems with any previous items
     // This is primarily for edit retries, where a user may want to reuse their context
-    for (const file of initialValues.initialSelectedContextFiles ?? []) {
+    for (const file of initialValues.initialSelectedContextItems ?? []) {
         selectedContextItems.set(getLabelForContextItem(file), file)
     }
 
@@ -167,7 +177,7 @@ export async function showEditorInput<T extends EditorInputType>({
     const symbolsPromise = fetchDocumentSymbols(document)
 
     const modelInput = createQuickPick({
-        title: INPUT_TITLE,
+        title,
         placeHolder: 'Select a model',
         getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
         buttons: [vscode.QuickInputButtons.Back],
@@ -212,7 +222,7 @@ export async function showEditorInput<T extends EditorInputType>({
     })
 
     const rangeSymbolsInput = createQuickPick({
-        title: INPUT_TITLE,
+        title,
         placeHolder: 'Select a symbol',
         getItems: () =>
             getRangeSymbolInputItems(
@@ -249,7 +259,7 @@ export async function showEditorInput<T extends EditorInputType>({
     })
 
     const rangeInput = createQuickPick({
-        title: INPUT_TITLE,
+        title,
         placeHolder: 'Select a range',
         getItems: () =>
             getRangeInputItems(type, document, { ...initialValues, initialCursorPosition }, activeRange),
@@ -286,15 +296,11 @@ export async function showEditorInput<T extends EditorInputType>({
     })
 
     const targetInput = createQuickPick({
-        title: INPUT_TITLE,
-        placeHolder:
-            type === 'Chat'
-                ? 'Enter chat message (@ to include code)'
-                : 'Enter edit instruction (@ to include code)',
+        title,
+        placeHolder,
         getItems: () =>
             getSharedInputItems(
                 type,
-                inputType,
                 targetInput.input.value,
                 activeRangeItem,
                 activeModelItem,
@@ -314,31 +320,30 @@ export async function showEditorInput<T extends EditorInputType>({
                 return
             }
 
-            if (inputType === 'WithPrefix' && value.trim().length === 0) {
-                // Support removing the prefix to go back to the previous menu
-                return vscode.commands.executeCommand('cody.editor.input')
-            }
-
-            const isFileSearch = value.endsWith('@')
-            const isSymbolSearch = value.endsWith('@#')
+            const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+            const mentionQuery = mentionTrigger
+                ? parseMentionQuery(mentionTrigger.matchingString)
+                : undefined
 
             // If we have the beginning of a file or symbol match, show a helpful label
-            if (isFileSearch) {
-                input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                return
-            }
-            if (isSymbolSearch) {
-                input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
+            if (mentionQuery?.text === '') {
+                if (mentionQuery.type === 'empty' || mentionQuery.type === 'file') {
+                    input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
+                    return
+                }
+                if (mentionQuery.type === 'symbol') {
+                    input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
+                    return
+                }
+                input.items = [{ alwaysShow: true, label: OTHER_MENTION_HELP_LABEL }]
                 return
             }
 
-            const matchingContext = await getMatchingContext(value)
+            const matchingContext = mentionQuery ? await getMatchingContext(mentionQuery) : null
             if (matchingContext === null) {
                 // Nothing to match, re-render existing items
-                // eslint-disable-next-line no-self-assign
                 input.items = getSharedInputItems(
                     type,
-                    inputType,
                     input.value,
                     activeRangeItem,
                     activeModelItem,
@@ -410,9 +415,6 @@ export async function showEditorInput<T extends EditorInputType>({
         },
     })
 
-    targetInput.render('')
+    targetInput.render(initialValues.initialInputValue || '')
     targetInput.input.activeItems = []
-    if (initialValues.initialInputValue) {
-        targetInput.input.value = initialValues.initialInputValue
-    }
 }
