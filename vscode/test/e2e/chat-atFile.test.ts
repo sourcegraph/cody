@@ -55,8 +55,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
 
     // Includes dotfiles after just "."
-    await chatInput.click()
-    await chatInput.fill('@.')
+    await chatInput.pressSequentially('@.', { delay: 50 })
     await expect(chatPanelFrame.getByRole('option', { name: '.mydotfile' })).toBeVisible()
 
     // Forward slashes
