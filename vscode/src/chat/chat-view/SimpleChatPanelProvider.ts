@@ -144,7 +144,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
-    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
@@ -577,10 +576,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
-        // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
-        this.contextFilesQueryCancellation?.cancel()
-        this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
@@ -598,25 +594,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
         }
 
-        try {
-            const items = await getChatContextItemsForMention(
-                query,
-                cancellation.token,
-                scopedTelemetryRecorder
-            )
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            void this.postMessage({
-                type: 'userContextFiles',
-                userContextFiles: items,
+        getChatContextItemsForMention(query, cancellation.token, scopedTelemetryRecorder)
+            .then(items => {
+                if (!cancellation.token.isCancellationRequested) {
+                    void this.postMessage({
+                        type: 'userContextFiles',
+                        userContextFiles: items,
+                    })
+                }
             })
-        } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        }
+            .catch(error => {
+                cancellation.cancel()
+                this.postError(new Error(`Error retrieving context files: ${error}`))
+            })
+            .finally(() => cancellation.dispose())
     }
 
     private async handleSymfIndex(): Promise<void> {
