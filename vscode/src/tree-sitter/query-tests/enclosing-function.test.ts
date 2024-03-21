@@ -17,36 +17,25 @@ describe('getEnclosingFunction', () => {
         })
     })
 
-    it.skip('typescriptreact', async () => {
-        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.typescriptreact)
-
-        await annotateAndMatchSnapshot({
-            parser,
-            language,
-            captures: queries.getEnclosingFunction,
-            sourcesPath: 'test-data/enclosing-function.ts',
-        })
-    })
-
-    it.skip('python', async () => {
+    it('python', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.python)
 
         await annotateAndMatchSnapshot({
             parser,
             language,
             captures: queries.getEnclosingFunction,
-            sourcesPath: 'test-data/enclosing-function.ts',
+            sourcesPath: 'test-data/enclosing-function.py',
         })
     })
 
-    it.skip('go', async () => {
+    it('go', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.go)
 
         await annotateAndMatchSnapshot({
             parser,
             language,
             captures: queries.getEnclosingFunction,
-            sourcesPath: 'test-data/enclosing-function.ts',
+            sourcesPath: 'test-data/enclosing-function.go',
         })
     })
 })
