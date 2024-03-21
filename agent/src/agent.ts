@@ -335,7 +335,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             function isEmpty(range: Range | undefined): boolean {
-                return !range || range == new vscode.Range(0, 0, 0, 0)
+                return (
+                    !range ||
+                    (range.start.line === 0 &&
+                        range.start.character === 0 &&
+                        range.end.line === 0 &&
+                        range.end.character === 0)
+                )
             }
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             // If the caller elided the content, reconstruct it here.
