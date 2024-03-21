@@ -18,7 +18,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        const tooltip = `${repoName} @${revision}\nincluded via Search`
+        const tooltip = `${repoName} @${revision}\nincluded via search (remote)`
         return (
             <a
                 href={uri.toString()}
