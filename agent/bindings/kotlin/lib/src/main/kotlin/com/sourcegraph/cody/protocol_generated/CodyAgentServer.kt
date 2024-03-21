@@ -20,6 +20,8 @@ interface CodyAgentServer {
   fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
+  @JsonRequest("chat/export")
+  fun chat_export(params: Null): CompletableFuture<ChatHistory>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/submitMessage")
