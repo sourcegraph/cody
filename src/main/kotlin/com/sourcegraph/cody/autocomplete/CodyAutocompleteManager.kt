@@ -16,10 +16,16 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol.AutocompleteParams
+import com.sourcegraph.cody.agent.protocol.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
+import com.sourcegraph.cody.agent.protocol.CompletionItemParams
+import com.sourcegraph.cody.agent.protocol.ErrorCode
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
+import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -29,7 +35,9 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
-import com.sourcegraph.cody.vscode.*
+import com.sourcegraph.cody.vscode.CancellationToken
+import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
+import com.sourcegraph.cody.vscode.IntelliJTextDocument
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -364,6 +372,7 @@ class CodyAutocompleteManager {
 
     defaultItem.insertText = formattedInsertText
     val completionText = formattedInsertText.removePrefix(originalText)
+    if (completionText.trim().isBlank()) return
 
     val lineBreaks = listOf("\r\n", "\n", "\r")
     val startsInline = lineBreaks.none { separator -> completionText.startsWith(separator) }
