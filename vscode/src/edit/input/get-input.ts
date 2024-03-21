@@ -8,6 +8,13 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import {
+    FILE_HELP_LABEL,
+    FILE_TOO_LARGE_LABEL,
+    GENERAL_HELP_LABEL,
+    NO_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { getEditor } from '../../editor/active-editor'
@@ -19,13 +26,6 @@ import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
-import {
-    FILE_HELP_LABEL,
-    FILE_TOO_LARGE_LABEL,
-    GENERAL_HELP_LABEL,
-    NO_MATCHES_LABEL,
-    SYMBOL_HELP_LABEL,
-} from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
