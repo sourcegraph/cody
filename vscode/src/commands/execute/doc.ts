@@ -82,9 +82,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
 
 /**
  * The command that generates a new docstring for the selected code.
- * When calls, the command will be executed as an inline-edit command.
- *
- * Context: add by the edit command
+ * When called, the command will be executed as an inline-edit command.
  */
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
