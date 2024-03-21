@@ -307,8 +307,6 @@ export async function showEditorInput<T extends EditorInputType>({
                 showModelSelector,
                 additionalItems
             ),
-        buttons: [vscode.QuickInputButtons.Back],
-        onDidTriggerButton: () => vscode.commands.executeCommand('cody.editor.input'),
         onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
         onDidChangeValue: async value => {
             const input = targetInput.input

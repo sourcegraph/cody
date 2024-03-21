@@ -25,10 +25,7 @@ const getModelProviderIcon = (provider: string): string => {
     }
 }
 
-export const getModelOptionItems = (
-    modelOptions: ModelProvider[],
-    isCodyPro: boolean
-): ModelItem[] => {
+export const getModelOptionItems = (modelOptions: ModelProvider[], isCodyPro: boolean): ModelItem[] => {
     const allOptions = modelOptions.map(modelOption => {
         const icon = getModelProviderIcon(modelOption.provider)
         return {
@@ -36,6 +33,7 @@ export const getModelOptionItems = (
             description: `by ${modelOption.provider}`,
             alwaysShow: true,
             model: modelOption.model,
+            usage: modelOption.usage,
             modelTitle: modelOption.title,
             codyProOnly: modelOption.codyProOnly,
         }

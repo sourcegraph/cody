@@ -77,6 +77,19 @@ export function getModelsForUser(authStatus: AuthStatus, type: EditorInputType):
             ])
         )
     }
+
+    if (type === 'Combined') {
+        // For the combined input, we want all possible models
+        // Return a de-duped combination of Edit and Chat.
+        const combinedModels = [
+            ...ModelProvider.get(ModelUsage.Chat, authStatus.endpoint),
+            ...ModelProvider.get(ModelUsage.Edit, authStatus.endpoint),
+        ]
+        return combinedModels.filter(
+            (obj, index, self) => index === self.findIndex(t => t.title === obj.title)
+        )
+    }
+
     return ModelProvider.get(EditorInputTypeToModelType[type].type, authStatus.endpoint)
 }
 
