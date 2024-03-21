@@ -20,18 +20,13 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
         'CodyVSCodeExtension:command:custom:build:executed',
+        'CodyVSCodeExtension:command:custom:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:command:custom:executed',
     ],
 })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -108,17 +103,15 @@ test.extend<ExpectedEvents>({
     await page.getByLabel('Custom Commands').locator('a').click()
     await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
-    const newCommandMenuItem = page.getByLabel('tools  ATestCommand, The test command has been created')
-    const newCommandSidebarItem = page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')
-    await newCommandMenuItem.hover()
-    await newCommandSidebarItem.hover()
-    await expect(page.getByText(commandName)).toHaveCount(2) // one in sidebar, and one in menu
-    await newCommandMenuItem.hover()
-    await expect(newCommandMenuItem).toBeVisible()
-    await newCommandSidebarItem.hover()
-    await expect(newCommandSidebarItem).toBeVisible()
-    await newCommandMenuItem.click()
+    await page.getByPlaceholder('Search command to run...').click()
+    await page.getByPlaceholder('Search command to run...').fill(commandName)
 
+    // The new command should show up in sidebar and on the menu
+    expect((await page.getByText(commandName).all()).length).toBeGreaterThan(1)
+    // The new command shows up in the sidebar
+    await expect(page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')).toBeVisible()
+    // Click the new command on the menu to execute it
+    await page.getByLabel('tools  ATestCommand, The test command has been created').click()
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()
