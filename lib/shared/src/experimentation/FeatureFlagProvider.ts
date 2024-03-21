@@ -44,9 +44,6 @@ export enum FeatureFlag {
     // When enabled, fuses embeddings and symf context for chat.
     CodyChatFusedContext = 'cody-chat-fused-context',
 
-    // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
-    CodyCommandHints = 'cody-command-hints',
-
     // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
     CodyDocumentHints = 'cody-document-hints',
 
