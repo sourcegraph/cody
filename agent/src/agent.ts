@@ -38,7 +38,7 @@ import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult, EditCommandResult } from '../../vscode/src/main'
+import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -335,10 +335,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             function isEmpty(range: Range | undefined): boolean {
-                return !range || range === new vscode.Range(0, 0, 0, 0)
+                return (
+                    !range ||
+                    (range.start.line === 0 &&
+                        range.start.character === 0 &&
+                        range.end.line === 0 &&
+                        range.end.character === 0)
+                )
             }
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            // If the caller elided the content, as is the sensible thing to do, reconstruct it here.
+            // If the caller elided the content, reconstruct it here.
             const cachedDocument = this.workspace.getDocumentFromUriString(
                 documentWithUri.uri.toString()
             )
@@ -776,30 +782,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const args = { configuration: { ...params } }
-            const taskThenable = vscode.commands.executeCommand<FixupTask | undefined>(
-                'cody.command.edit-code',
-                args
+            return this.createEditTask(
+                vscode.commands
+                    .executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
+                    .then(task => task && { type: 'edit', task })
             )
-            // Wrap the task in a Thenable that returns a CommandResult, required by createEditTask().
-            const commandResultThenable: Thenable<CommandResult | undefined> = new Promise(
-                (resolve, reject) => {
-                    taskThenable.then(
-                        task => {
-                            if (task) {
-                                const editCommandResult: EditCommandResult = { type: 'edit', task: task }
-                                resolve(editCommandResult)
-                            } else {
-                                resolve(undefined)
-                            }
-                        },
-                        error => {
-                            reject(error)
-                        }
-                    )
-                }
-            )
-
-            return this.createEditTask(commandResultThenable)
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
