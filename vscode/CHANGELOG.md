@@ -6,36 +6,44 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [1.10.0]
+
+### Added
+
 - Added support links for Cody Pro and Enterprise users. [pull/3330](https://github.com/sourcegraph/cody/pull/3330)
+- Autocomplete: Add StarCoder2 experimental support. [pull/61207](https://github.com/sourcegraph/cody/pull/61207)
+- Autocomplete: Add `cody.autocomplete.experimental.fireworksOptions` for local debugging with Fireworks. [pull/3415](https://github.com/sourcegraph/cody/pull/3415)
+- Chat: Add Claude 3 Haiku for Pro users. [pull/3423](https://github.com/sourcegraph/cody/pull/3423)
+- Chat: Upgrade GPT 4 turbo model. [pull/3468](https://github.com/sourcegraph/cody/pull/3468)
+- Chat: Added experimental support for including web pages as context by @-mentioning a URL (when the undocumented `cody.experimental.urlContext` VS Code setting is enabled). [pull/3436](https://github.com/sourcegraph/cody/pull/3436)
 - Document: Added support for automatically determining the symbol and range of a documentable block from the users' cursor position. Currently supported in JavaScript, TypeScript, Go and Python. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Document: Added a ghost text hint ("Alt+D to Document") that shows when the users' cursor is on a documentable symbol. Currently supported in JavaScript, TypeScript, Go and Python. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Document: Added a shortcut (`Alt+D`) to immediately execute the document command. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Edit: Added a ghost text hint ("Alt+K to Generate Code") that shows on empty files. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
-- Chat: Add Claude 3 Haiku for Pro users. [pull/3423](https://github.com/sourcegraph/cody/pull/3423)
-- Autocomplete: Add StarCoder2 experimental support. [pull/61207](https://github.com/sourcegraph/cody/pull/61207)
-- Autocomplete: Add `cody.autocomplete.experimental.fireworksOptions` for local debugging with Fireworks. [pull/3415](https://github.com/sourcegraph/cody/pull/3415)
-- Chat: Upgrade GPT 4 turbo model. [pull/3468](https://github.com/sourcegraph/cody/pull/3468)
-- Chat: Added experimental support for including web pages as context by @-mentioning a URL (when the undocumented `cody.experimental.urlContext` VS Code setting is enabled). [pull/3436](https://github.com/sourcegraph/cody/pull/3436)
 
 ### Fixed
 
+- Chat: When `@`-mentioning files in chat and edits, the list of fuzzy-matching files is shown much faster (which is especially noticeable in large workspaces).
+- Chat: Fix abort related error messages with Claude 3. [pull/3466](https://github.com/sourcegraph/cody/pull/3466)
 - Document: Fixed an issue where the generated documentation would be incorrectly inserted for Python. Cody will now follow PEP 257 – Docstring Conventions. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Edit: Fixed incorrect decorations being shown for edits that only insert new code. [pull/3424](https://github.com/sourcegraph/cody/pull/3424)
-- When `@`-mentioning files in chat and edits, the list of fuzzy-matching files is shown much faster (which is especially noticeable in large workspaces).
-- Chat: Fix abort related error messages with Claude 3. [pull/3466](https://github.com/sourcegraph/cody/pull/3466)
 
 ### Changed
 
 - Autocomplete: Upgrade tree-sitter and expand language support. [pull/3373](https://github.com/sourcegraph/cody/pull/3373)
 - Autocomplete: Do not cut off completions when they are almost identical to the following non-empty line. [pull/3377](https://github.com/sourcegraph/cody/pull/3377)
+- Autocomplete: Enabled dynamic multiline completions by default. [pull/3392](https://github.com/sourcegraph/cody/pull/3392)
+- Autocomplete: Improve StarCoder2 Ollama support. [pull/3452](https://github.com/sourcegraph/cody/pull/3452)
+- Autocomplete: Upgrade tree-sitter grammars and add Dart support. [pull/3476](https://github.com/sourcegraph/cody/pull/3476)
+- Autocomplete: Wrap tree-sitter parse calls in OpenTelemetry spans. [pull/3419](https://github.com/sourcegraph/cody/pull/3419)
 - Chat: The <kbd>UpArrow</kbd> key in an empty chat editor now edits the most recently sent message instead of populating the editor with the last message's text.
 - Chat: The chat editor uses a new rich editor component. If you open an old chat added before this version and edit a message in the transcript with @-mentions, the @-mentions will show up as plain text and will not actually include the mentioned files unless you re-type them.
-- Autocomplete: Enabled dynamic multiline completions by default. [pull/3392](https://github.com/sourcegraph/cody/pull/3392)
-- Document: Upgraded to use a faster model. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
-- Autocomplete: Wrap tree-sitter parse calls in OpenTelemetry spans. [pull/3419](https://github.com/sourcegraph/cody/pull/3419)
-- Autocomplete: Improve StarCoder2 Ollama support. [pull/3452](https://github.com/sourcegraph/cody/pull/3452)
 - Command: Enhanced the context provided to the Test command to help the language model determine the appropriate testing framework to use. [pull/3344](https://github.com/sourcegraph/cody/pull/3344)
-- Autocomplete: Upgrade tree-sitter grammars and add Dart support. [pull/3476](https://github.com/sourcegraph/cody/pull/3476)
+- Document: Upgraded to use a faster model. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
 - Properly throw an error when attempting to parse an incomplete SSE stream with the nodeClient. [pull/3479](https://github.com/sourcegraph/cody/pull/3479)
 
 ## [1.8.3]
