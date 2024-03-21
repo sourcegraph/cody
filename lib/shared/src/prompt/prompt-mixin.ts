@@ -1,13 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 
-// Reminds Cody of its identity.
-const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
-// Helps with hallucinations.
-const hallucinate = 'Never make assumptions nor provide misleading or hypothetical examples.'
-// To avoid starting responses with "Unfortunately..." when context is available.
-const rule = 'Answer in high-level using shared context. If more context needed, note that at the end.'
-
-const CODY_INTRO_PROMPT = `(${identity} ${hallucinate})`
+// Avoid responses that start with "Unfortunately..." when context is provided.
+const rule = 'Answer in high-level using shared context. If more context needed, tell me at the end.'
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -15,11 +9,14 @@ const CODY_INTRO_PROMPT = `(${identity} ${hallucinate})`
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static defaultMixin: PromptMixin = new PromptMixin(rule || CODY_INTRO_PROMPT)
+    private static defaultMixin: PromptMixin = new PromptMixin(rule)
 
+    /**
+     * Add custom prompt mixin to prepend to all human messages.
+     */
     public static addMixin(prompt: string): void {
         if (prompt) {
-            PromptMixin.mixins = [new PromptMixin(prompt)]
+            PromptMixin.mixins.push(new PromptMixin(prompt))
         }
     }
 

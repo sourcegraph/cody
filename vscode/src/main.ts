@@ -6,7 +6,6 @@ import {
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
     ModelProvider,
-    PromptMixin,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -94,7 +93,6 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                PromptMixin.addMixin(config.chatPreInstruction)
             }
         })
     )
@@ -129,7 +127,6 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-    PromptMixin.addMixin(config.chatPreInstruction)
 
     parseAllVisibleDocuments()
 
