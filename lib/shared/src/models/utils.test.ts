@@ -19,9 +19,9 @@ describe('getModelInfo', () => {
     })
 
     it('replaces dashes in title with spaces', () => {
-        const result = getModelInfo('Example/model-with-dashes')
+        const result = getModelInfo('example/model-with-dashes')
         expect(result).toEqual({
-            provider: 'Example',
+            provider: 'example',
             title: 'model with dashes',
         })
     })
