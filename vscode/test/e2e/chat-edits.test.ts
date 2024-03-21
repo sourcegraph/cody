@@ -41,12 +41,13 @@ test.extend<ExpectedEvents>({
     const editButtons = chatFrame.locator('.codicon-edit')
     await chatInput.fill('One')
     await chatInput.press('Enter')
-    await expect(editButtons).toHaveCount(1)
+    await expect(chatFrame.getByText('One')).toBeVisible()
     await chatInput.fill('Two')
     await chatInput.press('Enter')
-    await expect(editButtons).toHaveCount(2)
+    await expect(chatFrame.getByText('Two')).toBeVisible()
     await chatInput.fill('Three')
     await chatInput.press('Enter')
+    await expect(chatFrame.getByText('Three')).toBeVisible()
     await expect(editButtons).toHaveCount(3)
 
     // Click on the first edit button to get into the editing mode
