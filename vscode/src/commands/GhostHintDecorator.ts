@@ -101,9 +101,11 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
-        EditOrChat:
-            settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyCommandHints)),
+        /**
+         * We're not running an A/B test on the "Opt+K to Text".
+         * We can safely set the default of this to `true`.
+         */
+        EditOrChat: settingValue ?? true,
         Document:
             settingValue ??
             (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
@@ -177,8 +179,7 @@ export class GhostHintDecorator implements vscode.Disposable {
      * Tracks whether the user has recorded an enrollment for each ghost variant.
      * This is _only_ to help us measure usage via an A/B test.
      */
-    private enrollmentRecorded: Record<Exclude<GhostVariant, 'Generate'>, boolean> = {
-        EditOrChat: false,
+    private enrollmentRecorded: Record<Exclude<GhostVariant, 'Generate' | 'EditOrChat'>, boolean> = {
         Document: false,
     }
 
@@ -433,21 +434,6 @@ export class GhostHintDecorator implements vscode.Disposable {
             // Mark this enrollment as recorded for the current session
             // We do not need to repeatedly mark the users' enrollment.
             this.enrollmentRecorded.Document = true
-        }
-
-        if (variant === 'EditOrChat' && !this.enrollmentRecorded.EditOrChat) {
-            const testGroup = enablement.EditOrChat ? 'treatment' : 'control'
-            telemetryService.log(
-                'CodyVSCodeExtension:experiment:ghostText:enrolled',
-                { variant: testGroup },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.experiment.ghostText', 'enrolled', {
-                privateMetadata: { variant: testGroup },
-            })
-            // Mark this enrollment as recorded for the current session
-            // We do not need to repeatedly mark the users' enrollment.
-            this.enrollmentRecorded.EditOrChat = true
         }
     }
 
