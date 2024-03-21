@@ -218,6 +218,22 @@ function getLanguageSpecificQueryWrappers(
         getGraphContextIdentifiers: (root, start, end) => {
             return queries.graphContextIdentifiers.compiled.captures(root, start, end)
         },
+        getEnclosingFunction: (root, start, end) => {
+            const captures = queries.enclosingFunction.compiled.captures(root, start, end)
+
+            const firstEnclosingFunction = findLast(captures, ({ node }) => {
+                return (
+                    node.startPosition.row <= start.row &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+
+            if (!firstEnclosingFunction) {
+                return []
+            }
+
+            return [firstEnclosingFunction] as const
+        },
     }
 }
 

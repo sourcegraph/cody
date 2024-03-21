@@ -43,7 +43,7 @@ class Agent {
 
 class AgentConstructor {
     constructor() {
-        //   |
+    //   |
     }
 }
 
@@ -62,14 +62,14 @@ interface TestInterface {
 
 interface TestInterfacePropertySignature {
     test: boolean
-    //    |
+//    |
 }
 
 // ------------------------------------
 
 interface TestInterfaceCallSignature {
-    (): boolean
-    //     |
+    (): boolean;
+//     |
 }
 
 // ------------------------------------
@@ -82,23 +82,19 @@ type TestType = {
 
 type TestTypePropertySignature = {
     test: number
-    //   |
+//   |
 }
 
 // ------------------------------------
 
 type TestTypeCallSignature = {
-    (): boolean
+    (): boolean;
     //   |
 }
 
 // ------------------------------------
 
-enum TestEnum {
-    One,
-    Two,
-    Three,
-}
+enum TestEnum { One, Two, Three }
 //     |
 
 // ------------------------------------

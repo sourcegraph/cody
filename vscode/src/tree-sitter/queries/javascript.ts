@@ -220,11 +220,8 @@ const JS_ENCLOSING_FUNCTION_QUERY = dedent`
     (function_declaration) @range.function
     (generator_function_declaration) @range.function
     (function_expression) @range.function
-`
-
-const TS_ENCLOSING_FUNCTION_QUERY = dedent`
-    ${JS_ENCLOSING_FUNCTION_QUERY}
-    (function_signature) @range.function
+    (arrow_function) @range.function
+    (method_definition) @range.function
 `
 
 export const javascriptQueries = {
@@ -247,13 +244,13 @@ export const javascriptQueries = {
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
-        enclosingFunction: TS_ENCLOSING_FUNCTION_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
     [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
-        enclosingFunction: TS_ENCLOSING_FUNCTION_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
