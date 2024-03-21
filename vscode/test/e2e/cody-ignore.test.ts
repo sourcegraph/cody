@@ -15,6 +15,7 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',

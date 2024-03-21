@@ -37,15 +37,16 @@ test.extend<ExpectedEvents>({
     const startNewChatButton = chatFrame.getByTitle('Start New Chat')
 
     // Submit three new messages
-    await chatInput.fill('One')
-    await chatInput.press('Enter')
-    await chatInput.fill('Two')
-    await chatInput.press('Enter')
-    await chatInput.fill('Three')
-    await chatInput.press('Enter')
-
     // Three edit buttons should show up, one per each message submitted
     const editButtons = chatFrame.locator('.codicon-edit')
+    await chatInput.fill('One')
+    await chatInput.press('Enter')
+    await expect(editButtons).toHaveCount(1)
+    await chatInput.fill('Two')
+    await chatInput.press('Enter')
+    await expect(editButtons).toHaveCount(2)
+    await chatInput.fill('Three')
+    await chatInput.press('Enter')
     await expect(editButtons).toHaveCount(3)
 
     // Click on the first edit button to get into the editing mode
