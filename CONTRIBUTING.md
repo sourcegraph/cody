@@ -197,12 +197,15 @@ There are two supported configurations for debugging this way:
     - The Cody extension connects via socket to the "remote" agent
 
 Option 1 is the simplest, and probably makes the most sense for you
-to use if you are uncertain which method to use for debugging.
+to use if you are uncertain which method to use for debugging. Option 2
+is especially useful when you need to set a breakpoint very early in
+the Agent startup.
 
 ## How to set up Run Configurations
 
-Run configurations are basically IDEA's launcher scripts. You will need to create one
-run configuration in each project window, using Run → Edit Configurations.
+Run configurations are basically IDEA's launcher scripts. You will need
+to create one run configuration in each project window, using Run → Edit
+Configurations.
 
 For both debugging setups (Cody-spawns and JB-spawned), you will need:
 
@@ -305,7 +308,7 @@ Create this configuration in the `sourcegraph/cody` project window:
 - Working directory: `~/src/sg/cody` (or wherever you cloned sourcegraph/cody)
 - JavaScript file: `agent/dist/index.js`
     - note: this is a relative path, unlike the run configs for Option 2
-- Application Parameters: <leave empty>
+- Application Parameters: leave empty
 - Environment variables:
     - `CODY_AGENT_DEBUG_REMOTE=true`
     - `CODY_AGENT_DEBUG_PORT=3113`
@@ -352,3 +355,29 @@ To set this up, in the Before launch section of any Run/Debug configuration, do 
 You only need to do most of these steps once, when you create the
 External Tool. Then you can use it in any run config that spawns the
 agent, to rebuild it first.
+
+## Debugging VS Code
+
+Sometimes, the TypeScript backend behaves differently when called from
+IntelliJ via Agent than when the same code is called from the VS Code
+extension, and you may need to debug the same code paths through the
+Agent twice. First, when called from the JetBrains extension side, and
+again when called from the VS Code extension side.
+
+To accomplish the latter, you can use VS Code to debug itself. It works
+very similarly to how it works in JetBrains. There are predefined run
+configurations for debugging VS Code Cody in the file
+`.vscode/launch.json` in `sourcegraph/cody`, such as `Launch VS Code
+Extension (Desktop)`.
+
+You do not launch VS Code run configurations from the command palette.
+Instead, use ctrl-shift-D to open the Run and Debug view, and you can
+see the configuration dropdown at the top.
+
+## Known Issues
+
+- Force-stopping the target often corrupts IntelliJ's project indexes,
+  requiring an extra restart of the debugged target to fix them.
+  - Workaround is to exit the target gracefully by quitting each time,
+    using the menus or hotkeys, rather than force-stopping it.
+

@@ -40,7 +40,7 @@ class CodyAgentCodebase(val project: Project) {
   companion object {
     @JvmStatic
     fun getInstance(project: Project): CodyAgentCodebase {
-      return project.service<CodyAgentCodebase>()
+      return project.service()
     }
   }
 }

@@ -11,6 +11,9 @@
 # IntelliJ project
 *.iml
 
+# User local IDEA run configurations
+.run/
+
 # Build output & caches for IntelliJ plugin development
 build/
 idea-sandbox/

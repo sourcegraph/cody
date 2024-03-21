@@ -11,7 +11,7 @@ import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgentCodebase;
 import com.sourcegraph.cody.agent.CodyAgentService;
-import com.sourcegraph.cody.agent.protocol.TextDocument;
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,7 +54,7 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
             Thread.sleep(100);
           } catch (InterruptedException ignored) {
           }
-          agent.getServer().textDocumentDidFocus(TextDocument.fromVirtualFile(file));
+          agent.getServer().textDocumentDidFocus(ProtocolTextDocument.fromVirtualFile(file));
         });
 
     CodyAgentCodebase.getInstance(project).onFileOpened(project, file);

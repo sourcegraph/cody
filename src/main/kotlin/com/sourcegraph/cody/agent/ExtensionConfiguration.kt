@@ -11,5 +11,6 @@ data class ExtensionConfiguration(
     val autocompleteAdvancedAccessToken: String? = null,
     val debug: Boolean? = false,
     val verboseDebug: Boolean? = false,
-    val codebase: String? = null
+    val codebase: String? = null,
+    val customConfiguration: Map<String, String> = emptyMap()
 )

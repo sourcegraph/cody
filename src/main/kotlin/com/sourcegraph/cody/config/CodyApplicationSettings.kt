@@ -11,6 +11,7 @@ data class CodyApplicationSettings(
     var isCodyAutocompleteEnabled: Boolean = true,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
+    var isCodyExperimentalInlineEditEnabled: Boolean = false,
     var isGetStartedNotificationDismissed: Boolean = false,
     var isNotLoggedInNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
@@ -30,6 +31,7 @@ data class CodyApplicationSettings(
     this.isCodyAutocompleteEnabled = state.isCodyAutocompleteEnabled
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
+    this.isCodyExperimentalInlineEditEnabled = state.isCodyExperimentalInlineEditEnabled
     this.isGetStartedNotificationDismissed = state.isGetStartedNotificationDismissed
     this.isNotLoggedInNotificationDismissed = state.isNotLoggedInNotificationDismissed
     this.anonymousUserId = state.anonymousUserId

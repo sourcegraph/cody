@@ -4,8 +4,9 @@ import com.sourcegraph.cody.agent.ExtensionConfiguration
 
 data class ClientInfo(
     var version: String,
-    var workspaceRootUri: String,
-    var extensionConfiguration: ExtensionConfiguration? = null
+    var workspaceRootUri: String? = null,
+    var extensionConfiguration: ExtensionConfiguration? = null,
+    var capabilities: ClientCapabilities? = null,
 ) {
   val name = "JetBrains"
 }

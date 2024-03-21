@@ -40,7 +40,7 @@ class CodyStatusService : CodyStatusListener, Disposable {
   override fun onCodyAutocompleteStatusReset(project: Project) {
     ApplicationManager.getApplication().executeOnPooledThread {
       if (!project.isDisposed) {
-        val notify = didStatusChanged(project)
+        val notify = didStatusChange(project)
         if (notify) {
           updateCodyStatusBarIcons()
         }
@@ -48,7 +48,7 @@ class CodyStatusService : CodyStatusListener, Disposable {
     }
   }
 
-  private fun didStatusChanged(project: Project): Boolean {
+  private fun didStatusChange(project: Project): Boolean {
     synchronized(this) {
       val oldStatus = status
       val service = ApplicationManager.getApplication().getService(CodyAccountManager::class.java)

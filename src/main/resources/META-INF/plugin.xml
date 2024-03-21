@@ -218,12 +218,32 @@
             <reference ref="cody.newChat"/>
         </group>
 
+        <!-- Inline editor actions -->
+        <action
+            id="cody.editCodeAction"
+            class="com.sourcegraph.cody.edit.EditCodeAction"
+            text="Edit Code"/>
+
+        <action
+            id="cody.documentCodeAction"
+            class="com.sourcegraph.cody.edit.DocumentCodeAction"
+            text="Document Code"/>
+
+        <!-- TODO: Custom commands -->
+
         <group id="CodyEditorActions" popup="true" text="Cody"
-               searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
+               icon="/icons/codyLogoSm.svg" searchable="false"
+               class="com.sourcegraph.cody.CodyActionGroup">
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+
+            <!-- TODO: Put these back in and remove the feature flag when they are ready. -->
+            <!-- <reference ref="cody.editCodeAction"/> -->
+            <!-- <reference ref="cody.documentCodeAction"/> -->
+
             <reference ref="cody.command.Explain"/>
             <reference ref="cody.command.Smell"/>
             <reference ref="cody.command.Test"/>
+            <separator/>
         </group>
 
         <group id="SourcegraphEditor" popup="true" text="Sourcegraph"

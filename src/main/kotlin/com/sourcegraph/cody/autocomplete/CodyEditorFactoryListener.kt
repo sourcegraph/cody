@@ -14,8 +14,8 @@ import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.Position
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.Range
-import com.sourcegraph.cody.agent.protocol.TextDocument
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
@@ -175,7 +175,10 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         afterUpdate: () -> Unit = {}
     ) {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-      val document = TextDocument.fromVirtualFile(file, editor.document.text, getSelection(editor))
+
+      val document =
+          ProtocolTextDocument.fromVirtualFile(file, editor.document.text, getSelection(editor))
+
       val project = editor.project ?: return
 
       if (hasFileChanged) {

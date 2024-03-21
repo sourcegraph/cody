@@ -43,11 +43,18 @@ interface CodyAgentServer {
   @JsonNotification("extensionConfiguration/didChange")
   fun configurationDidChange(document: ExtensionConfiguration)
 
-  @JsonNotification("textDocument/didFocus") fun textDocumentDidFocus(document: TextDocument)
+  @JsonNotification("textDocument/didFocus")
+  fun textDocumentDidFocus(document: ProtocolTextDocument)
 
-  @JsonNotification("textDocument/didOpen") fun textDocumentDidOpen(document: TextDocument)
+  @JsonNotification("textDocument/didOpen") fun textDocumentDidOpen(document: ProtocolTextDocument)
 
-  @JsonNotification("textDocument/didClose") fun textDocumentDidClose(document: TextDocument)
+  @JsonNotification("textDocument/didChange")
+  fun textDocumentDidChange(document: ProtocolTextDocument)
+
+  @JsonNotification("textDocument/didClose")
+  fun textDocumentDidClose(document: ProtocolTextDocument)
+
+  @JsonNotification("textDocument/didSave") fun textDocumentDidSave(document: ProtocolTextDocument)
 
   @JsonNotification("autocomplete/clearLastCandidate") fun autocompleteClearLastCandidate()
 
@@ -60,6 +67,9 @@ interface CodyAgentServer {
   @JsonRequest("webview/receiveMessage")
   fun webviewReceiveMessage(params: WebviewReceiveMessageParams): CompletableFuture<Any?>
 
+  @JsonRequest("editTask/getFoldingRanges")
+  fun getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
+
   @JsonRequest("command/execute")
   fun commandExecute(params: CommandExecuteParams): CompletableFuture<Any?>
 
@@ -68,6 +78,11 @@ interface CodyAgentServer {
   @JsonRequest("commands/test") fun commandsTest(): CompletableFuture<String>
 
   @JsonRequest("commands/smell") fun commandsSmell(): CompletableFuture<String>
+
+  @JsonRequest("commands/document") fun commandsDocument(): CompletableFuture<EditTask>
+
+  @JsonRequest("editCommands/code")
+  fun commandsEdit(params: InlineEditParams): CompletableFuture<EditTask>
 
   @JsonRequest("chat/new") fun chatNew(): CompletableFuture<String>
 

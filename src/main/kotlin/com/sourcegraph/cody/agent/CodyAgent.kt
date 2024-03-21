@@ -90,8 +90,6 @@ private constructor(
     private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
-    private fun shouldConnectToDebugAgent() = System.getenv("CODY_AGENT_DEBUG_REMOTE") == "true"
-
     private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
 
     fun create(project: Project): CompletableFuture<CodyAgent> {
@@ -109,7 +107,10 @@ private constructor(
                       version = ConfigUtil.getPluginVersion(),
                       workspaceRootUri =
                           ConfigUtil.getWorkspaceRootPath(project).toUri().toString(),
-                      extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
+                      extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
+                      capabilities =
+                          ClientCapabilities(
+                              edit = "enabled", editWorkspace = "enabled", codeLenses = "enabled")))
               .thenApply { info ->
                 logger.info("Connected to Cody agent " + info.name)
                 server.initialized()
@@ -126,7 +127,7 @@ private constructor(
     }
 
     private fun startAgentProcess(): AgentConnection {
-      if (shouldConnectToDebugAgent()) {
+      if (ConfigUtil.shouldConnectToDebugAgent()) {
         return connectToDebugAgent()
       }
       val token = CancellationToken()
