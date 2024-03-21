@@ -35,8 +35,10 @@ export async function evaluateSimpleChatStrategy(
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-    await createEmbeddings(client, options)
-    await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
+    if (options.shouldUpdateEmbedding === 'true') {
+        await createEmbeddings(client, options)
+        await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
+    }
     await simulateWorkspaceChat(client, options)
     await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
 }
@@ -156,13 +158,6 @@ function registerEmbeddingsHandlers(
                         `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`
                     )
                 }
-            } else if (
-                debug_message.toLowerCase().includes('cody') &&
-                debug_message.toLowerCase().includes('gateway')
-            ) {
-                console.log(
-                    `some message related to cody gateway: reponame: ${repoDisplayName} debug_message: ${debug_message}`
-                )
             } else if (debug_message.startsWith('█ Symf Custom Log Symf [Done]: ')) {
                 embeddingDoneFlag.isSearchIndexReady = true
                 await chatLogs.writeLog(
@@ -171,11 +166,7 @@ function registerEmbeddingsHandlers(
                         embeddingDoneFlag
                     )}`
                 )
-            } else if (
-                debug_message.includes(
-                    'Access denied | sourcegraph.com used Cloudflare to restrict access'
-                )
-            ) {
+            } else if (debug_message.includes('Access denied')) {
                 await chatLogs.writeLog(
                     repoDisplayName,
                     `SourceGraph restricted access message: ${debug_message}`
@@ -193,11 +184,7 @@ function registerEmbeddingsHandlers(
                     '--------- --------- --------- --------- --------- --------- ---------'
                 )
                 exit(1)
-            } else if (
-                debug_message.includes(
-                    '█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden'
-                )
-            ) {
+            } else if (debug_message.includes('403 Forbidden')) {
                 await addRepoToBlockedRepo(workspaceName, repoDisplayName)
                 await chatLogs.writeLog(
                     repoDisplayName,
@@ -221,7 +208,7 @@ function registerEmbeddingsHandlers(
                 // embeddingDoneFlag.isSearchIndexReady = true
 
                 // exit(1)
-            } else if (debug_message.includes('Cody Gateway request failed: 429 Too Many Requests')) {
+            } else if (debug_message.includes('Too Many Requests')) {
                 await chatLogs.writeLog(
                     repoDisplayName,
                     `SourceGraph restricted access message: ${debug_message}`
