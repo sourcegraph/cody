@@ -615,7 +615,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (cancellation.token.isCancellationRequested) {
                 return
             }
+            cancellation.cancel()
             this.postError(new Error(`Error retrieving context files: ${error}`))
+        } finally {
+            cancellation.dispose()
         }
     }
 
