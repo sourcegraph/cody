@@ -269,11 +269,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'chatModel':
                 this.handleSetChatModel(message.model)
                 break
-            case 'history':
-                if (message.action === 'export') {
-                    await this.saveSession()
-                }
-                break
             case 'get-chat-models':
                 this.postChatModels()
                 break

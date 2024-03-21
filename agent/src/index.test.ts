@@ -119,7 +119,6 @@ describe('Agent', () => {
     const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
     const sumUri = vscode.Uri.file(sumPath)
     const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const historyPath = path.join(workspaceRootPath, 'src', 'history.json')
     const animalUri = vscode.Uri.file(animalPath)
     const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
     const squirrelUri = vscode.Uri.file(squirrelPath)
@@ -358,10 +357,7 @@ describe('Agent', () => {
             }
 
             // Step 2: export history
-            const exportHistoryChatId = await client.request('chat/new', null)
-            const chatHistory = await client.request('chat/export', {
-                id: exportHistoryChatId,
-            })
+            const chatHistory = await client.request('chat/export', null)
 
             Object.keys(chatHistory).forEach((chatKey, index) => {
                 const chat = chatHistory[chatKey]

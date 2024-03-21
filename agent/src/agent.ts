@@ -858,13 +858,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: panel.models ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async ({ id }): Promise<ChatHistory> => {
-            const panel = this.webPanels.getPanelOrError(id)
-            await this.receiveWebviewMessage(id, {
-                command: 'history',
-                action: 'export',
-            })
-            return panel.chatHistory || {}
+        this.registerAuthenticatedRequest('chat/export', async (): Promise<ChatHistory> => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = chatHistory.getLocalHistory(authStatus)
+            return localHistory
+                ? Object.fromEntries(
+                      Object.entries(localHistory?.chat).filter(
+                          ([chatID, chatTranscript]) => chatTranscript.interactions.length > 0
+                      )
+                  )
+                : {}
         })
 
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
@@ -1107,14 +1110,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                 } else if (message.type === 'chatModels') {
                     panel.models = message.models
-                } else if (message.type === 'history') {
-                    if (message.localHistory) {
-                        panel.chatHistory = Object.fromEntries(
-                            Object.entries(message.localHistory?.chat).filter(
-                                ([chatID, chatTranscript]) => chatTranscript.interactions.length > 0
-                            )
-                        )
-                    }
                 } else if (message.type === 'context/remote-repos') {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
