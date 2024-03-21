@@ -13,6 +13,7 @@ export enum DefaultChatCommands {
 export enum DefaultEditCommands {
     Test = 'test', // Generate unit tests with inline edit
     Doc = 'doc', // Generate documentation with inline edit
+    Edit = 'edit', // Edit code with inline edit
 }
 
 // The blueprint of a Cody Custom Command

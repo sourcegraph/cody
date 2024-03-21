@@ -36,8 +36,16 @@ import { findWorkspaceFiles } from './findWorkspaceFiles'
 // items it will be ranked low unless the users query contains the exact segment.
 const lowScoringPathSegments = ['bin']
 
-// This is expensive for large repos (e.g. Chromium), so we only do it max once every 10 seconds.
-const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
+/**
+ * This is expensive for large repos (e.g. Chromium), so we only do it max once every 10 seconds.
+ *
+ * We do NOT allow passing a cancellation token because that is highly likely to result in buggy
+ * behavior for a throttled function. If the first call to {@link findWorkspaceFiles} is cancelled,
+ * we still want it to complete so that its results are cached for subsequent calls. If we cancel
+ * and it throws an exception, then we lose all work we did until the cancellation and could
+ * potentially swallow errors and return (and cache) incomplete data.
+ */
+const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -54,7 +62,7 @@ export async function getFileContextFiles(
         return []
     }
 
-    const uris = await throttledFindFiles(token)
+    const uris = await throttledFindFiles()
     if (!uris) {
         return []
     }
