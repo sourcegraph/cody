@@ -23,10 +23,8 @@ export function getModelInfo(modelID: string): {
     provider: string
     title: string
 } {
-    const splittedModel = modelID.split('/')
-    // The name of provider of the model, e.g. "Anthropic"
-    const provider = getProviderName(splittedModel[0])
-    // The title/name of the model, e.g. "Claude 2.0"
-    const title = (splittedModel.pop() || splittedModel[1]).replaceAll('-', ' ')
+    const [providerID, ...rest] = modelID.split('/')
+    const provider = getProviderName(providerID)
+    const title = (rest.at(-1) || '').replace(/-/g, ' ')
     return { provider, title }
 }
