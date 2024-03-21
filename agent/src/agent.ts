@@ -864,7 +864,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 command: 'history',
                 action: 'export',
             })
-            return panel.chatHistory || {} // todo: proper handling
+            return panel.chatHistory || {}
         })
 
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
