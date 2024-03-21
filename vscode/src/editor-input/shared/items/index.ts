@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
+import { EditorInputTypeToModelType } from '../constants'
 import type { EditorInputType } from '../create-input'
 import type { GetItemsResult } from '../quick-pick'
 import { getItemLabel } from '../utils'
 import { MODEL_ITEM } from './model'
 import { RANGE_ITEM } from './range'
 import type { ModelItem } from './types'
-import { EditorInputTypeToModelType } from '../constants'
 
 const SUBMIT_SEPARATOR: vscode.QuickPickItem = {
     label: 'submit',
