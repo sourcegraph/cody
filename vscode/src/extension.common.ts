@@ -52,6 +52,7 @@ export async function activate(
     context: vscode.ExtensionContext,
     platformContext: PlatformContext
 ): Promise<ExtensionApi> {
+    const api = new ExtensionApi(context.extensionMode)
     try {
         const disposable = await start(context, platformContext)
         if (!context.globalState.get('extension.hasActivatedPreviously')) {
@@ -66,6 +67,5 @@ export async function activate(
         captureException(error)
         console.error(error)
     }
-
-    return new ExtensionApi(context.extensionMode)
+    return api
 }
