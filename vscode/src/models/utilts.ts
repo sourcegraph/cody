@@ -2,7 +2,14 @@ import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
 
-export function addEnterpriseChatModel(authStatus: AuthStatus): void {
+/**
+ * Sets the model providers based on the authentication status.
+ *
+ * If a chat model is configured to overwrite, it will add a model provider for that model.
+ * The token limit for the provider will use the configured limit,
+ * or fallback to the limit from the authentication status if not configured.
+ */
+export function setModelProviders(authStatus: AuthStatus): void {
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
     // overwrite it locally (for debugging purposes).
     //

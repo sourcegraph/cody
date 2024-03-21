@@ -23,7 +23,7 @@ import type { ExtensionMessage } from '../protocol'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
-import { addEnterpriseChatModel } from '../../models/utilts'
+import { setModelProviders } from '../../models/utilts'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
@@ -216,7 +216,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private createProvider(): SimpleChatPanelProvider {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
-        addEnterpriseChatModel(authStatus)
+        setModelProviders(authStatus)
         const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
