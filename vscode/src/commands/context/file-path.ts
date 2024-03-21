@@ -5,6 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
@@ -28,10 +29,10 @@ export async function getContextFileFromUri(file: URI): Promise<ContextItem[]> {
                     type: 'file',
                     content: decoded,
                     uri: file,
-                    source: 'editor',
+                    source: ContextItemSource.Editor,
                     range,
                 },
-            ]
+            ] satisfies ContextItem[]
         } catch (error) {
             logError('getContextFileFromUri', 'failed', { verbose: error })
             return []

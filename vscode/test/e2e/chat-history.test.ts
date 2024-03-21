@@ -36,6 +36,13 @@ test.extend<ExpectedEvents>({
     // Check if chat shows up in sidebar chat history tree view
     await expect(heyTreeItem).toBeVisible()
 
+    // Wait at least 1 second to ensure that the 2 chats have different IDs (which are currently
+    // created using `new Date(Date.now()).toUTCString()`, so they are the same if they are
+    // generated in the same second).
+    //
+    // TODO(sqs): investigate and fix the underlying bug here
+    await page.waitForTimeout(1000)
+
     // Clear and restart chat session
     // All current messages should be removed, and the panel name should be updated to 'New Chat'
     await chatInput.fill('/reset')

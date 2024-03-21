@@ -2,10 +2,15 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { type ChatClient, type Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
+    type ChatClient,
+    type Guardrails,
+    ModelProvider,
+} from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
-import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -13,7 +18,6 @@ import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import type { AuthStatus } from '../protocol'
 
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
@@ -28,6 +32,7 @@ import { SidebarViewController, type SidebarViewOptions } from './SidebarViewCon
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
+
 /**
  * Manages the sidebar webview for auth/onboarding.
  *
@@ -135,6 +140,7 @@ export class ChatManager implements vscode.Disposable {
             args.text,
             args?.submitType,
             args?.contextFiles ?? [],
+            args?.editorState,
             args?.addEnhancedContext ?? true,
             args?.source
         )

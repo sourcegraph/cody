@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextItem, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
+import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
@@ -9,10 +9,10 @@ import type { FixupFile } from './FixupFile'
 import type { Diff } from './diff'
 import { CodyTaskState } from './utils'
 
-export type taskID = string
+export type FixupTaskID = string
 
 export class FixupTask {
-    public id: taskID
+    public id: FixupTaskID
     public state_: CodyTaskState = CodyTaskState.idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
@@ -53,18 +53,19 @@ export class FixupTask {
          */
         public fixupFile: FixupFile,
         public readonly instruction: string,
-        public readonly userContextFiles: ContextItem[],
+        public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
+        /* The range being edited. This range is tracked and updates as the user (or Cody) edits code. */
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: ChatEventSource,
-        public readonly contextMessages?: ContextMessage[],
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
-        public destinationFile?: vscode.Uri
+        public destinationFile?: vscode.Uri,
+        public insertionPoint?: vscode.Position
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

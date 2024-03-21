@@ -1,7 +1,7 @@
-import { SHA256, enc } from 'crypto-js'
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -12,7 +12,9 @@ import {
     NetworkError,
     TracedError,
     addTraceparent,
+    createSSEIterator,
     displayPath,
+    dotcomTokenToGatewayToken,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
@@ -20,20 +22,27 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
-import { fetch } from '../../fetch'
+import { fetch } from '@sourcegraph/cody-shared/src/fetch'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import type { AuthStatus } from '../../chat/protocol'
-import { logDebug } from '../../log'
-import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
-import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    logResponseHeadersToSpan,
+    recordErrorToSpan,
+    tracer,
+} from '@sourcegraph/cody-shared/src/tracing'
+import { logDebug } from '../../log'
+import { createRateLimitErrorFromResponse } from '../client'
+import {
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
@@ -49,7 +58,10 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
-    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'accessToken' | 'autocompleteExperimentalFireworksOptions'
+    >
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
@@ -65,6 +77,8 @@ const MODEL_MAP = {
     starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
+    'starcoder2-15b': 'fireworks/starcoder2-15b',
+    'starcoder2-7b': 'fireworks/starcoder2-7b',
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
@@ -74,10 +88,15 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
+    // `starcoder2-hybrid` uses the 15b model for multiline requests and the 7b model for single line
+    | 'starcoder2-hybrid'
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder':
+        case 'starcoder2-hybrid':
+        case 'starcoder2-15b':
+        case 'starcoder2-7b':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b': {
@@ -94,10 +113,8 @@ function getMaxContextTokens(model: FireworksModel): number {
     }
 }
 
-const MAX_RESPONSE_TOKENS = 256
-
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n'],
+    singlelineStopSequences: [],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
@@ -108,6 +125,8 @@ class FireworksProvider extends Provider {
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private isLocalInstance: boolean
+    private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
 
     constructor(
         options: ProviderOptions,
@@ -119,16 +138,28 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.isLocalInstance = Boolean(
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+                this.authStatus.endpoint?.includes('localhost')
+        )
 
         const isNode = typeof process !== 'undefined'
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            this.authStatus.isDotCom &&
+            (this.authStatus.isDotCom || this.isLocalInstance) &&
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
                 : undefined
+
+        if (
+            process.env.NODE_ENV === 'development' &&
+            config.autocompleteExperimentalFireworksOptions?.token
+        ) {
+            this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
+            this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
+        }
     }
 
     private createPrompt(snippets: ContextSnippet[]): string {
@@ -192,24 +223,35 @@ class FireworksProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                timeouts: this.timeouts,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            timeouts: this.timeouts,
+            lineNumberDependentCompletionParams,
+        })
 
         const { multiline } = this.options
-        const requestParams: CodeCompletionsParams = {
+        const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
             topK: 0,
             model:
-                this.model === 'starcoder-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : MODEL_MAP[this.model],
+                this.model === 'starcoder2-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder2-15b' : 'starcoder2-7b']
+                    : this.model === 'starcoder-hybrid'
+                      ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                      : MODEL_MAP[this.model],
+        } satisfies CodeCompletionsParams
+
+        if (requestParams.model.includes('starcoder2')) {
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
+                '<fim_prefix>',
+                '<fim_suffix>',
+                '<fim_middle>',
+                '<|endoftext|>',
+                '<file_sep>',
+            ]
         }
 
         tracer?.params(requestParams)
@@ -225,7 +267,7 @@ class FireworksProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,
@@ -299,14 +341,13 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const isLocalInstance =
-            this.authStatus.endpoint?.includes('sourcegraph.test') ||
-            this.authStatus.endpoint?.includes('localhost')
-        const gatewayUrl = isLocalInstance
+        const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
 
-        const url = `${gatewayUrl}/v1/completions/fireworks`
+        const url = this.fireworksConfig
+            ? this.fireworksConfig.url
+            : `${gatewayUrl}/v1/completions/fireworks`
         const log = this.client.logger?.startCompletion(requestParams, url)
 
         // The async generator can not use arrow function syntax so we close over the context
@@ -320,14 +361,19 @@ class FireworksProvider extends Provider {
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {
-                    model: requestParams.model?.replace(/^fireworks\//, ''),
+                    model:
+                        self.fireworksConfig?.model || requestParams.model?.replace(/^fireworks\//, ''),
                     prompt,
                     max_tokens: requestParams.maxTokensToSample,
                     echo: false,
-                    temperature: requestParams.temperature,
-                    top_p: requestParams.topP,
-                    top_k: requestParams.topK,
-                    stop: requestParams.stopSequences,
+                    temperature:
+                        self.fireworksConfig?.parameters?.temperature || requestParams.temperature,
+                    top_p: self.fireworksConfig?.parameters?.top_p || requestParams.topP,
+                    top_k: self.fireworksConfig?.parameters?.top_k || requestParams.topK,
+                    stop: [
+                        ...(requestParams.stopSequences || []),
+                        ...(self.fireworksConfig?.parameters?.stop || []),
+                    ],
                     stream: true,
                 }
 
@@ -335,7 +381,10 @@ class FireworksProvider extends Provider {
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
-                headers.set('Content-Type', 'application/json; charset=utf-8')
+                headers.set(
+                    'Content-Type',
+                    `application/json${self.fireworksConfig ? '' : '; charset=utf-8'}`
+                )
                 headers.set('Authorization', `Bearer ${self.fastPathAccessToken}`)
                 headers.set('X-Sourcegraph-Feature', 'code_completions')
                 addTraceparent(headers)
@@ -370,7 +419,7 @@ class FireworksProvider extends Provider {
                         new NetworkError(
                             response,
                             (await response.text()) +
-                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                                (self.isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
                             traceId
                         )
                     )
@@ -484,8 +533,8 @@ export function createProviderConfig({
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid'
-              ? 'starcoder-hybrid'
+            : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
+              ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
                   ? (model as keyof typeof MODEL_MAP)
                   : null
@@ -527,24 +576,4 @@ function isLlamaCode(model: string): boolean {
 
 interface FireworksSSEData {
     choices: [{ text: string; finish_reason: null }]
-}
-
-function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
-    const DOTCOM_TOKEN_REGEX: RegExp =
-        /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
-    const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
-
-    if (!match) {
-        throw new Error('Access token format is invalid.')
-    }
-
-    const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
-
-    if (!hexEncodedAccessTokenBytes) {
-        throw new Error('Access token not found.')
-    }
-
-    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
-    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
-    return 'sgd_' + gatewayTokenBytes
 }

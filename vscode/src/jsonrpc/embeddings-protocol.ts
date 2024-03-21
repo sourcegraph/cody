@@ -16,9 +16,10 @@ interface ChunkingPolicy {
 interface QueryParams {
     repoName: string
     query: string
+    numResults: number
 }
 
-interface QueryResultSet {
+export interface QueryResultSet {
     results: QueryResult[]
 }
 

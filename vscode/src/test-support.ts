@@ -39,7 +39,7 @@ export class TestSupport {
     public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
     public ignoreHelper = new Rendezvous<IgnoreHelper>()
 
-    public async chatMessages(): Promise<ChatMessage[]> {
+    public async chatMessages(): Promise<readonly ChatMessage[]> {
         return (await this.chatPanelProvider.get()).getViewTranscript()
     }
 }

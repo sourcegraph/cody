@@ -10,7 +10,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
@@ -33,6 +32,9 @@ interface EditProviderOptions extends EditManagerOptions {
     controller: FixupController
 }
 
+// Initiates a completion and responds to the result from the LLM. Implements
+// "tools" like directing the response into a specific file. Code is forwarded
+// to the FixupTask.
 export class EditProvider {
     private insertionResponse: string | null = null
     private insertionInProgress = false
@@ -42,16 +44,25 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = getContextWindowForModel(
                 this.config.authProvider.getAuthStatus(),
                 model
             )
-            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+            const {
+                messages,
+                stopSequences,
+                responseTopic,
+                responsePrefix = '',
+            } = await buildInteraction({
                 model,
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
+            }).catch(err => {
+                this.handleError(err)
+                throw err
             })
 
             const multiplexer = new BotResponseMultiplexer()
@@ -161,11 +172,16 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
-                ...countCode(response),
-                source: this.config.task.source,
-                hasV2Event: true,
-            })
+            telemetryService.log(
+                'CodyVSCodeExtension:fixupResponse:hasCode',
+                {
+                    ...countCode(response),
+                    source: this.config.task.source,
+                },
+                {
+                    hasV2Event: true,
+                }
+            )
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
             const responseText = endpoint && isDotCom(endpoint) ? response : undefined
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
@@ -243,18 +259,6 @@ export class EditProvider {
 
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
-            // an existing test file from codebase
-            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))
-                ?.file?.uri
-            if (cbTestFileUri) {
-                const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
-                const fileExists = await doesFileExist(testFileUri)
-                // create a file uri with untitled scheme that would work on windows
-                const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
-                await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
-                return
-            }
-
             // Create a new untitled file if the suggested file does not exist
             const currentFile = task.fixupFile.uri
             const currentDoc = await workspace.openTextDocument(currentFile)
@@ -269,12 +273,16 @@ export class EditProvider {
         const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
-        const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+        const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
+
+        // Get workspace uri using the current file uri
+        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
+        const currentDirUri = Utils.joinPath(currentFileUri, '..')
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
+        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {

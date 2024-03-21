@@ -1,16 +1,20 @@
 import * as vscode from 'vscode'
 
-import { type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { FeedbackOptionItems } from './FeedbackOptions'
+import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
+import { telemetryService } from './telemetry'
+import { telemetryRecorder } from './telemetry-v2'
+import { enableDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
     description: string
     errorType: StatusBarErrorName
+    removeAfterSelected: boolean
     onShow?: () => void
     onSelect?: () => void
 }
@@ -26,6 +30,7 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
+    syncAuthStatus(newStatus: AuthStatus): void
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -49,7 +54,23 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
 
+    let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
+        telemetryService.log(
+            'CodyVSCodeExtension:statusBarIcon:clicked',
+            { loggedIn: Boolean(authStatus?.isLoggedIn) },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
+            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
+        })
+
+        if (!authStatus?.isLoggedIn) {
+            // Bring up the sidebar view
+            void vscode.commands.executeCommand('cody.focus')
+            return
+        }
+
         const workspaceConfig = vscode.workspace.getConfiguration()
         const config = getConfiguration(workspaceConfig)
 
@@ -85,6 +106,13 @@ export function createStatusBar(): CodyStatusBar {
             }
         }
 
+        function createFeedbackAndSupportItems(): StatusBarItem[] {
+            const isPaidUser = authStatus?.isLoggedIn && !authStatus?.userCanUpgrade
+            const paidSupportItems = isPaidUser ? PremiumSupportItems : []
+            // Display to paid users (e.g. Enterprise users or Cody Pro uers) only
+            return [...paidSupportItems, ...FeedbackOptionItems]
+        }
+
         if (errors.length > 0) {
             errors.map(error => error.error.onShow?.())
         }
@@ -101,9 +129,11 @@ export function createStatusBar(): CodyStatusBar {
                           detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
                           onSelect(): Promise<void> {
                               error.error.onSelect?.()
-                              const index = errors.indexOf(error)
-                              errors.splice(index)
-                              rerender()
+                              if (error.error.removeAfterSelected) {
+                                  const index = errors.indexOf(error)
+                                  errors.splice(index)
+                                  rerender()
+                              }
                               return Promise.resolve()
                           },
                       })),
@@ -152,9 +182,12 @@ export function createStatusBar(): CodyStatusBar {
             await createFeatureToggle(
                 'Command Hints',
                 undefined,
-                'Enable hints for Edit and Chat shortcuts, displayed alongside editor selections',
+                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
                 'cody.commandHints.enabled',
-                getGhostHintEnablement
+                async () => {
+                    const enablement = await getGhostHintEnablement()
+                    return enablement.Document || enablement.EditOrChat || enablement.Generate
+                }
             ),
             await createFeatureToggle(
                 'Search Context',
@@ -178,7 +211,7 @@ export function createStatusBar(): CodyStatusBar {
                 },
             },
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
-            ...FeedbackOptionItems,
+            ...createFeedbackAndSupportItems(),
         ]
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'
@@ -196,6 +229,19 @@ export function createStatusBar(): CodyStatusBar {
             item?.button?.onClick?.()
             quickPick.hide()
         })
+        // Debug Mode
+        quickPick.buttons = [
+            {
+                iconPath: new vscode.ThemeIcon('bug'),
+                tooltip: config.debugEnable ? 'Check Debug Logs' : 'Turn on Debug Mode',
+                onClick: () => enableDebugMode(),
+            } as vscode.QuickInputButton,
+        ]
+        quickPick.onDidTriggerButton(async item => {
+            // @ts-ignore: onClick is a custom extension to the QuickInputButton
+            item?.onClick?.()
+            quickPick.hide()
+        })
     })
 
     // Reference counting to ensure loading states are handled consistently across different
@@ -211,6 +257,16 @@ export function createStatusBar(): CodyStatusBar {
         } else {
             statusBarItem.text = DEFAULT_TEXT
             statusBarItem.tooltip = DEFAULT_TOOLTIP
+        }
+
+        // Only show this if authStatus is present, otherwise you get a flash of
+        // yellow status bar icon when extension first loads but login hasn't
+        // initialized yet
+        if (authStatus && !authStatus.isLoggedIn) {
+            statusBarItem.text = 'Sign In'
+            statusBarItem.tooltip = 'Sign in to get started with Cody'
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+            return
         }
 
         if (errors.length > 0) {
@@ -293,6 +349,10 @@ export function createStatusBar(): CodyStatusBar {
         },
         hasError(errorName: StatusBarErrorName): boolean {
             return errors.some(e => e.error.errorType === errorName)
+        },
+        syncAuthStatus(newStatus: AuthStatus) {
+            authStatus = newStatus
+            rerender()
         },
         dispose() {
             statusBarItem.dispose()

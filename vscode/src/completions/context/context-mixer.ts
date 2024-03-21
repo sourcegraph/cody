@@ -5,6 +5,7 @@ import { isCodyIgnoredFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { DocumentContext } from '../get-current-doc-context'
 import type { ContextSnippet } from '../types'
 
+import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 import { fuseResults } from './reciprocal-rank-fusion'
 
@@ -14,6 +15,7 @@ interface GetContextOptions {
     docContext: DocumentContext
     abortSignal?: AbortSignal
     maxChars: number
+    lastCandidate?: LastInlineCompletionCandidate
 }
 
 export interface ContextSummary {

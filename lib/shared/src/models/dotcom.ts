@@ -12,7 +12,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
-        title: 'Claude 2.1 Preview',
+        title: 'Claude 2.1',
         model: 'anthropic/claude-2.1',
         provider: 'Anthropic',
         default: false,
@@ -28,6 +28,30 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
     },
     {
+        title: 'Claude 3 Haiku',
+        model: 'anthropic/claude-3-haiku-20240307',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: 'Claude 3 Sonnet',
+        model: 'anthropic/claude-3-sonnet-20240229',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
+        title: 'Claude 3 Opus',
+        model: 'anthropic/claude-3-opus-20240229',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+    },
+    {
         title: 'GPT-3.5 Turbo',
         model: 'openai/gpt-3.5-turbo',
         provider: 'OpenAI',
@@ -37,7 +61,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'GPT-4 Turbo Preview',
-        model: 'openai/gpt-4-1106-preview',
+        model: 'openai/gpt-4-turbo-preview',
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,

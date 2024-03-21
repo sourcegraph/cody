@@ -1,8 +1,8 @@
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath, AuthStatus } from '@sourcegraph/cody-shared'
 import { ModelProvider } from '@sourcegraph/cody-shared'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { displayLineRange } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { AuthStatus } from '../../chat/protocol'
 import {
     EditorInputTypeToModelType,
     QUICK_PICK_ITEM_CHECKED_PREFIX,
@@ -29,30 +29,11 @@ export function removeAfterLastAt(str: string): string {
  */
 export function getLabelForContextItem(item: ContextItem): string {
     const isFileType = item.type === 'file'
-    const rangeLabel = item.range ? `:${item.range?.start.line}-${item.range?.end.line}` : ''
+    const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
     if (isFileType) {
         return `${displayPath(item.uri)}${rangeLabel}`
     }
     return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
-}
-
-/**
- * Returns a string representation of the given range, formatted as "{startLine}:{endLine}".
- * If startLine and endLine are the same, returns just the line number.
- */
-export function getTitleRange(range: vscode.Range): string {
-    if (range.isEmpty) {
-        // No selected range, return just active line
-        return `${range.start.line + 1}`
-    }
-
-    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
-    if (range.start.line === endLine) {
-        // Range only encompasses a single line
-        return `${range.start.line + 1}`
-    }
-
-    return `${range.start.line + 1}:${endLine + 1}`
 }
 
 /**

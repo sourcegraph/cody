@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { type Configuration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -47,6 +47,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.localSymbols':
                         return true
+                    case 'cody.experimental.ollamaChat':
+                        return true
                     case 'cody.experimental.symf.path':
                         return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
@@ -79,16 +81,14 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.autocomplete.disableInsideComments':
                         return false
-                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return true
-                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
-                        return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
+                    case 'cody.autocomplete.experimental.fireworksOptions':
+                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
-                            url: 'http://localhost:11434',
+                            url: OLLAMA_DEFAULT_URL,
                         }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'bfg'
@@ -126,6 +126,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             editorTitleCommandIcon: true,
             experimentalGuardrails: true,
+            experimentalOllamaChat: true,
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
@@ -140,13 +141,12 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
-            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
-                url: 'http://localhost:11434',
+                url: OLLAMA_DEFAULT_URL,
             },
             autocompleteTimeouts: {
                 multiline: undefined,

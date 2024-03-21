@@ -195,7 +195,7 @@ for (const isTreeSitterEnabled of cases) {
             it('adds parse info to single-line completions', async () => {
                 const completions = await getCompletionItems('function sort(█', [
                     'array) {}',
-                    'array) new',
+                    'array new',
                 ])
 
                 expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])
@@ -204,7 +204,7 @@ for (const isTreeSitterEnabled of cases) {
             it('respects completion insert ranges', async () => {
                 const completions = await getCompletionItems('function sort(█)', [
                     'array) {}',
-                    'array) new',
+                    'array new',
                 ])
 
                 expect(completions.map(c => Boolean(c.parseErrorCount))).toEqual([false, true])
@@ -227,12 +227,14 @@ for (const isTreeSitterEnabled of cases) {
 
                 expect(completion).toMatchInlineSnapshot(`
                   {
-                    "insertText": "array) {",
+                    "insertText": "array) {
+                  return array.sort()
+                  }",
                     "nodeTypes": {
                       "atCursor": "(",
                       "grandparent": "function_signature",
                       "greatGrandparent": "program",
-                      "lastAncestorOnTheSameLine": "function_signature",
+                      "lastAncestorOnTheSameLine": "program",
                       "parent": "formal_parameters",
                     },
                     "nodeTypesWithCompletion": {

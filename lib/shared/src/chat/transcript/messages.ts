@@ -1,28 +1,21 @@
-import type { ContextItem, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
-import type { TranscriptJSON } from '.'
+import type { SerializedChatTranscript } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
-export interface ChatButton {
-    label: string
-    action: string
-    onClick: (action: string) => void
-    appearance?: 'primary' | 'secondary' | 'icon'
-}
-
 export interface ChatMessage extends Message {
-    displayText?: string
     contextFiles?: ContextItem[]
-    preciseContext?: PreciseContext[]
-    buttons?: ChatButton[]
-    data?: any
-    metadata?: ChatMetadata
     error?: ChatError
-}
 
-export interface InteractionMessage extends ChatMessage {
-    prefix?: string
+    /**
+     * For messages composed in a rich text editor field, this is the representation of the editor
+     * state that can be used to instantiate the editor to edit the message or to render the
+     * message. This field's value is opaque to all but the rich editor, and it must validate and
+     * version the value so that it can (1) support backward- and forward-compatibility and (2) fall
+     * back to editing the text for invalid values.
+     */
+    editorState?: unknown
 }
 
 export interface ChatError {
@@ -45,24 +38,12 @@ export interface ChatError {
     isChatErrorGuard: 'isChatErrorGuard'
 }
 
-interface ChatMetadata {
-    source?: ChatEventSource
-    requestID?: string
-    chatModel?: string
-}
-
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
-    [chatID: string]: TranscriptJSON
-}
-
-export interface ChatInputHistory {
-    inputText: string
-    inputContextFiles: ContextItem[]
+    [chatID: string]: SerializedChatTranscript
 }
 
 export type ChatEventSource =

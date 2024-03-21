@@ -1,8 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "organizeImports": {
-    "enabled": true,
-    "ignore": ["dist/"]
+    "enabled": true
   },
   "linter": {
     "enabled": true,
@@ -26,37 +25,9 @@
         "noParameterAssign": "off",
         "useTemplate": "off"
       }
-    },
-    "ignore": [
-      "node_modules/",
-      "out/",
-      "dist/",
-      "build/",
-      "**/test-data/**",
-      "vscode/src/testutils/vscode/",
-      "agent/bindings/**",
-      "agent/src/bfg/__tests__/**",
-      "agent/src/__tests__/**",
-      "agent/recordings/**",
-      "agent/src/cli/scip-codegen/scip.ts",
-      "/vitest.workspace.js",
-      "vitest.config.ts",
-      "vite.config.ts",
-      "__mocks__",
-      ".vscode-test/"
-    ]
+    }
   },
   "formatter": {
-    "ignore": [
-      "agent/bindings/**",
-      "node_modules/",
-      ".github/PULL_REQUEST_TEMPLATE.md",
-      "dist/**",
-      "vscode/.vscode-test/**",
-      "**/__snapshots__/**",
-      "**/test-data/**",
-      "vscode/src/testutils/vscode/**"
-    ],
     "indentStyle": "space",
     "indentWidth": 4,
     "lineWidth": 105
@@ -68,6 +39,28 @@
       "arrowParentheses": "asNeeded",
       "trailingComma": "es5"
     }
+  },
+  "files": {
+    "ignore": [
+      "node_modules/",
+      "out/",
+      "dist/",
+      "build/",
+      "test-data/",
+      ".github/PULL_REQUEST_TEMPLATE.md",
+      "vscode/src/testutils/vscode/",
+      "agent/bindings/",
+      "agent/src/bfg/__tests__/",
+      "agent/src/__tests__/",
+      "agent/recordings/",
+      "agent/src/cli/scip-codegen/scip.ts",
+      "/vitest.workspace.js",
+      "vitest.config.ts",
+      "vite.config.ts",
+      "__snapshots__/",
+      "__mocks__/",
+      ".vscode-test/"
+    ]
   },
   "overrides": [
     {

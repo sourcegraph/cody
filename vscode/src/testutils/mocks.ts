@@ -9,7 +9,12 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { type Configuration, type FeatureFlag, FeatureFlagProvider } from '@sourcegraph/cody-shared'
+import {
+    type Configuration,
+    type FeatureFlag,
+    FeatureFlagProvider,
+    OLLAMA_DEFAULT_URL,
+} from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { Uri } from './uri'
@@ -810,13 +815,14 @@ export const DEFAULT_VSCODE_SETTINGS = {
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
+    experimentalOllamaChat: false,
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: false,
+    debugEnable: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',
@@ -826,13 +832,12 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
     autocompleteDisableInsideComments: false,
-    autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
-        url: 'http://localhost:11434',
+        url: OLLAMA_DEFAULT_URL,
     },
     autocompleteTimeouts: {
         multiline: undefined,

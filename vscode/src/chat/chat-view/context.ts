@@ -13,13 +13,13 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { viewRangeToRange } from './chat-helpers'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -184,10 +184,20 @@ async function getEnhancedContextFromRanker({
         // Get all possible context items to rank
         let searchContext = getVisibleEditorContext(editor)
 
+        const numResults = 50
         const embeddingsContextItemsPromise = retrieveContextGracefully(
-            searchEmbeddingsLocal(providers.localEmbeddings, text),
+            searchEmbeddingsLocal(providers.localEmbeddings, text, numResults),
             'local-embeddings'
         )
+
+        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
+            ? retrieveContextGracefully(
+                  contextRanking.searchModelSpecificEmbeddings(text, numResults),
+                  'model-specific-embeddings'
+              )
+            : []
+
+        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
 
         const localSearchContextItemsPromise = providers.symf
             ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
@@ -205,12 +215,18 @@ async function getEnhancedContextFromRanker({
             ...(await remoteSearchContextItemsPromise),
         ])()
 
-        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
-            embeddingsContextItemsPromise,
-            keywordContextItemsPromise,
-        ])
+        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
+            await Promise.all([
+                embeddingsContextItemsPromise,
+                keywordContextItemsPromise,
+                modelSpecificEmbeddingsContextItemsPromise,
+                precomputeQueryEmbeddingPromise,
+            ])
 
-        searchContext = searchContext.concat(keywordContextItems).concat(embeddingsContextItems)
+        searchContext = searchContext
+            .concat(keywordContextItems)
+            .concat(embeddingsContextItems)
+            .concat(modelEmbeddingContextItems)
         const editorContext = await getPriorityContext(text, editor, searchContext)
         const allContext = editorContext.concat(searchContext)
         if (!contextRanking) {
@@ -227,7 +243,7 @@ async function searchRemote(
     remoteSearch: RemoteSearch | null,
     userText: string
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.remote', async () => {
+    return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
@@ -237,11 +253,11 @@ async function searchRemote(
                 content: result.content,
                 range: new vscode.Range(result.startLine, 0, result.endLine, 0),
                 uri: result.uri,
-                source: 'unified',
+                source: ContextItemSource.Unified,
                 repoName: result.repoName,
                 title: result.path,
                 revision: result.commit,
-            }
+            } satisfies ContextItem
         })
     })
 }
@@ -303,7 +319,7 @@ async function searchSymf(
                         type: 'file',
                         uri: result.file,
                         range,
-                        source: 'search',
+                        source: ContextItemSource.Search,
                         content: text,
                     }
                 }
@@ -317,19 +333,18 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string
+    text: string,
+    numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.local', async () => {
+    return wrapInActiveSpan('chat.context.embeddings.local', async span => {
         if (!localEmbeddings) {
             return []
         }
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(
-            text,
-            NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-        )
+        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
+        span.setAttribute('numResults', embeddingsResults.length)
 
         for (const result of embeddingsResults) {
             const range = new vscode.Range(
@@ -342,7 +357,7 @@ async function searchEmbeddingsLocal(
                 uri: result.uri,
                 range,
                 content: result.content,
-                source: 'embeddings',
+                source: ContextItemSource.Embeddings,
             })
         }
         return contextItems
@@ -377,7 +392,7 @@ function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
             content: selection.selectedText,
             uri: selection.fileUri,
             range,
-            source: 'selection',
+            source: ContextItemSource.Selection,
         },
     ]
 }
@@ -395,11 +410,11 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
         return [
             {
                 type: 'file',
-                text: visible.content,
+                content: visible.content,
                 uri: fileUri,
-                source: 'editor',
+                source: ContextItemSource.Editor,
             },
-        ]
+        ] satisfies ContextItem[]
     })
 }
 
@@ -519,8 +534,8 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             type: 'file',
             uri: readmeUri,
             content: truncatedReadmeText,
-            range: viewRangeToRange(range),
-            source: 'editor',
+            range,
+            source: ContextItemSource.Editor,
         },
     ]
 }

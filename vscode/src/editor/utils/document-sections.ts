@@ -1,8 +1,5 @@
 import * as vscode from 'vscode'
 import { IndentationBasedFoldingRangeProvider } from '../../lsp/foldingRanges'
-const isIndentationBasedFoldingRanges =
-    vscode.workspace.getConfiguration().get<string>('cody.experimental.foldingRanges', 'lsp') ===
-    'indentation-based'
 
 export async function getDocumentSections(
     doc: vscode.TextDocument,
@@ -17,6 +14,7 @@ export async function getDocumentSections(
     // Remove imports, comments, and regions from the folding ranges
     const foldingRanges = await getFoldingRanges(doc.uri).then(r => r?.filter(r => !r.kind))
     if (!foldingRanges?.length) {
+        console.warn('No indentation-based folding ranges found', doc.uri)
         return []
     }
 
@@ -247,7 +245,10 @@ async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingR
     // setting `"cody.experimental.foldingRanges": "indentation-based"` and
     // reload VS Code. Beyond feature parity between all clients, this implementation
     // can be used to write test cases without mocking, which is a nice benefit.
-    if (isIndentationBasedFoldingRanges) {
+    if (
+        vscode.workspace.getConfiguration().get<string>('cody.experimental.foldingRanges', 'lsp') ===
+        'indentation-based'
+    ) {
         const provider = new IndentationBasedFoldingRangeProvider()
         const document = await vscode.workspace.openTextDocument(uri)
         return provider.provideFoldingRanges(document, {}, new vscode.CancellationTokenSource().token)

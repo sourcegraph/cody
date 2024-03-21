@@ -1,9 +1,11 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    ModelProvider,
     PromptMixin,
     featureFlagProvider,
     graphqlClient,
@@ -17,12 +19,7 @@ import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import {
-    ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
-    type AuthStatus,
-    CODY_FEEDBACK_URL,
-} from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -53,6 +50,7 @@ import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
+import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -64,7 +62,7 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { exportOutputLog } from './services/utils/export-logs'
+import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -164,7 +162,6 @@ const register = async (
     void featureFlagProvider.syncAuthStatus()
 
     const {
-        intentDetector,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -172,7 +169,7 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, platform)
+    } = await configureExternalServices(context, initialConfig, platform, authProvider)
 
     if (symfRunner) {
         disposables.push(symfRunner)
@@ -184,7 +181,6 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
-        symfRunner,
         authProvider,
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
@@ -195,7 +191,6 @@ const register = async (
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
-        intentDetector,
         guardrails,
         editor,
         authProvider,
@@ -207,6 +202,7 @@ const register = async (
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
             config,
+            startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
         enterpriseContextFactory,
@@ -220,9 +216,9 @@ const register = async (
     const editorManager = new EditManager({
         chat: chatClient,
         editor,
-        contextProvider,
         ghostHintDecorator,
         authProvider,
+        extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
@@ -235,6 +231,9 @@ const register = async (
         if (oldConfig === JSON.stringify(newConfig)) {
             return Promise.resolve()
         }
+
+        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
 
@@ -281,6 +280,8 @@ const register = async (
         )
     }
 
+    const statusBar = createStatusBar()
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Chat Manager uses Simple Context Provider
@@ -304,9 +305,13 @@ const register = async (
 
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        statusBar.syncAuthStatus(authStatus)
     })
+
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    statusBar.syncAuthStatus(authProvider.getAuthStatus())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -352,8 +357,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
-
-    const statusBar = createStatusBar()
 
     disposables.push(
         // Tests
@@ -523,32 +526,12 @@ const register = async (
             void vscode.commands.executeCommand(command, [source])
         }),
         ...setUpCodyIgnore(initialConfig),
-        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
+        // For debugging
+        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
+        vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        new CharactersLogger()
     )
-
-    /**
-     * Signed out status bar indicator
-     */
-    let removeAuthStatusBarError: undefined | (() => void)
-    function updateAuthStatusBarIndicator(): void {
-        if (removeAuthStatusBarError) {
-            removeAuthStatusBarError()
-            removeAuthStatusBarError = undefined
-        }
-        if (!authProvider.getAuthStatus().isLoggedIn) {
-            removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In to Use Cody',
-                errorType: 'auth',
-                description: 'You need to sign in to use Cody.',
-                onSelect: () => {
-                    // Bring up the sidebar view
-                    void vscode.commands.executeCommand('cody.focus')
-                },
-            })
-        }
-    }
-    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
-    updateAuthStatusBarIndicator()
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

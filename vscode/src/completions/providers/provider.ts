@@ -73,7 +73,6 @@ export interface ProviderOptions {
     firstCompletionTimeout: number
 
     // feature flags
-    dynamicMultilineCompletions?: boolean
     hotStreak?: boolean
 }
 

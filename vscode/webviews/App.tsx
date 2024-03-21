@@ -3,19 +3,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 import {
-    type ChatInputHistory,
+    type AuthStatus,
     type ChatMessage,
     type Configuration,
-    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
-    type TranscriptJSON,
+    type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
 
-import type { AuthMethod, AuthStatus, LocalEnv } from '../src/chat/protocol'
+import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import {
@@ -36,7 +35,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
+
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -45,12 +44,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         isCodyProUser: false,
     })
 
-    const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
-    const [userHistory, setUserHistory] = useState<TranscriptJSON[]>([])
+    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
-
-    const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -129,14 +124,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.localHistory?.input ?? [])
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
-                        break
-                    case 'userContextFiles':
-                        setContextSelection(message.userContextFiles)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -245,15 +236,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
-                                        messageBeingEdited={messageBeingEdited}
-                                        setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
-                                        contextSelection={contextSelection}
-                                        setContextSelection={setContextSelection}
-                                        formInput={formInput}
-                                        setFormInput={setFormInput}
-                                        inputHistory={inputHistory}
-                                        setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
                                         isTranscriptError={isTranscriptError}

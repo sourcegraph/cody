@@ -2,7 +2,7 @@ import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
-const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>\n`
+const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],
@@ -18,8 +18,15 @@ export const claude: EditLLMInteraction = {
         }
     },
     getDoc(options) {
+        const docStopSequences = [...SHARED_PARAMETERS.stopSequences]
+        const firstLine = options.selectedText.split('\n')[0]
+        if (firstLine.trim().length > 0) {
+            docStopSequences.push(firstLine)
+        }
+
         return {
             ...SHARED_PARAMETERS,
+            stopSequences: docStopSequences,
             prompt: buildGenericPrompt('doc', options),
         }
     },

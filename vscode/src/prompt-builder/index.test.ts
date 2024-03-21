@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {
         it('adds single valid transcript', () => {
             const builder = new PromptBuilder(100)
-            const transcript: MessageWithContext[] = [{ message: { speaker: 'human', text: 'Hi!' } }]
+            const transcript: ChatMessage[] = [{ speaker: 'human', text: 'Hi!' }]
             builder.tryAddMessages(transcript.reverse())
             const messages = builder.build()
             expect(messages.length).toBe(1)
@@ -16,7 +16,7 @@ describe('PromptBuilder', () => {
 
         it('throw on transcript starts with assistant', () => {
             const builder = new PromptBuilder(100)
-            const transcript: MessageWithContext[] = [{ message: { speaker: 'assistant', text: 'Hi!' } }]
+            const transcript: ChatMessage[] = [{ speaker: 'assistant', text: 'Hi!' }]
             expect(() => {
                 builder.tryAddMessages(transcript)
             }).toThrowError()
@@ -24,11 +24,11 @@ describe('PromptBuilder', () => {
 
         it('adds valid transcript in reverse order', () => {
             const builder = new PromptBuilder(1000)
-            const transcript: MessageWithContext[] = [
-                { message: { speaker: 'human', text: 'Hi assistant!' } },
-                { message: { speaker: 'assistant', text: 'Hello there!' } },
-                { message: { speaker: 'human', text: 'Hi again!' } },
-                { message: { speaker: 'assistant', text: 'Hello there again!' } },
+            const transcript: ChatMessage[] = [
+                { speaker: 'human', text: 'Hi assistant!' },
+                { speaker: 'assistant', text: 'Hello there!' },
+                { speaker: 'human', text: 'Hi again!' },
+                { speaker: 'assistant', text: 'Hello there again!' },
             ]
             builder.tryAddMessages(transcript.reverse())
             const messages = builder.build()
@@ -41,11 +41,11 @@ describe('PromptBuilder', () => {
 
         it('throws on consecutive speakers order', () => {
             const builder = new PromptBuilder(1000)
-            const invalidTranscript: MessageWithContext[] = [
-                { message: { speaker: 'human', text: 'Hi there!' } },
-                { message: { speaker: 'human', text: 'Hello there!' } },
-                { message: { speaker: 'assistant', text: 'How are you?' } },
-                { message: { speaker: 'assistant', text: 'Hello there!' } },
+            const invalidTranscript: ChatMessage[] = [
+                { speaker: 'human', text: 'Hi there!' },
+                { speaker: 'human', text: 'Hello there!' },
+                { speaker: 'assistant', text: 'How are you?' },
+                { speaker: 'assistant', text: 'Hello there!' },
             ]
             expect(() => {
                 builder.tryAddMessages(invalidTranscript)
@@ -54,11 +54,11 @@ describe('PromptBuilder', () => {
 
         it('throws on transcript with human speakers only', () => {
             const builder = new PromptBuilder(1000)
-            const invalidTranscript: MessageWithContext[] = [
-                { message: { speaker: 'human', text: '1' } },
-                { message: { speaker: 'human', text: '2' } },
-                { message: { speaker: 'human', text: '3' } },
-                { message: { speaker: 'human', text: '4' } },
+            const invalidTranscript: ChatMessage[] = [
+                { speaker: 'human', text: '1' },
+                { speaker: 'human', text: '2' },
+                { speaker: 'human', text: '3' },
+                { speaker: 'human', text: '4' },
             ]
             expect(() => {
                 builder.tryAddMessages(invalidTranscript)
@@ -67,18 +67,16 @@ describe('PromptBuilder', () => {
 
         it('stops adding message-pairs when limit has been reached', () => {
             const builder = new PromptBuilder(30)
-            const longTranscript: MessageWithContext[] = [
-                { message: { speaker: 'human', text: 'Hi assistant!' } },
-                { message: { speaker: 'assistant', text: 'Hello there!' } },
-                { message: { speaker: 'human', text: 'Hi again!' } },
+            const longTranscript: ChatMessage[] = [
+                { speaker: 'human', text: 'Hi assistant!' },
+                { speaker: 'assistant', text: 'Hello there!' },
+                { speaker: 'human', text: 'Hi again!' },
                 {
-                    message: {
-                        speaker: 'assistant',
-                        text: 'This is a very long message that should exceed the character limit',
-                    },
+                    speaker: 'assistant',
+                    text: 'This is a very long message that should exceed the character limit',
                 },
                 // Only this message should be added
-                { message: { speaker: 'human', text: 'This should be added.' } },
+                { speaker: 'human', text: 'This should be added.' },
             ]
             const numberOfMessagesIgnored = builder.tryAddMessages(longTranscript.reverse())
             expect(numberOfMessagesIgnored).toBe(4)

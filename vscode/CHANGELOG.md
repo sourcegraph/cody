@@ -6,20 +6,104 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Added support links for Cody Pro and Enterprise users. [pull/3330](https://github.com/sourcegraph/cody/pull/3330)
+- Document: Added support for automatically determining the symbol and range of a documentable block from the users' cursor position. Currently supported in JavaScript, TypeScript, Go and Python. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Document: Added a ghost text hint ("Alt+D to Document") that shows when the users' cursor is on a documentable symbol. Currently supported in JavaScript, TypeScript, Go and Python. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Document: Added a shortcut (`Alt+D`) to immediately execute the document command. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Edit: Added a ghost text hint ("Alt+K to Generate Code") that shows on empty files. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Chat: Add Claude 3 Haiku for Pro users. [pull/3423](https://github.com/sourcegraph/cody/pull/3423)
+- Autocomplete: Add StarCoder2 experimental support. [pull/61207](https://github.com/sourcegraph/cody/pull/61207)
+- Autocomplete: Add `cody.autocomplete.experimental.fireworksOptions` for local debugging with Fireworks. [pull/3415](https://github.com/sourcegraph/cody/pull/3415)
+- Chat: Upgrade GPT 4 turbo model. [pull/3468](https://github.com/sourcegraph/cody/pull/3468)
+- Chat: Added experimental support for including web pages as context by @-mentioning a URL (when the undocumented `cody.experimental.urlContext` VS Code setting is enabled). [pull/3436](https://github.com/sourcegraph/cody/pull/3436)
+
+### Fixed
+
+- Document: Fixed an issue where the generated documentation would be incorrectly inserted for Python. Cody will now follow PEP 257 – Docstring Conventions. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Edit: Fixed incorrect decorations being shown for edits that only insert new code. [pull/3424](https://github.com/sourcegraph/cody/pull/3424)
+- When `@`-mentioning files in chat and edits, the list of fuzzy-matching files is shown much faster (which is especially noticeable in large workspaces).
+- Chat: Fix abort related error messages with Claude 3. [pull/3466](https://github.com/sourcegraph/cody/pull/3466)
+
+### Changed
+
+- Autocomplete: Upgrade tree-sitter and expand language support. [pull/3373](https://github.com/sourcegraph/cody/pull/3373)
+- Autocomplete: Do not cut off completions when they are almost identical to the following non-empty line. [pull/3377](https://github.com/sourcegraph/cody/pull/3377)
+- Chat: The <kbd>UpArrow</kbd> key in an empty chat editor now edits the most recently sent message instead of populating the editor with the last message's text.
+- Chat: The chat editor uses a new rich editor component. If you open an old chat added before this version and edit a message in the transcript with @-mentions, the @-mentions will show up as plain text and will not actually include the mentioned files unless you re-type them.
+- Autocomplete: Enabled dynamic multiline completions by default. [pull/3392](https://github.com/sourcegraph/cody/pull/3392)
+- Document: Upgraded to use a faster model. [pull/3275](https://github.com/sourcegraph/cody/pull/3275)
+- Autocomplete: Wrap tree-sitter parse calls in OpenTelemetry spans. [pull/3419](https://github.com/sourcegraph/cody/pull/3419)
+- Autocomplete: Improve StarCoder2 Ollama support. [pull/3452](https://github.com/sourcegraph/cody/pull/3452)
+- Command: Enhanced the context provided to the Test command to help the language model determine the appropriate testing framework to use. [pull/3344](https://github.com/sourcegraph/cody/pull/3344)
+- Autocomplete: Upgrade tree-sitter grammars and add Dart support. [pull/3476](https://github.com/sourcegraph/cody/pull/3476)
+- Properly throw an error when attempting to parse an incomplete SSE stream with the nodeClient. [pull/3479](https://github.com/sourcegraph/cody/pull/3479)
+
+## [1.8.3]
+
+### Fixed
+
+- Fix crash upon initialization in the stable build if a prerelease version of the VS Code extension was used for chat after 2024-03-08. [pull/3394](https://github.com/sourcegraph/cody/pull/3394)
+
+## [1.8.2]
+
+### Added
+
+- Debug: Added new commands (`Cody Debug: Enable Debug Mode` and `Cody Debug: Open Output Channel`) to the editor Command Palette and the `Settings & Support` sidebar to streamline the process of getting started with debugging Cody. [pull/3342](https://github.com/sourcegraph/cody/pull/3342)
+
+### Fixed
+
+- Chat: Fixed an issue where in some cases the entire document instead of just the visible portion would be included as context. [pull/3351](https://github.com/sourcegraph/cody/pull/3351)
+- Chat: Fixed an issue where user aborts was not handled correctly for Claude 3. [pull/3355](https://github.com/sourcegraph/cody/pull/3355)
+
+### Changed
+
+- Autocomplete: Improved the stop sequences list for Ollama models. [pull/3352](https://github.com/sourcegraph/cody/pull/3352)
+- Chat: Welcome message is only shown on new chat panel. [pull/3341](https://github.com/sourcegraph/cody/pull/3341)
+- Chat: Wrap pasted code blocks in triple-backticks automatically. [pull/3357](https://github.com/sourcegraph/cody/pull/3357)
+- Command: You can now choose a LLM model for the Generate Unit Test command. [pull/3343](https://github.com/sourcegraph/cody/pull/3343)
+
+## [1.8.1]
+
+### Added
+
+### Fixed
+
+- Fixed an issue with the new auth experience that could prevent you from opening a sign in link. [pull/3339](https://github.com/sourcegraph/cody/pull/3339)
+- Custom Commands: Fixed an issue that blocked shell commands from running on Windows. [pull/3333](https://github.com/sourcegraph/cody/pull/3333)
+
+### Changed
+
+## [1.8.0]
+
+### Added
+
+- Chat: Adds experimental support for local Ollama chat models. Simply start the Ollama app. You should be able to find the models you have pulled from Ollama in the model dropdown list in your chat panel after restarting VS Code. For detailed instructions, see [pull/3282](https://github.com/sourcegraph/cody/pull/3282)
 - Chat: Adds support for line ranges with @-mentioned files (Example: `Explain @src/README.md:1-5`). [pull/3174](https://github.com/sourcegraph/cody/pull/3174)
 - Chat: Command prompts are now editable and compatible with @ mentions. [pull/3243](https://github.com/sourcegraph/cody/pull/3243)
+- Chat: Add Claude 3 Sonnet and Claude 3 Opus for Pro users. [pull/3301](https://github.com/sourcegraph/cody/pull/3301)
 - Commands: Updated the prompts for the `Explain Code` and `Find Code Smell` commands to include file ranges. [pull/3243](https://github.com/sourcegraph/cody/pull/3243)
 - Custom Command: All custom commands are now listed individually under the `Custom Commands` section in the Cody sidebar. [pull/3245](https://github.com/sourcegraph/cody/pull/3245)
 - Custom Commands: You can now assign keybindings to individual custom commands. Simply search for `cody.command.custom.{CUSTOM_COMMAND_NAME}` (e.g. `cody.command.custom.commit`) in the Keyboard Shortcuts editor to add keybinding. [pull/3242](https://github.com/sourcegraph/cody/pull/3242)
 - Chat/Search: Local indexes are rebuilt automatically on a daily cadence when they are stale. Staleness is determined by checking whether files have changed across Git commits and in the set of working file updates not yet committed. [pull/3261](https://github.com/sourcegraph/cody/pull/3261)
 - Debug: Added `Export Logs` functionality to `Settings & Support` sidebar for exporting output logs when `cody.debug.enabled` is enabled. Also available in the Command Palette under `Cody: Export Logs`. [pull/3256](https://github.com/sourcegraph/cody/pull/3256)
+- Auth: Adds a new onboarding flow that does not require the redirect back to VS Code behind a feature flag. [pull/3244](https://github.com/sourcegraph/cody/pull/3244)
+- Font: Adds Ollama logo. [pull/3281](https://github.com/sourcegraph/cody/pull/3281)
 
 ### Fixed
 
 - Auth: Logging in via redirect should now work in Cursor. This requires Sourcegraph 5.3.2 or later. [pull/3241](https://github.com/sourcegraph/cody/pull/3241)
 - Chat: Fixed error `found consecutive messages with the same speaker 'assistant'` that occurred when prompt length exceeded limit. [pull/3228](https://github.com/sourcegraph/cody/pull/3228)
+- Edit: Fixed an issue where preceding and following text would not be included for instruction-based Edits. [pull/3309](https://github.com/sourcegraph/cody/pull/3309)
 
 ### Changed
+
+- Debug: The `cody.debug.enabled` setting is now set to `true` by default. [pull/](https://github.com/sourcegraph/cody/pull/)
+
+## [1.6.1]
+
+### Changed
+
+- Autocomplete: Reduce the adaptive timeout to match latency improvements. [pull/3283](https://github.com/sourcegraph/cody/pull/3283)
 
 ## [1.6.0]
 

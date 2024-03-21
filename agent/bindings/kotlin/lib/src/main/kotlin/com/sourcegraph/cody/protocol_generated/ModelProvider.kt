@@ -8,5 +8,7 @@ data class ModelProvider(
   val title: String? = null,
   val privateProviders: Map<String, ModelProvider>? = null,
   val dotComProviders: List<ModelProvider>? = null,
+  val ollamaProvidersEnabled: Boolean? = null,
+  val ollamaProviders: List<ModelProvider>? = null,
 )
 

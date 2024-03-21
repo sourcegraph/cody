@@ -1,16 +1,21 @@
 import * as vscode from 'vscode'
 
-import { type ChatClient, ConfigFeaturesSingleton, type ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatClient,
+    ConfigFeaturesSingleton,
+    type ModelProvider,
+} from '@sourcegraph/cody-shared'
 
-import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import type { AuthStatus } from '../chat/protocol'
+import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
+import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -24,20 +29,23 @@ import { getEditLineSelection, getEditSmartSelection } from './utils/edit-select
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
-    contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
     authProvider: AuthProvider
+    extensionClient: ExtensionClient
 }
 
+// EditManager handles translating specific edit intents (document, edit) into
+// generic FixupTasks, and pairs a FixupTask with an EditProvider to generate
+// a completion.
 export class EditManager implements vscode.Disposable {
-    private controller: FixupController
+    private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
-    private editProviders = new Map<FixupTask, EditProvider>()
+    private editProviders = new WeakMap<FixupTask, EditProvider>()
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
         this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
-        this.controller = new FixupController(options.authProvider)
+        this.controller = new FixupController(options.authProvider, options.extensionClient)
         this.disposables.push(
             this.controller,
             vscode.commands.registerCommand('cody.command.edit-code', (args: ExecuteEditArguments) =>
@@ -113,8 +121,8 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 source,
-                configuration.contextMessages,
-                configuration.destinationFile
+                configuration.destinationFile,
+                configuration.insertionPoint
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -124,13 +132,28 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 intent,
-                configuration.contextMessages || [],
-                source,
-                configuration.inputType
+                source
             )
         }
 
         if (!task) {
+            return
+        }
+
+        /**
+         * Checks if there is already an active task for the given fixup file
+         * that has the same instruction and selection range as the current task.
+         */
+        const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
+            return (
+                ACTIVE_TASK_STATES.includes(activeTask.state) &&
+                activeTask.instruction === task!.instruction &&
+                activeTask.selectionRange.isEqual(task!.selectionRange)
+            )
+        })
+
+        if (activeTask) {
+            this.controller.cancel(task)
             return
         }
 
@@ -152,7 +175,7 @@ export class EditManager implements vscode.Disposable {
         return task
     }
 
-    public getProviderForTask(task: FixupTask): EditProvider {
+    private getProviderForTask(task: FixupTask): EditProvider {
         let provider = this.editProviders.get(task)
 
         if (!provider) {

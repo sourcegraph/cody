@@ -1,26 +1,8 @@
 import type { URI } from 'vscode-uri'
 
-import {
-    ProgrammingLanguage,
-    languageFromFilename,
-    markdownCodeBlockLanguageIDForFilename,
-} from '../common/languages'
+import { languageFromFilename, markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
-
-const CODE_CONTEXT_TEMPLATE = `Use the following code snippet from file \`{filePath}\`:
-\`\`\`{languageID}
-{text}
-\`\`\``
-
-const CODE_CONTEXT_TEMPLATE_WITH_REPO = `Use the following code snippet from file \`{filePath}\` in repository \`{repoName}\`:
-\`\`\`{languageID}
-{text}
-\`\`\``
-
-const CODE_CONTEXT_TEMPLATE_EDIT = `Use the following code snippet from file: {filePath}:
-{text}
-`
 
 export function populateCodeContextTemplate(
     code: string,
@@ -30,93 +12,14 @@ export function populateCodeContextTemplate(
 ): string {
     const template =
         type === 'edit'
-            ? CODE_CONTEXT_TEMPLATE_EDIT
-            : repoName
-              ? CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-              : CODE_CONTEXT_TEMPLATE
+            ? 'Codebase context from file {filePath}{inRepo}:\n{text}'
+            : 'Codebase context from file {filePath}{inRepo}:\n```{languageID}\n{text}```'
 
     return template
+        .replace('{inRepo}', ` in repository ${repoName}`)
         .replace('{filePath}', displayPath(fileUri))
         .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
         .replace('{text}', code)
-}
-
-const PRECISE_CONTEXT_TEMPLATE = `The symbol '{symbol}' is defined in the file {filePath} as:
-\`\`\`{languageID}
-{text}
-\`\`\``
-
-export function populatePreciseCodeContextTemplate(symbol: string, fileUri: URI, code: string): string {
-    return PRECISE_CONTEXT_TEMPLATE.replace('{symbol}', symbol)
-        .replace('{filePath}', displayPath(fileUri))
-        .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
-        .replace('{text}', code)
-}
-
-const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
-
-const MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO =
-    'Use the following text from file `{filePath}` in repository `{repoName}`:\n{text}'
-
-export function populateMarkdownContextTemplate(
-    markdown: string,
-    fileUri: URI,
-    repoName?: string
-): string {
-    return (
-        repoName
-            ? MARKDOWN_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : MARKDOWN_CONTEXT_TEMPLATE
-    )
-        .replace('{filePath}', displayPath(fileUri))
-        .replace('{text}', markdown)
-}
-
-const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my editor. '
-
-const CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO =
-    'I have the `{filePath}` file from the repository `{repoName}` opened in my editor. '
-
-export function populateCurrentEditorContextTemplate(
-    code: string,
-    fileUri: URI,
-    repoName?: string
-): string {
-    const context =
-        languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
-            ? populateMarkdownContextTemplate(code, fileUri, repoName)
-            : populateCodeContextTemplate(code, fileUri, repoName)
-    return (
-        (repoName
-            ? CURRENT_EDITOR_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : CURRENT_EDITOR_CODE_TEMPLATE
-        ).replaceAll('{filePath}', displayPath(fileUri)) + context
-    )
-}
-
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE =
-    'Here is the selected {languageID} code from file path `{filePath}`: '
-
-const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO =
-    'Here is the selected code from file `{filePath}` in the {repoName} repository, written in {languageID}: '
-
-export function populateCurrentEditorSelectedContextTemplate(
-    code: string,
-    fileUri: URI,
-    repoName?: string
-): string {
-    const context =
-        languageFromFilename(fileUri) === ProgrammingLanguage.Markdown
-            ? populateMarkdownContextTemplate(code, fileUri, repoName)
-            : populateCodeContextTemplate(code, fileUri, repoName)
-    return (
-        (repoName
-            ? CURRENT_EDITOR_SELECTED_CODE_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : CURRENT_EDITOR_SELECTED_CODE_TEMPLATE
-        )
-            .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
-            .replaceAll('{filePath}', displayPath(fileUri)) + context
-    )
 }
 
 const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file: {filePath}:

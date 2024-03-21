@@ -5,9 +5,7 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
-    type IntentDetector,
     SourcegraphGuardrailsClient,
-    SourcegraphIntentDetectorClient,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -19,9 +17,9 @@ import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
+import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
-    intentDetector: IntentDetector
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
@@ -58,7 +56,8 @@ export async function configureExternalServices(
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
         | 'createContextRankingController'
-    >
+    >,
+    authProvider: AuthProvider
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
@@ -85,12 +84,16 @@ export async function configureExternalServices(
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
 
-    const chatClient = new ChatClient(completionsClient)
+    const chatClient = new ChatClient(
+        completionsClient,
+        initialConfig,
+        () => authProvider.getAuthStatus(),
+        logger
+    )
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -102,6 +105,7 @@ export async function configureExternalServices(
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
+            chatClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
             void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },

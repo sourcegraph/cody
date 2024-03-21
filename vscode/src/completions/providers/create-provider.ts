@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     FeatureFlag,
@@ -7,7 +8,6 @@ import {
 
 import { logError } from '../../log'
 
-import type { AuthStatus } from '../../chat/protocol'
 import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
@@ -132,13 +132,18 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoderHybrid, llamaCode13B] = await Promise.all([
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
     ])
 
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }
+    }
+
+    if (starCoder2Hybrid) {
+        return { provider: 'fireworks', model: 'starcoder2-hybrid' }
     }
 
     if (starCoderHybrid) {

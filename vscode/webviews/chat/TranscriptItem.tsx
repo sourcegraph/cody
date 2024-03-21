@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ChatButtonProps } from '../Chat'
@@ -14,9 +14,9 @@ import type { CodeBlockActionsProps } from './CodeBlocks'
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { PreciseContexts, type SymbolLinkProps } from './PreciseContext'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
 /**
@@ -44,7 +44,6 @@ export const TranscriptItem: React.FunctionComponent<
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        symbolLinkComponent: React.FunctionComponent<SymbolLinkProps>
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
@@ -66,7 +65,6 @@ export const TranscriptItem: React.FunctionComponent<
     beingEdited,
     setBeingEdited,
     fileLinkComponent,
-    symbolLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -91,6 +89,8 @@ export const TranscriptItem: React.FunctionComponent<
     const isInEditingMode = beingEdited !== undefined
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
+
+    const displayMarkdown = useDisplayMarkdown(message)
 
     return (
         <div
@@ -129,15 +129,6 @@ export const TranscriptItem: React.FunctionComponent<
                     </header>
                 </div>
             )}
-            {message.preciseContext && message.preciseContext.length > 0 && (
-                <div className={styles.actions}>
-                    <PreciseContexts
-                        preciseContexts={message.preciseContext}
-                        symbolLinkComponent={symbolLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
             {message.error ? (
                 typeof message.error === 'string' ? (
                     <RequestErrorItem error={message.error} />
@@ -151,23 +142,20 @@ export const TranscriptItem: React.FunctionComponent<
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
-                {message.displayText ? (
+                {displayMarkdown ? (
                     <CodeBlocks
-                        displayText={message.displayText}
+                        displayMarkdown={displayMarkdown}
+                        wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        metadata={message.metadata}
                         guardrails={guardrails}
                     />
                 ) : (
                     inProgress && <BlinkingCursor />
                 )}
             </div>
-            {message.buttons?.length && ChatButtonComponent && (
-                <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
-            )}
             {/* Enhanced Context list shows up on human message only */}
             {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
@@ -204,3 +192,13 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 })
+
+/**
+ * React hook for returning the Markdown for rendering a chat message's text.
+ */
+function useDisplayMarkdown(message: ChatMessage): string {
+    if (message.speaker === 'assistant') {
+        return reformatBotMessageForChat(message.text ?? '')
+    }
+    return serializedPromptEditorStateFromChatMessage(message).html
+}

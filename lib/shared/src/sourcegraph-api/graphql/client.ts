@@ -1,6 +1,6 @@
-import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
+import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
@@ -759,7 +759,8 @@ export class SourcegraphGraphQLAPIClient {
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
-        } else if (this.anonymousUserID) {
+        }
+        if (this.anonymousUserID) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
 
@@ -897,7 +898,7 @@ export class ConfigFeaturesSingleton {
     }
 }
 
-async function verifyResponseCode(response: Response): Promise<Response> {
+async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

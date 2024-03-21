@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+    type AuthStatus,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
@@ -11,7 +12,7 @@ import {
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
-import { type AuthStatus, defaultAuthStatus } from '../../chat/protocol'
+import { defaultAuthStatus } from '../../chat/protocol'
 import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (

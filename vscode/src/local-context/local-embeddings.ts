@@ -386,44 +386,6 @@ export class LocalEmbeddingsController
         }
     }
 
-    public async load(repoDir: vscode.Uri | undefined): Promise<boolean> {
-        if (!this.endpointIsDotcom) {
-            // Local embeddings only supported for dotcom
-            return false
-        }
-        if (!repoDir) {
-            // There's no path to search
-            return false
-        }
-        if (!isFileURI(repoDir)) {
-            // Local embeddings currently only supports the file system.
-            return false
-        }
-        const cachedState = this.repoState.get(repoDir.toString())
-        if (cachedState && !cachedState.repoName) {
-            // We already failed to loading this, so use that result
-            return false
-        }
-        if (!this.serviceStarted) {
-            // Try starting the service but reply that there are no local
-            // embeddings this time.
-            void (async () => {
-                try {
-                    await this.getService()
-                } catch (error) {
-                    logDebug(
-                        'LocalEmbeddingsController',
-                        'load',
-                        captureException(error),
-                        JSON.stringify(error)
-                    )
-                }
-            })()
-            return false
-        }
-        return this.eagerlyLoad(repoDir)
-    }
-
     // Tries to load an index for the repo at the specified path, skipping any
     // cached results in `load`. This is used:
     // - When the service starts, to fulfill an earlier load request.
@@ -585,7 +547,7 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }
@@ -598,6 +560,7 @@ export class LocalEmbeddingsController
             const resp = await service.request('embeddings/query', {
                 repoName: lastRepo.repoName,
                 query,
+                numResults,
             })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
             return resp.results.map(result => ({

@@ -13,9 +13,10 @@
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",
+    "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
-    "package.json",
+    "package.json"
   ],
   "exclude": [
     "scripts",
@@ -28,6 +29,6 @@
   "references": [
     {
       "path": "../lib/shared"
-    },
+    }
   ]
 }

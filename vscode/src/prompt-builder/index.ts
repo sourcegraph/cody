@@ -1,6 +1,14 @@
-import { type ContextItem, type Message, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
-import type { MessageWithContext } from '../chat/chat-view/SimpleChatModel'
-import { contextItemId, renderContextItem } from './utils'
+import {
+    type ChatMessage,
+    type ContextItem,
+    type ContextMessage,
+    type Message,
+    isCodyIgnoredFile,
+    toRangeData,
+} from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { SHA256 } from 'crypto-js'
+import { renderContextItem } from './utils'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
@@ -24,7 +32,7 @@ export class PromptBuilder {
     public tryAddToPrefix(messages: Message[]): boolean {
         let numChars = 0
         for (const message of messages) {
-            numChars += message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
+            numChars += messageChars(message)
         }
         if (numChars + this.charsUsed > this.charLimit) {
             return false
@@ -41,13 +49,13 @@ export class PromptBuilder {
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddMessages(reverseTranscript: MessageWithContext[]): number {
+    public tryAddMessages(reverseTranscript: ChatMessage[]): number {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
-        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.message?.speaker === 'human')
+        const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.speaker === 'human')
         for (let i = lastHumanMsgIndex; i < reverseTranscript.length; i += 2) {
-            const humanMsg = reverseTranscript[i]?.message
-            const assistantMsg = reverseTranscript[i - 1]?.message
+            const humanMsg = reverseTranscript[i]
+            const assistantMsg = reverseTranscript[i - 1]
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
@@ -74,7 +82,7 @@ export class PromptBuilder {
      * overall character limit, which is still enforced.
      */
     public tryAddContext(
-        contextItems: ContextItem[],
+        contextItemsAndMessages: (ContextItem | ContextMessage)[],
         charLimit?: number
     ): {
         limitReached: boolean
@@ -94,40 +102,49 @@ export class PromptBuilder {
         if (isAgentTesting) {
             // Need deterministic ordering of context files for the tests to pass
             // consistently across different file systems.
-            contextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+            contextItemsAndMessages.sort((a, b) =>
+                contextItem(a).uri.path.localeCompare(contextItem(b).uri.path)
+            )
             // Move the selectionContext to the first position so that it'd be
             // the last context item to be read by the LLM to avoid confusions where
             // other files also include the selection text in test files.
-            const selectionContext = contextItems.find(item => item.source === 'selection')
+            const selectionContext = contextItemsAndMessages.find(
+                item =>
+                    (isContextItem(item) ? item.source : item.file.source) ===
+                    ContextItemSource.Selection
+            )
             if (selectionContext) {
-                contextItems.splice(contextItems.indexOf(selectionContext), 1)
-                contextItems.unshift(selectionContext)
+                contextItemsAndMessages.splice(contextItemsAndMessages.indexOf(selectionContext), 1)
+                contextItemsAndMessages.unshift(selectionContext)
             }
         }
-        for (const contextItem of contextItems) {
-            if (contextItem.uri.scheme === 'file' && isCodyIgnoredFile(contextItem.uri)) {
-                ignored.push(contextItem)
+        for (const v of contextItemsAndMessages) {
+            const uri = contextItem(v).uri
+            if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
+                ignored.push(contextItem(v))
                 continue
             }
-            const id = contextItemId(contextItem)
+            const id = contextItemId(v)
             if (this.seenContext.has(id)) {
-                duplicate.push(contextItem)
+                duplicate.push(contextItem(v))
                 continue
             }
-            const contextMessages = renderContextItem(contextItem).reverse()
-            const contextLen = contextMessages.reduce(
-                (acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
-                0
-            )
+            const contextMessage = isContextItem(v) ? renderContextItem(v) : v
+            const contextLen = contextMessage
+                ? contextMessage.speaker.length + contextMessage.text.length + 3
+                : 0
             if (this.charsUsed + contextLen > effectiveCharLimit) {
-                ignored.push(contextItem)
+                ignored.push(contextItem(v))
                 limitReached = true
                 continue
             }
             this.seenContext.add(id)
-            this.reverseMessages.push(...contextMessages)
+            if (contextMessage) {
+                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
+                this.reverseMessages.push(contextMessage)
+            }
             this.charsUsed += contextLen
-            used.push(contextItem)
+            used.push(contextItem(v))
         }
         return {
             limitReached,
@@ -136,4 +153,34 @@ export class PromptBuilder {
             duplicate,
         }
     }
+}
+
+function isContextItem(value: ContextItem | ContextMessage): value is ContextItem {
+    return 'uri' in value && 'type' in value && !('speaker' in value)
+}
+
+function contextItem(value: ContextItem | ContextMessage): ContextItem {
+    return isContextItem(value) ? value : value.file
+}
+
+function contextItemId(value: ContextItem | ContextMessage): string {
+    const item = contextItem(value)
+
+    // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
+    // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
+    // bug, so protect against it. See the `toRangeData` docstring for more.
+    const range = toRangeData(item.range)
+    if (range) {
+        return `${item.uri.toString()}#${range.start.line}:${range.end.line}`
+    }
+
+    if (item.content) {
+        return `${item.uri.toString()}#${SHA256(item.content).toString()}`
+    }
+
+    return item.uri.toString()
+}
+
+function messageChars(message: Message): number {
+    return message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
 }

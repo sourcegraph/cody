@@ -131,6 +131,10 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             {
                 key: 'guardrails',
                 value: this.config.experimentalGuardrails ? 1 : 0,
+            },
+            {
+                key: 'ollama',
+                value: this.config.experimentalOllamaChat ? 1 : 0,
             }
         )
     }

@@ -1,0 +1,50 @@
+.editor-shell {
+    position: relative;
+}
+
+.editor-shell .editor-container {
+    position: relative;
+    display: block;
+}
+
+.editor-scroller {
+    border: 0;
+    display: flex;
+    position: relative;
+    outline: 0;
+    z-index: 0;
+    overflow: auto;
+}
+
+.editor {
+    flex: auto;
+    position: relative;
+    z-index: -1;
+}
+
+/* ContentEditable */
+.content-editable {
+    border: 0;
+    display: block;
+    position: relative;
+    outline: 0;
+}
+
+/* Placeholder */
+.placeholder {
+    opacity: 0.6;
+    overflow: hidden;
+    position: absolute;
+    text-overflow: ellipsis;
+    top: 0;
+    left: 0;
+    user-select: none;
+    white-space: nowrap;
+    display: inline-block;
+    pointer-events: none;
+}
+
+/* Theme */
+.theme-paragraph {
+    margin: 0;
+}
