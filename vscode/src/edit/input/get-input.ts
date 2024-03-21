@@ -21,8 +21,9 @@ import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
 import {
     FILE_HELP_LABEL,
+    FILE_TOO_LARGE_LABEL,
+    GENERAL_HELP_LABEL,
     NO_MATCHES_LABEL,
-    OTHER_MENTION_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -369,20 +370,6 @@ export const getInput = async (
                     ? parseMentionQuery(mentionTrigger.matchingString)
                     : undefined
 
-                // If we have the beginning of a file or symbol match, show a helpful label
-                if (mentionQuery?.text === '') {
-                    if (mentionQuery.type === 'empty' || mentionQuery.type === 'file') {
-                        input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                        return
-                    }
-                    if (mentionQuery.type === 'symbol') {
-                        input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
-                        return
-                    }
-                    input.items = [{ alwaysShow: true, label: OTHER_MENTION_HELP_LABEL }]
-                    return
-                }
-
                 const matchingContext = mentionQuery ? await getMatchingContext(mentionQuery) : null
                 if (matchingContext === null) {
                     // Nothing to match, re-render existing items
@@ -402,16 +389,33 @@ export const getInput = async (
                 }
 
                 // Update stored context items so we can retrieve them later
-                for (const { key, file } of matchingContext) {
-                    contextItems.set(key, file)
+                for (const { key, item } of matchingContext) {
+                    contextItems.set(key, item)
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them
-                input.items = matchingContext.map(({ key, shortLabel }) => ({
-                    alwaysShow: true,
-                    label: shortLabel || key,
-                    description: shortLabel ? key : undefined,
-                }))
+                input.items = [
+                    ...matchingContext.map(({ key, shortLabel, item }) => ({
+                        alwaysShow: true,
+                        label: shortLabel || key,
+                        description: shortLabel ? key : undefined,
+                        detail:
+                            'isTooLarge' in item && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined,
+                    })),
+                    {
+                        kind: vscode.QuickPickItemKind.Separator,
+                        label: 'help',
+                    },
+                    {
+                        alwaysShow: true,
+                        label:
+                            mentionQuery?.type === 'symbol'
+                                ? SYMBOL_HELP_LABEL
+                                : mentionQuery?.type === 'file'
+                                  ? FILE_HELP_LABEL
+                                  : GENERAL_HELP_LABEL,
+                    },
+                ]
             },
             onDidAccept: () => {
                 const input = editInput.input
@@ -431,6 +435,13 @@ export const getInput = async (
                         return
                     case TEST_ITEM.label:
                         unitTestInput.render(activeTitle, '')
+                        return
+                    case FILE_HELP_LABEL:
+                    case FILE_TOO_LARGE_LABEL:
+                    case SYMBOL_HELP_LABEL:
+                    case NO_MATCHES_LABEL:
+                    case GENERAL_HELP_LABEL:
+                        // Noop, the user has actioned an item that is non intended to be actionable.
                         return
                 }
 

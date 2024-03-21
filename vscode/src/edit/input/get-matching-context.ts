@@ -1,7 +1,11 @@
 import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
+import {
+    getFileContextFiles,
+    getOpenTabsContextFile,
+    getSymbolContextFiles,
+} from '../../editor/utils/editor-context'
 import { getLabelForContextItem } from './utils'
 
 const MAX_FUZZY_RESULTS = 20
@@ -11,17 +15,25 @@ interface FixupMatchingContext {
     key: string
     /* If present, will override the key shown in the quick pick selector */
     shortLabel?: string
-    file: ContextItem
+    item: ContextItem
 }
 
 export async function getMatchingContext(
     mentionQuery: MentionQuery
 ): Promise<FixupMatchingContext[] | null> {
+    if (mentionQuery.type === 'empty') {
+        const openTabsResult = await getOpenTabsContextFile()
+        return openTabsResult.map(result => ({
+            key: getLabelForContextItem(result),
+            item: result,
+        }))
+    }
+
     if (mentionQuery.type === 'symbol') {
         const symbolResults = await getSymbolContextFiles(mentionQuery.text, MAX_FUZZY_RESULTS)
         return symbolResults.map(result => ({
             key: getLabelForContextItem(result),
-            file: result,
+            item: result,
             shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
                 result.symbolName
             }`,
@@ -37,7 +49,7 @@ export async function getMatchingContext(
         )
         return fileResults.map(result => ({
             key: getLabelForContextItem(result),
-            file: result,
+            item: result,
         }))
     }
 
