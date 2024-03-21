@@ -1,13 +1,14 @@
 import { logError } from '../logger'
 import { OLLAMA_DEFAULT_URL } from '../ollama'
-import { isDotCom } from '../sourcegraph-api/environments'
 import {
-    DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
-    DEFAULT_DOT_COM_MODELS,
+    DEFAULT_FAST_MODEL_CHARS_LIMIT,
     DEFAULT_FAST_MODEL_TOKEN_LIMIT,
-} from './dotcom'
+    tokensToChars,
+} from '../prompt/constants'
+import { isDotCom } from '../sourcegraph-api/environments'
+import { DEFAULT_DOT_COM_MODELS } from './dotcom'
 import { ModelUsage } from './types'
-import { getProviderName } from './utils'
+import { getModelInfo } from './utils'
 
 /**
  * ModelProvider manages available chat and edit models.
@@ -17,27 +18,34 @@ import { getProviderName } from './utils'
 export class ModelProvider {
     public default = false
     public codyProOnly = false
+    // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
+    // The title of the model, e.g. "Claude 2.0"
     public readonly title: string
-    public readonly contextWindow: number
 
     constructor(
+        // The model id that includes the provider name & the model name,
+        // e.g. "anthropic/claude-2.0"
         public readonly model: string,
+        // The usage of the model, e.g. chat or edit.
         public readonly usage: ModelUsage[],
-        tokenLimit?: number
+        // The maximum number of tokens that can be processed by the model in a single request.
+        // NOTE: A token is equivalent to 4 characters/bytes.
+        public readonly maxToken: number = DEFAULT_FAST_MODEL_TOKEN_LIMIT
     ) {
-        const splittedModel = model.split('/')
-        this.provider = getProviderName(splittedModel[0])
-        this.title = splittedModel[1]?.replaceAll('-', ' ')
+        const { provider, title } = getModelInfo(model)
+        this.provider = provider
+        this.title = title
         this.default = true
-        this.contextWindow = tokenLimit ? tokenLimit * 4 : DEFAULT_FAST_MODEL_TOKEN_LIMIT
     }
 
-    // Providers available for non-dotcom instances
-    private static privateProviders: Map<string, ModelProvider> = new Map()
-    // Providers available for dotcom instances
-    private static dotComProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
-    // Providers available from local ollama instances
+    /**
+     * Providers available on the user's instance
+     */
+    private static primaryProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
+    /**
+     * Providers available from local ollama instances
+     */
     private static ollamaProvidersEnabled = false
     private static ollamaProviders: ModelProvider[] = []
 
@@ -68,7 +76,11 @@ export class ModelProvider {
                     const models = new Set<ModelProvider>()
                     for (const model of data.models) {
                         const name = `ollama/${model.model}`
-                        const newModel = new ModelProvider(name, [ModelUsage.Chat, ModelUsage.Edit])
+                        const newModel = new ModelProvider(
+                            name,
+                            [ModelUsage.Chat, ModelUsage.Edit],
+                            DEFAULT_FAST_MODEL_CHARS_LIMIT
+                        )
                         models.add(newModel)
                     }
                     ModelProvider.ollamaProviders = Array.from(models)
@@ -88,11 +100,8 @@ export class ModelProvider {
      * made available for use.
      */
     public static add(provider: ModelProvider): void {
-        // private instances can only support 1 provider atm
-        if (ModelProvider.privateProviders.size) {
-            ModelProvider.privateProviders.clear()
-        }
-        ModelProvider.privateProviders.set(provider.model.trim(), provider)
+        // NOTE: private instances can only support 1 provider atm
+        ModelProvider.primaryProviders = [provider]
     }
 
     /**
@@ -106,17 +115,12 @@ export class ModelProvider {
         currentModel?: string
     ): ModelProvider[] {
         const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
-        const models = (
-            isDotComUser
-                ? ModelProvider.dotComProviders
-                : Array.from(ModelProvider.privateProviders.values())
-        )
+        if (isDotComUser) {
+            ModelProvider.primaryProviders = DEFAULT_DOT_COM_MODELS
+        }
+        const models = ModelProvider.primaryProviders
             .concat(ModelProvider.ollamaProviders)
             .filter(model => model.usage.includes(type))
-
-        if (!isDotComUser) {
-            return models
-        }
 
         // Set the current model as default
         return models.map(model => {
@@ -127,11 +131,15 @@ export class ModelProvider {
         })
     }
 
-    public static getContextWindow(modelID: string): number {
-        return (
-            ModelProvider.privateProviders.get(modelID)?.contextWindow ||
-            ModelProvider.dotComProviders.find(model => model.model === modelID)?.contextWindow ||
-            DEFAULT_CHAT_MODEL_TOKEN_LIMIT
-        )
+    /**
+     * Finds the model provider with the given model ID and returns its characters limit.
+     * The limit is calculated based on the max number of tokens the model can process.
+     * E.g. 7000 tokens * 4 characters/token = 28000 characters
+     */
+    public static getMaxCharsByModel(modelID: string): number {
+        const model = ModelProvider.primaryProviders
+            .concat(ModelProvider.ollamaProviders)
+            .find(m => m.model === modelID)
+        return tokensToChars(model?.maxToken || DEFAULT_FAST_MODEL_TOKEN_LIMIT)
     }
 }

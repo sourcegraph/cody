@@ -781,7 +781,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const maxChars = ModelProvider.getContextWindow(this.chatModel.modelID)
+        const maxChars = ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
         const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction

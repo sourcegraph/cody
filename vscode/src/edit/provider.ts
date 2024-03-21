@@ -46,7 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getContextWindow(model)
+            const contextWindow = ModelProvider.getMaxCharsByModel(model)
             const {
                 messages,
                 stopSequences,

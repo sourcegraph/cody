@@ -1,8 +1,6 @@
 import type { ModelProvider } from '.'
+import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, DEFAULT_FAST_MODEL_TOKEN_LIMIT } from '../prompt/constants'
 import { ModelUsage } from './types'
-
-export const DEFAULT_CHAT_MODEL_TOKEN_LIMIT = 28000 // 7000 tokens * 4 bytes per token
-export const DEFAULT_FAST_MODEL_TOKEN_LIMIT = 10000 // 4,096 tokens * 4 bytes per token
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 export const DEFAULT_DOT_COM_MODELS = [
@@ -13,7 +11,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude 2.1',
@@ -22,7 +20,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude Instant',
@@ -31,7 +29,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude 3 Haiku',
@@ -40,7 +38,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude 3 Sonnet',
@@ -49,7 +47,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude 3 Opus',
@@ -58,7 +56,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -67,7 +65,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'GPT-4 Turbo Preview',
@@ -76,7 +74,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Mixtral 8x7B',
@@ -86,6 +84,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
-        contextWindow: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
 ] as const satisfies ModelProvider[]
