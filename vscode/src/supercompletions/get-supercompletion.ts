@@ -6,6 +6,7 @@ import {
     logDebug,
 } from '@sourcegraph/cody-shared'
 import levenshtein from 'js-levenshtein'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import { getEditorIndentString } from '../utils'
 import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
@@ -22,6 +23,7 @@ export interface SuperCompletionsParams {
 }
 
 export interface Supercompletion {
+    id: string
     location: vscode.Location
     summary: string
     current: string
@@ -42,7 +44,7 @@ export async function* getSupercompletions({
 
     const messages = buildInteraction(document, diff)
 
-    for await (const rawChange of generateRawChanges(chat, messages)) {
+    for await (const rawChange of generateRawChanges(chat, messages, abortSignal)) {
         const supercompletion = parseRawChange(document, rawChange)
         if (!supercompletion) {
             continue
@@ -56,12 +58,15 @@ interface RawChange {
     summary: string
     change: string
 }
-async function* generateRawChanges(chat: ChatClient, messages: Message[]): AsyncGenerator<RawChange> {
-    const abortController = new AbortController()
+async function* generateRawChanges(
+    chat: ChatClient,
+    messages: Message[],
+    abortSignal: AbortSignal
+): AsyncGenerator<RawChange> {
     const stream = chat.chat(
         messages,
         { model: MODEL, temperature: 0.1, maxTokensToSample: 1000 },
-        abortController.signal
+        abortSignal
     )
 
     let processedLastIndex = 0
@@ -178,13 +183,14 @@ function parseRawChange(
     }
 
     const fullSupercompletion = {
+        id: uuid.v4(),
         location,
         summary,
         current,
         updated,
-    }
+    } satisfies Supercompletion
 
-    return fullSupercompletion //removeOverlappingChanges(document, fullSupercompletion)
+    return fullSupercompletion
 }
 
 function buildInteraction(document: vscode.TextDocument, diff: string): Message[] {
@@ -205,63 +211,63 @@ function buildInteraction(document: vscode.TextDocument, diff: string): Message[
     ]
 }
 
-// This function takes a supercompletion and adjusts the location to remove context
-// rows (rows which are the same in both the current and the updated text).
-function removeOverlappingChanges(
-    document: vscode.TextDocument,
-    supercompletion: Supercompletion
-): Supercompletion {
-    const currentLines = supercompletion.current.split('\n')
-    const updatedLines = supercompletion.updated.split('\n')
+// // This function takes a supercompletion and adjusts the location to remove context
+// // rows (rows which are the same in both the current and the updated text).
+// function removeOverlappingChanges(
+//     document: vscode.TextDocument,
+//     supercompletion: Supercompletion
+// ): Supercompletion {
+//     const currentLines = supercompletion.current.split('\n')
+//     const updatedLines = supercompletion.updated.split('\n')
 
-    let newCurrent = supercompletion.current
-    let newUpdated = supercompletion.updated
-    // let newRange = supercompletion.location.range
-    console.log('initial range', supercompletion.location.range)
+//     let newCurrent = supercompletion.current
+//     let newUpdated = supercompletion.updated
+//     // let newRange = supercompletion.location.range
+//     console.log('initial range', supercompletion.location.range)
 
-    const minLines = Math.min(currentLines.length, updatedLines.length)
+//     const minLines = Math.min(currentLines.length, updatedLines.length)
 
-    let startLine = supercompletion.location.range.start.line
-    let endLine = supercompletion.location.range.end.line
+//     let startLine = supercompletion.location.range.start.line
+//     let endLine = supercompletion.location.range.end.line
 
-    // Start from beginning. We can use the same index for both arrays
-    for (let i = 0; i < minLines; i++) {
-        if (currentLines[i] !== updatedLines[i] || startLine === endLine) {
-            break
-        }
+//     // Start from beginning. We can use the same index for both arrays
+//     for (let i = 0; i < minLines; i++) {
+//         if (currentLines[i] !== updatedLines[i] || startLine === endLine) {
+//             break
+//         }
 
-        newCurrent = newCurrent.slice(currentLines[i].length + 1)
-        newUpdated = newUpdated.slice(updatedLines[i].length + 1)
-        startLine++
-    }
-    // console.log(0, supercompletion)
-    // console.log(1, { newCurrent, newUpdated })
+//         newCurrent = newCurrent.slice(currentLines[i].length + 1)
+//         newUpdated = newUpdated.slice(updatedLines[i].length + 1)
+//         startLine++
+//     }
+//     // console.log(0, supercompletion)
+//     // console.log(1, { newCurrent, newUpdated })
 
-    // Start from the end. Calculate the indexes independently
-    for (let i = 0; i < minLines; i++) {
-        const ci = currentLines.length - i - 1
-        const ui = updatedLines.length - i - 1
-        if (currentLines[ci] !== updatedLines[ui] || startLine === endLine) {
-            break
-        }
+//     // Start from the end. Calculate the indexes independently
+//     for (let i = 0; i < minLines; i++) {
+//         const ci = currentLines.length - i - 1
+//         const ui = updatedLines.length - i - 1
+//         if (currentLines[ci] !== updatedLines[ui] || startLine === endLine) {
+//             break
+//         }
 
-        newCurrent = newCurrent.slice(0, -currentLines[ci].length - 1)
-        newUpdated = newUpdated.slice(0, -updatedLines[ui].length - 1)
-        endLine--
-    }
-    // console.log(2, { newCurrent, newUpdated })
-    // console.log('updated current', newCurrent)
+//         newCurrent = newCurrent.slice(0, -currentLines[ci].length - 1)
+//         newUpdated = newUpdated.slice(0, -updatedLines[ui].length - 1)
+//         endLine--
+//     }
+//     // console.log(2, { newCurrent, newUpdated })
+//     // console.log('updated current', newCurrent)
 
-    const newRange =
-        startLine === endLine
-            ? new vscode.Range(startLine, 0, startLine, 0)
-            : new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
+//     const newRange =
+//         startLine === endLine
+//             ? new vscode.Range(startLine, 0, startLine, 0)
+//             : new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
 
-    console.log('updated range', newRange)
-    return {
-        ...supercompletion,
-        location: new vscode.Location(supercompletion.location.uri, newRange),
-        current: newCurrent,
-        updated: newUpdated,
-    }
-}
+//     console.log('updated range', newRange)
+//     return {
+//         ...supercompletion,
+//         location: new vscode.Location(supercompletion.location.uri, newRange),
+//         current: newCurrent,
+//         updated: newUpdated,
+//     }
+// }
