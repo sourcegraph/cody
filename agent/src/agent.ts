@@ -1108,7 +1108,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else if (message.type === 'chatModels') {
                     panel.models = message.models
                 } else if (message.type === 'history') {
-                    panel.chatHistory = message.localHistory?.chat
+                    if (message.localHistory) {
+                        panel.chatHistory = Object.fromEntries(
+                            Object.entries(message.localHistory?.chat).filter(
+                                ([chatID, chatTranscript]) => chatTranscript.interactions.length > 0
+                            )
+                        )
+                    }
                 } else if (message.type === 'context/remote-repos') {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
