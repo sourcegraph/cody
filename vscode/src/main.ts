@@ -114,6 +114,8 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    const authProvider = new AuthProvider(initialConfig)
+
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -125,7 +127,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
 
@@ -154,7 +156,6 @@ const register = async (
         })
     )
 
-    const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
@@ -236,7 +237,7 @@ const register = async (
         graphqlClient.onConfigurationChange(newConfig)
         promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
-        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
+        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         enterpriseContextFactory.clientConfigurationDidChange()
@@ -629,9 +630,10 @@ const register = async (
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }
 

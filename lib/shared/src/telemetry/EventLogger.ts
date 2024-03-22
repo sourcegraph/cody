@@ -4,6 +4,7 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import type { TelemetryEventProperties } from '.'
+import type { AuthStatus } from '../auth/types'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -23,7 +24,8 @@ export class EventLogger {
     constructor(
         private serverEndpoint: string,
         private extensionDetails: ExtensionDetails,
-        private config: ConfigurationWithAccessToken
+        private config: ConfigurationWithAccessToken,
+        private getAuthStatus: () => AuthStatus
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
         this.setSiteIdentification().catch(error =>
@@ -117,6 +119,7 @@ export class EventLogger {
             ...properties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            tier: getTier(this.getAuthStatus()),
             configurationDetails: {
                 contextSelection: this.config.useContext,
                 guardrails: this.config.experimentalGuardrails,
@@ -153,4 +156,9 @@ export class EventLogger {
             })
             .catch(error => logError('EventLogger', 'Uncaught error logging event', error))
     }
+}
+
+function getTier(authStatus: AuthStatus): 'free' | 'pro' | 'enterprise' {
+    console.log({ authStatus })
+    return !authStatus.isDotCom ? 'enterprise' : authStatus.userCanUpgrade ? 'free' : 'pro'
 }

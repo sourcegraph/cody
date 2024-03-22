@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type Configuration,
     type ConfigurationWithAccessToken,
     EventLogger,
@@ -14,6 +15,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
 
+import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
 let eventLogger: EventLogger | null = null
@@ -35,7 +37,8 @@ export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): Ex
  */
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
     if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
         // check that CODY_TESTING is not true, because we want to log events when we are testing
@@ -56,7 +59,9 @@ export async function createOrUpdateEventLogger(
     const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
-        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
+        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config, () =>
+            authProvider.getAuthStatus()
+        )
         if (created) {
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
