@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type Configuration,
     type ConfigurationWithAccessToken,
     EventLogger,
