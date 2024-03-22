@@ -70,6 +70,10 @@
     color: var(--vscode-list-hoverForeground);
     background-color: var(--vscode-list-hoverBackground);
 }
+.option-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .option-item.selected,
 body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {

@@ -95,7 +95,12 @@ const Item: FunctionComponent<{
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            className={classNames(
+                className,
+                styles.optionItem,
+                isSelected && styles.selected,
+                warning && styles.disabled
+            )}
             ref={option.setRefElement}
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"
