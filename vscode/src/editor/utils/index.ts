@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { getSelectionAroundLine } from './document-sections'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
+import { getSelectionAroundLine } from './document-sections'
 
 /**
  * Gets the folding range containing the target position to use as a smart selection.
