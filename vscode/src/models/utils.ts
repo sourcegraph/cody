@@ -1,4 +1,5 @@
-import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
+import { type AuthStatus, ModelProvider, isDotCom } from '@sourcegraph/cody-shared'
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
 
@@ -10,6 +11,9 @@ import * as vscode from 'vscode'
  * or fallback to the limit from the authentication status if not configured.
  */
 export function setModelProviders(authStatus: AuthStatus): void {
+    if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
+        ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
+    }
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
     // overwrite it locally (for debugging purposes).
     //
@@ -20,13 +24,14 @@ export function setModelProviders(authStatus: AuthStatus): void {
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimitConfig = codyConfig.get<number>('provider.limit.prompt')
         const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
-        ModelProvider.add(
+        ModelProvider.setProviders([
             new ModelProvider(
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
                 tokenLimit
-            )
-        )
+            ),
+        ])
+        return
     }
 }

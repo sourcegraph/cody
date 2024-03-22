@@ -58,7 +58,6 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
-import { setModelProviders } from '../../models/utilts'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -730,8 +729,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        setModelProviders(authStatus)
-        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.getProviders(ModelUsage.Chat, this.chatModel.modelID)
 
         void this.postMessage({
             type: 'chatModels',

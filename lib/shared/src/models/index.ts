@@ -5,7 +5,6 @@ import {
     DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     tokensToChars,
 } from '../prompt/constants'
-import { isDotCom } from '../sourcegraph-api/environments'
 import { DEFAULT_DOT_COM_MODELS } from './dotcom'
 import { ModelUsage } from './types'
 import { getModelInfo } from './utils'
@@ -95,35 +94,24 @@ export class ModelProvider {
     }
 
     /**
-     * Adds a new model provider, instantiated from the given model string,
-     * to the internal providers set. This allows new models to be added and
-     * made available for use.
+     * Sets the primary model providers.
+     * NOTE: private instances can only support 1 provider atm
      */
-    public static add(provider: ModelProvider): void {
-        // NOTE: private instances can only support 1 provider atm
-        ModelProvider.primaryProviders = [provider]
+    public static setProviders(providers: ModelProvider[]): void {
+        ModelProvider.primaryProviders = providers
     }
 
     /**
-     * Gets the model providers based on the endpoint and current model.
-     * If endpoint is a dotcom endpoint, returns dotComProviders with ollama providers.
+     * Get the list of the primary models providers with local models.
      * If currentModel is provided, sets it as the default model.
      */
-    public static get(
-        type: ModelUsage,
-        endpoint?: string | null,
-        currentModel?: string
-    ): ModelProvider[] {
-        const isDotComUser = !endpoint || (endpoint && isDotCom(endpoint))
-        if (isDotComUser) {
-            ModelProvider.primaryProviders = DEFAULT_DOT_COM_MODELS
-        }
+    public static getProviders(type: ModelUsage, currentModel?: string): ModelProvider[] {
         const models = ModelProvider.primaryProviders
             .concat(ModelProvider.ollamaProviders)
             .filter(model => model.usage.includes(type))
 
         // Set the current model as default
-        return models.map(model => {
+        return models?.map(model => {
             return {
                 ...model,
                 default: model.model === currentModel,
