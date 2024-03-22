@@ -74,7 +74,7 @@ export class MentionTypeaheadOption extends MenuOption {
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState<string | null>(null)
 
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
@@ -116,7 +116,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
-    const onQueryChange = useCallback((query: string | null) => setQuery(query ?? ''), [])
+    const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
@@ -157,7 +157,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={classNames(styles.popover)}
                             >
                                 <OptionsList
-                                    query={query}
+                                    query={query ?? ''}
                                     options={options}
                                     selectedIndex={selectedIndex}
                                     setHighlightedIndex={setHighlightedIndex}
