@@ -267,7 +267,7 @@ export async function filterLargeFiles(
             stat => stat,
             error => undefined
         )
-        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File) {
+        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
         // Check if file contains more characters than the token limit based on fileStat.size

@@ -158,13 +158,14 @@ describe('filterLargeFiles', () => {
         expect(filtered).toEqual([])
     })
 
-    it('sets isTooLarge for files exceeding token limit', async () => {
+    it('sets isTooLarge for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
+        const oneByteOverTokenLimit = MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
-            size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
+            size: oneByteOverTokenLimit,
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
@@ -174,6 +175,7 @@ describe('filterLargeFiles', () => {
             type: 'file',
             uri: largeTextFile.uri,
             isTooLarge: true,
+            size: oneByteOverTokenLimit,
         })
     })
 })
