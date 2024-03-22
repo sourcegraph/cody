@@ -38,6 +38,9 @@ test('existing installs should show the update toast when the last dismissed ver
     // Use chat.
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     let chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await chatInput.fill('hey buddy')
+    await chatInput.press('Enter')
 
     // Forge an older dismissed version into local storage.
     expect(
@@ -46,10 +49,6 @@ test('existing installs should show the update toast when the last dismissed ver
             return localStorage.getItem(versionUpdateStorageKey)
         }, versionUpdateStorageKey)
     ).toBe('0.7')
-
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await chatInput.fill('hey buddy')
-    await chatInput.press('Enter')
 
     // Wait for this chat to be available in the sidebar
     const chatHistoryEntry = page.getByRole('treeitem', { name: 'hey buddy' })

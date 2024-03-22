@@ -14,7 +14,6 @@ test.extend<ExpectedEvents>({
         'CodyInstalled',
         // This is fired on empty @-mention query for open tabs context
         'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:file:executed',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
@@ -279,7 +278,8 @@ test.extend<ExpectedEvents>({
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Type a file with range.
-    await chatInput.fill('@buzz.ts:2-4')
+    // Use pressSequentially to simulate typing to trigger the expected event as we only log once on first character.
+    await chatInput.pressSequentially('@buzz.ts:2-4')
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
