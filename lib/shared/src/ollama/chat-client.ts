@@ -44,7 +44,8 @@ export function ollamaChatClient(
     } satisfies OllamaChatParams
 
     // Sends the completion parameters and callbacks to the Ollama API.
-    fetch(new URL('/api/chat', OLLAMA_DEFAULT_URL).href, {
+    const apiEndpoint = params.apiEndpoint || OLLAMA_DEFAULT_URL
+    fetch(new URL('/api/chat', apiEndpoint).href, {
         method: 'POST',
         body: JSON.stringify(ollamaChatParams),
         headers: {

@@ -52,6 +52,7 @@ export interface Configuration {
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
+    experimentalOllamaChatApiEndpoint?: string
 
     /**
      * Unstable Features for internal testing only

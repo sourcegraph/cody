@@ -227,7 +227,7 @@ const register = async (
             return Promise.resolve()
         }
 
-        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+        ModelProvider.onConfigChange(newConfig)
 
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
@@ -305,7 +305,7 @@ const register = async (
 
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
-    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    ModelProvider.onConfigChange(initialConfig)
     statusBar.syncAuthStatus(authProvider.getAuthStatus())
 
     const commandsManager = platform.createCommandsProvider?.()

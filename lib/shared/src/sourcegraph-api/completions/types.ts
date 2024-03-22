@@ -33,6 +33,11 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+
+    // For setting the endpoint for the completion server that is hosted
+    // in a different location than the Sourcegraph instance endpoint.
+    // Currently used by the Ollama chat client.
+    apiEndpoint?: string
 }
 
 export interface CompletionCallbacks {

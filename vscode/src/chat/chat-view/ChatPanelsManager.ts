@@ -37,6 +37,7 @@ export type ChatPanelConfig = Pick<
     | 'internalUnstable'
     | 'useContext'
     | 'experimentalChatContextRanker'
+    | 'experimentalOllamaChatApiEndpoint'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
