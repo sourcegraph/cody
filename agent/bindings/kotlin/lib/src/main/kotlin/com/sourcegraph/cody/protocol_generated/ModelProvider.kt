@@ -7,7 +7,6 @@ data class ModelProvider(
   val provider: String? = null,
   val title: String? = null,
   val primaryProviders: List<ModelProvider>? = null,
-  val ollamaProvidersEnabled: Boolean? = null,
   val ollamaProviders: List<ModelProvider>? = null,
 )
 
