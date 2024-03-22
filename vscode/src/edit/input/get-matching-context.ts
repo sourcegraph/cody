@@ -12,14 +12,9 @@ interface FixupMatchingContext {
     item: ContextItem
 }
 
-export async function getMatchingContext(
-    mentionQuery: MentionQuery
-): Promise<FixupMatchingContext[] | null> {
+export async function getMatchingContext(mentionQuery: MentionQuery): Promise<FixupMatchingContext[]> {
     const token = new vscode.CancellationTokenSource()?.token
     const results = await getChatContextItemsForMention(mentionQuery.text, token)
-    if (!results?.length) {
-        return null
-    }
     return results.map(result => {
         return {
             key: getLabelForContextItem(result),
@@ -30,6 +25,6 @@ export async function getMatchingContext(
                           result.symbolName
                       }`
                     : undefined,
-        } as FixupMatchingContext
+        }
     })
 }

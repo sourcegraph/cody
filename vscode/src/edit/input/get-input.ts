@@ -370,8 +370,7 @@ export const getInput = async (
                     ? parseMentionQuery(mentionTrigger.matchingString)
                     : undefined
 
-                const matchingContext = mentionQuery ? await getMatchingContext(mentionQuery) : null
-                if (matchingContext === null) {
+                if (!mentionQuery) {
                     // Nothing to match, re-render existing items
                     input.items = getEditInputItems(
                         input.value,
@@ -382,6 +381,7 @@ export const getInput = async (
                     return
                 }
 
+                const matchingContext = await getMatchingContext(mentionQuery)
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
                     input.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
