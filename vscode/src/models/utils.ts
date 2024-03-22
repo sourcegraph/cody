@@ -13,7 +13,9 @@ import * as vscode from 'vscode'
 export function setModelProviders(authStatus: AuthStatus): void {
     if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
+        return
     }
+
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
     // overwrite it locally (for debugging purposes).
     //
@@ -32,6 +34,5 @@ export function setModelProviders(authStatus: AuthStatus): void {
                 tokenLimit
             ),
         ])
-        return
     }
 }
