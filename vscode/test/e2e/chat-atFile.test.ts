@@ -14,6 +14,8 @@ test.extend<ExpectedEvents>({
         'CodyInstalled',
         // This is fired on empty @-mention query for open tabs context
         'CodyVSCodeExtension:at-mention:executed',
+        // Log once on the first character entered for an @-mention query, e.g. "@."
+        'CodyVSCodeExtension:at-mention:file:executed',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
@@ -267,9 +269,7 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:at-mention:file:executed'],
-})('@-mention file range', async ({ page, sidebar }) => {
+test('@-mention file range', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -278,8 +278,7 @@ test.extend<ExpectedEvents>({
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Type a file with range.
-    // Use pressSequentially to simulate typing to trigger the expected event as we only log once on first character.
-    await chatInput.pressSequentially('@buzz.ts:2-4')
+    await chatInput.fill('@buzz.ts:2-4')
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
