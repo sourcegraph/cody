@@ -7,6 +7,6 @@ data class ModelProvider(
   val provider: String? = null,
   val title: String? = null,
   val primaryProviders: List<ModelProvider>? = null,
-  val ollamaProviders: List<ModelProvider>? = null,
+  val localProviders: List<ModelProvider>? = null,
 )
 
