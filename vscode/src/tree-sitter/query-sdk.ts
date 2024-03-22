@@ -232,7 +232,7 @@ function getLanguageSpecificQueryWrappers(
                 return []
             }
 
-            return [firstEnclosingFunction] as const
+            return [firstEnclosingFunction]
         },
     }
 }
