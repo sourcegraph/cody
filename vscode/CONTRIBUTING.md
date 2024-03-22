@@ -43,11 +43,12 @@ We also have some build-in UI to help during the development of autocomplete req
 To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
 
 1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
-2. Commit the version increment, e.g. `VS Code: Release 1.1.0`.
-3. `git tag vscode-v$(jq -r .version package.json)`
-4. `git push --tags`
-5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
-6. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
+2. `pnpm update-agent-recordings` to update the version in agent recordings.
+3. Commit the version increment, e.g. `VS Code: Release 1.1.0`.
+4. `git tag vscode-v$(jq -r .version package.json)`
+5. `git push --tags`
+6. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+7. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
 
 ### Insiders builds
 
@@ -144,19 +145,19 @@ For now, all events in VSCode should be updated to use both the legacy event cli
 
 ```ts
 // Legacy events client
-import { telemetryService } from '../services/telemetry'
+import { telemetryService } from "../services/telemetry";
 // New events client
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { telemetryRecorder } from "../services/telemetry-v2";
 
 // Legacy instrumentation
 telemetryService.log(
-  'CodyVSCodeExtension:fixup:applied',
+  "CodyVSCodeExtension:fixup:applied",
   { ...codeCount, source },
   // Indicate the legacy instrumentation has a coexisting v2 instrumentation
   { hasV2Event: true }
-)
+);
 // New instrumentation, alonsgide the legacy instrumentation
-telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
+telemetryRecorder.recordEvent("cody.fixup.apply", "succeeded", {
   metadata: {
     /**
      * metadata, exported by default, must be numeric.
@@ -179,7 +180,7 @@ telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
      */
     source,
   },
-})
+});
 ```
 
 When events are recorded to both systems:

@@ -160,7 +160,8 @@ export class EditManager implements vscode.Disposable {
         // Log the default edit command name for doc intent or test mode
         const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
         const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
-        const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
+        const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
+        const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
         telemetryService.log(
             `CodyVSCodeExtension:command:${eventName}:executed`,
             { source },
