@@ -9,4 +9,14 @@
     margin: 0;
     text-align: left;
     font-weight: normal;
+    display: inline-block;
+}
+
+.excluded {
+    text-decoration: line-through !important;
+}
+
+.item {
+    display: flex;
+    align-items: center;
 }
