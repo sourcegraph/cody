@@ -9,14 +9,13 @@ import type { ChatButtonProps } from '../Chat'
 import type { EditButtonProps } from '../Chat'
 import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { CodeBlockActionsProps } from './CodeBlocks'
+import type { CodeBlockActionsProps, MessageTextValue } from './CodeBlocks'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
-import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
 /**
@@ -90,7 +89,7 @@ export const TranscriptItem: React.FunctionComponent<
     // A boolean indicating whether the current transcript item is the one being edited.
     const isItemBeingEdited = beingEdited === index
 
-    const displayMarkdown = useDisplayMarkdown(message)
+    const messageTextValue = useMessageTextValue(message)
 
     return (
         <div
@@ -142,9 +141,9 @@ export const TranscriptItem: React.FunctionComponent<
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
-                {displayMarkdown ? (
+                {messageTextValue ? (
                     <CodeBlocks
-                        displayMarkdown={displayMarkdown}
+                        value={messageTextValue}
                         wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
@@ -196,9 +195,17 @@ export const TranscriptItem: React.FunctionComponent<
 /**
  * React hook for returning the Markdown for rendering a chat message's text.
  */
-function useDisplayMarkdown(message: ChatMessage): string {
+function useMessageTextValue(message: ChatMessage): MessageTextValue {
     if (message.speaker === 'assistant') {
-        return reformatBotMessageForChat(message.text ?? '')
+        return { type: 'markdown', value: reformatBotMessageForChat(message.text ?? '') }
     }
-    return serializedPromptEditorStateFromChatMessage(message).html
+    if (!message.editorState) {
+        return { type: 'markdown', value: message.text ?? '' }
+    }
+    return { type: 'html', value: hackToDisplayCodeBlocksInLexicalHTML(message.editorState) }
+}
+
+function hackToDisplayCodeBlocksInLexicalHTML(html: string): string {
+    /// <span style="white-space: pre-wrap;">```</span>
+    return html.replaceAll('<span style="white-space: pre-wrap;">```</span>', '```')
 }

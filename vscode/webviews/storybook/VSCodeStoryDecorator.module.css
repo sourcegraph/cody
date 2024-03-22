@@ -53,6 +53,7 @@ vscode-button::part(control) {
     --vscode-checkbox-background: #313131;
     --vscode-checkbox-border: #3c3c3c;
     --vscode-editor-background: #151c28;
+    --vscode-editor-font-family: monospace;
     --vscode-editor-font-size: 12px;
     --vscode-editor-foreground: var(--foreground);
     --vscode-focusBorder: #4daafc;

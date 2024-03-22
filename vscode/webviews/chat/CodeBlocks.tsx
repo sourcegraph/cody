@@ -19,9 +19,13 @@ export interface CodeBlockActionsProps {
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
 }
 
+export interface MessageTextValue {
+    type: 'html' | 'markdown'
+    value: string
+}
+
 interface CodeBlocksProps {
-    displayMarkdown: string
-    wrapLinksWithCodyCommand: boolean
+    value: MessageTextValue
 
     copyButtonClassName?: string
     insertButtonClassName?: string
@@ -240,8 +244,7 @@ class GuardrailsStatusController {
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
     function CodeBlocksContent({
-        displayMarkdown,
-        wrapLinksWithCodyCommand,
+        value,
         copyButtonClassName,
         copyButtonOnSubmit,
         insertButtonClassName,
@@ -319,14 +322,14 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                     ref={rootRef}
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
                     dangerouslySetInnerHTML={{
-                        // wrapLinksWithCodyCommand opens all links in assistant responses using the
-                        // _cody.vscode.open command (but not human messages because those already
-                        // have the right URIs and are trusted).
-                        __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
+                        __html:
+                            value.type === 'html'
+                                ? value.value
+                                : renderCodyMarkdown(value.value, { wrapLinksWithCodyCommand: true }),
                     }}
                 />
             ),
-            [displayMarkdown, wrapLinksWithCodyCommand]
+            [value]
         )
     }
 )

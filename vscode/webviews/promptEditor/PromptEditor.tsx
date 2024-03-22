@@ -1,5 +1,5 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
-import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type ContextItem, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { $getRoot, CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
@@ -191,9 +191,11 @@ function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState
 }
 
 /**
- * This treats the entire text as plain text and does not parse it for any @-mentions.
+ * This treats the entire text as Markdown and does not parse it for any @-mentions.
  */
-export function serializedPromptEditorStateFromText(text: string): SerializedPromptEditorState {
+export function serializedPromptEditorStateFromMarkdownText(
+    markdown: string
+): SerializedPromptEditorState {
     const editorState: SerializedEditorState = {
         root: {
             children: [
@@ -204,7 +206,7 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
                             format: 0,
                             mode: 'normal',
                             style: '',
-                            text,
+                            text: markdown,
                             type: 'text',
                             version: 1,
                         },
@@ -226,7 +228,7 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
     return {
         v: STATE_VERSION_CURRENT,
         lexicalEditorState: editorState,
-        html: escapeHTML(text),
+        html: renderCodyMarkdown(markdown, { wrapLinksWithCodyCommand: false }),
     }
 }
 
@@ -247,7 +249,7 @@ export function serializedPromptEditorStateFromChatMessage(
     // It would be smoother to automatically import or convert textual @-mentions to the Lexical
     // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
     // of editing old messages in your chat history.
-    return serializedPromptEditorStateFromText(chatMessage.text ?? '')
+    return serializedPromptEditorStateFromMarkdownText(chatMessage.text ?? '')
 }
 
 export function contextItemsFromPromptEditorValue(

@@ -1,13 +1,16 @@
 import { describe, expect, test } from 'vitest'
-import { contextItemsFromPromptEditorValue, serializedPromptEditorStateFromText } from './PromptEditor'
+import {
+    contextItemsFromPromptEditorValue,
+    serializedPromptEditorStateFromMarkdownText,
+} from './PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 import type { SerializedContextItem } from './nodes/ContextItemMentionNode'
 
 describe('serializedPromptEditorStateFromText', () => {
     test('empty', () =>
-        expect(contextItemsFromPromptEditorValue(serializedPromptEditorStateFromText('foo'))).toEqual(
-            []
-        ))
+        expect(
+            contextItemsFromPromptEditorValue(serializedPromptEditorStateFromMarkdownText('foo'))
+        ).toEqual([]))
 
     test('with mentions', () =>
         expect(contextItemsFromPromptEditorValue(FILE_MENTION_EDITOR_STATE_FIXTURE)).toEqual<
