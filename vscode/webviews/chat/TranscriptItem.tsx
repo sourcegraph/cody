@@ -196,10 +196,11 @@ export const TranscriptItem: React.FunctionComponent<
  * React hook for returning the Markdown for rendering a chat message's text.
  */
 function useMessageTextValue(message: ChatMessage): MessageTextValue {
-    return useMemo(() => {
-        if (message.speaker === 'assistant') {
-            return { type: 'markdown', value: reformatBotMessageForChat(message.text ?? '') }
-        }
-        return messageTextValueFromPromptEditorState(message)
-    }, [message])
+    return useMemo(
+        () =>
+            message.speaker === 'assistant'
+                ? { type: 'markdown', value: reformatBotMessageForChat(message.text ?? '') }
+                : messageTextValueFromPromptEditorState(message),
+        [message]
+    )
 }
