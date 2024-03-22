@@ -297,8 +297,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
                             })
                     }
 
-                    // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                    // Insert the buttons after the pre using insertBefore() because there is no
+                    // insertAfter(), if they haven't already been inserted.
+                    if (preElement.nextElementSibling?.className !== buttons.className) {
+                        preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                    }
 
                     // capture copy events (right click or keydown) on code block
                     preElement.addEventListener('copy', () => {
