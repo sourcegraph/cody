@@ -42,7 +42,7 @@ test.extend<ExpectedEvents>({
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
-        'CodyVSCodeExtension:command:edit:executed',
+        'CodyVSCodeExtension:command:fix:executed',
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
     ],
