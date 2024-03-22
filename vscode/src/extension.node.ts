@@ -1,3 +1,6 @@
+// Sentry should be imported first
+import { NodeSentryService } from './services/sentry/sentry.node'
+
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import * as vscode from 'vscode'
 
@@ -19,7 +22,6 @@ import {
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { NodeSentryService } from './services/sentry/sentry.node'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
