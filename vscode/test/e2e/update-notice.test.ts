@@ -37,7 +37,7 @@ test('existing installs should show the update toast when the last dismissed ver
 
     // Use chat.
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    let chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('hey buddy')
     await chatInput.press('Enter')
@@ -51,6 +51,7 @@ test('existing installs should show the update toast when the last dismissed ver
     ).toBe('0.7')
 
     // Wait for this chat to be available in the sidebar
+    await page.waitForSelector('div[aria-label="Today"]')
     const chatHistoryEntry = page.getByRole('treeitem', { name: 'hey buddy' })
     await expect(chatHistoryEntry).toBeVisible()
     await page.locator('*[aria-label="Tab actions"] *[aria-label~="Close"]').click()
@@ -58,7 +59,6 @@ test('existing installs should show the update toast when the last dismissed ver
     // Reopen the chat; the update notice should be visible.
     // Welcome message is removed.
     await chatHistoryEntry.click()
-    chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const introChat = chatFrame.getByText(greetingChatText)
     await expect(introChat).not.toBeVisible()
     const chatNotice = chatFrame.getByText(updateToastText)
