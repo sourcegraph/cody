@@ -1,7 +1,10 @@
 import * as vscode from 'vscode'
+import {
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from '../../../chat/context/constants'
 import { isGenerateIntent } from '../../utils/edit-intent'
 import { getEditSmartSelection } from '../../utils/edit-selection'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import type { EditInputInitialValues } from '../get-input'
 import type { GetItemsResult } from '../quick-pick'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'

@@ -1,14 +1,8 @@
 import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import {
-    getFileContextFiles,
-    getOpenTabsContextFile,
-    getSymbolContextFiles,
-} from '../../editor/utils/editor-context'
+import { getChatContextItemsForMention } from '../../chat/context/chatContext'
 import { getLabelForContextItem } from './utils'
-
-const MAX_FUZZY_RESULTS = 20
 
 interface FixupMatchingContext {
     /* Unique identifier for the context, shown in the input value but not necessarily in the quick pick selector */
@@ -21,37 +15,21 @@ interface FixupMatchingContext {
 export async function getMatchingContext(
     mentionQuery: MentionQuery
 ): Promise<FixupMatchingContext[] | null> {
-    if (mentionQuery.type === 'empty') {
-        const openTabsResult = await getOpenTabsContextFile()
-        return openTabsResult.map(result => ({
+    const token = new vscode.CancellationTokenSource()?.token
+    const results = await getChatContextItemsForMention(mentionQuery.text, token)
+    if (!results?.length) {
+        return null
+    }
+    return results.map(result => {
+        return {
             key: getLabelForContextItem(result),
             item: result,
-        }))
-    }
-
-    if (mentionQuery.type === 'symbol') {
-        const symbolResults = await getSymbolContextFiles(mentionQuery.text, MAX_FUZZY_RESULTS)
-        return symbolResults.map(result => ({
-            key: getLabelForContextItem(result),
-            item: result,
-            shortLabel: `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
-                result.symbolName
-            }`,
-        }))
-    }
-
-    if (mentionQuery.type === 'file') {
-        const cancellation = new vscode.CancellationTokenSource()
-        const fileResults = await getFileContextFiles(
-            mentionQuery.text,
-            MAX_FUZZY_RESULTS,
-            cancellation.token
-        )
-        return fileResults.map(result => ({
-            key: getLabelForContextItem(result),
-            item: result,
-        }))
-    }
-
-    return null
+            shortLabel:
+                result.type === 'symbol'
+                    ? `${result.kind === 'class' ? '$(symbol-structure)' : '$(symbol-method)'} ${
+                          result.symbolName
+                      }`
+                    : undefined,
+        } as FixupMatchingContext
+    })
 }
