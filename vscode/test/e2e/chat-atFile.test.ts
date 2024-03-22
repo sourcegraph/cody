@@ -12,6 +12,7 @@ import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
+        // This is fired on empty @-mention query for open tabs context
         'CodyVSCodeExtension:at-mention:executed',
         'CodyVSCodeExtension:at-mention:file:executed',
     ],
@@ -267,7 +268,9 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
-test('@-mention file range', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: ['CodyVSCodeExtension:at-mention:file:executed'],
+})('@-mention file range', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -296,11 +299,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-    ],
+    expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
 })('@-mention symbol in chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
