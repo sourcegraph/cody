@@ -19,7 +19,7 @@ interface Props extends KeyboardEventPluginProps {
 
     placeholder?: string
 
-    initialEditorState?: SerializedPromptEditorState
+    initialEditorState?: SerializedEditorState
     onChange?: (value: SerializedPromptEditorValue) => void
     onFocusChange?: (focused: boolean) => void
 
@@ -29,7 +29,7 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    setEditorState(value: SerializedPromptEditorState | null): void
+    setEditorState(value: SerializedEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean): void
 }
@@ -57,7 +57,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(value: SerializedPromptEditorState | null): void {
+            setEditorState(value: SerializedEditorState | null): void {
                 if (value === null) {
                     // Clearing seems to require a different code path because focusing fails if
                     // the editor is empty.
@@ -69,7 +69,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
                 const editor = editorRef.current
                 if (editor) {
-                    editor.setEditorState(editor.parseEditorState(value.lexicalEditorState))
+                    editor.setEditorState(editor.parseEditorState(value))
                     editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
                     editor.focus()
                 }
@@ -107,7 +107,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         <div className={classNames(styles.container, containerClassName)}>
             <BaseEditor
                 className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
-                initialEditorState={initialEditorState?.lexicalEditorState ?? null}
+                initialEditorState={initialEditorState ?? null}
                 onChange={onBaseEditorChange}
                 onFocusChange={onFocusChange}
                 editorRef={editorRef}

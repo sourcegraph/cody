@@ -15,6 +15,7 @@ import {
 import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
+import type { SerializedEditorState } from 'lexical'
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
@@ -23,7 +24,6 @@ import { ChatActions } from './chat/components/ChatActions'
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from './promptEditor/PromptEditor'
@@ -67,7 +67,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
-    const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
+    const setEditorState = useCallback((state: SerializedEditorState | null) => {
         editorRef.current?.setEditorState(state)
     }, [])
 
@@ -226,7 +226,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
             const messageAtIndex = transcript[index]
             if (messageAtIndex) {
-                setEditorState(serializedPromptEditorStateFromChatMessage(messageAtIndex))
+                setEditorState(
+                    serializedPromptEditorStateFromChatMessage(messageAtIndex).lexicalEditorState
+                )
             }
             // move focus back to chatbox
             setInputFocus(true)
