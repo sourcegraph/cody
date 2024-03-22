@@ -3,6 +3,7 @@
     position: relative;
 
 }
+
 .context-item-mention-node::before {
     content: '';
     background-color: var(--link-foreground);
@@ -14,4 +15,10 @@
     left: 0;
     right: 0;
     opacity: 0.2;
+    pointer-events: none
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {
+    background-color: var(--code-background);
+    color: var(--code-foreground);
 }
