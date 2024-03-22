@@ -3,16 +3,7 @@ import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    if (authStatus?.configOverwrites?.chatModel) {
-        ModelProvider.add(
-            new ModelProvider(authStatus.configOverwrites.chatModel, [
-                ModelUsage.Chat,
-                // TODO: Add configOverwrites.editModel for separate edit support
-                ModelUsage.Edit,
-            ])
-        )
-    }
-    return ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
+    return ModelProvider.getProviders(ModelUsage.Edit)
 }
 
 export function getOverridenModelForIntent(intent: EditIntent, currentModel: EditModel): EditModel {

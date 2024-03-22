@@ -2,6 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    ModelProvider,
     Typewriter,
     isAbortError,
     isDotCom,
@@ -17,7 +18,6 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { getContextWindowForModel } from '../models/utilts'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -46,10 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = getContextWindowForModel(
-                this.config.authProvider.getAuthStatus(),
-                model
-            )
+            const contextWindow = ModelProvider.getMaxCharsByModel(model)
             const {
                 messages,
                 stopSequences,

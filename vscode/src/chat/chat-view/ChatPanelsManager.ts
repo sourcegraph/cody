@@ -214,17 +214,7 @@ export class ChatPanelsManager implements vscode.Disposable {
      */
     private createProvider(): SimpleChatPanelProvider {
         const authProvider = this.options.authProvider
-        const authStatus = authProvider.getAuthStatus()
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
-        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
+        const models = ModelProvider.getProviders(ModelUsage.Chat)
         const isConsumer = authProvider.getAuthStatus().isDotCom
 
         return new SimpleChatPanelProvider({
