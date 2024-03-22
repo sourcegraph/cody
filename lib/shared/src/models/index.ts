@@ -1,13 +1,7 @@
-import { logError } from '../logger'
-import { OLLAMA_DEFAULT_URL } from '../ollama'
-import {
-    DEFAULT_FAST_MODEL_CHARS_LIMIT,
-    DEFAULT_FAST_MODEL_TOKEN_LIMIT,
-    tokensToChars,
-} from '../prompt/constants'
+import { DEFAULT_FAST_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
 import { DEFAULT_DOT_COM_MODELS } from './dotcom'
-import { ModelUsage } from './types'
-import { getModelInfo } from './utils'
+import type { ModelUsage } from './types'
+import { fetchLocalOllamaModels, getModelInfo } from './utils'
 
 /**
  * ModelProvider manages available chat and edit models.
@@ -15,7 +9,9 @@ import { getModelInfo } from './utils'
  * retrieve and select between them.
  */
 export class ModelProvider {
+    // Whether the model is the default model
     public default = false
+    // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
@@ -38,16 +34,23 @@ export class ModelProvider {
     }
 
     /**
-     * Providers available on the user's instance
+     * Get all the providers currently available to the user
+     */
+    private static get providers(): ModelProvider[] {
+        return ModelProvider.primaryProviders.concat(ModelProvider.localProviders)
+    }
+    /**
+     * Providers available on the user's Sourcegraph instance
      */
     private static primaryProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
     /**
-     * Providers available from local ollama instances
+     * Providers available from user's local instances, e.g. Ollama
      */
-    private static ollamaProviders: ModelProvider[] = []
+    private static localProviders: ModelProvider[] = []
+
     public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
         // Only fetch local models if user has enabled the config
-        ModelProvider.ollamaProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
+        ModelProvider.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
     }
 
     /**
@@ -63,17 +66,13 @@ export class ModelProvider {
      * If currentModel is provided, sets it as the default model.
      */
     public static getProviders(type: ModelUsage, currentModel?: string): ModelProvider[] {
-        const models = ModelProvider.primaryProviders
-            .concat(ModelProvider.ollamaProviders)
-            .filter(model => model.usage.includes(type))
-
-        // Set the current model as default
-        return models?.map(model => {
-            return {
+        return ModelProvider.providers
+            .filter(m => m.usage.includes(type))
+            ?.map(model => ({
                 ...model,
+                // Set the current model as default
                 default: model.model === currentModel,
-            }
-        })
+            }))
     }
 
     /**
@@ -82,41 +81,7 @@ export class ModelProvider {
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
     public static getMaxCharsByModel(modelID: string): number {
-        const model = ModelProvider.primaryProviders
-            .concat(ModelProvider.ollamaProviders)
-            .find(m => m.model === modelID)
+        const model = ModelProvider.providers.find(m => m.model === modelID)
         return tokensToChars(model?.maxToken || DEFAULT_FAST_MODEL_TOKEN_LIMIT)
     }
-}
-
-/**
- * Fetches available Ollama models from the local Ollama server
- * and adds them to the list of ollama providers.
- */
-export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
-    if (process.env.CODY_SHIM_TESTING === 'true') {
-        return []
-    }
-    // TODO (bee) watch file change to determine if a new model is added
-    // to eliminate the needs of restarting the extension to get the new models
-    return await fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
-        .then(response => response.json())
-        .then(
-            data =>
-                data?.models?.map(
-                    (m: { model: string }) =>
-                        new ModelProvider(
-                            `ollama/${m.model}`,
-                            [ModelUsage.Chat, ModelUsage.Edit],
-                            DEFAULT_FAST_MODEL_CHARS_LIMIT
-                        )
-                ),
-            error => {
-                const fetchFailedErrors = ['Failed to fetch', 'fetch failed']
-                const isFetchFailed = fetchFailedErrors.some(err => error.toString().includes(err))
-                const serverErrorMsg = 'Please make sure the Ollama server is up & running.'
-                logError('getLocalOllamaModels: failed ', isFetchFailed ? serverErrorMsg : error)
-                return []
-            }
-        )
 }

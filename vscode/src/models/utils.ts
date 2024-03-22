@@ -10,7 +10,7 @@ import * as vscode from 'vscode'
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export function setModelProviders(authStatus: AuthStatus): void {
+export function syncModelProviders(authStatus: AuthStatus): void {
     if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
         return
@@ -24,7 +24,7 @@ export function setModelProviders(authStatus: AuthStatus): void {
     // the client.
     if (authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimitConfig = codyConfig.get<number>('provider.limit.prompt')
+        const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
         const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
         ModelProvider.setProviders([
             new ModelProvider(

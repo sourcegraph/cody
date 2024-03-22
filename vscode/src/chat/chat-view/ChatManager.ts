@@ -21,7 +21,6 @@ import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
-import { setModelProviders } from '../../models/utils'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
 import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
@@ -99,8 +98,6 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        setModelProviders(authStatus)
-
         await this.chatPanelsManager.syncAuthStatus(authStatus)
     }
 
