@@ -35,7 +35,6 @@ export class ModelProvider {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
         this.title = title
-        this.default = true
     }
 
     /**
@@ -45,52 +44,10 @@ export class ModelProvider {
     /**
      * Providers available from local ollama instances
      */
-    private static ollamaProvidersEnabled = false
     private static ollamaProviders: ModelProvider[] = []
-
-    public static onConfigChange(enableOllamaModels: boolean): void {
-        ModelProvider.ollamaProvidersEnabled = enableOllamaModels
-        ModelProvider.ollamaProviders = []
-        if (enableOllamaModels) {
-            ModelProvider.getLocalOllamaModels()
-        }
-    }
-
-    /**
-     * Fetches available Ollama models from the local Ollama server
-     * and adds them to the list of ollama providers.
-     */
-    public static getLocalOllamaModels(): void {
-        const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+    public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
         // Only fetch local models if user has enabled the config
-        if (isAgentTesting || !ModelProvider.ollamaProvidersEnabled) {
-            return
-        }
-        // TODO (bee) watch file change to determine if a new model is added
-        // to eliminate the needs of restarting the extension to get the new models
-        fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
-            .then(response => response.json())
-            .then(
-                data => {
-                    const models = new Set<ModelProvider>()
-                    for (const model of data.models) {
-                        const name = `ollama/${model.model}`
-                        const newModel = new ModelProvider(
-                            name,
-                            [ModelUsage.Chat, ModelUsage.Edit],
-                            DEFAULT_FAST_MODEL_CHARS_LIMIT
-                        )
-                        models.add(newModel)
-                    }
-                    ModelProvider.ollamaProviders = Array.from(models)
-                },
-                error => {
-                    const fetchFailedErrors = ['Failed to fetch', 'fetch failed']
-                    const isFetchFailed = fetchFailedErrors.some(err => error.toString().includes(err))
-                    const serverErrorMsg = 'Please make sure the Ollama server is up & running.'
-                    logError('getLocalOllamaModels: failed ', isFetchFailed ? serverErrorMsg : error)
-                }
-            )
+        ModelProvider.ollamaProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
     }
 
     /**
@@ -130,4 +87,36 @@ export class ModelProvider {
             .find(m => m.model === modelID)
         return tokensToChars(model?.maxToken || DEFAULT_FAST_MODEL_TOKEN_LIMIT)
     }
+}
+
+/**
+ * Fetches available Ollama models from the local Ollama server
+ * and adds them to the list of ollama providers.
+ */
+export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
+    if (process.env.CODY_SHIM_TESTING === 'true') {
+        return []
+    }
+    // TODO (bee) watch file change to determine if a new model is added
+    // to eliminate the needs of restarting the extension to get the new models
+    return await fetch(new URL('/api/tags', OLLAMA_DEFAULT_URL).href)
+        .then(response => response.json())
+        .then(
+            data =>
+                data?.models?.map(
+                    (m: { model: string }) =>
+                        new ModelProvider(
+                            `ollama/${m.model}`,
+                            [ModelUsage.Chat, ModelUsage.Edit],
+                            DEFAULT_FAST_MODEL_CHARS_LIMIT
+                        )
+                ),
+            error => {
+                const fetchFailedErrors = ['Failed to fetch', 'fetch failed']
+                const isFetchFailed = fetchFailedErrors.some(err => error.toString().includes(err))
+                const serverErrorMsg = 'Please make sure the Ollama server is up & running.'
+                logError('getLocalOllamaModels: failed ', isFetchFailed ? serverErrorMsg : error)
+                return []
+            }
+        )
 }
