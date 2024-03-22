@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -16,6 +16,7 @@ import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { messageTextValueFromPromptEditorState } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
 /**
@@ -144,7 +145,6 @@ export const TranscriptItem: React.FunctionComponent<
                 {messageTextValue ? (
                     <CodeBlocks
                         value={messageTextValue}
-                        wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonClassName={codeBlocksInsertButtonClassName}
@@ -196,16 +196,10 @@ export const TranscriptItem: React.FunctionComponent<
  * React hook for returning the Markdown for rendering a chat message's text.
  */
 function useMessageTextValue(message: ChatMessage): MessageTextValue {
-    if (message.speaker === 'assistant') {
-        return { type: 'markdown', value: reformatBotMessageForChat(message.text ?? '') }
-    }
-    if (!message.editorState) {
-        return { type: 'markdown', value: message.text ?? '' }
-    }
-    return { type: 'html', value: hackToDisplayCodeBlocksInLexicalHTML(message.editorState) }
-}
-
-function hackToDisplayCodeBlocksInLexicalHTML(html: string): string {
-    /// <span style="white-space: pre-wrap;">```</span>
-    return html.replaceAll('<span style="white-space: pre-wrap;">```</span>', '```')
+    return useMemo(() => {
+        if (message.speaker === 'assistant') {
+            return { type: 'markdown', value: reformatBotMessageForChat(message.text ?? '') }
+        }
+        return messageTextValueFromPromptEditorState(message)
+    }, [message])
 }

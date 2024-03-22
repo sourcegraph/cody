@@ -1,9 +1,10 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
-import { type ChatMessage, type ContextItem, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { $getRoot, CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
+import type { MessageTextValue } from '../chat/CodeBlocks'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -161,7 +162,7 @@ function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptE
 const STATE_VERSION_CURRENT = 'lexical-v0' as const
 
 /**
- * The representation of a user's prompt input in the chat view.
+ * The serialized representation of a user's prompt input in the chat view.
  */
 export interface SerializedPromptEditorState {
     /**
@@ -190,13 +191,39 @@ function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState
     }
 }
 
-/**
- * This treats the entire text as Markdown and does not parse it for any @-mentions.
- */
-export function serializedPromptEditorStateFromMarkdownText(
-    markdown: string
-): SerializedPromptEditorState {
-    const editorState: SerializedEditorState = {
+function isCurrentVersionEditorState(value: unknown): value is SerializedPromptEditorState {
+    return Boolean(value) && (value as any).v === STATE_VERSION_CURRENT
+}
+
+export function messageTextValueFromPromptEditorState(chatMessage: ChatMessage): MessageTextValue {
+    if (isCurrentVersionEditorState(chatMessage.editorState)) {
+        return {
+            type: 'html',
+            value: hackToDisplayCodeBlocksInLexicalHTML(chatMessage.editorState.html),
+        }
+    }
+    return { type: 'markdown', value: chatMessage.text ?? '' }
+}
+
+function hackToDisplayCodeBlocksInLexicalHTML(html: string): string {
+    /// <span style="white-space: pre-wrap;">```</span>
+    return html.replaceAll('<span style="white-space: pre-wrap;">```</span>', '```')
+}
+
+export function serializedPromptEditorStateFromChatMessage(
+    chatMessage: ChatMessage
+): SerializedEditorState {
+    if (isCurrentVersionEditorState(chatMessage.editorState)) {
+        return chatMessage.editorState.lexicalEditorState
+    }
+
+    // Fall back to using plain text for chat messages that don't have a serialized Lexical editor
+    // state that we recognize.
+    //
+    // It would be smoother to automatically import or convert textual @-mentions to the Lexical
+    // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
+    // of editing old messages in your chat history.
+    return {
         root: {
             children: [
                 {
@@ -206,7 +233,7 @@ export function serializedPromptEditorStateFromMarkdownText(
                             format: 0,
                             mode: 'normal',
                             style: '',
-                            text: markdown,
+                            text: chatMessage.text ?? '',
                             type: 'text',
                             version: 1,
                         },
@@ -225,35 +252,10 @@ export function serializedPromptEditorStateFromMarkdownText(
             version: 1,
         },
     }
-    return {
-        v: STATE_VERSION_CURRENT,
-        lexicalEditorState: editorState,
-        html: renderCodyMarkdown(markdown, { wrapLinksWithCodyCommand: false }),
-    }
-}
-
-export function serializedPromptEditorStateFromChatMessage(
-    chatMessage: ChatMessage
-): SerializedPromptEditorState {
-    function isCurrentVersionEditorState(value: unknown): value is SerializedPromptEditorState {
-        return Boolean(value) && (value as any).v === STATE_VERSION_CURRENT
-    }
-
-    if (isCurrentVersionEditorState(chatMessage.editorState)) {
-        return chatMessage.editorState
-    }
-
-    // Fall back to using plain text for chat messages that don't have a serialized Lexical editor
-    // state that we recognize.
-    //
-    // It would be smoother to automatically import or convert textual @-mentions to the Lexical
-    // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
-    // of editing old messages in your chat history.
-    return serializedPromptEditorStateFromMarkdownText(chatMessage.text ?? '')
 }
 
 export function contextItemsFromPromptEditorValue(
-    state: SerializedPromptEditorState
+    state: Pick<SerializedPromptEditorState, 'lexicalEditorState'>
 ): SerializedContextItem[] {
     const contextItems: SerializedContextItem[] = []
 

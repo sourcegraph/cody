@@ -1,15 +1,43 @@
+import type { SerializedLexicalNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
-import {
-    contextItemsFromPromptEditorValue,
-    serializedPromptEditorStateFromMarkdownText,
-} from './PromptEditor'
+import { contextItemsFromPromptEditorValue } from './PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 import type { SerializedContextItem } from './nodes/ContextItemMentionNode'
 
 describe('serializedPromptEditorStateFromText', () => {
     test('empty', () =>
         expect(
-            contextItemsFromPromptEditorValue(serializedPromptEditorStateFromMarkdownText('foo'))
+            contextItemsFromPromptEditorValue({
+                lexicalEditorState: {
+                    root: {
+                        children: [
+                            {
+                                children: [
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'Hello, world',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                type: 'paragraph',
+                                version: 1,
+                            } as SerializedLexicalNode,
+                        ],
+                        direction: 'ltr',
+                        format: '',
+                        indent: 0,
+                        type: 'root',
+                        version: 1,
+                    },
+                },
+            })
         ).toEqual([]))
 
     test('with mentions', () =>
