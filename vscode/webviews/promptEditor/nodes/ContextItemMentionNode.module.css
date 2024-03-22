@@ -1,3 +1,17 @@
 .context-item-mention-node {
-    background-color: var(--vscode-list-dropBackground);
+    color: var(--link-foreground);
+    position: relative;
+
+}
+.context-item-mention-node::before {
+    content: '';
+    background-color: var(--link-foreground);
+    border-radius: 3px;
+    outline: 1px solid var(--link-foreground);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0.2;
 }
