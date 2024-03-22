@@ -52,6 +52,7 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -601,7 +602,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                this.chatModel.charsLeft - ANSWER_TOKENS
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -779,8 +781,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const maxChars = ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
-        const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
+        const { prompt, newContextUsed } = await prompter.makePrompt(
+            this.chatModel,
+            this.chatModel.maxChars
+        )
 
         // Update UI based on prompt construction
         this.chatModel.setLastMessageContext(newContextUsed)

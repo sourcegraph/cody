@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
@@ -15,13 +16,27 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
+    public readonly maxChars: number
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
-    ) {}
+    ) {
+        this.maxChars = ModelProvider.getMaxCharsByModel(this.modelID)
+    }
+
+    public get charsLeft(): number {
+        let used = 0
+        for (const msg of this.messages) {
+            if (used > this.maxChars) {
+                return 0
+            }
+            used += msg.speaker.length + (msg.text?.length || 0) + 3
+        }
+        return this.maxChars - used
+    }
 
     public isEmpty(): boolean {
         return this.messages.length === 0

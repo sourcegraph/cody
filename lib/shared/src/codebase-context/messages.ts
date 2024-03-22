@@ -84,6 +84,8 @@ export interface ContextItemFile extends ContextItemCommon {
      * Whether the file is too large to be included as context.
      */
     isTooLarge?: boolean
+
+    size?: number
 }
 
 /**
