@@ -33,13 +33,9 @@ export const OptionsList: FunctionComponent<
                 {mentionQuery.type === 'empty'
                     ? 'Search for a file to include, or type # for symbols...'
                     : mentionQuery.type === 'symbol'
-                      ? options.length > 0
+                      ? options.length > 0 || mentionQuery.text.length < 2
                             ? 'Search for a symbol to include...'
-                            : `No symbols found${
-                                  mentionQuery.text.length <= 2
-                                      ? ' (try installing language extensions and opening a file)'
-                                      : ''
-                              }`
+                            : 'No symbols found'
                       : options.length > 0
                           ? 'Search for a file to include...'
                           : 'No files found'}
