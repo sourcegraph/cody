@@ -31,6 +31,7 @@ data class ContextItemFile(
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal
   val type: TypeEnum? = null, // Oneof: file
   val isTooLarge: Boolean? = null,
+  val size: Int? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {
