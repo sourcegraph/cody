@@ -349,7 +349,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         // Log when a user clicks on the Enhanced Context toggle
         getVSCodeAPI().postMessage({
             command: 'event',
-            eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+            eventName: 'CodyVSCodeExtension:useEnhancedContextInputToggler:clicked',
             properties: { useEnhancedContext: enabled },
         })
     }
@@ -358,10 +358,16 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
-                onSetEnabledChanged(shouldEnable)
+                setEnabled(enabled)
+                // Log when a user clicks on the Enhanced Context toggle
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+                    properties: { useEnhancedContext: enabled },
+                })
             }
         },
-        [events, enabled, onSetEnabledChanged]
+        [events, enabled]
     )
 
     // Handles removing a manually added remote search provider.
