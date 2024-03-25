@@ -159,6 +159,5 @@ export class EventLogger {
 }
 
 function getTier(authStatus: AuthStatus): 'free' | 'pro' | 'enterprise' {
-    console.log({ authStatus })
     return !authStatus.isDotCom ? 'enterprise' : authStatus.userCanUpgrade ? 'free' : 'pro'
 }
