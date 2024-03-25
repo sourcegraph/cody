@@ -7,6 +7,7 @@ import {
     isAbortError,
     isAuthError,
     isDotCom,
+    isError,
     isRateLimitError,
 } from '@sourcegraph/cody-shared'
 
@@ -59,7 +60,7 @@ export abstract class SentryService {
                     if (
                         isProd &&
                         isDotCom(this.config.serverEndpoint) &&
-                        shouldErrorBeReported(hint.originalException)
+                        shouldErrorBeReported(hint.originalException, !!this.config.isRunningInsideAgent)
                     ) {
                         return event
                     }
@@ -78,13 +79,24 @@ export abstract class SentryService {
     protected abstract reconfigure(options: Parameters<typeof nodeInit | typeof browserInit>[0]): void
 }
 
-export function shouldErrorBeReported(error: unknown): boolean {
+export function shouldErrorBeReported(error: unknown, insideAgent: boolean): boolean {
     if (error instanceof NetworkError) {
         // Ignore Server error responses (5xx).
         return error.status < 500
     }
 
     if (isAbortError(error) || isRateLimitError(error) || isAuthError(error)) {
+        return false
+    }
+
+    // Silencing our #1 reported error
+    if (isError(error) && error.message?.includes("Unexpected token '<', \"<!DOCTYPE")) {
+        return false
+    }
+
+    // Attempt to silence errors from other extensions (if we're inside a VS Code extension, the
+    // stack trace should include the extension name).
+    if (isError(error) && !insideAgent && !error.stack?.includes('sourcegraph.cody-ai')) {
         return false
     }
 
