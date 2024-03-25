@@ -8,7 +8,10 @@ import {
 
 import { logError } from '../../log'
 
-import { AnthropicOptions, createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import {
+    type AnthropicOptions,
+    createProviderConfig as createAnthropicProviderConfig,
+} from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
     type FireworksOptions,
