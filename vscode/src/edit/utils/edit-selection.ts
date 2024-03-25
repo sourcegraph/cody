@@ -41,15 +41,14 @@ export async function getEditSmartSelection(
     // If we find a new expanded selection position then we set it as the new start position
     // and if we don't then we fallback to the original selection made by the user
     const newSelectionStartingPosition =
-        (await getSmartSelection(document, activeCursorStartPosition.line))?.start ||
-        selectionRange.start
+        (await getSmartSelection(document, activeCursorStartPosition))?.start || selectionRange.start
 
     // Retrieve the ending line of the current selection
     const activeCursorEndPosition = selectionRange.end
     // If we find a new expanded selection position then we set it as the new ending position
     // and if we don't then we fallback to the original selection made by the user
     const newSelectionEndingPosition =
-        (await getSmartSelection(document, activeCursorEndPosition.line))?.end || selectionRange.end
+        (await getSmartSelection(document, activeCursorEndPosition))?.end || selectionRange.end
 
     // Create a new range that starts from the beginning of the folding range at the start position
     // and ends at the end of the folding range at the end position.

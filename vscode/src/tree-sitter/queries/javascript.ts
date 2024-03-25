@@ -216,29 +216,41 @@ const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
     (jsx_attribute (property_identifier) @identifier)
 `
 
+const JS_ENCLOSING_FUNCTION_QUERY = dedent`
+    (function_declaration) @range.function
+    (generator_function_declaration) @range.function
+    (function_expression) @range.function
+    (arrow_function) @range.function
+    (method_definition) @range.function
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.javascript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
     [SupportedLanguage.javascriptreact]: {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
     [SupportedLanguage.typescript]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
     [SupportedLanguage.typescriptreact]: {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
+        enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

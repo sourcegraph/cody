@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { getSelectionAroundLine } from './document-sections'
 
 /**
@@ -23,13 +24,34 @@ import { getSelectionAroundLine } from './document-sections'
  */
 export async function getSmartSelection(
     documentOrUri: vscode.TextDocument | vscode.Uri,
-    target: number
+    target: vscode.Position
 ): Promise<vscode.Selection | undefined> {
     const document =
         documentOrUri instanceof vscode.Uri
             ? await vscode.workspace.openTextDocument(documentOrUri)
             : documentOrUri
-    return getSelectionAroundLine(document, target)
+
+    const [enclosingFunction] = execQueryWrapper({
+        document,
+        position: target,
+        queryWrapper: 'getEnclosingFunction',
+    })
+
+    if (enclosingFunction) {
+        const { startPosition, endPosition } = enclosingFunction.node
+        // Regardless of the columns provided, we want to ensure the edit spans the full range of characters
+        // on the start and end lines. This helps improve the reliability of the output.
+        const adjustedStartColumn = document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
+        const adjustedEndColumn = Number.MAX_SAFE_INTEGER
+        return new vscode.Selection(
+            startPosition.row,
+            adjustedStartColumn,
+            endPosition.row,
+            adjustedEndColumn
+        )
+    }
+
+    return getSelectionAroundLine(document, target.line)
 }
 
 /**
