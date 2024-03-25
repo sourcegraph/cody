@@ -344,21 +344,24 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
+    const onSetEnabledChanged = (enabled: boolean) => {
+        setEnabled(enabled)
+        // Log when a user clicks on the Enhanced Context toggle
+        getVSCodeAPI().postMessage({
+            command: 'event',
+            eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+            properties: { useEnhancedContext: enabled },
+        })
+    }
     const enabledChanged = React.useCallback(
         (event: any): void => {
             const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
-                setEnabled(shouldEnable)
-                // Log when a user clicks on the Enhanced Context toggle
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
-                    properties: { useEnhancedContext: shouldEnable },
-                })
+                onSetEnabledChanged(shouldEnable)
             }
         },
-        [events, enabled]
+        [events, enabled, onSetEnabledChanged]
     )
 
     // Handles removing a manually added remote search provider.
@@ -465,7 +468,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                     styles.settingsIndicator,
                     enabled && styles.settingsIndicatorActive
                 )}
-                onClick={() => setEnabled(!enabled)}
+                onClick={() => onSetEnabledChanged(!enabled)}
                 appearance="icon"
                 type="button"
             >
