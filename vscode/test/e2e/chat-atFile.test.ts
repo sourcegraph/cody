@@ -27,9 +27,15 @@ test.extend<ExpectedEvents>({
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
 
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
-    await chatInput.click()
+    await chatInput.dblclick()
+
+    await chatInput.focus()
     await page.keyboard.type('@')
     await expect(
         chatPanelFrame.getByRole('heading', {
@@ -199,6 +205,11 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
+
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Send a message with an @-mention.
@@ -237,8 +248,12 @@ test('pressing Enter with @-mention menu open selects item, does not submit mess
     await sidebarSignin(page, sidebar)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
 
+    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('Explain @index.htm')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Enter')
@@ -275,6 +290,10 @@ test('@-mention file range', async ({ page, sidebar }) => {
     // Open chat.
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Type a file with range.
@@ -305,6 +324,10 @@ test.extend<ExpectedEvents>({
     // Open chat.
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
     const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
