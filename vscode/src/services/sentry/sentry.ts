@@ -35,7 +35,7 @@ export abstract class SentryService {
 
     private prepareReconfigure(): void {
         try {
-            const isProd = process.env.NODE_ENV === 'production'
+            const isProd = process.env.NODE_ENV !== 'production'
 
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
@@ -90,7 +90,7 @@ export function shouldErrorBeReported(error: unknown, insideAgent: boolean): boo
     }
 
     // Silencing our #1 reported error
-    if (isError(error) && error.message?.includes("Unexpected token '<', \"<!DOCTYPE")) {
+    if (isError(error) && error.message?.includes("Unexpected token '<'")) {
         return false
     }
 
