@@ -22,8 +22,25 @@ export const OptionsList: FunctionComponent<
     useEffect(() => {
         // Scroll to top when options change because the prior `selectedIndex` is invalidated.
         ref?.current?.scrollTo(0, 0)
-        setHighlightedIndex(0)
+        const validIndex = options.findIndex(o => o?.item?.type === 'file' && !o?.item?.isTooLarge)
+        setHighlightedIndex(validIndex < 0 ? 0 : validIndex)
     }, [options])
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `selectedIndex` changes.
+    useEffect(() => {
+        if (selectedIndex === null) {
+            return
+        }
+        // If the selectedIndex isTooLarge, set it to the next valid option.
+        const current = options[selectedIndex]
+        const currentOptionIsInvalid = current?.item?.type === 'file' && current?.item?.isTooLarge
+        if (currentOptionIsInvalid) {
+            const validIndex = options.findIndex(
+                (o, i) => i > selectedIndex && o?.item?.type === 'file' && !o?.item?.isTooLarge
+            )
+            setHighlightedIndex(validIndex)
+        }
+    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query)
 
@@ -98,7 +115,7 @@ const Item: FunctionComponent<{
             className={classNames(
                 className,
                 styles.optionItem,
-                isSelected && styles.selected,
+                isSelected && !warning && styles.selected,
                 warning && styles.disabled
             )}
             ref={option.setRefElement}
