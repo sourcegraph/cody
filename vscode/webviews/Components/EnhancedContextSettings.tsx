@@ -402,6 +402,11 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         restoreFocusTarget.current?.focus()
     }, [setOpen])
 
+    const displayEnhancedSettingsOnFirstChat =
+        isFirstChat &&
+        (presentationMode === EnhancedContextPresentationMode.Enterprise ||
+            !context.groups?.[0]?.providers.every(p => p.state === 'ready'))
+
     return (
         <div className={classNames(popupStyles.popupHost)}>
             <PopupFrame
@@ -474,7 +479,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 ref={restoreFocusTarget}
             >
                 <i className="codicon codicon-chevron-down" />
-                {isFirstChat && isOpen && <div className={styles.glowyDot} />}
+                {displayEnhancedSettingsOnFirstChat && isOpen && <div className={styles.glowyDot} />}
             </VSCodeButton>
         </div>
     )
