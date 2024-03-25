@@ -60,7 +60,8 @@ export const EnhancedContext: React.FunctionComponent<{
     const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     let title = lineCount ? `${lines} from ${files}` : `${files}`
     if (excludedAtContext.length) {
-        title = `${title} - ⚠️ ${excludedAtContext.length} mentiones excluded`
+        const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
+        title = `${title} - ⚠️ ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
     return (
