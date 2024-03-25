@@ -30,15 +30,23 @@ export const OptionsList: FunctionComponent<
     return (
         <div className={styles.container}>
             <h3 className={classNames(styles.item, styles.helpItem)}>
-                {mentionQuery.type === 'empty'
-                    ? 'Search for a file to include, or type # for symbols...'
-                    : mentionQuery.type === 'symbol'
-                      ? options.length > 0 || mentionQuery.text.length < 2
-                            ? 'Search for a symbol to include...'
-                            : 'No symbols found (make sure workspace symbols are available)'
-                      : options.length > 0
-                          ? 'Search for a file to include...'
-                          : 'No files found'}
+                <span>
+                    {mentionQuery.type === 'empty'
+                        ? 'Search for a file to include, or type # for symbols...'
+                        : mentionQuery.type === 'symbol'
+                          ? options.length > 0 || !mentionQuery.text.length
+                                ? 'Search for a symbol to include...'
+                                : 'No symbols found '
+                          : options.length > 0
+                              ? 'Search for a file to include...'
+                              : 'No files found'}
+                </span>
+                {mentionQuery.type === 'symbol' && !options.length && !!mentionQuery.text.length && (
+                    <i
+                        className={classNames('codicon codicon-question', styles.titleHelpIcon)}
+                        title="Please try opening a file to make sure symbols are ready and available in your workspace."
+                    />
+                )}
                 <br />
             </h3>
             {options.length > 0 && (
