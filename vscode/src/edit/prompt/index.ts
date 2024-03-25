@@ -99,13 +99,14 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
+    const preamble = getSimplePreamble(model)
+    promptBuilder.tryAddToPrefix(preamble)
+
     const preInstruction: string | undefined = vscode.workspace
         .getConfiguration('cody.chat')
         .get('preInstruction')
-    const preamble = getSimplePreamble(model, preInstruction)
-    promptBuilder.tryAddToPrefix(preamble)
-
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
+    const editRule = preInstruction ? `\nIMPORTANT: ${preInstruction}` : ''
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt + editRule }]
     if (assistantText) {
         transcript.push({ speaker: 'assistant', text: assistantText })
     }
