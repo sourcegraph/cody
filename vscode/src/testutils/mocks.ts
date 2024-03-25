@@ -806,6 +806,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     codebase: '',
     customHeaders: {},
     chatPreInstruction: '',
+    editPreInstruction: '',
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {

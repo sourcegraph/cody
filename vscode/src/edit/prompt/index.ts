@@ -103,7 +103,7 @@ export const buildInteraction = async ({
     promptBuilder.tryAddToPrefix(preamble)
 
     const preInstruction: string | undefined = vscode.workspace
-        .getConfiguration('cody.chat')
+        .getConfiguration('cody.edit')
         .get('preInstruction')
     const editRule = preInstruction ? `\nIMPORTANT: ${preInstruction}` : ''
     const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt + editRule }]

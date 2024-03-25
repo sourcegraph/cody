@@ -887,6 +887,12 @@
           "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
         },
+        "cody.edit.preInstruction": {
+          "order": 7,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the start of the prompt for your edit commands.",
+          "examples": ["Write all unit tests with Jest instead of detected framework."]
+        },
         "cody.codeActions.enabled": {
           "order": 11,
           "title": "Cody Code Actions",

@@ -96,6 +96,7 @@ export function getConfiguration(
             '*': true,
         }),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
+        editPreInstruction: config.get(CONFIG_KEY.editPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
