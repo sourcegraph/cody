@@ -43,7 +43,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     const { href, target } = webviewOpenURIForContextItem({ uri, range })
     const warning = 'Excluded due to context window limit'
     return (
-        <span className="styles.item">
+        <span className={styles.linkContainer}>
             {isTooLarge && <i className="codicon codicon-warning" title={warning} />}
             <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
             <a
