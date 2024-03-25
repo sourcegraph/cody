@@ -384,6 +384,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
+            restoreFocusTarget.current?.focus()
             autofocusTarget.current?.focus()
         }
     }, [isOpen])

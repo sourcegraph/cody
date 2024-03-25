@@ -66,6 +66,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
+    // Display the enhanced context settings on first chats
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
         editorRef.current?.setEditorState(state)
@@ -188,9 +191,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const setInputFocus = useCallback((focus: boolean): void => {
         editorRef.current?.setFocus(focus)
-        if (focus) {
-            setIsEnhancedContextOpen(false)
-        }
     }, [])
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
@@ -405,17 +405,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ]
     )
 
-    // Display the enhanced context settings on first chats
-    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(!transcript.length)
-    const setEnhancedContextOpenState = useCallback(
-        (state: boolean) => {
-            setIsEnhancedContextOpen(state)
-            // Refocus input box on close
-            setInputFocus(!state)
-        },
-        [setInputFocus]
-    )
-
     // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
     // `Cody: Focus on Chat View` with the keyboard.
@@ -526,7 +515,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
-                                setOpen={setEnhancedContextOpenState}
+                                setOpen={setIsEnhancedContextOpen}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                                 isFirstChat={transcript.length < 1}
                             />

@@ -22,10 +22,7 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
-    const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await contextSettingsButton.focus()
 
-    await page.keyboard.press('Space')
     // Opening the enhanced context settings should focus the checkbox for toggling it.
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
     await expect(enhancedContextCheckbox).toBeFocused()
@@ -42,6 +39,7 @@ test.extend<ExpectedEvents>({
     // Closing the enhanced context settings should close the dialog...
     await expect(enhancedContextCheckbox).not.toBeVisible()
     // ... and focus the button which re-opens it.
+    const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
     await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
 })
 
@@ -78,7 +76,6 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
     const chatFrame = await newChat(page)
 
     // Because there are no repositories in the workspace, none should be selected by default.
-    await chatFrame.getByTitle('Configure Enhanced Context').click()
     await expect(chatFrame.getByText('No repositories selected')).toBeVisible()
 
     // Choosing a repository should open the repository picker.
