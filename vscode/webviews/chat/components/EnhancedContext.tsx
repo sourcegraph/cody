@@ -41,16 +41,7 @@ export const EnhancedContext: React.FunctionComponent<{
         }
     }
 
-    // Enhanced Context are context added by one of Cody's context fetchers.
-    // NOTE: sparkle should only be added to messages that use enhanced context.
-    // NOTE: Core chat commands (e.g. /explain and /smell) use local context only.
-    // Check if the filteredFiles only contain local context (non-enhanced context).
-    const localContextType = ['user', 'uri', 'selection', 'terminal', 'editor']
-    const localContextOnly = usedContext.every(file =>
-        localContextType.includes(file.source || file.type)
-    )
-    const sparkle = localContextOnly ? '' : '✨ '
-    const prefix = sparkle + 'Context: '
+    const prefix = 'Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
     const lineCount = usedContext.reduce(
