@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
  * File...` command.
  */
 export async function findWorkspaceFiles(
-    cancellationToken: vscode.CancellationToken
+    cancellationToken?: vscode.CancellationToken
 ): Promise<vscode.Uri[]> {
     return (
         await Promise.all(

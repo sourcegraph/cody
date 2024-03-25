@@ -2,6 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    ModelProvider,
     Typewriter,
     isAbortError,
     isDotCom,
@@ -17,7 +18,6 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { getContextWindowForModel } from '../models/utilts'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
@@ -32,6 +32,9 @@ interface EditProviderOptions extends EditManagerOptions {
     controller: FixupController
 }
 
+// Initiates a completion and responds to the result from the LLM. Implements
+// "tools" like directing the response into a specific file. Code is forwarded
+// to the FixupTask.
 export class EditProvider {
     private insertionResponse: string | null = null
     private insertionInProgress = false
@@ -43,10 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = getContextWindowForModel(
-                this.config.authProvider.getAuthStatus(),
-                model
-            )
+            const contextWindow = ModelProvider.getMaxCharsByModel(model)
             const {
                 messages,
                 stopSequences,
@@ -270,12 +270,16 @@ export class EditProvider {
         const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
-        const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+        const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
+
+        // Get workspace uri using the current file uri
+        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
+        const currentDirUri = Utils.joinPath(currentFileUri, '..')
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
+        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {

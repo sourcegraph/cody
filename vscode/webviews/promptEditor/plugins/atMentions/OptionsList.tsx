@@ -78,7 +78,7 @@ const Item: FunctionComponent<{
     const item = option.item
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName
+    const title = item.title ?? (item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName)
     const range = item.range ? displayLineRange(item.range) : ''
     const dirname = displayPathDirname(item.uri)
     const description =

@@ -15,6 +15,7 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
@@ -65,7 +66,6 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
-    await page.waitForTimeout(1000) // seems to make it less flaky on Windows
     await expect(
         chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()

@@ -243,7 +243,7 @@ async function searchRemote(
     remoteSearch: RemoteSearch | null,
     userText: string
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.remote', async () => {
+    return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
@@ -336,7 +336,7 @@ async function searchEmbeddingsLocal(
     text: string,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.local', async () => {
+    return wrapInActiveSpan('chat.context.embeddings.local', async span => {
         if (!localEmbeddings) {
             return []
         }
@@ -344,6 +344,7 @@ async function searchEmbeddingsLocal(
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await localEmbeddings.getContext(text, numResults)
+        span.setAttribute('numResults', embeddingsResults.length)
 
         for (const result of embeddingsResults) {
             const range = new vscode.Range(
