@@ -39,7 +39,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
     const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
     const { href, target } = webviewOpenURIForContextItem({ uri, range })
-    const warning = 'This file is excluded due to token limit reached'
+    const warning = 'Excluded due to context window limit'
     return (
         <span className="styles.item">
             {isTooLarge && <i className="codicon codicon-warning" />}
@@ -58,10 +58,9 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
 
 function getIconByFileSource(source?: string): string {
     switch (source) {
+        case 'uri':
         case 'user':
             return 'mention'
-        case 'uri':
-            return 'link'
         default:
             return 'sparkle'
     }
