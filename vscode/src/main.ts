@@ -636,7 +636,7 @@ async function configureEventsInfra(
     authProvider: AuthProvider
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
-    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }
 
 export type CommandResult = ChatCommandResult | EditCommandResult

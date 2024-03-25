@@ -5,6 +5,7 @@ import { isError } from '../utils'
 
 import type { TelemetryEventProperties } from '.'
 import type { AuthStatus } from '../auth/types'
+import { getTier } from '../telemetry-v2/cody-tier'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -156,8 +157,4 @@ export class EventLogger {
             })
             .catch(error => logError('EventLogger', 'Uncaught error logging event', error))
     }
-}
-
-function getTier(authStatus: AuthStatus): 'free' | 'pro' | 'enterprise' {
-    return !authStatus.isDotCom ? 'enterprise' : authStatus.userCanUpgrade ? 'free' : 'pro'
 }
