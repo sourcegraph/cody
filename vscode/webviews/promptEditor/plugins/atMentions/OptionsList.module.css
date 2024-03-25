@@ -72,7 +72,7 @@
 }
 .option-item.disabled {
     opacity: 0.5;
-    cursor: not-allowed;
+    cursor: default;
 }
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .option-item.selected,
