@@ -21,32 +21,34 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        const tooltip = `${repoName} @${revision}\nincluded via search (remote)`
+        const tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
         return (
-            <a
-                href={uri.toString()}
-                target="_blank"
-                rel="noreferrer"
-                title={tooltip}
-                className={styles.linkButton}
-            >
-                {pathWithRange}
-            </a>
+            <span className="styles.item">
+                <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
+                <a
+                    href={uri.toString()}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={tooltip}
+                    className={styles.linkButton}
+                >
+                    {pathWithRange}
+                </a>
+            </span>
         )
     }
 
     const pathToDisplay = `${displayPath(uri)}`
     const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-    const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
     const { href, target } = webviewOpenURIForContextItem({ uri, range })
     const warning = 'Excluded due to context window limit'
     return (
         <span className="styles.item">
-            {isTooLarge && <i className="codicon codicon-warning" />}
-            <i className={`codicon codicon-${icon}`} />
+            {isTooLarge && <i className="codicon codicon-warning" title={warning} />}
+            <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
             <a
                 className={classNames(styles.linkButton, isTooLarge && styles.excluded)}
-                title={isTooLarge ? warning : tooltip}
+                title={isTooLarge ? warning : pathWithRange}
                 href={href}
                 target={target}
             >
@@ -63,5 +65,30 @@ function getIconByFileSource(source?: string): string {
             return 'mention'
         default:
             return 'sparkle'
+    }
+}
+
+function getFileSourceIconTitle(source?: string): string {
+    const displayText = getFileSourceDisplayText(source)
+    return `Included via ${displayText}`
+}
+
+function getFileSourceDisplayText(source?: string): string {
+    switch (source) {
+        case 'unified':
+            return 'Enhanced Context (Enterprise Search)'
+        case 'search':
+        case 'symf':
+            return 'Enhanced Context (Search)'
+        case 'embeddings':
+            return 'Enhanced Context (Embeddings)'
+        case 'editor':
+            return 'Editor Context'
+        case 'selection':
+            return 'Selection'
+        case 'user':
+            return '@-mention'
+        default:
+            return source ?? 'Enhanced Context'
     }
 }
