@@ -315,9 +315,15 @@ test.extend<ExpectedEvents>({
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
 
-    // Symbol empty state
+    // Symbol empty state shows tooltip to search for a symbol
     await chatInput.fill('@#')
-    await expect(chatPanelFrame.getByRole('heading', { name: /No symbols found/ })).toBeVisible()
+    await expect(
+        chatPanelFrame.getByRole('heading', { name: /^Search for a symbol to include/ })
+    ).toBeVisible()
+
+    // Symbol empty symbol results updates tooltip title to show no symbols found
+    await chatInput.fill('@#invalide')
+    await expect(chatPanelFrame.getByRole('heading', { name: /^No symbols found/ })).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.fill('@#fizzb')
