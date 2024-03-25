@@ -182,6 +182,17 @@
     outline-offset: 2px;
 }
 
+.settings-indicator {
+    color: var(--vscode-editor-foreground);
+
+    position: relative;
+
+    padding: 0rem 0.2rem;
+    width: 0.8rem;
+    overflow: hidden;
+    justify-content: center;
+}
+
 .settings-btn {
     color: var(--vscode-editor-foreground);
     border: 1px solid transparent;
@@ -206,9 +217,9 @@
     border-radius: 100%;
     background-color: var(--vscode-inputOption-activeBorder);
     position: absolute;
-    top: -3px;
-    left: -3px;
-    z-index: 2;
+    top: 0;
+    right: 0.5rem;
+    z-index: 3;
 }
 
 .glowy-dot::after {

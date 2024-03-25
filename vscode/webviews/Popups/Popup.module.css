@@ -31,14 +31,14 @@
 
 .popup-trail {
     left: auto;
-    right: -3px;
+    right: -0.5rem;
 }
 
 .pointy-bit {
     z-index: 3;
 
     position: absolute;
-    left: calc(50% - 6px);
+    right: 0.3rem;
     bottom: 100%;
     rotate: -45deg;
     width: 12px;
@@ -51,6 +51,19 @@
     border-bottom: 1px solid var(--vscode-widget-border);
 
     /* no box shadow on this, it relies on overlapping the rest of the popup */
+}
+
+.pointy-bit-tooltip {
+    z-index: 1;
+
+    position: absolute;
+    right: 0.65rem;
+    bottom: 1rem;
+    width: 2px;
+    height: 2rem;
+    pointer-events: none;
+
+    background-color: var(--vscode-inputOption-activeBorder);
 }
 
 .popup-host {

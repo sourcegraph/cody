@@ -405,7 +405,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ]
     )
 
-    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+    // Display the enhanced context settings on first chats
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(!transcript.length)
+    const setEnhancedContextOpenState = useCallback(
+        (state: boolean) => {
+            setIsEnhancedContextOpen(state)
+            // Refocus input box on close
+            setInputFocus(!state)
+        },
+        [setInputFocus]
+    )
 
     // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
@@ -517,8 +526,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
-                                setOpen={setIsEnhancedContextOpen}
+                                setOpen={setEnhancedContextOpenState}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
+                                isFirstChat={transcript.length < 1}
                             />
                         </div>
                     </div>

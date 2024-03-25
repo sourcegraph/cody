@@ -34,11 +34,12 @@ const Backdrop: React.FunctionComponent<React.PropsWithoutRef<BackdropProps>> = 
 interface PopupFrameProps {
     classNames?: string[]
     actionButtons?: React.ReactNode
+    isFirstChat?: boolean
 }
 
 export const PopupFrame: React.FunctionComponent<
     React.PropsWithChildren<PopupFrameProps & PopupOpenProps>
-> = ({ actionButtons, classNames: extraClassNames, onDismiss, isOpen, children }) => {
+> = ({ actionButtons, classNames: extraClassNames, onDismiss, isOpen, children, isFirstChat }) => {
     const handleKeyUp = (e: React.KeyboardEvent<HTMLDialogElement>): void => {
         if (e.key === 'Escape') {
             e.stopPropagation()
@@ -60,7 +61,7 @@ export const PopupFrame: React.FunctionComponent<
                         </div>
                     )}
                 </dialog>
-                <div className={styles.pointyBit} />
+                <div className={isFirstChat ? styles.pointyBitTooltip : styles.pointyBit} />
                 <Backdrop dismiss={onDismiss} />
             </>
         )

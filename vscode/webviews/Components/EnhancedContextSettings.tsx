@@ -30,6 +30,7 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
+    isFirstChat: boolean
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -338,6 +339,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
+    isFirstChat,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
@@ -386,6 +388,12 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         }
     }, [isOpen])
 
+    React.useEffect(() => {
+        if (isFirstChat) {
+            setOpen(true)
+        }
+    }, [isFirstChat, setOpen])
+
     // Can't point at and use VSCodeButton type with 'ref'
 
     const restoreFocusTarget = React.useRef<any>(null)
@@ -400,6 +408,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
                 classNames={[popupStyles.popupTrail, styles.popup]}
+                isFirstChat={isFirstChat}
             >
                 <div className={styles.container}>
                     <div>
@@ -447,17 +456,25 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             <VSCodeButton
                 className={classNames(
                     popupStyles.popupHost,
-                    styles.settingsBtn,
+                    styles.settingsIndicatorBtn,
                     enabled && styles.settingsBtnActive
                 )}
+                onClick={() => setEnabled(!enabled)}
+                appearance="icon"
+                type="button"
+            >
+                <i className="codicon codicon-sparkle" />
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(popupStyles.popupHost, styles.settingsBtn)}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
                 ref={restoreFocusTarget}
             >
-                <i className="codicon codicon-sparkle" />
-                {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}
+                <i className="codicon codicon-chevron-down" />
+                {isFirstChat && isOpen && <div className={styles.glowyDot} />}
             </VSCodeButton>
         </div>
     )
