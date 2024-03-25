@@ -1,14 +1,14 @@
 import levenshtein from 'js-levenshtein'
 import * as vscode from 'vscode'
 
-import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
+import { updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 
-import {
-    type CompletionAnalyticsID,
-    logCompletionPersistencePresentEvent,
-    logCompletionPersistenceRemovedEvent,
-} from './logger'
-import { lines } from './text-processing'
+import type {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+    TrackedInsertion,
+} from './types'
+import { lines } from './utils'
 
 const MEASURE_TIMEOUTS = [
     30 * 1000, // 30 seconds
@@ -16,29 +16,23 @@ const MEASURE_TIMEOUTS = [
     300 * 1000, // 5 minutes
     600 * 1000, // 10 minutes
 ]
-interface TrackedCompletion {
-    id: CompletionAnalyticsID
-    uri: vscode.Uri
-    // When a document is rename, the TextDocument instance will still work
-    // however the URI it resolves to will be outdated. Ensure we never use it.
-    document: Omit<vscode.TextDocument, 'uri'>
-    insertedAt: number
-    insertText: string
-    insertRange: vscode.Range
-    latestRange: vscode.Range
-}
-export class PersistenceTracker implements vscode.Disposable {
+
+export class PersistenceTracker<T = string> implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private managedTimeouts: Set<NodeJS.Timeout> = new Set()
-    // We use a map from the document URI to the set of tracked completions inside that document to
+    // We use a map from the document URI to the set of tracked insertions inside that document to
     // improve performance of the `onDidChangeTextDocument` event handler.
-    private trackedCompletions: Map<string, Set<TrackedCompletion>> = new Map()
+    private trackedInsertions: Map<string, Set<TrackedInsertion<T>>> = new Map()
 
     constructor(
         workspace: Pick<
             typeof vscode.workspace,
             'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
-        > = vscode.workspace
+        >,
+        public logger: {
+            onRemoved: (event: PersistenceRemovedEventPayload<T>) => void
+            onPresent: (event: PersistencePresentEventPayload<T>) => void
+        }
     ) {
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
@@ -52,7 +46,7 @@ export class PersistenceTracker implements vscode.Disposable {
         insertRange,
         document,
     }: {
-        id: CompletionAnalyticsID
+        id: T
         insertedAt: number
         insertText: string
         insertRange: vscode.Range
@@ -62,8 +56,8 @@ export class PersistenceTracker implements vscode.Disposable {
             return
         }
 
-        // The range for the completion is relative to the state before the completion was inserted.
-        // We need to convert it to the state after the completion was inserted.
+        // The range for the insertion is relative to the state before the insertion was inserted.
+        // We need to convert it to the state after the insertion was inserted.
         const textLines = lines(insertText)
         const latestRange = new vscode.Range(
             insertRange.start.line,
@@ -75,7 +69,7 @@ export class PersistenceTracker implements vscode.Disposable {
                 : insertRange.end.character + textLines[0].length
         )
 
-        const trackedCompletion = {
+        const trackedInsertion = {
             insertText,
             insertRange,
             document,
@@ -85,82 +79,80 @@ export class PersistenceTracker implements vscode.Disposable {
             uri: document.uri,
         }
 
-        let documentCompletions = this.trackedCompletions.get(document.uri.toString())
-        if (!documentCompletions) {
-            documentCompletions = new Set([])
-            this.trackedCompletions.set(document.uri.toString(), documentCompletions)
+        let documentInsertions = this.trackedInsertions.get(document.uri.toString())
+        if (!documentInsertions) {
+            documentInsertions = new Set([])
+            this.trackedInsertions.set(document.uri.toString(), documentInsertions)
         }
 
-        documentCompletions.add(trackedCompletion)
+        documentInsertions.add(trackedInsertion)
         const firstTimeoutIndex = 0
-        this.enqueueMeasure(trackedCompletion, firstTimeoutIndex)
+        this.enqueueMeasure(trackedInsertion, firstTimeoutIndex)
     }
 
-    private enqueueMeasure(trackedCompletion: TrackedCompletion, nextTimeoutIndex: number): void {
-        const timeout = trackedCompletion.insertedAt + MEASURE_TIMEOUTS[nextTimeoutIndex] - Date.now()
+    private enqueueMeasure(trackedInsertion: TrackedInsertion<T>, nextTimeoutIndex: number): void {
+        const timeout = trackedInsertion.insertedAt + MEASURE_TIMEOUTS[nextTimeoutIndex] - Date.now()
         const timeoutId = setTimeout(() => {
             this.managedTimeouts.delete(timeoutId)
-            this.measure(trackedCompletion, nextTimeoutIndex)
+            this.measure(trackedInsertion, nextTimeoutIndex)
         }, timeout)
         this.managedTimeouts.add(timeoutId)
     }
 
     private measure(
-        trackedCompletion: TrackedCompletion,
+        trackedInsertion: TrackedInsertion<T>,
         // The index in the MEASURE_TIMEOUTS array
         measureTimeoutsIndex: number
     ): void {
-        const isStillTracked = this.trackedCompletions
-            .get(trackedCompletion.uri.toString())
-            ?.has(trackedCompletion)
+        const isStillTracked = this.trackedInsertions
+            .get(trackedInsertion.uri.toString())
+            ?.has(trackedInsertion)
         if (!isStillTracked) {
             return
         }
 
-        const initialText = trackedCompletion.insertText
-        const latestText = trackedCompletion.document.getText(trackedCompletion.latestRange)
+        const initialText = trackedInsertion.insertText
+        const latestText = trackedInsertion.document.getText(trackedInsertion.latestRange)
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            logCompletionPersistenceRemovedEvent({ id: trackedCompletion.id })
+            this.logger.onRemoved({ id: trackedInsertion.id })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
 
-            logCompletionPersistencePresentEvent({
-                id: trackedCompletion.id,
+            this.logger.onPresent({
+                id: trackedInsertion.id,
                 afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
                 difference,
                 lineCount:
-                    trackedCompletion.latestRange.end.line -
-                    trackedCompletion.latestRange.start.line +
-                    1,
+                    trackedInsertion.latestRange.end.line - trackedInsertion.latestRange.start.line + 1,
                 charCount: latestText.length,
             })
 
             // If the text is not deleted yet and there are more timeouts, schedule a new run.
             if (measureTimeoutsIndex < MEASURE_TIMEOUTS.length - 1) {
-                this.enqueueMeasure(trackedCompletion, measureTimeoutsIndex + 1)
+                this.enqueueMeasure(trackedInsertion, measureTimeoutsIndex + 1)
                 return
             }
         }
 
-        // Remove the completion from the tracking set.
-        const documentCompletions = this.trackedCompletions.get(trackedCompletion.uri.toString())
-        if (!documentCompletions) {
+        // Remove the insertion from the tracking set.
+        const documentInsertions = this.trackedInsertions.get(trackedInsertion.uri.toString())
+        if (!documentInsertions) {
             return
         }
-        documentCompletions.delete(trackedCompletion)
-        if (documentCompletions.size === 0) {
-            this.trackedCompletions.delete(trackedCompletion.uri.toString())
+        documentInsertions.delete(trackedInsertion)
+        if (documentInsertions.size === 0) {
+            this.trackedInsertions.delete(trackedInsertion.uri.toString())
         }
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        const documentCompletions = this.trackedCompletions.get(event.document.uri.toString())
+        const documentInsertions = this.trackedInsertions.get(event.document.uri.toString())
 
-        if (!documentCompletions) {
+        if (!documentInsertions) {
             return
         }
         // Create a list of changes that can be mutated by the `updateRangeMultipleChanges` function
@@ -169,9 +161,9 @@ export class PersistenceTracker implements vscode.Disposable {
             text: change.text,
         }))
 
-        for (const trackedCompletion of documentCompletions) {
-            trackedCompletion.latestRange = updateRangeMultipleChanges(
-                trackedCompletion.latestRange,
+        for (const trackedInsertion of documentInsertions) {
+            trackedInsertion.latestRange = updateRangeMultipleChanges(
+                trackedInsertion.latestRange,
                 mutableChanges
             )
         }
@@ -179,16 +171,16 @@ export class PersistenceTracker implements vscode.Disposable {
 
     private onDidRenameFiles(event: vscode.FileRenameEvent): void {
         for (const file of event.files) {
-            const documentCompletions = this.trackedCompletions.get(file.oldUri.toString())
-            if (documentCompletions) {
-                this.trackedCompletions.set(file.newUri.toString(), documentCompletions)
-                this.trackedCompletions.delete(file.oldUri.toString())
+            const documentInsertions = this.trackedInsertions.get(file.oldUri.toString())
+            if (documentInsertions) {
+                this.trackedInsertions.set(file.newUri.toString(), documentInsertions)
+                this.trackedInsertions.delete(file.oldUri.toString())
                 // Note: We maintain a reference to the TextDocument. After a renaming, this will
                 // still be able to read content for the right file (I tested this). However, the
                 // TextDocument#uri for this will then resolve to the previous URI (it seems to be
                 // cached) so we need to update a manual copy of that URI
-                for (const trackedCompletion of documentCompletions) {
-                    trackedCompletion.uri = file.newUri
+                for (const trackedInsertion of documentInsertions) {
+                    trackedInsertion.uri = file.newUri
                 }
             }
         }
@@ -196,7 +188,7 @@ export class PersistenceTracker implements vscode.Disposable {
 
     private onDidDeleteFiles(event: vscode.FileDeleteEvent): void {
         for (const uri of event.files) {
-            this.trackedCompletions.delete(uri.toString())
+            this.trackedInsertions.delete(uri.toString())
         }
     }
 
@@ -205,7 +197,7 @@ export class PersistenceTracker implements vscode.Disposable {
             clearTimeout(timeoutId)
         }
         this.managedTimeouts.clear()
-        this.trackedCompletions.clear()
+        this.trackedInsertions.clear()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

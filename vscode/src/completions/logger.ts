@@ -17,10 +17,10 @@ import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import type { Span } from '@opentelemetry/api'
+import { PersistenceTracker } from '../common/persistence-tracker'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
-import { PersistenceTracker } from './persistence-tracker'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -425,7 +425,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
     max: 50,
 })
 
-let persistenceTracker: PersistenceTracker | null = null
+let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -626,7 +626,10 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker()
+        persistenceTracker = new PersistenceTracker(vscode.workspace, {
+            onPresent: logCompletionPersistencePresentEvent,
+            onRemoved: logCompletionPersistenceRemovedEvent,
+        })
     }
     persistenceTracker.track({
         id: completionEvent.params.id,
