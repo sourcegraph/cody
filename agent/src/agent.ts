@@ -10,7 +10,6 @@ import {
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
-    type ChatHistory,
     FeatureFlag,
     ModelProvider,
     NoOpTelemetryRecorderProvider,
@@ -858,16 +857,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: panel.models ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async (): Promise<ChatHistory> => {
+        this.registerAuthenticatedRequest('chat/export', async () => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = chatHistory.getLocalHistory(authStatus)
-            return localHistory
-                ? Object.fromEntries(
-                      Object.entries(localHistory?.chat).filter(
-                          ([chatID, chatTranscript]) => chatTranscript.interactions.length > 0
-                      )
-                  )
-                : {}
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat)
+                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
+                    .map(([chatID, chatTranscript]) => ({ chatID: chatID, transcript: chatTranscript }))
+            }
+
+            return []
         })
 
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {

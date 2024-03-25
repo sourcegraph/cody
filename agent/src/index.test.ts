@@ -359,11 +359,10 @@ describe('Agent', () => {
             // Step 2: export history
             const chatHistory = await client.request('chat/export', null)
 
-            Object.keys(chatHistory).forEach((chatKey, index) => {
-                const chat = chatHistory[chatKey]
+            chatHistory.forEach((result, index) => {
                 const myDate = new Date(date.getTime() + index * 60 * 1000).toISOString()
 
-                expect(chat).toMatchInlineSnapshot(`{
+                expect(result.transcript).toMatchInlineSnapshot(`{
   "chatModel": "anthropic/claude-2.0",
   "id": "${myDate}",
   "interactions": [
