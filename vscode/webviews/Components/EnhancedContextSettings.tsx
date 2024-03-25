@@ -461,9 +461,9 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             </PopupFrame>
             <VSCodeButton
                 className={classNames(
-                    popupStyles.popupHost,
-                    styles.settingsIndicatorBtn,
-                    enabled && styles.settingsBtnActive
+                    styles.settingsBtns,
+                    styles.settingsIndicator,
+                    enabled && styles.settingsIndicatorActive
                 )}
                 onClick={() => setEnabled(!enabled)}
                 appearance="icon"
@@ -472,7 +472,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 <i className="codicon codicon-sparkle" />
             </VSCodeButton>
             <VSCodeButton
-                className={classNames(popupStyles.popupHost, styles.settingsBtn)}
+                className={classNames(styles.settingsBtns, styles.settingsBtn)}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!isOpen)}

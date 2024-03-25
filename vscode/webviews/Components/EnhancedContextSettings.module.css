@@ -182,32 +182,41 @@
     outline-offset: 2px;
 }
 
+.settings-btns {
+    position: relative;
+    display: flex;
+    border: unset;
+}
+
+
 .settings-indicator {
+    border-bottom-right-radius: unset;
+    border-top-right-radius: unset;
     color: var(--vscode-editor-foreground);
 
     position: relative;
-
-    padding: 0rem 0.2rem;
-    width: 0.8rem;
-    overflow: hidden;
     justify-content: center;
 }
 
 .settings-btn {
     color: var(--vscode-editor-foreground);
-    border: 1px solid transparent;
-    border-radius: 3px;
+    border: unset;
+    border-left: 1px solid var(--vscode-inputOption-hoverBackground);
     position: relative;
+    display: flex;
+    justify-content: center;
+    border-radius: unset;
+    padding: 0rem 0.2rem;
+    width: 0.8rem;
 }
 
-.settings-btn i {
+.settings-indicator i, .settings-btn i {
     width: 16px;
     height: 16px;
 }
 
-.settings-btn-active {
+.settings-indicator-active {
     color: var(--vscode-inputOption-activeForeground);
-    border-color: var(--vscode-inputOption-activeBorder);
     background-color: var(--vscode-inputOption-activeBackground);
 }
 
@@ -218,7 +227,7 @@
     background-color: var(--vscode-inputOption-activeBorder);
     position: absolute;
     top: 0;
-    right: 0.5rem;
+    right: 0.4rem;
     z-index: 3;
 }
 

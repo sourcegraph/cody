@@ -38,7 +38,7 @@
     z-index: 3;
 
     position: absolute;
-    right: 0.3rem;
+    right: 0.2rem;
     bottom: 100%;
     rotate: -45deg;
     width: 12px;
@@ -57,7 +57,7 @@
     z-index: 1;
 
     position: absolute;
-    right: 0.65rem;
+    right: 0.55rem;
     bottom: 1rem;
     width: 2px;
     height: 2rem;
@@ -68,6 +68,9 @@
 
 .popup-host {
     position: relative;
+    display: flex;
+    border: 1px solid var(--vscode-inputOption-hoverBackground);
+    border-radius: var(--button-icon-corner-radius);
 }
 
 .row {
