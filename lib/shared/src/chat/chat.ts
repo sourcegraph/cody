@@ -1,18 +1,11 @@
-import { dotcomTokenToGatewayToken } from '../auth/tokens'
 import type { AuthStatus } from '../auth/types'
-import type { ConfigurationWithAccessToken } from '../configuration'
-import { supportsFastPath } from '../models/utils'
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
-import type {
-    CompletionLogger,
-    SourcegraphCompletionsClient,
-} from '../sourcegraph-api/completions/client'
+import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
-import { createFastPathClient } from './fast-path-client'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
@@ -24,41 +17,24 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
 }
 
 export class ChatClient {
-    private fastPathAccessToken?: string
-
     constructor(
         private completions: SourcegraphCompletionsClient,
-        config: Pick<ConfigurationWithAccessToken, 'accessToken'>,
-        private getAuthStatus: () => Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>,
-        private completionLogger: CompletionLogger
-    ) {
-        this.onConfigurationChange(config)
-    }
-
-    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'accessToken'>): void {
-        const isNode = typeof process !== 'undefined'
-        this.fastPathAccessToken =
-            newConfig.accessToken &&
-            // Require the upstream to be dotcom
-            this.getAuthStatus().isDotCom &&
-            // The fast path client only supports Node.js style response streams
-            isNode
-                ? dotcomTokenToGatewayToken(newConfig.accessToken)
-                : undefined
-    }
+        private getAuthStatus: () => Pick<
+            AuthStatus,
+            'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'codyApiVersion'
+        >
+    ) {}
 
     public chat(
         messages: Message[],
         params: Partial<ChatParameters>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
-        const useFastPath =
-            this.fastPathAccessToken !== undefined && params.model && supportsFastPath(params.model)
-
+        const authStatus = this.getAuthStatus()
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =
-            params?.model?.startsWith('fireworks/') || useFastPath
+            params?.model?.startsWith('fireworks/') || authStatus.codyApiVersion >= 1
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
@@ -77,17 +53,7 @@ export class ChatClient {
             messages: messagesToSend,
         }
 
-        if (useFastPath) {
-            return createFastPathClient(
-                completionParams,
-                this.getAuthStatus(),
-                this.fastPathAccessToken!,
-                abortSignal,
-                this.completionLogger
-            )
-        }
-
-        return this.completions.stream(completionParams, abortSignal)
+        return this.completions.stream(completionParams, authStatus.codyApiVersion, abortSignal)
     }
 }
 

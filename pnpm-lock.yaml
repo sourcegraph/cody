@@ -371,6 +371,9 @@ importers:
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
+      semver:
+        specifier: ^7.5.4
+        version: 7.5.4
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
@@ -510,9 +513,6 @@ importers:
       progress:
         specifier: ^2.0.3
         version: 2.0.3
-      semver:
-        specifier: ^7.5.4
-        version: 7.5.4
       yaml:
         specifier: ^2.3.4
         version: 2.3.4

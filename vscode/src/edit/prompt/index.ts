@@ -53,6 +53,7 @@ const getInteractionArgsFromIntent = (
 
 interface BuildInteractionOptions {
     model: EditModel
+    codyApiVersion: number
     contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
@@ -66,6 +67,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    codyApiVersion,
     contextWindow,
     task,
     editor,
@@ -99,7 +101,7 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble(model)
+    const preamble = getSimplePreamble(codyApiVersion)
     promptBuilder.tryAddToPrefix(preamble)
 
     const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
