@@ -475,7 +475,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 }}
                 appearance="icon"
                 type="button"
-                title={enabled ? 'Disable' : 'Enable' + ' Enhanced Context'}
+                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}
             >
                 {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
             </VSCodeButton>
