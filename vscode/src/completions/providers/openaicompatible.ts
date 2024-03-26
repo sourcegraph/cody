@@ -1,36 +1,37 @@
 import * as vscode from 'vscode'
 
 import {
-    displayPath,
-    tokensToChars,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     type ConfigurationWithAccessToken,
+    displayPath,
+    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
+import { CLOSING_CODE_TAG, OPENING_CODE_TAG, getHeadAndTail } from '../text-processing'
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import {
-    type AuthStatus,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 
-import { type FetchCompletionResult, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import {
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
 import {
     MAX_RESPONSE_TOKENS,
     getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
-    Provider,
-    standardContextSizeHints,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
 
 export interface OpenAICompatibleOptions {
@@ -103,12 +104,7 @@ class OpenAICompatibleProvider extends Provider {
 
     constructor(
         options: ProviderOptions,
-        {
-            model,
-            maxContextTokens,
-            client,
-            timeouts,
-        }: Required<OpenAICompatibleOptions>
+        { model, maxContextTokens, client, timeouts }: Required<OpenAICompatibleOptions>
     ) {
         super(options)
         this.timeouts = timeouts
@@ -206,8 +202,8 @@ class OpenAICompatibleProvider extends Provider {
                 this.model === 'starcoder-hybrid'
                     ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                     : this.model.startsWith('starchat')
-                        ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
-                        : MODEL_MAP[this.model],
+                      ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
+                      : MODEL_MAP[this.model],
         }
 
         tracer?.params(requestParams)
