@@ -36,8 +36,6 @@ test('existing installs should show the update toast when the last dismissed ver
 
     // Use chat.
     let [chatFrame, chatInput] = await createEmptyChatPanel(page)
-    await chatInput.fill('hey buddy')
-    await chatInput.press('Enter')
 
     // Forge an older dismissed version into local storage.
     expect(
@@ -47,10 +45,16 @@ test('existing installs should show the update toast when the last dismissed ver
         }, versionUpdateStorageKey)
     ).toBe('0.7')
 
+    // Submit a chat message
+    await chatInput.fill('hey buddy')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('hey buddy')).toBeVisible()
+    await page.getByLabel(/Close /).click()
+    await expect(chatFrame.getByText('hey buddy')).not.toBeVisible()
+
     // Wait for this chat to be available in the sidebar
     const chatHistoryEntry = page.getByRole('treeitem', { name: 'hey buddy' })
     await expect(chatHistoryEntry).toBeVisible()
-    await page.locator('*[aria-label="Tab actions"] *[aria-label~="Close"]').click()
 
     // Reopen the chat; the update notice should be visible.
     // Welcome message is removed.
