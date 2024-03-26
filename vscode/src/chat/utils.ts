@@ -1,4 +1,4 @@
-import { type AuthStatus, CodyApiVersion } from '@sourcegraph/cody-shared'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 import semver from 'semver'
 import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
@@ -85,7 +85,7 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
     return count
 }
 
-function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
+function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
     const parsedVersion = semver.valid(version)
     // DotCom is always recent
     if (isDotCom) {
