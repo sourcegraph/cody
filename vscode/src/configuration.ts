@@ -191,7 +191,12 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const config = getConfiguration()
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
-        localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
+        localStorage?.getEndpoint() ||
+        (isTesting
+            ? `http://localhost:4930${
+                  process.env.VITEST_POOL_ID ?? process.env.TEST_PARALLEL_INDEX ?? 0
+              }/`
+            : DOTCOM_URL.href)
     const accessToken = (await getAccessToken()) || null
     return { ...config, accessToken, serverEndpoint }
 }
