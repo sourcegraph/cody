@@ -15,6 +15,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Changed
 
 - Autocomplete: Subsequent new lines are added to the singleline stop sequences. [pull/3549](https://github.com/sourcegraph/cody/pull/3549)
+- Add information on which Cody tier is being used to analytics events. [pull/3508](https://github.com/sourcegraph/cody/pull/3508)
 
 ## [1.10.0]
 
