@@ -67,7 +67,6 @@ describe('PersistenceTracker', () => {
             charCount: 3,
             difference: 0,
             lineCount: 1,
-            metadata: {},
         }
 
         vi.advanceTimersByTime(30 * 1000)
@@ -115,7 +114,6 @@ describe('PersistenceTracker', () => {
             id: '123',
             charCount: 3,
             lineCount: 1,
-            metadata: {},
         }
 
         vi.advanceTimersToNextTimer()
@@ -192,7 +190,6 @@ describe('PersistenceTracker', () => {
             difference: 1 / 3,
             id: '123',
             lineCount: 1,
-            metadata: {},
         })
         expect(onRemoveSpy).not.toHaveBeenCalled()
     })
@@ -231,7 +228,6 @@ describe('PersistenceTracker', () => {
         vi.advanceTimersToNextTimer()
         expect(onRemoveSpy).toHaveBeenCalledWith({
             id: '123',
-            metadata: {},
         })
         expect(onPresentSpy).not.toHaveBeenCalled()
     })

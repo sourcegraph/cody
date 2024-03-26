@@ -428,7 +428,14 @@ export class FixupController
             },
         })
 
+        /**
+         * Default the tracked range to the `selectionRange`.
+         * Note: This is imperfect because an Edit doesn't necessarily change all characters in a `selectionRange`.
+         * We should try to chunk actual _changes_ and track these individually.
+         * Issue: https://github.com/sourcegraph/cody/issues/3513
+         */
         let trackedRange = task.selectionRange
+
         if (task.mode === 'insert' || task.mode === 'add') {
             const insertionPoint = task.insertionPoint || task.selectionRange.start
             const textLines = lines(task.replacement)

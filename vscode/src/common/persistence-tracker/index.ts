@@ -26,7 +26,7 @@ interface TrackedInsertion<T = string> {
     insertText: string
     insertRange: vscode.Range
     latestRange: vscode.Range
-    metadata: PersistenceEventMetadata
+    metadata?: PersistenceEventMetadata
 }
 
 export class PersistenceTracker<T = string> implements vscode.Disposable {
@@ -57,7 +57,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
         insertText,
         insertRange,
         document,
-        metadata = {},
+        metadata,
     }: {
         id: T
         insertedAt: number

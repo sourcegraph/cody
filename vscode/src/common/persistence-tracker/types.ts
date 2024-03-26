@@ -12,12 +12,12 @@ export interface PersistencePresentEventPayload<T = string> {
     /** Number of characters still in the document */
     charCount: number
     /** Attached metadata to the insertion */
-    metadata: PersistenceEventMetadata
+    metadata?: PersistenceEventMetadata
 }
 
 export interface PersistenceRemovedEventPayload<T = string> {
     /** An ID to uniquely identify an accepted insertion. */
     id: T
     /** Attached metadata to the insertion */
-    metadata: PersistenceEventMetadata
+    metadata?: PersistenceEventMetadata
 }
