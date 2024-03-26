@@ -480,7 +480,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 {enabled ? (
                     <i className="codicon codicon-sparkle" />
                 ) : (
-                    <img src={SparkleSlashIcon} alt="Enhanced Context is disabled." />
+                    <img src={SparkleSlashIcon} alt="" />
                 )}
             </VSCodeButton>
             <VSCodeButton
