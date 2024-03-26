@@ -5,6 +5,7 @@ import {
     ModelProvider,
     Typewriter,
     isAbortError,
+    isDotCom,
     posixFilePaths,
     uriBasename,
     wrapInActiveSpan,
@@ -169,19 +170,28 @@ export class EditProvider {
 
         if (!isMessageInProgress) {
             const { task } = this.config
-            const metadata = {
-                model: task.model,
+            const legacyMetadata = {
                 intent: task.intent,
                 mode: task.mode,
                 source: task.source,
-                responseText: response,
                 ...countCode(response),
             }
-            // TODO: Confirm that this is only sent for dotcom
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', metadata, {
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', splitSafeMetadata(metadata))
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                    // 🚨 SECURITY: edit responses are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: endpoint && isDotCom(endpoint) ? response : undefined,
+                },
+            })
         }
 
         const intentsForInsert = ['add', 'test']

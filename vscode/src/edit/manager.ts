@@ -163,20 +163,22 @@ export class EditManager implements vscode.Disposable {
         const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
         const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
 
-        const metadata = {
-            model: task.model,
+        const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
         }
-        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, metadata, {
+        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
             hasV2Event: true,
         })
-        telemetryRecorder.recordEvent(
-            `cody.command.${eventName}`,
-            'executed',
-            splitSafeMetadata(metadata)
-        )
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
+            metadata,
+            privateMetadata: {
+                ...privateMetadata,
+                model: task.model,
+            },
+        })
 
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
