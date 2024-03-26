@@ -1,12 +1,12 @@
 {
   "name": "cody-ai",
   "private": true,
-  "displayName": "Cody AI",
+  "displayName": "Cody: AI Coding Assistant with Autocomplete & GPT-4 Turbo Chat for JS, Python, Java, Go, & more",
   "version": "1.10.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "Code AI with codebase context",
+  "description": "Cody is an AI coding assistant that understands your codebase. Cody brings autocomplete, chat, and commands to your IDE, helping you generate code, write unit tests, create documentation, and explain complex or legacy code. Choose from several LLMs including GPT-3.5 Turbo, GPT-4 Turbo, and Claude 3. Cody supports all major languages including JavaScript, TypeScript, Python, Java, Go, and C/C++.",
   "scripts": {
     "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
