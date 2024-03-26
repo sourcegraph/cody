@@ -13,7 +13,7 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
             // It is outside of the typical Edit flow so it is more likely a user could become "stuck" here.
             // TODO: Make the model usage more visible to users outside of the normal edit flow. This means
             // we could let the user provide any model they want for `fix`.
-            // Issue: https://github.com/sourcegraph/cody/issues/3518
+            // Issue: https://github.com/sourcegraph/cody/issues/3512
             return 'anthropic/claude-3-sonnet-20240229'
         case 'doc':
             // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
