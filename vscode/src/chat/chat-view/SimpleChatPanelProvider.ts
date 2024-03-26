@@ -779,15 +779,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const maxChars = ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
-        const { prompt, newContextUsed } = await prompter.makePrompt(
+        const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion,
-            maxChars
+            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
-        this.chatModel.setLastMessageContext(newContextUsed)
+        // Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...newContextUsed, ...(newContextIgnored ?? [])])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being

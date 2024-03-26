@@ -25,7 +25,7 @@ export async function getURLContextItems(
                 uri: url,
                 content,
                 title: tryGetHTMLDocumentTitle(content),
-                source: ContextItemSource.User,
+                source: ContextItemSource.Uri,
             },
         ]
     } catch (error) {

@@ -770,7 +770,7 @@ function lineAndCharCount({ insertText }: InlineCompletionItem): {
 const TEN_MINUTES = 1000 * 60 * 10
 const errorCounts: Map<string, number> = new Map()
 export function logError(error: Error): void {
-    if (!shouldErrorBeReported(error)) {
+    if (!shouldErrorBeReported(error, false)) {
         return
     }
 
