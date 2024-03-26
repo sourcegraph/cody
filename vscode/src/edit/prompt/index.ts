@@ -104,7 +104,14 @@ export const buildInteraction = async ({
     const preamble = getSimplePreamble(model, codyApiVersion)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
+    // Add pre-instruction for edit commands to end of human prompt to override the default
+    // prompt. This is used for providing additional information and guidelines by the user.
+    const preInstruction: string | undefined = vscode.workspace
+        .getConfiguration('cody.edit')
+        .get('preInstruction')
+    const additionalRule = preInstruction ? `\nIMPORTANT: ${preInstruction.trim()}` : ''
+
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt + additionalRule }]
     if (assistantText) {
         transcript.push({ speaker: 'assistant', text: assistantText })
     }

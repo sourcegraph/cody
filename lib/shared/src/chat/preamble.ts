@@ -5,9 +5,7 @@ export function getSimplePreamble(
     apiVersion: number,
     preInstruction?: string | undefined
 ): Message[] {
-    const intro = `You are Cody, an AI coding assistant from Sourcegraph.${
-        preInstruction ? ` ${preInstruction}` : ''
-    }`
+    const intro = `You are Cody, an AI coding assistant from Sourcegraph. ${preInstruction ?? ''}`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for
     // Claude 3 models for now

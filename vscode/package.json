@@ -884,8 +884,14 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.edit.preInstruction": {
+          "order": 7,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
+          "examples": ["Write all unit tests with Jest instead of detected framework."]
         },
         "cody.codeActions.enabled": {
           "order": 11,
