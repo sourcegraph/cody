@@ -74,7 +74,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(true)
     const onEditorChange = useCallback((value: SerializedPromptEditorValue): void => {
-        setIsEmptyEditorValue(value.text === '')
+        setIsEmptyEditorValue(!value?.text?.trim())
     }, [])
 
     const onAbortMessageInProgress = useCallback(() => {
@@ -89,7 +89,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 throw new Error('Chat has no editorRef')
             }
             const editorValue = editorRef.current.getSerializedValue()
-
+            if (!editorValue.text.trim()) {
+                throw new Error('Chat message cannot be empty')
+            }
             // Handle edit requests
             if (submitType === 'edit') {
                 if (messageBeingEdited === undefined) {

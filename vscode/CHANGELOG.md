@@ -14,6 +14,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Large file cannot be added via @-mention. [pull/3531](https://github.com/sourcegraph/cody/pull/3531)
+- Chat: Handle empty chat message input and prevent submission of empty messages. [pull/3554](https://github.com/sourcegraph/cody/pull/3554)
 
 ### Changed
 

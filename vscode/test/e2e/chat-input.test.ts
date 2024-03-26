@@ -24,8 +24,15 @@ test.extend<ExpectedEvents>({
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
 
-    // Test that Ctrl+Arrow jumps by a word.
+    // Test that empty chat messages cannot be submitted.
+    await chatInput.fill(' ')
+    await chatInput.press('Enter')
+    await expect(chatInput).toHaveText(' ')
+    await chatInput.press('Backspace')
     await chatInput.clear()
+
+    // Test that Ctrl+Arrow jumps by a word.
+    await chatInput.focus()
     await chatInput.type('One')
     await chatInput.press('Control+ArrowLeft')
     await chatInput.type('Two')
