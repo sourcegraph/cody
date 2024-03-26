@@ -18,6 +18,10 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import type { Span } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
+import type {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+} from '../common/persistence-tracker/types'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -26,10 +30,6 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
-import {
-    PersistencePresentEventPayload,
-    PersistenceRemovedEventPayload,
-} from '../common/persistence-tracker/types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
