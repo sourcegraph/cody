@@ -9,7 +9,6 @@ data class SettingsModel(
     var isCodyAutocompleteEnabled: Boolean = true,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
-    var isCodyExperimentalInlineEditEnabled: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Color? = null,
     var isLookupAutocompleteEnabled: Boolean = true,

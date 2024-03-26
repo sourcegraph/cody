@@ -49,12 +49,6 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
         row {
-          checkBox("Enable experimental inline edits")
-              .comment("Enables experimental edit-code and document-code features")
-              .enabledIf(enableCodyCheckbox.selected)
-              .bindSelected(settingsModel::isCodyExperimentalInlineEditEnabled)
-        }
-        row {
           checkBox("Accept non-trusted certificates")
               .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::shouldAcceptNonTrustedCertificatesAutomatically)
@@ -106,8 +100,6 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     settingsModel.isCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     settingsModel.isCodyDebugEnabled = codyApplicationSettings.isCodyDebugEnabled
     settingsModel.isCodyVerboseDebugEnabled = codyApplicationSettings.isCodyVerboseDebugEnabled
-    settingsModel.isCodyExperimentalInlineEditEnabled =
-        codyApplicationSettings.isCodyExperimentalInlineEditEnabled
     settingsModel.isCustomAutocompleteColorEnabled =
         codyApplicationSettings.isCustomAutocompleteColorEnabled
     settingsModel.customAutocompleteColor =
@@ -142,8 +134,6 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
     codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
     codyApplicationSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
-    codyApplicationSettings.isCodyExperimentalInlineEditEnabled =
-        settingsModel.isCodyExperimentalInlineEditEnabled
     codyApplicationSettings.isCustomAutocompleteColorEnabled =
         settingsModel.isCustomAutocompleteColorEnabled
     codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb

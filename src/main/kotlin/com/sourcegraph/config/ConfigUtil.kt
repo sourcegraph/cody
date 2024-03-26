@@ -130,10 +130,6 @@ object ConfigUtil {
   @JvmStatic fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.instance.isCodyDebugEnabled
 
   @JvmStatic
-  fun isExperimentalInlineEditEnabled(): Boolean =
-      CodyApplicationSettings.instance.isCodyExperimentalInlineEditEnabled
-
-  @JvmStatic
   fun isCodyVerboseDebugEnabled(): Boolean =
       CodyApplicationSettings.instance.isCodyVerboseDebugEnabled
 
