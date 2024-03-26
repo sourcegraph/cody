@@ -35,7 +35,7 @@ export abstract class SentryService {
 
     private prepareReconfigure(): void {
         try {
-            const isProd = process.env.NODE_ENV !== 'production'
+            const isProd = process.env.NODE_ENV === 'production'
 
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
