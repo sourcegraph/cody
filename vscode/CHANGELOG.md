@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+Chat: Large file cannot be added via @-mention. [pull/3531](https://github.com/sourcegraph/cody/pull/3531)
+
 ### Changed
 
 ## [1.10.0]
