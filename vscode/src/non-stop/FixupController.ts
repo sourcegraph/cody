@@ -15,6 +15,8 @@ import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
+import { PersistenceTracker } from '../common/persistence-tracker'
+import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -39,6 +41,22 @@ export class FixupController
     private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        onPresent: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
+        },
+        onRemoved: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
+        },
+    })
 
     private _disposables: vscode.Disposable[] = []
 
@@ -390,7 +408,7 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
-    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+    private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
@@ -425,6 +443,41 @@ export class FixupController
             privateMetadata: {
                 ...privateMetadata,
                 model: task.model,
+            },
+        })
+
+        /**
+         * Default the tracked range to the `selectionRange`.
+         * Note: This is imperfect because an Edit doesn't necessarily change all characters in a `selectionRange`.
+         * We should try to chunk actual _changes_ and track these individually.
+         * Issue: https://github.com/sourcegraph/cody/issues/3513
+         */
+        let trackedRange = task.selectionRange
+
+        if (task.mode === 'insert' || task.mode === 'add') {
+            const insertionPoint = task.insertionPoint || task.selectionRange.start
+            const textLines = lines(task.replacement)
+            trackedRange = new vscode.Range(
+                insertionPoint,
+                new vscode.Position(
+                    insertionPoint.line + textLines.length - 1,
+                    textLines.length > 1
+                        ? textLines.at(-1)!.length
+                        : insertionPoint.character + textLines[0].length
+                )
+            )
+        }
+
+        this.persistenceTracker.track({
+            id: task.id,
+            insertedAt: Date.now(),
+            insertText: task.replacement,
+            insertRange: trackedRange,
+            document,
+            metadata: {
+                model: task.model,
+                mode: task.mode,
+                intent: task.intent,
             },
         })
     }
@@ -472,7 +525,7 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, editOk)
+            this.logTaskCompletion(task, document, editOk)
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -584,7 +637,7 @@ export class FixupController
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        this.logTaskCompletion(task, editOk)
+        this.logTaskCompletion(task, document, editOk)
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
