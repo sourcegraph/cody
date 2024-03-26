@@ -1,5 +1,4 @@
 import * as React from 'react'
-import SparkleSlashIcon from '../icons/sparkle-slash.svg'
 
 import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -18,6 +17,7 @@ import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import popupStyles from '../Popups/Popup.module.css'
+import { SparkleSlash } from '../icons/SparkleSlash'
 import styles from './EnhancedContextSettings.module.css'
 
 export enum EnhancedContextPresentationMode {
@@ -477,11 +477,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 type="button"
                 title={enabled ? 'Disable' : 'Enable' + ' Enhanced Context'}
             >
-                {enabled ? (
-                    <i className="codicon codicon-sparkle" />
-                ) : (
-                    <img src={SparkleSlashIcon} alt="" />
-                )}
+                {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
             </VSCodeButton>
             <VSCodeButton
                 className={classNames(

@@ -56,8 +56,6 @@
 .popup-host {
     position: relative;
     display: flex;
-    border: 1px solid var(--vscode-inputOption-hoverBackground);
-    border-radius: var(--button-icon-corner-radius);
 }
 
 .row {
