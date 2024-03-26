@@ -63,11 +63,24 @@
       "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
     },
     {
+      "type": "node",
+      "request": "attach",
       "name": "Attach to Agent",
       "port": 9229,
-      "request": "attach",
       "skipFiles": ["<node_internals>/**"],
-      "type": "node"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Agent port 3113",
+      "program": "${workspaceFolder}/agent/dist/index.js",
+      "runtimeArgs": ["--enable-source-maps"],
+      "env": {
+        "CODY_AGENT_DEBUG_REMOTE": "true",
+        "CODY_AGENT_DEBUG_PORT": "3113"
+      },
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"],
     },
     {
       "type": "node",
