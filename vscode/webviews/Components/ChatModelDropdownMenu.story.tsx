@@ -12,7 +12,7 @@ const meta: Meta<typeof ChatModelDropdownMenu> = {
     component: ChatModelDropdownMenu,
     decorators: [VSCodeStoryDecorator],
     args: {
-        models: ModelProvider.get(ModelUsage.Chat, String(DOTCOM_URL)),
+        models: ModelProvider.getProviders(ModelUsage.Chat, String(DOTCOM_URL)),
         disabled: false,
     },
     parameters: {

@@ -10,6 +10,7 @@ import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@source
 
 import { logDebug } from '../log'
 
+import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 import { getExtensionDetails } from './telemetry'
 
@@ -79,7 +80,8 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
@@ -104,7 +106,12 @@ export async function createOrUpdateTelemetryRecorderProvider(
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
         updateGlobalInstances(
-            new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
+            new MockServerTelemetryRecorderProvider(
+                extensionDetails,
+                config,
+                () => authProvider.getAuthStatus(),
+                anonymousUserID
+            )
         )
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
@@ -114,6 +121,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
+                () => authProvider.getAuthStatus(),
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )

@@ -15,6 +15,7 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
@@ -56,7 +57,7 @@ test.extend<ExpectedEvents>({
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
+    expect(await chatPanel.getByText(/^Context:/).count()).toEqual(0)
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()

@@ -821,7 +821,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const theModel = modelID ? modelID : ModelProvider.get(ModelUsage.Chat).at(0)?.model
+            const theModel = modelID ? modelID : ModelProvider.getProviders(ModelUsage.Chat).at(0)?.model
             if (!theModel) {
                 throw new Error('No default chat model found')
             }

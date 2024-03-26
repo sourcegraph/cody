@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.8.3",
+  "version": "1.10.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -884,8 +884,14 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.edit.preInstruction": {
+          "order": 7,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
+          "examples": ["Write all unit tests with Jest instead of detected framework."]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1171,9 +1177,9 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
-    "@sentry/browser": "^7.66.0",
-    "@sentry/core": "^7.66.0",
-    "@sentry/node": "^7.66.0",
+    "@sentry/browser": "^7.107.0",
+    "@sentry/core": "^7.107.0",
+    "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
