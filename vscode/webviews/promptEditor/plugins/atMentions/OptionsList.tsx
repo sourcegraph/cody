@@ -36,17 +36,14 @@ export const OptionsList: FunctionComponent<
                         : mentionQuery.type === 'symbol'
                           ? options.length > 0 || !mentionQuery.text.length
                                 ? 'Search for a symbol to include...'
-                                : 'No symbols found '
+                                : 'No symbols found' +
+                                  (mentionQuery.text.length > 1
+                                      ? ' (language extensions may be loading)'
+                                      : '')
                           : options.length > 0
                               ? 'Search for a file to include...'
                               : 'No files found'}
                 </span>
-                {mentionQuery.type === 'symbol' && !options.length && !!mentionQuery.text.length && (
-                    <i
-                        className={classNames('codicon codicon-question', styles.titleHelpIcon)}
-                        title="Please try opening a file to make sure symbols are ready and available in your workspace."
-                    />
-                )}
                 <br />
             </h3>
             {options.length > 0 && (
