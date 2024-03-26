@@ -22,27 +22,45 @@ export const OptionsList: FunctionComponent<
     useEffect(() => {
         // Scroll to top when options change because the prior `selectedIndex` is invalidated.
         ref?.current?.scrollTo(0, 0)
-        setHighlightedIndex(0)
+        const validIndex = options.findIndex(o => o?.item?.type === 'file' && !o?.item?.isTooLarge)
+        setHighlightedIndex(validIndex < 0 ? 0 : validIndex)
     }, [options])
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `selectedIndex` changes.
+    useEffect(() => {
+        if (selectedIndex === null) {
+            return
+        }
+        // If the selectedIndex isTooLarge, set it to the next valid option.
+        const current = options[selectedIndex]
+        const currentOptionIsInvalid = current?.item?.type === 'file' && current?.item?.isTooLarge
+        if (currentOptionIsInvalid) {
+            const validIndex = options.findIndex(
+                (o, i) => i > selectedIndex && o?.item?.type === 'file' && !o?.item?.isTooLarge
+            )
+            setHighlightedIndex(validIndex)
+        }
+    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query)
 
     return (
         <div className={styles.container}>
             <h3 className={classNames(styles.item, styles.helpItem)}>
-                {mentionQuery.type === 'empty'
-                    ? 'Search for a file to include, or type # for symbols...'
-                    : mentionQuery.type === 'symbol'
-                      ? options.length > 0
-                            ? 'Search for a symbol to include...'
-                            : `No symbols found${
-                                  mentionQuery.text.length <= 2
-                                      ? ' (try installing language extensions and opening a file)'
-                                      : ''
-                              }`
-                      : options.length > 0
-                          ? 'Search for a file to include...'
-                          : 'No files found'}
+                <span>
+                    {mentionQuery.type === 'empty'
+                        ? 'Search for a file to include, or type # for symbols...'
+                        : mentionQuery.type === 'symbol'
+                          ? options.length > 0 || !mentionQuery.text.length
+                                ? 'Search for a symbol to include...'
+                                : 'No symbols found' +
+                                  (mentionQuery.text.length > 1
+                                      ? ' (language extensions may be loading)'
+                                      : '')
+                          : options.length > 0
+                              ? 'Search for a file to include...'
+                              : 'No files found'}
+                </span>
                 <br />
             </h3>
             {options.length > 0 && (
@@ -95,7 +113,12 @@ const Item: FunctionComponent<{
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            className={classNames(
+                className,
+                styles.optionItem,
+                isSelected && !warning && styles.selected,
+                warning && styles.disabled
+            )}
             ref={option.setRefElement}
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"

@@ -18,6 +18,7 @@ import { sortContextItems } from './agentContextSorting'
 interface PromptInfo {
     prompt: Message[]
     newContextUsed: ContextItem[]
+    newContextIgnored?: ContextItem[]
 }
 
 export interface IPrompter {
@@ -42,6 +43,7 @@ export class DefaultPrompter implements IPrompter {
     ): Promise<{
         prompt: Message[]
         newContextUsed: ContextItem[]
+        newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
@@ -72,15 +74,16 @@ export class DefaultPrompter implements IPrompter {
             }
 
             {
-                // Add context from new user-specified context items
-                const { limitReached, used } = promptBuilder.tryAddContext(this.explicitContext)
+                // Add context from new user-specified context items, e.g. @-mentions, @-uri
+                const { limitReached, used, ignored } = promptBuilder.tryAddContext(this.explicitContext)
                 newContextUsed.push(...used)
                 if (limitReached) {
                     logDebug(
                         'DefaultPrompter.makePrompt',
                         'Ignored current user-specified context items due to context limit'
                     )
-                    return { prompt: promptBuilder.build(), newContextUsed }
+                    // Only display excluded context from user-specifed context items
+                    return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored: ignored }
                 }
             }
 

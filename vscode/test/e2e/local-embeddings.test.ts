@@ -153,7 +153,7 @@ test
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('hello world')
     await chatInput.press('Enter')
-    await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({
+    await expect(chatFrame.getByText(/Context: \d+ lines from 2 files/)).toBeVisible({
         timeout: 10000,
     })
 })
