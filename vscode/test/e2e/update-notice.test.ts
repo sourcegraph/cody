@@ -48,11 +48,13 @@ test('existing installs should show the update toast when the last dismissed ver
     // Submit a chat message
     await chatInput.fill('hey buddy')
     await chatInput.press('Enter')
+    await expect(chatFrame.getByText('hey buddy')).toBeVisible()
+    await page.getByLabel(/Close /).click()
+    await expect(chatFrame.getByText('hey buddy')).not.toBeVisible()
 
     // Wait for this chat to be available in the sidebar
     const chatHistoryEntry = page.getByRole('treeitem', { name: 'hey buddy' })
     await expect(chatHistoryEntry).toBeVisible()
-    await page.locator('*[aria-label="Tab actions"] *[aria-label~="Close"]').click()
 
     // Reopen the chat; the update notice should be visible.
     // Welcome message is removed.
