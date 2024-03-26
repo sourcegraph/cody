@@ -11,10 +11,15 @@ import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
+import { PersistenceTracker } from '../common/persistence-tracker'
+import type {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+} from '../common/persistence-tracker/types'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -39,6 +44,22 @@ export class FixupController
     private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        onPresent: event => {
+            const task = this.tasks.get(event.id)
+            if (!task) {
+                return
+            }
+            return this.logTaskPersistence(task, event, 'present')
+        },
+        onRemoved: event => {
+            const task = this.tasks.get(event.id)
+            if (!task) {
+                return
+            }
+            return this.logTaskPersistence(task, event, 'removed')
+        },
+    })
 
     private _disposables: vscode.Disposable[] = []
 
@@ -374,7 +395,7 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
-    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+    private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, {
                 hasV2Event: true,
@@ -409,6 +430,31 @@ export class FixupController
                 source,
             },
         })
+
+        this.persistenceTracker.track({
+            id: task.id,
+            insertedAt: Date.now(),
+            insertText: task.replacement,
+            insertRange: task.selectionRange,
+            document,
+        })
+    }
+
+    private logTaskPersistence(
+        task: FixupTask,
+        event: PersistenceRemovedEventPayload | PersistencePresentEventPayload,
+        type: 'present' | 'removed'
+    ) {
+        const metadata = {
+            ...event,
+            intent: task.intent,
+            mode: task.mode,
+            model: task.model,
+        }
+        telemetryService.log(`CodyVSCodeExtension:fixup:persistence:${type}`, metadata, {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.fixup.persistence', type, splitSafeMetadata(metadata))
     }
 
     private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
@@ -454,7 +500,7 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, editOk)
+            this.logTaskCompletion(task, document, editOk)
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -566,7 +612,7 @@ export class FixupController
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        this.logTaskCompletion(task, editOk)
+        this.logTaskCompletion(task, document, editOk)
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
