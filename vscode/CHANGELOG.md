@@ -14,6 +14,8 @@ Chat: Large file cannot be added via @-mention. [pull/3531](https://github.com/s
 
 ### Changed
 
+- Add information on which Cody tier is being used to analytics events. [pull/3508](https://github.com/sourcegraph/cody/pull/3508)
+
 ## [1.10.0]
 
 ### Added
