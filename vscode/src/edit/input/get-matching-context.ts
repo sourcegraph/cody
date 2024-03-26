@@ -1,6 +1,6 @@
 import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 
+import { DEFAULT_FAST_MODEL_CHARS_LIMIT } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
 import { getLabelForContextItem } from './utils'
 
@@ -29,11 +29,10 @@ export async function getMatchingContext(
     }
 
     if (mentionQuery.type === 'file') {
-        const cancellation = new vscode.CancellationTokenSource()
         const fileResults = await getFileContextFiles(
             mentionQuery.text,
             MAX_FUZZY_RESULTS,
-            cancellation.token
+            DEFAULT_FAST_MODEL_CHARS_LIMIT
         )
         return fileResults.map(result => ({
             key: getLabelForContextItem(result),

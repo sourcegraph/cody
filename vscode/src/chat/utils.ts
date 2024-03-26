@@ -1,4 +1,4 @@
-import type { AuthStatus } from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatMessage } from '@sourcegraph/cody-shared'
 import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
 /**
@@ -81,4 +81,36 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
         count.lineCount += lineCount
     }
     return count
+}
+
+/**
+ * Counts the total number of bytes used in a list of chat messages.
+ *
+ * This function is exported and can be used to calculate the byte usage
+ * of chat messages for storage/bandwidth purposes.
+ *
+ * @param messages - The list of chat messages to count bytes for
+ * @returns The total number of bytes used in the messages
+ */
+export function countBytesInChatMessages(messages: ChatMessage[]): number {
+    if (messages.length === 0) {
+        return 0
+    }
+    return messages.reduce((acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3, 0)
+}
+
+/**
+ * Gets the context window limit in bytes for chat messages, taking into
+ * account the maximum allowed character count. Returns 0 if the used bytes
+ * exceeds the limit.
+ * @param messages - The chat messages
+ * @param maxChars - The maximum allowed character count
+ * @returns The context window limit in bytes
+ */
+export function getContextWindowLimitInBytes(messages: ChatMessage[], maxChars: number): number {
+    const used = countBytesInChatMessages(messages)
+    if (used > maxChars) {
+        return 0
+    }
+    return maxChars - used
 }
