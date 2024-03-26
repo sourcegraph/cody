@@ -188,12 +188,10 @@
     border: unset;
 }
 
-
 .settings-indicator {
     border-bottom-right-radius: unset;
     border-top-right-radius: unset;
     color: var(--vscode-editor-foreground);
-
     position: relative;
     justify-content: center;
 }
@@ -201,7 +199,6 @@
 .settings-btn {
     border-bottom-left-radius: unset;
     border-top-left-radius: unset;
-
     color: var(--vscode-editor-foreground);
     border: unset;
     border-left: 1px solid var(--vscode-inputOption-hoverBackground);
@@ -224,44 +221,6 @@
 
 .settings-btn-active, .settings-indicator:focus, .settings-btn:focus {
     outline: 2px solid var(--vscode-inputOption-activeBorder);
-}
-
-
-.glowy-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    background-color: var(--vscode-inputOption-activeBorder);
-    position: absolute;
-    top: 0;
-    right: 0.4rem;
-    z-index: 3;
-}
-
-.glowy-dot::after {
-    content: '';
-    box-sizing: border-box;
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    border: 0.75px solid var(--vscode-inputOption-activeForeground);
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    animation: 2.5s linear infinite glowy;
-}
-
-@keyframes glowy {
-    50% {
-        transform: scale(300%);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(300%);
-        opacity: 0;
-    }
 }
 
 .popup .hint {
