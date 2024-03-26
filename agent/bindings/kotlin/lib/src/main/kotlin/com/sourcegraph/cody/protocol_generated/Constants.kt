@@ -44,6 +44,7 @@ object Constants {
   const val unified = "unified"
   const val selection = "selection"
   const val terminal = "terminal"
+  const val uri = "uri"
   const val file = "file"
   const val symbol = "symbol"
   const val `class` = "class"

@@ -57,7 +57,7 @@ test.extend<ExpectedEvents>({
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
+    expect(await chatPanel.getByText(/^Context:/).count()).toEqual(0)
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()
