@@ -407,6 +407,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 source,
                 traceId: span.spanContext().traceId,
             }
+            const maxTranscriptSize = 9 * 1024 * 1024 // 9 MB
+            if (inputText.length > maxTranscriptSize) {
+                inputText = inputText.substring(0, maxTranscriptSize)
+            }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
                 metadata: {
@@ -479,6 +483,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     }
                     span.setAttributes(properties)
 
+                    if (inputText.length > maxTranscriptSize) {
+                        inputText = inputText.substring(0, maxTranscriptSize)
+                    }
                     telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
                         hasV2Event: true,
                     })
@@ -942,12 +949,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
     private addBotMessage(requestID: string, rawResponse: string): void {
-        const messageText = reformatBotMessageForChat(rawResponse)
+        let messageText = reformatBotMessageForChat(rawResponse)
         this.chatModel.addBotMessage({ text: messageText })
         void this.saveSession()
         this.postViewTranscript()
 
         const authStatus = this.authProvider.getAuthStatus()
+
+        const maxTranscriptSize = 9 * 1024 * 1024 // 9 MB
+        if (messageText.length > maxTranscriptSize) {
+            messageText = messageText.substring(0, maxTranscriptSize)
+        }
 
         // Count code generated from response
         const codeCount = countGeneratedCode(messageText)
