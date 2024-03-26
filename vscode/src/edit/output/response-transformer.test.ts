@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { RESPONSE_TEST_FIXTURES } from './test-fixtures'
 import { responseTransformer } from './response-transformer'
+import { RESPONSE_TEST_FIXTURES } from './test-fixtures'
 
 describe('responseTransformer', () => {
     describe.each(Object.entries(RESPONSE_TEST_FIXTURES))(

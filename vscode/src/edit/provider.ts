@@ -23,9 +23,9 @@ import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
+import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { responseTransformer } from './output/response-transformer'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
