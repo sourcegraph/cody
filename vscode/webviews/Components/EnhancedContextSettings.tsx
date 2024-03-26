@@ -412,8 +412,18 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         restoreFocusTarget.current?.focus()
     }, [setOpen])
 
+    const onKeyDown = React.useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            // Close the popup on escape
+            if (event.key === 'Escape') {
+                handleDismiss()
+            }
+        },
+        [handleDismiss]
+    )
+
     return (
-        <div className={classNames(popupStyles.popupHost)}>
+        <div className={classNames(popupStyles.popupHost)} onKeyDown={onKeyDown}>
             <PopupFrame
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
@@ -469,10 +479,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                     styles.settingsIndicator,
                     enabled && styles.settingsIndicatorActive
                 )}
-                onClick={() => {
-                    setOpen(false)
-                    onSetEnabledChanged(!enabled)
-                }}
+                onClick={() => onSetEnabledChanged(!enabled)}
                 appearance="icon"
                 type="button"
                 title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}

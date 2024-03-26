@@ -289,6 +289,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     ])
 
     const onEditorEscapeKey = useCallback((): void => {
+        // Close the enhanced context settings modal if it's open
+        setIsEnhancedContextOpen(false)
+
         // Exits editing mode if a message is being edited
         if (messageBeingEdited !== undefined) {
             setEditMessageState()
@@ -441,11 +444,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: We don't want to re-run this effect.
-    const onEnhancedContextTogglerClick = useCallback((focus: boolean) => {
-        if (!isEnhancedContextOpen && !focus) {
+    const onEnhancedContextTogglerClick = useCallback((open: boolean) => {
+        if (!isEnhancedContextOpen && !open) {
             setInputFocus(true)
         }
-        setIsEnhancedContextOpen(focus)
+        setIsEnhancedContextOpen(open)
     }, [])
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
