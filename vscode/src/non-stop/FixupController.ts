@@ -149,20 +149,36 @@ export class FixupController
             editBuilder.replace(task.selectionRange, task.original)
         })
 
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+            ...countCode(replacementText),
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', {
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
+            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
             return
         }
 
-        const tokenCount = countCode(replacementText)
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, {
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata: tokenCount,
+            metadata,
+            privateMetadata: {
+                ...privateMetadata,
+                model: task.model,
+            },
         })
 
         this.setTaskState(task, CodyTaskState.finished)
@@ -393,11 +409,24 @@ export class FixupController
     }
 
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+            ...countCode(task.replacement || ''),
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, {
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', legacyMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
 
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
@@ -408,23 +437,12 @@ export class FixupController
             return
         }
 
-        const codeCount = countCode(task.replacement.trim())
-        const source = task.source
-
-        telemetryService.log(
-            'CodyVSCodeExtension:fixup:applied',
-            { ...codeCount, source },
-            { hasV2Event: true }
-        )
+        telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
-            metadata: {
-                lineCount: codeCount.lineCount,
-                charCount: codeCount.charCount,
-            },
+            metadata,
             privateMetadata: {
-                // TODO: generate numeric ID representing source so that it
-                // can be included in metadata for default export.
-                source,
+                ...privateMetadata,
+                model: task.model,
             },
         })
 
