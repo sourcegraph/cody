@@ -588,6 +588,11 @@
         "command": "cody.fixup.cancelNearest",
         "key": "alt+z",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.supercompletion.jumpToNext",
+        "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],
     "submenus": [

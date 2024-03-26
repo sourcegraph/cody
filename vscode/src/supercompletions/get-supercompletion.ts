@@ -190,7 +190,7 @@ function parseRawChange(
         updated,
     } satisfies Supercompletion
 
-    return fullSupercompletion
+    return removeContextRows(document, fullSupercompletion)
 }
 
 function buildInteraction(document: vscode.TextDocument, diff: string): Message[] {
@@ -211,63 +211,64 @@ function buildInteraction(document: vscode.TextDocument, diff: string): Message[
     ]
 }
 
-// // This function takes a supercompletion and adjusts the location to remove context
-// // rows (rows which are the same in both the current and the updated text).
-// function removeOverlappingChanges(
-//     document: vscode.TextDocument,
-//     supercompletion: Supercompletion
-// ): Supercompletion {
-//     const currentLines = supercompletion.current.split('\n')
-//     const updatedLines = supercompletion.updated.split('\n')
+// This function takes a supercompletion and adjusts the location to removes all
+// but one context row on each side (rows which are the same in both the current
+// and the updated text).
+function removeContextRows(
+    document: vscode.TextDocument,
+    supercompletion: Supercompletion
+): Supercompletion {
+    const currentLines = supercompletion.current.split('\n')
+    const updatedLines = supercompletion.updated.split('\n')
 
-//     let newCurrent = supercompletion.current
-//     let newUpdated = supercompletion.updated
-//     // let newRange = supercompletion.location.range
-//     console.log('initial range', supercompletion.location.range)
+    // let newCurrent = supercompletion.current
+    // let newUpdated = supercompletion.updated
 
-//     const minLines = Math.min(currentLines.length, updatedLines.length)
+    const minLines = Math.min(currentLines.length, updatedLines.length)
 
-//     let startLine = supercompletion.location.range.start.line
-//     let endLine = supercompletion.location.range.end.line
+    const initialStartLine = supercompletion.location.range.start.line
+    const initialEndLine = supercompletion.location.range.end.line
+    let startLine = initialStartLine
+    let endLine = initialEndLine
 
-//     // Start from beginning. We can use the same index for both arrays
-//     for (let i = 0; i < minLines; i++) {
-//         if (currentLines[i] !== updatedLines[i] || startLine === endLine) {
-//             break
-//         }
+    // Start from beginning. We can use the same index for both arrays
+    for (let i = 0; i < minLines; i++) {
+        if (currentLines[i] !== updatedLines[i] || startLine === endLine) {
+            break
+        }
+        startLine++
+    }
 
-//         newCurrent = newCurrent.slice(currentLines[i].length + 1)
-//         newUpdated = newUpdated.slice(updatedLines[i].length + 1)
-//         startLine++
-//     }
-//     // console.log(0, supercompletion)
-//     // console.log(1, { newCurrent, newUpdated })
+    // Start from the end. Calculate the indexes independently
+    for (let i = 0; i < minLines; i++) {
+        const ci = currentLines.length - i - 1
+        const ui = updatedLines.length - i - 1
+        if (currentLines[ci] !== updatedLines[ui] || startLine === endLine) {
+            break
+        }
+        endLine--
+    }
 
-//     // Start from the end. Calculate the indexes independently
-//     for (let i = 0; i < minLines; i++) {
-//         const ci = currentLines.length - i - 1
-//         const ui = updatedLines.length - i - 1
-//         if (currentLines[ci] !== updatedLines[ui] || startLine === endLine) {
-//             break
-//         }
+    if (startLine === endLine) {
+        // Include one context line before and after the insertion, if the change is
+        // a pure insertion
+        startLine = Math.max(0, startLine - 1)
+        // endLine is kept since the selection will span towards the end of the line anyways
+    }
 
-//         newCurrent = newCurrent.slice(0, -currentLines[ci].length - 1)
-//         newUpdated = newUpdated.slice(0, -updatedLines[ui].length - 1)
-//         endLine--
-//     }
-//     // console.log(2, { newCurrent, newUpdated })
-//     // console.log('updated current', newCurrent)
+    const newCurrent = currentLines
+        .slice(startLine - initialStartLine, currentLines.length + endLine - initialEndLine)
+        .join('\n')
+    const newUpdated = updatedLines
+        .slice(startLine - initialStartLine, updatedLines.length + endLine - initialEndLine)
+        .join('\n')
 
-//     const newRange =
-//         startLine === endLine
-//             ? new vscode.Range(startLine, 0, startLine, 0)
-//             : new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
+    const newRange = new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
 
-//     console.log('updated range', newRange)
-//     return {
-//         ...supercompletion,
-//         location: new vscode.Location(supercompletion.location.uri, newRange),
-//         current: newCurrent,
-//         updated: newUpdated,
-//     }
-// }
+    return {
+        ...supercompletion,
+        location: new vscode.Location(supercompletion.location.uri, newRange),
+        current: newCurrent,
+        updated: newUpdated,
+    }
+}

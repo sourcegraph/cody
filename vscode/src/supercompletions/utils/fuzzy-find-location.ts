@@ -1,6 +1,8 @@
 import levenshtein from 'js-levenshtein'
 import * as vscode from 'vscode'
 
+// TODO(philipp-spiess): Correct for invalid indentations right away to ensure we
+// find the location with the best overlap.
 export function fuzzyFindLocation(
     document: vscode.TextDocument,
     snippet: string
