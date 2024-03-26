@@ -17,6 +17,7 @@ import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import popupStyles from '../Popups/Popup.module.css'
+import { SparkleSlash } from '../icons/SparkleSlash'
 import styles from './EnhancedContextSettings.module.css'
 
 export enum EnhancedContextPresentationMode {
@@ -30,6 +31,7 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
+    isFirstChat: boolean
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -338,6 +340,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
+    isFirstChat,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
@@ -386,6 +389,12 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         }
     }, [isOpen])
 
+    React.useEffect(() => {
+        if (isFirstChat) {
+            setOpen(true)
+        }
+    }, [isFirstChat, setOpen])
+
     // Can't point at and use VSCodeButton type with 'ref'
 
     const restoreFocusTarget = React.useRef<any>(null)
@@ -394,12 +403,23 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         restoreFocusTarget.current?.focus()
     }, [setOpen])
 
+    const onKeyDown = React.useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            // Close the popup on escape
+            if (event.key === 'Escape') {
+                handleDismiss()
+            }
+        },
+        [handleDismiss]
+    )
+
     return (
-        <div className={classNames(popupStyles.popupHost)}>
+        <div className={classNames(popupStyles.popupHost)} onKeyDown={onKeyDown}>
             <PopupFrame
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
                 classNames={[popupStyles.popupTrail, styles.popup]}
+                isFirstChat={isFirstChat}
             >
                 <div className={styles.container}>
                     <div>
@@ -446,9 +466,30 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             </PopupFrame>
             <VSCodeButton
                 className={classNames(
-                    popupStyles.popupHost,
+                    styles.settingsBtns,
+                    styles.settingsIndicator,
+                    enabled && styles.settingsIndicatorActive
+                )}
+                onClick={() => {
+                    setEnabled(!enabled)
+                    // Log when a user clicks on the Enhanced Context toggle
+                    getVSCodeAPI().postMessage({
+                        command: 'event',
+                        eventName: 'CodyVSCodeExtension:useEnhancedContextInputToggler:clicked',
+                        properties: { useEnhancedContext: !enabled },
+                    })
+                }}
+                appearance="icon"
+                type="button"
+                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}
+            >
+                {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(
+                    styles.settingsBtns,
                     styles.settingsBtn,
-                    enabled && styles.settingsBtnActive
+                    isOpen && styles.settingsBtnActive
                 )}
                 appearance="icon"
                 type="button"
@@ -456,8 +497,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 title="Configure Enhanced Context"
                 ref={restoreFocusTarget}
             >
-                <i className="codicon codicon-sparkle" />
-                {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}
+                <i className="codicon codicon-chevron-down" />
             </VSCodeButton>
         </div>
     )

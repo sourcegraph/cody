@@ -129,8 +129,8 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 .context-button {
     color: var(--button-primary-background);
     position: absolute;
-    right: 0.3rem;
-    bottom: 0.3rem;
+    right: 0.3125rem;
+    bottom: 0.3125rem;
     fill: currentColor;
     background: none;
     border: none;
@@ -205,7 +205,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     height: 2rem;
     width: 2rem;
 
-    margin-left: 0.5rem;
+    margin-left: 0.3125rem;
 
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
