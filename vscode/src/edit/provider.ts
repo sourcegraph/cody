@@ -177,6 +177,7 @@ export class EditProvider {
                 responseText: response,
                 ...countCode(response),
             }
+            // TODO: Confirm that this is only sent for dotcom
             telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', metadata, {
                 hasV2Event: true,
             })
