@@ -13,7 +13,12 @@ import { URI } from 'vscode-uri'
 import { isNode16 } from './isNode16'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
-import type { CustomChatCommandResult, CustomEditCommandResult, EditTask } from './protocol-alias'
+import type {
+    CustomChatCommandResult,
+    CustomEditCommandResult,
+    EditTask,
+    NetworkRequest,
+} from './protocol-alias'
 
 const explainPollyError = `
 
@@ -149,6 +154,7 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
             customHeaders: {},
         })
+
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
@@ -162,6 +168,15 @@ describe('Agent', () => {
         // If you don't have access to this private file then you need to ask
         // for sombody on the Sourcegraph team to help you update the HTTP requests.
         expect(valid?.username).toStrictEqual('olafurpg-testing')
+        afterAll(async () => {
+            const { requests } = await client.request('testing/networkRequests', null)
+            const { telemetryEventsV1, telemetryEventsV2 } = getTelemetryEvents(requests)
+            const expectedEventsV1: any[] = []
+            const expectedEventsV2: any[] = []
+            // assert to see if expectedEvents match telemetryEvents (order does not matter)
+            expect(telemetryEventsV1).toEqual(expect.arrayContaining(expectedEventsV1))
+            expect(telemetryEventsV2).toEqual(expect.arrayContaining(expectedEventsV2))
+        }, 30_000)
     }, 10_000)
 
     describe('Autocomplete', () => {
@@ -1150,6 +1165,15 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+
+        }, 30_000)
+        afterAll(async () => {
+            const { requests } = await client.request('testing/networkRequests', null)
+            const telemetryEvents = getTelemetryEvents(requests)
+            console.log(telemetryEvents)
+            const expectedEvents: any[] = []
+            // assert to see if expectedEvents match telemetryEvents (order does not matter)
+            expect(telemetryEvents).toEqual(expect.arrayContaining(expectedEvents))
         }, 30_000)
     })
 
@@ -1232,6 +1256,15 @@ describe('Agent', () => {
                 disposable.dispose()
             }
         })
+        afterAll(async () => {
+            const { requests } = await client.request('testing/networkRequests', null)
+            const { telemetryEventsV1, telemetryEventsV2 } = getTelemetryEvents(requests)
+            console.log(telemetryEventsV1)
+            console.log(telemetryEventsV2)
+            const expectedEventsV1: any[] = []
+            // assert to see if expectedEvents match telemetryEvents (order does not matter)
+            expect(telemetryEventsV2).toEqual(expect.arrayContaining(expectedEventsV1))
+        }, 30_000)
     })
 
     describe('RateLimitedAgent', () => {
@@ -1258,6 +1291,13 @@ describe('Agent', () => {
         }, 30_000)
 
         afterAll(async () => {
+            const { requests } = await rateLimitedClient.request('testing/networkRequests', null)
+            const { telemetryEventsV1, telemetryEventsV2 } = getTelemetryEvents(requests)
+            console.log(telemetryEventsV1)
+            console.log(telemetryEventsV2)
+            const expectedEventsV1: any[] = []
+            // assert to see if expectedEvents match telemetryEvents (order does not matter)
+            expect(telemetryEventsV2).toEqual(expect.arrayContaining(expectedEventsV1))
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
@@ -1372,6 +1412,23 @@ describe('Agent', () => {
 
         afterAll(async () => {
             const { requests } = await enterpriseClient.request('testing/networkRequests', null)
+            const { telemetryEventsV1, telemetryEventsV2 } = getTelemetryEvents(requests)
+            console.log(telemetryEventsV1)
+            console.log(telemetryEventsV2)
+            const expectedEventsV2 = [
+                'cody.auth.connected',
+                'cody.chat-question.submitted',
+                'cody.chat-question.executed',
+                'cody.command.doc.executed',
+                'cody.fixup.response.hasCode',
+                'cody.fixup.apply.succeeded',
+                'cody.fixup.codeLens.accept',
+                'cody.chat-question.submitted',
+                'cody.chat-question.executed',
+            ]
+            // assert to see if expectedEvents match telemetryEvents (order does not matter)
+            expect(telemetryEventsV2).toEqual(expect.arrayContaining(expectedEventsV2))
+
             const nonServerInstanceRequests = requests
                 .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
@@ -1447,4 +1504,34 @@ function trimEndOfLine(text: string | undefined): string {
         .split('\n')
         .map(line => line.trimEnd())
         .join('\n')
+}
+function getTelemetryEvents(requests: NetworkRequest[]): {
+    telemetryEventsV1: string[]
+    telemetryEventsV2: string[]
+} {
+    const v1Requests = requests.filter(req => req.url.includes('.api/graphql?LogEventMutation'))
+
+    const v2Requests = requests.filter(req => req.url.includes('RecordTelemetryEvents'))
+
+    const v1Events = []
+    for (const req of v1Requests) {
+        if (!req || !req.body) continue
+
+        const { variables } = JSON.parse(req.body)
+        v1Events.push(variables.event)
+    }
+
+    const v2Events = v2Requests.flatMap(req => {
+        if (!req || !req.body) return []
+
+        const { variables } = JSON.parse(req.body)
+        return variables.events.map((event: { feature: string; action: string }) => {
+            return `${event.feature}.${event.action}`
+        })
+    })
+
+    return {
+        telemetryEventsV1: v1Events,
+        telemetryEventsV2: v2Events,
+    }
 }
