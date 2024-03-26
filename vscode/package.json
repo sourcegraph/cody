@@ -890,7 +890,7 @@
         "cody.edit.preInstruction": {
           "order": 7,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
+          "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
           "examples": ["Write all unit tests with Jest instead of detected framework."]
         },
         "cody.codeActions.enabled": {
