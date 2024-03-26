@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    PromptMixin,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
@@ -105,8 +106,17 @@ export class SimpleChatModel {
         this.messages.splice(index)
     }
 
+    /**
+     * Returns a readonly copy of the messages array with prompt mixins applied to the last human message.
+     */
     public getMessages(): readonly ChatMessage[] {
-        return this.messages
+        // Use copy to avoid promptMixin modifying the original messages used for serialization.
+        const messages = [...this.messages]
+        const lastHumanIndex = this.getLastSpeakerMessageIndex('human')
+        if (lastHumanIndex !== undefined) {
+            messages[lastHumanIndex] = PromptMixin.mixInto(messages[lastHumanIndex])
+        }
+        return messages
     }
 
     public getChatTitle(): string {
