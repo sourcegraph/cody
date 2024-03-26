@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
@@ -24,17 +24,9 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
-
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.dblclick()
-
     await chatInput.focus()
     await page.keyboard.type('@')
     await expect(
@@ -203,14 +195,8 @@ test.extend<ExpectedEvents>({
 
 test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
 
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Send a message with an @-mention.
     await chatInput.fill('Explain @mj')
@@ -246,14 +232,8 @@ test('pressing Enter with @-mention menu open selects item, does not submit mess
     sidebar,
 }) => {
     await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
 
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
     await chatInput.fill('Explain @index.htm')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Enter')
@@ -265,9 +245,7 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Submit a message with an @-mention.
     await chatInput.fill('Hello @buzz.ts')
@@ -288,13 +266,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Type a file with range.
     await chatInput.fill('@buzz.ts:2-4')
@@ -322,13 +294,7 @@ test.extend<ExpectedEvents>({
     await sidebarSignin(page, sidebar)
 
     // Open chat.
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatPanelFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatPanelFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
-    const chatInput = chatPanelFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
