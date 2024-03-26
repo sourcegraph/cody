@@ -27,7 +27,7 @@
     border-radius: 2px;
 
     /* Extra right padding to ensure it doesn't overlap with enhanced context button */
-    padding: 0.5rem 32px 0.5rem 0.5rem;
+    padding: 0.5rem 50px 0.5rem 0.5rem;
     font: inherit;
     width: 100%;
     overflow: hidden;
