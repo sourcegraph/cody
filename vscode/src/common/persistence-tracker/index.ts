@@ -1,21 +1,35 @@
 import levenshtein from 'js-levenshtein'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 
 import type {
+    PersistenceEventMetadata,
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
-    TrackedInsertion,
 } from './types'
-import { lines } from './utils'
 
 const MEASURE_TIMEOUTS = [
+    10 * 1000, // 10 seconds
+    20 * 1000, // 20 seconds
     30 * 1000, // 30 seconds
     120 * 1000, // 2 minutes
     300 * 1000, // 5 minutes
     600 * 1000, // 10 minutes
 ]
+
+interface TrackedInsertion<T = string> {
+    id: T
+    uri: vscode.Uri
+    // When a document is rename, the TextDocument instance will still work
+    // however the URI it resolves to will be outdated. Ensure we never use it.
+    document: Omit<vscode.TextDocument, 'uri'>
+    insertedAt: number
+    insertText: string
+    insertRange: vscode.Range
+    latestRange: vscode.Range
+    metadata: PersistenceEventMetadata
+}
 
 export class PersistenceTracker<T = string> implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -45,29 +59,18 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
         insertText,
         insertRange,
         document,
+        metadata = {},
     }: {
         id: T
         insertedAt: number
         insertText: string
         insertRange: vscode.Range
         document: vscode.TextDocument
+        metadata?: PersistenceEventMetadata
     }): void {
         if (insertText.length === 0) {
             return
         }
-
-        // The range for the insertion is relative to the state before the insertion was inserted.
-        // We need to convert it to the state after the insertion was inserted.
-        const textLines = lines(insertText)
-        const latestRange = new vscode.Range(
-            insertRange.start.line,
-            insertRange.start.character,
-            insertRange.end.line + textLines.length - 1,
-
-            textLines.length > 1
-                ? textLines.at(-1)!.length
-                : insertRange.end.character + textLines[0].length
-        )
 
         const trackedInsertion = {
             insertText,
@@ -75,8 +78,9 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
             document,
             id,
             insertedAt,
-            latestRange,
+            latestRange: insertRange,
             uri: document.uri,
+            metadata,
         }
 
         let documentInsertions = this.trackedInsertions.get(document.uri.toString())
@@ -116,7 +120,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            this.logger.onRemoved({ id: trackedInsertion.id })
+            this.logger.onRemoved({ id: trackedInsertion.id, metadata: trackedInsertion.metadata })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
@@ -129,6 +133,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
                 lineCount:
                     trackedInsertion.latestRange.end.line - trackedInsertion.latestRange.start.line + 1,
                 charCount: latestText.length,
+                metadata: trackedInsertion.metadata,
             })
 
             // If the text is not deleted yet and there are more timeouts, schedule a new run.

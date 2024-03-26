@@ -16,10 +16,6 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
-import type {
-    PersistencePresentEventPayload,
-    PersistenceRemovedEventPayload,
-} from '../common/persistence-tracker/types'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -45,19 +41,19 @@ export class FixupController
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
-        onPresent: event => {
-            const task = this.tasks.get(event.id)
-            if (!task) {
-                return
-            }
-            return this.logTaskPersistence(task, event, 'present')
+        onPresent: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
-        onRemoved: event => {
-            const task = this.tasks.get(event.id)
-            if (!task) {
-                return
-            }
-            return this.logTaskPersistence(task, event, 'removed')
+        onRemoved: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
         },
     })
 
@@ -437,24 +433,12 @@ export class FixupController
             insertText: task.replacement,
             insertRange: task.selectionRange,
             document,
+            metadata: {
+                model: task.model,
+                mode: task.mode,
+                intent: task.intent,
+            },
         })
-    }
-
-    private logTaskPersistence(
-        task: FixupTask,
-        event: PersistenceRemovedEventPayload | PersistencePresentEventPayload,
-        type: 'present' | 'removed'
-    ) {
-        const metadata = {
-            ...event,
-            intent: task.intent,
-            mode: task.mode,
-            model: task.model,
-        }
-        telemetryService.log(`CodyVSCodeExtension:fixup:persistence:${type}`, metadata, {
-            hasV2Event: true,
-        })
-        telemetryRecorder.recordEvent('cody.fixup.persistence', type, splitSafeMetadata(metadata))
     }
 
     private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {

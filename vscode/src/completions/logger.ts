@@ -631,11 +631,25 @@ export function accepted(
             onRemoved: logCompletionPersistenceRemovedEvent,
         })
     }
+
+    // The trackedRange for the completion is relative to the state before the completion was inserted.
+    // We need to convert it to the state after the completion was inserted.
+    const textLines = lines(completion.insertText)
+    const insertRange = new vscode.Range(
+        trackedRange.start.line,
+        trackedRange.start.character,
+        trackedRange.end.line + textLines.length - 1,
+
+        textLines.length > 1
+            ? textLines.at(-1)!.length
+            : trackedRange.end.character + textLines[0].length
+    )
+
     persistenceTracker.track({
         id: completionEvent.params.id,
         insertedAt: Date.now(),
         insertText: completion.insertText,
-        insertRange: trackedRange,
+        insertRange,
         document,
     })
 }
