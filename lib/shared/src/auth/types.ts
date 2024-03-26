@@ -15,7 +15,7 @@ export interface AuthStatus {
     requiresVerifiedEmail: boolean
     siteHasCodyEnabled: boolean
     siteVersion: string
-    codyApiVersion: 0 | 1
+    codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
     primaryEmail: string

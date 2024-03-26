@@ -101,7 +101,7 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble(codyApiVersion)
+    const preamble = getSimplePreamble(model, codyApiVersion)
     promptBuilder.tryAddToPrefix(preamble)
 
     const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]

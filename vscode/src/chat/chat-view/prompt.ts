@@ -54,7 +54,7 @@ export class DefaultPrompter implements IPrompter {
                 .getConfiguration('cody.chat')
                 .get('preInstruction')
 
-            const preambleMessages = getSimplePreamble(codyApiVersion, preInstruction)
+            const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(`Preamble length exceeded context window size ${charLimit}`)

@@ -31,10 +31,11 @@ export class ChatClient {
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         const authStatus = this.getAuthStatus()
+        const useApiV1 = authStatus.codyApiVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =
-            params?.model?.startsWith('fireworks/') || authStatus.codyApiVersion >= 1
+            params?.model?.startsWith('fireworks/') || useApiV1
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
@@ -53,7 +54,11 @@ export class ChatClient {
             messages: messagesToSend,
         }
 
-        return this.completions.stream(completionParams, authStatus.codyApiVersion, abortSignal)
+        return this.completions.stream(
+            completionParams,
+            useApiV1 ? authStatus.codyApiVersion : 0,
+            abortSignal
+        )
     }
 }
 
