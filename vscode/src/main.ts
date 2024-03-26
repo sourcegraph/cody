@@ -38,6 +38,7 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { EditManager } from './edit/manager'
+import { registerEditorInput } from './editor-input'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
@@ -222,6 +223,10 @@ const register = async (
         extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+
+    // The in-editor input, used for chat and commands.
+    const editorInput = registerEditorInput(authProvider)
+    disposables.push(editorInput)
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {

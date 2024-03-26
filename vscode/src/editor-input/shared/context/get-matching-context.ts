@@ -1,8 +1,8 @@
 import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import { getFileContextFiles, getSymbolContextFiles } from '../../editor/utils/editor-context'
-import { getLabelForContextItem } from './utils'
+import { getFileContextFiles, getSymbolContextFiles } from '../../../editor/utils/editor-context'
+import { getLabelForContextItem } from '../utils'
 
 const MAX_FUZZY_RESULTS = 20
 

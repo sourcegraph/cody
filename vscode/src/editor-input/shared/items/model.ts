@@ -3,7 +3,12 @@ import * as vscode from 'vscode'
 import type { EditModel, ModelProvider } from '@sourcegraph/cody-shared'
 import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
 import type { GetItemsResult } from '../quick-pick'
-import type { EditModelItem } from './types'
+import type { ModelItem } from './types'
+
+export const MODEL_ITEM: vscode.QuickPickItem = {
+    label: 'Model',
+    alwaysShow: true,
+}
 
 const getModelProviderIcon = (provider: string): string => {
     switch (provider) {
@@ -20,10 +25,7 @@ const getModelProviderIcon = (provider: string): string => {
     }
 }
 
-export const getModelOptionItems = (
-    modelOptions: ModelProvider[],
-    isCodyPro: boolean
-): EditModelItem[] => {
+export const getModelOptionItems = (modelOptions: ModelProvider[], isCodyPro: boolean): ModelItem[] => {
     const allOptions = modelOptions.map(modelOption => {
         const icon = getModelProviderIcon(modelOption.provider)
         return {
@@ -31,6 +33,7 @@ export const getModelOptionItems = (
             description: `by ${modelOption.provider}`,
             alwaysShow: true,
             model: modelOption.model,
+            usage: modelOption.usage,
             modelTitle: modelOption.title,
             codyProOnly: modelOption.codyProOnly,
         }
@@ -39,7 +42,7 @@ export const getModelOptionItems = (
     if (!isCodyPro) {
         return [
             ...allOptions.filter(option => !option.codyProOnly),
-            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as EditModelItem,
+            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as ModelItem,
             ...allOptions.filter(option => option.codyProOnly),
         ]
     }
