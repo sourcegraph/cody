@@ -176,7 +176,8 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
     const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
-    if (contextItem.type === 'file') {
+    // Large file cannot be added to the context file list.
+    if (contextItem.type === 'file' && !contextItem.isTooLarge) {
         return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}`
     }
     if (contextItem.type === 'symbol') {

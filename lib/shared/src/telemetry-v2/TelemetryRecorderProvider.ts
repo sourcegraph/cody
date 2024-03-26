@@ -19,6 +19,8 @@ import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTe
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
 import type { BillingCategory, BillingProduct } from '.'
+import type { AuthStatus } from '../auth/types'
+import { getTier } from './cody-tier'
 
 interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -41,6 +43,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     constructor(
         extensionDetails: ExtensionDetails,
         config: ConfigurationWithAccessToken,
+        getAuthStatus: () => AuthStatus,
         anonymousUserID: string,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
@@ -56,7 +59,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 ? new TestTelemetryExporter()
                 : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
-                new ConfigurationMetadataProcessor(config),
+                new ConfigurationMetadataProcessor(config, getAuthStatus),
                 // Generate timestamps when recording events, instead of serverside
                 new TimestampTelemetryProcessor(),
             ],
@@ -99,6 +102,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     constructor(
         extensionDetails: ExtensionDetails,
         config: ConfigurationWithAccessToken,
+        getAuthStatus: () => AuthStatus,
         anonymousUserID: string
     ) {
         super(
@@ -107,7 +111,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
                 clientVersion: extensionDetails.version,
             },
             new MockServerTelemetryExporter(anonymousUserID),
-            [new ConfigurationMetadataProcessor(config)]
+            [new ConfigurationMetadataProcessor(config, getAuthStatus)]
         )
     }
 }
@@ -117,7 +121,10 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  * automatically attached to all events.
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
-    constructor(private config: Configuration) {}
+    constructor(
+        private config: Configuration,
+        private getAuthStatus: () => AuthStatus
+    ) {}
 
     public processEvent(event: TelemetryEventInput): void {
         if (!event.parameters.metadata) {
@@ -135,6 +142,10 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             {
                 key: 'ollama',
                 value: this.config.experimentalOllamaChat ? 1 : 0,
+            },
+            {
+                key: 'tier',
+                value: getTier(this.getAuthStatus()),
             }
         )
     }
