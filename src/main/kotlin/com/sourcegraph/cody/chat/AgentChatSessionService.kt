@@ -5,7 +5,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -38,21 +37,12 @@ class AgentChatSessionService(private val project: Project) {
 
   fun restoreAllSessions(agent: CodyAgent) {
     chatSessions.forEach { agentChatSession ->
-      val chatModelProvider =
-          HistoryService.getInstance(project)
-              .state
-              .chats
-              .find { it.internalId == agentChatSession.getInternalId() }
-              ?.llm
-              ?.let { llm ->
-                ChatModelsResponse.ChatModelProvider(
-                    default = llm.model == null,
-                    codyProOnly = false,
-                    provider = llm.provider ?: "Default",
-                    title = llm.title ?: "Default",
-                    model = llm.model ?: "")
-              }
-      agentChatSession.restoreAgentSession(agent, chatModelProvider)
+      val chatState =
+          HistoryService.getInstance(project).state.chats.find {
+            it.internalId == agentChatSession.getInternalId()
+          } ?: return
+
+      agentChatSession.updateFromState(agent, chatState)
     }
   }
 

@@ -64,29 +64,6 @@ private constructor(
     fetchLlms()
   }
 
-  fun restoreAgentSession(
-      agent: CodyAgent,
-      chatModelProvider: ChatModelsResponse.ChatModelProvider? = null
-  ) {
-    val messagesToReload =
-        messages
-            .toList()
-            .dropWhile { it.speaker == Speaker.ASSISTANT }
-            .fold(emptyList<ChatMessage>()) { acc, msg ->
-              if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
-            }
-
-    val restoreParams =
-        ChatRestoreParams(
-            // TODO: Change in the agent handling chat restore with null model
-            chatModelProvider?.model,
-            messagesToReload,
-            UUID.randomUUID().toString())
-    val newConnectionId = agent.server.chatRestore(restoreParams)
-    connectionId.getAndSet(newConnectionId)
-    fetchLlms()
-  }
-
   fun getPanel(): ChatPanel = chatPanel
 
   override fun getConnectionId(): ConnectionId? = connectionId.get().getNow(null)
@@ -169,15 +146,13 @@ private constructor(
         if (extensionMessage.messages?.isNotEmpty() == true &&
             extensionMessage.isMessageInProgress == false) {
           getCancellationToken().dispose()
-        } else {
-          if (extensionMessage.chatID != null && extensionMessage.messages != null) {
-            extensionMessage.messages.forEachIndexed { index, incomingMessage ->
-              val sessionMessage = messages.getOrNull(index)
-              if (sessionMessage != incomingMessage) {
-                ApplicationManager.getApplication().invokeLater {
-                  addMessageAtIndex(incomingMessage, index)
-                }
-              }
+        }
+
+        extensionMessage.messages.orEmpty().forEachIndexed { index, incomingMessage ->
+          val sessionMessage = messages.getOrNull(index)
+          if (sessionMessage != incomingMessage) {
+            ApplicationManager.getApplication().invokeLater {
+              addMessageAtIndex(incomingMessage, index)
             }
           }
         }
@@ -290,12 +265,22 @@ private constructor(
     }
   }
 
+  fun updateFromState(agent: CodyAgent, state: ChatState) {
+    val newConnectionId = restoreChatSession(agent, state)
+    connectionId.getAndSet(newConnectionId)
+    fetchLlms()
+  }
+
   companion object {
     @RequiresEdt
-    fun createNew(project: Project): AgentChatSession {
+    fun createNew(
+        project: Project,
+        runWithConnectionId: (ConnectionId) -> Unit = {}
+    ): AgentChatSession {
       val connectionId = createNewPanel(project) { it.server.chatNew() }
       val chatSession = AgentChatSession(project, connectionId)
       AgentChatSessionService.getInstance(project).addSession(chatSession)
+      connectionId.thenApply(runWithConnectionId::invoke)
       return chatSession
     }
 
@@ -339,48 +324,54 @@ private constructor(
       return chatSession
     }
 
-    @RequiresEdt
+    fun restoreChatSession(
+        agent: CodyAgent,
+        chatState: ChatState
+    ): CompletableFuture<ConnectionId> {
+      val modelFromState =
+          chatState.llm?.let {
+            ChatModelsResponse.ChatModelProvider(
+                default = it.model == null,
+                codyProOnly = false,
+                provider = it.provider,
+                title = it.title,
+                model = it.model ?: "")
+          }
+
+      val chatMessages =
+          chatState.messages.map { message ->
+            val parsed =
+                when (val speaker = message.speaker) {
+                  MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
+                  MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
+                  else -> error("unrecognized speaker $speaker")
+                }
+
+            ChatMessage(speaker = parsed, message.text)
+          }
+
+      val messages =
+          chatMessages
+              .dropWhile { it.speaker == Speaker.ASSISTANT }
+              .fold(emptyList<ChatMessage>()) { acc, msg ->
+                if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
+              }
+
+      val restoreParams = ChatRestoreParams(modelFromState?.model, messages, chatState.internalId!!)
+      return agent.server.chatRestore(restoreParams)
+    }
+
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
+
       val agentChatSession = CompletableFuture<AgentChatSession>()
       createNewPanel(project) { codyAgent ->
-        val newConnectionId = codyAgent.server.chatNew()
-        val modelFromState =
-            state.llm?.let {
-              ChatModelsResponse.ChatModelProvider(
-                  default = it.model == null,
-                  codyProOnly = false,
-                  provider = it.provider,
-                  title = it.title,
-                  model = it.model ?: "")
-            }
+        val dummyConnectionId = codyAgent.server.chatNew()
+        val chatSession = AgentChatSession(project, dummyConnectionId, state.internalId!!)
 
-        val chatSession =
-            AgentChatSession(project, newConnectionId, state.internalId!!, modelFromState)
-        val chatMessages =
-            state.messages.map { message ->
-              val parsed =
-                  when (val speaker = message.speaker) {
-                    MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
-                    MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
-                    else -> error("unrecognized speaker $speaker")
-                  }
-
-              ChatMessage(speaker = parsed, message.text)
-            }
-        chatSession.messages.addAll(chatMessages)
-        ApplicationManager.getApplication().invokeLater {
-          chatSession.chatPanel.addAllMessages(chatMessages)
-        }
-
-        if (modelFromState?.model.isNullOrEmpty()) {
-          chatSession.restoreAgentSession(codyAgent)
-        } else {
-          chatSession.restoreAgentSession(codyAgent, modelFromState)
-        }
-
+        chatSession.updateFromState(codyAgent, state)
         AgentChatSessionService.getInstance(project).addSession(chatSession)
         agentChatSession.complete(chatSession)
-        newConnectionId
+        dummyConnectionId
       }
       return agentChatSession.completeOnTimeout(null, 15, TimeUnit.SECONDS).get()
     }

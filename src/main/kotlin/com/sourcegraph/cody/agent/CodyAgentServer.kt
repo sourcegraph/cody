@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -73,11 +74,11 @@ interface CodyAgentServer {
   @JsonRequest("command/execute")
   fun commandExecute(params: CommandExecuteParams): CompletableFuture<Any?>
 
-  @JsonRequest("commands/explain") fun commandsExplain(): CompletableFuture<String>
+  @JsonRequest("commands/explain") fun commandsExplain(): CompletableFuture<ConnectionId>
 
-  @JsonRequest("commands/test") fun commandsTest(): CompletableFuture<String>
+  @JsonRequest("commands/test") fun commandsTest(): CompletableFuture<ConnectionId>
 
-  @JsonRequest("commands/smell") fun commandsSmell(): CompletableFuture<String>
+  @JsonRequest("commands/smell") fun commandsSmell(): CompletableFuture<ConnectionId>
 
   @JsonRequest("commands/document") fun commandsDocument(): CompletableFuture<EditTask>
 
@@ -92,7 +93,8 @@ interface CodyAgentServer {
   @JsonRequest("chat/models")
   fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>
 
-  @JsonRequest("chat/restore") fun chatRestore(params: ChatRestoreParams): CompletableFuture<String>
+  @JsonRequest("chat/restore")
+  fun chatRestore(params: ChatRestoreParams): CompletableFuture<ConnectionId>
 
   @JsonRequest("attribution/search")
   fun attributionSearch(
