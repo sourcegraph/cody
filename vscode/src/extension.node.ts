@@ -2,7 +2,7 @@
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
@@ -40,9 +40,10 @@ export function activate(
     // NOTE: local embeddings are only going to be supported in VSC for now.
     // Until we revisit this decision, we disable local embeddings for all agent
     // clients like the JetBrains plugin.
-    const isLocalEmbeddingsDisabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.advanced.agent.running', false)
+    // const isLocalEmbeddingsDisabled = vscode.workspace
+    //     .getConfiguration()
+    //     .get<boolean>('cody.advanced.agent.running', false)
+    const isLocalEmbeddingsDisabled = false
 
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled

@@ -111,6 +111,9 @@ importers:
       '@types/js-levenshtein':
         specifier: ^1.1.1
         version: 1.1.1
+      async-mutex:
+        specifier: ^0.4.0
+        version: 0.4.0
       commander:
         specifier: ^11.1.0
         version: 11.1.0

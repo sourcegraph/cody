@@ -39,6 +39,19 @@ interface GetEnhancedContextOptions {
     contextRanking: ContextRankingController | null
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
+
+export async function logAllEnhancedContextItems(
+    text: string,
+    allContext: ContextItem[]
+): Promise<void> {
+    const logObj = {
+        logUnixTimestamp: new Date().valueOf(),
+        question: text,
+        contextCandidates: allContext,
+    }
+    logDebug('EnhancedContextAllContext', JSON.stringify(logObj))
+}
+
 export async function getEnhancedContext({
     strategy,
     editor,
@@ -118,7 +131,9 @@ export async function getEnhancedContext({
         }
 
         const priorityContext = await getPriorityContext(text, editor, searchContext)
-        return priorityContext.concat(searchContext)
+        const allContext = priorityContext.concat(searchContext)
+        logAllEnhancedContextItems(text, allContext)
+        return allContext
     })
 }
 
@@ -235,6 +250,7 @@ async function getEnhancedContextFromRanker({
         const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
             contextRanking.rankContextItems(text, allContext)
         )
+        logAllEnhancedContextItems(text, allContext)
         return rankedContext
     })
 }
@@ -512,6 +528,7 @@ function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
 
     return containsQuestionIndicator && containsProjectSignifier
 }
+
 async function getReadmeContext(): Promise<ContextItem[]> {
     // global pattern for readme file
     const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'

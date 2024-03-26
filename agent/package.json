@@ -51,7 +51,8 @@
     "minimatch": "^9.0.3",
     "pretty-ms": "^8.0.0",
     "uuid": "^9.0.0",
-    "vscode-uri": "^3.0.7"
+    "vscode-uri": "^3.0.7",
+    "async-mutex": "^0.4.0"
   },
   "devDependencies": {
     "@types/dedent": "^0.7.0",

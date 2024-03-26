@@ -122,7 +122,11 @@ export type ExtensionMessage =
           query: string
       }
     | { type: 'index-updated'; scopeDir: string }
-    | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
+    | {
+          context: any
+          type: 'enhanced-context'
+          enhancedContextStatus: EnhancedContextContextT
+      }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'webview-state'; isActive: boolean }
