@@ -634,7 +634,11 @@ const register = async (
         })
     }
 
-    await autocompleteSetup
+    const [_, extensionClientDispose] = await Promise.all([
+        autocompleteSetup,
+        platform.extensionClient.provide({ enterpriseContextFactory }),
+    ])
+    disposables.push(extensionClientDispose)
 
     return {
         disposable: vscode.Disposable.from(...disposables),

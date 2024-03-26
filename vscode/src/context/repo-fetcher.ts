@@ -7,10 +7,10 @@ export interface Repo {
 }
 
 export enum RepoFetcherState {
-    Paused = 0,
-    Fetching = 1,
-    Errored = 2,
-    Complete = 3,
+    Paused = 'paused',
+    Fetching = 'fetching',
+    Errored = 'errored',
+    Complete = 'complete',
 }
 
 // RepoFetcher

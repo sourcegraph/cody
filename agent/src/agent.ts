@@ -36,7 +36,7 @@ import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
-import type { ExtensionClient } from '../../vscode/src/extension-client'
+import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
@@ -961,6 +961,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 limitHit: result?.attribution?.limitHit || false,
             }
         })
+
+        this.registerAuthenticatedRequest(
+            'remoteRepo/list',
+            async ({ query, first, afterId }, cancelToken) => {
+                return this.extension.enterpriseContextFactory.repoSearcher.list(query, first, afterId)
+            }
+        )
     }
 
     // ExtensionClient callbacks.
@@ -972,6 +979,45 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): FixupControlApplicator {
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
+    }
+
+    private maybeExtension: ExtensionObjects | undefined
+
+    public async provide(extension: ExtensionObjects): Promise<vscode.Disposable> {
+        this.maybeExtension = extension
+
+        const disposables: vscode.Disposable[] = []
+
+        const repoSearcher = this.extension.enterpriseContextFactory.repoSearcher
+        disposables.push(
+            repoSearcher.onFetchStateChanged(({ state, error }) => {
+                this.notify('remoteRepo/didChangeState', {
+                    state,
+                    error: errorToCodyError(error),
+                })
+            }),
+            repoSearcher.onRepoListChanged(() => {
+                this.notify('remoteRepo/didChange', {})
+            }),
+            {
+                dispose: () => {
+                    this.maybeExtension = undefined
+                },
+            }
+        )
+
+        return vscode.Disposable.from(...disposables)
+    }
+
+    /**
+     * Gets provided extension objects. This may only be called after
+     * registration is complete.
+     */
+    private get extension(): ExtensionObjects {
+        if (!this.maybeExtension) {
+            throw new Error('Extension registration not yet complete')
+        }
+        return this.maybeExtension
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
