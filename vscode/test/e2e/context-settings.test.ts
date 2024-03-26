@@ -29,7 +29,7 @@ test.extend<ExpectedEvents>({
 
     // Enhanced context should be enabled by default.
     await expect(enhancedContextCheckbox).toBeChecked()
-    await page.keyboard.press('Space')
+    await page.keyboard.press('Space') // Disable enhanced context
     // The keyboard should toggle the checkbox, but not dismiss the popup.
     await expect(enhancedContextCheckbox).not.toBeChecked()
     await expect(enhancedContextCheckbox).toBeVisible()
@@ -38,9 +38,21 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Escape')
     // Closing the enhanced context settings should close the dialog...
     await expect(enhancedContextCheckbox).not.toBeVisible()
-    // ... and focus the button which re-opens it.
+    // ... and the focus is moved to the chat input on close.
     const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
+    await expect(contextSettingsButton.and(page.locator(':focus'))).not.toBeVisible()
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await expect(chatInput).toBeFocused()
+
+    // Tab should move the focus to the Enhanced Context Toggle button
+    await chatInput.press('Tab')
+    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
+
+    // Enter/Space key should toggle the setting
+    await page.keyboard.press('Space') // From disabled to enabled
+    await expect(chatFrame.getByTitle('Disable Enhanced Context')).toBeFocused()
+    await page.keyboard.press('Enter') // From enabled to disabled
+    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
 })
 
 test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
