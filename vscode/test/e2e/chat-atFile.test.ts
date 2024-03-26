@@ -310,10 +310,10 @@ test.extend<ExpectedEvents>({
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover({
-        // Longer timeout because sometimes tsserver takes a while to become ready.
-        timeout: 15000,
-    })
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Add timeout because sometimes tsserver takes a while to become ready.
+    await page.waitForTimeout(15000)
 
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
@@ -329,7 +329,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByRole('heading', { name: /^No symbols found/ })).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
-    await chatInput.fill('@#fizzb')
+    await chatInput.pressSequentially('@#fizzb', { delay: 20 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
