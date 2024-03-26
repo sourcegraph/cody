@@ -47,8 +47,6 @@ test('existing installs should show the update toast when the last dismissed ver
         }, versionUpdateStorageKey)
     ).toBe('0.7')
 
-    await page.waitForTimeout(1000)
-
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('hey buddy')
     await chatInput.press('Enter')

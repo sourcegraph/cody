@@ -310,10 +310,13 @@ test.extend<ExpectedEvents>({
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await page.getByRole('tab', { name: 'buzz.ts' }).click()
 
-    // Add timeout because sometimes tsserver takes a while to become ready.
-    await page.waitForTimeout(15000)
+    // Wait for the tsserver to become ready: when loading status disappears
+    await expect(page.getByRole('button', { name: 'Editor Language Status: Loading' })).toBeVisible()
+    await page.waitForSelector('button[aria-label="Editor Language Status: Loading"]', {
+        state: 'hidden',
+    })
 
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
@@ -329,7 +332,8 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByRole('heading', { name: /^No symbols found/ })).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
-    await chatInput.pressSequentially('@#fizzb', { delay: 20 })
+    await chatInput.clear()
+    await chatInput.pressSequentially('@#fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
