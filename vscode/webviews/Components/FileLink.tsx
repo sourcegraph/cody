@@ -32,7 +32,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         )
     }
 
-    const pathToDisplay = `@${displayPath(uri)}`
+    const pathToDisplay = displayPath(uri)
     const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
     const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
     const { href, target } = webviewOpenURIForContextItem({ uri, range })
