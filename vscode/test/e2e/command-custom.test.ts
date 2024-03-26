@@ -165,15 +165,15 @@ test.extend<ExpectedEvents>({
 
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
     // Show the current file numbers used as context
-    await expect(chatPanel.getByText('✨ Context: 56 lines from 5 files')).toBeVisible()
-    await chatPanel.getByText('✨ Context: 56 lines from 5 files').click()
+    await expect(chatPanel.getByText('Context: 56 lines from 5 files')).toBeVisible()
+    await chatPanel.getByText('Context: 56 lines from 5 files').click()
     // Display the context files to confirm no hidden files are included
-    await expect(chatPanel.locator('span').filter({ hasText: '@.mydotfile:1-2' })).not.toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@error.ts:1-9' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@Main.java:1-9' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.test.ts:1-12' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@buzz.ts:1-15' })).toBeVisible()
-    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:1-11' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'error.ts:1-9' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'Main.java:1-9' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'buzz.test.ts:1-12' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'buzz.ts:1-15' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
 
     /* Test: context.filePath with filePath command */
 
@@ -184,7 +184,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
-    await expect(chatPanel.getByText('✨ Context: 12 lines from 2 files')).toBeVisible()
+    await expect(chatPanel.getByText('Context: 12 lines from 2 files')).toBeVisible()
 
     /* Test: context.directory with directory command */
 
@@ -194,15 +194,15 @@ test.extend<ExpectedEvents>({
     await page.getByPlaceholder('Search command to run...').fill('directory')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
-    await expect(chatPanel.getByText('✨ Context: 12 lines from 2 file')).toBeVisible()
-    await chatPanel.getByText('✨ Context: 12 lines from 2 file').click()
+    await expect(chatPanel.getByText('Context: 12 lines from 2 file')).toBeVisible()
+    await chatPanel.getByText('Context: 12 lines from 2 file').click()
     await expect(
-        chatPanel.locator('span').filter({ hasText: withPlatformSlashes('@lib/batches/env/var.go:1') })
+        chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
     const chatContext = chatPanel.locator('details').last()
     await chatContext
-        .getByRole('link', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
+        .getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
@@ -215,11 +215,11 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context
-    await expect(chatPanel.getByText('✨ Context: 12 lines from 2 files')).toBeVisible()
-    await chatPanel.getByText('✨ Context: 12 lines from 2 files').click()
-    await expect(chatContext.getByRole('link', { name: '@index.html:1-11' })).toBeVisible()
+    await expect(chatPanel.getByText('Context: 12 lines from 2 files')).toBeVisible()
+    await chatPanel.getByText('Context: 12 lines from 2 files').click()
+    await expect(chatContext.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('@lib/batches/env/var.go:1') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
 })
 
@@ -314,10 +314,10 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
 
     // Check the context list to confirm the terminal output is added as file
     const panel = getChatPanel(page)
-    await expect(panel.getByText('✨ Context: 1 line from 2 files')).toBeVisible()
-    await panel.getByText('✨ Context: 1 line from 2 files').click()
+    await expect(panel.getByText('Context: 1 line from 2 files')).toBeVisible()
+    await panel.getByText('Context: 1 line from 2 files').click()
     const chatContext = panel.locator('details').last()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('@/terminal-output') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('/terminal-output') })
     ).toBeVisible()
 })
