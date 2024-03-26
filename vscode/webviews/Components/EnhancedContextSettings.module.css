@@ -212,10 +212,6 @@
     width: 0.8rem;
 }
 
-.settings-btn-active {
-    outline: 2px solid var(--vscode-inputOption-activeBorder);
-}
-
 .settings-indicator i, .settings-btn i {
     width: 16px;
     height: 16px;
@@ -225,6 +221,11 @@
     color: var(--vscode-inputOption-activeForeground);
     background-color: var(--vscode-inputOption-activeBackground);
 }
+
+.settings-btn-active, .settings-indicator:focus, .settings-btn:focus {
+    outline: 2px solid var(--vscode-inputOption-activeBorder);
+}
+
 
 .glowy-dot {
     width: 6px;

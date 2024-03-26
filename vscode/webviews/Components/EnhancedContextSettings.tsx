@@ -1,4 +1,5 @@
 import * as React from 'react'
+import SparkleSlashIcon from '../icons/sparkle-slash.svg'
 
 import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -358,7 +359,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             const shouldEnable = !!event.target.checked
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
-                setEnabled(enabled)
+                setEnabled(shouldEnable)
                 // Log when a user clicks on the Enhanced Context toggle
                 getVSCodeAPI().postMessage({
                     command: 'event',
@@ -393,7 +394,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            restoreFocusTarget.current?.focus()
             autofocusTarget.current?.focus()
         }
     }, [isOpen])
@@ -475,9 +475,13 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 }}
                 appearance="icon"
                 type="button"
-                title="Enable Enhanced Context"
+                title={enabled ? 'Disable' : 'Enable' + ' Enhanced Context'}
             >
-                <i className="codicon codicon-sparkle" />
+                {enabled ? (
+                    <i className="codicon codicon-sparkle" />
+                ) : (
+                    <img src={SparkleSlashIcon} alt="Enhanced Context is disabled." />
+                )}
             </VSCodeButton>
             <VSCodeButton
                 className={classNames(
