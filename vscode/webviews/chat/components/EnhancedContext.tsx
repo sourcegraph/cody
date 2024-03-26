@@ -19,6 +19,7 @@ export interface FileLinkProps {
     source?: string
     range?: RangeData
     title?: string
+    isTooLarge?: boolean
 }
 
 export const EnhancedContext: React.FunctionComponent<{
@@ -30,17 +31,20 @@ export const EnhancedContext: React.FunctionComponent<{
         return
     }
 
-    // Enhanced Context are context added by one of Cody's context fetchers.
-    // NOTE: sparkle should only be added to messages that use enhanced context.
-    // NOTE: Core chat commands (e.g. /explain and /smell) use local context only.
-    // Check if the filteredFiles only contain local context (non-enhanced context).
-    const localContextType = ['user', 'selection', 'terminal', 'editor']
-    const localContextOnly = contextFiles.every(file => localContextType.includes(file.type))
-    const sparkle = localContextOnly ? '' : '✨ '
-    const prefix = sparkle + 'Context: '
+    const usedContext = []
+    const excludedAtContext = []
+    for (const f of contextFiles) {
+        if (f.type === 'file' && f.source === 'user' && f.isTooLarge) {
+            excludedAtContext.push(f)
+        } else {
+            usedContext.push(f)
+        }
+    }
+
+    const prefix = 'Context: '
     // It checks if file.range exists first before accessing start and end.
     // If range doesn't exist, it adds 0 lines for that file.
-    const lineCount = contextFiles.reduce(
+    const lineCount = usedContext.reduce(
         (total, file) =>
             total +
             (file.range
@@ -51,10 +55,14 @@ export const EnhancedContext: React.FunctionComponent<{
                 : 0),
         0
     )
-    const fileCount = new Set(contextFiles.map(file => file.uri.toString())).size
+    const fileCount = new Set(usedContext.map(file => file.uri.toString())).size
     const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
     const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
-    const title = lineCount ? `${lines} from ${files}` : `${files}`
+    let title = lineCount ? `${lines} from ${files}` : `${files}`
+    if (excludedAtContext.length) {
+        const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
+        title = `${title} - ⚠️ ${excludedAtContext.length} ${excludedAtUnit} excluded`
+    }
 
     return (
         <TranscriptAction
@@ -73,6 +81,7 @@ export const EnhancedContext: React.FunctionComponent<{
                         source={file.source}
                         range={file.range}
                         title={file.title}
+                        isTooLarge={file.type === 'file' && file.isTooLarge && file.source === 'user'}
                     />
                 ),
             }))}

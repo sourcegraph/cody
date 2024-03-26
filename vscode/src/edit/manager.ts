@@ -18,7 +18,7 @@ import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
@@ -162,13 +162,22 @@ export class EditManager implements vscode.Disposable {
         const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
         const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
         const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
-        telemetryService.log(
-            `CodyVSCodeExtension:command:${eventName}:executed`,
-            { source },
-            { hasV2Event: true }
-        )
+
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+        }
+        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
+            hasV2Event: true,
+        })
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            privateMetadata: { source },
+            metadata,
+            privateMetadata: {
+                ...privateMetadata,
+                model: task.model,
+            },
         })
 
         const provider = this.getProviderForTask(task)

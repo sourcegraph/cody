@@ -11,10 +11,12 @@ import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
+import { PersistenceTracker } from '../common/persistence-tracker'
+import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -39,6 +41,22 @@ export class FixupController
     private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        onPresent: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
+        },
+        onRemoved: ({ metadata, ...event }) => {
+            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', safeMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
+        },
+    })
 
     private _disposables: vscode.Disposable[] = []
 
@@ -131,20 +149,36 @@ export class FixupController
             editBuilder.replace(task.selectionRange, task.original)
         })
 
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+            ...countCode(replacementText),
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', {
+            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed')
+            telemetryRecorder.recordEvent('cody.fixup.revert', 'failed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
             return
         }
 
-        const tokenCount = countCode(replacementText)
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', tokenCount, {
+        telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata: tokenCount,
+            metadata,
+            privateMetadata: {
+                ...privateMetadata,
+                model: task.model,
+            },
         })
 
         this.setTaskState(task, CodyTaskState.finished)
@@ -374,12 +408,25 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
-    private logTaskCompletion(task: FixupTask, editOk: boolean): void {
+    private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+            ...countCode(task.replacement || ''),
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', undefined, {
+            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', legacyMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed')
+            telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
 
             // TODO: Try to recover, for example by respinning
             void vscode.window.showWarningMessage('edit did not apply')
@@ -390,23 +437,47 @@ export class FixupController
             return
         }
 
-        const codeCount = countCode(task.replacement.trim())
-        const source = task.source
-
-        telemetryService.log(
-            'CodyVSCodeExtension:fixup:applied',
-            { ...codeCount, source },
-            { hasV2Event: true }
-        )
+        telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
-            metadata: {
-                lineCount: codeCount.lineCount,
-                charCount: codeCount.charCount,
-            },
+            metadata,
             privateMetadata: {
-                // TODO: generate numeric ID representing source so that it
-                // can be included in metadata for default export.
-                source,
+                ...privateMetadata,
+                model: task.model,
+            },
+        })
+
+        /**
+         * Default the tracked range to the `selectionRange`.
+         * Note: This is imperfect because an Edit doesn't necessarily change all characters in a `selectionRange`.
+         * We should try to chunk actual _changes_ and track these individually.
+         * Issue: https://github.com/sourcegraph/cody/issues/3513
+         */
+        let trackedRange = task.selectionRange
+
+        if (task.mode === 'insert' || task.mode === 'add') {
+            const insertionPoint = task.insertionPoint || task.selectionRange.start
+            const textLines = lines(task.replacement)
+            trackedRange = new vscode.Range(
+                insertionPoint,
+                new vscode.Position(
+                    insertionPoint.line + textLines.length - 1,
+                    textLines.length > 1
+                        ? textLines.at(-1)!.length
+                        : insertionPoint.character + textLines[0].length
+                )
+            )
+        }
+
+        this.persistenceTracker.track({
+            id: task.id,
+            insertedAt: Date.now(),
+            insertText: task.replacement,
+            insertRange: trackedRange,
+            document,
+            metadata: {
+                model: task.model,
+                mode: task.mode,
+                intent: task.intent,
             },
         })
     }
@@ -454,7 +525,7 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, editOk)
+            this.logTaskCompletion(task, document, editOk)
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -566,7 +637,7 @@ export class FixupController
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        this.logTaskCompletion(task, editOk)
+        this.logTaskCompletion(task, document, editOk)
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once

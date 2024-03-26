@@ -1,21 +1,7 @@
 .context-item-mention-node {
     color: var(--link-foreground);
-    position: relative;
-
-}
-
-.context-item-mention-node::before {
-    content: '';
-    background-color: var(--link-foreground);
+    background: color-mix(in srgb, currentColor 15%, transparent);
     border-radius: 3px;
-    outline: 1px solid var(--link-foreground);
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    opacity: 0.2;
-    pointer-events: none
 }
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {

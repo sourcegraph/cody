@@ -149,7 +149,8 @@ export class PromptBuilder {
         return {
             limitReached,
             used,
-            ignored,
+            // Marks excluded context items as too large to be displayed in UI
+            ignored: ignored.map(c => ({ ...c, isTooLarge: true })),
             duplicate,
         }
     }

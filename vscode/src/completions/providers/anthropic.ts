@@ -45,7 +45,11 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export const SINGLE_LINE_STOP_SEQUENCES = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG]
+export const SINGLE_LINE_STOP_SEQUENCES = [
+    anthropic.HUMAN_PROMPT,
+    CLOSING_CODE_TAG,
+    MULTILINE_STOP_SEQUENCE,
+]
 
 export const MULTI_LINE_STOP_SEQUENCES = [
     anthropic.HUMAN_PROMPT,
@@ -60,7 +64,7 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
 
 let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
 
-interface AnthropicOptions {
+export interface AnthropicOptions {
     model?: string // The model identifier that is being used by the server's site config.
     maxContextTokens?: number
     client: Pick<CodeCompletionsClient, 'complete'>
@@ -299,6 +303,7 @@ function isAllowlistedModel(model: string | undefined): boolean {
         case 'anthropic/claude-instant-1.2':
         case 'anthropic/claude-instant-v1':
         case 'anthropic/claude-instant-1':
+        case 'anthropic/claude-3-haiku-20240307':
             return true
     }
     return false

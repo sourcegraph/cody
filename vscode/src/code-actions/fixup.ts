@@ -35,7 +35,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         // const importDiagnostics = diagnostics.filter(diagnostic => diagnostic.message.includes('import'))
 
         // Expand range by getting the folding range contains the target (error) area
-        const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
+        const targetAreaRange = await getSmartSelection(document.uri, range.start)
 
         const newRange = targetAreaRange
             ? new vscode.Range(targetAreaRange.start, targetAreaRange.end)
