@@ -41,11 +41,7 @@ describe('getFileContextFiles', () => {
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
-        const results = await getFileContextFiles(
-            query,
-            maxResults,
-            new vscode.CancellationTokenSource().token
-        )
+        const results = await getFileContextFiles(query, maxResults)
 
         return results.map(f => uriBasename(f.uri))
     }
@@ -175,7 +171,6 @@ describe('filterLargeFiles', () => {
             type: 'file',
             uri: largeTextFile.uri,
             isTooLarge: true,
-            size: oneByteOverTokenLimit,
         })
     })
 })

@@ -56,7 +56,6 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 export async function getFileContextFiles(
     query: string,
     maxResults: number,
-    cancellationToken: vscode.CancellationToken,
     charsLimit?: number
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
@@ -273,7 +272,6 @@ export async function filterLargeFiles(
         // Check if file contains more characters than the token limit based on fileStat.size
         // and set {@link ContextItemFile.isTooLarge} for webview to display file size
         // warning.
-        cf.size = fileStat.size
         if (fileStat.size > charsLimit) {
             cf.isTooLarge = true
         }

@@ -16,6 +16,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
+    // The maximum number of characters in the context window for the current model.
     public readonly maxChars: number
     constructor(
         public modelID: string,
