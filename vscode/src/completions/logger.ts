@@ -26,6 +26,10 @@ import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
+import {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+} from '../common/persistence-tracker/types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -220,7 +224,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
         params
     )
 }
-export function logCompletionPersistencePresentEvent({}: PersistencePresentEventPayload): void {
+export function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -606,7 +610,7 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker(vscode.workspace, {
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace, {
             onPresent: logCompletionPersistencePresentEvent,
             onRemoved: logCompletionPersistenceRemovedEvent,
         })
