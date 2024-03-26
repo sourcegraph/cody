@@ -158,26 +158,6 @@ interface PartiallyAcceptedEventPayload extends SharedEventPayload {
     acceptedLengthDelta: number
 }
 
-/** Emitted when a completion is still present at a specific time interval after insertion */
-interface PersistencePresentEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-    /** How many seconds after the acceptance was the check performed */
-    afterSec: number
-    /** Levenshtein distance between the current document state and the accepted completion */
-    difference: number
-    /** Number of lines still in the document */
-    lineCount: number
-    /** Number of characters still in the document */
-    charCount: number
-}
-
-/** Emitted when a completion is no longer present at a specific time interval after insertion */
-interface PersistenceRemovedEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-}
-
 /** Emitted when a completion request returned no usable results */
 interface NoResponseEventPayload extends SharedEventPayload {}
 
@@ -240,7 +220,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
         params
     )
 }
-export function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
+export function logCompletionPersistencePresentEvent({}: PersistencePresentEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(

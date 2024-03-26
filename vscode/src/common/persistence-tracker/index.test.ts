@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { range } from '../../testutils/textDocument'
 
@@ -7,6 +7,12 @@ import { PersistenceTracker } from '.'
 import { document } from '../../completions/test-helpers'
 
 const insertionId = '123'
+
+const getDocumentRange = (document: vscode.TextDocument): vscode.Range => {
+    const firstLine = document.lineAt(0)
+    const lastLine = document.lineAt(document.lineCount - 1)
+    return new vscode.Range(firstLine.range.start, lastLine.range.end)
+}
 
 describe('PersistenceTracker', () => {
     const onPresentSpy = vi.fn()
@@ -52,7 +58,7 @@ describe('PersistenceTracker', () => {
             id: insertionId,
             insertedAt: Date.now(),
             insertText: 'foo',
-            insertRange: range(0, 0, 0, 0),
+            insertRange: getDocumentRange(doc),
             document: doc,
         })
 
@@ -61,6 +67,7 @@ describe('PersistenceTracker', () => {
             charCount: 3,
             difference: 0,
             lineCount: 1,
+            metadata: {},
         }
 
         vi.advanceTimersByTime(30 * 1000)
@@ -100,7 +107,7 @@ describe('PersistenceTracker', () => {
             id: insertionId,
             insertedAt: Date.now(),
             insertText: 'foo',
-            insertRange: range(0, 0, 0, 0),
+            insertRange: getDocumentRange(doc),
             document: doc,
         })
 
@@ -108,6 +115,7 @@ describe('PersistenceTracker', () => {
             id: '123',
             charCount: 3,
             lineCount: 1,
+            metadata: {},
         }
 
         vi.advanceTimersToNextTimer()
@@ -149,7 +157,7 @@ describe('PersistenceTracker', () => {
             id: insertionId,
             insertedAt: Date.now(),
             insertText: 'foo',
-            insertRange: range(0, 0, 0, 0),
+            insertRange: getDocumentRange(doc),
             document: doc,
         })
 
@@ -184,6 +192,7 @@ describe('PersistenceTracker', () => {
             difference: 1 / 3,
             id: '123',
             lineCount: 1,
+            metadata: {},
         })
         expect(onRemoveSpy).not.toHaveBeenCalled()
     })
@@ -196,7 +205,7 @@ describe('PersistenceTracker', () => {
             id: insertionId,
             insertedAt: Date.now(),
             insertText: 'foo',
-            insertRange: range(0, 0, 0, 0),
+            insertRange: getDocumentRange(doc),
             document: doc,
         })
 
@@ -215,13 +224,14 @@ describe('PersistenceTracker', () => {
             id: insertionId,
             insertedAt: Date.now(),
             insertText: 'foo',
-            insertRange: range(0, 0, 0, 0),
+            insertRange: getDocumentRange(doc),
             document: doc,
         })
 
         vi.advanceTimersToNextTimer()
         expect(onRemoveSpy).toHaveBeenCalledWith({
             id: '123',
+            metadata: {},
         })
         expect(onPresentSpy).not.toHaveBeenCalled()
     })

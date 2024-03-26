@@ -10,8 +10,6 @@ import type {
 } from './types'
 
 const MEASURE_TIMEOUTS = [
-    10 * 1000, // 10 seconds
-    20 * 1000, // 20 seconds
     30 * 1000, // 30 seconds
     120 * 1000, // 2 minutes
     300 * 1000, // 5 minutes
