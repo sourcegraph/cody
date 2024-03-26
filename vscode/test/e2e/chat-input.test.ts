@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
@@ -19,10 +19,7 @@ test.extend<ExpectedEvents>({
 })('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    const [_chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Test that empty chat messages cannot be submitted.
     await chatInput.fill(' ')
@@ -68,13 +65,9 @@ test('chat input focus', async ({ page, sidebar }) => {
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
     await page.click('.badge[aria-label="Cody"]')
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
-
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).hover()
@@ -113,9 +106,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
     async ({ page, sidebar }) => {
         await sidebarSignin(page, sidebar)
 
-        await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-        const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-        const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+        const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+
         const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
 
         // Model selector is initially enabled.

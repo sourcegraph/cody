@@ -31,14 +31,14 @@
 
 .popup-trail {
     left: auto;
-    right: -3px;
+    right: -0.5rem;
 }
 
 .pointy-bit {
     z-index: 3;
 
     position: absolute;
-    left: calc(50% - 6px);
+    right: 0.2rem;
     bottom: 100%;
     rotate: -45deg;
     width: 12px;
@@ -55,6 +55,7 @@
 
 .popup-host {
     position: relative;
+    display: flex;
 }
 
 .row {
