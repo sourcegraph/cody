@@ -440,6 +440,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [chatIDHistory, postMessage]
     )
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: We don't want to re-run this effect.
+    const onEnhancedContextTogglerClick = useCallback((focus: boolean) => {
+        if (!isEnhancedContextOpen && !focus) {
+            setInputFocus(true)
+        }
+        setIsEnhancedContextOpen(focus)
+    }, [])
+
     const [isEditorFocused, setIsEditorFocused] = useState(false)
 
     const isNewChat = transcript.length === 0
@@ -515,7 +523,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
-                                setOpen={setIsEnhancedContextOpen}
+                                setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                                 isFirstChat={transcript.length < 1}
                             />

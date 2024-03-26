@@ -412,11 +412,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         restoreFocusTarget.current?.focus()
     }, [setOpen])
 
-    const displayEnhancedSettingsOnFirstChat =
-        isFirstChat &&
-        (presentationMode === EnhancedContextPresentationMode.Enterprise ||
-            !context.groups?.[0]?.providers.every(p => p.state === 'ready'))
-
     return (
         <div className={classNames(popupStyles.popupHost)}>
             <PopupFrame
@@ -474,14 +469,22 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                     styles.settingsIndicator,
                     enabled && styles.settingsIndicatorActive
                 )}
-                onClick={() => onSetEnabledChanged(!enabled)}
+                onClick={() => {
+                    setOpen(false)
+                    onSetEnabledChanged(!enabled)
+                }}
                 appearance="icon"
                 type="button"
+                title="Enable Enhanced Context"
             >
                 <i className="codicon codicon-sparkle" />
             </VSCodeButton>
             <VSCodeButton
-                className={classNames(styles.settingsBtns, styles.settingsBtn)}
+                className={classNames(
+                    styles.settingsBtns,
+                    styles.settingsBtn,
+                    isOpen && styles.settingsBtnActive
+                )}
                 appearance="icon"
                 type="button"
                 onClick={() => setOpen(!isOpen)}
@@ -489,7 +492,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 ref={restoreFocusTarget}
             >
                 <i className="codicon codicon-chevron-down" />
-                {displayEnhancedSettingsOnFirstChat && isOpen && <div className={styles.glowyDot} />}
             </VSCodeButton>
         </div>
     )

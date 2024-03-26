@@ -61,7 +61,7 @@ export const PopupFrame: React.FunctionComponent<
                         </div>
                     )}
                 </dialog>
-                <div className={isFirstChat ? styles.pointyBitTooltip : styles.pointyBit} />
+                <div className={styles.pointyBit} />
                 <Backdrop dismiss={onDismiss} />
             </>
         )

@@ -53,19 +53,6 @@
     /* no box shadow on this, it relies on overlapping the rest of the popup */
 }
 
-.pointy-bit-tooltip {
-    z-index: 1;
-
-    position: absolute;
-    right: 0.55rem;
-    bottom: 1rem;
-    width: 2px;
-    height: 2rem;
-    pointer-events: none;
-
-    background-color: var(--vscode-inputOption-activeBorder);
-}
-
 .popup-host {
     position: relative;
     display: flex;
