@@ -22,6 +22,7 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: string
+    editPreInstruction: string
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
