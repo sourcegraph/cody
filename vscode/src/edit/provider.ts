@@ -5,7 +5,6 @@ import {
     ModelProvider,
     Typewriter,
     isAbortError,
-    isDotCom,
     posixFilePaths,
     uriBasename,
     wrapInActiveSpan,
@@ -20,7 +19,7 @@ import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
 import { buildInteraction } from './prompt'
@@ -169,25 +168,19 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log(
-                'CodyVSCodeExtension:fixupResponse:hasCode',
-                {
-                    ...countCode(response),
-                    source: this.config.task.source,
-                },
-                {
-                    hasV2Event: true,
-                }
-            )
-            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
-            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
-            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                metadata: countCode(response),
-                privateMetadata: {
-                    source: this.config.task.source,
-                    responseText,
-                },
+            const { task } = this.config
+            const metadata = {
+                model: task.model,
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+                responseText: response,
+                ...countCode(response),
+            }
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', metadata, {
+                hasV2Event: true,
             })
+            telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', splitSafeMetadata(metadata))
         }
 
         const intentsForInsert = ['add', 'test']
