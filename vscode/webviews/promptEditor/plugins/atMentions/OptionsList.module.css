@@ -23,6 +23,7 @@
 }
 
 .item {
+    display: flex;
     min-height: calc(var(--item-height) - 2*var(--item-padding-y));
     padding: var(--item-padding-y) var(--item-padding-x);
 }
@@ -107,3 +108,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
     opacity: 0.7;
 }
 
+.title-help-icon {
+    margin-left: 0.25rem;
+}
