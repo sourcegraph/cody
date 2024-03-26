@@ -15,10 +15,14 @@ import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-proc
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import type { AuthStatus } from '../../chat/protocol'
-import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    type AuthStatus,
+} from '@sourcegraph/cody-shared'
+
+import { type FetchCompletionResult, fetchAndProcessDynamicMultilineCompletions } from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
@@ -85,8 +89,6 @@ function getMaxContextTokens(model: OpenAICompatibleModel): number {
             return 1200
     }
 }
-
-const MAX_RESPONSE_TOKENS = 256
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
     singlelineStopSequences: ['\n'],
@@ -174,13 +176,11 @@ class OpenAICompatibleProvider extends Provider {
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                timeouts: this.timeouts,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            timeouts: this.timeouts,
+            lineNumberDependentCompletionParams,
+        })
 
         // starchat: Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
@@ -221,7 +221,7 @@ class OpenAICompatibleProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,
