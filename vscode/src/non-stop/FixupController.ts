@@ -16,6 +16,7 @@ import { countCode } from '../services/utils/code-count'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
+import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -427,11 +428,26 @@ export class FixupController
             },
         })
 
+        let trackedRange = task.selectionRange
+        if (task.mode === 'insert' || task.mode === 'add') {
+            const insertionPoint = task.insertionPoint || task.selectionRange.start
+            const textLines = lines(task.replacement)
+            trackedRange = new vscode.Range(
+                insertionPoint,
+                new vscode.Position(
+                    insertionPoint.line + textLines.length - 1,
+                    textLines.length > 1
+                        ? textLines.at(-1)!.length
+                        : insertionPoint.character + textLines[0].length
+                )
+            )
+        }
+
         this.persistenceTracker.track({
             id: task.id,
             insertedAt: Date.now(),
             insertText: task.replacement,
-            insertRange: task.selectionRange,
+            insertRange: trackedRange,
             document,
             metadata: {
                 model: task.model,
