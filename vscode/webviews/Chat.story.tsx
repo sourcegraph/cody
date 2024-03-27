@@ -28,6 +28,7 @@ const meta: Meta<typeof Chat> = {
         },
         telemetryService: null as any,
         isTranscriptError: false,
+        isNewInstall: false,
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [WithBorder, VSCodeStoryDecorator],
