@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test'
 
-import { sidebarExplorer, sidebarSignin } from './common'
-import { type ExpectedEvents, test } from './helpers'
+import * as mockServer from '../fixtures/mock-server'
+import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import { type DotcomUrlOverride, type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -18,24 +19,28 @@ test.extend<ExpectedEvents>({
 })('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [_chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    // Test that empty chat messages cannot be submitted.
+    await chatInput.fill(' ')
+    await chatInput.press('Enter')
+    await expect(chatInput).toHaveText(' ')
+    await chatInput.press('Backspace')
+    await chatInput.clear()
 
     // Test that Ctrl+Arrow jumps by a word.
-    await chatInput.clear()
+    await chatInput.focus()
     await chatInput.type('One')
     await chatInput.press('Control+ArrowLeft')
     await chatInput.type('Two')
-    await expect(chatInput).toHaveValue('TwoOne')
+    await expect(chatInput).toHaveText('TwoOne')
 
     // Test that Ctrl+Shift+Arrow highlights a word by trying to delete it.
     await chatInput.clear()
     await chatInput.type('One')
     await chatInput.press('Control+Shift+ArrowLeft')
     await chatInput.press('Delete')
-    await expect(chatInput).toHaveValue('')
+    await expect(chatInput).toHaveText('')
 
     // Chat input should have focused after sending a message.
     await expect(chatInput).toBeFocused()
@@ -60,13 +65,9 @@ test('chat input focus', async ({ page, sidebar }) => {
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByRole('button', { name: 'New Chat', exact: true }).hover()
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
     await page.click('.badge[aria-label="Cody"]')
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
-
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).hover()
@@ -99,3 +100,22 @@ test('chat input focus', async ({ page, sidebar }) => {
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     await expect(chatInput).toBeFocused()
 })
+
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
+    'chat model selector',
+    async ({ page, sidebar }) => {
+        await sidebarSignin(page, sidebar)
+
+        const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+
+        const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
+
+        // Model selector is initially enabled.
+        await expect(modelSelect).toBeEnabled()
+
+        // Immediately after submitting the first message, the model selector is disabled.
+        await chatInput.fill('Hello')
+        await chatInput.press('Enter')
+        await expect(modelSelect).toBeDisabled()
+    }
+)

@@ -57,16 +57,11 @@ const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
 })
 
-const publishOptions = {
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', {
     gaxOpts: {
         timeout: 120000,
     },
-}
-
-const topicPublisher = pubSubClient.topic(
-    'projects/sourcegraph-telligent-testing/topics/e2e-testing',
-    publishOptions
-)
+})
 
 //#region GraphQL Mocks
 
@@ -294,6 +289,7 @@ export class MockServer {
         })
 
         let attribution = false
+        let codyPro = false
         app.post('/.api/graphql', (req, res) => {
             if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
                 res.sendStatus(401)
@@ -328,12 +324,29 @@ export class MockServer {
                             })
                         )
                         break
+                    case 'CurrentUserCodySubscription':
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    currentUser: {
+                                        codySubscription: {
+                                            status: 'ACTIVE',
+                                            plan: codyPro ? 'PRO' : 'FREE',
+                                            applyProRateLimits: codyPro,
+                                            currentPeriodStartAt: '2021-01-01T00:00:00Z',
+                                            currentPeriodEndAt: '2022-01-01T00:00:00Z',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
                     case 'CurrentUserCodyProEnabled':
                         res.send(
                             JSON.stringify({
                                 data: {
                                     currentUser: {
-                                        codyProEnabled: false,
+                                        codyProEnabled: codyPro,
                                     },
                                 },
                             })
@@ -421,6 +434,10 @@ export class MockServer {
             }
         })
 
+        app.post('/.test/currentUser/codyProEnabled', (req, res) => {
+            codyPro = true
+            res.sendStatus(200)
+        })
         app.post('/.test/attribution/enable', (req, res) => {
             attribution = true
             res.sendStatus(200)
@@ -458,7 +475,7 @@ export class MockServer {
 const loggedTestRun: Record<string, boolean> = {}
 
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
-    if (process.env.CI === undefined) {
+    if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 

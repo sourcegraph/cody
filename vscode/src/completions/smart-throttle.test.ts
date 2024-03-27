@@ -92,7 +92,6 @@ function createRequest(textWithCursor: string, abortController = new AbortContro
         position,
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
-        dynamicMultilineCompletions: false,
         context: undefined,
     })
     return {

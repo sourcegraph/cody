@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import type { TextDocument } from 'vscode'
 import type { Tree, default as Parser } from 'web-tree-sitter'
 
-import { type SupportedLanguage, getParseLanguage } from './grammars'
-import { createParser, getParser } from './parser'
+import { type SupportedLanguage, isSupportedLanguage } from './grammars'
+import { type WrappedParser, createParser, getParser } from './parser'
 
 const parseTreesPerFile = new LRUCache<string, Tree>({
     max: 10,
@@ -12,7 +12,7 @@ const parseTreesPerFile = new LRUCache<string, Tree>({
 
 interface ParseTreeCache {
     tree: Tree
-    parser: Parser
+    parser: WrappedParser
     cacheKey: string
 }
 
@@ -49,13 +49,13 @@ async function parseDocument(document: TextDocument): Promise<void> {
     updateParseTreeCache(document, parser)
 }
 
-export function updateParseTreeCache(document: TextDocument, parser: Parser): void {
-    const tree = parser.parse(document.getText())
+export function updateParseTreeCache(document: TextDocument, parser: WrappedParser): void {
+    const tree = parser.safeParse(document.getText())
     parseTreesPerFile.set(document.uri.toString(), tree)
 }
 
 function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLanguage | null {
-    const parseLanguage = getParseLanguage(document.languageId)
+    const { languageId } = document
 
     /**
      * 1. Do not use tree-sitter for unsupported languages.
@@ -65,8 +65,8 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
      *
      *    Needs more testing to figure out if we need it. Playing it safe for the initial integration.
      */
-    if (document.lineCount <= 10_000 && parseLanguage) {
-        return parseLanguage
+    if (document.lineCount <= 10_000 && isSupportedLanguage(languageId)) {
+        return languageId
     }
 
     return null
@@ -106,7 +106,7 @@ export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent): voi
         })
     }
 
-    const updatedTree = parser.parse(document.getText(), tree)
+    const updatedTree = parser.safeParse(document.getText(), tree)
     parseTreesPerFile.set(cacheKey, updatedTree)
 }
 

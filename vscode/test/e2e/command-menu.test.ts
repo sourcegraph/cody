@@ -33,7 +33,7 @@ test('Start a new chat from Cody Command Menu', async ({ page, sidebar }) => {
 
     // the question should show up in the chat panel on submit
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    await chatPanel.getByText('new chat submitted from command menu').click()
+    await chatPanel.getByText('hello from the assistant').hover()
 
     const expectedEvents = [
         'CodyVSCodeExtension:menu:command:default:clicked',

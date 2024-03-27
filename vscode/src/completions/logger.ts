@@ -17,10 +17,14 @@ import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import type { Span } from '@opentelemetry/api'
+import { PersistenceTracker } from '../common/persistence-tracker'
+import type {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+} from '../common/persistence-tracker/types'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
-import { PersistenceTracker } from './persistence-tracker'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -156,26 +160,6 @@ interface PartiallyAcceptedEventPayload extends SharedEventPayload {
      * if you sum up all the acceptedLengthDelta of a given completion ID, you get acceptedLength.
      */
     acceptedLengthDelta: number
-}
-
-/** Emitted when a completion is still present at a specific time interval after insertion */
-interface PersistencePresentEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-    /** How many seconds after the acceptance was the check performed */
-    afterSec: number
-    /** Levenshtein distance between the current document state and the accepted completion */
-    difference: number
-    /** Number of lines still in the document */
-    lineCount: number
-    /** Number of characters still in the document */
-    charCount: number
-}
-
-/** Emitted when a completion is no longer present at a specific time interval after insertion */
-interface PersistenceRemovedEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
 }
 
 /** Emitted when a completion request returned no usable results */
@@ -425,7 +409,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
     max: 50,
 })
 
-let persistenceTracker: PersistenceTracker | null = null
+let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -626,13 +610,30 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker()
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace, {
+            onPresent: logCompletionPersistencePresentEvent,
+            onRemoved: logCompletionPersistenceRemovedEvent,
+        })
     }
+
+    // The trackedRange for the completion is relative to the state before the completion was inserted.
+    // We need to convert it to the state after the completion was inserted.
+    const textLines = lines(completion.insertText)
+    const insertRange = new vscode.Range(
+        trackedRange.start.line,
+        trackedRange.start.character,
+        trackedRange.end.line + textLines.length - 1,
+
+        textLines.length > 1
+            ? textLines.at(-1)!.length
+            : trackedRange.end.character + textLines[0].length
+    )
+
     persistenceTracker.track({
         id: completionEvent.params.id,
         insertedAt: Date.now(),
         insertText: completion.insertText,
-        insertRange: trackedRange,
+        insertRange,
         document,
     })
 }
@@ -770,7 +771,7 @@ function lineAndCharCount({ insertText }: InlineCompletionItem): {
 const TEN_MINUTES = 1000 * 60 * 10
 const errorCounts: Map<string, number> = new Map()
 export function logError(error: Error): void {
-    if (!shouldErrorBeReported(error)) {
+    if (!shouldErrorBeReported(error, false)) {
         return
     }
 

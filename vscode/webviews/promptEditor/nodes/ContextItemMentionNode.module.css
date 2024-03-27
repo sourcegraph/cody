@@ -1,0 +1,10 @@
+.context-item-mention-node {
+    color: var(--link-foreground);
+    background: color-mix(in srgb, currentColor 15%, transparent);
+    border-radius: 3px;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {
+    background-color: var(--code-background);
+    color: var(--code-foreground);
+}

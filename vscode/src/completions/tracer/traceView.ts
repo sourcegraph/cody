@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { displayPath, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
+import { displayPath, displayRange, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
 
 import {
     SectionHistoryRetriever,
@@ -313,20 +313,8 @@ ${
 }`
 }
 
-function rangeDescription(range: vscode.Range): string {
-    // The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
-    // 1-indexed lines and columns. Show the latter.
-    return `${range.start.line + 1}:${range.start.character + 1}${
-        range.isEmpty
-            ? ''
-            : `-${range.end.line === range.start.line ? '' : `${range.end.line + 1}:`}${
-                  range.end.character + 1
-              }`
-    }`
-}
-
 function rangeDescriptionWithCurrentText(range: vscode.Range, document?: vscode.TextDocument): string {
-    return `${rangeDescription(range)} (${
+    return `${displayRange(range)} (${
         range.isEmpty
             ? 'empty'
             : document

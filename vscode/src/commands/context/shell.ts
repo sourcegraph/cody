@@ -13,6 +13,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 const _exec = promisify(exec)
 
@@ -33,14 +34,10 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
 
         // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${rootDir}${path.sep}`)
-        const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri?.path
+        // NOTE: Use fsPath to get path with platform specific path separator
+        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         try {
-            const { stdout, stderr } = await _exec(filteredCommand, {
-                cwd: wsRoot,
-                encoding: 'utf8',
-            })
-
-            // stringify the output of the command first
+            const { stdout, stderr } = await _exec(filteredCommand, { cwd, encoding: 'utf8' })
             const output = stdout ?? stderr
             const outputString = JSON.stringify(output.trim())
             if (!outputString) {
@@ -54,16 +51,15 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                 content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
-                source: 'terminal',
-            } as ContextItem
+                source: ContextItemSource.Terminal,
+            } satisfies ContextItem
 
             return [file]
         } catch (error) {
             // Handles errors and empty output
-            console.error('getContextFileFromShell > failed', error)
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            void vscode.window.showErrorMessage('Command Failed: Make sure the command works locally.')
-            return []
+            void vscode.window.showErrorMessage((error as Error).message)
+            throw new Error('Failed to get shell output for Custom Command.')
         }
     })
 }

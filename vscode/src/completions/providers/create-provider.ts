@@ -8,7 +8,10 @@ import {
 
 import { logError } from '../../log'
 
-import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import {
+    type AnthropicOptions,
+    createProviderConfig as createAnthropicProviderConfig,
+} from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
     type FireworksOptions,
@@ -47,7 +50,7 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return createAnthropicProviderConfig({ client })
+                return createAnthropicProviderConfig({ client, model })
             }
             case 'experimental-ollama':
             case 'unstable-ollama': {
@@ -126,23 +129,33 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
 ): Promise<{
     provider: string
-    model?: FireworksOptions['model']
+    model?: FireworksOptions['model'] | AnthropicOptions['model']
 } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoderHybrid, llamaCode13B] = await Promise.all([
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
     ])
 
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }
     }
 
+    if (starCoder2Hybrid) {
+        return { provider: 'fireworks', model: 'starcoder2-hybrid' }
+    }
+
     if (starCoderHybrid) {
         return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    }
+
+    if (claude3) {
+        return { provider: 'anthropic', model: 'anthropic/claude-3-haiku-20240307' }
     }
 
     return null

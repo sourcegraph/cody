@@ -76,14 +76,18 @@ export class AuthProvider {
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
-        telemetryService.log('CodyVSCodeExtension:login:clicked', { hasV2Event: true })
+        telemetryService.log('CodyVSCodeExtension:login:clicked', {}, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
         const menuID = type || item?.id
-        telemetryService.log('CodyVSCodeExtension:auth:selectSigninMenu', { menuID, hasV2Event: true })
+        telemetryService.log(
+            'CodyVSCodeExtension:auth:selectSigninMenu',
+            { menuID },
+            { hasV2Event: true }
+        )
         telemetryRecorder.recordEvent('cody.auth.signin.menu', 'clicked', {
             privateMetadata: { menuID },
         })
@@ -132,10 +136,13 @@ export class AuthProvider {
             return
         }
         const authState = await this.auth(instanceUrl, accessToken)
-        telemetryService.log('CodyVSCodeExtension:auth:fromToken', {
-            success: Boolean(authState?.isLoggedIn),
-            hasV2Event: true,
-        })
+        telemetryService.log(
+            'CodyVSCodeExtension:auth:fromToken',
+            {
+                success: Boolean(authState?.isLoggedIn),
+            },
+            { hasV2Event: true }
+        )
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,
@@ -145,7 +152,7 @@ export class AuthProvider {
     }
 
     public async signoutMenu(): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:logout:clicked', { hasV2Event: true })
+        telemetryService.log('CodyVSCodeExtension:logout:clicked', {}, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
         const { endpoint } = this.getAuthStatus()
 
@@ -266,8 +273,8 @@ export class AuthProvider {
             )
         }
 
+        // Configure AuthStatus for DotCom users
         const isCodyEnabled = true
-        const proStatus = await this.client.getCurrentUserCodyProEnabled()
 
         // check first if it's a network error
         if (isError(userInfo)) {
@@ -276,11 +283,11 @@ export class AuthProvider {
             }
             return { ...unauthenticatedStatus, endpoint }
         }
-        const userCanUpgrade =
-            isDotCom &&
-            'codyProEnabled' in proStatus &&
-            typeof proStatus.codyProEnabled === 'boolean' &&
-            !proStatus.codyProEnabled
+
+        const proStatus = await this.client.getCurrentUserCodySubscription()
+        // Pro user without the pending status is the valid pro users
+        const isActiveProUser =
+            'plan' in proStatus && proStatus.plan === 'PRO' && proStatus.status !== 'PENDING'
 
         return newAuthStatus(
             endpoint,
@@ -288,7 +295,7 @@ export class AuthProvider {
             !!userInfo.id,
             userInfo.hasVerifiedEmail,
             isCodyEnabled,
-            userCanUpgrade,
+            !isActiveProUser, // UserCanUpgrade
             version,
             userInfo.avatarURL,
             userInfo.username,
@@ -363,12 +370,15 @@ export class AuthProvider {
             return
         }
         const authState = await this.auth(endpoint, token, customHeaders)
-        telemetryService.log('CodyVSCodeExtension:auth:fromCallback', {
-            type: 'callback',
-            from: 'web',
-            success: Boolean(authState?.isLoggedIn),
-            hasV2Event: true,
-        })
+        telemetryService.log(
+            'CodyVSCodeExtension:auth:fromCallback',
+            {
+                type: 'callback',
+                from: 'web',
+                success: Boolean(authState?.isLoggedIn),
+            },
+            { hasV2Event: true }
+        )
         telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.8.0",
+  "version": "1.10.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -30,7 +30,7 @@
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
-    "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
+    "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
     "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
@@ -38,12 +38,7 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
-  "categories": [
-    "Programming Languages",
-    "Machine Learning",
-    "Snippets",
-    "Education"
-  ],
+  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
     "ai",
     "openai",
@@ -94,11 +89,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": [
-    "onLanguage",
-    "onStartupFinished",
-    "onWebviewPanel:cody.chatPanel"
-  ],
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
   "contributes": {
     "walkthroughs": [
       {
@@ -502,10 +493,23 @@
       },
       {
         "command": "cody.debug.export.logs",
-        "category": "Cody",
-        "group": "Cody",
+        "category": "Cody Debug",
+        "group": "Debug",
         "title": "Export Logs…",
         "when": "config.cody.debug.enable"
+      },
+      {
+        "command": "cody.debug.outputChannel",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Open Output Channel"
+      },
+      {
+        "command": "cody.debug.enable.all",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Enable Debug Mode",
+        "when": "!config.cody.debug.verbose"
       }
     ],
     "keybindings": [
@@ -538,6 +542,11 @@
       {
         "command": "cody.command.edit-code",
         "key": "alt+k",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.document-code",
+        "key": "alt+d",
         "when": "cody.activated && !editorReadonly"
       },
       {
@@ -579,6 +588,18 @@
         "command": "cody.fixup.cancelNearest",
         "key": "alt+z",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["next"],
+        "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["previous"],
+        "key": "shift+ctrl+up",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],
     "submenus": [
@@ -718,7 +739,17 @@
         {
           "command": "cody.debug.export.logs",
           "when": "view == cody.support.tree.view",
-          "group": "7_cody@0"
+          "group": "8_cody@1"
+        },
+        {
+          "command": "cody.debug.enable.all",
+          "when": "view == cody.support.tree.view && !config.cody.debug.verbose",
+          "group": "8_cody@0"
+        },
+        {
+          "command": "cody.debug.outputChannel",
+          "when": "view == cody.support.tree.view",
+          "group": "8_cody@2"
         },
         {
           "command": "cody.search.index-update",
@@ -797,20 +828,12 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": [
-            "https://github.com/sourcegraph/cody",
-            "ssh://git@github.com/sourcegraph/cody"
-          ]
+          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
         },
         "cody.useContext": {
           "order": 99,
           "type": "string",
-          "enum": [
-            "embeddings",
-            "keyword",
-            "blended",
-            "none"
-          ],
+          "enum": ["embeddings", "keyword", "blended", "none"],
           "default": "blended",
           "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
@@ -873,10 +896,14 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
-          "examples": [
-            "Answer all my questions in Spanish."
-          ]
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
+          "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.edit.preInstruction": {
+          "order": 7,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
+          "examples": ["Write all unit tests with Jest instead of detected framework."]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -889,7 +916,7 @@
           "order": 12,
           "title": "Cody Command Hints",
           "type": "boolean",
-          "markdownDescription": "Enable hints for Edit and Chat shortcuts (\"Opt+K to Edit, Opt+L to Chat\"), displayed alongside editor selections.",
+          "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
         "cody.experimental.simpleChatContext": {
@@ -941,27 +968,15 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": [
-            "all",
-            "off"
-          ],
-          "enumDescriptions": [
-            "Sends usage data and errors.",
-            "Disables all extension telemetry."
-          ],
+          "enum": ["all", "off"],
+          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "anthropic",
-            "fireworks",
-            "unstable-openai",
-            "experimental-ollama"
-          ],
+          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
@@ -975,12 +990,7 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "starcoder-16b",
-            "starcoder-7b",
-            "llama-code-13b"
-          ],
+          "enum": [null, "starcoder-16b", "starcoder-7b", "starcoder2-hybrid", "llama-code-13b"],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1000,26 +1010,13 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": [
-            "lsp",
-            "indentation-based"
-          ],
+          "enum": ["lsp", "indentation-based"],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
           ],
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
-        },
-        "cody.autocomplete.experimental.syntacticPostProcessing": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Rank autocomplete results with tree-sitter."
-        },
-        "cody.autocomplete.experimental.dynamicMultilineCompletions": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Dynamically switch from singleline to multiline completion based on the first completion line."
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
@@ -1034,12 +1031,44 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [
-            null,
-            "bfg",
-            "bfg-mixed"
-          ],
+          "enum": [null, "bfg", "bfg-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
+        },
+        "cody.autocomplete.experimental.fireworksOptions": {
+          "type": "object",
+          "markdownDescription": "Experimental options for the direct-Fireworks autocomplete provider.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL of the Fireworks API.",
+              "default": "https://api.fireworks.ai/inference/v1/completions"
+            },
+            "token": {
+              "type": "string",
+              "description": "The access token of the Fireworks API."
+            },
+            "model": {
+              "type": "string",
+              "description": "The model ID can be acquired from `firectl list deployments`",
+              "default": "accounts/sourcegraph/models/starcoder2-7b"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for querying the the model.",
+              "properties": {
+                "temperature": "number",
+                "top_k": "number",
+                "top_p": "number",
+                "stop": {
+                  "type": "array",
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         },
         "cody.autocomplete.experimental.ollamaOptions": {
           "type": "object",
@@ -1139,6 +1168,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
+    "@floating-ui/react": "^0.26.9",
+    "@lexical/code": "^0.13.1",
+    "@lexical/html": "^0.13.1",
+    "@lexical/react": "^0.13.1",
     "@mdi/js": "^7.2.96",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
@@ -1150,11 +1183,12 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
-    "@sentry/browser": "^7.66.0",
-    "@sentry/core": "^7.66.0",
-    "@sentry/node": "^7.66.0",
+    "@sentry/browser": "^7.107.0",
+    "@sentry/core": "^7.107.0",
+    "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
+    "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@storybook/preview-api": "^7.6.2",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
@@ -1163,21 +1197,25 @@
     "classnames": "^2.3.2",
     "crypto-js": "^4.2.0",
     "detect-indent": "^7.0.1",
+    "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
+    "lexical": "^0.13.1",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-git-diff": "^0.0.14",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
-    "web-tree-sitter": "^0.20.8",
-    "wink-nlp-utils": "^2.1.0"
+    "web-tree-sitter": "^0.21.0",
+    "wink-nlp-utils": "^2.1.0",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
@@ -1189,13 +1227,14 @@
     "@types/axios": "^0.14.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
+    "@types/diff": "^5.0.9",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.0.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
@@ -1218,7 +1257,6 @@
     "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
     "progress": "^2.0.3",
-    "semver": "^7.5.4",
     "yaml": "^2.3.4"
   }
 }

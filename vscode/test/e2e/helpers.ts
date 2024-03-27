@@ -10,6 +10,7 @@ import * as uuid from 'uuid'
 import { MockServer, loggedEvents, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
 
 import { installVsCode } from './install-deps'
+import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
 
 // Playwright test extension: The workspace directory to run the test in.
 export interface WorkspaceDirectory {
@@ -107,7 +108,7 @@ export const test = base
             )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
-            await buildCodyJson(workspaceDirectory)
+            await buildCustomCommandConfigFile(workspaceDirectory)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
@@ -281,58 +282,6 @@ async function buildWorkSpaceSettings(
     })
 }
 
-// Build a cody.json file for testing custom commands and context fetching
-async function buildCodyJson(workspaceDirectory: string): Promise<void> {
-    const codyJson = {
-        currentDir: {
-            description:
-                "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
-            prompt: 'Add four context files from the current directory.',
-            context: {
-                selection: false,
-                currentDir: true,
-            },
-        },
-        filePath: {
-            prompt: 'Add lib/batches/env/var.go as context.',
-            context: {
-                filePath: 'lib/batches/env/var.go',
-            },
-        },
-        directoryPath: {
-            description: 'Get files from directory.',
-            prompt: 'Directory has one context file.',
-            context: {
-                directoryPath: 'lib/batches/env',
-            },
-        },
-        openTabs: {
-            description: 'Get files from open tabs.',
-            prompt: 'Open tabs as context.',
-            context: {
-                selection: false,
-                openTabs: true,
-            },
-        },
-        invalid: {
-            description: 'Command without prompt should not break the custom command menu.',
-            note: 'This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu.',
-        },
-    }
-
-    // add file to the .vscode directory created in the buildWorkSpaceSettings step
-    const codyJsonPath = path.join(workspaceDirectory, '.vscode', 'cody.json')
-    await new Promise<void>((resolve, reject) => {
-        writeFile(codyJsonPath, JSON.stringify(codyJson), error => {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
-}
-
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await executeCommandInPalette(page, 'cody sign out')
@@ -393,7 +342,7 @@ export async function openFile(page: Page, filename: string): Promise<void> {
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
 export async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat' }).click()
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 

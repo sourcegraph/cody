@@ -96,6 +96,7 @@ export function getConfiguration(
             '*': true,
         }),
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
+        editPreInstruction: config.get(CONFIG_KEY.editPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
@@ -126,13 +127,10 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+        experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
-        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
-            'autocomplete.experimental.dynamicMultilineCompletions',
-            false
-        ),
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
@@ -143,6 +141,10 @@ export function getConfiguration(
                 url: OLLAMA_DEFAULT_URL,
                 model: 'codellama:7b-code',
             }
+        ),
+        autocompleteExperimentalFireworksOptions: getHiddenSetting(
+            'autocomplete.experimental.fireworksOptions',
+            undefined
         ),
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',

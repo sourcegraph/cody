@@ -51,8 +51,7 @@ export function pressEnterAndGetIndentString(
 function insertCompletionAndPressEnter(
     docContext: DocumentContext,
     completion: InlineCompletionItemWithAnalytics,
-    document: TextDocument,
-    dynamicMultilineCompletions: boolean
+    document: TextDocument
 ): DocumentContext {
     const { insertText } = completion
 
@@ -68,7 +67,6 @@ function insertCompletionAndPressEnter(
         docContext,
         languageId: document.languageId,
         insertText: insertTextWithPressedEnter,
-        dynamicMultilineCompletions,
     })
 
     return updatedDocContext
@@ -80,15 +78,9 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
         docContext,
         document,
         document: { languageId },
-        dynamicMultilineCompletions = false,
     } = providerOptions
 
-    let updatedDocContext = insertCompletionAndPressEnter(
-        docContext,
-        completedCompletion,
-        document,
-        dynamicMultilineCompletions
-    )
+    let updatedDocContext = insertCompletionAndPressEnter(docContext, completedCompletion, document)
 
     function* extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult> {
         while (true) {
@@ -108,7 +100,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
 
             const maybeDynamicMultilineDocContext = {
                 ...updatedDocContext,
-                ...(dynamicMultilineCompletions && !updatedDocContext.multilineTrigger
+                ...(!updatedDocContext.multilineTrigger
                     ? getDynamicMultilineDocContext({
                           languageId,
                           docContext: updatedDocContext,
@@ -120,7 +112,6 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
             const completion = extractCompletion(unprocessedCompletion, {
                 document,
                 docContext: maybeDynamicMultilineDocContext,
-                isDynamicMultilineCompletion: Boolean(dynamicMultilineCompletions),
             })
 
             addAutocompleteDebugEvent('attempted to extract completion', {
@@ -153,8 +144,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 updatedDocContext = insertCompletionAndPressEnter(
                     updatedDocContext,
                     processedCompletion,
-                    document,
-                    dynamicMultilineCompletions
+                    document
                 )
             } else {
                 addAutocompleteDebugEvent('hot-streak extractor stop')

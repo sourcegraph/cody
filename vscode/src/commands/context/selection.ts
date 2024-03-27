@@ -5,6 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
@@ -28,7 +29,7 @@ export async function getContextFileFromCursor(): Promise<ContextItem[]> {
             // Else, use smart selection based on cursor position
             // Else, use visible range of the editor that contains the cursor as fallback
             const cursor = editor.active.selection
-            const smartSelection = await getSmartSelection(document?.uri, cursor?.start.line)
+            const smartSelection = await getSmartSelection(document?.uri, cursor?.start)
             const activeSelection = !cursor?.start.isEqual(cursor?.end) ? cursor : smartSelection
             const visibleRange = editor.active.visibleRanges.find(range => range.contains(cursor?.start))
             const selection = activeSelection ?? visibleRange
@@ -40,9 +41,9 @@ export async function getContextFileFromCursor(): Promise<ContextItem[]> {
                     type: 'file',
                     uri: document.uri,
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
-                    source: 'selection',
+                    source: ContextItemSource.Selection,
                     range: selection,
-                } as ContextItem,
+                } satisfies ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })

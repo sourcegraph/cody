@@ -15,26 +15,9 @@ interface OllamaPromptContext {
     languageId: string
 }
 
-const EOT_TOKEN = '<EOT>'
-const SHARED_STOP_SEQUENCES = [
-    '// Path:',
-    '\u001E',
-    '\u001C',
-    EOT_TOKEN,
-
-    // Tokens that reduce the quality of multi-line completions but improve performance.
-    '; ',
-    ';\t',
-]
-const SINGLE_LINE_STOP_SEQUENCES = ['\n', ...SHARED_STOP_SEQUENCES]
-// TODO(valery): find the balance between using less stop tokens to get more multiline completions and keeping a good perf.
-// `SHARED_STOP_SEQUENCES` are not included because the number of multiline completions goes down significantly
-// leaving an impression that Ollama provider support only singleline completions.
-const MULTI_LINE_STOP_SEQUENCES: string[] = ['\n\n', EOT_TOKEN /* ...SHARED_STOP_SEQUENCES */]
-
 export interface OllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters
 }
 
 class DefaultOllamaModel implements OllamaModel {
@@ -43,24 +26,19 @@ class DefaultOllamaModel implements OllamaModel {
         return context + currentFileNameComment + prefix
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<PRE>', '<SUF>', '<MID>', '<EOT>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.2,
             top_k: -1,
             top_p: -1,
-            num_predict: 30,
+            num_predict: 256,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop: MULTI_LINE_STOP_SEQUENCES,
-            })
-        }
-
-        if (isDynamicMultiline) {
-            params.stop = []
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -76,29 +54,21 @@ class DeepseekCoder extends DefaultOllamaModel {
         return `<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<｜fim▁begin｜>', '<｜fim▁hole｜>', '<｜fim▁end｜>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.6,
             top_k: 30,
             top_p: 0.2,
-            num_predict: 30,
+            num_predict: 256,
             num_gpu: 99,
             repeat_penalty: 1.1,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: -1,
-                stop: MULTI_LINE_STOP_SEQUENCES,
-            })
-        }
-
-        if (isDynamicMultiline) {
-            Object.assign(params, {
-                num_predict: -1,
-                stop: [],
-            })
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -129,13 +99,33 @@ class CodeLlama extends DefaultOllamaModel {
     }
 }
 
-class StarCoder extends DefaultOllamaModel {
+class StarCoder2 extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string {
-        const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
+        const { context, prefix, suffix } = ollamaPrompt
 
-        const infillPrefix = context + currentFileNameComment + prefix
+        // `currentFileNameComment` is not included because it causes StarCoder2 to output
+        // invalid suggestions.
+        const infillPrefix = context + prefix
 
         return `<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+    }
+
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
+
+        const params = {
+            stop: ['\n', ...stop],
+            temperature: 0.2,
+            top_k: -1,
+            top_p: -1,
+            num_predict: 256,
+        }
+
+        if (isMultiline) {
+            params.stop = ['\n\n', ...stop]
+        }
+
+        return params
     }
 }
 
@@ -148,8 +138,8 @@ export function getModelHelpers(model: string) {
         return new DeepseekCoder()
     }
 
-    if (model.includes('starcoder')) {
-        return new StarCoder()
+    if (model.includes('starcoder2')) {
+        return new StarCoder2()
     }
 
     return new DefaultOllamaModel()

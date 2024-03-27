@@ -1,6 +1,21 @@
-import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
+import {
+    type ChatEventSource,
+    type ContextItem,
+    type EditModel,
+    displayLineRange,
+    parseMentionQuery,
+    scanForMentionTriggerInUserTextInput,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import {
+    FILE_HELP_LABEL,
+    FILE_TOO_LARGE_LABEL,
+    GENERAL_HELP_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { getEditor } from '../../editor/active-editor'
@@ -12,7 +27,6 @@ import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
-import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
@@ -22,7 +36,7 @@ import { getTestInputItems } from './get-items/test'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
-import { fetchDocumentSymbols, getLabelForContextItem, getTitleRange, removeAfterLastAt } from './utils'
+import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
 
 interface QuickPickInput {
     /** The user provided instruction */
@@ -103,8 +117,7 @@ export const getInput = async (
     const relativeFilePath = vscode.workspace.asRelativePath(document.uri.fsPath)
     let activeTitle: string
     const updateActiveTitle = (newRange: vscode.Range) => {
-        const fileRange = getTitleRange(newRange)
-        activeTitle = `Edit ${relativeFilePath}:${fileRange} with Cody`
+        activeTitle = `Edit ${relativeFilePath}:${displayLineRange(newRange)} with Cody`
     }
     updateActiveTitle(activeRange)
 
@@ -353,23 +366,13 @@ export const getInput = async (
                     return
                 }
 
-                const isFileSearch = value.endsWith('@')
-                const isSymbolSearch = value.endsWith('@#')
+                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionQuery = mentionTrigger
+                    ? parseMentionQuery(mentionTrigger.matchingString)
+                    : undefined
 
-                // If we have the beginning of a file or symbol match, show a helpful label
-                if (isFileSearch) {
-                    input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                    return
-                }
-                if (isSymbolSearch) {
-                    input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
-                    return
-                }
-
-                const matchingContext = await getMatchingContext(value)
-                if (matchingContext === null) {
+                if (!mentionQuery) {
                     // Nothing to match, re-render existing items
-                    // eslint-disable-next-line no-self-assign
                     input.items = getEditInputItems(
                         input.value,
                         activeRangeItem,
@@ -379,23 +382,53 @@ export const getInput = async (
                     return
                 }
 
+                const matchingContext = await getMatchingContext(mentionQuery)
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
-                    input.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
+                    input.items = [
+                        {
+                            alwaysShow: true,
+                            label:
+                                mentionQuery.type === 'symbol'
+                                    ? mentionQuery.text.length === 0
+                                        ? SYMBOL_HELP_LABEL
+                                        : NO_SYMBOL_MATCHES_LABEL
+                                    : mentionQuery.text.length === 0
+                                      ? FILE_HELP_LABEL
+                                      : NO_FILE_MATCHES_LABEL,
+                        },
+                    ]
                     return
                 }
 
                 // Update stored context items so we can retrieve them later
-                for (const { key, file } of matchingContext) {
-                    contextItems.set(key, file)
+                for (const { key, item } of matchingContext) {
+                    contextItems.set(key, item)
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them
-                input.items = matchingContext.map(({ key, shortLabel }) => ({
-                    alwaysShow: true,
-                    label: shortLabel || key,
-                    description: shortLabel ? key : undefined,
-                }))
+                input.items = [
+                    ...matchingContext.map(({ key, shortLabel, item }) => ({
+                        alwaysShow: true,
+                        label: shortLabel || key,
+                        description: shortLabel ? key : undefined,
+                        detail:
+                            'isTooLarge' in item && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined,
+                    })),
+                    {
+                        kind: vscode.QuickPickItemKind.Separator,
+                        label: 'help',
+                    },
+                    {
+                        alwaysShow: true,
+                        label:
+                            mentionQuery?.type === 'symbol'
+                                ? SYMBOL_HELP_LABEL
+                                : mentionQuery?.type === 'file'
+                                  ? FILE_HELP_LABEL
+                                  : GENERAL_HELP_LABEL,
+                    },
+                ]
             },
             onDidAccept: () => {
                 const input = editInput.input
@@ -415,6 +448,14 @@ export const getInput = async (
                         return
                     case TEST_ITEM.label:
                         unitTestInput.render(activeTitle, '')
+                        return
+                    case FILE_HELP_LABEL:
+                    case FILE_TOO_LARGE_LABEL:
+                    case SYMBOL_HELP_LABEL:
+                    case NO_FILE_MATCHES_LABEL:
+                    case NO_SYMBOL_MATCHES_LABEL:
+                    case GENERAL_HELP_LABEL:
+                        // Noop, the user has actioned an item that is non intended to be actionable.
                         return
                 }
 

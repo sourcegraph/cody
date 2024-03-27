@@ -1,8 +1,13 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import type { ChatMessage, Guardrails, ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type Guardrails,
+    type ModelProvider,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ChatButtonProps } from '../Chat'
@@ -20,6 +25,7 @@ import styles from './Transcript.module.css'
 export const Transcript: React.FunctionComponent<
     {
         transcript: ChatMessage[]
+        welcomeMessage?: string
         messageInProgress: ChatMessage | null
         messageBeingEdited: number | undefined
         setMessageBeingEdited: (index?: number) => void
@@ -41,6 +47,7 @@ export const Transcript: React.FunctionComponent<
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
+    welcomeMessage,
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
@@ -140,7 +147,7 @@ export const Transcript: React.FunctionComponent<
 
     const lastHumanMessageIndex = findLastIndex(
         transcript,
-        message => message.speaker === 'human' && message.displayText !== undefined
+        message => message.speaker === 'human' && message.text !== undefined
     )
     let earlierMessages: ChatMessage[] = []
     let lastInteractionMessages = transcript
@@ -152,30 +159,27 @@ export const Transcript: React.FunctionComponent<
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
-            if (!message?.displayText && !message.error) {
+            if (!message.text && !message.error) {
                 return null
             }
-            // The key index includes the Cody welcome message added to the transcript in the webview
-            // as it is not included in the transcript returned from the server, the key index is
-            // offset by 1 to account for this.
             const offsetIndex = index + offset === earlierMessages.length
             const keyIndex = index + offset
-            const transcriptIndex = keyIndex - 1
 
-            const isItemBeingEdited = messageBeingEdited === transcriptIndex
+            const isItemBeingEdited = messageBeingEdited === keyIndex
 
             return (
                 <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
                     <TranscriptItem
-                        index={transcriptIndex}
+                        index={keyIndex}
                         key={keyIndex}
                         message={message}
-                        inProgress={
+                        inProgress={Boolean(
                             offsetIndex &&
-                            messageInProgress?.speaker === 'assistant' &&
-                            !messageInProgress?.displayText
-                        }
+                                messageInProgress &&
+                                messageInProgress.speaker === 'assistant' &&
+                                !messageInProgress.text
+                        )}
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
@@ -201,6 +205,11 @@ export const Transcript: React.FunctionComponent<
             )
         }
 
+    const welcomeTranscriptMessage = useMemo(
+        (): ChatMessage => ({ speaker: 'assistant', text: welcomeText({ welcomeMessage }) }),
+        [welcomeMessage]
+    )
+
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
@@ -211,11 +220,25 @@ export const Transcript: React.FunctionComponent<
                     userInfo.isDotComUser && (
                         <ChatModelDropdownMenu
                             models={chatModels}
-                            disabled={transcript.length > 1}
+                            disabled={transcript.length > 0}
                             onCurrentChatModelChange={onCurrentChatModelChange}
                             userInfo={userInfo}
                         />
                     )}
+                {transcript.length === 0 && (
+                    // Show welcome message only when the chat is empty.
+                    <TranscriptItem
+                        index={0}
+                        message={welcomeTranscriptMessage}
+                        beingEdited={undefined}
+                        inProgress={false}
+                        fileLinkComponent={fileLinkComponent}
+                        setBeingEdited={() => {}}
+                        showEditButton={false}
+                        showFeedbackButtons={false}
+                        userInfo={userInfo}
+                    />
+                )}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
@@ -257,4 +280,18 @@ function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number 
         }
     }
     return -1
+}
+
+interface WelcomeTextOptions {
+    /** Provide users with a way to quickly access Cody docs/help.*/
+    helpMarkdown?: string
+    /** Provide additional content to supplement the original message. Example: tips, privacy policy. */
+    welcomeMessage?: string
+}
+
+function welcomeText({
+    helpMarkdown = 'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.',
+    welcomeMessage,
+}: WelcomeTextOptions): string {
+    return [helpMarkdown, welcomeMessage].filter(isDefined).join('\n\n')
 }

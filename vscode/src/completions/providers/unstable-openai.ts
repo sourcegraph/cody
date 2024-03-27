@@ -19,9 +19,13 @@ import {
 import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import type { FetchCompletionResult } from './fetch-and-process-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
@@ -32,14 +36,9 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-const MAX_RESPONSE_TOKENS = 256
-
-const MULTI_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG]
-const SINGLE_LINE_STOP_SEQUENCES = [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE]
-
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
-    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
+    singlelineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
+    multilineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
 })
 
 interface UnstableOpenAIOptions {
@@ -124,12 +123,10 @@ ${OPENING_CODE_TAG}${infillBlock}`
         snippets: ContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            lineNumberDependentCompletionParams,
+        })
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
@@ -150,7 +147,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,

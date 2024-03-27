@@ -9,8 +9,7 @@
     gap: 4px;
 }
 
-.step button {
-    display: block;
+.step a {
     max-width: 100%;
     padding: 1px 2px;
     box-sizing: border-box;

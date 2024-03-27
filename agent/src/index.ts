@@ -20,6 +20,10 @@ process.on('uncaughtException', e => {
     console.error('Uncaught exception:', e)
 })
 
+// Deduplicates and installs mac root certs onto the global agent
+// This is a no op for non-mac environments
+require('mac-ca').addToGlobalAgent({ excludeBundled: false })
+
 const args = process.argv.slice(2)
 const { operands } = rootCommand.parseOptions(args)
 if (operands.length === 0) {

@@ -67,6 +67,8 @@ describe('getConfiguration', () => {
                         return 'off'
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
+                    case 'cody.edit.preInstruction':
+                        return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
                     case 'cody.autocomplete.advanced.model':
@@ -81,12 +83,10 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.autocomplete.disableInsideComments':
                         return false
-                    case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                        return true
-                    case 'cody.autocomplete.experimental.dynamicMultilineCompletions':
-                        return false
                     case 'cody.autocomplete.experimental.hotStreak':
                         return false
+                    case 'cody.autocomplete.experimental.fireworksOptions':
+                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
@@ -104,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.supercompletions':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -118,12 +120,14 @@ describe('getConfiguration', () => {
                 'Proxy-Authenticate': 'Basic',
             },
             chatPreInstruction: 'My name is Jeff.',
+            editPreInstruction: 'My name is not Jeff.',
             autocomplete: false,
             autocompleteLanguages: {
                 '*': true,
             },
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
+            experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
             editorTitleCommandIcon: true,
@@ -143,7 +147,6 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
-            autocompleteExperimentalDynamicMultilineCompletions: false,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,

@@ -14,6 +14,7 @@ import {
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
+import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
@@ -41,12 +42,17 @@ const getContextFromIntent = async ({
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
         /**
+         * The context for the test intent is handled by the executeTestEditCommand function,
+         * we don't need to add additional context here to avoid duplication.
+         */
+        case 'test':
+            return []
+        /**
          * Very broad set of possible instructions.
          * Fetch context from the users' instructions and use context from current file.
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
-        case 'test':
         case 'add': {
             return [
                 {
@@ -57,7 +63,7 @@ const getContextFromIntent = async ({
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),
-                    file: { type: 'file', uri, source: 'editor' },
+                    file: { type: 'file', uri, source: ContextItemSource.Editor },
                 },
             ]
         }
@@ -76,14 +82,14 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: 'editor' },
+                    file: { type: 'file', uri, source: ContextItemSource.Editor },
                 })
             }
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: 'editor' },
+                    file: { type: 'file', uri, source: ContextItemSource.Editor },
                 })
             }
             return contextMessages
@@ -105,7 +111,7 @@ const getContextFromIntent = async ({
                         ({
                             speaker: 'human' as const,
                             text: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
-                            file: { type: 'file', uri, source: 'editor' },
+                            file: { type: 'file', uri, source: ContextItemSource.Editor },
                         }) satisfies ContextMessage
                 ),
                 ...[truncatedPrecedingText, truncatedFollowingText]
@@ -115,7 +121,7 @@ const getContextFromIntent = async ({
                             ({
                                 speaker: 'human' as const,
                                 text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
-                                file: { type: 'file', uri, source: 'editor' },
+                                file: { type: 'file', uri, source: ContextItemSource.Editor },
                             }) satisfies ContextMessage
                     ),
             ]

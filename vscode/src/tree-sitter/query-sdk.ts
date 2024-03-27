@@ -6,12 +6,13 @@ import type {
     Query,
     QueryCapture,
     SyntaxNode,
+    Tree,
     default as Parser,
 } from 'web-tree-sitter'
 
-import { type SupportedLanguage, getParseLanguage } from './grammars'
+import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
-import { getParser } from './parser'
+import { type WrappedParser, getParser } from './parser'
 import { type CompletionIntent, type QueryName, intentPriority, languages } from './queries'
 
 interface ParsedQuery {
@@ -53,28 +54,27 @@ export function initQueries(language: Language, languageId: SupportedLanguage, p
 
     QUERIES_LOCAL_CACHE[languageId] = {
         ...queries,
-        ...getLanguageSpecificQueryWrappers(queries, parser),
+        ...getLanguageSpecificQueryWrappers(queries, parser, languageId),
     }
 }
 
 export interface DocumentQuerySDK {
-    parser: Parser
+    parser: WrappedParser
     queries: ResolvedQueries & QueryWrappers
     language: SupportedLanguage
 }
 
 /**
  * Returns the query SDK only if the language has queries defined and
- * the relevant laguage parser is initialized.
+ * the relevant language parser is initialized.
  */
 export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
-    const supportedLanguage = getParseLanguage(language)
-    if (!supportedLanguage) {
+    if (!isSupportedLanguage(language)) {
         return null
     }
 
-    const parser = getParser(supportedLanguage)
-    const queries = QUERIES_LOCAL_CACHE[supportedLanguage]
+    const parser = getParser(language)
+    const queries = QUERIES_LOCAL_CACHE[language]
 
     if (!parser || !queries) {
         return null
@@ -83,11 +83,11 @@ export function getDocumentQuerySDK(language: string): DocumentQuerySDK | null {
     return {
         parser,
         queries,
-        language: supportedLanguage,
+        language,
     }
 }
 
-interface QueryWrappers {
+export interface QueryWrappers {
     getSinglelineTrigger: (
         node: SyntaxNode,
         start: Point,
@@ -105,14 +105,25 @@ interface QueryWrappers {
     ) =>
         | []
         | readonly [
-              { readonly node: SyntaxNode; readonly name: 'documentableNode' | 'documentableExport' },
+              {
+                  symbol?: QueryCapture
+                  range?: QueryCapture
+                  insertionPoint?: QueryCapture
+                  meta: { showHint: boolean }
+              },
           ]
+    getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
+    getEnclosingFunction: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
 }
 
 /**
  * Query wrappers with custom post-processing logic.
  */
-function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Parser): QueryWrappers {
+function getLanguageSpecificQueryWrappers(
+    queries: ResolvedQueries,
+    _parser: Parser,
+    languageId: SupportedLanguage
+): QueryWrappers {
     return {
         getSinglelineTrigger: (root, start, end) => {
             const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
@@ -136,9 +147,23 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
         },
         getDocumentableNode: (root, start, end) => {
-            const captures = queries.documentableNodes.compiled.captures(root, start, end)
+            const captures = queries.documentableNodes.compiled.captures(
+                root,
+                { ...start, column: 0 },
+                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
+            )
+            const symbolCaptures = []
+            const rangeCaptures = []
 
-            const cursorCapture = findLast(captures, ({ node }) => {
+            for (const capture of captures) {
+                if (capture.name.startsWith('range')) {
+                    rangeCaptures.push(capture)
+                } else if (capture.name.startsWith('symbol')) {
+                    symbolCaptures.push(capture)
+                }
+            }
+
+            const symbol = findLast(symbolCaptures, ({ node }) => {
                 return (
                     node.startPosition.row === start.row &&
                     (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
@@ -146,16 +171,68 @@ function getLanguageSpecificQueryWrappers(queries: ResolvedQueries, _parser: Par
                 )
             })
 
-            if (!cursorCapture) {
-                return []
+            const documentableRanges = rangeCaptures.filter(({ node }) => {
+                return (
+                    node.startPosition.row <= start.row &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+            const range = documentableRanges.at(-1)
+
+            let insertionPoint: QueryCapture | undefined
+            if (languageId === 'python' && range) {
+                /**
+                 * Python is a special case for generating documentation.
+                 * The insertion point of the documentation should differ if the symbol is a function or class.
+                 * We need to query again for an insertion point, this time using the correct determined range.
+                 *
+                 * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
+                 */
+                const insertionCaptures = queries.documentableNodes.compiled
+                    .captures(root, range.node.startPosition, range.node.endPosition)
+                    .filter(({ name }) => name.startsWith('insertion'))
+                insertionPoint = insertionCaptures.find(
+                    ({ node }) =>
+                        node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
+                )
             }
+
+            /**
+             * Heuristic to determine if we should show a prominent hint for the symbol.
+             * 1. If there is only one documentable range for this position, we can be confident it makes sense to document. Show the hint.
+             * 2. Otherwise, only show the hint if the symbol is a function
+             */
+            const showHint = Boolean(
+                documentableRanges.length === 1 || symbol?.name.includes('function')
+            )
 
             return [
                 {
-                    node: cursorCapture.node,
-                    name: cursorCapture.name === 'export' ? 'documentableExport' : 'documentableNode',
+                    symbol,
+                    range,
+                    insertionPoint,
+                    meta: { showHint },
                 },
-            ] as const
+            ]
+        },
+        getGraphContextIdentifiers: (root, start, end) => {
+            return queries.graphContextIdentifiers.compiled.captures(root, start, end)
+        },
+        getEnclosingFunction: (root, start, end) => {
+            const captures = queries.enclosingFunction.compiled.captures(root, start, end)
+
+            const firstEnclosingFunction = findLast(captures, ({ node }) => {
+                return (
+                    node.startPosition.row <= start.row &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+
+            if (!firstEnclosingFunction) {
+                return []
+            }
+
+            return [firstEnclosingFunction]
         },
     }
 }
@@ -323,7 +400,7 @@ interface QueryPoints {
     endPoint: Point
 }
 
-function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
+export function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): QueryPoints {
     const startPoint = {
         row: position.line,
         column: position.character,
@@ -338,19 +415,46 @@ function positionToQueryPoints(position: Pick<Position, 'line' | 'character'>): 
     return { startPoint, endPoint }
 }
 
-export function execQueryWrapper<T extends keyof QueryWrappers>(
-    document: TextDocument,
-    position: Pick<Position, 'line' | 'character'>,
+type ExecQueryWrapperParams<T> = {
     queryWrapper: T
+} & (
+    | {
+          document: TextDocument
+          queryPoints: QueryPoints
+      }
+    | {
+          document: TextDocument
+          position: Pick<Position, 'line' | 'character'>
+      }
+    | {
+          tree: Tree
+          languageId: string
+          queryPoints: QueryPoints
+      }
+    | {
+          tree: Tree
+          languageId: string
+          position: Pick<Position, 'line' | 'character'>
+      }
+)
+
+export function execQueryWrapper<T extends keyof QueryWrappers>(
+    params: ExecQueryWrapperParams<T>
 ): ReturnType<QueryWrappers[T]> | never[] {
-    const parseTreeCache = getCachedParseTreeForDocument(document)
-    const documentQuerySDK = getDocumentQuerySDK(document.languageId)
+    const { queryWrapper } = params
 
-    const { startPoint, endPoint } = positionToQueryPoints(position)
+    const treeToQuery =
+        'document' in params ? getCachedParseTreeForDocument(params.document)?.tree : params.tree
+    const languageId = 'document' in params ? params.document.languageId : params.languageId
+    const documentQuerySDK = getDocumentQuerySDK(languageId as SupportedLanguage)
 
-    if (documentQuerySDK && parseTreeCache) {
+    const queryPoints =
+        'position' in params ? positionToQueryPoints(params.position) : params.queryPoints
+    const { startPoint, endPoint } = queryPoints
+
+    if (documentQuerySDK && treeToQuery) {
         return documentQuerySDK.queries[queryWrapper](
-            parseTreeCache.tree.rootNode,
+            treeToQuery.rootNode,
             startPoint,
             endPoint
         ) as ReturnType<QueryWrappers[T]>

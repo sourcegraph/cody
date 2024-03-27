@@ -16,7 +16,6 @@ import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
 import {
     closeAuthProgressIndicator,
-    isAuthProgressInProgress,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import { OnboardingExperimentBranch, logExposure, pickBranch } from '../../services/OnboardingExperiment'
@@ -72,21 +71,24 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     if (this.startTokenReceiver) {
                         logExposure()
                         if (branch === OnboardingExperimentBranch.RemoveAuthenticationStep) {
-                            if (isAuthProgressInProgress()) {
-                                return
-                            }
+                            closeAuthProgressIndicator()
                             startAuthProgressIndicator()
                             tokenReceiverUrl = await this.startTokenReceiver(
                                 endpoint,
                                 async (token, endpoint) => {
                                     closeAuthProgressIndicator()
                                     const authStatus = await this.authProvider.auth(endpoint, token)
-                                    telemetryService.log('CodyVSCodeExtension:auth:fromTokenReceiver', {
-                                        type: 'callback',
-                                        from: 'web',
-                                        success: Boolean(authStatus?.isLoggedIn),
-                                        hasV2Event: true,
-                                    })
+                                    telemetryService.log(
+                                        'CodyVSCodeExtension:auth:fromTokenReceiver',
+                                        {
+                                            type: 'callback',
+                                            from: 'web',
+                                            success: Boolean(authStatus?.isLoggedIn),
+                                        },
+                                        {
+                                            hasV2Event: true,
+                                        }
+                                    )
                                     telemetryRecorder.recordEvent(
                                         'cody.auth.fromTokenReceiver.web',
                                         'succeeded',
@@ -169,7 +171,10 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
             // not required for non-chat view
             return
         }
-        void this.webview?.postMessage({ type: 'errors', errors: error.toString() })
+        void this.webview?.postMessage({
+            type: 'errors',
+            errors: error.toString(),
+        })
     }
 
     /**

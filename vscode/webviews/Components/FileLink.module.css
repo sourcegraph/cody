@@ -1,3 +1,8 @@
+.link-container {
+    display: flex;
+    align-items: center;
+}
+
 .link-button {
     background: none;
     border: none;
@@ -5,9 +10,13 @@
     cursor: pointer;
     font-size: inherit;
     text-decoration: underline;
-    display: contents; /* so our parent can tell us to truncate with ellipsis */
     padding: 0;
     margin: 0;
     text-align: left;
     font-weight: normal;
+    display: inline-block;
+}
+
+.excluded {
+    text-decoration: line-through !important;
 }

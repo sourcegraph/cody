@@ -43,12 +43,14 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import { syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/repositoryHelpers'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
+import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -60,7 +62,8 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { exportOutputLog } from './services/utils/export-logs'
+import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -113,6 +116,8 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    const authProvider = new AuthProvider(initialConfig)
+
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -124,7 +129,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
 
@@ -153,14 +158,12 @@ const register = async (
         })
     )
 
-    const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
 
     const {
-        intentDetector,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -190,7 +193,6 @@ const register = async (
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
-        intentDetector,
         guardrails,
         editor,
         authProvider,
@@ -216,9 +218,9 @@ const register = async (
     const editorManager = new EditManager({
         chat: chatClient,
         editor,
-        contextProvider,
         ghostHintDecorator,
         authProvider,
+        extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
@@ -237,7 +239,7 @@ const register = async (
         graphqlClient.onConfigurationChange(newConfig)
         promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
-        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
+        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         enterpriseContextFactory.clientConfigurationDidChange()
@@ -262,6 +264,8 @@ const register = async (
         })
     )
 
+    const statusBar = createStatusBar()
+
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
@@ -276,8 +280,13 @@ const register = async (
         )
     }
 
+    if (config.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        syncModelProviders(authStatus)
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
@@ -299,10 +308,13 @@ const register = async (
 
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        statusBar.syncAuthStatus(authStatus)
     })
+
     // Sync initial auth status
     await chatManager.syncAuthStatus(authProvider.getAuthStatus())
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    statusBar.syncAuthStatus(authProvider.getAuthStatus())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -348,8 +360,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
     )
-
-    const statusBar = createStatusBar()
 
     disposables.push(
         // Tests
@@ -519,32 +529,12 @@ const register = async (
             void vscode.commands.executeCommand(command, [source])
         }),
         ...setUpCodyIgnore(initialConfig),
-        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri))
+        // For debugging
+        vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
+        vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        new CharactersLogger()
     )
-
-    /**
-     * Signed out status bar indicator
-     */
-    let removeAuthStatusBarError: undefined | (() => void)
-    function updateAuthStatusBarIndicator(): void {
-        if (removeAuthStatusBarError) {
-            removeAuthStatusBarError()
-            removeAuthStatusBarError = undefined
-        }
-        if (!authProvider.getAuthStatus().isLoggedIn) {
-            removeAuthStatusBarError = statusBar.addError({
-                title: 'Sign In to Use Cody',
-                errorType: 'auth',
-                description: 'You need to sign in to use Cody.',
-                onSelect: () => {
-                    // Bring up the sidebar view
-                    void vscode.commands.executeCommand('cody.focus')
-                },
-            })
-        }
-    }
-    authProvider.addChangeListener(() => updateAuthStatusBarIndicator())
-    updateAuthStatusBarIndicator()
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
@@ -647,10 +637,11 @@ const register = async (
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
-    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }
 
 export type CommandResult = ChatCommandResult | EditCommandResult

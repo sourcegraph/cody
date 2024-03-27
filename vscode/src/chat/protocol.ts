@@ -12,7 +12,6 @@ import type {
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
-import type { CodeBlockMeta } from '../../webviews/chat/CodeBlocks'
 
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
@@ -57,13 +56,12 @@ export type WebviewMessage =
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
-    | { command: 'insert'; text: string; metadata?: CodeBlockMeta }
-    | { command: 'newFile'; text: string; metadata?: CodeBlockMeta }
+    | { command: 'insert'; text: string }
+    | { command: 'newFile'; text: string }
     | {
           command: 'copy'
           eventType: 'Button' | 'Keydown'
           text: string
-          metadata?: CodeBlockMeta
       }
     | {
           command: 'auth'
@@ -151,11 +149,17 @@ export type ChatSubmitType = 'user' | 'user-newchat'
 export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
     submitType: ChatSubmitType
+
+    /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+    editorState?: unknown
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
     text: string
     index?: number
+
+    /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+    editorState?: unknown
 }
 
 interface WebviewContextMessage {
@@ -186,6 +190,7 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
+export const CODY_SUPPORT_URL = new URL('https://help.sourcegraph.com/hc/en-us/requests/new')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
@@ -208,6 +213,7 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const unauthenticatedStatus = {
@@ -225,6 +231,7 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
@@ -242,6 +249,7 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */

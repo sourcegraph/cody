@@ -4,10 +4,8 @@ import './App.css'
 
 import {
     type AuthStatus,
-    type ChatInputHistory,
     type ChatMessage,
     type Configuration,
-    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
@@ -37,7 +35,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
+
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -46,12 +44,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         isCodyProUser: false,
     })
 
-    const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<ChatInputHistory[]>([])
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>([])
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
-
-    const [contextSelection, setContextSelection] = useState<ContextItem[] | null>(null)
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -130,14 +124,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setAttributionEnabled(message.configFeatures.attribution)
                         break
                     case 'history':
-                        setInputHistory(message.localHistory?.input ?? [])
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
-                        break
-                    case 'userContextFiles':
-                        setContextSelection(message.userContextFiles)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -201,7 +191,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-
+    const isNewInstall = useMemo(() => !userHistory.some(c => c.interactions.length > 0), [userHistory])
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -217,12 +207,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices
-                        probablyNewInstall={
-                            !userHistory.filter(chat => chat.interactions.length)?.length
-                        }
-                        vscodeAPI={vscodeAPI}
-                    />
+                    <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}
@@ -246,15 +231,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}
                                         messageInProgress={messageInProgress}
-                                        messageBeingEdited={messageBeingEdited}
-                                        setMessageBeingEdited={setMessageBeingEdited}
                                         transcript={transcript}
-                                        contextSelection={contextSelection}
-                                        setContextSelection={setContextSelection}
-                                        formInput={formInput}
-                                        setFormInput={setFormInput}
-                                        inputHistory={inputHistory}
-                                        setInputHistory={setInputHistory}
                                         vscodeAPI={vscodeAPI}
                                         telemetryService={telemetryService}
                                         isTranscriptError={isTranscriptError}
@@ -264,6 +241,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
+                                        isNewInstall={isNewInstall}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

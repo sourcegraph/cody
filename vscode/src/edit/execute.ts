@@ -17,6 +17,7 @@ export interface ExecuteEditArguments {
         model?: EditModel
         // The file to write the edit to. If not provided, the edit will be applied to the current file.
         destinationFile?: vscode.Uri
+        insertionPoint?: vscode.Position
     }
     source?: ChatEventSource
 }

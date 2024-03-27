@@ -1,4 +1,3 @@
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
@@ -12,6 +11,7 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { version } from '../../version'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
@@ -75,7 +75,9 @@ export class OpenTelemetryService {
 
         // Add the default tracer exporter used in production.
         this.tracerProvider.addSpanProcessor(
-            new BatchSpanProcessor(new OTLPTraceExporter({ url: traceUrl }))
+            new BatchSpanProcessor(
+                new OTLPTraceExporter({ url: traceUrl, httpAgentOptions: { rejectUnauthorized: false } })
+            )
         )
 
         // Add the console exporter used in development for verbose logging and debugging.

@@ -5,10 +5,17 @@ import type { SerializedChatTranscript } from '.'
 import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
-    displayText?: string
     contextFiles?: ContextItem[]
-    metadata?: ChatMetadata
     error?: ChatError
+
+    /**
+     * For messages composed in a rich text editor field, this is the representation of the editor
+     * state that can be used to instantiate the editor to edit the message or to render the
+     * message. This field's value is opaque to all but the rich editor, and it must validate and
+     * version the value so that it can (1) support backward- and forward-compatibility and (2) fall
+     * back to editing the text for invalid values.
+     */
+    editorState?: unknown
 }
 
 export interface ChatError {
@@ -31,24 +38,12 @@ export interface ChatError {
     isChatErrorGuard: 'isChatErrorGuard'
 }
 
-interface ChatMetadata {
-    source?: ChatEventSource
-    requestID?: string
-    chatModel?: string
-}
-
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
     [chatID: string]: SerializedChatTranscript
-}
-
-export interface ChatInputHistory {
-    inputText: string
-    inputContextFiles: ContextItem[]
 }
 
 export type ChatEventSource =
