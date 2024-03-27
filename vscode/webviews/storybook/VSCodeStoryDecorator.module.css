@@ -227,10 +227,6 @@ vscode-button::part(control) {
     content: '\ea73';
 }
 
-:global .codicon-send::before {
-    content: '\ec0f';
-}
-
 :global .codicon-arrow-up::before {
     content: '\eaa1';
 }

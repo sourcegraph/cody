@@ -22,17 +22,14 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
-    const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await contextSettingsButton.focus()
 
-    await page.keyboard.press('Space')
     // Opening the enhanced context settings should focus the checkbox for toggling it.
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
     await expect(enhancedContextCheckbox).toBeFocused()
 
     // Enhanced context should be enabled by default.
     await expect(enhancedContextCheckbox).toBeChecked()
-    await page.keyboard.press('Space')
+    await page.keyboard.press('Space') // Disable enhanced context
     // The keyboard should toggle the checkbox, but not dismiss the popup.
     await expect(enhancedContextCheckbox).not.toBeChecked()
     await expect(enhancedContextCheckbox).toBeVisible()
@@ -41,8 +38,21 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Escape')
     // Closing the enhanced context settings should close the dialog...
     await expect(enhancedContextCheckbox).not.toBeVisible()
-    // ... and focus the button which re-opens it.
-    await expect(contextSettingsButton.and(page.locator(':focus'))).toBeVisible()
+    // ... and the focus is moved to the chat input on close.
+    const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
+    await expect(contextSettingsButton.and(page.locator(':focus'))).not.toBeVisible()
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await expect(chatInput).toBeFocused()
+
+    // Tab should move the focus to the Enhanced Context Toggle button
+    await chatInput.press('Tab')
+    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
+
+    // Enter/Space key should toggle the setting
+    await page.keyboard.press('Space') // From disabled to enabled
+    await expect(chatFrame.getByTitle('Disable Enhanced Context')).toBeFocused()
+    await page.keyboard.press('Enter') // From enabled to disabled
+    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
 })
 
 test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
@@ -78,7 +88,6 @@ test('enterprise context selector can pick repos', async ({ page, sidebar, serve
     const chatFrame = await newChat(page)
 
     // Because there are no repositories in the workspace, none should be selected by default.
-    await chatFrame.getByTitle('Configure Enhanced Context').click()
     await expect(chatFrame.getByText('No repositories selected')).toBeVisible()
 
     // Choosing a repository should open the repository picker.

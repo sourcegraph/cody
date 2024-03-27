@@ -45,6 +45,7 @@ interface ChatboxProps {
     guardrails?: Guardrails
     chatIDHistory: string[]
     isWebviewActive: boolean
+    isNewInstall: boolean
 }
 
 const isMac = isMacOS()
@@ -63,8 +64,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     guardrails,
     chatIDHistory,
     isWebviewActive,
+    isNewInstall,
 }) => {
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
+
+    // Display the enhanced context settings on first chats
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
@@ -74,7 +79,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(true)
     const onEditorChange = useCallback((value: SerializedPromptEditorValue): void => {
-        setIsEmptyEditorValue(value.text === '')
+        setIsEmptyEditorValue(!value?.text?.trim())
     }, [])
 
     const onAbortMessageInProgress = useCallback(() => {
@@ -89,7 +94,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 throw new Error('Chat has no editorRef')
             }
             const editorValue = editorRef.current.getSerializedValue()
-
+            if (!editorValue.text.trim()) {
+                throw new Error('Chat message cannot be empty')
+            }
             // Handle edit requests
             if (submitType === 'edit') {
                 if (messageBeingEdited === undefined) {
@@ -188,9 +195,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const setInputFocus = useCallback((focus: boolean): void => {
         editorRef.current?.setFocus(focus)
-        if (focus) {
-            setIsEnhancedContextOpen(false)
-        }
     }, [])
 
     // When New Chat Mode is enabled, all non-edit questions will be asked in a new chat session
@@ -289,6 +293,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     ])
 
     const onEditorEscapeKey = useCallback((): void => {
+        // Close the enhanced context settings modal if it's open
+        setIsEnhancedContextOpen(false)
+
         // Exits editing mode if a message is being edited
         if (messageBeingEdited !== undefined) {
             setEditMessageState()
@@ -405,8 +412,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ]
     )
 
-    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
-
     // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
     // `Cody: Focus on Chat View` with the keyboard.
@@ -441,6 +446,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 : undefined,
         [chatIDHistory, postMessage]
     )
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: We don't want to re-run this effect.
+    const onEnhancedContextTogglerClick = useCallback((open: boolean) => {
+        if (!isEnhancedContextOpen && !open) {
+            setInputFocus(true)
+        }
+        setIsEnhancedContextOpen(open)
+    }, [])
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
 
@@ -517,8 +530,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         <div className={styles.contextButton}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
-                                setOpen={setIsEnhancedContextOpen}
+                                setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
+                                isFirstChat={isNewInstall}
                             />
                         </div>
                     </div>

@@ -32,28 +32,28 @@
   "devDependencies": {
     "@biomejs/biome": "1.5.2",
     "@sourcegraph/tsconfig": "^4.0.1",
-    "@storybook/addon-essentials": "^7.0.26",
-    "@storybook/addon-interactions": "^7.0.26",
-    "@storybook/addon-links": "^7.0.26",
-    "@storybook/react": "^7.0.26",
-    "@storybook/react-vite": "^7.0.26",
+    "@storybook/addon-essentials": "^7.6.17",
+    "@storybook/addon-interactions": "^7.6.17",
+    "@storybook/addon-links": "^7.6.17",
+    "@storybook/react": "^7.6.17",
+    "@storybook/react-vite": "^7.6.17",
     "@types/node": "20.4.0",
     "@types/react": "18.2.42",
     "@types/react-dom": "18.2.17",
-    "@vitejs/plugin-react": "^4.0.2",
-    "esbuild": "^0.18.11",
+    "@vitejs/plugin-react": "^4.2.1",
+    "esbuild": "^0.18.20",
     "jsdom": "^22.1.0",
     "knip": "^3.13.2",
-    "storybook": "^7.0.26",
+    "storybook": "^7.6.17",
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "vite": "^5.1.4",
-    "vitest": "^1.2.0"
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6",
+    "vitest": "^1.3.1"
   },
   "dependencies": {
-    "ignore": "^5.2.4",
+    "ignore": "^5.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
@@ -70,6 +70,9 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"]
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }
