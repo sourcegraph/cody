@@ -4,6 +4,7 @@ import type { URI } from 'vscode-uri'
 
 import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
 
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { TranscriptAction } from '../actions/TranscriptAction'
 
 export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
@@ -64,6 +65,18 @@ export const EnhancedContext: React.FunctionComponent<{
         title = `${title} - ⚠️ ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
+    function logContextOpening() {
+        getVSCodeAPI().postMessage({
+            command: 'event',
+            eventName: 'CodyVSCodeExtension:chat:context:opened',
+            properties: {
+                lineCount,
+                fileCount,
+                excludedAtContext: excludedAtContext.length,
+            },
+        })
+    }
+
     return (
         <TranscriptAction
             title={{
@@ -85,6 +98,7 @@ export const EnhancedContext: React.FunctionComponent<{
                     />
                 ),
             }))}
+            onClick={logContextOpening}
             className={className}
         />
     )
