@@ -10,7 +10,12 @@ import classNames from 'classnames'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
-    FILE_TOO_LARGE_LABEL, GENERAL_HELP_LABEL, NO_FILE_MATCHES_LABEL, NO_SYMBOL_MATCHES_HELP_LABEL, NO_SYMBOL_MATCHES_LABEL, SYMBOL_HELP_LABEL
+    FILE_TOO_LARGE_LABEL,
+    GENERAL_HELP_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
 import type { MentionTypeaheadOption } from './atMentions'
@@ -58,9 +63,7 @@ export const OptionsList: FunctionComponent<
                           ? options.length > 0 || !mentionQuery.text.length
                                 ? SYMBOL_HELP_LABEL
                                 : NO_SYMBOL_MATCHES_LABEL +
-                                  (mentionQuery.text.length < 3
-                                      ? NO_SYMBOL_MATCHES_HELP_LABEL
-                                      : '')
+                                  (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
                           : options.length > 0
                               ? FILE_HELP_LABEL
                               : NO_FILE_MATCHES_LABEL}
