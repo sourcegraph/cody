@@ -821,7 +821,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const theModel = modelID ? modelID : ModelProvider.getProviders(ModelUsage.Chat).at(0)?.model
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const theModel = modelID
+                ? modelID
+                : ModelProvider.getProviders(
+                      ModelUsage.Chat,
+                      authStatus.isDotCom && !authStatus.userCanUpgrade
+                  ).at(0)?.model
             if (!theModel) {
                 throw new Error('No default chat model found')
             }
@@ -836,7 +842,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     chatModel.addHumanMessage(message)
                 }
             }
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
