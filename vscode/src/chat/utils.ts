@@ -1,6 +1,6 @@
-import semver from "semver";
-import type { AuthStatus, ChatMessage } from "@sourcegraph/cody-shared";
-import { defaultAuthStatus, unauthenticatedStatus } from "./protocol";
+import type { AuthStatus, ChatMessage } from '@sourcegraph/cody-shared'
+import semver from 'semver'
+import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
 /**
  * Checks a user's authentication status.
@@ -18,46 +18,44 @@ import { defaultAuthStatus, unauthenticatedStatus } from "./protocol";
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
 export function newAuthStatus(
-	endpoint: string,
-	isDotCom: boolean,
-	user: boolean,
-	isEmailVerified: boolean,
-	isCodyEnabled: boolean,
-	userCanUpgrade: boolean,
-	version: string,
-	avatarURL: string,
-	username: string,
-	displayName?: string,
-	primaryEmail?: string,
-	configOverwrites?: AuthStatus["configOverwrites"],
+    endpoint: string,
+    isDotCom: boolean,
+    user: boolean,
+    isEmailVerified: boolean,
+    isCodyEnabled: boolean,
+    userCanUpgrade: boolean,
+    version: string,
+    avatarURL: string,
+    username: string,
+    displayName?: string,
+    primaryEmail?: string,
+    configOverwrites?: AuthStatus['configOverwrites']
 ): AuthStatus {
-	if (!user) {
-		return { ...unauthenticatedStatus, endpoint };
-	}
-	const authStatus: AuthStatus = { ...defaultAuthStatus, endpoint };
-	// Set values and return early
-	authStatus.authenticated = user;
-	authStatus.showInvalidAccessTokenError = !user;
-	authStatus.requiresVerifiedEmail = isDotCom;
-	authStatus.hasVerifiedEmail = isDotCom && isEmailVerified;
-	authStatus.siteHasCodyEnabled = isCodyEnabled;
-	authStatus.userCanUpgrade = userCanUpgrade;
-	authStatus.siteVersion = version;
-	authStatus.avatarURL = avatarURL;
-	authStatus.primaryEmail = primaryEmail || "";
-	authStatus.displayName = displayName || "";
-	authStatus.username = username;
-	if (configOverwrites) {
-		authStatus.configOverwrites = configOverwrites;
-	}
-	const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated;
-	const isAllowed = authStatus.requiresVerifiedEmail
-		? authStatus.hasVerifiedEmail
-		: true;
-	authStatus.isLoggedIn = isLoggedIn && isAllowed;
-	authStatus.isDotCom = isDotCom;
-	authStatus.codyApiVersion = inferCodyApiVersion(version, isDotCom);
-	return authStatus;
+    if (!user) {
+        return { ...unauthenticatedStatus, endpoint }
+    }
+    const authStatus: AuthStatus = { ...defaultAuthStatus, endpoint }
+    // Set values and return early
+    authStatus.authenticated = user
+    authStatus.showInvalidAccessTokenError = !user
+    authStatus.requiresVerifiedEmail = isDotCom
+    authStatus.hasVerifiedEmail = isDotCom && isEmailVerified
+    authStatus.siteHasCodyEnabled = isCodyEnabled
+    authStatus.userCanUpgrade = userCanUpgrade
+    authStatus.siteVersion = version
+    authStatus.avatarURL = avatarURL
+    authStatus.primaryEmail = primaryEmail || ''
+    authStatus.displayName = displayName || ''
+    authStatus.username = username
+    if (configOverwrites) {
+        authStatus.configOverwrites = configOverwrites
+    }
+    const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated
+    const isAllowed = authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true
+    authStatus.isLoggedIn = isLoggedIn && isAllowed
+    authStatus.isDotCom = isDotCom
+    authStatus.codyApiVersion = inferCodyApiVersion(version, isDotCom)
+    return authStatus
 }
 
 /**
@@ -66,50 +64,48 @@ export function newAuthStatus(
  * @returns An object with the total lineCount and charCount of code in code blocks,
  * or null if no code blocks are found.
  */
-export const countGeneratedCode = (
-	text: string,
-): { lineCount: number; charCount: number } | null => {
-	const codeBlockRegex = /```[\S\s]*?```/g;
-	const codeBlocks = text.match(codeBlockRegex);
-	if (!codeBlocks) {
-		return null;
-	}
-	const count = { lineCount: 0, charCount: 0 };
-	const backticks = "```";
-	for (const block of codeBlocks) {
-		const lines = block.split("\n");
-		const codeLines = lines.filter((line) => !line.startsWith(backticks));
-		const lineCount = codeLines.length;
-		const language = lines[0].replace(backticks, "");
-		// 2 backticks + 2 newline
-		const charCount = block.length - language.length - backticks.length * 2 - 2;
-		count.charCount += charCount;
-		count.lineCount += lineCount;
-	}
-	return count;
-};
+export const countGeneratedCode = (text: string): { lineCount: number; charCount: number } | null => {
+    const codeBlockRegex = /```[\S\s]*?```/g
+    const codeBlocks = text.match(codeBlockRegex)
+    if (!codeBlocks) {
+        return null
+    }
+    const count = { lineCount: 0, charCount: 0 }
+    const backticks = '```'
+    for (const block of codeBlocks) {
+        const lines = block.split('\n')
+        const codeLines = lines.filter(line => !line.startsWith(backticks))
+        const lineCount = codeLines.length
+        const language = lines[0].replace(backticks, '')
+        // 2 backticks + 2 newline
+        const charCount = block.length - language.length - backticks.length * 2 - 2
+        count.charCount += charCount
+        count.lineCount += lineCount
+    }
+    return count
+}
 
 function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
-	const parsedVersion = semver.valid(version);
-	// DotCom is always recent
-	if (isDotCom) {
-		return 1;
-	}
-	// On Cloud deployments from main, the version identifier will not parse as SemVer. Assume these
-	// are recent
-	if (parsedVersion == null) {
-		return 1;
-	}
-	// 5.4.0+ will include the API changes.
-	if (semver.gte(parsedVersion, "5.4.0")) {
-		return 1;
-	}
-	// Dev instances report as 0.0.0
-	if (parsedVersion === "0.0.0") {
-		return 1;
-	}
+    const parsedVersion = semver.valid(version)
+    // DotCom is always recent
+    if (isDotCom) {
+        return 1
+    }
+    // On Cloud deployments from main, the version identifier will not parse as SemVer. Assume these
+    // are recent
+    if (parsedVersion == null) {
+        return 1
+    }
+    // 5.4.0+ will include the API changes.
+    if (semver.gte(parsedVersion, '5.4.0')) {
+        return 1
+    }
+    // Dev instances report as 0.0.0
+    if (parsedVersion === '0.0.0') {
+        return 1
+    }
 
-	return 0; // zero refers to the legacy, unversioned, Cody API
+    return 0 // zero refers to the legacy, unversioned, Cody API
 }
 
 /**
@@ -122,13 +118,10 @@ function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
  * @returns The total number of bytes used in the messages
  */
 export function countBytesInChatMessages(messages: ChatMessage[]): number {
-	if (messages.length === 0) {
-		return 0;
-	}
-	return messages.reduce(
-		(acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3,
-		0,
-	);
+    if (messages.length === 0) {
+        return 0
+    }
+    return messages.reduce((acc, msg) => acc + msg.speaker.length + (msg.text?.length || 0) + 3, 0)
 }
 
 /**
@@ -139,13 +132,10 @@ export function countBytesInChatMessages(messages: ChatMessage[]): number {
  * @param maxChars - The maximum allowed character count
  * @returns The context window limit in bytes
  */
-export function getContextWindowLimitInBytes(
-	messages: ChatMessage[],
-	maxChars: number,
-): number {
-	const used = countBytesInChatMessages(messages);
-	if (used > maxChars) {
-		return 0;
-	}
-	return maxChars - used;
+export function getContextWindowLimitInBytes(messages: ChatMessage[], maxChars: number): number {
+    const used = countBytesInChatMessages(messages)
+    if (used > maxChars) {
+        return 0
+    }
+    return maxChars - used
 }
