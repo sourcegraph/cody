@@ -4,7 +4,6 @@ import {
     type AuthStatus,
     type ChatEventSource,
     ConfigFeaturesSingleton,
-    Configuration,
     type ConfigurationWithAccessToken,
     ModelProvider,
     PromptMixin,
