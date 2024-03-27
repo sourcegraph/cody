@@ -58,7 +58,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         } catch (error) {
             // Handles errors and empty output
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            void vscode.window.showErrorMessage('Command Failed: Make sure the command works locally.')
+            void vscode.window.showErrorMessage((error as Error).message)
             throw new Error('Failed to get shell output for Custom Command.')
         }
     })
