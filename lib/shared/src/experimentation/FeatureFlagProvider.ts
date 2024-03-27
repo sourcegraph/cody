@@ -51,6 +51,9 @@ export enum FeatureFlag {
 
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
+
+    /** Display Cody commands in a pop-up window on hover. */
+    CodyHoverCommands = 'cody-hover-commands',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
