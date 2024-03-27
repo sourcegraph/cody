@@ -745,7 +745,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             authStatus.isDotCom && !authStatus.userCanUpgrade,
             this.chatModel.modelID
         )
-        console.log('getModel', this.chatModel.modelID, models)
 
         void this.postMessage({
             type: 'chatModels',
