@@ -390,9 +390,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     }, [isOpen])
 
     React.useEffect(() => {
-        if (isFirstChat) {
-            setOpen(true)
-        }
+        setOpen(isFirstChat)
     }, [isFirstChat, setOpen])
 
     // Can't point at and use VSCodeButton type with 'ref'

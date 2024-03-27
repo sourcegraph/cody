@@ -45,6 +45,7 @@ interface ChatboxProps {
     guardrails?: Guardrails
     chatIDHistory: string[]
     isWebviewActive: boolean
+    isNewInstall: boolean
 }
 
 const isMac = isMacOS()
@@ -63,6 +64,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     guardrails,
     chatIDHistory,
     isWebviewActive,
+    isNewInstall,
 }) => {
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
@@ -530,7 +532,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 isOpen={isEnhancedContextOpen}
                                 setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                                isFirstChat={transcript.length < 1}
+                                isFirstChat={isNewInstall}
                             />
                         </div>
                     </div>
