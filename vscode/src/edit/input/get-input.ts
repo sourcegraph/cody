@@ -390,8 +390,12 @@ export const getInput = async (
                             alwaysShow: true,
                             label:
                                 mentionQuery.type === 'symbol'
-                                    ? NO_SYMBOL_MATCHES_LABEL
-                                    : NO_FILE_MATCHES_LABEL,
+                                    ? mentionQuery.text.length === 0
+                                        ? SYMBOL_HELP_LABEL
+                                        : NO_SYMBOL_MATCHES_LABEL
+                                    : mentionQuery.text.length === 0
+                                      ? FILE_HELP_LABEL
+                                      : NO_FILE_MATCHES_LABEL,
                         },
                     ]
                     return
