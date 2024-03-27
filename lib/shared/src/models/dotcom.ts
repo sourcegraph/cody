@@ -84,5 +84,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat, ModelUsage.Edit],
+        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     },
 ] as const satisfies ModelProvider[]
