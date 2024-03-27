@@ -8,6 +8,15 @@ import {
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { type FunctionComponent, useEffect, useRef } from 'react'
+import {
+    FILE_HELP_LABEL,
+    FILE_TOO_LARGE_LABEL,
+    GENERAL_HELP_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
 import type { MentionTypeaheadOption } from './atMentions'
 
@@ -49,17 +58,15 @@ export const OptionsList: FunctionComponent<
             <h3 className={classNames(styles.item, styles.helpItem)}>
                 <span>
                     {mentionQuery.type === 'empty'
-                        ? 'Search for a file to include, or type # for symbols...'
+                        ? GENERAL_HELP_LABEL
                         : mentionQuery.type === 'symbol'
                           ? options.length > 0 || !mentionQuery.text.length
-                                ? 'Search for a symbol to include...'
-                                : 'No symbols found' +
-                                  (mentionQuery.text.length > 1
-                                      ? ' (language extensions may be loading)'
-                                      : '')
+                                ? SYMBOL_HELP_LABEL
+                                : NO_SYMBOL_MATCHES_LABEL +
+                                  (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
                           : options.length > 0
-                              ? 'Search for a file to include...'
-                              : 'No files found'}
+                              ? FILE_HELP_LABEL
+                              : NO_FILE_MATCHES_LABEL}
                 </span>
                 <br />
             </h3>
@@ -103,10 +110,7 @@ const Item: FunctionComponent<{
         item.type === 'file'
             ? `${range ? `Lines ${range} · ` : ''}${dirname === '.' ? '' : dirname}`
             : displayPath(item.uri) + `:${range}`
-    const warning =
-        item.type === 'file' && item.isTooLarge
-            ? 'File too large. Type @# to choose a symbol.'
-            : undefined
+    const warning = item.type === 'file' && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:

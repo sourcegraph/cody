@@ -53,6 +53,7 @@ const getInteractionArgsFromIntent = (
 
 interface BuildInteractionOptions {
     model: EditModel
+    codyApiVersion: number
     contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
@@ -66,6 +67,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    codyApiVersion,
     contextWindow,
     task,
     editor,
@@ -99,7 +101,7 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble(model)
+    const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
 
     // Add pre-instruction for edit commands to end of human prompt to override the default
@@ -109,7 +111,7 @@ export const buildInteraction = async ({
         .get('preInstruction')
     const additionalRule = preInstruction ? `\nIMPORTANT: ${preInstruction.trim()}` : ''
 
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt + additionalRule }]
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt.instruction + additionalRule }]
     if (assistantText) {
         transcript.push({ speaker: 'assistant', text: assistantText })
     }

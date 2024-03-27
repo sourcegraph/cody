@@ -3,7 +3,7 @@ import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    return ModelProvider.getProviders(ModelUsage.Edit)
+    return ModelProvider.getProviders(ModelUsage.Edit, authStatus.isDotCom && !authStatus.userCanUpgrade)
 }
 
 export function getOverridenModelForIntent(intent: EditIntent, currentModel: EditModel): EditModel {
@@ -12,7 +12,7 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
             // Edit commands have only been tested with Claude 2. Default to that for now.
             return 'anthropic/claude-2.0'
         case 'doc':
-            return 'anthropic/claude-instant-1.2'
+            return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':
         case 'edit':

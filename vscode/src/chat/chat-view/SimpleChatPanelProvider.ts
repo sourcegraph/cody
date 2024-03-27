@@ -585,7 +585,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
-                telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
+                telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
+                    source,
+                })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
                     privateMetadata: { source },
                 })
@@ -738,7 +740,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelProvider.getProviders(ModelUsage.Chat, this.chatModel.modelID)
+        const models = ModelProvider.getProviders(
+            ModelUsage.Chat,
+            authStatus.isDotCom && !authStatus.userCanUpgrade,
+            this.chatModel.modelID
+        )
 
         void this.postMessage({
             type: 'chatModels',
@@ -790,7 +796,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<Message[]> {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
-            this.chatModel.maxChars
+            this.authProvider.getAuthStatus().codyApiVersion,
+            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
@@ -1147,7 +1154,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Let the webview know if it is active
         panel.onDidChangeViewState(event =>
-            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+            this.postMessage({
+                type: 'webview-state',
+                isActive: event.webviewPanel.active,
+            })
         )
 
         this.disposables.push(

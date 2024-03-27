@@ -53,6 +53,7 @@ export interface Configuration {
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
+    experimentalSupercompletions: boolean
 
     /**
      * Unstable Features for internal testing only
