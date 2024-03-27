@@ -1455,11 +1455,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ca319e7a676bb9033fad26c0fa907896
+    - _id: b09fcd3a334619a22b0d4e87090fb0e3
       _order: 0
       cache: {}
       request:
-        bodySize: 3077
+        bodySize: 3161
         cookies: []
         headers:
           - name: content-type
@@ -1482,8 +1482,10 @@ log:
           textJSON:
             maxTokensToSample: 1000
             messages:
-              - speaker: system
+              - speaker: human
                 text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >+
                   Codebase context from file src/example.test.ts in repository
@@ -1563,14 +1565,264 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 120
+        bodySize: 8829
         content:
           mimeType: text/event-stream
-          size: 120
+          size: 8829
           text: >+
-            event: error
+            event: completion
 
-            data: {"error":"expected message speaker to be 'human' or 'assistant', got system"}
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3r","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1580,7 +1832,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 27 Mar 2024 10:30:54 GMT
+            value: Wed, 27 Mar 2024 11:30:52 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1609,7 +1861,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-27T10:30:54.053Z
+      startedDateTime: 2024-03-27T11:30:49.812Z
       time: 0
       timings:
         blocked: -1
@@ -3021,6 +3273,242 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-21T19:50:32.252Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ba5bcb1c34bc6e8414833dea477f0b81
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 351
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "351"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 391
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: hasCode
+                  feature: cody.fixup.response
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.10.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 11:30:54 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T11:30:53.848Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: eaa3ad79c9b90818e0df6ce8ab871083
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 350
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "350"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 391
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: succeeded
+                  feature: cody.fixup.apply
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.10.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 112
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 11:30:54 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T11:30:53.883Z
       time: 0
       timings:
         blocked: -1

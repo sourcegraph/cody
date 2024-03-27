@@ -932,7 +932,7 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Adds two numbers and returns the result.
+                   * Sums two numbers together.
                    *
                    * @param a - The first number to add.
                    * @param b - The second number to add.
@@ -957,7 +957,7 @@ describe('Agent', () => {
                           constructor(private shouldGreet: boolean) {}
 
                               /**
-                           * Logs a greeting message if the shouldGreet flag is true.
+                           * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
                            */
                       public functionName() {
                               if (this.shouldGreet) {
@@ -981,7 +981,7 @@ describe('Agent', () => {
                               // Do some stuff
 
                                       /**
-                               * Logs a message to indicate when logging activity begins.
+                               * Records a log message.
                                */
                       function recordLog() {
                                   console.log(/* CURSOR */ 'Recording the log')
@@ -1015,8 +1015,10 @@ describe('Agent', () => {
 
                           it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
-                                      // Record start time for performance measurement
-                              const startTime = performance.now();
+                                      /**
+                               * Retrieves the current time in milliseconds since the page was loaded.
+                               * This can be used to measure the elapsed time of an operation.
+                               */
                       const startTime = performance.now(/* CURSOR */)
                           })
                       })
@@ -1355,11 +1357,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 test cases:
-                   * - Does test 1
-                   * - Does test 2
-                   * - Does something else (has incorrect usage of \`performance.now\`)
-                   */
+                   * Test block that contains 3 sample test cases.
+                   * The 1st case asserts true is true.
+                   * The 2nd case asserts true is true.
+                   * The 3rd case attempts to error by incorrectly using \`performance.now\`.
+                  */
                   describe('test block', () => {
                       it('does 1', () => {
                           expect(true).toBe(true)
