@@ -290,7 +290,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
-}).only('@-mention symbol in chat', async ({ page, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
