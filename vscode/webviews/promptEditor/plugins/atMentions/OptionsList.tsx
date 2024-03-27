@@ -54,7 +54,7 @@ export const OptionsList: FunctionComponent<
                           ? options.length > 0 || !mentionQuery.text.length
                                 ? 'Search for a symbol to include...'
                                 : 'No symbols found' +
-                                  (mentionQuery.text.length > 1
+                                  (mentionQuery.text.length < 3
                                       ? ' (language extensions may be loading)'
                                       : '')
                           : options.length > 0

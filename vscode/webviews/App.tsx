@@ -191,7 +191,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-
+    const isNewInstall = useMemo(() => !userHistory.some(c => c.interactions.length > 0), [userHistory])
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -207,12 +207,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices
-                        probablyNewInstall={
-                            !userHistory.filter(chat => chat.interactions.length)?.length
-                        }
-                        vscodeAPI={vscodeAPI}
-                    />
+                    <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}
@@ -246,6 +241,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
+                                        isNewInstall={isNewInstall}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
