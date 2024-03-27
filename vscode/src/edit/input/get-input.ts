@@ -12,7 +12,8 @@ import {
     FILE_HELP_LABEL,
     FILE_TOO_LARGE_LABEL,
     GENERAL_HELP_LABEL,
-    NO_MATCHES_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
@@ -384,7 +385,15 @@ export const getInput = async (
                 const matchingContext = await getMatchingContext(mentionQuery)
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
-                    input.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
+                    input.items = [
+                        {
+                            alwaysShow: true,
+                            label:
+                                mentionQuery.type === 'symbol'
+                                    ? NO_SYMBOL_MATCHES_LABEL
+                                    : NO_FILE_MATCHES_LABEL,
+                        },
+                    ]
                     return
                 }
 
@@ -439,7 +448,8 @@ export const getInput = async (
                     case FILE_HELP_LABEL:
                     case FILE_TOO_LARGE_LABEL:
                     case SYMBOL_HELP_LABEL:
-                    case NO_MATCHES_LABEL:
+                    case NO_FILE_MATCHES_LABEL:
+                    case NO_SYMBOL_MATCHES_LABEL:
                     case GENERAL_HELP_LABEL:
                         // Noop, the user has actioned an item that is non intended to be actionable.
                         return
