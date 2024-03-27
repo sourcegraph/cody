@@ -17,7 +17,7 @@ export function getOverridenModelForIntent(intent: EditIntent, currentModel: Edi
             return 'anthropic/claude-3-sonnet-20240229'
         case 'doc':
             // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
-            return 'anthropic/claude-instant-1.2'
+            return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':
         case 'edit':

@@ -1,7 +1,10 @@
 import * as vscode from 'vscode'
 
 import type { EditModel, ModelProvider } from '@sourcegraph/cody-shared'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
+import {
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from '../../../chat/context/constants'
 import type { GetItemsResult } from '../quick-pick'
 import type { EditModelItem } from './types'
 

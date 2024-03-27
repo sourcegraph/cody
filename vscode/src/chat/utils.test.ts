@@ -1,12 +1,11 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 import { newAuthStatus } from './utils'
 
 describe('validateAuthStatus', () => {
-    // NOTE: Site version is for frontend use and doesn't play a role in validating auth status
     const siteVersion = ''
-    const isDotComOrApp = true
+    const isDotCom = true
     const verifiedEmail = true
     const codyEnabled = true
     const validUser = true
@@ -16,13 +15,13 @@ describe('validateAuthStatus', () => {
     const primaryEmail = 'me@domain.test'
     const displayName = 'Test Name'
     const avatarURL = 'https://domain.test/avatar.png'
-    // DOTCOM AND APP USERS
-    test('returns auth state for invalid user on dotcom or app instance', () => {
+
+    it('returns auth state for invalid user on dotcom instance', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
         expect(
             newAuthStatus(
                 endpoint,
-                isDotComOrApp,
+                isDotCom,
                 !validUser,
                 !verifiedEmail,
                 codyEnabled,
@@ -36,7 +35,7 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for valid user with varified email on dotcom or app instance', () => {
+    it('returns auth status for valid user with verified email on dotcom instance', () => {
         const expected = {
             ...defaultAuthStatus,
             authenticated: true,
@@ -50,11 +49,12 @@ describe('validateAuthStatus', () => {
             username,
             displayName,
             primaryEmail,
+            codyApiVersion: 1,
         }
         expect(
             newAuthStatus(
                 endpoint,
-                isDotComOrApp,
+                isDotCom,
                 validUser,
                 verifiedEmail,
                 codyEnabled,
@@ -68,7 +68,7 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for valid user without verified email on dotcom or app instance', () => {
+    it('returns auth status for valid user without verified email on dotcom instance', () => {
         const expected = {
             ...defaultAuthStatus,
             authenticated: true,
@@ -80,11 +80,12 @@ describe('validateAuthStatus', () => {
             username,
             displayName,
             primaryEmail,
+            codyApiVersion: 1,
         }
         expect(
             newAuthStatus(
                 endpoint,
-                isDotComOrApp,
+                isDotCom,
                 validUser,
                 !verifiedEmail,
                 codyEnabled,
@@ -98,8 +99,7 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    // ENTERPRISE
-    test('returns auth status for valid user on enterprise instance with Cody enabled', () => {
+    it('returns auth status for valid user on enterprise instance with Cody enabled', () => {
         const expected = {
             ...defaultAuthStatus,
             authenticated: true,
@@ -111,11 +111,12 @@ describe('validateAuthStatus', () => {
             username,
             displayName,
             primaryEmail,
+            codyApiVersion: 1,
         }
         expect(
             newAuthStatus(
                 endpoint,
-                !isDotComOrApp,
+                !isDotCom,
                 validUser,
                 verifiedEmail,
                 codyEnabled,
@@ -129,12 +130,12 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for invalid user on enterprise instance with Cody enabled', () => {
+    it('returns auth status for invalid user on enterprise instance with Cody enabled', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
         expect(
             newAuthStatus(
                 endpoint,
-                !isDotComOrApp,
+                !isDotCom,
                 !validUser,
                 verifiedEmail,
                 codyEnabled,
@@ -147,7 +148,7 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for valid user on enterprise instance with Cody disabled', () => {
+    it('returns auth status for valid user on enterprise instance with Cody disabled', () => {
         const expected = {
             ...defaultAuthStatus,
             authenticated: true,
@@ -158,11 +159,12 @@ describe('validateAuthStatus', () => {
             displayName,
             primaryEmail,
             isDotCom: false,
+            codyApiVersion: 1,
         }
         expect(
             newAuthStatus(
                 endpoint,
-                !isDotComOrApp,
+                !isDotCom,
                 validUser,
                 !verifiedEmail,
                 !codyEnabled,
@@ -176,12 +178,12 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for invalid user on enterprise instance with Cody disabled', () => {
+    it('returns auth status for invalid user on enterprise instance with Cody disabled', () => {
         const expected = { ...unauthenticatedStatus, endpoint }
         expect(
             newAuthStatus(
                 endpoint,
-                !isDotComOrApp,
+                !isDotCom,
                 !validUser,
                 verifiedEmail,
                 !codyEnabled,
@@ -195,7 +197,7 @@ describe('validateAuthStatus', () => {
         ).toEqual(expected)
     })
 
-    test('returns auth status for signed in user without email&displayName on enterprise instance', () => {
+    it('returns auth status for signed in user without email and displayName on enterprise instance', () => {
         const expected = {
             ...defaultAuthStatus,
             authenticated: true,
@@ -207,16 +209,47 @@ describe('validateAuthStatus', () => {
             username,
             displayName: '',
             primaryEmail: '',
+            codyApiVersion: 1,
         }
         expect(
             newAuthStatus(
                 endpoint,
-                !isDotComOrApp,
+                !isDotCom,
                 validUser,
                 verifiedEmail,
                 codyEnabled,
                 userCanUpgrade,
                 siteVersion,
+                avatarURL,
+                username
+            )
+        ).toEqual(expected)
+    })
+
+    it('returns API version 0 for a legacy instance', () => {
+        const expected = {
+            ...defaultAuthStatus,
+            authenticated: true,
+            siteHasCodyEnabled: true,
+            isLoggedIn: true,
+            isDotCom: false,
+            endpoint,
+            avatarURL,
+            username,
+            displayName: '',
+            primaryEmail: '',
+            siteVersion: '5.2.0',
+            codyApiVersion: 0,
+        }
+        expect(
+            newAuthStatus(
+                endpoint,
+                !isDotCom,
+                validUser,
+                verifiedEmail,
+                codyEnabled,
+                userCanUpgrade,
+                '5.2.0',
                 avatarURL,
                 username
             )

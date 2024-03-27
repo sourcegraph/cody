@@ -454,7 +454,7 @@ export class FixupController
          */
         let trackedRange = task.selectionRange
 
-        if (task.mode === 'insert' || task.mode === 'add') {
+        if (task.mode === 'insert') {
             const insertionPoint = task.insertionPoint || task.selectionRange.start
             const textLines = lines(task.replacement)
             trackedRange = new vscode.Range(
