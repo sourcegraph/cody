@@ -71,7 +71,7 @@ export class ModelProvider {
             ?.map(model => ({
                 ...model,
                 // Set the current model as default
-                default: model.model === currentModel,
+                default: currentModel ? model.model === currentModel : model.default,
             }))
     }
 
