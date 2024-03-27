@@ -932,10 +932,11 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Adds two numbers
-                   * @param a The first number in the addition
-                   * @param b The second number in the addition
-                   * @returns The sum of a and b
+                   * Adds two numbers and returns the result.
+                   *
+                   * @param a - The first number to add.
+                   * @param b - The second number to add.
+                   * @returns The sum of the two numbers.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -950,22 +951,22 @@ describe('Agent', () => {
                 'TestClass.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "const foo = 42
+                      "const foo = 42
 
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
+                      export class TestClass {
+                          constructor(private shouldGreet: boolean) {}
 
-                          /**
-                       * Logs a greeting message if the shouldGreet flag is true.
-                       */
-                  public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
+                              /**
+                           * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
+                           */
+                      public functionName() {
+                              if (this.shouldGreet) {
+                                  console.log(/* CURSOR */ 'Hello World!')
+                              }
                           }
                       }
-                  }
-                  "
-                `)
+                      "
+                    `)
             )
 
             checkDocumentCommand(
@@ -974,23 +975,23 @@ describe('Agent', () => {
                 'TestLogger.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "const foo = 42
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
+                      "const foo = 42
+                      export const TestLogger = {
+                          startLogging: () => {
+                              // Do some stuff
 
-                                  /**
-                           * Logs a message to indicate when logging activity begins.
-                           */
-                  function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
+                                      /**
+                               * Records a log message.
+                               */
+                      function recordLog() {
+                                  console.log(/* CURSOR */ 'Recording the log')
+                              }
 
-                          recordLog()
-                      },
-                  }
-                  "
-                `)
+                              recordLog()
+                          },
+                      }
+                      "
+                    `)
             )
 
             checkDocumentCommand(
@@ -999,28 +1000,30 @@ describe('Agent', () => {
                 'example.test.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+                      "import { expect } from 'vitest'
+                      import { it } from 'vitest'
+                      import { describe } from 'vitest'
 
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
+                      describe('test block', () => {
+                          it('does 1', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
+                          it('does 2', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                                  // Record start time for performance measurement
-                          const startTime = performance.now();
-                  const startTime = performance.now(/* CURSOR */)
+                          it('does something else', () => {
+                              // This line will error due to incorrect usage of \`performance.now\`
+                                      /**
+                               * Retrieves the current time in milliseconds since the page was loaded.
+                               * This can be used to measure the duration of an operation.
+                               */
+                      const startTime = performance.now(/* CURSOR */)
+                          })
                       })
-                  })
-                  "
-                `)
+                      "
+                    `)
             )
         })
     })

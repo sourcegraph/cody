@@ -5,6 +5,1357 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
+    - _id: 6f9c618e678530de14f58be0a21d48f5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2653
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_a60a05fa067138127a8314f05ea34a087bc87f14c6ab552f17d65a1619473b54
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: x-sourcegraph-feature
+            value: chat_completions
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "2653"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: cody-gateway.sourcegraph.com
+        headersSize: 426
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            max_tokens: 1000
+            messages:
+              - content:
+                  - text: You are Cody, an AI coding assistant from Sourcegraph.
+                    type: text
+                role: system
+              - content:
+                  - text: >-
+                      - You are an AI programming assistant who is an expert in
+                      updating code to meet given instructions.
+
+                      - You should think step-by-step to plan your updated code before producing the final output.
+
+                      - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                      - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                      - Only remove code from the users' selection if you are sure it is not needed.
+
+                      - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                      - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                      - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                      - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                      This is part of the file: src/sum.ts
+
+
+                      The user has the following code in their selection:
+
+                      <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                          /* CURSOR */
+                      }</SELECTEDCODE7662>
+
+
+                      The user wants you to generate documentation for the selected code by following their instructions.
+
+                      Provide your generated documentation using the following instructions:
+
+                      <INSTRUCTIONS7390>
+
+                      Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                      </INSTRUCTIONS7390>
+                    type: text
+                role: user
+              - content:
+                  - text: <CODE5711>
+                    type: text
+                role: assistant
+            model: anthropic/claude-3-haiku-20240307
+            stop_sequences:
+              - </CODE5711>
+              - "export function sum(a: number, b: number): number {"
+            stream: true
+            temperature: 0.2
+            top_k: -1
+            top_p: -1
+        queryString: []
+        url: https://cody-gateway.sourcegraph.com/v1/completions/anthropic-messages
+      response:
+        bodySize: 7046
+        content:
+          mimeType: text/event-stream; charset=utf-8
+          size: 7046
+          text: >+
+            event: message_start
+
+            data: {"type":"message_start","message":{"id":"msg_01CQqQSpqP15XMVDTmxtDMY4","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":512,"output_tokens":1}}       }
+
+
+            event: content_block_start
+
+            data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}       }
+
+
+            event: ping
+
+            data: {"type": "ping"}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"/**"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Adds"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" two"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" numbers"}     }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" and"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" returns"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" th"} }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"e result"}     }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" @"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"param"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" a"}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" -"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Th"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"e first"}   }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" number"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" to"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" add"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" @"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"param"}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" b"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" -"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Th"}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"e second"}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" number"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" to"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" add"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}        }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" @"}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"returns"}          }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Th"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"e sum"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" of"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" th"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"e two"}        }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" numbers"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*/"}  }
+
+
+            event: content_block_stop
+
+            data: {"type":"content_block_stop","index":0}
+
+
+            event: message_delta
+
+            data: {"type":"message_delta","delta":{"stop_reason":"stop_sequence","stop_sequence":"</CODE5711>"},"usage":{"output_tokens":62}              }
+
+
+            event: message_stop
+
+            data: {"type":"message_stop"          }
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 10:30:47 GMT
+          - name: content-type
+            value: text/event-stream; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: cache-control
+            value: no-cache
+          - name: request-id
+            value: req_01Bvy5ndduCGgHBKcTcJzQ3G
+          - name: x-cody-resolved-model
+            value: anthropic/claude-3-haiku-20240307
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 987
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T10:30:46.324Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b21c1f9f1eb094ebeee33739fed0586c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2969
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_a60a05fa067138127a8314f05ea34a087bc87f14c6ab552f17d65a1619473b54
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: x-sourcegraph-feature
+            value: chat_completions
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "2969"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: cody-gateway.sourcegraph.com
+        headersSize: 426
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            max_tokens: 1000
+            messages:
+              - content:
+                  - text: You are Cody, an AI coding assistant from Sourcegraph.
+                    type: text
+                role: system
+              - content:
+                  - text: "Codebase context from file src/TestClass.ts in repository undefined:
+
+                      t foo = 42
+
+
+                      export class TestClass {
+
+                      \    constructor(private
+                      shouldGreet: boolean) {}
+
+
+                      \    "
+                    type: text
+                role: user
+              - content:
+                  - text: Ok.
+                    type: text
+                role: assistant
+              - content:
+                  - text: >-
+                      - You are an AI programming assistant who is an expert in
+                      updating code to meet given instructions.
+
+                      - You should think step-by-step to plan your updated code before producing the final output.
+
+                      - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                      - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                      - Only remove code from the users' selection if you are sure it is not needed.
+
+                      - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                      - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                      - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                      - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                      This is part of the file: src/TestClass.ts
+
+
+                      The user has the following code in their selection:
+
+                      <SELECTEDCODE7662>public functionName() {
+                              if (this.shouldGreet) {
+                                  console.log(/* CURSOR */ 'Hello World!')
+                              }
+                          }</SELECTEDCODE7662>
+
+                      The user wants you to generate documentation for the selected code by following their instructions.
+
+                      Provide your generated documentation using the following instructions:
+
+                      <INSTRUCTIONS7390>
+
+                      Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                      </INSTRUCTIONS7390>
+                    type: text
+                role: user
+              - content:
+                  - text: <CODE5711>
+                    type: text
+                role: assistant
+            model: anthropic/claude-3-haiku-20240307
+            stop_sequences:
+              - </CODE5711>
+              - public functionName() {
+            stream: true
+            temperature: 0.2
+            top_k: -1
+            top_p: -1
+        queryString: []
+        url: https://cody-gateway.sourcegraph.com/v1/completions/anthropic-messages
+      response:
+        bodySize: 3637
+        content:
+          mimeType: text/event-stream; charset=utf-8
+          size: 3637
+          text: >+
+            event: message_start
+
+            data: {"type":"message_start","message":{"id":"msg_01YJLFnji45h7qkz95Phtdh8","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":580,"output_tokens":1}}         }
+
+
+            event: content_block_start
+
+            data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}     }
+
+
+            event: ping
+
+            data: {"type": "ping"}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"/**"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}        }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Logs"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" a"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" greeting"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" message"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" to"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" the"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" console"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" if"} }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" the"}     }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" `"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"should"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Gre"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"et"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"`"}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" flag"}   }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" is"}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" true"}       }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*/"}             }
+
+
+            event: content_block_stop
+
+            data: {"type":"content_block_stop","index":0       }
+
+
+            event: message_delta
+
+            data: {"type":"message_delta","delta":{"stop_reason":"stop_sequence","stop_sequence":"</CODE5711>"},"usage":{"output_tokens":31}         }
+
+
+            event: message_stop
+
+            data: {"type":"message_stop"       }
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 10:30:48 GMT
+          - name: content-type
+            value: text/event-stream; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: cache-control
+            value: no-cache
+          - name: request-id
+            value: req_01GtdoDjA5JTEskWKXD8STWH
+          - name: x-cody-resolved-model
+            value: anthropic/claude-3-haiku-20240307
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 987
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T10:30:48.057Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 37f4eb7faa3cb20614923189a1da99f6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2938
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_a60a05fa067138127a8314f05ea34a087bc87f14c6ab552f17d65a1619473b54
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: x-sourcegraph-feature
+            value: chat_completions
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "2938"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: cody-gateway.sourcegraph.com
+        headersSize: 426
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            max_tokens: 1000
+            messages:
+              - content:
+                  - text: You are Cody, an AI coding assistant from Sourcegraph.
+                    type: text
+                role: system
+              - content:
+                  - text: "Codebase context from file src/TestLogger.ts in repository undefined:
+
+                      o = 42
+
+                      export const TestLogger = {
+
+                      \    startLogging: () => {
+
+                      \        // Do some stuff
+
+
+                      \        "
+                    type: text
+                role: user
+              - content:
+                  - text: Ok.
+                    type: text
+                role: assistant
+              - content:
+                  - text: >-
+                      - You are an AI programming assistant who is an expert in
+                      updating code to meet given instructions.
+
+                      - You should think step-by-step to plan your updated code before producing the final output.
+
+                      - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                      - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                      - Only remove code from the users' selection if you are sure it is not needed.
+
+                      - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                      - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                      - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                      - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                      This is part of the file: src/TestLogger.ts
+
+
+                      The user has the following code in their selection:
+
+                      <SELECTEDCODE7662>function recordLog() {
+                                  console.log(/* CURSOR */ 'Recording the log')
+                              }</SELECTEDCODE7662>
+
+                      The user wants you to generate documentation for the selected code by following their instructions.
+
+                      Provide your generated documentation using the following instructions:
+
+                      <INSTRUCTIONS7390>
+
+                      Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                      </INSTRUCTIONS7390>
+                    type: text
+                role: user
+              - content:
+                  - text: <CODE5711>
+                    type: text
+                role: assistant
+            model: anthropic/claude-3-haiku-20240307
+            stop_sequences:
+              - </CODE5711>
+              - function recordLog() {
+            stream: true
+            temperature: 0.2
+            top_k: -1
+            top_p: -1
+        queryString: []
+        url: https://cody-gateway.sourcegraph.com/v1/completions/anthropic-messages
+      response:
+        bodySize: 2000
+        content:
+          mimeType: text/event-stream; charset=utf-8
+          size: 2000
+          text: >+
+            event: message_start
+
+            data: {"type":"message_start","message":{"id":"msg_01XQsxuKMNVMZJkWojLhAvfu","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":570,"output_tokens":1}}       }
+
+
+            event: content_block_start
+
+            data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}            }
+
+
+            event: ping
+
+            data: {"type": "ping"}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"/**"}   }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Records"}        }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" a"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" log"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" message"}          }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}          }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*/"}}
+
+
+            event: content_block_stop
+
+            data: {"type":"content_block_stop","index":0 }
+
+
+            event: message_delta
+
+            data: {"type":"message_delta","delta":{"stop_reason":"stop_sequence","stop_sequence":"</CODE5711>"},"usage":{"output_tokens":17}              }
+
+
+            event: message_stop
+
+            data: {"type":"message_stop"         }
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 10:30:49 GMT
+          - name: content-type
+            value: text/event-stream; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: cache-control
+            value: no-cache
+          - name: request-id
+            value: req_01F6Lsbc7cbV4CmYy8zynXtj
+          - name: x-cody-resolved-model
+            value: anthropic/claude-3-haiku-20240307
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 987
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T10:30:49.230Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 345c834ad008d5d01c8ed0e428c4ef60
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3207
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_a60a05fa067138127a8314f05ea34a087bc87f14c6ab552f17d65a1619473b54
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: x-sourcegraph-feature
+            value: chat_completions
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "3207"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: cody-gateway.sourcegraph.com
+        headersSize: 426
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            max_tokens: 1000
+            messages:
+              - content:
+                  - text: You are Cody, an AI coding assistant from Sourcegraph.
+                    type: text
+                role: system
+              - content:
+                  - text: "Codebase context from file src/example.test.ts in repository undefined:
+
+                      \ expect } from 'vitest'
+
+                      import { it } from 'vitest'
+
+                      import { describe } from 'vitest'
+
+
+                      describe('test block', () => {
+
+                      \    it('does 1', () => {
+
+                      \        expect(true).toBe(true)
+
+                      \    })
+
+
+                      \    it('does 2', () => {
+
+                      \        expect(true).toBe(true)
+
+                      \    })
+
+
+                      \    it('does something else', () =>
+                      {
+
+                      \        // This line will error due
+                      to incorrect usage of `performance.now`
+
+                      \        "
+                    type: text
+                role: user
+              - content:
+                  - text: Ok.
+                    type: text
+                role: assistant
+              - content:
+                  - text: >-
+                      - You are an AI programming assistant who is an expert in
+                      updating code to meet given instructions.
+
+                      - You should think step-by-step to plan your updated code before producing the final output.
+
+                      - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                      - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                      - Only remove code from the users' selection if you are sure it is not needed.
+
+                      - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                      - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                      - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                      - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+
+
+                      This is part of the file: src/example.test.ts
+
+
+                      The user has the following code in their selection:
+
+                      <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
+
+
+                      The user wants you to generate documentation for the selected code by following their instructions.
+
+                      Provide your generated documentation using the following instructions:
+
+                      <INSTRUCTIONS7390>
+
+                      Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                      </INSTRUCTIONS7390>
+                    type: text
+                role: user
+              - content:
+                  - text: <CODE5711>
+                    type: text
+                role: assistant
+            model: anthropic/claude-3-haiku-20240307
+            stop_sequences:
+              - </CODE5711>
+              - const startTime = performance.now(/* CURSOR */)
+            stream: true
+            temperature: 0.2
+            top_k: -1
+            top_p: -1
+        queryString: []
+        url: https://cody-gateway.sourcegraph.com/v1/completions/anthropic-messages
+      response:
+        bodySize: 4928
+        content:
+          mimeType: text/event-stream; charset=utf-8
+          size: 4928
+          text: >+
+            event: message_start
+
+            data: {"type":"message_start","message":{"id":"msg_01FCB1tRthf8jMzQVtniqHXN","type":"message","role":"assistant","content":[],"model":"claude-3-haiku-20240307","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":652,"output_tokens":1}}          }
+
+
+            event: content_block_start
+
+            data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}             }
+
+
+            event: ping
+
+            data: {"type": "ping"}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"/**"}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" Retri"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"eves"}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" the"}             }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" current"}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" time"}          }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" in"}   }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" millis"}      }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"econds"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" since"}     }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" the"}               }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" page"}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" was"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" loaded"}         }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}        }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*"}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" This"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" can"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" be"} }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" used"} }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" to"}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" measure"}     }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" the"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" duration"}  }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" of"}            }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" an"}           }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" operation"}    }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}              }
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n "}}
+
+
+            event: content_block_delta
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"*/"}      }
+
+
+            event: content_block_stop
+
+            data: {"type":"content_block_stop","index":0         }
+
+
+            event: message_delta
+
+            data: {"type":"message_delta","delta":{"stop_reason":"stop_sequence","stop_sequence":"</CODE5711>"},"usage":{"output_tokens":42}}
+
+
+            event: message_stop
+
+            data: {"type":"message_stop"}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 10:30:50 GMT
+          - name: content-type
+            value: text/event-stream; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: cache-control
+            value: no-cache
+          - name: request-id
+            value: req_01NTG3RQZwZ9P2PZV3RAmLCt
+          - name: x-cody-resolved-model
+            value: anthropic/claude-3-haiku-20240307
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 987
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T10:30:50.131Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 7a38afd9f6cdba4b5646c4a397ad28e6
       _order: 0
       cache: {}
@@ -15828,326 +17179,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 29995f66f46573160240f85311dbfbc9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2646
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - "export function sum(a: number, b: number): number {"
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 5426
-        content:
-          mimeType: text/event-stream
-          size: 5426
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Adds two numbers\n * @param a The first number in the addition\n * @param b The second number in the addition\n * @returns The sum of a and b\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 16:50:56 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-15T16:50:55.228Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: f5c079a4dd4bc8cd7fc9b06b12440076
       _order: 0
       cache: {}
@@ -17457,693 +18488,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d6fe029f0810088cadff6bbf9ded6ffb
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2913
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/TestClass.ts in repository undefined:
-
-                  t foo = 42
-
-
-                  export class TestClass {
-
-                  \    constructor(private shouldGreet:
-                  boolean) {}
-
-
-                  \    "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestClass.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - public functionName() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1887
-        content:
-          mimeType: text/event-stream
-          size: 1887
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the should","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldG","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a greeting message if the shouldGreet flag is true.\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 18 Mar 2024 17:48:55 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-18T17:48:52.049Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 27666dc77fd32ed695dd5c043c75a4d6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2882
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/TestLogger.ts in repository undefined:
-
-                  o = 42
-
-                  export const TestLogger = {
-
-                  \    startLogging: () => {
-
-                  \        // Do some stuff
-
-
-                  \        "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestLogger.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - function recordLog() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1547
-        content:
-          mimeType: text/event-stream
-          size: 1547
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Logs a message to indicate when logging activity begins.\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 18 Mar 2024 17:48:57 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-18T17:48:56.238Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: f57278b9d4d3da95638437bab80c574e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3151
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/example.test.ts in repository undefined:
-
-                  \ expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-
-                  \    it('does 1', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does 2', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does something else', () => {
-
-                  \        // This line will error due to
-                  incorrect usage of `performance.now`
-
-                  \        "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - const startTime = performance.now(/* CURSOR */)
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1172
-        content:
-          mimeType: text/event-stream
-          size: 1172
-          text: >+
-            event: completion
-
-            data: {"completion":"\n//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance measurement","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance measurement\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n// Record start time for performance measurement\nconst startTime = performance.now();\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 18 Mar 2024 17:48:58 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-18T17:48:57.757Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: a327ce72966a8092d3ae0846993efbd3
       _order: 0
       cache: {}
@@ -18438,6 +18782,7 @@ log:
                   <selected>
 
                       return function inner() {}
+
 
                       
                   </selected>
