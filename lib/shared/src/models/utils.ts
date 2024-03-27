@@ -17,10 +17,6 @@ export function getProviderName(name: string): string {
     }
 }
 
-export function supportsFastPath(model: string): boolean {
-    return model?.startsWith('anthropic/claude-3')
-}
-
 /**
  * Gets the provider and title from a model ID string.
  */

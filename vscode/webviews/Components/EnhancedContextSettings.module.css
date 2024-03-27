@@ -182,59 +182,48 @@
     outline-offset: 2px;
 }
 
-.settings-btn {
-    color: var(--vscode-editor-foreground);
-    border: 1px solid transparent;
-    border-radius: 3px;
+.settings-btns {
     position: relative;
+    display: flex;
+    color: var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 3px;
 }
 
-.settings-btn i {
+.settings-indicator {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.settings-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left-width: 0;
+}
+
+/* Active borders on keyboard focus but not mousedown (:focus-visible doesn't seem to work) */
+
+.settings-indicator:focus:not(:active) {
+    border-color: var(--vscode-inputOption-activeBorder);
+}
+
+.settings-btn:focus:not(:active) {
+    border-color: var(--vscode-inputOption-activeBorder);
+    border-left-width: 1px;
+}
+
+.settings-indicator:has(+ .settings-btn:focus:not(:active)) {
+    border-right-width: 0;
+}
+
+.settings-indicator img {
     width: 16px;
     height: 16px;
 }
 
-.settings-btn-active {
+.settings-indicator-active {
     color: var(--vscode-inputOption-activeForeground);
-    border-color: var(--vscode-inputOption-activeBorder);
     background-color: var(--vscode-inputOption-activeBackground);
-}
-
-.glowy-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    background-color: var(--vscode-inputOption-activeBorder);
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    z-index: 2;
-}
-
-.glowy-dot::after {
-    content: '';
-    box-sizing: border-box;
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    border: 0.75px solid var(--vscode-inputOption-activeForeground);
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    animation: 2.5s linear infinite glowy;
-}
-
-@keyframes glowy {
-    50% {
-        transform: scale(300%);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(300%);
-        opacity: 0;
-    }
 }
 
 .popup .hint {

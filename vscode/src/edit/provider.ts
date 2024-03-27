@@ -23,9 +23,9 @@ import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
+import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { contentSanitizer } from './utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -54,6 +54,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
+                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -211,7 +212,7 @@ export class EditProvider {
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
             this.config.task.id,
-            contentSanitizer(response),
+            responseTransformer(response, this.config.task, isMessageInProgress),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }
@@ -235,7 +236,7 @@ export class EditProvider {
 
             this.insertionPromise = this.config.controller.didReceiveFixupInsertion(
                 this.config.task.id,
-                contentSanitizer(responseToSend),
+                responseTransformer(responseToSend, this.config.task, this.insertionInProgress),
                 this.insertionInProgress ? 'streaming' : 'complete'
             )
 

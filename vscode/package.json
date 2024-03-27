@@ -30,7 +30,7 @@
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
-    "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
+    "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
     "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
@@ -1213,7 +1213,8 @@
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.21.0",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
@@ -1255,7 +1256,6 @@
     "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
     "progress": "^2.0.3",
-    "semver": "^7.5.4",
     "yaml": "^2.3.4"
   }
 }

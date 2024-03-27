@@ -135,6 +135,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                             isOpen={isOpen}
                             setOpen={() => setIsOpen(!isOpen)}
                             presentationMode={args.presentationMode}
+                            isFirstChat={false}
                         />
                     </div>
                 </EnhancedContextEventHandlers.Provider>
@@ -171,6 +172,7 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                         isOpen={isOpen}
                         setOpen={() => setIsOpen(!isOpen)}
                         presentationMode={EnhancedContextPresentationMode.Consumer}
+                        isFirstChat={false}
                     />
                 </div>
             </EnhancedContextContext.Provider>
@@ -198,6 +200,7 @@ export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> 
                         presentationMode={EnhancedContextPresentationMode.Enterprise}
                         isOpen={isOpen}
                         setOpen={() => setIsOpen(!isOpen)}
+                        isFirstChat={false}
                     />
                 </div>
             </EnhancedContextContext.Provider>
@@ -262,6 +265,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                         presentationMode={EnhancedContextPresentationMode.Enterprise}
                         isOpen={isOpen}
                         setOpen={() => setIsOpen(!isOpen)}
+                        isFirstChat={false}
                     />
                 </div>
             </EnhancedContextContext.Provider>
