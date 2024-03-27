@@ -816,6 +816,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
+    experimentalSupercompletions: false,
     experimentalOllamaChat: false,
     experimentalSymfContext: true,
     experimentalTracing: false,

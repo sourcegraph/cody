@@ -221,9 +221,6 @@ function removeContextRows(
     const currentLines = supercompletion.current.split('\n')
     const updatedLines = supercompletion.updated.split('\n')
 
-    // let newCurrent = supercompletion.current
-    // let newUpdated = supercompletion.updated
-
     const minLines = Math.min(currentLines.length, updatedLines.length)
 
     const initialStartLine = supercompletion.location.range.start.line

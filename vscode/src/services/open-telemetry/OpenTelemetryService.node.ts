@@ -1,4 +1,3 @@
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
@@ -12,6 +11,7 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { version } from '../../version'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
@@ -47,7 +47,6 @@ export class OpenTelemetryService {
         if (!isEnabled) {
             return
         }
-        return
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
         if (this.lastTraceUrl === traceUrl) {
