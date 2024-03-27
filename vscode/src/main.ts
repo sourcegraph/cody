@@ -24,7 +24,7 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
-import { HoverCommandsProvider, isHoverCommandsEnabled } from './commands/HoverCommandsProvider'
+import { HoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -64,6 +64,7 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
+import { logFirstEnrollmentEvent } from './services/utils/enrollment-event'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -539,11 +540,10 @@ const register = async (
     )
 
     // Experimental features: Hover Commands
-    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)) {
-        //  Register Provider when feature flag is enabled and config is not disabled
-        if (isHoverCommandsEnabled()) {
-            disposables.push(new HoverCommandsProvider())
-        }
+    const hasHoverFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
+    logFirstEnrollmentEvent(FeatureFlag.CodyHoverCommands, hasHoverFlag)
+    if (hasHoverFlag) {
+        disposables.push(new HoverCommandsProvider())
     }
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution

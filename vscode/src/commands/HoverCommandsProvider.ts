@@ -1,12 +1,13 @@
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
-import { CHAT_SHORTCUT_LABEL, EDIT_SHORTCUT_LABEL } from './GhostHintDecorator'
 
 /**
  * Provides clickable commands on hover and handles clicking on commands.
+ * NOTE: Behind the feature flag `cody-hover-commands`.
  */
 export class HoverCommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -15,6 +16,10 @@ export class HoverCommandsProvider implements vscode.Disposable {
     private currentDocument: vscode.Uri | undefined
 
     constructor() {
+        if (!this.isEnabled) {
+            return
+        }
+
         this.disposables.push(
             vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
             vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id)),
@@ -42,46 +47,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
             return undefined
         }
 
-        // Copy the hoverCommands object to avoid modifying the original
-        const commandsOnHovers = { ...HoverCommands() }
-
-        const [docNode] = execQuery({
-            document,
-            position,
-            queryWrapper: 'getDocumentableNode',
-        })
-        const symbol = docNode?.symbol?.node ?? docNode?.range?.node
-
-        // Display Chat & Edit commands when the current position is over highlighted area
-        const selection = vscode.window.activeTextEditor?.selection
-        if (selection?.contains(position)) {
-            commandsOnHovers.edit.enabled = !selection?.isSingleLine
-        } else if (docNode && symbol) {
-            // Display Explain command if this is a symbol
-            commandsOnHovers.explain.enabled = true
-            commandsOnHovers.chat.enabled = false
-            // Display Document command if the symbol is not documented
-            commandsOnHovers.doc.enabled = !document.lineAt(symbol.startPosition.row - 1)?.text.trim()
-        } else if (!document.getWordRangeAtPosition(position)) {
-            // Display Chat & Edit commands when the current position is empty
-            commandsOnHovers.chat.enabled = true
-            commandsOnHovers.edit.enabled = true
-        }
-
-        // Create contents for the hover with clickable commands
-        const commands = []
-        for (const { id, title, enabled } of Object.values(commandsOnHovers)) {
-            if (enabled) {
-                commands.push(title.replace('{params}', encodeURIComponent(JSON.stringify([id]))))
-            }
-        }
-        const contents = new vscode.MarkdownString('$(cody-logo) ' + commands.join(' | '))
-        contents.supportThemeIcons = true
-        contents.isTrusted = true
-
-        telemetryService.log('CodyVSCodeExtension:hoverCommands:visible', {}, { hasV2Event: true })
-        telemetryRecorder.recordEvent('cody.hoverCommands', 'visible', { privateMetadata: {} })
-        return new vscode.Hover(contents)
+        return throttledHover(document, position)
     }
 
     /**
@@ -92,7 +58,6 @@ export class HoverCommandsProvider implements vscode.Disposable {
         if (!this.currentDocument || !this.currentPosition) {
             return
         }
-        console.log(this.currentPosition, 'this.currentPosition')
         telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', { id }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: { id } })
 
@@ -121,12 +86,12 @@ const HoverCommands = () => ({
     },
     chat: {
         id: 'cody.action.chat',
-        title: `[New Chat](command:cody.experiment.hover.commands?{params}) (${CHAT_SHORTCUT_LABEL})`,
+        title: '[New Chat](command:cody.experiment.hover.commands?{params})',
         enabled: true,
     },
     edit: {
         id: 'cody.command.edit-code',
-        title: `[Edit Code](command:cody.experiment.hover.commands?{params}) (${EDIT_SHORTCUT_LABEL})`,
+        title: '[Edit Code](command:cody.experiment.hover.commands?{params})',
         enabled: false,
     },
 })
@@ -141,3 +106,53 @@ export function isHoverCommandsEnabled(): boolean {
     const experimentalConfigs = vscode.workspace.getConfiguration('cody.experimental')
     return experimentalConfigs.get<boolean>('hoverCommands') !== false
 }
+
+const HOVER_COMMANDS_THROTTLE = 250
+const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
+
+const throttledHover = throttle((document: vscode.TextDocument, position: vscode.Position) => {
+    // Copy the hoverCommands object to avoid modifying the original
+    const commandsOnHovers = { ...HoverCommands() }
+
+    const [docNode] = execQuery({
+        document,
+        position,
+        queryWrapper: 'getDocumentableNode',
+    })
+    const symbol = docNode?.symbol?.node ?? docNode?.range?.node
+
+    // Display Chat & Edit commands when the current position is over highlighted area
+    const selection = vscode.window.activeTextEditor?.selection
+    if (selection?.contains(position)) {
+        commandsOnHovers.edit.enabled = !selection?.isSingleLine
+    } else if (docNode && symbol) {
+        // Display Explain command if this is a symbol
+        commandsOnHovers.explain.enabled = true
+        commandsOnHovers.chat.enabled = false
+        // Display Document command if the symbol is not documented
+        commandsOnHovers.doc.enabled = !document.lineAt(symbol.startPosition.row - 1)?.text.trim()
+    } else if (!document.getWordRangeAtPosition(position)) {
+        // Display Chat & Edit commands when the current position is empty
+        commandsOnHovers.chat.enabled = true
+        commandsOnHovers.edit.enabled = true
+    }
+
+    // Create contents for the hover with clickable commands
+    const commands: string[] = []
+    for (const { id, title, enabled } of Object.values(commandsOnHovers)) {
+        if (enabled) {
+            commands.push(title.replace('{params}', encodeURIComponent(JSON.stringify([id]))))
+        }
+    }
+    const contents = new vscode.MarkdownString('$(cody-logo) ' + commands.join(' | '))
+    contents.supportThemeIcons = true
+    contents.isTrusted = true
+
+    throttle(() => {
+        const args = { variant: commands.join(',') }
+        telemetryService.log('CodyVSCodeExtension:hoverCommands:visible', args, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.hoverCommands', 'visible', { privateMetadata: args })
+    }, TELEMETRY_THROTTLE)
+
+    return new vscode.Hover(contents)
+}, HOVER_COMMANDS_THROTTLE)

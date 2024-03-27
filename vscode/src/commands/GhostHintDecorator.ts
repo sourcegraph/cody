@@ -8,9 +8,9 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
-export const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
-export const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
-export const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
+const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
+const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
+const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
 
 /**
  * Checks if the given selection in the document is an incomplete line selection.
