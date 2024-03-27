@@ -4,6 +4,7 @@ import type React from 'react'
 import { displayLineRange, displayPath, webviewOpenURIForContextItem } from '@sourcegraph/cody-shared'
 import type { FileLinkProps } from '../chat/components/EnhancedContext'
 
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './FileLink.module.css'
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({
@@ -15,6 +16,14 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     revision,
     isTooLarge,
 }) => {
+    function logContextOpening() {
+        getVSCodeAPI().postMessage({
+            command: 'event',
+            eventName: 'CodyVSCodeExtension:fileLink:clicked',
+            properties: { source },
+        })
+    }
+
     const icon = getIconByFileSource(source)
     if (source === 'unified') {
         // This is a remote search result.
@@ -25,12 +34,14 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         return (
             <span className="styles.item">
                 <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
+                {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
                 <a
                     href={uri.toString()}
                     target="_blank"
                     rel="noreferrer"
                     title={tooltip}
                     className={styles.linkButton}
+                    onClick={logContextOpening}
                 >
                     {pathWithRange}
                 </a>
@@ -46,11 +57,13 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         <span className={styles.linkContainer}>
             {isTooLarge && <i className="codicon codicon-warning" title={warning} />}
             <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
+            {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
                 className={classNames(styles.linkButton, isTooLarge && styles.excluded)}
                 title={isTooLarge ? warning : pathWithRange}
                 href={href}
                 target={target}
+                onClick={logContextOpening}
             >
                 {pathWithRange}
             </a>
