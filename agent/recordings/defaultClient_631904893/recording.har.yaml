@@ -63,12 +63,12 @@ log:
                   style, patterns, and logics in use. Then, use what you detect
                   and reuse methods/libraries to complete and enclose completed
                   code only inside XML tags precisely without duplicating
-                  existing implementations. Here is the code: 
+                  existing implementations. Here is the code:
 
                   ```
 
                   export function sum(a: number, b: number): number {
-                     <CODE5711></CODE5711> 
+                     <CODE5711></CODE5711>
                   }
 
 
@@ -5688,1208 +5688,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 783828478c66e194364df37d356000a9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2567
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - "export function sum(a: number, b: number): number {"
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1
-      response:
-        bodySize: 7189
-        content:
-          mimeType: text/event-stream
-          size: 7189
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * S","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns Th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of th","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Sums two numbers together.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 27 Mar 2024 11:30:42 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-27T11:30:41.068Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: b58381bc3395c8b284d1943b3475252e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2834
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/TestClass.ts in repository undefined:
-
-                  t foo = 42
-
-
-                  export class TestClass {
-
-                  \    constructor(private shouldGreet:
-                  boolean) {}
-
-
-                  \    "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestClass.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - public functionName() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1
-      response:
-        bodySize: 2644
-        content:
-          mimeType: text/event-stream
-          size: 2644
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `should","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGre","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is true.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is true.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is true.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 27 Mar 2024 11:30:43 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-27T11:30:42.884Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 21fa8a2fbceaf05d8e8bb78c3a4e1aa8
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2803
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/TestLogger.ts in repository undefined:
-
-                  o = 42
-
-                  export const TestLogger = {
-
-                  \    startLogging: () => {
-
-                  \        // Do some stuff
-
-
-                  \        "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/TestLogger.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - function recordLog() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1
-      response:
-        bodySize: 915
-        content:
-          mimeType: text/event-stream
-          size: 915
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log message","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log message.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log message.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log message.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Records a log message.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 27 Mar 2024 11:30:45 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-27T11:30:44.427Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 75e511c23a48924b8dd835b0725eeb29
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3072
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Codebase context from file src/example.test.ts in repository undefined:
-
-                  \ expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-
-                  \    it('does 1', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does 2', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does something else', () => {
-
-                  \        // This line will error due to
-                  incorrect usage of `performance.now`
-
-                  \        "
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - const startTime = performance.now(/* CURSOR */)
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1
-      response:
-        bodySize: 4850
-        content:
-          mimeType: text/event-stream
-          size: 4850
-          text: >+
-            event: completion
-
-            data: {"completion":"/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retri","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in millis","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an operation","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an operation.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an operation.\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an operation.\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This can be used to measure the elapsed time of an operation.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 27 Mar 2024 11:30:46 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-27T11:30:45.705Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: b384203d8e33ac5fa472cd25cf0097a1
       _order: 0
       cache: {}
@@ -12179,7 +10977,7 @@ log:
 
                       return function inner() {}
 
-                      
+
                   </selected>
               - speaker: assistant
                 text: Ok.
@@ -22603,11 +21401,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a1eb6903ee2f3ae4924cb2bf3bd9e583
+    - _id: 6d7bc09f544f1f44ddd3cb6615285155
       _order: 0
       cache: {}
       request:
-        bodySize: 2246
+        bodySize: 2564
         cookies: []
         headers:
           - name: content-type
@@ -22631,22 +21429,10 @@ log:
             maxTokensToSample: 1000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  "My selected TypeScript code from file `src/sum.ts`:
-                  <selected>
-                  export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
                 text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -22663,8 +21449,1237 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/sum.ts
 
 
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }</SELECTEDCODE7662>
+
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - "export function sum(a: number, b: number): number {"
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 8756
+        content:
+          mimeType: text/event-stream
+          size: 8756
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns th","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a Th","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b Th","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns Th","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `b`.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `b`.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `b`.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of `a` and `b`.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 14:12:53 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T14:12:51.217Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1d3a12176fc9862b0082d55888448df5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2831
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file src/TestClass.ts in repository undefined:
+
+                  t foo = 42
+
+
+                  export class TestClass {
+
+                  \    constructor(private shouldGreet:
+                  boolean) {}
+
+
+                  \    "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/TestClass.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }</SELECTEDCODE7662>
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - public functionName() {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 2797
+        content:
+          mimeType: text/event-stream
+          size: 2797
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Gr","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\"","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGre","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is true","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is true.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is true.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is true.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Greets the user with \"Hello World!\" if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 14:12:56 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T14:12:55.336Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: cc49bf43d0bfe55135e16f7a21ac9544
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2800
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file src/TestLogger.ts in repository undefined:
+
+                  o = 42
+
+                  export const TestLogger = {
+
+                  \    startLogging: () => {
+
+                  \        // Do some stuff
+
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/TestLogger.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }</SELECTEDCODE7662>
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - function recordLog() {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 915
+        content:
+          mimeType: text/event-stream
+          size: 915
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log message","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log message.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log message.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log message.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Records a log message.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 14:12:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T14:12:57.408Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e5817696701fa4a44f5a03031749f993
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3069
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file src/example.test.ts in repository undefined:
+
+                  \ expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+
+                  \    it('does 1', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does 2', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does something else', () => {
+
+                  \        // This line will error due to
+                  incorrect usage of `performance.now`
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
+
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - const startTime = performance.now(/* CURSOR */)
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 4506
+        content:
+          mimeType: text/event-stream
+          size: 4506
+          text: >+
+            event: completion
+
+            data: {"completion":"/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in millis","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Returns the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 14:13:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T14:12:59.895Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 4cc440571fe8719af706ffa81bdab555
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2243
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: |-
+                  "My selected TypeScript code from file `src/sum.ts`:
+                  <selected>
+                  export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  </selected>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
                   This is part of the file: src/sum.ts
 
 
@@ -22722,7 +22737,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 27 Mar 2024 12:37:41 GMT
+            value: Wed, 27 Mar 2024 16:26:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -22751,7 +22766,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-27T12:37:39.426Z
+      startedDateTime: 2024-03-27T16:26:07.187Z
       time: 0
       timings:
         blocked: -1
@@ -22761,11 +22776,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fc7de3a617031243f1cad1d6da26647a
+    - _id: b5037a27881aa4b51c4accb52b020d73
       _order: 0
       cache: {}
       request:
-        bodySize: 2344
+        bodySize: 2341
         cookies: []
         headers:
           - name: content-type
@@ -22789,25 +22804,10 @@ log:
             maxTokensToSample: 1000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
                 text: >-
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -22824,8 +22824,22 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: >-
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
 
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
 
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
                   This is part of the file: src/animal.ts
 
 
@@ -22864,214 +22878,264 @@ log:
             value: "1"
         url: https://sourcegraph.com/.api/completions/stream?api-version=1
       response:
-        bodySize: 6288
+        bodySize: 8915
         content:
           mimeType: text/event-stream
-          size: 6288
+          size: 8915
           text: >+
             event: completion
 
-            data: {"completion":"export","stopReason":""}
+            data: {"completion":"/*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface","stopReason":""}
+            data: {"completion":"/* SELECTION","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal","stopReason":""}
+            data: {"completion":"/* SELECTION_","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {","stopReason":""}
+            data: {"completion":"/* SELECTION_START","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name:","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    make","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAn","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimal","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound():","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    make","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAn","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    i","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimal","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isM","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMam","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound():","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal:","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    i","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isM","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    log","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMam","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName():","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    log","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName():","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    ","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}","stopReason":""}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name)\n    }\n}","stopReason":"stop_sequence"}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/*","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/* SELECTION","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/* SELECTION_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/* SELECTION_END","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/* SELECTION_END */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}\n/* SELECTION_END */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -23081,7 +23145,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 27 Mar 2024 12:37:45 GMT
+            value: Wed, 27 Mar 2024 16:26:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -23110,7 +23174,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-27T12:37:41.641Z
+      startedDateTime: 2024-03-27T16:26:11.785Z
       time: 0
       timings:
         blocked: -1
