@@ -590,8 +590,15 @@
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
       },
       {
-        "command": "cody.supercompletion.jumpToNext",
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["next"],
         "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["previous"],
+        "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],

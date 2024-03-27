@@ -196,7 +196,7 @@ function parseRawChange(
 function buildInteraction(document: vscode.TextDocument, diff: string): Message[] {
     const indentation = getEditorIndentString(document.uri)
 
-    const preamble = getSimplePreamble(MODEL, SYSTEM.replaceAll('____', indentation))
+    const preamble = getSimplePreamble(MODEL, 1, SYSTEM.replaceAll('____', indentation))
 
     const prompt = PROMPT.replace('{filename}', vscode.workspace.asRelativePath(document.uri.path))
         .replace('{source}', document.getText())

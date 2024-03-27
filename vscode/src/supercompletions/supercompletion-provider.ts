@@ -36,7 +36,8 @@ export class SupercompletionProvider implements vscode.Disposable {
 
             vscode.commands.registerCommand(
                 'cody.supercompletion.apply',
-                (supercompletion: Supercompletion) => this.applySupercompletion(supercompletion)
+                (supercompletion: Supercompletion, range: vscode.Range) =>
+                    this.applySupercompletion(supercompletion, range)
             ),
             vscode.commands.registerCommand(
                 'cody.supercompletion.discard',
@@ -68,14 +69,14 @@ export class SupercompletionProvider implements vscode.Disposable {
         }
     }
 
-    public applySupercompletion(supercompletion: Supercompletion) {
+    public applySupercompletion(supercompletion: Supercompletion, range: vscode.Range) {
         // Prevent supercompletion insertions from adding more supercompletions. This would make the
         // UX very confusing
         this.ignoreNextChange = true
 
         const editor = vscode.window.activeTextEditor!
         editor.edit(editBuilder => {
-            editBuilder.replace(supercompletion.location.range, supercompletion.updated)
+            editBuilder.replace(range, supercompletion.updated)
         })
         this.renderer.remove(supercompletion)
     }

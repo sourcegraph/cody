@@ -53,7 +53,9 @@ export class SupercompletionRenderer
             workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)),
             workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)),
 
-            vscode.commands.registerCommand('cody.supercompletion.jumpToNext', () => this.jumpToNext())
+            vscode.commands.registerCommand('cody.supercompletion.jumpTo', ([direction]: any) =>
+                this.jumpTo(direction)
+            )
         )
     }
 
@@ -88,11 +90,11 @@ export class SupercompletionRenderer
 
         editor.setDecorations(
             inlineDecorationType,
-            supercompletionsInDocument.map(s => s.supercompletion.location.range)
+            supercompletionsInDocument.map(s => s.range)
         )
     }
 
-    public jumpToNext() {
+    public jumpTo(direction: 'next' | 'previous' = 'next') {
         const editor = vscode.window.activeTextEditor
         if (!editor) {
             return
@@ -102,38 +104,48 @@ export class SupercompletionRenderer
 
         const currentLine = editor.selection.active.line
 
-        const sortedSupercompletion = [...supercompletionsInDocument].sort(
+        let nextSupercompletion: RenderedSupercompletion | undefined
+        const sortedSupercompletionAsc = [...supercompletionsInDocument].sort(
             (a, b) => a.range.start.line - b.range.start.line
         )
-
-        const nextSupercompletion = sortedSupercompletion.find(s => s.range.start.line > currentLine)
-
-        if (nextSupercompletion) {
-            const { range } = nextSupercompletion
-            editor.revealRange(range, vscode.TextEditorRevealType.InCenter)
-            editor.selection = new vscode.Selection(range.start, range.start)
-            vscode.commands.executeCommand('editor.action.showHover')
+        if (direction === 'next') {
+            nextSupercompletion = sortedSupercompletionAsc.find(s => s.range.start.line > currentLine)
+            if (!nextSupercompletion && sortedSupercompletionAsc.length > 0) {
+                nextSupercompletion = sortedSupercompletionAsc[0]
+            }
+        } else {
+            nextSupercompletion = sortedSupercompletionAsc.findLast(
+                s => s.range.start.line < currentLine
+            )
+            if (!nextSupercompletion && sortedSupercompletionAsc.length > 0) {
+                nextSupercompletion = sortedSupercompletionAsc[sortedSupercompletionAsc.length - 1]
+            }
         }
+
+        if (!nextSupercompletion) {
+            return
+        }
+
+        const { range } = nextSupercompletion
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenter)
+        editor.selection = new vscode.Selection(range.start, range.start)
+        vscode.commands.executeCommand('editor.action.showHover')
     }
 
     public provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
         const supercompletionsInDocument = this.supercompletions.get(document.uri.toString()) ?? []
 
         const lenses: vscode.CodeLens[] = []
-        for (const { supercompletion } of supercompletionsInDocument) {
-            const {
-                location: { range },
-            } = supercompletion
-
+        for (const { supercompletion, range } of supercompletionsInDocument) {
             const summary = new vscode.CodeLens(range, {
                 command: 'cody.supercompletion.apply',
                 title: `$(cody-logo) ${supercompletion.summary}`,
-                arguments: [supercompletion],
+                arguments: [supercompletion, range],
             } as vscode.Command)
             const apply = new vscode.CodeLens(range, {
                 command: 'cody.supercompletion.apply',
                 title: 'Apply ⌥A',
-                arguments: [supercompletion],
+                arguments: [supercompletion, range],
             } as vscode.Command)
             const discard = new vscode.CodeLens(range, {
                 command: 'cody.supercompletion.discard',
