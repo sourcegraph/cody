@@ -25,4 +25,8 @@
     "source.organizeImports.biome": "explicit"
   },
   "editor.insertSpaces": true,
+  "cSpell.words": [
+    "Supercompletion",
+    "Supercompletions"
+  ],
 }
