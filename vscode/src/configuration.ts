@@ -127,7 +127,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
-        experimentalSupercompletions: config.get(CONFIG_KEY.experimentalSupercompletions, false),
+        experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
