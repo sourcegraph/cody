@@ -20,6 +20,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             - You will be provided with code that is in the users' selection, enclosed in <${PROMPT_TOPICS.SELECTED}></${PROMPT_TOPICS.SELECTED}> XML tags. You must use this code to help you plan your updated code.
             - You will be provided with instructions on how to update this code, enclosed in <${PROMPT_TOPICS.INSTRUCTIONS}></${PROMPT_TOPICS.INSTRUCTIONS}> XML tags. You must follow these instructions carefully and to the letter.
             - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
+            - You will use correct indentations recommended by PEP 8 for Python code.
             - Do not provide any additional commentary about the changes you made. Only respond with the generated code.`,
         instruction: dedent`
             This is part of the file: {filePath}
@@ -43,6 +44,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             - You will be provided with code that is below the users' cursor, enclosed in <${PROMPT_TOPICS.FOLLOWING}></${PROMPT_TOPICS.FOLLOWING}> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
             - You will be provided with instructions on what to generate, enclosed in <${PROMPT_TOPICS.INSTRUCTIONS}></${PROMPT_TOPICS.INSTRUCTIONS}> XML tags. You must follow these instructions carefully and to the letter.
             - Only enclose your response in <${PROMPT_TOPICS.OUTPUT}></${PROMPT_TOPICS.OUTPUT}> XML tags. Do use any other XML tags unless they are part of the generated code.
+            - You will use correct indentations recommended by PEP 8 for Python code.
             - Do not provide any additional commentary about the code you added. Only respond with the generated code.`,
         instruction: dedent`
             The user is currently in the file: {filePath}

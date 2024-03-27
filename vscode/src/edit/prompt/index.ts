@@ -16,6 +16,7 @@ import type { EditIntent } from '../types'
 import { PromptBuilder } from '../../prompt-builder'
 import { getContext } from './context'
 import { claude } from './models/claude'
+import { mixtral } from './models/mixtral'
 import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
@@ -28,6 +29,7 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-3-haiku-20240307': claude,
     'openai/gpt-3.5-turbo': openai,
     'openai/gpt-4-turbo-preview': openai,
+    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct': mixtral,
 } as const
 
 const getInteractionArgsFromIntent = (
