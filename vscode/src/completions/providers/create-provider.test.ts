@@ -87,29 +87,28 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
-        // TODO: test 'openaicompatible'
-        // it('returns "fireworks" provider config and corresponding model if specified', async () => {
-        //     const provider = await createProviderConfig(
-        //         getVSCodeConfigurationWithAccessToken({
-        //             autocompleteAdvancedProvider: 'fireworks',
-        //             autocompleteAdvancedModel: 'starcoder-7b',
-        //         }),
-        //         dummyCodeCompletionsClient,
-        //         dummyAuthStatus
-        //     )
-        //     expect(provider?.identifier).toBe('fireworks')
-        //     expect(provider?.model).toBe('starcoder-7b')
-        // })
+        it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                    autocompleteAdvancedModel: 'starchat-16b-beta',
+                }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            expect(provider?.model).toBe('starchat-16b-beta')
+        })
 
-        // it('returns "fireworks" provider config if specified in settings and default model', async () => {
-        //     const provider = await createProviderConfig(
-        //         getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'fireworks' }),
-        //         dummyCodeCompletionsClient,
-        //         dummyAuthStatus
-        //     )
-        //     expect(provider?.identifier).toBe('fireworks')
-        //     expect(provider?.model).toBe('starcoder-hybrid')
-        // })
+        it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'experimental-openaicompatible' }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            expect(provider?.model).toBe('starchat-16b-beta')
+        })
 
         it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
             const provider = await createProviderConfig(
