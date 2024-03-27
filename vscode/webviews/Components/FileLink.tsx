@@ -16,10 +16,10 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     revision,
     isTooLarge,
 }) => {
-    function logContextOpening() {
+    function logFileLinkClicked() {
         getVSCodeAPI().postMessage({
             command: 'event',
-            eventName: 'CodyVSCodeExtension:fileLink:clicked',
+            eventName: 'CodyVSCodeExtension:chat:context:fileLink:clicked',
             properties: { source },
         })
     }
@@ -41,7 +41,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                     rel="noreferrer"
                     title={tooltip}
                     className={styles.linkButton}
-                    onClick={logContextOpening}
+                    onClick={logFileLinkClicked}
                 >
                     {pathWithRange}
                 </a>
@@ -63,7 +63,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                 title={isTooLarge ? warning : pathWithRange}
                 href={href}
                 target={target}
-                onClick={logContextOpening}
+                onClick={logFileLinkClicked}
             >
                 {pathWithRange}
             </a>
