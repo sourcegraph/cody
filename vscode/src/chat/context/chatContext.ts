@@ -14,7 +14,7 @@ import {
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
-    query: string,
+    query: MentionQuery | string,
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
@@ -23,14 +23,14 @@ export async function getChatContextItemsForMention(
     // The number of characters left in current context window.
     maxChars?: number
 ): Promise<ContextItem[]> {
-    const mentionQuery = parseMentionQuery(query)
+    const mentionQuery = typeof query === 'string' ? parseMentionQuery(query) : query
 
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
     if (mentionQuery.type === 'empty') {
         telemetryRecorder?.empty()
-    } else if (query.length === 1) {
+    } else if (mentionQuery.text.length === 1) {
         telemetryRecorder?.withType(mentionQuery.type)
     }
 

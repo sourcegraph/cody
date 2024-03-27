@@ -54,6 +54,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
+                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,

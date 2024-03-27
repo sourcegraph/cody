@@ -292,7 +292,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                '" You told me your name is Lars Monsen."',
+                `" You told me your name is Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
@@ -957,7 +957,7 @@ describe('Agent', () => {
                           constructor(private shouldGreet: boolean) {}
 
                               /**
-                           * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
+                           * Logs a greeting message if the shouldGreet flag is true.
                            */
                       public functionName() {
                               if (this.shouldGreet) {
@@ -981,7 +981,7 @@ describe('Agent', () => {
                               // Do some stuff
 
                                       /**
-                               * Records a log message.
+                               * Logs a message to indicate when logging activity begins.
                                */
                       function recordLog() {
                                   console.log(/* CURSOR */ 'Recording the log')
@@ -1015,10 +1015,8 @@ describe('Agent', () => {
 
                           it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
-                                      /**
-                               * Retrieves the current time in milliseconds since the page was loaded.
-                               * This can be used to measure the duration of an operation.
-                               */
+                                      // Record start time for performance measurement
+                              const startTime = performance.now();
                       const startTime = performance.now(/* CURSOR */)
                           })
                       })
@@ -1352,32 +1350,32 @@ describe('Agent', () => {
             'example.test.ts',
             obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
-              "import { expect } from 'vitest'
-              import { it } from 'vitest'
-              import { describe } from 'vitest'
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-              /**
-               * Test block that contains 3 test cases:
-               * - Does test 1
-               * - Does test 2
-               * - Does something else (has incorrect usage of \`performance.now\`)
-               */
-              describe('test block', () => {
-                  it('does 1', () => {
-                      expect(true).toBe(true)
-                  })
+                  /**
+                   * Test block that contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does something else (has incorrect usage of \`performance.now\`)
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does 2', () => {
-                      expect(true).toBe(true)
-                  })
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does something else', () => {
-                      // This line will error due to incorrect usage of \`performance.now\`
-                      const startTime = performance.now(/* CURSOR */)
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
                   })
-              })
-              "
-            `)
+                  "
+                `)
         )
 
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword

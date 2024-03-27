@@ -213,6 +213,7 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const unauthenticatedStatus = {
@@ -230,6 +231,7 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
@@ -247,6 +249,7 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
