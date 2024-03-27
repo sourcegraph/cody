@@ -1455,11 +1455,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b09fcd3a334619a22b0d4e87090fb0e3
+    - _id: 92ba9612bb3a5955367be1a4f019ed1d
       _order: 0
       cache: {}
       request:
-        bodySize: 3161
+        bodySize: 3158
         cookies: []
         headers:
           - name: content-type
@@ -1483,7 +1483,26 @@ log:
             maxTokensToSample: 1000
             messages:
               - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1501,26 +1520,6 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
                   This is part of the file: src/example.test.ts
 
 
@@ -1565,10 +1564,10 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 8829
+        bodySize: 7096
         content:
           mimeType: text/event-stream
-          size: 8829
+          size: 7096
           text: >+
             event: completion
 
@@ -1582,247 +1581,217 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test","stopReason":""}
+            data: {"completion":"\n/**\n * Desc","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block","stopReason":""}
+            data: {"completion":"\n/**\n * Describe","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vit","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true.","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. ","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n *","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2n","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n *","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3r","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `","stopReason":""}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 sample test cases.\n * The 1st case asserts true is true. \n * The 2nd case asserts true is true.\n * The 3rd case attempts to error by incorrectly using `performance.now`.\n*/\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1832,7 +1801,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 27 Mar 2024 11:30:52 GMT
+            value: Wed, 27 Mar 2024 14:13:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1861,7 +1830,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-27T11:30:49.812Z
+      startedDateTime: 2024-03-27T14:13:12.592Z
       time: 0
       timings:
         blocked: -1

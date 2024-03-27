@@ -932,11 +932,11 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers together.
+                   * Adds two numbers together and returns the result.
                    *
-                   * @param a - The first number to add.
-                   * @param b - The second number to add.
-                   * @returns The sum of the two numbers.
+                   * @param a The first number to add.
+                   * @param b The second number to add.
+                   * @returns The sum of \`a\` and \`b\`.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -957,7 +957,7 @@ describe('Agent', () => {
                           constructor(private shouldGreet: boolean) {}
 
                               /**
-                           * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
+                           * Greets the user with "Hello World!" if the \`shouldGreet\` flag is true.
                            */
                       public functionName() {
                               if (this.shouldGreet) {
@@ -1016,8 +1016,8 @@ describe('Agent', () => {
                           it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
                                       /**
-                               * Retrieves the current time in milliseconds since the page was loaded.
-                               * This can be used to measure the elapsed time of an operation.
+                               * Returns the current time in milliseconds since the page was loaded.
+                               * This can be used to measure the duration of an operation.
                                */
                       const startTime = performance.now(/* CURSOR */)
                           })
@@ -1168,7 +1168,7 @@ describe('Agent', () => {
             const originalDocument = client.workspace.getDocument(sumUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
                 `
-              "/* hello */
+              "// hello
               export function sum(a: number, b: number): number {
                   /* CURSOR */
               }
@@ -1195,11 +1195,10 @@ describe('Agent', () => {
                 `
               "/* SELECTION_START */
               export interface Animal {
-                  name: string;
-                  makeAnimalSound(): string;
-                  isMammal: boolean;
-
-                  logName() {
+                  name: string
+                  makeAnimalSound(): string
+                  isMammal: boolean
+                  logName(): void {
                     console.log(this.name);
                   }
               }
@@ -1357,10 +1356,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 sample test cases.
-                   * The 1st case asserts true is true.
-                   * The 2nd case asserts true is true.
-                   * The 3rd case attempts to error by incorrectly using \`performance.now\`.
+                   * Describe block that runs vitest tests.
+                   * Contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does something else (has incorrect usage of performance.now)
                   */
                   describe('test block', () => {
                       it('does 1', () => {
