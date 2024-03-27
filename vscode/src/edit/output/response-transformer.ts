@@ -1,3 +1,4 @@
+import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
 
 /**
@@ -26,7 +27,11 @@ const MARKDOWN_CODE_BLOCK_REGEX = new RegExp(
 )
 
 // It also removes all spaces before a new line to keep the indentations
-export function responseTransformer(text: string): string {
+export function responseTransformer(
+    text: string,
+    task: FixupTask,
+    isMessageInProgress: boolean
+): string {
     const strippedText = text
         // Strip specific XML tags referenced in the prompt, e.g. <CODE511>
         .replaceAll(PROMPT_TOPIC_REGEX, '')
@@ -36,6 +41,11 @@ export function responseTransformer(text: string): string {
         )
         // Trim any leading or trailing spaces
         .replace(/^\s*\n/, '')
+
+    if (task.mode === 'insert' && !isMessageInProgress && !strippedText.endsWith('\n')) {
+        // For insertions, we want to always ensure we include a new line at the end of the response
+        return strippedText + '\n'
+    }
 
     return strippedText
 }
