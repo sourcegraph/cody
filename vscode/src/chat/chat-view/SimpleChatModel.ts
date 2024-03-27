@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
@@ -15,13 +16,17 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
+    // The maximum number of characters available in the model's context window.
+    public readonly maxChars: number
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
-    ) {}
+    ) {
+        this.maxChars = ModelProvider.getMaxCharsByModel(this.modelID)
+    }
 
     public isEmpty(): boolean {
         return this.messages.length === 0

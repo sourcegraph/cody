@@ -41,3 +41,18 @@ async function disableNotifications(page: Page): Promise<void> {
 export function getChatPanel(page: Page): FrameLocator {
     return page.frameLocator('iframe.webview').frameLocator('iframe[title="New Chat"]')
 }
+
+/**
+ * Create and open a new chat panel, and close the enhanced context settings window.
+ * Returns the chat panel frame locator.
+ */
+export async function createEmptyChatPanel(page: Page): Promise<[FrameLocator, Locator]> {
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
+    await expect(enhancedContextCheckbox).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(enhancedContextCheckbox).not.toBeVisible()
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    return [chatFrame, chatInput]
+}
