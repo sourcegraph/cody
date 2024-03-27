@@ -6,7 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
 
@@ -26,71 +26,6 @@ class FixupService(val project: Project) : Disposable {
 
   // The last text the user typed in without saving it, for continuity.
   private var lastPrompt: String = ""
-
-  init {
-    // JetBrains docs say avoid heavy lifting in the constructor, so pass to another thread.
-    CodyAgentService.withAgent(project) { agent ->
-      agent.client.setOnEditTaskDidUpdate { task ->
-        val session = activeSessions[task.id]
-        if (session == null) {
-          logger.warn("No session found for task ${task.id}")
-        } else {
-          session.update(task)
-        }
-      }
-
-      agent.client.setOnEditTaskDidDelete { task ->
-        val session = activeSessions[task.id]
-        if (session == null) {
-          logger.warn("No session found for task ${task.id}")
-        } else {
-          session.taskDeleted()
-        }
-      }
-
-      agent.client.setOnWorkspaceEdit { params ->
-        for (op in params.operations) {
-          // TODO: We need to support the file-level operations.
-          when (op.type) {
-            "create-file" -> {
-              logger.warn("Workspace edit operation created a file: ${op.uri}")
-            }
-            "rename-file" -> {
-              logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
-            }
-            "delete-file" -> {
-              logger.warn("Workspace edit operation deleted a file: ${op.uri}")
-            }
-            "edit-file" -> {
-              if (op.edits == null) {
-                logger.warn("Workspace edit operation has no edits")
-              } else {
-                // If there is a pending session, assume that it is the one that caused the
-                // edit.
-                val session: FixupSession? =
-                    if (pendingSessions.isNotEmpty()) {
-                      pendingSessions.first()
-                    } else {
-                      // TODO: This is what I'd like to be able to do, but it requires a
-                      // protocol change:
-                      // session = activeSessions[op.id]
-                      activeSessions.values.firstOrNull()
-                    }
-                if (session == null) {
-                  logger.warn("No sessions found for performing inline edits")
-                } else {
-                  session.performInlineEdits(op.edits)
-                }
-              }
-            }
-            else ->
-                logger.warn(
-                    "DocumentCommand session received unknown workspace edit operation: ${op.type}")
-          }
-        }
-      }
-    }
-  }
 
   /** Entry point for the inline edit command, called by the action handler. */
   fun startCodeEdit(editor: Editor) {
@@ -127,6 +62,23 @@ class FixupService(val project: Project) : Disposable {
   }
 
   fun getLastPrompt(): String = lastPrompt
+
+  fun getActiveSession(): FixupSession? {
+    val session: FixupSession? =
+        pendingSessions.firstOrNull() ?: activeSessions.values.firstOrNull()
+    if (session == null) {
+      logger.warn("No sessions found for performing inline edits")
+    }
+    return session
+  }
+
+  fun getSessionForTask(task: EditTask): FixupSession? {
+    val session = activeSessions[task.id]
+    if (session == null) {
+      logger.warn("No session found for task ${task.id}")
+    }
+    return session
+  }
 
   fun addSession(session: FixupSession) {
     val taskId = session.taskId

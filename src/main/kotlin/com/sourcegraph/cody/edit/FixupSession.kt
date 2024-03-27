@@ -5,7 +5,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.editor.*
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -18,7 +22,13 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.CommandExecuteParams
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.CodyTaskState
+import com.sourcegraph.cody.agent.protocol.EditTask
+import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
+import com.sourcegraph.cody.agent.protocol.Position
+import com.sourcegraph.cody.agent.protocol.Range
+import com.sourcegraph.cody.agent.protocol.TextEdit
+import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
 import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import java.util.concurrent.CancellationException
@@ -243,6 +253,33 @@ abstract class FixupSession(
     }
     undoEdits()
     finish()
+  }
+
+  fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams) {
+    for (op in workspaceEditParams.operations) {
+      // TODO: We need to support the file-level operations.
+      when (op.type) {
+        "create-file" -> {
+          logger.warn("Workspace edit operation created a file: ${op.uri}")
+        }
+        "rename-file" -> {
+          logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
+        }
+        "delete-file" -> {
+          logger.warn("Workspace edit operation deleted a file: ${op.uri}")
+        }
+        "edit-file" -> {
+          if (op.edits == null) {
+            logger.warn("Workspace edit operation has no edits")
+          } else {
+            performInlineEdits(op.edits)
+          }
+        }
+        else ->
+            logger.warn(
+                "DocumentCommand session received unknown workspace edit operation: ${op.type}")
+      }
+    }
   }
 
   fun performInlineEdits(edits: List<TextEdit>) {

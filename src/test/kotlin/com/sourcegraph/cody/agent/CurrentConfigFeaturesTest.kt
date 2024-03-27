@@ -1,8 +1,5 @@
-package com.sourcegraph.cody.cody.agent
+package com.sourcegraph.cody.agent
 
-import com.sourcegraph.cody.agent.ConfigFeatures
-import com.sourcegraph.cody.agent.ConfigFeaturesObserver
-import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import java.util.concurrent.CopyOnWriteArrayList
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.until

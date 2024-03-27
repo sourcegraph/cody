@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyFileEditorListener
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -40,6 +41,24 @@ class CodyAgentService(project: Project) : Disposable {
               .getSession(params.id)
               ?.receiveWebviewExtensionMessage(params.message)
         }
+      }
+
+      agent.client.onEditTaskDidUpdate = Consumer { task ->
+        FixupService.getInstance(project).getSessionForTask(task)?.update(task)
+      }
+
+      agent.client.onEditTaskDidDelete = Consumer { task ->
+        FixupService.getInstance(project).getSessionForTask(task)?.taskDeleted()
+      }
+
+      agent.client.onWorkspaceEdit = Consumer { params ->
+        // TODO: We should change the protocol and send `taskId` as part of `WorkspaceEditParam`
+        // and then use method like `getSessionForTask` instead of this one
+        FixupService.getInstance(project).getActiveSession()?.performWorkspaceEdit(params)
+      }
+
+      agent.client.onTextDocumentEdit = Consumer { params ->
+        // TODO: This one is missing
       }
 
       if (!project.isDisposed) {

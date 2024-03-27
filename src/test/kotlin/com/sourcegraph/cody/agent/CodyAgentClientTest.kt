@@ -1,8 +1,7 @@
-package com.sourcegraph.cody.cody.agent
+package com.sourcegraph.cody.agent
 
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.sourcegraph.cody.agent.*
 import java.util.concurrent.locks.ReentrantLock
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,6 +14,7 @@ class CodyAgentClientTest : BasePlatformTestCase() {
   }
 
   @Volatile var lastMessage: ConfigFeatures? = null
+
   // Use lock/condition to synchronize between observer being invoked
   // and the test being able to assert.
   val lock = ReentrantLock()
