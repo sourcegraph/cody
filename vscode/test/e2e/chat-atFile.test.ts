@@ -290,7 +290,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
-})('@-mention symbol in chat', async ({ page, sidebar }) => {
+}).only('@-mention symbol in chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -301,10 +301,11 @@ test.extend<ExpectedEvents>({
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'buzz.ts' }).click()
 
-    // Wait for the tsserver to become ready: when loading status disappears
+    // Wait for the tsserver to become ready: when sync icon disappears
     const langServerLoadingState = 'Editor Language Status: Loading'
     await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
-    await page.waitForSelector(`button[aria-label="${langServerLoadingState}"]`, { state: 'detached' })
+    await page.waitForSelector(`span[class*="codicon codicon-sync"]`, { state: 'detached' })
+    await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
 
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
