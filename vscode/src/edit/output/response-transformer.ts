@@ -42,11 +42,7 @@ export function responseTransformer(
         // Trim any leading or trailing spaces
         .replace(/^\s*\n/, '')
 
-    if (
-        (task.mode === 'add' || task.mode === 'insert') &&
-        !isMessageInProgress &&
-        !strippedText.endsWith('\n')
-    ) {
+    if (task.mode === 'insert' && !isMessageInProgress && !strippedText.endsWith('\n')) {
         // For insertions, we want to always ensure we include a new line at the end of the response
         return strippedText + '\n'
     }
