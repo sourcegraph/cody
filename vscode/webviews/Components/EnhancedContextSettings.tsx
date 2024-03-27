@@ -61,7 +61,7 @@ export interface EnhancedContextEventHandlersT {
     onShouldBuildSymfIndex: (provider: LocalSearchProvider) => void
 }
 
-function useEnhancedContextContext(): EnhancedContextContextT {
+export function useEnhancedContextContext(): EnhancedContextContextT {
     return React.useContext(EnhancedContextContext)
 }
 

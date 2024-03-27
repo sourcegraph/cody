@@ -16,6 +16,8 @@ import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { VSCodeLink } from '@vscode/webview-ui-toolkit/react'
+import { useEnhancedContextContext } from '../Components/EnhancedContextSettings'
 import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
 
@@ -57,6 +59,7 @@ export const TranscriptItem: React.FunctionComponent<
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
+        setIsEnhancedContextOpen?: (value: boolean) => void
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     index,
@@ -82,6 +85,7 @@ export const TranscriptItem: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
+    setIsEnhancedContextOpen,
 }) {
     // A boolean indicating whether the message was sent by a human speaker.
     const isHumanMessage = message.speaker === 'human'
@@ -91,6 +95,9 @@ export const TranscriptItem: React.FunctionComponent<
     const isItemBeingEdited = beingEdited === index
 
     const displayMarkdown = useDisplayMarkdown(message)
+    const enhancedContextConfigured = useEnhancedContextContext()?.groups?.[0]?.providers?.some(
+        p => p.state === 'ready'
+    )
 
     return (
         <div
@@ -170,6 +177,16 @@ export const TranscriptItem: React.FunctionComponent<
                     )}
                 </div>
             )}
+            {isHumanMessage && !enhancedContextConfigured && setIsEnhancedContextOpen && (
+                <div className={styles.enhancedContextTooltip}>
+                    <VSCodeLink onClick={() => setIsEnhancedContextOpen(true)}>
+                        {userInfo.isDotComUser
+                            ? '→ Enable Embeddings for this Repository...'
+                            : '→ Choose Repositories to use as Context...'}
+                    </VSCodeLink>
+                </div>
+            )}
+
             {/* Display feedback buttons on assistant messages only */}
             {!isHumanMessage &&
                 showFeedbackButtons &&

@@ -194,3 +194,7 @@
                 0 1px 0 var(--vscode-sideBarSectionHeader-border),
                 0 0 2rem var(--vscode-widget-shadow);
 }
+
+.enhanced-context-tooltip {
+    margin-top: 0.5rem;
+}
