@@ -19,10 +19,16 @@ const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void {
-        tracer.startActiveSpan(`POST ${this.completionsEndpoint}`, span => {
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+
+        tracer.startActiveSpan(`POST ${url.toString()}`, span => {
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,
@@ -44,11 +50,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 return
             }
 
-            const log = this.logger?.startCompletion(params, this.completionsEndpoint)
+            const log = this.logger?.startCompletion(params, url.toString())
 
-            const requestFn = this.completionsEndpoint.startsWith('https://')
-                ? https.request
-                : http.request
+            const requestFn = url.protocol === 'https:' ? https.request : http.request
 
             // Keep track if we have send any message to the completion callbacks
             let didSendMessage = false
@@ -69,7 +73,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             let bufferText = ''
 
             const request = requestFn(
-                this.completionsEndpoint,
+                url,
                 {
                     method: 'POST',
                     headers: {
