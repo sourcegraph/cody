@@ -76,6 +76,7 @@ describe('DefaultPrompter', () => {
                 type: 'file',
                 uri: vscode.Uri.file('/foo/bar'),
                 content: 'foobar',
+                isTooLarge: true,
             },
         ]
 

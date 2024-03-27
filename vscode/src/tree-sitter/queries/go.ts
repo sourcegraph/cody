@@ -40,6 +40,12 @@ const DOCUMENTABLE_NODES = dedent`
             name: (field_identifier) @symbol.identifier)  @range.identifier)
 `
 
+const ENCLOSING_FUNCTION_QUERY = dedent`
+    (function_declaration) @range.function
+    (method_declaration) @range.function
+    (func_literal) @range.function
+`
+
 export const goQueries = {
     [SupportedLanguage.go]: {
         singlelineTriggers: SINGLE_LINE_TRIGGERS,
@@ -51,5 +57,6 @@ export const goQueries = {
             (type_spec (type_identifier) @identifier)
             (selector_expression (field_identifier)) @identifier
         `,
+        enclosingFunction: ENCLOSING_FUNCTION_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

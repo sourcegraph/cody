@@ -1,6 +1,6 @@
 import path from 'path'
 import { expect } from '@playwright/test'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -46,18 +46,16 @@ test.extend<ExpectedEvents>({
     await page.click('.badge[aria-label="Cody"]')
 
     // Start new chat
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
 
     /* TEST: Chat Context - Ignored file do not show up with context */
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
     await chatInput.focus()
     await chatInput.fill('Ignore me')
     await chatInput.press('Enter')
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
+    expect(await chatPanel.getByText(/^Context:/).count()).toEqual(0)
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()

@@ -1,5 +1,5 @@
-import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
 
 import { getChatContextItemsForMention } from '../../chat/context/chatContext'
 import { getLabelForContextItem } from './utils'

@@ -41,11 +41,7 @@ describe('getFileContextFiles', () => {
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
-        const results = await getFileContextFiles(
-            query,
-            maxResults,
-            new vscode.CancellationTokenSource().token
-        )
+        const results = await getFileContextFiles(query, maxResults)
 
         return results.map(f => uriBasename(f.uri))
     }
@@ -158,13 +154,14 @@ describe('filterLargeFiles', () => {
         expect(filtered).toEqual([])
     })
 
-    it('sets isTooLarge for files exceeding token limit', async () => {
+    it('sets isTooLarge for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
+        const oneByteOverTokenLimit = MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
-            size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
+            size: oneByteOverTokenLimit,
             type: vscode.FileType.File,
         } as vscode.FileStat)
 

@@ -2,6 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    ModelProvider,
     Typewriter,
     isAbortError,
     isDotCom,
@@ -17,15 +18,14 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { getContextWindowForModel } from '../models/utilts'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
+import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { contentSanitizer } from './utils'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -46,10 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = getContextWindowForModel(
-                this.config.authProvider.getAuthStatus(),
-                model
-            )
+            const contextWindow = ModelProvider.getMaxCharsByModel(model)
             const {
                 messages,
                 stopSequences,
@@ -172,23 +169,27 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log(
-                'CodyVSCodeExtension:fixupResponse:hasCode',
-                {
-                    ...countCode(response),
-                    source: this.config.task.source,
-                },
-                {
-                    hasV2Event: true,
-                }
-            )
+            const { task } = this.config
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+                ...countCode(response),
+            }
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {
+                hasV2Event: true,
+            })
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
-            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                metadata: countCode(response),
+                metadata,
                 privateMetadata: {
-                    source: this.config.task.source,
-                    responseText,
+                    ...privateMetadata,
+                    model: task.model,
+                    // 🚨 SECURITY: edit responses are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: endpoint && isDotCom(endpoint) ? response : undefined,
                 },
             })
         }
@@ -210,7 +211,7 @@ export class EditProvider {
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
             this.config.task.id,
-            contentSanitizer(response),
+            responseTransformer(response),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }
@@ -234,7 +235,7 @@ export class EditProvider {
 
             this.insertionPromise = this.config.controller.didReceiveFixupInsertion(
                 this.config.task.id,
-                contentSanitizer(responseToSend),
+                responseTransformer(responseToSend),
                 this.insertionInProgress ? 'streaming' : 'complete'
             )
 
