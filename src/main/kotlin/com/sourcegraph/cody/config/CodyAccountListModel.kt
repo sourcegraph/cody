@@ -31,17 +31,17 @@ class CodyAccountListModel(private val project: Project) :
 
     val token = newCredentials[account] ?: getOldToken(account)
     val authData =
-        CodyAuthenticationManager.instance.login(
-            project,
-            parentComponent,
-            CodyLoginRequest(
-                login = account.name,
-                server = account.server,
-                token = token,
-                customRequestHeaders = account.server.customRequestHeaders,
-                title = "Edit Sourcegraph Account",
-                loginButtonText = "Save account",
-            ))
+        CodyAuthenticationManager.getInstance(project)
+            .login(
+                parentComponent,
+                CodyLoginRequest(
+                    login = account.name,
+                    server = account.server,
+                    token = token,
+                    customRequestHeaders = account.server.customRequestHeaders,
+                    title = "Edit Sourcegraph Account",
+                    loginButtonText = "Save account",
+                ))
 
     if (authData == null) return
 
@@ -53,7 +53,7 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   private fun getOldToken(account: CodyAccount) =
-      CodyAuthenticationManager.instance.getTokenForAccount(account)
+      CodyAuthenticationManager.getInstance(project).getTokenForAccount(account)
 
   override fun addAccount(
       server: SourcegraphServerPath,

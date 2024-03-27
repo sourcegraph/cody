@@ -9,10 +9,10 @@ import com.sourcegraph.cody.initialization.Activity
 class SelectOneOfTheAccountsAsActive : Activity {
 
   override fun runActivity(project: Project) {
-    if (CodyAuthenticationManager.instance.hasNoActiveAccount(project)) {
+    if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()) {
       val newActiveAccount =
-          CodyAuthenticationManager.instance.getAccounts().getFirstAccountOrNull()
-      CodyAuthenticationManager.instance.setActiveAccount(project, newActiveAccount)
+          CodyAuthenticationManager.getInstance(project).getAccounts().getFirstAccountOrNull()
+      CodyAuthenticationManager.getInstance(project).setActiveAccount(newActiveAccount)
       CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshPanelsVisibility() }
     }
   }

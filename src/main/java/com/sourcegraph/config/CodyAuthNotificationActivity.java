@@ -24,7 +24,7 @@ public class CodyAuthNotificationActivity implements Activity {
 
   @Override
   public void runActivity(@NotNull Project project) {
-    CodyAccount activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project);
+    CodyAccount activeAccount = CodyAuthenticationManager.getInstance(project).getActiveAccount();
     CodyAccountManager service =
         ApplicationManager.getApplication().getService(CodyAccountManager.class);
 

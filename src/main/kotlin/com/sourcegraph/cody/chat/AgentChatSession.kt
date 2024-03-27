@@ -22,9 +22,7 @@ import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
 import com.sourcegraph.cody.agent.protocol.ContextItem
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ui.ChatPanel
-import com.sourcegraph.cody.chat.ui.LlmDropdownData
 import com.sourcegraph.cody.commands.CommandId
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.error.CodyErrorSubmitter
 import com.sourcegraph.cody.history.HistoryService
@@ -61,7 +59,7 @@ private constructor(
 
   init {
     cancellationToken.get().dispose()
-    fetchLlms()
+    updateLlmDropdownModels()
   }
 
   fun getPanel(): ChatPanel = chatPanel
@@ -245,7 +243,7 @@ private constructor(
     chatPanel.registerCancellationToken(newCancellationToken)
   }
 
-  private fun fetchLlms() {
+  private fun updateLlmDropdownModels() {
     if (chatModelProviderFromState != null) {
       return
     }
@@ -253,22 +251,15 @@ private constructor(
     CodyAgentService.withAgent(project) { agent ->
       val chatModels = agent.server.chatModels(ChatModelsParams(connectionId.get().get()))
       val response =
-          chatModels.completeOnTimeout(null, 4, TimeUnit.SECONDS).get() ?: return@withAgent
-
-      val activeAccountType = CodyAuthenticationManager.instance.getActiveAccount(project)
-      val isCurrentUserFree =
-          if (activeAccountType?.isDotcomAccount() == true) {
-            agent.server.isCurrentUserPro().completeOnTimeout(false, 4, TimeUnit.SECONDS).get() ==
-                false
-          } else false
-      chatPanel.updateLlmDropdownModels(LlmDropdownData(response.models, isCurrentUserFree))
+          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get() ?: return@withAgent
+      chatPanel.updateLlmDropdownModels(response.models)
     }
   }
 
   fun updateFromState(agent: CodyAgent, state: ChatState) {
     val newConnectionId = restoreChatSession(agent, state)
     connectionId.getAndSet(newConnectionId)
-    fetchLlms()
+    updateLlmDropdownModels()
   }
 
   companion object {

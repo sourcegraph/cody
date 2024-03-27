@@ -1,6 +1,5 @@
 package com.sourcegraph.cody
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -51,7 +50,7 @@ class CodyToolWindowContent(private val project: Project) {
         }
       }
 
-  private val myAccountPanel = MyAccountTabPanel()
+  private val myAccountPanel = MyAccountTabPanel(project)
 
   init {
     tabbedPane.insertSimpleTab("Chat", chatContainerPanel, CHAT_TAB_INDEX)
@@ -88,22 +87,15 @@ class CodyToolWindowContent(private val project: Project) {
   }
 
   fun refreshMyAccountTab() {
-    CodyAgentService.withAgent(project) { agent ->
-      fetchMyAccountPanelData(project, agent.server).thenApply { data ->
-        if (data != null) {
-          ApplicationManager.getApplication().invokeLater {
-            val isMyAccountTabVisible = tabbedPane.tabCount > MY_ACCOUNT_TAB_INDEX
-            if (data.isDotcomAccount) {
-              if (!isMyAccountTabVisible) {
-                tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
-              }
-              myAccountPanel.update(data.isCurrentUserPro)
-            } else if (isMyAccountTabVisible) {
-              tabbedPane.removeTabAt(MY_ACCOUNT_TAB_INDEX)
-            }
-          }
-        }
+    val isMyAccountTabVisible = tabbedPane.tabCount > MY_ACCOUNT_TAB_INDEX
+    if (CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount() ==
+        true) {
+      if (!isMyAccountTabVisible) {
+        tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
       }
+      myAccountPanel.update()
+    } else if (isMyAccountTabVisible) {
+      tabbedPane.removeTabAt(MY_ACCOUNT_TAB_INDEX)
     }
   }
 
@@ -111,12 +103,12 @@ class CodyToolWindowContent(private val project: Project) {
 
   @RequiresEdt
   fun refreshPanelsVisibility() {
-    val codyAuthenticationManager = CodyAuthenticationManager.instance
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
     if (codyAuthenticationManager.getAccounts().isEmpty()) {
       allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
       return
     }
-    val activeAccount = codyAuthenticationManager.getActiveAccount(project)
+    val activeAccount = codyAuthenticationManager.getActiveAccount()
     if (!CodyApplicationSettings.instance.isOnboardingGuidanceDismissed) {
       val displayName = activeAccount?.let(CodyAccount::displayName)
       val newCodyOnboardingGuidancePanel = CodyOnboardingGuidancePanel(displayName)

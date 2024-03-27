@@ -19,4 +19,11 @@ class CodyProjectActiveAccountHolder(project: Project) :
   override fun accountManager() = service<CodyAccountManager>()
 
   override fun notifyActiveAccountMissing() {}
+
+  companion object {
+    @JvmStatic
+    fun getInstance(project: Project): CodyProjectActiveAccountHolder {
+      return project.service<CodyProjectActiveAccountHolder>()
+    }
+  }
 }

@@ -13,7 +13,7 @@ class SignInWithEnterpriseInstanceAction(
     private val defaultServer: String = ConfigUtil.DOTCOM_URL
 ) : DumbAwareAction("Sign in with Sourcegraph") {
   override fun actionPerformed(e: AnActionEvent) {
-    val project = e.project
+    val project = e.project ?: return
     val accountsHost = CodyPersistentAccountsHost(project)
     val dialog =
         signInWithSourcegrapDialog(
@@ -25,7 +25,7 @@ class SignInWithEnterpriseInstanceAction(
     if (dialog.showAndGet()) {
       accountsHost.addAccount(
           dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
-      if (project != null && ConfigUtil.isCodyEnabled()) {
+      if (ConfigUtil.isCodyEnabled()) {
         // Open Cody sidebar
         val toolWindowManager = ToolWindowManager.getInstance(project)
         val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)

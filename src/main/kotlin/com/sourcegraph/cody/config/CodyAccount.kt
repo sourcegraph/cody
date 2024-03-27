@@ -7,11 +7,6 @@ import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.auth.ServerAccount
 import com.sourcegraph.config.ConfigUtil
 
-enum class AccountType {
-  DOTCOM,
-  ENTERPRISE
-}
-
 @Tag("account")
 data class CodyAccount(
     @NlsSafe @Attribute("name") override var name: String = "",
@@ -22,14 +17,9 @@ data class CodyAccount(
     @Attribute("id") override var id: String = generateId(),
 ) : ServerAccount() {
 
-  fun getAccountType(): AccountType {
-    if (isDotcomAccount()) {
-      return AccountType.DOTCOM
-    }
-    return AccountType.ENTERPRISE
-  }
+  fun isDotcomAccount(): Boolean = server.url.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
 
-  fun isDotcomAccount() = server.url.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
+  fun isEnterpriseAccount(): Boolean = isDotcomAccount().not()
 
   override fun toString(): String = "$server/$name"
 
@@ -42,8 +32,6 @@ data class CodyAccount(
     ): CodyAccount {
       return CodyAccount(username, displayName ?: username, server, id)
     }
-
-    fun CodyAccount?.isEnterpriseAccount() = this?.isDotcomAccount()?.not() ?: false
   }
 }
 

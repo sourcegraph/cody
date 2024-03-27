@@ -1,12 +1,8 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
-import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
-import com.sourcegraph.config.ConfigUtil
 
-class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHost {
+class CodyPersistentAccountsHost(private val project: Project) : CodyAccountsHost {
   override fun addAccount(
       server: SourcegraphServerPath,
       login: String,
@@ -15,22 +11,11 @@ class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHo
       id: String
   ) {
     val codyAccount = CodyAccount.create(login, displayName, server, id)
-    CodyAuthenticationManager.instance.updateAccountToken(codyAccount, token)
-    if (project != null) {
-      CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)
-      // Notify Cody Agent about config changes.
-      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-      }
-
-      val bus = project.messageBus
-      val publisher = bus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
-      publisher.afterAction(
-          AccountSettingChangeContext(serverUrlChanged = true, accessTokenChanged = true))
-    }
+    CodyAuthenticationManager.getInstance(project).updateAccountToken(codyAccount, token)
+    CodyAuthenticationManager.getInstance(project).setActiveAccount(codyAccount)
   }
 
   override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean {
-    return CodyAuthenticationManager.instance.isAccountUnique(login, server)
+    return CodyAuthenticationManager.getInstance(project).isAccountUnique(login, server)
   }
 }

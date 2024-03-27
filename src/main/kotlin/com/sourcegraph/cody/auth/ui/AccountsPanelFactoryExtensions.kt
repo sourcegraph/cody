@@ -26,7 +26,13 @@ import com.sourcegraph.cody.ui.BGTActionSetter
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
-import javax.swing.*
+import javax.swing.Icon
+import javax.swing.JComponent
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
+import javax.swing.ListCellRenderer
+import javax.swing.ListSelectionModel
+import javax.swing.SwingUtilities
 
 /**
  * Custom factory method to create and account panel with possibility to add mouse listener for list
@@ -152,8 +158,6 @@ fun <A : Account, Cred> Row.customAccountsPanel(
     }
     val newTokensMap = accountsModel.accounts.associateWith { null }
     accountManager.updateAccounts(newTokensMap)
-    val activeAccount = accountsModel.activeAccount
-    activeAccountHolder.account = activeAccount
     accountsModel.clearNewCredentials()
   }
 

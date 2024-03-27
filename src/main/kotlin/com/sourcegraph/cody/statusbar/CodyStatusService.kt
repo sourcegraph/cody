@@ -53,8 +53,8 @@ class CodyStatusService : CodyStatusListener, Disposable {
       val oldStatus = status
       val service = ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
       val token =
-          CodyAuthenticationManager.instance
-              .getActiveAccount(project)
+          CodyAuthenticationManager.getInstance(project)
+              .getActiveAccount()
               ?.let(service::findCredentials)
       status =
           if (!ConfigUtil.isCodyEnabled()) {

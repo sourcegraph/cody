@@ -179,7 +179,7 @@ class HistoryTree(
           .state
           .chats
           .filter {
-            it.accountId == CodyAuthenticationManager.instance.getActiveAccount(project)?.id
+            it.accountId == CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
           }
           .filter { it.messages.isNotEmpty() }
           .sortedByDescending { chat -> chat.getUpdatedTimeAt() }

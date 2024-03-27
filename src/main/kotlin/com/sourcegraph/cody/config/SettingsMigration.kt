@@ -30,7 +30,10 @@ import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : Activity {
 
-  private val codyAuthenticationManager = CodyAuthenticationManager.instance
+  enum class AccountType {
+    DOTCOM,
+    ENTERPRISE
+  }
 
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
@@ -52,7 +55,7 @@ class SettingsMigration : Activity {
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {
-    val activeAccountId = CodyAuthenticationManager.instance.getActiveAccount(project)?.id
+    val activeAccountId = CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
     HistoryService.getInstance(project)
         .state
         .chats
@@ -64,9 +67,9 @@ class SettingsMigration : Activity {
 
   private fun refreshAccountsIds(project: Project) {
     val customRequestHeaders = extractCustomRequestHeaders(project)
-    codyAuthenticationManager.getAccounts().forEach { codyAccount ->
+    CodyAuthenticationManager.getInstance(project).getAccounts().forEach { codyAccount ->
       val server = SourcegraphServerPath.from(codyAccount.server.url, customRequestHeaders)
-      val token = codyAuthenticationManager.getTokenForAccount(codyAccount)
+      val token = CodyAuthenticationManager.getInstance(project).getTokenForAccount(codyAccount)
       if (token != null) {
         loadUserDetails(
             SourcegraphApiRequestExecutor.Factory.instance,
@@ -74,7 +77,7 @@ class SettingsMigration : Activity {
             EmptyProgressIndicator(ModalityState.NON_MODAL),
             server) {
               codyAccount.id = it.id
-              codyAuthenticationManager.updateAccountToken(codyAccount, token)
+              CodyAuthenticationManager.getInstance(project).updateAccountToken(codyAccount, token)
             }
       }
     }
@@ -163,6 +166,7 @@ class SettingsMigration : Activity {
             EmptyProgressIndicator(ModalityState.NON_MODAL))
       } else {
         addAccountIfUnique(
+            project,
             dotcomAccessToken,
             server,
             requestExecutorFactory,
@@ -191,6 +195,7 @@ class SettingsMigration : Activity {
                   EmptyProgressIndicator(ModalityState.NON_MODAL))
             } else {
               addAccountIfUnique(
+                  project,
                   enterpriseAccessToken,
                   it,
                   requestExecutorFactory,
@@ -203,13 +208,14 @@ class SettingsMigration : Activity {
   }
 
   private fun addAccountIfUnique(
+      project: Project,
       accessToken: String,
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount.create(it.name, it.displayName, server, it.id), accessToken)
+      addAccount(project, CodyAccount.create(it.name, it.displayName, server, it.id), accessToken)
     }
   }
 
@@ -222,9 +228,9 @@ class SettingsMigration : Activity {
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, it.displayName, server, it.id)
-      addAccount(codyAccount, accessToken)
-      if (CodyAuthenticationManager.instance.hasNoActiveAccount(project))
-          CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)
+      addAccount(project, codyAccount, accessToken)
+      if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount())
+          CodyAuthenticationManager.getInstance(project).setActiveAccount(codyAccount)
     }
   }
 
@@ -249,14 +255,15 @@ class SettingsMigration : Activity {
             }
           }
 
-  private fun addAccount(codyAccount: CodyAccount, token: String) {
-    if (isAccountUnique(codyAccount)) {
-      codyAuthenticationManager.updateAccountToken(codyAccount, token)
+  private fun addAccount(project: Project, codyAccount: CodyAccount, token: String) {
+    if (isAccountUnique(project, codyAccount)) {
+      CodyAuthenticationManager.getInstance(project).updateAccountToken(codyAccount, token)
     }
   }
 
-  private fun isAccountUnique(codyAccount: CodyAccount): Boolean {
-    return codyAuthenticationManager.isAccountUnique(codyAccount.name, codyAccount.server)
+  private fun isAccountUnique(project: Project, codyAccount: CodyAccount): Boolean {
+    return CodyAuthenticationManager.getInstance(project)
+        .isAccountUnique(codyAccount.name, codyAccount.server)
   }
 
   private fun extractEnterpriseUrl(project: Project): String {

@@ -4,8 +4,12 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
+import com.sourcegraph.cody.config.AccountTier
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
@@ -14,9 +18,8 @@ import java.awt.BorderLayout
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
-class MyAccountTabPanel : JPanel() {
+class MyAccountTabPanel(val project: Project) : JPanel() {
 
-  private var isCurrentUserPro: Boolean? = null
   private var chatLimitError = UpgradeToCodyProNotification.chatRateLimitError.get()
   private var autocompleteLimitError = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
 
@@ -26,11 +29,10 @@ class MyAccountTabPanel : JPanel() {
     if (chatLimitError != null || autocompleteLimitError != null) {
       add(createRateLimitPanel(), BorderLayout.PAGE_START)
     }
-    add(createCenterPanel())
     ApplicationManager.getApplication()
         .messageBus
         .connect()
-        .subscribe(LafManagerListener.TOPIC, LafManagerListener { update(isCurrentUserPro) })
+        .subscribe(LafManagerListener.TOPIC, LafManagerListener { update() })
   }
 
   private fun createRateLimitPanel() = panel {
@@ -63,35 +65,43 @@ class MyAccountTabPanel : JPanel() {
     }
   }
 
-  private fun createCenterPanel() = panel {
-    val getIsCurrentUserPro = isCurrentUserPro
+  private fun createCenterPanel(accountTier: AccountTier?) = panel {
     val tier =
-        if (getIsCurrentUserPro == null) CodyBundle.getString("my-account-tab.loading-label")
-        else if (getIsCurrentUserPro) CodyBundle.getString("my-account-tab.cody-pro-label")
-        else CodyBundle.getString("my-account-tab.cody-free-label")
+        when (accountTier) {
+          null -> CodyBundle.getString("my-account-tab.loading-label")
+          AccountTier.DOTCOM_PRO -> CodyBundle.getString("my-account-tab.cody-pro-label")
+          else -> CodyBundle.getString("my-account-tab.cody-free-label")
+        }
     row { label("<html>Current tier: <b>$tier</b><html/>") }
     row {
-      if (getIsCurrentUserPro != null && !getIsCurrentUserPro) {
+      if (accountTier == AccountTier.DOTCOM_FREE) {
         val upgradeButton =
             button("Upgrade") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/subscription") }
         upgradeButton.component.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
       }
       button("Check Usage") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/manage") }
     }
-    if (getIsCurrentUserPro != null && !getIsCurrentUserPro) {
+    if (accountTier == AccountTier.DOTCOM_FREE) {
       row { text(CodyBundle.getString("my-account-tab.already-pro")) }
     }
   }
 
-  fun update(isCurrentUserPro: Boolean?) {
-    this.isCurrentUserPro = isCurrentUserPro
+  @RequiresEdt
+  fun update(accountTier: AccountTier? = null) {
     this.removeAll()
     chatLimitError = UpgradeToCodyProNotification.chatRateLimitError.get()
     autocompleteLimitError = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
     if (chatLimitError != null || autocompleteLimitError != null) {
       this.add(createRateLimitPanel(), BorderLayout.PAGE_START)
     }
-    this.add(createCenterPanel())
+    this.add(createCenterPanel(accountTier))
+
+    if (accountTier == null) {
+      CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply {
+        ApplicationManager.getApplication().invokeLater { update(it) }
+      }
+    }
+
     revalidate()
     repaint()
   }

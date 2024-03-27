@@ -16,9 +16,13 @@ internal class CodyLoginRequest(
 )
 
 internal fun CodyLoginRequest.loginWithToken(
-    project: Project?,
+    project: Project,
     parentComponent: Component?
 ): CodyAuthData? {
+  val isLoginUniqueChecker: UniqueLoginPredicate = { login, server ->
+    !isCheckLoginUnique ||
+        CodyAuthenticationManager.getInstance(project).isAccountUnique(login, server)
+  }
   val dialog =
       SourcegraphTokenLoginDialog(
           project, parentComponent, isLoginUniqueChecker, SsoAuthMethod.DEFAULT)
@@ -26,11 +30,6 @@ internal fun CodyLoginRequest.loginWithToken(
 
   return dialog.getAuthData()
 }
-
-private val CodyLoginRequest.isLoginUniqueChecker: UniqueLoginPredicate
-  get() = { login, server ->
-    !isCheckLoginUnique || CodyAuthenticationManager.instance.isAccountUnique(login, server)
-  }
 
 private fun CodyLoginRequest.configure(dialog: BaseLoginDialog) {
   server?.let { dialog.setServer(it.toString()) }

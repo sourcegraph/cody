@@ -124,7 +124,7 @@ class EnhancedContextPanel(private val project: Project, private val chatSession
   }
 
   private fun isDotComAccount() =
-      CodyAuthenticationManager.instance.getActiveAccount(project)?.isDotcomAccount() ?: false
+      CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount() ?: false
 
   private fun getReposByUrlAndRun(
       codebaseNames: List<CodebaseName>,

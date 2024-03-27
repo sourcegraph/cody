@@ -14,8 +14,6 @@ import javax.swing.JPanel
 
 class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCellRenderer() {
 
-  var isCurrentUserFree: Boolean = false
-
   override fun getListCellRendererComponent(
       list: JList<*>?,
       chatModelProvider: Any?,
@@ -37,7 +35,7 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
     val displayNameLabel = JLabel(chatModelProvider.displayName())
     textBadgePanel.add(displayNameLabel, BorderLayout.CENTER)
     textBadgePanel.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
-    if (chatModelProvider.codyProOnly && isCurrentUserFree) {
+    if (chatModelProvider.codyProOnly && llmDropdown.isCurrentUserFree) {
       textBadgePanel.add(JLabel(Icons.LLM.ProSticker), BorderLayout.EAST)
     }
 

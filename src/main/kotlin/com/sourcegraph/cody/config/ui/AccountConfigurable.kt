@@ -16,9 +16,15 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
-import com.sourcegraph.cody.config.*
-import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
-import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
+import com.sourcegraph.cody.config.CodyAccountDetailsProvider
+import com.sourcegraph.cody.config.CodyAccountListModel
+import com.sourcegraph.cody.config.CodyAccountManager
+import com.sourcegraph.cody.config.CodyAccountsHost
+import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.config.CodyProjectActiveAccountHolder
+import com.sourcegraph.cody.config.SettingsModel
+import com.sourcegraph.cody.config.getFirstAccountOrNull
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Dimension
 
@@ -84,32 +90,16 @@ class AccountConfigurable(val project: Project) :
   }
 
   override fun apply() {
-    val bus = project.messageBus
-    val publisher = bus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
-
-    val oldActiveAccount = activeAccountHolder.account
-    val oldUrl = oldActiveAccount?.server?.url ?: ""
+    super.apply()
 
     var activeAccount = accountsModel.activeAccount
     val activeAccountRemoved = !accountsModel.accounts.contains(activeAccount)
     if (activeAccountRemoved || activeAccount == null) {
       activeAccount = accountsModel.accounts.getFirstAccountOrNull()
     }
-    val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
 
-    val activeAccountChanged = oldActiveAccount != activeAccount
-    val accessTokenChanged = newAccessToken != null || activeAccountRemoved || activeAccountChanged
-
-    val newUrl = activeAccount?.server?.url ?: ""
-
-    val serverUrlChanged = oldUrl != newUrl
-
-    publisher.beforeAction(serverUrlChanged)
-    super.apply()
-    val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-    CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
+    CodyAuthenticationManager.getInstance(project).setActiveAccount(activeAccount)
     accountsModel.activeAccount = activeAccount
-    publisher.afterAction(context)
 
     codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates
     if (codyApplicationSettings.shouldCheckForUpdates) {
