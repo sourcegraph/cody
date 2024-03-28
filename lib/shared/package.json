@@ -31,13 +31,13 @@
     "crypto-js": "^4.2.0"
   },
   "devDependencies": {
-    "@types/crypto-js": "^4.2.2",
-    "@types/dompurify": "^3.0.2",
-    "@types/highlight.js": "^9.12.4",
-    "@types/isomorphic-fetch": "^0.0.39",
-    "@types/lodash": "^4.14.195",
-    "@types/node-fetch": "^2.6.4",
-    "@types/marked": "^5.0.0",
-    "@types/vscode": "^1.80.0"
+    "@types/crypto-js": "4.2.2",
+    "@types/dompurify": "3.0.2",
+    "@types/highlight.js": "9.12.4",
+    "@types/isomorphic-fetch": "0.0.39",
+    "@types/lodash": "4.14.195",
+    "@types/node-fetch": "2.6.4",
+    "@types/marked": "5.0.0",
+    "@types/vscode": "1.80.0"
   }
 }
