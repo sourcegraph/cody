@@ -39,13 +39,13 @@ describe('symf', () => {
 
         check('ocean', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"circulation current ebb flow heat ocean ppt psu salinity salt sea stream surf temp temperature tidal tide water wave waves"`
+                `"circulation current ebb flow ocean ppt psu salinity salt sea stream surf tidal tide water wave waves"`
             )
         )
 
         check('How do I write a file to disk in Go', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"disk file files go golang harddrive storage write writefile writetofile"'
+                `"disk drive file files go golang storage write writefile writetofile"`
             )
         )
 
@@ -57,14 +57,12 @@ describe('symf', () => {
 
         check('parse file with tree-sitter', expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"file files parser parsing sitter tree tree-sitter ts"'
+                `"file parse parser parsing read reading reads tree tree-sitter treesitter"`
             )
         )
 
         check('scan tokens in C++', expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"c c++ cin cplusplus cpp f getline in scan scan_f scanf token tokenization tokenize tokens"`
-            )
+            expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
         )
         afterAll(async () => {
             await polly.stop()
