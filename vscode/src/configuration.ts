@@ -52,7 +52,10 @@ export function getConfiguration(
     }
 
     let autocompleteAdvancedProvider = config.get<
-        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+        | Configuration['autocompleteAdvancedProvider']
+        | 'unstable-ollama'
+        | 'unstable-fireworks'
+        | 'experimental-openaicompatible'
     >(CONFIG_KEY.autocompleteAdvancedProvider, null)
 
     // Handle deprecated provider identifiers
