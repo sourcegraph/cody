@@ -15,6 +15,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import com.intellij.openapi.updateSettings.impl.UpdateChecker
 import com.intellij.openapi.util.BuildNumber
+import com.sourcegraph.common.NotificationGroups
 import java.lang.reflect.InvocationTargetException
 
 class CheckUpdatesTask(project: Project) :
@@ -60,7 +61,7 @@ class CheckUpdatesTask(project: Project) :
     fun notifyAboutTheUpdate(project: Project) {
       val notification =
           FullContent(
-              "Sourcegraph Cody + Code Search plugin updates",
+              NotificationGroups.CODY_UPDATES,
               "Update Available",
               "A new version of Sourcegraph Cody + Code Search is available. Go to plugin settings to update.",
               NotificationType.IDE_UPDATE)

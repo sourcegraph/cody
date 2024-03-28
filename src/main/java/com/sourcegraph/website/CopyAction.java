@@ -5,6 +5,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.common.NotificationGroups;
 import java.awt.datatransfer.StringSelection;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +21,7 @@ public class CopyAction extends FileActionBase {
     // Display notification
     Notification notification =
         new Notification(
-            "Sourcegraph: URL sharing",
+            NotificationGroups.SOURCEGRAPH_URL_SHARING,
             "Sourcegraph",
             "File URL copied to clipboard: " + urlWithoutUtm,
             NotificationType.INFORMATION);

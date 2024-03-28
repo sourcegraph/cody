@@ -17,6 +17,7 @@ import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.Icons;
+import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.find.browser.JavaToJSBridge;
@@ -105,7 +106,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
   private void showNoBrowserErrorNotification() {
     Notification notification =
         new Notification(
-            "Sourcegraph errors",
+            NotificationGroups.SOURCEGRAPH_ERRORS,
             "Sourcegraph",
             "Your IDE doesn't support JCEF. You won't be able to use \"Find with Sourcegraph\". If you believe this is an error, please raise this at support@sourcegraph.com, specifying your OS and IDE version.",
             NotificationType.ERROR);

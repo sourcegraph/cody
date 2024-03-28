@@ -16,7 +16,7 @@ object BrowserErrorNotification {
   fun show(project: Project?, uri: URI) {
     val notification =
         Notification(
-            "Sourcegraph errors",
+            NotificationGroups.SOURCEGRAPH_ERRORS,
             "Sourcegraph",
             "Opening an external browser is not supported. You can still copy the URL to your clipboard and open it manually.",
             NotificationType.WARNING)

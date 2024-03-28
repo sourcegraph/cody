@@ -9,10 +9,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.sourcegraph.Icons
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.NotificationGroups
 
 class TrialEndingSoonNotification :
     Notification(
-        "Sourcegraph errors",
+        NotificationGroups.SOURCEGRAPH_ERRORS,
         CodyBundle.getString("TrialEndingSoonNotification.ending-soon.title"),
         CodyBundle.getString("TrialEndingSoonNotification.ending-soon.content"),
         NotificationType.WARNING),

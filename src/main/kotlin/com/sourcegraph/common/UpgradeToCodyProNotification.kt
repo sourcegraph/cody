@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
 private constructor(title: String, content: String, shouldShowUpgradeOption: Boolean) :
-    Notification("Sourcegraph errors", title, content, NotificationType.WARNING),
+    Notification(NotificationGroups.SOURCEGRAPH_ERRORS, title, content, NotificationType.WARNING),
     NotificationFullContent {
   init {
     icon = Icons.CodyLogo

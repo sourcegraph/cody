@@ -25,7 +25,11 @@ object ErrorNotification {
 
   fun create(errorMessage: String): Notification {
     val notification =
-        Notification("Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING)
+        Notification(
+            NotificationGroups.SOURCEGRAPH_ERRORS,
+            "Sourcegraph",
+            errorMessage,
+            NotificationType.WARNING)
     notification.setIcon(Icons.CodyLogo)
     return notification
   }

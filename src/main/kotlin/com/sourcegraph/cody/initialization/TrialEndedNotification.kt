@@ -10,10 +10,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.sourcegraph.Icons
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.NotificationGroups
 
 class TrialEndedNotification(val disposable: Disposable) :
     Notification(
-        "Sourcegraph errors",
+        NotificationGroups.SOURCEGRAPH_ERRORS,
         CodyBundle.getString("TrialEndedNotification.ended.title"),
         CodyBundle.getString("TrialEndedNotification.ended.content"),
         NotificationType.WARNING),

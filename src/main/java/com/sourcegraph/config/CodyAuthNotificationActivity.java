@@ -18,6 +18,7 @@ import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.initialization.Activity;
 import com.sourcegraph.cody.statusbar.CodyManageAccountsAction;
+import com.sourcegraph.common.NotificationGroups;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyAuthNotificationActivity implements Activity {
@@ -45,7 +46,10 @@ public class CodyAuthNotificationActivity implements Activity {
     // Display notification
     Notification notification =
         new Notification(
-            "cody.auth", "Open Cody sidebar to get started", "", NotificationType.WARNING);
+            NotificationGroups.CODY_AUTH,
+            "Open Cody sidebar to get started",
+            "",
+            NotificationType.WARNING);
 
     AnAction openCodySidebar =
         new DumbAwareAction("Open Cody") {
@@ -79,7 +83,8 @@ public class CodyAuthNotificationActivity implements Activity {
   private void showMissingTokenNotification() {
     // Display notification
     Notification notification =
-        new Notification("cody.auth", "Missing access token", "", NotificationType.WARNING);
+        new Notification(
+            NotificationGroups.CODY_AUTH, "Missing access token", "", NotificationType.WARNING);
 
     notification.setIcon(Icons.CodyLogo);
     notification.addAction(new CodyManageAccountsAction());

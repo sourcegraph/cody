@@ -13,6 +13,7 @@ import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.initialization.EndOfTrialNotificationScheduler
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.NotificationGroups
 import java.util.concurrent.TimeUnit
 
 class ExportChatsBackgroundable(
@@ -58,7 +59,7 @@ class ExportChatsBackgroundable(
 
           val notification =
               Notification(
-                  "Sourcegraph Cody",
+                  NotificationGroups.TOOLWINDOW,
                   CodyBundle.getString("export.failed"),
                   "",
                   NotificationType.WARNING)
@@ -72,7 +73,7 @@ class ExportChatsBackgroundable(
 
       val notification =
           Notification(
-              "Sourcegraph Cody",
+              NotificationGroups.TOOLWINDOW,
               CodyBundle.getString("export.timed-out"),
               "",
               NotificationType.WARNING)
