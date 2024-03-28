@@ -336,6 +336,7 @@ describe('Agent', () => {
             for (let i = 0; i < NUMBER_OF_CHATS_TO_RESTORE; i++) {
                 const myDate = new Date(date.getTime() + i * 60 * 1000)
                 await client.request('chat/restore', {
+                    modelID: 'anthropic/claude-2.0',
                     messages: [
                         { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
