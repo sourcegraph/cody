@@ -109,7 +109,9 @@ describe('createProviderConfig', () => {
                 dummyAuthStatus
             )
             expect(provider?.identifier).toBe('experimental-openaicompatible')
-            expect(provider?.model).toBe('starchat-16b-beta')
+            // TODO(slimsag): make this default to starchat2 once added
+            // specifically just when using `experimental-openaicompatible`
+            expect(provider?.model).toBe('starcoder-hybrid')
         })
 
         it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
