@@ -58,6 +58,12 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
                 {
                     configuration: { instruction, range, intent: 'fix', document },
                     source,
+                    telemetryMetadata: {
+                        diagnostics: diagnostics.map(diagnostic => ({
+                            code: diagnostic.code,
+                            source: diagnostic.source,
+                        })),
+                    },
                 } satisfies ExecuteEditArguments,
             ],
             title: 'Ask Cody to Fix',
