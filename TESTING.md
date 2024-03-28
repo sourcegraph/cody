@@ -348,3 +348,9 @@ Primary languages to test: Javascript, Typescript, TypescriptReact, Python, Go
 - [ ] Open the Autocomplete Trace View (cmd+shift+p “trace view”)
 - [ ] In another editor tab, trigger an autocomplete request.
 - [ ] Expect the number of shown/accepted completions to update accordingly.
+
+### Guardrails:
+
+- [ ] Check if Guardrails check passes for any code longer than 10 lines generated in Cody Chat
+- [ ] Check if Guardrails check failes for any code longer than 10 lines that matches indexed OSS
+
