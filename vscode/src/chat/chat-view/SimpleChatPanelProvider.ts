@@ -79,6 +79,7 @@ import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
 
+const maxTranscriptSize = 5 * 1024 * 1024 // 5 MB
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
@@ -421,7 +422,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
                     promptText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? inputText : undefined,
+                        authStatus.endpoint && isDotCom(authStatus.endpoint)
+                            ? inputText.substring(0, maxTranscriptSize)
+                            : undefined,
                 },
             })
 
@@ -497,7 +500,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // the condition below is an additional safeguard measure
                             promptText:
                                 authStatus.endpoint && isDotCom(authStatus.endpoint)
-                                    ? inputText
+                                    ? inputText.substring(0, maxTranscriptSize)
                                     : undefined,
                         },
                     })
@@ -981,7 +984,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? messageText : undefined,
+                        authStatus.endpoint && isDotCom(authStatus.endpoint)
+                            ? messageText.substring(0, maxTranscriptSize)
+                            : undefined,
                 },
             })
         }
