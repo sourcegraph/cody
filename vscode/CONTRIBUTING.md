@@ -56,7 +56,12 @@ To publish a patch release to the [VS Code Marketplace](https://marketplace.visu
 
 1. Makes sure all the changes for the patch are already commited to the `main` branch.
 2. Start a new branch from [the last stable released version tag](https://github.com/sourcegraph/cody/tags), e.g. `git checkout -b v1.10.2 tags/vscode-v1.10.1`
-3. Cherry pick (`git cherry-pick $COMMIT`) the changes for the patch into this new branch.
+   1. If you run into the "tag is not a commit" error, create a new branch based off the commit from the tagged version instead:
+      1. Get the commit hash for the tag with `git rev-parse origin $LAST_STABLE_RELEASE_VERSION TAG`.
+         1. Example: `git rev-parse origin vscode-v1.10.1`
+      2. Create a new branch off the returned commit hash: `git checkout $TAG_COMMIT_HASH -b $NEW_BRANCH`
+         1. Example: `git checkout d296d980289cf5424b7b99b5f846e7fc580675c7 -b patch-v1.10.2`
+3. Cherry pick (`git cherry-pick $COMMIT_FROM_MAIN`) the changes for the patch into this new branch.
 4. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
 5. `pnpm update-agent-recordings` to update the version in agent recordings.
 6. `git tag vscode-v$(jq -r .version package.json)`
