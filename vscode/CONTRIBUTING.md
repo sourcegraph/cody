@@ -40,7 +40,7 @@ We also have some build-in UI to help during the development of autocomplete req
 
 ### Stable builds
 
-To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
+To publish a new major release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 
 1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
 2. `pnpm update-agent-recordings` to update the version in agent recordings.
@@ -49,6 +49,23 @@ To publish a new release to the [VS Code Marketplace](https://marketplace.visual
 5. `git push --tags`
 6. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
 7. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
+
+### Patch Release
+
+To publish a patch release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
+
+1. Makes sure all the changes for the patch are already commited to the `main` branch.
+2. Start a new branch from [the last stable released version tag](https://github.com/sourcegraph/cody/tags), e.g. `git checkout -b v1.10.2 tags/vscode-v1.10.1`
+3. Cherry pick (`git cherry-pick $COMMIT`) the changes for the patch into this new branch.
+4. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
+5. `pnpm update-agent-recordings` to update the version in agent recordings.
+6. `git tag vscode-v$(jq -r .version package.json)`
+7. `git push --tags`
+8. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+9. Once the patch has been published, create a new branch off `main`
+10. Update the [`CHANGELOG`](CHANGELOG.md) and the `version` in [`package.json`](package.json) to patch the patch release version.
+11. `pnpm update-agent-recordings` to update the version in agent recordings.
+12. Commit the version increment, e.g. `VS Code: Release 1.10.2` and merge this branch to main.
 
 ### Insiders builds
 
