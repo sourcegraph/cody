@@ -79,7 +79,7 @@ import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
 
-const maxTranscriptSize = 9 * 1024 * 1024 // 9 MB
+const maxTranscriptSize = 5 * 1024 * 1024 // 5 MB
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
