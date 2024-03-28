@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
+import { ModelUsage } from '@sourcegraph/cody-shared/dist/models/types'
 import { URI } from 'vscode-uri'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
@@ -265,7 +266,7 @@ describe('Agent', () => {
             //  and assert that it can retrieve my name from the transcript.
             const {
                 models: [model],
-            } = await client.request('chat/models', { id: id1 })
+            } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
             const id2 = await client.request('chat/restore', {
                 modelID: model.model,
@@ -335,6 +336,7 @@ describe('Agent', () => {
             for (let i = 0; i < NUMBER_OF_CHATS_TO_RESTORE; i++) {
                 const myDate = new Date(date.getTime() + i * 60 * 1000)
                 await client.request('chat/restore', {
+                    modelID: 'anthropic/claude-2.0',
                     messages: [
                         { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
