@@ -23,6 +23,7 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
+import { HoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -535,6 +536,9 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
         new CharactersLogger()
     )
+
+    // Experimental features: Hover Commands
+    disposables.push(new HoverCommandsProvider())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

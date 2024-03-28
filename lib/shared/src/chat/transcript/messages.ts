@@ -59,6 +59,7 @@ export type ChatEventSource =
     | 'custom-commands'
     | 'test'
     | 'code-lens'
+    | 'hover'
     | DefaultCodyCommands
 
 /**
