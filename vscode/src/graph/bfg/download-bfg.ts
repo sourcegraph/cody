@@ -1,6 +1,6 @@
-import * as fs from 'fs'
-import { promises as fspromises } from 'fs'
-import path from 'path'
+import * as fs from 'node:fs'
+import { promises as fspromises } from 'node:fs'
+import path from 'node:path'
 
 import axios from 'axios'
 import * as unzipper from 'unzipper'

@@ -3,9 +3,9 @@
  * single binary build.
  */
 
-import os from 'os'
-import path from 'path'
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import * as vscode from 'vscode'
 import { TestClient } from '../src/TestClient'
 

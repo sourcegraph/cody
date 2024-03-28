@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import { expect } from '@playwright/test'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'

@@ -1,6 +1,6 @@
-import { spawn } from 'child_process'
-import path from 'path'
-import * as fspromises from 'fs/promises'
+import { spawn } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
