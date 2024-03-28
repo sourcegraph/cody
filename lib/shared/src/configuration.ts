@@ -78,6 +78,7 @@ export interface Configuration {
     autocompleteTimeouts: AutocompleteTimeouts
 
     testingLocalEmbeddingsModel: string | undefined
+    testingLocalEmbeddingsDimension: number | undefined
     testingLocalEmbeddingsEndpoint: string | undefined
     testingLocalEmbeddingsIndexLibraryPath: string | undefined
 }
