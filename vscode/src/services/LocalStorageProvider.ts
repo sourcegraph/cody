@@ -142,7 +142,10 @@ class LocalStorage {
      * Gets the enrollment history for a feature from the storage.
      *
      * Checks if the given feature name exists in the stored enrollment
-     * history array. If not, Add the feature.
+     * history array.
+     *
+     * If not, add the feature to the memory, but return false after adding the feature
+     * so that the caller can log the first enrollment event.
      */
     public getEnrollmentHistory(featureName: string): boolean {
         const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])

@@ -16,9 +16,13 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): v
     // Check if the user is enrolled in the experiment or not
     const isEnrolled = localStorage.getEnrollmentHistory(key)
     const eventName = getFeatureFlagEventName(key as FeatureFlag)
-    if (!isEnrolled || !eventName) {
+
+    // If the user is already enrolled or the event name is not found, return early,
+    // as we only want to log the enrollment event once in the user's lifetime.
+    if (isEnrolled || !eventName) {
         return
     }
+
     // Log the enrollment event
     const args = { variant: isEnabled ? 'treatment' : 'control' }
     telemetryService.log(`CodyVSCodeExtension:experiment:${eventName}:enrolled`, args, hasV2Event)
