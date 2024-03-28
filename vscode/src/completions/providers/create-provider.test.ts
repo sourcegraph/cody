@@ -102,7 +102,9 @@ describe('createProviderConfig', () => {
 
         it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
             const provider = await createProviderConfig(
-                getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'experimental-openaicompatible' }),
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                }),
                 dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
