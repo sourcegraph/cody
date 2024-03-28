@@ -6,6 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
@@ -19,7 +20,7 @@ class FixupService(val project: Project) : Disposable {
   // TODO: Consider doing the multiplexing in CodyAgentClient instead.
   private var activeSessions: MutableMap<String, FixupSession> = mutableMapOf()
 
-  private var lastSelectedModel = "GPT-3.5"
+  private var lastSelectedModel: ChatModelsResponse.ChatModelProvider? = null
 
   // Sessions for which we have not yet received a task ID, but may receive an edit anyway.
   private var pendingSessions: MutableSet<FixupSession> = mutableSetOf()
@@ -52,12 +53,7 @@ class FixupService(val project: Project) : Disposable {
     return true
   }
 
-  // TODO: get model list from protocol
-  fun getModels(): List<String> = listOf("GPT-4", "GPT-3.5")
-
-  fun getCurrentModel(): String = lastSelectedModel
-
-  fun setCurrentModel(model: String) {
+  fun setCurrentModel(model: ChatModelsResponse.ChatModelProvider) {
     lastSelectedModel = model
   }
 

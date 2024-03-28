@@ -5,13 +5,18 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.fields.ExpandableTextField
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import java.awt.*
+import com.sourcegraph.cody.agent.protocol.ModelUsage
+import com.sourcegraph.cody.chat.ui.LlmDropdown
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
 import java.awt.event.KeyAdapter
@@ -39,7 +44,12 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
         minimumSize = Dimension(preferredWidth, minimumSize.height)
       }
 
-  lateinit var modelComboBox: ComboBox<String>
+  val llmDropdown =
+      LlmDropdown(
+          modelUsage = ModelUsage.EDIT,
+          project = controller.project,
+          onSetSelectedItem = controller::setCurrentModel,
+          chatModelProviderFromState = null)
 
   // History navigation helper
   private val historyCursor = HistoryCursor()
@@ -171,9 +181,9 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
     @RequiresEdt
     override fun doOKAction() {
       val text = instructionsField.text
-      val model = modelComboBox.item
+      val chatModelProvider = llmDropdown.item
       super.doOKAction()
-      controller.setCurrentModel(model)
+      controller.setCurrentModel(chatModelProvider)
       if (text.isNotBlank()) {
         addToHistory(text)
         val project = editor.project
@@ -183,7 +193,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
           return
         }
         controller.addSession(
-            EditSession(controller, editor, project, editor.document, text, model))
+            EditSession(controller, editor, project, editor.document, text, chatModelProvider))
       }
     }
 
@@ -218,25 +228,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
         }
     southRow.add(historyLabel, BorderLayout.CENTER)
 
-    modelComboBox =
-        ComboBox(controller.getModels().toTypedArray()).apply {
-          selectedItem = controller.getCurrentModel()
-          addKeyListener(
-              object : KeyAdapter() {
-                override fun keyPressed(e: KeyEvent) {
-                  if (e.isActionKey() ||
-                      e.keyCode == KeyEvent.VK_TAB ||
-                      e.isControlDown ||
-                      e.isMetaDown) {
-                    return
-                  }
-                  if (!instructionsField.hasFocus()) {
-                    instructionsField.requestFocusInWindow()
-                  }
-                }
-              })
-        }
-    southRow.add(modelComboBox, BorderLayout.EAST)
+    southRow.add(llmDropdown, BorderLayout.EAST)
 
     root.add(topRow, BorderLayout.NORTH)
     root.add(southRow, BorderLayout.SOUTH)
