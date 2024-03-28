@@ -10,6 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.10.1]
+
+### Added
+
+- Autocomplete: Add Claude 3 Haiku experimental autocomplete support. [pull/3538](https://github.com/sourcegraph/cody/pull/3538)
+
+### Changed
+
+- Telemetry: Upgrade Sentry version. [pull/3502](https://github.com/sourcegraph/cody/pull/3502)
+
 ## [1.10.0]
 
 ### Added
