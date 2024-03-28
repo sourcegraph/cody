@@ -46,15 +46,15 @@ class LlmDropdown(
       val response =
           chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get() ?: return@withAgent
 
-      invokeLater { updateModelsInUI(response) }
+      invokeLater { updateModelsInUI(response.models) }
     }
   }
 
   @RequiresEdt
-  private fun updateModelsInUI(response: ChatModelsResponse) {
+  private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
     removeAllItems()
-    response.models.forEach(::addItem)
-    response.models.find { it.default }?.let { this.selectedItem = it }
+    models.sortedBy { it.codyProOnly }.forEach(::addItem)
+    models.find { it.default }?.let { this.selectedItem = it }
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
       isCurrentUserFree = accountTier == AccountTier.DOTCOM_FREE
