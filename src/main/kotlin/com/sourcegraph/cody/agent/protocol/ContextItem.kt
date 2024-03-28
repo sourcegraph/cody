@@ -43,8 +43,11 @@ sealed class ContextItem {
     val path = uri.path
     val pathComponents = path.split("/") // uri path is posix-style
     if (pathComponents.size > 3) {
-      return "...${File.separator}${pathComponents.subList(pathComponents.size - 3, pathComponents.size).joinToString(
-                File.separator)}"
+      return "...${File.separator}${
+        pathComponents.subList(pathComponents.size - 3, pathComponents.size).joinToString(
+          File.separator
+        )
+      }"
     }
     return path.replace("/", File.separator)
   }
@@ -116,6 +119,10 @@ data class ContextItemSymbol(
 
 val uriDeserializer =
     JsonDeserializer { jsonElement: JsonElement?, _: Type, _: JsonDeserializationContext ->
+      fun asStringOrNull(elem: JsonElement?): String? {
+        return if (elem == null || elem.isJsonNull) null else elem.asString
+      }
+
       val j = jsonElement?.asJsonObject
       if (j == null || j.isJsonNull) {
         null
@@ -123,12 +130,11 @@ val uriDeserializer =
         j.asString
       } else {
         URI(
-            j["scheme"]?.asString,
-            j["authority"]?.asString,
-            j["path"]?.asString,
-            j["query"]?.asString,
-            j["fragment"]?.asString,
-        )
+            asStringOrNull(j["scheme"]),
+            asStringOrNull(j["authority"]),
+            asStringOrNull(j["path"]),
+            asStringOrNull(j["query"]),
+            asStringOrNull(j["fragment"]))
       }
     }
 
