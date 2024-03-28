@@ -33,8 +33,8 @@ export function resetActiveEditor(): void {
     lastActiveTextEditor = { active: undefined, ignored: false }
 }
 
-// Support file, untitled, and notebooks
-const validFileSchemes = new Set(['file', 'untitled', 'vscode-notebook', 'vscode-notebook-cell'])
+// Support file, untitled, and notebooks. temp is for jetbrains integration tests.
+const validFileSchemes = new Set(['file', 'untitled', 'temp', 'vscode-notebook', 'vscode-notebook-cell'])
 
 // When the webview panel is focused, calling activeTextEditor will return undefined.
 // This allows us to keep using the last active editor before the webview panel became the active editor
