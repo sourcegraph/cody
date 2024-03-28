@@ -157,9 +157,9 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
     debugHandler.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
-    debugHandler.messageEncoder.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(debugHandler.messageDecoder)
-    const client = agent.clientForThisInstance()
+    debugHandler.messageEncoder.pipe(agent.messageHandler.messageDecoder)
+    agent.messageHandler.messageEncoder.pipe(debugHandler.messageDecoder)
+    const client = agent.messageHandler.clientForThisInstance()
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
     return agent
@@ -175,7 +175,7 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
         : undefined
 }
 
-export class Agent extends MessageHandler implements ExtensionClient {
+export class Agent implements ExtensionClient {
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
@@ -212,7 +212,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     throw new Error('Not implemented')
                 },
             })
-            return this.request('textDocument/edit', { uri: uri.toString(), edits, options })
+            return this.messageHandler.request('textDocument/edit', {
+                uri: uri.toString(),
+                edits,
+                options,
+            })
         },
     })
 
@@ -241,6 +245,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             },
         ])
 
+    public messageHandler = new MessageHandler()
+
     constructor(
         private readonly params?: {
             polly?: Polly | undefined
@@ -248,9 +254,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             requestErrors: PollyRequestError[]
         }
     ) {
-        super()
         vscode_shim.setAgent(this)
-        this.registerRequest('initialize', async clientInfo => {
+        this.messageHandler.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
                 '*',
                 new IndentationBasedFoldingRangeProvider()
@@ -319,9 +324,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerNotification('initialized', () => {})
+        this.messageHandler.registerNotification('initialized', () => {})
 
-        this.registerRequest('shutdown', async () => {
+        this.messageHandler.registerRequest('shutdown', async () => {
             if (this?.params?.polly) {
                 this.params.polly.disconnectFrom('node-http')
                 await this.params.polly.stop()
@@ -329,47 +334,53 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
-        this.registerNotification('exit', () => {
+        this.messageHandler.registerNotification('exit', () => {
             process.exit(0)
         })
 
-        this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
-            function isEmpty(range: Range | undefined): boolean {
-                return (
-                    !range ||
-                    (range.start.line === 0 &&
-                        range.start.character === 0 &&
-                        range.end.line === 0 &&
-                        range.end.character === 0)
+        this.messageHandler.registerNotification(
+            'textDocument/didFocus',
+            (document: ProtocolTextDocument) => {
+                function isEmpty(range: Range | undefined): boolean {
+                    return (
+                        !range ||
+                        (range.start.line === 0 &&
+                            range.start.character === 0 &&
+                            range.end.line === 0 &&
+                            range.end.character === 0)
+                    )
+                }
+                const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+                // If the caller elided the content, reconstruct it here.
+                const cachedDocument = this.workspace.getDocumentFromUriString(
+                    documentWithUri.uri.toString()
+                )
+                if (!documentWithUri.underlying.content) {
+                    if (cachedDocument?.content != null) {
+                        documentWithUri.underlying.content = cachedDocument.content
+                    }
+                }
+                // Similarly, don't let this notification blow away our cached selection.
+                if (
+                    isEmpty(document.selection) &&
+                    !isEmpty(cachedDocument?.protocolDocument.selection)
+                ) {
+                    document.selection = cachedDocument?.protocolDocument.selection
+                }
+                this.workspace.setActiveTextEditor(
+                    this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
                 )
             }
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            // If the caller elided the content, reconstruct it here.
-            const cachedDocument = this.workspace.getDocumentFromUriString(
-                documentWithUri.uri.toString()
-            )
-            if (!documentWithUri.underlying.content) {
-                if (cachedDocument?.content != null) {
-                    documentWithUri.underlying.content = cachedDocument.content
-                }
-            }
-            // Similarly, don't let this notification blow away our cached selection.
-            if (isEmpty(document.selection) && !isEmpty(cachedDocument?.protocolDocument.selection)) {
-                document.selection = cachedDocument?.protocolDocument.selection
-            }
-            this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
-            )
-        })
+        )
 
-        this.registerNotification('textDocument/didOpen', document => {
+        this.messageHandler.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
-        this.registerNotification('textDocument/didChange', document => {
+        this.messageHandler.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.addDocument(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
@@ -389,7 +400,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerNotification('textDocument/didClose', document => {
+        this.messageHandler.registerNotification('textDocument/didClose', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const oldDocument = this.workspace.getDocument(documentWithUri.uri)
             if (oldDocument) {
@@ -398,28 +409,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerNotification('textDocument/didSave', async params => {
+        this.messageHandler.registerNotification('textDocument/didSave', async params => {
             const uri = vscode.Uri.parse(params.uri)
             const document = await vscode.workspace.openTextDocument(uri)
             vscode_shim.onDidSaveTextDocument.fire(document)
         })
 
-        this.registerNotification('extensionConfiguration/didChange', config => {
+        this.messageHandler.registerNotification('extensionConfiguration/didChange', config => {
             this.authenticationPromise = this.handleConfigChanges(config)
         })
 
-        this.registerRequest('extensionConfiguration/change', async config => {
+        this.messageHandler.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             const result = await this.authenticationPromise
             return result ?? null
         })
 
-        this.registerRequest('extensionConfiguration/status', async () => {
+        this.messageHandler.registerRequest('extensionConfiguration/status', async () => {
             const result = await this.authenticationPromise
             return result ?? null
         })
 
-        this.registerNotification('progress/cancel', ({ id }) => {
+        this.messageHandler.registerNotification('progress/cancel', ({ id }) => {
             const token = vscode_shim.progressBars.get(id)
             if (token) {
                 token.cancel()
@@ -601,15 +612,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
-            const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
-        })
+        this.messageHandler.registerNotification(
+            'autocomplete/completionAccepted',
+            async ({ completionID }) => {
+                const provider = await vscode_shim.completionProvider()
+                await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
+            }
+        )
 
-        this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
-            const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
-        })
+        this.messageHandler.registerNotification(
+            'autocomplete/completionSuggested',
+            async ({ completionID }) => {
+                const provider = await vscode_shim.completionProvider()
+                provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
+            }
+        )
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
             const repos = await graphqlClient.getRepoIds(names, first)
@@ -681,11 +698,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
-        this.registerRequest('graphql/getRepoIdIfEmbeddingExists', () => {
+        this.messageHandler.registerRequest('graphql/getRepoIdIfEmbeddingExists', () => {
             return Promise.resolve(null)
         })
 
-        this.registerRequest('graphql/getRepoId', async ({ repoName }) => {
+        this.messageHandler.registerRequest('graphql/getRepoId', async ({ repoName }) => {
             const result = await graphqlClient.getRepoId(repoName)
             if (result instanceof Error) {
                 console.error('getRepoId', result)
@@ -703,7 +720,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(result.length > 0)
         })
 
-        this.registerNotification('autocomplete/clearLastCandidate', async () => {
+        this.messageHandler.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 console.log('Completion provider is not initialized: unable to clear last candidate')
@@ -963,7 +980,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public createFixupControlApplicator(
         files: FixupActor & FixupFileCollection
     ): FixupControlApplicator {
-        this.fixups = new AgentFixupControls(files, this.notify.bind(this))
+        this.fixups = new AgentFixupControls(files, this.messageHandler.notify.bind(this))
         return this.fixups
     }
 
@@ -1026,7 +1043,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.notify('codeLenses/display', {
+        this.messageHandler.notify('codeLenses/display', {
             uri: uri.toString(),
             codeLenses: agentLenses,
         })
@@ -1121,7 +1138,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     panel.pushAttribution(message)
                 }
 
-                this.notify('webview/postMessage', {
+                this.messageHandler.notify('webview/postMessage', {
                     id: panel.panelID,
                     message,
                 })
@@ -1198,7 +1215,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         method: M,
         callback: RequestCallback<M>
     ): void {
-        this.registerRequest(method, async (params, token) => {
+        this.messageHandler.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
             return callback(params, token)
         })
@@ -1210,7 +1227,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): Promise<boolean> {
         if (edit instanceof AgentWorkspaceEdit) {
             if (this.clientInfo?.capabilities?.editWorkspace === 'enabled') {
-                return this.request('workspace/edit', { operations: edit.operations, metadata })
+                return this.messageHandler.request('workspace/edit', {
+                    operations: edit.operations,
+                    metadata,
+                })
             }
             logError(
                 'Agent',
@@ -1224,4 +1244,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
+
+    public request = this.messageHandler.request.bind(this.messageHandler)
+    public notify = this.messageHandler.notify.bind(this.messageHandler)
 }

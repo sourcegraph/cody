@@ -193,6 +193,6 @@ function setupAgentCommunication(params: {
         params.stdin.on('close', () => process.exit(1))
     }
 
-    params.stdin.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(params.stdout)
+    params.stdin.pipe(agent.messageHandler.messageDecoder)
+    agent.messageHandler.messageEncoder.pipe(params.stdout)
 }
