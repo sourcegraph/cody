@@ -36,6 +36,7 @@ export interface Configuration {
         | 'anthropic'
         | 'fireworks'
         | 'unstable-openai'
+        | 'experimental-openaicompatible'
         | 'experimental-ollama'
         | null
     autocompleteAdvancedModel: string | null

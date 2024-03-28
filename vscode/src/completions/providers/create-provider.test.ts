@@ -87,6 +87,33 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
+        it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                    autocompleteAdvancedModel: 'starchat-16b-beta',
+                }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            expect(provider?.model).toBe('starchat-16b-beta')
+        })
+
+        it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            // TODO(slimsag): make this default to starchat2 once added
+            // specifically just when using `experimental-openaicompatible`
+            expect(provider?.model).toBe('starcoder-hybrid')
+        })
+
         it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({

@@ -958,7 +958,7 @@
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": null,
-          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
+          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama", "experimental-openaicompatible"],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
