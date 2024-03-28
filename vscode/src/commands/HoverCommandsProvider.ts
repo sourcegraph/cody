@@ -46,9 +46,10 @@ export class HoverCommandsProvider implements vscode.Disposable {
      * Initializes the hover command provider by registering the necessary listeners and commands.
      */
     private init(): void {
+        const selector = { scheme: 'file' }
         this.disposables.push(
             // Registers the hover provider to provide hover information when hovering over code.
-            vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
+            vscode.languages.registerHoverProvider(selector, { provideHover: this.onHover.bind(this) }),
             //  Registers the 'cody.experiment.hover.commands' command to handle clicking hover commands.
             vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id))
         )
