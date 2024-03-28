@@ -1,5 +1,5 @@
-import { execSync } from 'child_process'
-import path from 'path'
+import { execSync } from 'node:child_process'
+import path from 'node:path'
 import jsonStableStringify from 'fast-json-stable-stringify'
 
 import { type EXPIRY_STRATEGY, type Headers, type MODE, Polly } from '@pollyjs/core'

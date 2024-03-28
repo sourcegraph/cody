@@ -1,6 +1,6 @@
-import crypto from 'crypto'
-import http from 'http'
-import type { AddressInfo } from 'net'
+import crypto from 'node:crypto'
+import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { sleep } from '../completions/utils'
 
 const FIVE_MINUTES = 5 * 60 * 1000

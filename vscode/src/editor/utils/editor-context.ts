@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'

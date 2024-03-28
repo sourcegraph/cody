@@ -1,8 +1,8 @@
-import * as child_process from 'child_process'
-import * as fs from 'fs'
-import path from 'path'
-import * as util from 'util'
-import * as fspromises from 'fs/promises'
+import * as child_process from 'node:child_process'
+import * as fs from 'node:fs'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
+import * as util from 'node:util'
 
 import envPaths from 'env-paths'
 import * as rimraf from 'rimraf'

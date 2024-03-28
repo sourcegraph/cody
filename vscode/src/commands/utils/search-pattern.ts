@@ -1,4 +1,4 @@
-import { posix } from 'path'
+import { posix } from 'node:path'
 import { workspace } from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
 

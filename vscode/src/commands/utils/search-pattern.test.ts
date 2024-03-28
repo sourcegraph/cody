@@ -1,4 +1,4 @@
-import path from 'path/posix'
+import path from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getSearchPatternForTestFiles } from './search-pattern'

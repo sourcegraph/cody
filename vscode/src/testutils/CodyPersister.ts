@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 import type { Har } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'

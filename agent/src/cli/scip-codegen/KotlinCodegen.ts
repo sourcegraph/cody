@@ -1,6 +1,6 @@
-import path from 'path'
+import fspromises from 'node:fs/promises'
+import path from 'node:path'
 import dedent from 'dedent'
-import fspromises from 'fs/promises'
 import { BaseCodegen, type DiscriminatedUnion, type DiscriminatedUnionMember } from './BaseCodegen'
 import { CodePrinter } from './CodePrinter'
 import type { ConsoleReporter } from './ConsoleReporter'

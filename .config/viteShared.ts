@@ -1,4 +1,4 @@
-import { basename } from 'path'
+import { basename } from 'node:path'
 
 import { type UserConfig, mergeConfig } from 'vite'
 import { type UserWorkspaceConfig, configDefaults, defineProject } from 'vitest/config'

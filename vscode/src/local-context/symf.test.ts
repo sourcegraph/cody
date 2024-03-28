@@ -7,9 +7,9 @@ import { startPollyRecording } from '../testutils/polly'
 import { _getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
 
-import { tmpdir } from 'os'
-import path from 'path'
-import { mkdtemp, open, rmdir } from 'fs/promises'
+import { mkdtemp, open, rmdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
