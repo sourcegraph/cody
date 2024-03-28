@@ -23,7 +23,7 @@ body:
       label: 'Description:'
       description: What is the problem we are trying to solve?
       value: |
-        <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. The current chat window feels outdated and cluttered - messages from different commands blend together and it's hard to distinguish what the output is. I have to scroll back through walls of text to understand the flow of a conversation and the output of answers is extremely slow. This frustrates me and makes me less engaged in the chat. -->
+        <!-- Example: As a user, I want a redesigned chat window so that I can more easily follow conversations and communicate with Cody. -->
     validations:
       required: true
   - type: textarea
@@ -32,18 +32,16 @@ body:
       label: 'Objectives:'
       description: What is the end goal?
       value: |
-        <!-- Example: The goal is to create an intuitive, uncluttered chat experience that delights users and facilitates seamless communication. It needs to be as fast as existing AI chatbots, and give the user control of what is used as context. The redesigned chat should increase lovability by removing the complication of context mixing and making it lightning fast for users. -->
+        <!-- Example: The goal is to create an intuitive, uncluttered chat experience that delights users. -->
   - type: textarea
     id: acceptance
     attributes:
       label: 'Acceptance Criteria:'
       description: Conditions that the feature must meet to be accepted by a user
       value: |
-        <!-- Example:
-        - The chat window has a clean, uncluttered interface with plenty of white space
-        - The user should have the option to select whether Cody or the user chooses the context
-        - The user should be able to use "@ commands" to select files or symbols for context
-        -->
+        ```[tasklist]
+        ### Acceptance Criteria
+        ```
   - type: textarea
     id: design-tasklist
     attributes:
