@@ -9,6 +9,7 @@ import com.intellij.openapi.startup.StartupActivity
 import com.sourcegraph.cody.CodyFocusChangeListener
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
+import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.statusbar.CodyStatusService
@@ -39,7 +40,8 @@ class PostStartupActivity : StartupActivity.DumbAware {
   // TODO: This should go away (along with the feature flag) once Inline Edits are stable/released.
   private fun initializeInlineEdits() {
     ApplicationManager.getApplication().invokeLater {
-      if (ConfigUtil.isFeatureFlagEnabled("cody.feature.inline-edits")) {
+      if (ConfigUtil.isFeatureFlagEnabled("cody.feature.inline-edits") ||
+          CodyApplicationSettings.instance.isInlineEditionEnabled) {
         val actionManager = ActionManager.getInstance()
         (actionManager.getAction("CodyEditorActions") as? DefaultActionGroup)?.apply {
           pushFrontAction(actionManager, "cody.documentCodeAction", this)

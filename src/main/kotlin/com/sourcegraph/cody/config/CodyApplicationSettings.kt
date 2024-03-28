@@ -22,6 +22,7 @@ data class CodyApplicationSettings(
     var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
     var shouldCheckForUpdates: Boolean = true,
+    var isInlineEditionEnabled: Boolean = false
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -41,6 +42,8 @@ data class CodyApplicationSettings(
     this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
     this.shouldAcceptNonTrustedCertificatesAutomatically =
         state.shouldAcceptNonTrustedCertificatesAutomatically
+    this.shouldCheckForUpdates = state.shouldCheckForUpdates
+    this.isInlineEditionEnabled = state.isInlineEditionEnabled
   }
 
   companion object {

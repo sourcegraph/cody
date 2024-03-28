@@ -226,14 +226,19 @@
 
         <!-- Inline editor actions -->
         <action
-            id="cody.editCodeAction"
-            class="com.sourcegraph.cody.edit.EditCodeAction"
-            text="Edit Code"/>
+                id="cody.editCodeAction"
+                class="com.sourcegraph.cody.edit.EditCodeAction"
+                text="Edit Code"/>
 
         <action
-            id="cody.documentCodeAction"
-            class="com.sourcegraph.cody.edit.DocumentCodeAction"
-            text="Document Code"/>
+                id="cody.documentCodeAction"
+                class="com.sourcegraph.cody.edit.DocumentCodeAction"
+                text="Document Code"/>
+
+        <action
+                id="cody.enableInlineEditsActions"
+                class="com.sourcegraph.cody.edit.EnableInlineEditsAction"
+                text="Enable Inline Edits"/>
 
         <!-- TODO: Custom commands -->
 
