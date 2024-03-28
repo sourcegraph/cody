@@ -43,7 +43,7 @@ export interface OpenAICompatibleOptions {
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
-const PROVIDER_IDENTIFIER = 'openaicompatible'
+const PROVIDER_IDENTIFIER = 'experimental-openaicompatible'
 
 const EOT_STARCHAT = '<|end|>'
 const EOT_STARCODER = '<|endoftext|>'
