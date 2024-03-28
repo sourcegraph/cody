@@ -1850,7 +1850,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -1958,7 +1958,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2069,7 +2069,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2173,7 +2173,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -2284,7 +2284,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
               	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
                       ...on FileChunkContext {
@@ -2466,7 +2466,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -2575,7 +2575,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2680,7 +2680,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2789,7 +2789,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2907,7 +2907,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3025,7 +3025,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3143,7 +3143,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3261,7 +3261,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3299,7 +3299,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3330,7 +3330,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.264Z
+      startedDateTime: 2024-03-28T12:09:29.518Z
       time: 0
       timings:
         blocked: -1
@@ -3379,7 +3379,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3417,7 +3417,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3448,7 +3448,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.265Z
+      startedDateTime: 2024-03-28T12:09:29.542Z
       time: 0
       timings:
         blocked: -1
@@ -3497,7 +3497,7 @@ log:
           params: []
           textJSON:
             query: |
-
+              
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -3605,7 +3605,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3704,7 +3704,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3811,7 +3811,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteGraphQLFields {
                   __type(name: "Site") {
                       fields {
@@ -3922,7 +3922,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteHasCodyEnabled {
                   site {
                       isCodyEnabled
@@ -4016,7 +4016,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -4119,7 +4119,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -4228,7 +4228,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4325,7 +4325,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
