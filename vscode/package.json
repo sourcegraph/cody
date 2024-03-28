@@ -535,12 +535,6 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+shift+v",
-        "mac": "shift+cmd+v",
-        "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
       },
