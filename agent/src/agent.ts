@@ -862,6 +862,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: panel.models ?? [] }
         })
 
+        this.registerAuthenticatedRequest('chat/export', async () => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = chatHistory.getLocalHistory(authStatus)
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat)
+                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
+                    .map(([chatID, chatTranscript]) => ({ chatID: chatID, transcript: chatTranscript }))
+            }
+
+            return []
+        })
+
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await this.receiveWebviewMessage(id, { command: 'context/get-remote-search-repos' })

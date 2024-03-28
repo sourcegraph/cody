@@ -5,6 +5,7 @@ import type {
     ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
+    SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
 import type {
@@ -52,6 +53,7 @@ export type ClientRequests = {
     'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
 
     'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/export': [null, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -305,6 +307,11 @@ interface AutocompleteParams {
 interface SelectedCompletionInfo {
     readonly range: Range
     readonly text: string
+}
+
+export interface ChatExportResult {
+    chatID: string
+    transcript: SerializedChatTranscript
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
