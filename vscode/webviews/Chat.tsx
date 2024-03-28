@@ -495,6 +495,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
+                    setIsEnhancedContextOpen={setIsEnhancedContextOpen}
                 />
             }
             <form className={classNames(styles.inputRow)}>

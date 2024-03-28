@@ -44,6 +44,7 @@ export const Transcript: React.FunctionComponent<
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
+        setIsEnhancedContextOpen?: (value: boolean) => void
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -72,6 +73,7 @@ export const Transcript: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
+    setIsEnhancedContextOpen,
 }) {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -200,6 +202,7 @@ export const Transcript: React.FunctionComponent<
                         userInfo={userInfo}
                         postMessage={postMessage}
                         guardrails={guardrails}
+                        setIsEnhancedContextOpen={setIsEnhancedContextOpen}
                     />
                 </div>
             )
