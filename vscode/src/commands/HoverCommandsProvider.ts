@@ -1,8 +1,9 @@
-import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider, isCodyIgnoredFile, logDebug } from '@sourcegraph/cody-shared'
 import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
 
 /**
@@ -16,13 +17,21 @@ export class HoverCommandsProvider implements vscode.Disposable {
     private currentDocument: vscode.Uri | undefined
 
     constructor() {
-        if (!this.isEnabled) {
-            return
-        }
+        featureFlagProvider
+            .evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
+            .then(hasFeatureFlag => {
+                // Log Enrollment event for Cody Hover Commands for all users
+                logFirstEnrollmentEvent(FeatureFlag.CodyHoverCommands, hasFeatureFlag)
+                // Register the providers only for users with:
+                // feature flag enabled & did not disable the feature config
+                if (!hasFeatureFlag || !this.isEnabled) {
+                    return
+                }
+                this.init()
+            })
+            .catch(error => logDebug('HoverCommandsProvider:failed', error))
 
         this.disposables.push(
-            vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
-            vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id)),
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
                     if (!this.isEnabled) {
@@ -30,6 +39,18 @@ export class HoverCommandsProvider implements vscode.Disposable {
                     }
                 }
             })
+        )
+    }
+
+    /**
+     * Initializes the hover command provider by registering the necessary listeners and commands.
+     */
+    private init(): void {
+        this.disposables.push(
+            // Registers the hover provider to provide hover information when hovering over code.
+            vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
+            //  Registers the 'cody.experiment.hover.commands' command to handle clicking hover commands.
+            vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id))
         )
     }
 

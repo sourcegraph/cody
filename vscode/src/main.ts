@@ -5,7 +5,6 @@ import {
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
-    FeatureFlag,
     ModelProvider,
     PromptMixin,
     featureFlagProvider,
@@ -64,7 +63,6 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { logFirstEnrollmentEvent } from './services/utils/enrollment-event'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -540,11 +538,7 @@ const register = async (
     )
 
     // Experimental features: Hover Commands
-    const hasHoverFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
-    logFirstEnrollmentEvent(FeatureFlag.CodyHoverCommands, hasHoverFlag)
-    if (hasHoverFlag) {
-        disposables.push(new HoverCommandsProvider())
-    }
+    disposables.push(new HoverCommandsProvider())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
