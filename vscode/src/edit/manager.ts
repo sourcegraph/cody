@@ -67,6 +67,7 @@ export class EditManager implements vscode.Disposable {
              * E.g. triggering this command via the command palette, right-click menus
              **/
             source = 'editor',
+            telemetryMetadata,
         } = args
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
@@ -167,6 +168,7 @@ export class EditManager implements vscode.Disposable {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
+            ...telemetryMetadata,
         }
         telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
             hasV2Event: true,
