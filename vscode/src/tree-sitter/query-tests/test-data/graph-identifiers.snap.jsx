@@ -16,6 +16,7 @@
 //            ^^^ identifier[4]
       sentry.captureException(new Error('hello world'))
 //           ^^^^^^^^^^^^^^^^ identifier[5]
+//                                ^^^^^ identifier[6]
       function test() {
 //                    █
       }
@@ -27,28 +28,33 @@
 // identifier[3]: identifier
 // identifier[4]: property_identifier
 // identifier[5]: property_identifier
+// identifier[6]: identifier
 
 // ------------------------------------
 
   function testParams() {
       const result = {
           value: 1,
+//        ^^^^^ identifier[1]
           key: 'foo',
+//        ^^^ identifier[2]
       }
       pick(result, ['value'])
-//    ^^^^ identifier[1]
+//    ^^^^ identifier[3]
       Agent.test()
-//          ^^^^ identifier[2]
+//          ^^^^ identifier[4]
       wrapper
-//    ^^^^^^^ identifier[3]
+//    ^^^^^^^ identifier[5]
 //           █
       return result
   }
 
 // Nodes types:
-// identifier[1]: identifier
+// identifier[1]: property_identifier
 // identifier[2]: property_identifier
 // identifier[3]: identifier
+// identifier[4]: property_identifier
+// identifier[5]: identifier
 
 // ------------------------------------
 
@@ -139,10 +145,14 @@ function returnStatementValue(value, flag) {
 
 // ------------------------------------
 
-const object = {
-    key: 'value',
-    //   |
-}
+  const object = {
+      key: 'value',
+//    ^^^ identifier[1]
+//         █
+  }
+
+// Nodes types:
+// identifier[1]: property_identifier
 
 // ------------------------------------
 
@@ -159,10 +169,12 @@ const object = {
 
   returnStatementValue('value', { key: value })
 //^^^^^^^^^^^^^^^^^^^^ identifier[1]
+//                                ^^^ identifier[2]
 //                                    █
 
 // Nodes types:
 // identifier[1]: identifier
+// identifier[2]: property_identifier
 
 // ------------------------------------
 

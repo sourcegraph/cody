@@ -11,11 +11,12 @@ function wrapper() {
 
 // ------------------------------------
 
-function testParams(): TestType {
+function testParams(arg: TestType): TestType {
     const result: Agent = {
         value: 1,
         key: 'foo',
     }
+    const value = wrapper
     pick(result, ['value'])
     Agent.test()
     wrapper
@@ -85,8 +86,8 @@ function returnStatementValue(value: Agent, flag?: boolean) {
 
 // ------------------------------------
 
-interface TestInterface {
-    //                  |
+interface TestInterface extends TestType {
+    //                                   |
 }
 
 // ------------------------------------

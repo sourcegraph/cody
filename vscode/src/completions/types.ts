@@ -27,7 +27,7 @@ interface FileContextSnippet {
     endLine: number
     content: string
 }
-interface SymbolContextSnippet extends FileContextSnippet {
+export interface SymbolContextSnippet extends FileContextSnippet {
     symbol: string
 }
 export type ContextSnippet = FileContextSnippet | SymbolContextSnippet

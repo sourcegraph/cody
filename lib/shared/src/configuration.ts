@@ -64,7 +64,7 @@ export interface Configuration {
      * Experimental autocomplete
      */
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean

@@ -199,9 +199,8 @@ export class BfgRetriever implements ContextRetriever {
                     // in hopes that LLM partially guessed the right completion.
                     ...getLastNGraphContextIdentifiersFromString({
                         n: 10,
-                        document,
-                        position,
-                        currentLinePrefix: docContext.currentLinePrefix,
+                        uri: document.uri,
+                        languageId: document.languageId,
                         source: lastCandidateCurrentLine,
                     }),
                     // Get last 10 identifiers from the current document prefix.
@@ -209,14 +208,13 @@ export class BfgRetriever implements ContextRetriever {
                         n: 10,
                         document,
                         position,
-                        currentLinePrefix: docContext.currentLinePrefix,
                     }),
                 ])
             )
 
             const response = await bfg.request('bfg/contextForIdentifiers', {
                 uri: document.uri.toString(),
-                identifiers: inputIdentifiers,
+                identifiers: inputIdentifiers.map(snippetRequest => snippetRequest.symbolName),
                 maxSnippets: 20,
                 maxDepth: 4,
             })

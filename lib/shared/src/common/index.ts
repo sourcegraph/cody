@@ -22,8 +22,19 @@ export function pluralize(string: string, count: number | bigint, plural = `${st
 
 /**
  * Return a filtered version of the given array, de-duplicating items based on the given key function.
- * The order of the filtered array is not guaranteed to be related to the input ordering.
  */
-export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => [
-    ...new Map(items.map(item => [typeof key === 'function' ? key(item) : item[key], item])).values(),
-]
+export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => {
+    const seen = new Set()
+    const isKeyFunction = typeof key === 'function'
+
+    return items.reduce((result, item) => {
+        const itemKey = isKeyFunction ? key(item) : item[key]
+
+        if (!seen.has(itemKey)) {
+            seen.add(itemKey)
+            result.push(item)
+        }
+
+        return result
+    }, [] as T[])
+}
