@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.8.3",
+  "version": "1.10.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -30,7 +30,7 @@
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
-    "storybook": "storybook dev -p 6007 --no-open --no-version-updates --no-release-notes",
+    "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
     "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
@@ -535,12 +535,6 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+shift+v",
-        "mac": "shift+cmd+v",
-        "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
       },
@@ -588,6 +582,18 @@
         "command": "cody.fixup.cancelNearest",
         "key": "alt+z",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["next"],
+        "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["previous"],
+        "key": "shift+ctrl+up",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],
     "submenus": [
@@ -884,8 +890,14 @@
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
-          "markdownDescription": "A custom instruction to be included at the start of all chat messages. (E.g., \"Answer all my questions in Spanish.\")",
+          "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.edit.preInstruction": {
+          "order": 7,
+          "type": "string",
+          "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
+          "examples": ["Write all unit tests with Jest instead of detected framework."]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1165,11 +1177,12 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
-    "@sentry/browser": "^7.66.0",
-    "@sentry/core": "^7.66.0",
-    "@sentry/node": "^7.66.0",
+    "@sentry/browser": "^7.107.0",
+    "@sentry/core": "^7.107.0",
+    "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
+    "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@storybook/preview-api": "^7.6.2",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
@@ -1188,14 +1201,15 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-git-diff": "^0.0.14",
     "socks-proxy-agent": "^8.0.1",
-    "tree-sitter-wasms": "^0.1.7",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.21.0",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
@@ -1214,7 +1228,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
@@ -1237,7 +1251,6 @@
     "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
     "progress": "^2.0.3",
-    "semver": "^7.5.4",
     "yaml": "^2.3.4"
   }
 }

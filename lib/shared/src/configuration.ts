@@ -22,6 +22,7 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: string
+    editPreInstruction: string
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
@@ -53,6 +54,7 @@ export interface Configuration {
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
+    experimentalSupercompletions: boolean
 
     /**
      * Unstable Features for internal testing only

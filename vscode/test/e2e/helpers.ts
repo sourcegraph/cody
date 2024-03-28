@@ -342,7 +342,7 @@ export async function openFile(page: Page, filename: string): Promise<void> {
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
 export async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat' }).click()
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 

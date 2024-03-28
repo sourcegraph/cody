@@ -2,7 +2,7 @@ import { displayPath } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import type { EditIntent } from '../../types'
 import { PROMPT_TOPICS } from '../constants'
-import type { GetLLMInteractionOptions } from '../type'
+import type { GetLLMInteractionOptions, LLMPrompt } from '../type'
 
 interface PromptVariant {
     system?: string
@@ -113,39 +113,49 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
     },
 }
 
-const buildCompleteGenericPrompt = (promptVariant: PromptVariant) => {
-    const system = promptVariant.system ? `${promptVariant.system}\n\n` : ''
-    return `${system}${promptVariant.instruction}`
-}
-
 export const buildGenericPrompt = (
     intent: EditIntent,
     { instruction, selectedText, uri }: GetLLMInteractionOptions
-): string => {
+): LLMPrompt => {
     switch (intent) {
         case 'edit':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.edit)
-                .replace('{instruction}', instruction)
-                .replace('{selectedText}', selectedText)
-                .replace('{filePath}', displayPath(uri))
+            return {
+                system: GENERIC_PROMPTS.edit.system,
+                instruction: GENERIC_PROMPTS.edit.instruction
+                    .replace('{instruction}', instruction)
+                    .replace('{selectedText}', selectedText)
+                    .replace('{filePath}', displayPath(uri)),
+            }
         case 'add':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.add)
-                .replace('{instruction}', instruction)
-                .replace('{filePath}', displayPath(uri))
+            return {
+                system: GENERIC_PROMPTS.add.system,
+                instruction: GENERIC_PROMPTS.add.instruction
+                    .replace('{instruction}', instruction)
+                    .replace('{filePath}', displayPath(uri)),
+            }
         case 'fix':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.fix)
-                .replace('{instruction}', instruction)
-                .replace('{selectedText}', selectedText)
-                .replace('{filePath}', displayPath(uri))
+            return {
+                system: GENERIC_PROMPTS.fix.system,
+                instruction: GENERIC_PROMPTS.fix.instruction
+                    .replace('{instruction}', instruction)
+                    .replace('{selectedText}', selectedText)
+                    .replace('{filePath}', displayPath(uri)),
+            }
         case 'test':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.test)
-                .replace('{instruction}', instruction)
-                .replace('{selectedText}', selectedText)
-                .replace('{filePath}', displayPath(uri))
+            return {
+                system: GENERIC_PROMPTS.test.system,
+                instruction: GENERIC_PROMPTS.test.instruction
+                    .replace('{instruction}', instruction)
+                    .replace('{selectedText}', selectedText)
+                    .replace('{filePath}', displayPath(uri)),
+            }
         case 'doc':
-            return buildCompleteGenericPrompt(GENERIC_PROMPTS.doc)
-                .replace('{instruction}', instruction)
-                .replace('{selectedText}', selectedText)
-                .replace('{filePath}', displayPath(uri))
+            return {
+                system: GENERIC_PROMPTS.doc.system,
+                instruction: GENERIC_PROMPTS.doc.instruction
+                    .replace('{instruction}', instruction)
+                    .replace('{selectedText}', selectedText)
+                    .replace('{filePath}', displayPath(uri)),
+            }
     }
 }

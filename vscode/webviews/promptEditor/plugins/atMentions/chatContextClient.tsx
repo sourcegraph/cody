@@ -54,10 +54,18 @@ function useChatContextClient(): ChatContextClient {
 }
 
 /** Hook to get the chat context items for the given query. */
-export function useChatContextItems(query: string): ContextItem[] | undefined {
+export function useChatContextItems(query: string | null): ContextItem[] | undefined {
     const chatContextClient = useChatContextClient()
     const [results, setResults] = useState<ContextItem[]>()
+    // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
+        // An empty query is a valid query that we use to get open tabs context,
+        // while a null query means this is not an at-mention query.
+        if (query === null) {
+            setResults(undefined)
+            return
+        }
+
         // Track if the query changed since this request was sent (which would make our results
         // no longer valid).
         let invalidated = false
@@ -80,6 +88,6 @@ export function useChatContextItems(query: string): ContextItem[] | undefined {
         return () => {
             invalidated = true
         }
-    }, [chatContextClient, query])
+    }, [query])
     return results
 }

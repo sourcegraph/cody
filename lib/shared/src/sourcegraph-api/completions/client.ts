@@ -84,12 +84,14 @@ export abstract class SourcegraphCompletionsClient {
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void
 
     public stream(
         params: CompletionParameters,
+        apiVersion: number,
         signal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         // Provide default stop sequence for starchat models.
@@ -125,7 +127,7 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        this._streamWithCallbacks(params, callbacks, signal)
+        this._streamWithCallbacks(params, apiVersion, callbacks, signal)
 
         return (async function* () {
             for (let i = 0; ; i++) {

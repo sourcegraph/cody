@@ -32,7 +32,7 @@ body:
         - label: Other
   - type: textarea
     attributes:
-      label: What needs to be improved? Please describe how this affects the user experience.
+      label: What needs to be improved? Please describe how this affects the user experience and include a screenshot.
       description: A clear and concise description of what is wrong or needs improvement.
     validations:
       required: true

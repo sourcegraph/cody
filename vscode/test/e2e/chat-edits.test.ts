@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { sidebarSignin } from './common'
+import { createEmptyChatPanel, sidebarSignin } from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 const osKey = isMacOS() ? 'Meta' : 'Control'
@@ -21,10 +21,7 @@ test.extend<ExpectedEvents>({
 })('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Chat Action Buttons - above the input box
     const editLastMessageButton = chatFrame.getByRole('button', { name: /^Edit Last Message / })
@@ -37,15 +34,17 @@ test.extend<ExpectedEvents>({
     const startNewChatButton = chatFrame.getByTitle('Start New Chat')
 
     // Submit three new messages
-    await chatInput.fill('One')
-    await chatInput.press('Enter')
-    await chatInput.fill('Two')
-    await chatInput.press('Enter')
-    await chatInput.fill('Three')
-    await chatInput.press('Enter')
-
     // Three edit buttons should show up, one per each message submitted
     const editButtons = chatFrame.locator('.codicon-edit')
+    await chatInput.fill('One')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await chatInput.fill('Two')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('Two')).toBeVisible()
+    await chatInput.fill('Three')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('Three')).toBeVisible()
     await expect(editButtons).toHaveCount(3)
 
     // Click on the first edit button to get into the editing mode

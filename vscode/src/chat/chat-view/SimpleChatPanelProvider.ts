@@ -46,19 +46,19 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { countGeneratedCode } from '../utils'
+import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
-import { getContextWindowForModel } from '../../models/utilts'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -585,7 +585,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
-                telemetryService.log('CodyVSCodeExtension:at-mention:executed', { source })
+                telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
+                    source,
+                })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
                     privateMetadata: { source },
                 })
@@ -597,12 +599,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             },
         }
+        // Use the number of characters left in the chat model as the limit
+        // for adding user context files to the chat.
+        const contextLimit = getContextWindowLimitInBytes(
+            [...this.chatModel.getMessages()],
+            // Minus the character limit reserved for the answer token
+            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+        )
 
         try {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                contextLimit
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -615,7 +625,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (cancellation.token.isCancellationRequested) {
                 return
             }
+            cancellation.cancel()
             this.postError(new Error(`Error retrieving context files: ${error}`))
+        } finally {
+            cancellation.dispose()
         }
     }
 
@@ -727,16 +740,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
-        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint, this.chatModel.modelID)
+        const models = ModelProvider.getProviders(
+            ModelUsage.Chat,
+            authStatus.isDotCom && !authStatus.userCanUpgrade,
+            this.chatModel.modelID
+        )
 
         void this.postMessage({
             type: 'chatModels',
@@ -786,14 +794,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any) => void
     ): Promise<Message[]> {
-        const maxChars = getContextWindowForModel(
-            this.authProvider.getAuthStatus(),
-            this.chatModel.modelID
+        const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
+            this.chatModel,
+            this.authProvider.getAuthStatus().codyApiVersion,
+            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
         )
-        const { prompt, newContextUsed } = await prompter.makePrompt(this.chatModel, maxChars)
 
         // Update UI based on prompt construction
-        this.chatModel.setLastMessageContext(newContextUsed)
+        // Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...newContextUsed, ...(newContextIgnored ?? [])])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -1145,7 +1154,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Let the webview know if it is active
         panel.onDidChangeViewState(event =>
-            this.postMessage({ type: 'webview-state', isActive: event.webviewPanel.active })
+            this.postMessage({
+                type: 'webview-state',
+                isActive: event.webviewPanel.active,
+            })
         )
 
         this.disposables.push(

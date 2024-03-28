@@ -1,6 +1,9 @@
 import { type ContextItem, displayLineRange, displayPath } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
+import {
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from '../../chat/context/constants'
 
 /**
  * Removes the string after the last '@' character in the given string.
@@ -21,6 +24,9 @@ export function removeAfterLastAt(str: string): string {
  */
 export function getLabelForContextItem(item: ContextItem): string {
     const isFileType = item.type === 'file'
+    if (isFileType && item.title) {
+        return `Add context from: ${item.title}`
+    }
     const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
     if (isFileType) {
         return `${displayPath(item.uri)}${rangeLabel}`
