@@ -301,11 +301,11 @@ test.extend<ExpectedEvents>({
     await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'buzz.ts' }).click()
 
-    // Wait for the tsserver to become ready: when loading status disappears
-    await expect(page.getByRole('button', { name: 'Editor Language Status: Loading' })).toBeVisible()
-    await page.waitForSelector('button[aria-label="Editor Language Status: Loading"]', {
-        state: 'hidden',
-    })
+    // Wait for the tsserver to become ready: when sync icon disappears
+    const langServerLoadingState = 'Editor Language Status: Loading'
+    await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
+    await page.waitForSelector(`span[class*="codicon codicon-sync"]`, { state: 'detached' })
+    await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
 
     // Go back to the Cody chat tab
     await page.getByRole('tab', { name: 'New Chat' }).click()
@@ -322,7 +322,7 @@ test.extend<ExpectedEvents>({
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.clear()
-    await chatInput.pressSequentially('@#fizzb', { delay: 10 })
+    await chatInput.pressSequentially('@#fizzb', { delay: 200 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')

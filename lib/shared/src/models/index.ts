@@ -65,13 +65,24 @@ export class ModelProvider {
      * Get the list of the primary models providers with local models.
      * If currentModel is provided, sets it as the default model.
      */
-    public static getProviders(type: ModelUsage, currentModel?: string): ModelProvider[] {
+    public static getProviders(
+        type: ModelUsage,
+        isCodyProUser: boolean,
+        currentModel?: string
+    ): ModelProvider[] {
+        const availableModels = ModelProvider.providers.filter(m => m.usage.includes(type))
+
+        const currentDefault = currentModel
+            ? availableModels.find(m => m.model === currentModel)
+            : undefined
+        const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
+
         return ModelProvider.providers
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
                 // Set the current model as default
-                default: model.model === currentModel,
+                default: canUseCurrentDefault ? model.model === currentModel : model.default,
             }))
     }
 

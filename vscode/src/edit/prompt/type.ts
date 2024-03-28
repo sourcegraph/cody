@@ -1,7 +1,12 @@
 import type * as vscode from 'vscode'
 
+export interface LLMPrompt {
+    system?: string
+    instruction: string
+}
+
 export interface LLMInteraction {
-    prompt: string
+    prompt: LLMPrompt
     stopSequences?: string[]
     responseTopic?: string
     assistantText?: string

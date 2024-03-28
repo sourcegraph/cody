@@ -740,7 +740,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelProvider.getProviders(ModelUsage.Chat, this.chatModel.modelID)
+        const models = ModelProvider.getProviders(
+            ModelUsage.Chat,
+            authStatus.isDotCom && !authStatus.userCanUpgrade,
+            this.chatModel.modelID
+        )
 
         void this.postMessage({
             type: 'chatModels',

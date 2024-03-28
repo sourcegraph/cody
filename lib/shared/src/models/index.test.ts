@@ -7,7 +7,7 @@ import { ModelUsage } from './types'
 
 describe('getMaxCharsByModel', () => {
     beforeAll(() => {
-        ModelProvider.getProviders(ModelUsage.Chat, DOTCOM_URL.toString())
+        ModelProvider.getProviders(ModelUsage.Chat, false, DOTCOM_URL.toString())
     })
 
     it('returns default token limit for unknown model', () => {
@@ -21,13 +21,13 @@ describe('getMaxCharsByModel', () => {
     })
 
     it('returns default token limit for unknown model - Enterprise user', () => {
-        ModelProvider.getProviders(ModelUsage.Chat, 'https://example.com')
+        ModelProvider.getProviders(ModelUsage.Chat, false, 'https://example.com')
         const maxChars = ModelProvider.getMaxCharsByModel('unknown-model')
         expect(maxChars).toEqual(tokensToChars(DEFAULT_FAST_MODEL_TOKEN_LIMIT))
     })
 
     it('returns max token limit for known model - Enterprise user', () => {
-        ModelProvider.getProviders(ModelUsage.Chat, 'https://example.com')
+        ModelProvider.getProviders(ModelUsage.Chat, false, 'https://example.com')
         ModelProvider.setProviders([new ModelProvider('model-with-limit', [ModelUsage.Chat], 200)])
         const maxChars = ModelProvider.getMaxCharsByModel('model-with-limit')
         expect(maxChars).toEqual(tokensToChars(200))

@@ -535,12 +535,6 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+shift+v",
-        "mac": "shift+cmd+v",
-        "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
       },
@@ -588,6 +582,18 @@
         "command": "cody.fixup.cancelNearest",
         "key": "alt+z",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["next"],
+        "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["previous"],
+        "key": "shift+ctrl+up",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],
     "submenus": [
@@ -1195,6 +1201,7 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-git-diff": "^0.0.14",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
@@ -1221,7 +1228,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
