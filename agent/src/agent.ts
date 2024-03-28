@@ -851,15 +851,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
-            const panel = this.webPanels.getPanelOrError(id)
-            if (panel.models) {
-                return { models: panel.models, remoteRepos: panel.remoteRepos }
-            }
-            await this.receiveWebviewMessage(id, {
-                command: 'get-chat-models',
-            })
-            return { models: panel.models ?? [] }
+        this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const providers = ModelProvider.getProviders(
+                modelUsage,
+                authStatus.isDotCom && !authStatus.userCanUpgrade
+            )
+            return { models: providers ?? [] }
         })
 
         this.registerAuthenticatedRequest('chat/export', async () => {
