@@ -37,7 +37,7 @@ import {
 } from './provider'
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [CLOSING_CODE_TAG],
+    singlelineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
     multilineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
 })
 

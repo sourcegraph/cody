@@ -19,6 +19,12 @@ describe('[getInlineCompletions] models', () => {
             })
             expect(requests[0].stopSequences).toMatchInlineSnapshot(`
               [
+                "
+
+              ",
+                "
+
+              ",
                 "<fim_prefix>",
                 "<fim_suffix>",
                 "<fim_middle>",
@@ -41,6 +47,12 @@ describe('[getInlineCompletions] models', () => {
             // Keeps stop sequences array unchanged
             expect(requests[0].stopSequences).toMatchInlineSnapshot(`
               [
+                "
+
+              ",
+                "
+
+              ",
                 "<fim_prefix>",
                 "<fim_suffix>",
                 "<fim_middle>",
