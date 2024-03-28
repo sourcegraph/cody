@@ -7,9 +7,12 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.AgentChatSession.Companion.restoreChatSession
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.initialization.EndOfTrialNotificationScheduler
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
@@ -36,7 +39,19 @@ class ExportChatsBackgroundable(
             .filter { chat -> if (internalId != null) chat.internalId == internalId else true }
 
     chats.forEachIndexed { index, chatState ->
-      restoreChatSession(agent, chatState)
+      val chatMessages =
+          chatState.messages.map { message ->
+            val parsed =
+                when (val speaker = message.speaker) {
+                  MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
+                  MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
+                  else -> error("unrecognized speaker $speaker")
+                }
+
+            ChatMessage(speaker = parsed, message.text)
+          }
+
+      restoreChatSession(agent, chatMessages, chatModelProvider = null, chatState.internalId!!)
       indicator.fraction = ((index + 1.0) / (chats.size + 1.0))
 
       if (indicator.isCanceled) {

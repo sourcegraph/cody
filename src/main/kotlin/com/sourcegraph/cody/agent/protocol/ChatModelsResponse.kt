@@ -4,7 +4,6 @@ import com.sourcegraph.cody.Icons
 import javax.swing.Icon
 
 data class ChatModelsResponse(val models: List<ChatModelProvider>) {
-
   data class ChatModelProvider(
       val default: Boolean,
       val codyProOnly: Boolean,

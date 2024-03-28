@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.util.IconUtil
@@ -10,6 +9,7 @@ import com.sourcegraph.cody.PromptPanel
 import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.ui.EnhancedContextPanel
@@ -31,7 +31,11 @@ class ChatPanel(
 
   val promptPanel: PromptPanel = PromptPanel(project, chatSession)
   private val llmDropdown =
-      LlmDropdown(project, onSetSelectedItem = ::setLlmForAgentSession, chatModelProviderFromState)
+      LlmDropdown(
+          ModelUsage.CHAT,
+          project,
+          onSetSelectedItem = ::setLlmForAgentSession,
+          chatModelProviderFromState)
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
 
@@ -82,15 +86,6 @@ class ChatPanel(
   }
 
   @RequiresEdt
-  fun addAllMessages(messages: List<ChatMessage>) {
-    if (messages.isNotEmpty()) {
-      llmDropdown.updateAfterFirstMessage()
-      promptPanel.updateEmptyTextAfterFirstMessage()
-    }
-    messages.forEach(messagesPanel::addChatMessageAsComponent)
-  }
-
-  @RequiresEdt
   fun registerCancellationToken(cancellationToken: CancellationToken) {
     messagesPanel.registerCancellationToken(cancellationToken)
     promptPanel.registerCancellationToken(cancellationToken)
@@ -102,10 +97,6 @@ class ChatPanel(
       stopGeneratingButton.removeActionListener(listener)
     }
     stopGeneratingButton.addActionListener { cancellationToken.abort() }
-  }
-
-  fun updateLlmDropdownModels(models: List<ChatModelsResponse.ChatModelProvider>) {
-    ApplicationManager.getApplication().invokeLater { llmDropdown.updateModels(models) }
   }
 
   private fun setLlmForAgentSession(chatModelProvider: ChatModelsResponse.ChatModelProvider) {

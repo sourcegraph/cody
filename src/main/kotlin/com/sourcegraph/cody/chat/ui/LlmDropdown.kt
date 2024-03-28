@@ -1,17 +1,23 @@
 package com.sourcegraph.cody.chat.ui
 
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.config.AccountTier
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.ui.LlmComboBoxRenderer
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.CodyBundle
+import java.util.concurrent.TimeUnit
 
 class LlmDropdown(
+    private val modelUsage: ModelUsage,
     private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
     private val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
@@ -27,17 +33,28 @@ class LlmDropdown(
     }
 
     isEnabled = false
+    updateModels()
   }
 
-  @RequiresEdt
-  fun updateModels(models: List<ChatModelsResponse.ChatModelProvider>) {
+  private fun updateModels() {
     if (chatModelProviderFromState != null) {
       return
     }
 
+    CodyAgentService.withAgent(project) { agent ->
+      val chatModels = agent.server.chatModels(ChatModelsParams(modelUsage.value))
+      val response =
+          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get() ?: return@withAgent
+
+      invokeLater { updateModelsInUI(response) }
+    }
+  }
+
+  @RequiresEdt
+  private fun updateModelsInUI(response: ChatModelsResponse) {
     removeAllItems()
-    models.forEach(::addItem)
-    models.find { it.default }?.let { this.selectedItem = it }
+    response.models.forEach(::addItem)
+    response.models.find { it.default }?.let { this.selectedItem = it }
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
       isCurrentUserFree = accountTier == AccountTier.DOTCOM_FREE

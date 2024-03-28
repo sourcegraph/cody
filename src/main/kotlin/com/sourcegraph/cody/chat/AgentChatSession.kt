@@ -15,7 +15,6 @@ import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
 import com.sourcegraph.cody.agent.protocol.ChatError
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
 import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
@@ -59,7 +58,6 @@ private constructor(
 
   init {
     cancellationToken.get().dispose()
-    updateLlmDropdownModels()
   }
 
   fun getPanel(): ChatPanel = chatPanel
@@ -243,23 +241,21 @@ private constructor(
     chatPanel.registerCancellationToken(newCancellationToken)
   }
 
-  private fun updateLlmDropdownModels() {
-    if (chatModelProviderFromState != null) {
-      return
-    }
-
-    CodyAgentService.withAgent(project) { agent ->
-      val chatModels = agent.server.chatModels(ChatModelsParams(connectionId.get().get()))
-      val response =
-          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get() ?: return@withAgent
-      chatPanel.updateLlmDropdownModels(response.models)
-    }
-  }
-
   fun updateFromState(agent: CodyAgent, state: ChatState) {
-    val newConnectionId = restoreChatSession(agent, state)
+    val chatMessages =
+        state.messages.map { message ->
+          val parsed =
+              when (val speaker = message.speaker) {
+                MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
+                MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
+                else -> error("unrecognized speaker $speaker")
+              }
+
+          ChatMessage(speaker = parsed, message.text)
+        }
+    val newConnectionId =
+        restoreChatSession(agent, chatMessages, chatModelProviderFromState, state.internalId!!)
     connectionId.getAndSet(newConnectionId)
-    updateLlmDropdownModels()
   }
 
   companion object {
@@ -317,29 +313,10 @@ private constructor(
 
     fun restoreChatSession(
         agent: CodyAgent,
-        chatState: ChatState
+        chatMessages: List<ChatMessage>,
+        chatModelProvider: ChatModelsResponse.ChatModelProvider?,
+        internalId: String
     ): CompletableFuture<ConnectionId> {
-      val modelFromState =
-          chatState.llm?.let {
-            ChatModelsResponse.ChatModelProvider(
-                default = it.model == null,
-                codyProOnly = false,
-                provider = it.provider,
-                title = it.title,
-                model = it.model ?: "")
-          }
-
-      val chatMessages =
-          chatState.messages.map { message ->
-            val parsed =
-                when (val speaker = message.speaker) {
-                  MessageState.SpeakerState.HUMAN -> Speaker.HUMAN
-                  MessageState.SpeakerState.ASSISTANT -> Speaker.ASSISTANT
-                  else -> error("unrecognized speaker $speaker")
-                }
-
-            ChatMessage(speaker = parsed, message.text)
-          }
 
       val messages =
           chatMessages
@@ -348,16 +325,27 @@ private constructor(
                 if (acc.lastOrNull()?.speaker == msg.speaker) acc else acc.plus(msg)
               }
 
-      val restoreParams = ChatRestoreParams(modelFromState?.model, messages, chatState.internalId!!)
+      val restoreParams = ChatRestoreParams(chatModelProvider?.model, messages, internalId)
       return agent.server.chatRestore(restoreParams)
     }
 
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
-
       val agentChatSession = CompletableFuture<AgentChatSession>()
+
+      val chatModelProvider =
+          state.llm?.let {
+            ChatModelsResponse.ChatModelProvider(
+                default = it.model == null,
+                codyProOnly = false,
+                provider = it.provider,
+                title = it.title,
+                model = it.model ?: "")
+          }
+
       createNewPanel(project) { codyAgent ->
         val dummyConnectionId = codyAgent.server.chatNew()
-        val chatSession = AgentChatSession(project, dummyConnectionId, state.internalId!!)
+        val chatSession =
+            AgentChatSession(project, dummyConnectionId, state.internalId!!, chatModelProvider)
 
         chatSession.updateFromState(codyAgent, state)
         AgentChatSessionService.getInstance(project).addSession(chatSession)
