@@ -60,7 +60,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
                     source,
                     telemetryMetadata: {
                         diagnostics: diagnostics.map(diagnostic => ({
-                            code: diagnostic.code,
+                            code: getDiagnosticCode(diagnostic.code),
                             source: diagnostic.source,
                         })),
                     },
@@ -119,4 +119,13 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         }
         return prompt
     }
+}
+
+function getDiagnosticCode(diagnosticCode: vscode.Diagnostic['code']): string | undefined {
+    if (!diagnosticCode) {
+        return
+    }
+
+    const code = typeof diagnosticCode === 'object' ? diagnosticCode.value : diagnosticCode
+    return code.toString()
 }
