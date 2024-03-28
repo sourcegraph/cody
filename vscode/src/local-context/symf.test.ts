@@ -62,9 +62,7 @@ describe('symf', () => {
         )
 
         check('scan tokens in C++', expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"C++ c++ cpp scan scanner scanning token tokens"`
-            )
+            expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
         )
         afterAll(async () => {
             await polly.stop()
