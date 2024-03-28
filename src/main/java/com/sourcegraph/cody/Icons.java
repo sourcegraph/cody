@@ -46,6 +46,7 @@ public interface Icons {
 
   interface Chat {
     Icon ChatLeaf = IconLoader.getIcon("/icons/chat/chatLeaf.svg", Icons.class);
+    Icon Download = IconLoader.getIcon("/icons/chat/download.svg", Icons.class);
   }
 
   interface LLM {
