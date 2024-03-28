@@ -1,5 +1,5 @@
+import fspromises from 'node:fs/promises'
 import { Command, InvalidOptionArgumentError, Option } from 'commander'
-import fspromises from 'fs/promises'
 import type { BaseCodegen } from './BaseCodegen'
 import { ConsoleReporter } from './ConsoleReporter'
 import { KotlinCodegen } from './KotlinCodegen'

@@ -1,4 +1,4 @@
-import * as fspromises from 'fs/promises'
+import * as fspromises from 'node:fs/promises'
 
 import { createObjectCsvWriter } from 'csv-writer'
 import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'

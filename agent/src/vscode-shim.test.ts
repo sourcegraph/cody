@@ -1,7 +1,7 @@
-import assert from 'assert'
-import os from 'os'
-import * as path from 'path'
-import * as fspromises from 'fs/promises'
+import assert from 'node:assert'
+import * as fspromises from 'node:fs/promises'
+import os from 'node:os'
+import * as path from 'node:path'
 
 import { rimraf } from 'rimraf'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

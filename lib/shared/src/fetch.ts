@@ -1,4 +1,4 @@
-import type { Agent } from 'http'
+import type { Agent } from 'node:http'
 
 /**
  * By hard-requiring isomorphic-fetch, we ensure that even in newer Node environments that include

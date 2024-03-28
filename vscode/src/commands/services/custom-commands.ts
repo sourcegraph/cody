@@ -1,4 +1,4 @@
-import os from 'os'
+import os from 'node:os'
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 

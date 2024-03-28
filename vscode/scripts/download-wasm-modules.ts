@@ -1,5 +1,5 @@
-import { copyFileSync, existsSync, mkdirSync } from 'fs'
-import path from 'path'
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
+import path from 'node:path'
 
 const DIST_DIRECTORY = path.join(__dirname, '../dist')
 const WASM_DIRECTORY = path.join(__dirname, '../resources/wasm')

@@ -1,5 +1,5 @@
-import { writeFile } from 'fs'
-import { join } from 'path'
+import { writeFile } from 'node:fs'
+import { join } from 'node:path'
 import * as codyJson from './commands.json'
 
 /**
