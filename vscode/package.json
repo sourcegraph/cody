@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -535,12 +535,6 @@
       },
       {
         "command": "cody.command.edit-code",
-        "key": "ctrl+shift+v",
-        "mac": "shift+cmd+v",
-        "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
       },
@@ -588,6 +582,18 @@
         "command": "cody.fixup.cancelNearest",
         "key": "alt+z",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["next"],
+        "key": "shift+ctrl+down",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supercompletion.jumpTo",
+        "args": ["previous"],
+        "key": "shift+ctrl+up",
+        "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
     ],
     "submenus": [
@@ -964,7 +970,7 @@
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": null,
-          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama"],
+          "enum": [null, "anthropic", "fireworks", "unstable-openai", "experimental-ollama", "experimental-openaicompatible"],
           "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
         },
         "cody.autocomplete.advanced.serverEndpoint": {
@@ -1195,13 +1201,15 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-git-diff": "^0.0.14",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.21.0",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
@@ -1220,7 +1228,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
@@ -1243,7 +1251,6 @@
     "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
     "progress": "^2.0.3",
-    "semver": "^7.5.4",
     "yaml": "^2.3.4"
   }
 }

@@ -6,10 +6,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Cody Enterprise users now have access to an `experimental-openaicompatible` which allows bringing your own LLM via any OpenAI-compatible API. For now, this is only supported with Starchat and specific configurations - but we continue to generalize this work to support more models and OpenAI-compatible endpoints. [pull/3218](https://github.com/sourcegraph/cody/pull/3218)
 - Edit/Chat: Cody now expands the selection to the nearest enclosing function, if available, before attempting to expand to the nearest enclosing block. [pull/3507](https://github.com/sourcegraph/cody/pull/3507)
 - Edit: New `cody.edit.preInstruction` configuration option for adding custom instruction at the end of all your requests. [pull/3542](https://github.com/sourcegraph/cody/pull/3542)
 - Edit: Add support for the new `cody.edit.preInstruction` setting. [pull/3542](https://github.com/sourcegraph/cody/pull/3542)
 - Edit: Added telemetry to measure the persistence of edits in the document. [pull/3550](https://github.com/sourcegraph/cody/pull/3550)
+- Edit: "Ask Cody to Fix" now uses Claude 3 Sonnet. [pull/3555](https://github.com/sourcegraph/cody/pull/3555)
 - Chat: Added buttons in the chat input box for enabling/disabling Enhanced Context. [pull/3547](https://github.com/sourcegraph/cody/pull/3547)
 - Edit: Display warnings for large @-mentioned files during selection. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
 - Edit: Automatically show open tabs as available options when triggering an @-mention. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
@@ -22,13 +24,26 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Warnings are now displayed correctly for large files in the @-mention file selection list. [pull/3526](https://github.com/sourcegraph/cody/pull/3526)
 - Custom Commands: Errors when running context command scripts now show the error output in the notification message. [pull/3565](https://github.com/sourcegraph/cody/pull/3565)
 - Edit: Improved the response reliability, Edit commands should no longer occasionally produce Markdown outputs. [pull/3192](https://github.com/sourcegraph/cody/pull/3192)
+- Edit: The `document` command now defaults to Claude 3 Haiku. [pull/3572](https://github.com/sourcegraph/cody/pull/3572)
 
 ### Changed
 
-- Autocomplete: Subsequent new lines are added to the singleline stop sequences. [pull/3549](https://github.com/sourcegraph/cody/pull/3549)
 - Chat: The Enhanced Context Settings modal is opened by default for the first chat session. [pull/3547](https://github.com/sourcegraph/cody/pull/3547)
 - Add information on which Cody tier is being used to analytics events. [pull/3508](https://github.com/sourcegraph/cody/pull/3508)
 - Auth: Enable the new onboarding flow that does not require the redirect back to VS Code for everyone. [pull/3574](https://github.com/sourcegraph/cody/pull/3574)
+- Chat: Claude 3 Sonnet is now the default model for every Cody Free or Pro user. [pull/3575](https://github.com/sourcegraph/cody/pull/3575)
+- Edit: Removed a previous Edit shortcut (`Shift+Cmd/Ctrl+v`), use `Opt/Alt+K` to trigger Edits. [pull/3591](https://github.com/sourcegraph/cody/pull/3591)
+
+## [1.10.1]
+
+### Added
+
+- Autocomplete: Add Claude 3 Haiku experimental autocomplete support. [pull/3538](https://github.com/sourcegraph/cody/pull/3538)
+
+### Changed
+
+- Telemetry: Upgrade Sentry version. [pull/3502](https://github.com/sourcegraph/cody/pull/3502)
+- Autocomplete: Subsequent new lines are added to the singleline stop sequences. [pull/3549](https://github.com/sourcegraph/cody/pull/3549)
 
 ## [1.10.0]
 

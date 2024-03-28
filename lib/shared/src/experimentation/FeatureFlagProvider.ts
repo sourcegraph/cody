@@ -33,9 +33,6 @@ export enum FeatureFlag {
     // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
 
-    // Enable Cody PLG features on JetBrains
-    CodyProJetBrains = 'cody-pro-jetbrains',
-
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 

@@ -102,362 +102,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3fa89f4ce4c1149d238941470344a779
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3156
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
-          - name: user-agent
-            value: enterpriseClient / v1
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 265
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 1000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >+
-                  Codebase context from file src/example.test.ts in repository
-                  undefined:
-
-                  import { expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  - You are an AI programming assistant who is an expert in
-                  updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-instant-1.2
-            stopSequences:
-              - </CODE5711>
-              - describe('test block', () => {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://demo.sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 5716
-        content:
-          mimeType: text/event-stream
-          size: 5716
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.now`)","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.now`)\n */","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.now`)\n */\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of `performance.now`)\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 18 Mar 2024 17:49:03 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1214
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-03-18T17:49:01.672Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: acf6bb3da3ec0745e6e7a2e39631ec46
       _order: 0
       cache: {}
@@ -1811,6 +1455,391 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 92ba9612bb3a5955367be1a4f019ed1d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3158
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - name: user-agent
+            value: enterpriseClient / v1
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 265
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 1000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >+
+                  Codebase context from file src/example.test.ts in repository
+                  undefined:
+
+                  import { expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/example.test.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - describe('test block', () => {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 7096
+        content:
+          mimeType: text/event-stream
+          size: 7096
+          text: >+
+            event: completion
+
+            data: {"completion":"\n/**","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Desc","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vit","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n *","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"\n/**\n * Describe block that runs vitest tests.\n * Contains 3 test cases:\n * - Does test 1\n * - Does test 2 \n * - Does something else (has incorrect usage of performance.now)\n*/\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 27 Mar 2024 14:13:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1214
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-03-27T14:13:12.592Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: bdc2963954b4d2c823757233e91ab963
       _order: 0
       cache: {}
@@ -1850,7 +1879,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -1958,7 +1987,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2069,7 +2098,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2173,7 +2202,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -2284,7 +2313,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
               	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
                       ...on FileChunkContext {
@@ -2466,7 +2495,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -2540,7 +2569,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 15e318d5de653d79b30973db1697eef2
+    - _id: c3e065b89cce851e3a50bbf623211475
       _order: 0
       cache: {}
       request:
@@ -2575,7 +2604,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2592,7 +2621,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2607,7 +2636,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2635,7 +2664,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:31.935Z
+      startedDateTime: 2024-03-28T12:09:29.167Z
       time: 0
       timings:
         blocked: -1
@@ -2645,7 +2674,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4573e98e27aed532c11b90d85a4703ee
+    - _id: 75d196d959c348ecbb1321840ccc1b7c
       _order: 0
       cache: {}
       request:
@@ -2680,7 +2709,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2697,7 +2726,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2712,7 +2741,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2740,7 +2769,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:31.980Z
+      startedDateTime: 2024-03-28T12:09:29.222Z
       time: 0
       timings:
         blocked: -1
@@ -2750,7 +2779,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5802e944d092fa30b77ce59ffbfd9784
+    - _id: 62a78582d6dae81642c597893a6291af
       _order: 0
       cache: {}
       request:
@@ -2789,7 +2818,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2806,7 +2835,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2827,7 +2856,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2858,7 +2887,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.025Z
+      startedDateTime: 2024-03-28T12:09:29.274Z
       time: 0
       timings:
         blocked: -1
@@ -2868,7 +2897,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 23bf98b76b21d3ad254ab805fb092c0f
+    - _id: 5f8d9a90fcf9ad2e32da4eae1d72bf4a
       _order: 0
       cache: {}
       request:
@@ -2907,7 +2936,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2924,7 +2953,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2945,7 +2974,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2976,7 +3005,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.051Z
+      startedDateTime: 2024-03-28T12:09:29.297Z
       time: 0
       timings:
         blocked: -1
@@ -2986,7 +3015,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3bd295011089c24c6263a83be02c95a7
+    - _id: 01e4b61f0143017142cc2f7b9f26bebc
       _order: 0
       cache: {}
       request:
@@ -3025,7 +3054,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3042,7 +3071,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3063,7 +3092,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3094,7 +3123,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.070Z
+      startedDateTime: 2024-03-28T12:09:29.320Z
       time: 0
       timings:
         blocked: -1
@@ -3104,7 +3133,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 580d29cca17db5280d1c4de018491898
+    - _id: 05f7aa87de4126ea8c7e8a7ee2a2a3bf
       _order: 0
       cache: {}
       request:
@@ -3143,7 +3172,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3160,7 +3189,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3181,7 +3210,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3212,7 +3241,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.252Z
+      startedDateTime: 2024-03-28T12:09:29.486Z
       time: 0
       timings:
         blocked: -1
@@ -3222,7 +3251,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ba5bcb1c34bc6e8414833dea477f0b81
+    - _id: 16e8bc1305a4e815be7dd0e1d98a324a
       _order: 0
       cache: {}
       request:
@@ -3261,7 +3290,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3278,7 +3307,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3299,7 +3328,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Wed, 27 Mar 2024 11:30:54 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3330,7 +3359,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.264Z
+      startedDateTime: 2024-03-27T11:30:53.848Z
       time: 0
       timings:
         blocked: -1
@@ -3340,7 +3369,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: eaa3ad79c9b90818e0df6ce8ab871083
+    - _id: 7fcb5fe8826ab2b15ddf694d04b4e34a
       _order: 0
       cache: {}
       request:
@@ -3379,7 +3408,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3396,7 +3425,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3417,7 +3446,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Wed, 27 Mar 2024 11:30:54 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3448,7 +3477,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.265Z
+      startedDateTime: 2024-03-27T11:30:53.883Z
       time: 0
       timings:
         blocked: -1
@@ -3497,7 +3526,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -3605,7 +3634,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3704,7 +3733,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3811,7 +3840,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteGraphQLFields {
                   __type(name: "Site") {
                       fields {
@@ -3922,7 +3951,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteHasCodyEnabled {
                   site {
                       isCodyEnabled
@@ -4016,7 +4045,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4119,7 +4148,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4228,7 +4257,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4325,7 +4354,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion

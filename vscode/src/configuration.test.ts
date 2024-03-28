@@ -104,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.supercompletions':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -125,6 +127,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
+            experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
             editorTitleCommandIcon: true,

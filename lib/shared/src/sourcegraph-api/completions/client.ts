@@ -84,16 +84,22 @@ export abstract class SourcegraphCompletionsClient {
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void
 
     public stream(
         params: CompletionParameters,
+        apiVersion: number,
         signal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
-        // This is a technique to convert a function that takes callbacks to an async generator.
+        // Provide default stop sequence for starchat models.
+        if (!params.stopSequences && params?.model?.startsWith('openaicompatible/starchat')) {
+            params.stopSequences = ['<|end|>']
+        }
 
+        // This is a technique to convert a function that takes callbacks to an async generator.
         const values: Promise<CompletionGeneratorValue>[] = []
         let resolve: ((value: CompletionGeneratorValue) => void) | undefined
         values.push(
@@ -121,7 +127,7 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        this._streamWithCallbacks(params, callbacks, signal)
+        this._streamWithCallbacks(params, apiVersion, callbacks, signal)
 
         return (async function* () {
             for (let i = 0; ; i++) {

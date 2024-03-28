@@ -22,7 +22,7 @@ interface PromptInfo {
 }
 
 export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, charLimit: number): Promise<PromptInfo>
+    makePrompt(chat: SimpleChatModel, codyApiVersion: number, charLimit: number): Promise<PromptInfo>
 }
 
 const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% of the context window
@@ -39,6 +39,7 @@ export class DefaultPrompter implements IPrompter {
     // prompt for the current message.
     public async makePrompt(
         chat: SimpleChatModel,
+        codyApiVersion: number,
         charLimit: number
     ): Promise<{
         prompt: Message[]
@@ -53,7 +54,7 @@ export class DefaultPrompter implements IPrompter {
                 .getConfiguration('cody.chat')
                 .get('preInstruction')
 
-            const preambleMessages = getSimplePreamble(chat.modelID, preInstruction)
+            const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(`Preamble length exceeded context window size ${charLimit}`)

@@ -47,4 +47,5 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     displayName: 'w.w.',
     avatarURL: '',
     userCanUpgrade: false,
+    codyApiVersion: 0,
 }

@@ -5,6 +5,7 @@ import type {
     ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
+    SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
 import type {
@@ -15,6 +16,7 @@ import type {
 } from '@sourcegraph/telemetry'
 import type * as vscode from 'vscode'
 
+import type { ModelUsage } from '@sourcegraph/cody-shared/dist/models/types'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
@@ -51,7 +53,8 @@ export type ClientRequests = {
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
 
-    'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
+    'chat/export': [null, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -305,6 +308,11 @@ interface AutocompleteParams {
 interface SelectedCompletionInfo {
     readonly range: Range
     readonly text: string
+}
+
+export interface ChatExportResult {
+    chatID: string
+    transcript: SerializedChatTranscript
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
