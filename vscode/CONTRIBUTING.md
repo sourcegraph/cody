@@ -40,7 +40,7 @@ We also have some build-in UI to help during the development of autocomplete req
 
 ### Stable builds
 
-To publish a new major release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
+To publish a new **major** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 
 1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
 2. `pnpm update-agent-recordings` to update the version in agent recordings.
@@ -52,25 +52,32 @@ To publish a new major release to the [VS Code Marketplace](https://marketplace.
 
 ### Patch Release
 
-To publish a patch release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
+To publish a **patch** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 
-1. Makes sure all the changes for the patch are already commited to the `main` branch.
-2. Start a new branch from [the last stable released version tag](https://github.com/sourcegraph/cody/tags), e.g. `git checkout -b v1.10.2 tags/vscode-v1.10.1`
-   1. If you run into the "tag is not a commit" error, create a new branch based off the commit from the tagged version instead:
-      1. Get the commit hash for the tag with `git rev-parse origin $LAST_STABLE_RELEASE_VERSION TAG`.
-         1. Example: `git rev-parse origin vscode-v1.10.1`
-      2. Create a new branch off the returned commit hash: `git checkout $TAG_COMMIT_HASH -b $NEW_BRANCH`
-         1. Example: `git checkout d296d980289cf5424b7b99b5f846e7fc580675c7 -b patch-v1.10.2`
-3. Cherry pick (`git cherry-pick $COMMIT_FROM_MAIN`) the changes for the patch into this new branch.
-4. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
-5. `pnpm update-agent-recordings` to update the version in agent recordings.
-6. `git tag vscode-v$(jq -r .version package.json)`
-7. `git push --tags`
-8. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
-9. Once the patch has been published, create a new branch off `main`
-10. Update the [`CHANGELOG`](CHANGELOG.md) and the `version` in [`package.json`](package.json) to patch the patch release version.
-11. `pnpm update-agent-recordings` to update the version in agent recordings.
-12. Commit the version increment, e.g. `VS Code: Release 1.10.2` and merge this branch to main.
+1. Make sure all the changes for the patch are already committed to the `main` branch.
+2. Create a patch release branch if one does not already exist:
+   1. For example, if you are releasing `v1.10.<patch>`, then you should look to see if there is already a `vscode/1.10` branch.
+   2. If there is not, then create the branch using the [last stable release tag](https://github.com/sourcegraph/cody/tags) for the version you are trying to patch, e.g., `git checkout vscode-v1.10.0 -B vscode/1.10` and push this branch.
+      1. Note: Do not push your changes to this branch directly; treat it like a `main` branch where all changes that are merged should be reviewed first.
+3. Create a PR with your changes that will go into the release, and send that PR to the e.g., `vscode/1.10` branch:
+   1. Create your PR branch: `git checkout vscode/1.10 -b me/1.10.1-patch-release`
+   2. Make changes:
+      1. Cherry-pick (`git cherry-pick $COMMIT_FROM_MAIN`) the relevant patches from `main` into your PR branch. If there are any conflicts, address them in your branch.
+      2. Increment the `version` in [`package.json`](package.json)
+      3. Update the [`CHANGELOG`](CHANGELOG.md)
+      4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
+   3. Send a PR to merge your branch, e.g., `me/1.10.1-patch-release` into `vscode/1.10`
+   4. Ensure your PR branch passes CI tests, and get your PR reviewed/approved/merged.
+4. Tag the patch release:
+   1. `git tag vscode-v$(jq -r .version package.json)`
+   2. `git push --tags`
+5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+6. Once the patch has been published, update `main`:
+   1. Create a new PR branch off `main`
+   2. Update the `version` in [`package.json`](package.json) if appropriate.
+   3. Update the [`CHANGELOG`](CHANGELOG.md)
+   4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
+   5. Commit the version increment, e.g., `VS Code: Release 1.10.1` and get your `main` PR merged.
 
 ### Insiders builds
 
