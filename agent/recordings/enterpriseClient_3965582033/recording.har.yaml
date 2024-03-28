@@ -1879,7 +1879,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -1987,7 +1987,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2098,7 +2098,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -2202,7 +2202,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -2313,7 +2313,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
               	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
                       ...on FileChunkContext {
@@ -2495,7 +2495,7 @@ log:
           params: []
           textJSON:
             query: >-
-              
+
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -2569,7 +2569,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 15e318d5de653d79b30973db1697eef2
+    - _id: c3e065b89cce851e3a50bbf623211475
       _order: 0
       cache: {}
       request:
@@ -2604,7 +2604,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2621,7 +2621,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2636,7 +2636,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2664,7 +2664,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:31.935Z
+      startedDateTime: 2024-03-28T12:09:29.167Z
       time: 0
       timings:
         blocked: -1
@@ -2674,7 +2674,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4573e98e27aed532c11b90d85a4703ee
+    - _id: 75d196d959c348ecbb1321840ccc1b7c
       _order: 0
       cache: {}
       request:
@@ -2709,7 +2709,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2726,7 +2726,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2741,7 +2741,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -2769,7 +2769,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:31.980Z
+      startedDateTime: 2024-03-28T12:09:29.222Z
       time: 0
       timings:
         blocked: -1
@@ -2779,7 +2779,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5802e944d092fa30b77ce59ffbfd9784
+    - _id: 62a78582d6dae81642c597893a6291af
       _order: 0
       cache: {}
       request:
@@ -2818,7 +2818,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2835,7 +2835,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2856,7 +2856,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2887,7 +2887,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.025Z
+      startedDateTime: 2024-03-28T12:09:29.274Z
       time: 0
       timings:
         blocked: -1
@@ -2897,7 +2897,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 23bf98b76b21d3ad254ab805fb092c0f
+    - _id: 5f8d9a90fcf9ad2e32da4eae1d72bf4a
       _order: 0
       cache: {}
       request:
@@ -2936,7 +2936,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -2953,7 +2953,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -2974,7 +2974,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3005,7 +3005,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.051Z
+      startedDateTime: 2024-03-28T12:09:29.297Z
       time: 0
       timings:
         blocked: -1
@@ -3015,7 +3015,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3bd295011089c24c6263a83be02c95a7
+    - _id: 01e4b61f0143017142cc2f7b9f26bebc
       _order: 0
       cache: {}
       request:
@@ -3054,7 +3054,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3071,7 +3071,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3092,7 +3092,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3123,7 +3123,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.070Z
+      startedDateTime: 2024-03-28T12:09:29.320Z
       time: 0
       timings:
         blocked: -1
@@ -3133,7 +3133,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 580d29cca17db5280d1c4de018491898
+    - _id: 05f7aa87de4126ea8c7e8a7ee2a2a3bf
       _order: 0
       cache: {}
       request:
@@ -3172,7 +3172,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3189,7 +3189,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3210,7 +3210,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:32 GMT
+            value: Thu, 28 Mar 2024 12:09:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3241,7 +3241,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:32.252Z
+      startedDateTime: 2024-03-28T12:09:29.486Z
       time: 0
       timings:
         blocked: -1
@@ -3251,7 +3251,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ba5bcb1c34bc6e8414833dea477f0b81
+    - _id: 16e8bc1305a4e815be7dd0e1d98a324a
       _order: 0
       cache: {}
       request:
@@ -3290,7 +3290,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3307,7 +3307,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3369,7 +3369,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: eaa3ad79c9b90818e0df6ce8ab871083
+    - _id: 7fcb5fe8826ab2b15ddf694d04b4e34a
       _order: 0
       cache: {}
       request:
@@ -3408,7 +3408,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
               	telemetry {
               		recordEvents(events: $events) {
@@ -3425,7 +3425,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -3526,7 +3526,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -3634,7 +3634,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3733,7 +3733,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -3840,7 +3840,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteGraphQLFields {
                   __type(name: "Site") {
                       fields {
@@ -3951,7 +3951,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteHasCodyEnabled {
                   site {
                       isCodyEnabled
@@ -4045,7 +4045,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4148,7 +4148,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4257,7 +4257,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4354,7 +4354,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
