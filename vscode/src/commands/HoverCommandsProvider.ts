@@ -21,7 +21,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
         }
 
         this.disposables.push(
-            vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
+            vscode.languages.registerHoverProvider({ scheme: 'file' }, { provideHover: this.onHover.bind(this) }),
             vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id)),
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
