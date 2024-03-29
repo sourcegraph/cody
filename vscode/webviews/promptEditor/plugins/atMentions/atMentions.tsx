@@ -115,7 +115,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 // This allows users to autocomplete the file path, and provide them with
                 // the options to make additional changes, e.g. add range, before inserting the mention.
                 const textNode = $createContextItemTextNode(selectedOption.item)
-                if (!currentInputText.endsWith(textNode.__text)) {
+                if (!currentInputText.endsWith(textNode.__text) && !currentInputText.startsWith('@#')) {
                     nodeToReplace.replace(textNode)
                     textNode.select()
                     closeMenu()
