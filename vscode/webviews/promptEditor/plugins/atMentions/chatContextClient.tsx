@@ -66,6 +66,13 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
             return
         }
 
+        // If user is typing a line range, keep the current results.
+        if (results?.length && /:(\d+)?(-\d+)?/.test(query)) {
+            if (!/:(\d+)-(\d+)$/.test(query)) {
+                return
+            }
+        }
+
         // Track if the query changed since this request was sent (which would make our results
         // no longer valid).
         let invalidated = false

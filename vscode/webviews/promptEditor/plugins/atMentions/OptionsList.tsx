@@ -31,25 +31,8 @@ export const OptionsList: FunctionComponent<
     useEffect(() => {
         // Scroll to top when options change because the prior `selectedIndex` is invalidated.
         ref?.current?.scrollTo(0, 0)
-        const validIndex = options.findIndex(o => o?.item?.type === 'file' && !o?.item?.isTooLarge)
-        setHighlightedIndex(validIndex < 0 ? 0 : validIndex)
+        setHighlightedIndex(0)
     }, [options])
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `selectedIndex` changes.
-    useEffect(() => {
-        if (selectedIndex === null) {
-            return
-        }
-        // If the selectedIndex isTooLarge, set it to the next valid option.
-        const current = options[selectedIndex]
-        const currentOptionIsInvalid = current?.item?.type === 'file' && current?.item?.isTooLarge
-        if (currentOptionIsInvalid) {
-            const validIndex = options.findIndex(
-                (o, i) => i > selectedIndex && o?.item?.type === 'file' && !o?.item?.isTooLarge
-            )
-            setHighlightedIndex(validIndex)
-        }
-    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query)
 
@@ -74,6 +57,7 @@ export const OptionsList: FunctionComponent<
                 <ul ref={ref} className={styles.list}>
                     {options.map((option, i) => (
                         <Item
+                            query={query}
                             isSelected={selectedIndex === i}
                             onClick={() => {
                                 setHighlightedIndex(i)
@@ -94,17 +78,21 @@ export const OptionsList: FunctionComponent<
 }
 
 const Item: FunctionComponent<{
+    query: string
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
     option: MentionTypeaheadOption
     className?: string
-}> = ({ isSelected, onClick, onMouseEnter, option, className }) => {
+}> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
     const title = item.title ?? (item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName)
-    const range = item.range ? displayLineRange(item.range) : ''
+    let range = item.range ? displayLineRange(item.range) : ''
+    if (!range && /:(\d+)?-?(\d+)?/.test(query)) {
+        range = parseLineRangeDisplayText(query)
+    }
     const dirname = displayPathDirname(item.uri)
     const description =
         item.type === 'file'
@@ -120,7 +108,7 @@ const Item: FunctionComponent<{
             className={classNames(
                 className,
                 styles.optionItem,
-                isSelected && !warning && styles.selected,
+                isSelected && styles.selected,
                 warning && styles.disabled
             )}
             ref={option.setRefElement}
@@ -147,4 +135,14 @@ const Item: FunctionComponent<{
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
         </li>
     )
+}
+
+function parseLineRangeDisplayText(text: string): string {
+    const match = text.match(/:(\d+)?-?(\d+)?/)
+    if (!match || match[1] === undefined) {
+        return ''
+    }
+
+    const matches = [parseInt(match[1], 10), match[2] ? parseInt(match[2], 10) : '#']
+    return matches.join('-')
 }
