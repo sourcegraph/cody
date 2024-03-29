@@ -201,6 +201,7 @@ interface ConfigJson {
  * The underlying storage is set on extension activation via `secretStorage.setStorage(context.secrets)`.
  */
 export const secretStorage =
-    process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
+    typeof process !== 'undefined' &&
+    (process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true')
         ? new InMemorySecretStorage()
         : new VSCodeSecretStorage()
