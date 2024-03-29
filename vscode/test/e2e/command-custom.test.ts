@@ -265,8 +265,12 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await expect(page.getByRole('button', { name: 'Open or Create Settings File' })).toBeVisible()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+
+    // Close file.
+    const codyJSONFileTab = page.getByRole('tab', { name: 'cody.json' })
     await page.getByRole('tab', { name: 'cody.json' }).hover()
-    await expect(page.getByRole('tab', { name: 'cody.json' })).toBeVisible()
+    await expect(codyJSONFileTab).toBeVisible()
+    await codyJSONFileTab.getByRole('button', { name: /^Close/ }).click()
 
     // Check button click to delete the cody.json file from the workspace tree view
     await customCommandSidebar.click()
@@ -275,18 +279,20 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
-
     // Because we have turned off notification, we will need to check the notification center
-    // for the confirmation message.
+    // for the deletion-confirmation message.
     await page.getByRole('button', { name: 'Do Not Disturb' }).click()
-    await page.getByRole('button', { name: /^Move to / }).click()
+    await page.getByRole('button', { name: /^Move to / }).click() // Move to trash on Mac and bin on Windows
 
-    // The opened cody.json file should be shown as "Deleted"
-    await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
+    // Confirm cody.json has been deleted from workspace
+    await sidebarExplorer(page).click()
+    await expect(page.getByRole('treeitem', { name: 'cody.json' }).locator('a')).not.toBeVisible()
 
     // Open the cody.json from User Settings
+
     // NOTE: This is expected to fail locally if you currently have User commands configured
     await page.waitForTimeout(100)
+    await page.click('.badge[aria-label="Cody"]')
     await customCommandSidebar.click()
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
