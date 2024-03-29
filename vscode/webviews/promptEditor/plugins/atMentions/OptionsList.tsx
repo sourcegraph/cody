@@ -96,7 +96,7 @@ const Item: FunctionComponent<{
         item.type === 'file'
             ? `${range ? `Lines ${range} · ` : ''}${dirname === '.' ? '' : dirname}`
             : displayPath(item.uri) + `:${range}`
-    const warning = item.type === 'file' && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined
+    const warning = item.type === 'file' && !range && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:

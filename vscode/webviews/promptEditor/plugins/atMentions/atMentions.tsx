@@ -111,18 +111,24 @@ export default function MentionsPlugin(): JSX.Element | null {
                 if (!currentInputText) {
                     return
                 }
-                // On first selection, add the selected option as text.
+
+                // On first file selection, add the selected option as text.
                 // This allows users to autocomplete the file path, and provide them with
                 // the options to make additional changes, e.g. add range, before inserting the mention.
-                const textNode = $createContextItemTextNode(selectedOption.item)
-                if (!currentInputText.endsWith(textNode.__text) && !currentInputText.startsWith('@#')) {
+                const selectedItem = selectedOption.item
+                const textNode = $createContextItemTextNode(selectedItem)
+                const isFile = selectedItem.type === 'file'
+                const isLargeFile = isFile && selectedItem.isTooLarge && !selectedItem.range
+                if (isFile && (!currentInputText.endsWith(textNode.__text) || isLargeFile)) {
                     nodeToReplace.replace(textNode)
-                    textNode.select()
+                    const suffix = $createTextNode(isLargeFile ? ' ' : '')
+                    textNode.insertAfter(suffix)
+                    suffix.select()
                     closeMenu()
                     return
                 }
 
-                const mentionNode = $createContextItemMentionNode(selectedOption.item)
+                const mentionNode = $createContextItemMentionNode(selectedItem)
                 nodeToReplace?.replace(mentionNode)
                 const spaceAfter = $createTextNode(' ')
                 mentionNode.insertAfter(spaceAfter)
