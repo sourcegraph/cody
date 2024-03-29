@@ -58,6 +58,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
+import type { SecretStorage } from '../../services/SecretStorageProvider'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -81,6 +82,7 @@ import { DefaultPrompter, type IPrompter } from './prompt'
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
+    secretStorage: SecretStorage
     authProvider: AuthProvider
     chatClient: ChatClient
     localEmbeddings: LocalEmbeddingsController | null
@@ -129,6 +131,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private chatModel: SimpleChatModel
 
     private config: ChatPanelConfig
+    private readonly secretStorage: SecretStorage
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
@@ -154,6 +157,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     constructor({
         config,
         extensionUri,
+        secretStorage,
         authProvider,
         chatClient,
         localEmbeddings,
@@ -167,6 +171,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
+        this.secretStorage = secretStorage
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
@@ -341,7 +346,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
-        const config = await getFullConfig()
+        const config = await getFullConfig(this.secretStorage)
         const authStatus = this.authProvider.getAuthStatus()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,

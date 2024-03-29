@@ -15,7 +15,7 @@ import {
     getConfigEnumValues,
 } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken } from './services/SecretStorageProvider'
+import { type SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -191,12 +191,14 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+export async function getFullConfig(
+    secretStorage: SecretStorage
+): Promise<ConfigurationWithAccessToken> {
     const config = getConfiguration()
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
         localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    const accessToken = (await getAccessToken()) || null
+    const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken, serverEndpoint }
 }
 

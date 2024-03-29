@@ -17,6 +17,7 @@ import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
 import type { RemoteSearch } from '../context/remote-search'
+import type { SecretStorage } from '../services/SecretStorageProvider'
 import type { SidebarChatWebview } from './chat-view/SidebarViewController'
 import type { ConfigurationSubsetForWebview, LocalEnv } from './protocol'
 
@@ -62,6 +63,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     constructor(
         public config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private editor: VSCodeEditor,
+        private readonly secretStorage: SecretStorage,
         private authProvider: AuthProvider,
         public readonly localEmbeddings: LocalEmbeddingsController | undefined,
         private readonly remoteSearch: RemoteSearch | undefined
@@ -159,7 +161,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         // Update config to the latest one and fire configure change event to update external services
-        const newConfig = await getFullConfig()
+        const newConfig = await getFullConfig(this.secretStorage)
         await this.publishConfig()
         await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
@@ -180,7 +182,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
      */
     private async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
-            this.config = await getFullConfig()
+            this.config = await getFullConfig(this.secretStorage)
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()

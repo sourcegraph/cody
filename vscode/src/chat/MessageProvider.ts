@@ -3,6 +3,7 @@ import type { ChatClient, Guardrails } from '@sourcegraph/cody-shared'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import type { AuthProvider } from '../services/AuthProvider'
 
+import type { SecretStorage } from '../services/SecretStorageProvider'
 import type { ContextProvider } from './ContextProvider'
 
 /**
@@ -16,6 +17,7 @@ export interface MessageProviderOptions {
     chat: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
+    secretStorage: SecretStorage
     authProvider: AuthProvider
     contextProvider: ContextProvider
 }

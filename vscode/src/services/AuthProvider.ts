@@ -27,7 +27,7 @@ import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
-import { secretStorage } from './SecretStorageProvider'
+import type { SecretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 
@@ -46,7 +46,8 @@ export class AuthProvider {
         private config: Pick<
             ConfigurationWithAccessToken,
             'serverEndpoint' | 'accessToken' | 'customHeaders'
-        >
+        >,
+        private readonly secretStorage: SecretStorage
     ) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
@@ -55,13 +56,13 @@ export class AuthProvider {
     // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
         let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
-        let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        let token = (await this.secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         if (lastEndpoint === LOCAL_APP_URL.toString()) {
             // If the user last signed in to app, which talks to dotcom, try
             // signing them in to dotcom.
             logDebug('AuthProvider:init', 'redirecting App-signed in user to dotcom')
             lastEndpoint = DOTCOM_URL.toString()
-            token = (await secretStorage.get(lastEndpoint)) || null
+            token = (await this.secretStorage.get(lastEndpoint)) || null
         }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
         await this.auth(lastEndpoint, token || null)
@@ -115,7 +116,7 @@ export class AuthProvider {
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                const token = await secretStorage.get(selectedEndpoint)
+                const token = await this.secretStorage.get(selectedEndpoint)
                 let authStatus = await this.auth(selectedEndpoint, token || null)
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
@@ -213,7 +214,7 @@ export class AuthProvider {
 
     // Log user out of the selected endpoint (remove token from secret)
     private async signout(endpoint: string): Promise<void> {
-        await secretStorage.deleteToken(endpoint)
+        await this.secretStorage.deleteToken(endpoint)
         await localStorage.deleteEndpoint()
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
@@ -332,7 +333,7 @@ export class AuthProvider {
 
     // Set auth status in case of reload
     public async reloadAuthStatus(): Promise<void> {
-        this.config = await getFullConfig()
+        this.config = await getFullConfig(this.secretStorage)
         await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
     }
 
@@ -429,7 +430,7 @@ export class AuthProvider {
         }
         await localStorage.saveEndpoint(endpoint)
         if (token) {
-            await secretStorage.storeToken(endpoint, token)
+            await this.secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
     }
