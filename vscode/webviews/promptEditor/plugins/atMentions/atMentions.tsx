@@ -18,7 +18,10 @@ import {
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
+import {
+    $createContextItemMentionNode,
+    $createContextItemTextNode,
+} from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
 
@@ -101,15 +104,26 @@ export default function MentionsPlugin(): JSX.Element | null {
             closeMenu: () => void
         ) => {
             editor.update(() => {
-                const mentionNode = $createContextItemMentionNode(selectedOption.item)
-                if (nodeToReplace) {
-                    nodeToReplace.replace(mentionNode)
+                const currentInputText = nodeToReplace?.__text
+                if (!currentInputText) {
+                    return
+                }
+                // On first selection, add the selected option as text.
+                // This allows users to autocomplete the file path, and provide them with
+                // the options to make additional changes, e.g. add range, before inserting the mention.
+                const textNode = $createContextItemTextNode(selectedOption.item)
+                if (!currentInputText.endsWith(textNode.__text)) {
+                    nodeToReplace.replace(textNode)
+                    textNode.select()
+                    closeMenu()
+                    return
                 }
 
+                const mentionNode = $createContextItemMentionNode(selectedOption.item)
+                nodeToReplace?.replace(mentionNode)
                 const spaceAfter = $createTextNode(' ')
                 mentionNode.insertAfter(spaceAfter)
                 spaceAfter.select()
-
                 closeMenu()
             })
         },
