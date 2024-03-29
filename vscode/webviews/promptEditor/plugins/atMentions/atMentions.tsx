@@ -25,6 +25,9 @@ import {
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
 
+export const RANGE_MATCHES_REGEXP = /:(\d+)?-?(\d+)?$/
+export const LINE_RANGE_REGEXP = /:(\d+)-(\d+)$/
+
 /**
  * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
  * of lines 1 and 2", the returned range actually goes to the start of line 3 to ensure all of line
@@ -34,7 +37,7 @@ export function parseLineRangeInMention(text: string): {
     textWithoutRange: string
     range?: RangeData
 } {
-    const match = text.match(/:(\d+)-(\d+)$/)
+    const match = text.match(LINE_RANGE_REGEXP)
     if (match === null) {
         return { textWithoutRange: text }
     }

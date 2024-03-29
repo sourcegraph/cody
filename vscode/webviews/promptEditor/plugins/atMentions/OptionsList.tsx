@@ -1,5 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    type RangeData,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -18,7 +19,7 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
-import type { MentionTypeaheadOption } from './atMentions'
+import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -89,10 +90,7 @@ const Item: FunctionComponent<{
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
     const title = item.title ?? (item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName)
-    let range = item.range ? displayLineRange(item.range) : ''
-    if (!range && /:(\d+)?-?(\d+)?/.test(query)) {
-        range = parseLineRangeDisplayText(query)
-    }
+    const range = getLineRangeInMention(query, item.range)
     const dirname = displayPathDirname(item.uri)
     const description =
         item.type === 'file'
@@ -137,12 +135,18 @@ const Item: FunctionComponent<{
     )
 }
 
-function parseLineRangeDisplayText(text: string): string {
-    const match = text.match(/:(\d+)?-?(\d+)?/)
-    if (!match || match[1] === undefined) {
-        return ''
+/**
+ * Gets the display line range from the query string.
+ */
+function getLineRangeInMention(query: string, range?: RangeData): string {
+    // Parses out the start and end line numbers from the query if it contains a line range match.
+    const queryRange = query.match(RANGE_MATCHES_REGEXP)
+    if (query && queryRange?.[1]) {
+        const [_, start, end] = queryRange
+        const startLine = parseInt(start)
+        const endLine = end ? parseInt(end) : Number.POSITIVE_INFINITY
+        return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
     }
-
-    const matches = [parseInt(match[1], 10), match[2] ? parseInt(match[2], 10) : '#']
-    return matches.join('-')
+    // Passed in range string if no line number match.
+    return range ? displayLineRange(range) : ''
 }
