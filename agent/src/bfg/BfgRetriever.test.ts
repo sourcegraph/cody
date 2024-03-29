@@ -13,6 +13,7 @@ import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../../../vscode/src/extension-client'
+import { activate } from '../../../vscode/src/extension.node'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -35,7 +36,11 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        await initializeVscodeExtension(vscode.Uri.file(process.cwd()), defaultVSCodeExtensionClient())
+        await initializeVscodeExtension(
+            vscode.Uri.file(process.cwd()),
+            activate,
+            defaultVSCodeExtensionClient()
+        )
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
@@ -55,19 +60,22 @@ describe('BfgRetriever', async () => {
 
     const rootUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
     vscode_shim.addGitRepository(rootUri, 'asdf')
-    const agent = await newEmbeddedAgentClient({
-        name: 'BfgContextFetcher',
-        version: '0.1.0',
-        workspaceRootUri: rootUri.toString(),
-        extensionConfiguration: {
-            accessToken: '',
-            serverEndpoint: '',
-            customHeaders: {},
-            customConfiguration: {
-                'cody.experimental.cody-engine.await-indexing': true,
+    const agent = await newEmbeddedAgentClient(
+        {
+            name: 'BfgContextFetcher',
+            version: '0.1.0',
+            workspaceRootUri: rootUri.toString(),
+            extensionConfiguration: {
+                accessToken: '',
+                serverEndpoint: '',
+                customHeaders: {},
+                customConfiguration: {
+                    'cody.experimental.cody-engine.await-indexing': true,
+                },
             },
         },
-    })
+        activate
+    )
     const client = agent.messageHandler.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
