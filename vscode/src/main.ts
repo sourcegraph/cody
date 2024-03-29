@@ -55,7 +55,12 @@ import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
-import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import {
+    InMemorySecretStorage,
+    type SecretStorage,
+    VSCodeSecretStorage,
+    getAccessToken,
+} from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { setUpCodyIgnore } from './services/cody-ignore'
@@ -75,9 +80,12 @@ export async function start(
 ): Promise<vscode.Disposable> {
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(context.globalState)
-    if (secretStorage instanceof VSCodeSecretStorage) {
-        secretStorage.setStorage(context.secrets)
-    }
+
+    const secretStorage =
+        typeof process !== 'undefined' &&
+        (process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true')
+            ? new InMemorySecretStorage()
+            : new VSCodeSecretStorage(context.secrets)
 
     setLogger({ logDebug, logError })
 
@@ -85,8 +93,9 @@ export async function start(
 
     const { disposable, onConfigurationChange } = await register(
         context,
-        await getFullConfig(),
-        platform
+        await getFullConfig(secretStorage),
+        platform,
+        secretStorage
     )
     disposables.push(disposable)
 
@@ -94,7 +103,7 @@ export async function start(
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                const config = await getFullConfig()
+                const config = await getFullConfig(secretStorage)
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
                 if (config.chatPreInstruction) {
@@ -111,12 +120,13 @@ export async function start(
 const register = async (
     context: vscode.ExtensionContext,
     initialConfig: ConfigurationWithAccessToken,
-    platform: PlatformContext
+    platform: PlatformContext,
+    secretStorage: SecretStorage
 ): Promise<{
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
-    const authProvider = new AuthProvider(initialConfig)
+    const authProvider = new AuthProvider(initialConfig, secretStorage)
 
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -183,6 +193,7 @@ const register = async (
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
+        secretStorage,
         authProvider,
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
@@ -195,6 +206,7 @@ const register = async (
         chat: chatClient,
         guardrails,
         editor,
+        secretStorage,
         authProvider,
         contextProvider,
     }
@@ -259,7 +271,7 @@ const register = async (
         }),
         // Update external services when configurationChangeEvent is fired by chatProvider
         contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
+            const newConfig = await getFullConfig(secretStorage)
             await onConfigurationChange(newConfig)
         })
     )
@@ -298,7 +310,7 @@ const register = async (
         // Symf
         if (symfRunner && authStatus.isLoggedIn) {
             parallelPromises.push(
-                getAccessToken()
+                getAccessToken(secretStorage)
                     .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
                     .catch(() => {})
             )
@@ -554,7 +566,7 @@ const register = async (
     function setupAutocomplete(): Promise<void> {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = await getFullConfig()
+                const config = await getFullConfig(secretStorage)
                 if (!config.autocomplete) {
                     disposeAutocomplete()
                     if (config.isRunningInsideAgent) {
