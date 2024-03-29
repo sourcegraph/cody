@@ -4,13 +4,9 @@ import { logDebug, logError } from '../log'
 
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function getAccessToken(): Promise<string | null> {
+export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
     try {
-        const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
-        if (token) {
-            return token
-        }
-        throw new Error('token not found')
+        return (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
     } catch (error) {
         logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
         // Remove corrupted token from secret storage
@@ -19,11 +15,7 @@ export async function getAccessToken(): Promise<string | null> {
     }
 }
 
-export async function clearAccessToken(): Promise<void> {
-    await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-}
-
-interface SecretStorage {
+export interface SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
     storeToken(endpoint: string, value: string): Promise<void>
@@ -35,26 +27,7 @@ interface SecretStorage {
 export class VSCodeSecretStorage implements SecretStorage {
     private fsPath: string | null = null
 
-    /**
-     * Should be set on extension activation via `secretStorage.setStorage(context.secrets)`
-     * Done to avoid passing the secret storage around as a parameter and instead
-     * access it as a singleton via the module import.
-     */
-    private _secretStorage: vscode.SecretStorage | null = null
-
-    private get secretStorage(): vscode.SecretStorage {
-        if (!this._secretStorage) {
-            throw new Error('SecretStorage not initialized')
-        }
-
-        return this._secretStorage
-    }
-
-    public setStorage(secretStorage: vscode.SecretStorage): void {
-        this._secretStorage = secretStorage
-    }
-
-    constructor() {
+    constructor(private readonly secretStorage: vscode.SecretStorage) {
         const config = vscode.workspace.getConfiguration('cody')
         // For user that does not have secret storage implemented in their server
         this.fsPath = config.get('experimental.localTokenPath') || null
@@ -123,7 +96,7 @@ export class VSCodeSecretStorage implements SecretStorage {
     }
 }
 
-class InMemorySecretStorage implements SecretStorage {
+export class InMemorySecretStorage implements SecretStorage {
     private storage: Map<string, string> = new Map<string, string>()
     private callbacks: ((key: string) => Promise<void>)[] = []
 
@@ -215,15 +188,3 @@ async function getAccessTokenFromFsPath(fsPath: string): Promise<string | null> 
 interface ConfigJson {
     token: string
 }
-
-/**
- * Singleton instance of the secret storage provider.
- * The underlying storage is set on extension activation via `secretStorage.setStorage(context.secrets)`.
- */
-export const secretStorage =
-    process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
-        ? new InMemorySecretStorage(
-              process.env.CODY_TESTING === 'true' ? process.env.TESTING_SECRET_STORAGE_STATE : undefined,
-              process.env.CODY_TESTING === 'true' ? process.env.TESTING_SECRET_STORAGE_TOKEN : undefined
-          )
-        : new VSCodeSecretStorage()
