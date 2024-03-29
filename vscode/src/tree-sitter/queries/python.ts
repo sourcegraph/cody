@@ -63,6 +63,8 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
     ;--------------------------------
     (assignment
         left: (identifier) @symbol.identifier) @range.identifier
+    (string) @docstring
+    (comment) @comment
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`

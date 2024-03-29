@@ -149,9 +149,12 @@ function getLanguageSpecificQueryWrappers(
         getDocumentableNode: (root, start, end) => {
             const captures = queries.documentableNodes.compiled.captures(
                 root,
-                { ...start, column: 0 },
+                // Capture the line above to check if it is comment
+                { row: Math.max(start.row - 1, 0), column: 0 },
                 end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
             )
+
+            let docstringFound = false
             const symbolCaptures = []
             const rangeCaptures = []
 
@@ -160,6 +163,8 @@ function getLanguageSpecificQueryWrappers(
                     rangeCaptures.push(capture)
                 } else if (capture.name.startsWith('symbol')) {
                     symbolCaptures.push(capture)
+                } else if (capture.name.startsWith('comment')) {
+                    docstringFound = true
                 }
             }
 
@@ -188,22 +193,37 @@ function getLanguageSpecificQueryWrappers(
                  *
                  * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
                  */
-                const insertionCaptures = queries.documentableNodes.compiled
-                    .captures(root, range.node.startPosition, range.node.endPosition)
-                    .filter(({ name }) => name.startsWith('insertion'))
-                insertionPoint = insertionCaptures.find(
-                    ({ node }) =>
-                        node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
+                const { startPosition, endPosition } = range.node
+                const captures = queries.documentableNodes.compiled.captures(
+                    root,
+                    startPosition,
+                    endPosition
                 )
+
+                for (const capture of captures) {
+                    const { name, node } = capture
+                    if (name.startsWith('insertion') || name.startsWith('docstring')) {
+                        if (
+                            node.startIndex >= range.node.startIndex &&
+                            node.endIndex <= range.node.endIndex
+                        ) {
+                            insertionPoint = capture
+                        }
+                        if (name.startsWith('docstring')) {
+                            docstringFound = true
+                        }
+                    }
+                }
             }
 
             /**
              * Heuristic to determine if we should show a prominent hint for the symbol.
              * 1. If there is only one documentable range for this position, we can be confident it makes sense to document. Show the hint.
              * 2. Otherwise, only show the hint if the symbol is a function
+             * 3. Don't show hint if there is no docstring already present.
              */
             const showHint = Boolean(
-                documentableRanges.length === 1 || symbol?.name.includes('function')
+                (documentableRanges.length === 1 || symbol?.name.includes('function')) && !docstringFound
             )
 
             return [
