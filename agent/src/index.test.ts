@@ -1,8 +1,8 @@
-import assert from 'assert'
-import { execSync } from 'child_process'
-import os from 'os'
-import path from 'path'
-import fspromises from 'fs/promises'
+import assert from 'node:assert'
+import { execSync } from 'node:child_process'
+import fspromises from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'

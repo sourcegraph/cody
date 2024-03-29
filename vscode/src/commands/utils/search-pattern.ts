@@ -1,6 +1,7 @@
-import { posix } from 'path'
-import { workspace } from 'vscode'
-import { type URI, Utils } from 'vscode-uri'
+import { uriDirname, uriParseNameAndExtension } from '@sourcegraph/cody-shared'
+import { pathFunctionsForURI } from '@sourcegraph/cody-shared/src/common/path'
+import * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
 
 /**
  * Returns a glob pattern to search for test files.
@@ -19,9 +20,8 @@ export function getSearchPatternForTestFiles(
     fileNameMatchesOnly?: boolean
 ): string {
     const root = '**'
-    const osSep = posix.sep
-    const fileExtension = Utils.extname(file)
-    const fileWithoutExt = posix.parse(file.path).name
+    const osSep = pathFunctionsForURI(file).separator
+    const { name: fileWithoutExt, ext: fileExtension } = uriParseNameAndExtension(file)
 
     const testPattern = `**{test,spec}**${fileExtension}`
     const nameMatchPattern = `*{test_${fileWithoutExt},${fileWithoutExt}_test,test.${fileWithoutExt},${fileWithoutExt}.test,${fileWithoutExt}Test,spec_${fileWithoutExt},${fileWithoutExt}_spec,spec.${fileWithoutExt},${fileWithoutExt}.spec,${fileWithoutExt}Spec}${fileExtension}`
@@ -34,8 +34,8 @@ export function getSearchPatternForTestFiles(
     // Pattern to search for test files in the current directory
     if (currentDirectoryOnly) {
         // Create a relative path of the current directory
-        const root = posix.dirname(file.path)
-        const relative = workspace.asRelativePath(root)
+        const root = uriDirname(file).path
+        const relative = vscode.workspace.asRelativePath(root)
 
         return relative + osSep + testPattern
     }
