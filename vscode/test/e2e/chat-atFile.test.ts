@@ -273,7 +273,7 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
-test.only('@-mention file range', async ({ page, sidebar }) => {
+test('@-mention file range', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
