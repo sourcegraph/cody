@@ -29,7 +29,6 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
-import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import type { Har } from '@pollyjs/persister'
@@ -79,8 +78,15 @@ import * as vscode_shim from './vscode-shim'
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
 
+/** The VS Code extension's `activate` function. */
+type ExtensionActivate = (
+    context: vscode.ExtensionContext,
+    extensionClient?: ExtensionClient
+) => Promise<unknown>
+
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
+    extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
     const paths = envPaths('Cody')
@@ -121,7 +127,7 @@ export async function initializeVscodeExtension(
         globalStoragePath: vscode.Uri.file(paths.data).fsPath,
     }
 
-    await activate(context, extensionClient)
+    await extensionActivate(context, extensionClient)
 }
 
 export async function newAgentClient(
@@ -164,7 +170,10 @@ export async function newAgentClient(
     })
 }
 
-export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
+export async function newEmbeddedAgentClient(
+    clientInfo: ClientInfo,
+    extensionActivate: ExtensionActivate
+): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
 
     // Create noop MessageConnection because we're just using clientForThisInstance.
@@ -180,7 +189,7 @@ export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Ag
         })()
     )
 
-    const agent = new Agent({ conn })
+    const agent = new Agent({ conn, extensionActivate })
     agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
@@ -276,6 +285,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             networkRequests?: Request[]
             requestErrors?: PollyRequestError[]
             conn: MessageConnection
+            extensionActivate: ExtensionActivate
         }
     ) {
         super(params.conn)
@@ -330,7 +340,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       path: clientInfo.workspaceRootPath,
                   })
             try {
-                await initializeVscodeExtension(this.workspace.workspaceRootUri, this)
+                await initializeVscodeExtension(
+                    this.workspace.workspaceRootUri,
+                    params.extensionActivate,
+                    this
+                )
                 this.registerWebviewHandlers()
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
@@ -444,13 +458,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
-            const requests = this.params?.networkRequests ?? []
+            const requests = this.params.networkRequests ?? []
             return {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
-            const polly = this.params?.polly
+            const polly = this.params.polly
             let closestDistance = Number.MAX_VALUE
             let closest = ''
             if (polly) {
@@ -473,7 +487,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { closestBody: closest }
         })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
-            const requests = this.params?.requestErrors ?? []
+            const requests = this.params.requestErrors ?? []
             return {
                 errors: requests.map(({ request, error }) => ({
                     url: request.url,
