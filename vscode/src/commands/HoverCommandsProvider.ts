@@ -92,16 +92,14 @@ export class HoverCommandsProvider implements vscode.Disposable {
             return undefined
         }
 
-        const commands: string[] = []
-        for (const { id, title, enabled } of hoverCommands) {
-            if (!enabled) {
-                continue
-            }
-            commands.push(title.replace('{params}', encodeURIComponent(JSON.stringify([id]))))
-        }
-
         // Create contents for the hover with clickable commands
-        const contents = new vscode.MarkdownString('$(cody-logo) ' + commands.join(' | '))
+        const contents = new vscode.MarkdownString(
+            '$(cody-logo) ' +
+                hoverCommands
+                    .filter(c => c.enabled)
+                    .map(c => c.title.replace('{params}', encodeURIComponent(JSON.stringify([c.id]))))
+                    .join(' | ')
+        )
         contents.supportThemeIcons = true
         contents.isTrusted = true
 
