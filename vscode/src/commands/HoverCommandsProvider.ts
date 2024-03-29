@@ -1,4 +1,10 @@
-import { FeatureFlag, featureFlagProvider, isCodyIgnoredFile, logDebug } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    FeatureFlag,
+    featureFlagProvider,
+    isCodyIgnoredFile,
+    logDebug,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { fetchDocumentSymbols } from '../edit/input/utils'
 import { telemetryService } from '../services/telemetry'
@@ -15,10 +21,11 @@ export class HoverCommandsProvider implements vscode.Disposable {
     private readonly id = FeatureFlag.CodyHoverCommands
     private disposables: vscode.Disposable[] = []
 
-    private isActive = false // If we should show hover commands
+    // For determining if we should show on hover or not
+    private isActive = false // If the configuration is enabled
 
     // For the a/b test experimentation
-    private isInTreatmentGroup = false
+    private isInTreatment = false // If the feature flag is enabled
     private isEnrolled = false
 
     // To store the current hover context for command clicks
@@ -27,33 +34,22 @@ export class HoverCommandsProvider implements vscode.Disposable {
     private currentDocument: vscode.Uri | undefined
     private symbolStore: vscode.DocumentSymbol[] = []
 
-    constructor() {
-        // Check if the feature flag is enabled for the user
-        featureFlagProvider
-            .evaluateFeatureFlag(this.id)
-            .then(hasFeatureFlag => {
-                this.isInTreatmentGroup = hasFeatureFlag
-                this.isActive = isHoverCommandsEnabled()
-                this.init()
-            })
-            .catch(error => logDebug('HoverCommandsProvider:failed', error))
-    }
-
-    private init(): void {
-        const initItems = [
+    private register(): void {
+        if (this.disposables.length) {
+            return
+        }
+        const disposables = [
             // Registers the hover provider to provide hover information when hovering over code.
             vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
             //  Registers the 'cody.experiment.hover.commands' command to handle clicking hover commands.
             vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id)),
             vscode.workspace.onDidChangeConfiguration(e => {
-                if (this.isInTreatmentGroup && e.affectsConfiguration('cody')) {
-                    if (!isHoverCommandsEnabled()) {
-                        this.dispose()
-                    }
+                if (this.isInTreatment && e.affectsConfiguration('cody')) {
+                    this.isActive = isHoverCommandsEnabled()
                 }
             }),
         ]
-        this.disposables.push(...initItems)
+        this.disposables.push(...disposables)
         logDebug('HoverCommandsProvider', 'initialized')
     }
 
@@ -66,6 +62,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
         position: vscode.Position
     ): Promise<vscode.Hover | undefined> {
         if (!this.isActive || !doc?.uri || !position || isCodyIgnoredFile(doc.uri)) {
+            // Skip if isEnrolled is false so that we can log the first enrollment event.
             if (this.isEnrolled) {
                 this.reset()
                 return undefined
@@ -106,8 +103,8 @@ export class HoverCommandsProvider implements vscode.Disposable {
         // Log Enrollment event at the first Hover Commands for all users,
         // then dispose the provider if the user is not in the treatment group.
         if (!this.isEnrolled) {
-            this.isEnrolled = logFirstEnrollmentEvent(this.id, this.isInTreatmentGroup)
-            if (!this.isInTreatmentGroup) {
+            this.isEnrolled = logFirstEnrollmentEvent(this.id, this.isInTreatment)
+            if (!this.isInTreatment) {
                 this.dispose()
                 return undefined
             }
@@ -179,6 +176,32 @@ export class HoverCommandsProvider implements vscode.Disposable {
         }
     }
 
+    public syncAuthStatus(authStatus: AuthStatus): boolean {
+        if (!authStatus.isLoggedIn || !authStatus.isDotCom) {
+            this.isActive = false
+            this.reset()
+            return false
+        }
+
+        // Check if the feature flag is enabled for the user
+        featureFlagProvider
+            .evaluateFeatureFlag(this.id)
+            .then(hasFeatureFlag => {
+                this.isInTreatment = hasFeatureFlag
+                this.isActive = isHoverCommandsEnabled()
+                this.register
+            })
+            .catch(error => {
+                logDebug('HoverCommandsProvider:failed', error)
+            })
+
+        return this.isInTreatment
+    }
+
+    public getEnablement(): boolean {
+        return this.isInTreatment
+    }
+
     private reset(): void {
         this.symbolStore = []
         this.currentDocument = undefined
@@ -202,7 +225,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
  */
 export function isHoverCommandsEnabled(): boolean {
     const experimentalConfigs = vscode.workspace.getConfiguration('cody.experimental')
-    return experimentalConfigs.get<boolean>('hoverCommands') !== false
+    return experimentalConfigs.get<boolean>('hoverCommands') ?? true
 }
 
 interface HoverCommand {
@@ -233,3 +256,5 @@ const HoverCommands: () => Record<string, HoverCommand> = () => ({
         enabled: false,
     },
 })
+
+export const hoverCommandsProvider = new HoverCommandsProvider()
