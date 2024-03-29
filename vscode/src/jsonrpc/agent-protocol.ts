@@ -190,7 +190,7 @@ export type ClientRequests = {
     'remoteRepo/list': [
         {
             // The user input to perform a fuzzy match with
-            query: string
+            query?: string
             // The maximum number of results to retrieve
             first: number
             // The repository ID of the last result in the previous
