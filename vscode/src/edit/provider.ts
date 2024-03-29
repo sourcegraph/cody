@@ -46,7 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getMaxCharsByModel(model)
+            const contextWindowInTokens = ModelProvider.getMaxTokensByModel(model)
             const {
                 messages,
                 stopSequences,
@@ -55,7 +55,7 @@ export class EditProvider {
             } = await buildInteraction({
                 model,
                 codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
-                contextWindow,
+                contextWindowInTokens,
                 task: this.config.task,
                 editor: this.config.editor,
             }).catch(err => {

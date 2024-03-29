@@ -14,19 +14,11 @@ export const MAX_BYTES_PER_FILE = 4096
 // CHAT MODEL TOKEN LIMITS
 export const DEFAULT_CHAT_MODEL_TOKEN_LIMIT = 7000
 export const DEFAULT_FAST_MODEL_TOKEN_LIMIT = 4096
-export const DEFAULT_CHAT_MODEL_CHARS_LIMIT = tokensToChars(DEFAULT_CHAT_MODEL_TOKEN_LIMIT)
-export const DEFAULT_FAST_MODEL_CHARS_LIMIT = tokensToChars(DEFAULT_FAST_MODEL_TOKEN_LIMIT)
 
 /**
  * Calculate the number of characters from the number of tokens.
  */
+// TODO: Users of this function need to specify the model as a parameter; tokenization can vary by model.
 export function tokensToChars(tokenCount: number): number {
     return tokenCount * CHARS_PER_TOKEN
-}
-
-/**
- * Calculate the number of token from the number of characters.
- */
-export function charsToTokens(charsCount: number): number {
-    return charsCount / CHARS_PER_TOKEN
 }

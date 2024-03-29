@@ -54,7 +54,7 @@ const getInteractionArgsFromIntent = (
 interface BuildInteractionOptions {
     model: EditModel
     codyApiVersion: number
-    contextWindow: number
+    contextWindowInTokens: number
     task: FixupTask
     editor: VSCodeEditor
 }
@@ -68,7 +68,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 export const buildInteraction = async ({
     model,
     codyApiVersion,
-    contextWindow,
+    contextWindowInTokens,
     task,
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
@@ -82,7 +82,8 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (selectedText.length > contextWindow) {
+    // TODO: Tokens compared to characters!!!
+    if (selectedText.length > contextWindowInTokens) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText
@@ -99,7 +100,7 @@ export const buildInteraction = async ({
             document,
         })
 
-    const promptBuilder = new PromptBuilder(contextWindow)
+    const promptBuilder = new PromptBuilder(contextWindowInTokens)
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)

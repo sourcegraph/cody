@@ -1,6 +1,7 @@
 import { Tiktoken } from 'tiktoken/lite'
 const cl100k_base = require('tiktoken/encoders/cl100k_base.json')
 
+
 // TODO: specify the model as a parameter; tokenization can vary by model.
 export function countTokens(s: string): number {
     // TODO: Cache and reuse the encoding.

@@ -125,17 +125,19 @@ export function countBytesInChatMessages(messages: ChatMessage[]): number {
 }
 
 /**
- * Gets the context window limit in bytes for chat messages, taking into
- * account the maximum allowed character count. Returns 0 if the used bytes
- * exceeds the limit.
+ * Gets the context window limit in terms of tokens for chat messages, taking into
+ * account the maximum allowed token count. Returns 0 if the used tokens
+ * exceed the limit.
+ *
  * @param messages - The chat messages
- * @param maxChars - The maximum allowed character count
- * @returns The context window limit in bytes
+ * @param maxTokens - The maximum allowed token count
+ * @returns The context window limit in terms of tokens
  */
-export function getContextWindowLimitInBytes(messages: ChatMessage[], maxChars: number): number {
+export function getContextWindowLimitInTokens(messages: ChatMessage[], maxTokens: number): number {
+    // TODO: Tokens minus bytes!!! Should be converted to tokens here!
     const used = countBytesInChatMessages(messages)
-    if (used > maxChars) {
+    if (used > maxTokens) {
         return 0
     }
-    return maxChars - used
+    return maxTokens - used
 }

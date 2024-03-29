@@ -15,7 +15,6 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
-    countTokens,
     featureFlagProvider,
     hydrateAfterPostMessage,
     isDefined,
@@ -47,13 +46,13 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
+import { countGeneratedCode, getContextWindowLimitInTokens } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -600,13 +599,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             },
         }
-        // Use the number of characters left in the chat model as the limit
+        // Use the number of tokens left in the chat model as the limit
         // for adding user context files to the chat.
-        countTokens("hey hey, we're the monkees")
-        const contextLimit = getContextWindowLimitInBytes(
+        const contextLimitInTokens = getContextWindowLimitInTokens(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            this.chatModel.maxTokens - ANSWER_TOKENS
         )
 
         try {
@@ -614,7 +612,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 query,
                 cancellation.token,
                 scopedTelemetryRecorder,
-                contextLimit
+                contextLimitInTokens
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -799,7 +797,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
+            ModelProvider.getMaxTokensByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction

@@ -22,7 +22,7 @@ interface PromptInfo {
 }
 
 export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, codyApiVersion: number, charLimit: number): Promise<PromptInfo>
+    makePrompt(chat: SimpleChatModel, codyApiVersion: number, tokenLimit: number): Promise<PromptInfo>
 }
 
 const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% of the context window
@@ -30,7 +30,7 @@ const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% o
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: string, tokenLimit: number) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -40,15 +40,15 @@ export class DefaultPrompter implements IPrompter {
     public async makePrompt(
         chat: SimpleChatModel,
         codyApiVersion: number,
-        charLimit: number
+        tokenLimit: number
     ): Promise<{
         prompt: Message[]
         newContextUsed: ContextItem[]
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
-            const promptBuilder = new PromptBuilder(charLimit)
+            const enhancedContextTokenLimit = Math.floor(tokenLimit * ENHANCED_CONTEXT_ALLOCATION)
+            const promptBuilder = new PromptBuilder(tokenLimit)
             const newContextUsed: ContextItem[] = []
             const preInstruction: string | undefined = vscode.workspace
                 .getConfiguration('cody.chat')
@@ -57,7 +57,7 @@ export class DefaultPrompter implements IPrompter {
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
-                throw new Error(`Preamble length exceeded context window size ${charLimit}`)
+                throw new Error(`Preamble length exceeded context window size ${tokenLimit}`)
             }
 
             // Add existing transcript messages
@@ -115,12 +115,12 @@ export class DefaultPrompter implements IPrompter {
                 // Add additional context from current editor or broader search
                 const additionalContextItems = await this.getEnhancedContext(
                     lastMessage.text,
-                    enhancedContextCharLimit
+                    enhancedContextTokenLimit
                 )
                 sortContextItems(additionalContextItems)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                     additionalContextItems,
-                    enhancedContextCharLimit
+                    enhancedContextTokenLimit
                 )
                 newContextUsed.push(...used)
                 if (limitReached) {

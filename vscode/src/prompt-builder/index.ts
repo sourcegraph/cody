@@ -21,24 +21,24 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private charsUsed = 0
+    private tokensUsed: number = 0
     private seenContext = new Set<string>()
-    constructor(private readonly charLimit: number) {}
+    constructor(private readonly tokenLimit: number) {}
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        let numChars = 0
+        let numTokens: number = 0
         for (const message of messages) {
-            numChars += messageChars(message)
+            numTokens += messageTokens(message)
         }
-        if (numChars + this.charsUsed > this.charLimit) {
+        if (numTokens + this.tokensUsed > this.tokenLimit) {
             return false
         }
         this.prefixMessages.push(...messages)
-        this.charsUsed += numChars
+        this.tokensUsed += numTokens
         return true
     }
 
@@ -60,15 +60,16 @@ export class PromptBuilder {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
             const countChar = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
-            const msgLen = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
-            if (this.charsUsed + msgLen > this.charLimit) {
+            const msgLenInChars = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
+            const msgLenInTokens = msgLenInChars // TODO: Calculate this!
+            if (this.tokensUsed + msgLenInTokens > this.tokenLimit) {
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
-            this.charsUsed += msgLen
+            this.tokensUsed += msgLenInTokens
         }
         return 0
     }
@@ -90,7 +91,7 @@ export class PromptBuilder {
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
-        let effectiveCharLimit = this.charLimit - this.charsUsed
+        let effectiveCharLimit = this.tokenLimit - this.tokensUsed
         if (charLimit && charLimit < effectiveCharLimit) {
             effectiveCharLimit = charLimit
         }
@@ -133,7 +134,7 @@ export class PromptBuilder {
             const contextLen = contextMessage
                 ? contextMessage.speaker.length + contextMessage.text.length + 3
                 : 0
-            if (this.charsUsed + contextLen > effectiveCharLimit) {
+            if (this.tokensUsed + contextLen > effectiveCharLimit) {
                 ignored.push(contextItem(v))
                 limitReached = true
                 continue
@@ -143,7 +144,7 @@ export class PromptBuilder {
                 this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
                 this.reverseMessages.push(contextMessage)
             }
-            this.charsUsed += contextLen
+            this.tokensUsed += contextLen
             used.push(contextItem(v))
         }
         return {
@@ -182,6 +183,7 @@ function contextItemId(value: ContextItem | ContextMessage): string {
     return item.uri.toString()
 }
 
-function messageChars(message: Message): number {
+function messageTokens(message: Message): number {
+    // TODO: Calculate tokens, not chars!
     return message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
 }
