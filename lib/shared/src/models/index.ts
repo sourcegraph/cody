@@ -91,6 +91,7 @@ export class ModelProvider {
      * The limit is calculated based on the max number of tokens the model can process.
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
+    // TODO: Callers need to handle a token limit, not a char limit.
     public static getMaxCharsByModel(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
         return tokensToChars(model?.maxToken || DEFAULT_FAST_MODEL_TOKEN_LIMIT)

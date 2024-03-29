@@ -1,7 +1,7 @@
 import { ModelProvider } from '.'
 import { logError } from '../logger'
 import { OLLAMA_DEFAULT_URL } from '../ollama'
-import { DEFAULT_FAST_MODEL_CHARS_LIMIT } from '../prompt/constants'
+import { DEFAULT_FAST_MODEL_TOKEN_LIMIT } from '../prompt/constants'
 import { ModelUsage } from './types'
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
@@ -45,7 +45,7 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
                         new ModelProvider(
                             `ollama/${m.model}`,
                             [ModelUsage.Chat, ModelUsage.Edit],
-                            DEFAULT_FAST_MODEL_CHARS_LIMIT
+                            DEFAULT_FAST_MODEL_TOKEN_LIMIT
                         )
                 ),
             error => {

@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -21,14 +25,15 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
+    "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
     "dompurify": "^3.0.4",
     "highlight.js": "^10.7.3",
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "marked": "^4.0.16",
-    "vscode-uri": "^3.0.7",
-    "crypto-js": "^4.2.0"
+    "tiktoken": "^1.0.13",
+    "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
@@ -36,8 +41,8 @@
     "@types/highlight.js": "^9.12.4",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/lodash": "^4.14.195",
-    "@types/node-fetch": "^2.6.4",
     "@types/marked": "^5.0.0",
+    "@types/node-fetch": "^2.6.4",
     "@types/vscode": "^1.80.0"
   }
 }

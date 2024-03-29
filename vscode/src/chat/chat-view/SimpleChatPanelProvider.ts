@@ -15,6 +15,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
+    countTokens,
     featureFlagProvider,
     hydrateAfterPostMessage,
     isDefined,
@@ -601,6 +602,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         // Use the number of characters left in the chat model as the limit
         // for adding user context files to the chat.
+        countTokens("hey hey, we're the monkees")
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token

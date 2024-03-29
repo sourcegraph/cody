@@ -16,7 +16,8 @@
     "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
-    "package.json"
+    "package.json",
+    "../lib/shared/src/prompt/token-count.ts"
   ],
   "exclude": [
     "scripts",
