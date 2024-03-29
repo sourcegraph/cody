@@ -1,6 +1,6 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+const isAgentTesting = typeof process !== 'undefined' && process.env.CODY_SHIM_TESTING === 'true'
 
 // These helper functions should be called before we pass context items/files to a prompt builder. This is necessary to get the tests
 // passing in CI because we need the prompts to be stable for the HTTP replay mode to succeed.

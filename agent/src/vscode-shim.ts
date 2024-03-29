@@ -55,7 +55,7 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
-const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+const isTesting = typeof process !== 'undefined' && process.env.CODY_SHIM_TESTING === 'true'
 
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
@@ -905,9 +905,9 @@ export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
-    appRoot: process.cwd(),
+    appRoot: typeof process !== 'undefined' && process.cwd ? process.cwd() : '',
     uiKind: UIKind.Web,
-    language: process.env.language,
+    language: typeof process !== 'undefined' ? process.env.language : undefined,
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),

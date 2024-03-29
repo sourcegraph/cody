@@ -41,7 +41,7 @@ export function isNodeResponse(response: BrowserOrNodeResponse): response is Nod
     return Boolean(response.body && !('getReader' in response.body))
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+const isAgentTesting = typeof process !== 'undefined' && process.env.CODY_SHIM_TESTING === 'true'
 
 interface APIResponse<T> {
     data?: T

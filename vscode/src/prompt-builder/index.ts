@@ -10,7 +10,7 @@ import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+const isAgentTesting = typeof process !== 'undefined' && process.env.CODY_SHIM_TESTING === 'true'
 
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.

@@ -129,7 +129,7 @@ const getContextFromIntent = async ({
     }
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+const isAgentTesting = typeof process !== 'undefined' && process.env.CODY_SHIM_TESTING === 'true'
 
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextItems: ContextItem[]
