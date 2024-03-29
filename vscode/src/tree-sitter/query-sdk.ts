@@ -164,6 +164,8 @@ function getLanguageSpecificQueryWrappers(
                 } else if (capture.name.startsWith('symbol')) {
                     symbolCaptures.push(capture)
                 } else if (capture.name.startsWith('comment')) {
+                    // Docstring are named "docstring" in Python,
+                    // and "comment" in other languages.
                     docstringFound = true
                 }
             }
@@ -193,24 +195,30 @@ function getLanguageSpecificQueryWrappers(
                  *
                  * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
                  */
+                docstringFound = false
                 const { startPosition, endPosition } = range.node
-                const captures = queries.documentableNodes.compiled.captures(
+                const pyCaptures = queries.documentableNodes.compiled.captures(
                     root,
                     startPosition,
                     endPosition
                 )
 
-                for (const capture of captures) {
+                for (const capture of pyCaptures) {
                     const { name, node } = capture
-                    if (name.startsWith('insertion') || name.startsWith('docstring')) {
+                    if (name.startsWith('insertion')) {
                         if (
                             node.startIndex >= range.node.startIndex &&
                             node.endIndex <= range.node.endIndex
                         ) {
                             insertionPoint = capture
                         }
-                        if (name.startsWith('docstring')) {
-                            docstringFound = true
+                    }
+                    // A valid docstring should be directly below the insertion point, with 1/2 of the indentation.
+                    if (!docstringFound && insertionPoint && name.startsWith('docstring')) {
+                        if (node.startPosition.row - 1 === insertionPoint.node.startPosition.row) {
+                            if (node.startPosition.column / 2 === range.node.startPosition.column) {
+                                docstringFound = true
+                            }
                         }
                     }
                 }
