@@ -17,7 +17,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
+import { NodeMessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     ClientInfo,
     CreateFileOperation,
@@ -54,7 +54,7 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
-export class TestClient extends MessageHandler {
+export class TestClient extends NodeMessageHandler {
     public info: ClientInfo
     public agentProcess?: ChildProcessWithoutNullStreams
     // Array of all raw `progress/*` notification. Typed as `any` because

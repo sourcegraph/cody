@@ -7,6 +7,7 @@ import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
 import { activate } from '../../../vscode/src/extension.node'
+import type { NodeMessageHandler } from '../jsonrpc-alias'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 
 interface JsonrpcCommandOptions {
@@ -194,6 +195,6 @@ function setupAgentCommunication(params: {
         params.stdin.on('close', () => process.exit(1))
     }
 
-    params.stdin.pipe(agent.messageHandler.messageDecoder)
-    agent.messageHandler.messageEncoder.pipe(params.stdout)
+    params.stdin.pipe((agent.messageHandler as NodeMessageHandler).messageDecoder)
+    ;(agent.messageHandler as NodeMessageHandler).messageEncoder.pipe(params.stdout)
 }

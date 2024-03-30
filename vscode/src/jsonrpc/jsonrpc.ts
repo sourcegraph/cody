@@ -1,8 +1,10 @@
 import assert from 'node:assert'
+import { Buffer } from 'node:buffer'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { Readable, Writable } from 'node:stream'
+import type { MessageConnection } from 'vscode-jsonrpc'
 
 import * as vscode from 'vscode'
 
@@ -254,13 +256,52 @@ type NotificationCallback<M extends NotificationMethodName> = (
     params: ParamsOf<M>
 ) => void | Promise<void>
 
+export interface MessageHandler {
+    registerRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void
+    registerNotification<M extends NotificationMethodName>(
+        method: M,
+        callback: NotificationCallback<M>
+    ): void
+    request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>>
+    notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void
+    isAlive(): boolean
+    clientForThisInstance?(): InProcessClient
+}
+
+export class BrowserMessageHandler implements MessageHandler {
+    constructor(private conn: MessageConnection) {}
+
+    public registerRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
+        this.conn.onRequest(method, (params, cancelToken) => callback(params, cancelToken))
+    }
+
+    public registerNotification<M extends NotificationMethodName>(
+        method: M,
+        callback: NotificationCallback<M>
+    ): void {
+        this.conn.onNotification(method, params => callback(params))
+    }
+
+    public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+        return this.conn.sendRequest(method, params)
+    }
+
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
+        this.conn.sendNotification(method, params)
+    }
+
+    public isAlive(): boolean {
+        return true // TODO(sqs)
+    }
+}
+
 /**
- * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
- * that can be piped with ReadStream/WriteStream.
+ * NodeMessageHandler exposes a public `messageDecoder` property that can be piped with
+ * ReadStream/WriteStream.
  */
-export class MessageHandler {
-    public id = 0
-    public requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
+export class NodeMessageHandler implements MessageHandler {
+    private id = 0
+    private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
     private cancelTokens: Map<Id, vscode.CancellationTokenSource> = new Map()
     private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private alive = true

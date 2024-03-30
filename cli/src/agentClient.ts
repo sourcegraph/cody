@@ -3,7 +3,7 @@ import { displayLineRange } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import type { ServerInfo } from '../../vscode/src/jsonrpc/agent-protocol'
-import { MessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
+import { NodeMessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
 
 export interface AgentClient {
     serverInfo: ServerInfo
@@ -35,7 +35,7 @@ export async function createAgentClient({
     debug = false,
 }: AgentClientOptions): Promise<AgentClient> {
     const agentProcess = spawnAgent()
-    const rpc = new MessageHandler()
+    const rpc = new NodeMessageHandler()
     agentProcess.stdout.pipe(rpc.messageDecoder)
     rpc.messageEncoder.pipe(agentProcess.stdin)
 
