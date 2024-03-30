@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -41,6 +42,24 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 endpoint: 'https://example.com',
             },
             workspaceFolderUris: [],
+        })
+        cb({ type: 'chatModels', models: DEFAULT_DOT_COM_MODELS })
+        cb({
+            type: 'history',
+            localHistory: {
+                chat: {
+                    a: {
+                        id: 'a',
+                        lastInteractionTimestamp: '2024-03-29',
+                        interactions: [
+                            {
+                                humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                            },
+                        ],
+                    },
+                },
+            },
         })
         return () => {}
     },
