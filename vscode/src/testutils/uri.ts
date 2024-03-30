@@ -49,7 +49,7 @@ export class Uri {
         return new Uri(URI.from(components))
     }
 
-    private uri: URI
+    private readonly uri: URI
 
     private constructor(componentsOrUri: UriComponents | URI) {
         if (componentsOrUri instanceof URI) {
@@ -57,30 +57,21 @@ export class Uri {
         } else {
             this.uri = URI.from(componentsOrUri)
         }
+
+        this.scheme = this.uri.scheme
+        this.authority = this.uri.authority
+        this.path = this.uri.path
+        this.query = this.uri.query
+        this.fragment = this.uri.fragment
+        this.fsPath = this.uri.fsPath
     }
 
-    public get scheme(): string {
-        return this.uri.scheme
-    }
-
-    public get authority(): string {
-        return this.uri.authority
-    }
-    public get path(): string {
-        return this.uri.path
-    }
-
-    public get query(): string {
-        return this.uri.query
-    }
-
-    public get fragment(): string {
-        return this.uri.fragment
-    }
-
-    public get fsPath(): string {
-        return this.uri.fsPath
-    }
+    public readonly scheme: string
+    public readonly authority: string
+    public readonly path: string
+    public readonly query: string
+    public readonly fragment: string
+    public readonly fsPath: string
 
     public with(change: {
         scheme?: string

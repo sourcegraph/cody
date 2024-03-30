@@ -569,7 +569,10 @@ const register = async (
                 const config = await getFullConfig(secretStorage)
                 if (!config.autocomplete) {
                     disposeAutocomplete()
-                    if (config.isRunningInsideAgent) {
+                    if (
+                        config.isRunningInsideAgent &&
+                        !process.env.CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING
+                    ) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
                                 'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
