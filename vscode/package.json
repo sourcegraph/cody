@@ -1311,7 +1311,6 @@
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
-    "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
     "progress": "^2.0.3",
     "yaml": "^2.3.4"
