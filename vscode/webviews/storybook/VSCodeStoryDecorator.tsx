@@ -35,6 +35,7 @@ export const VSCodeStandaloneComponent: Decorator = VSCodeDecorator(undefined)
  * A customizable decorator for components with VS Code theme colors applied.
  */
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
+    document.body.dataset.vscodeThemeKind = 'vscode-dark'
     return story => (
         <div className={classNames(styles.container, className)} style={style}>
             <WithChatContextClient value={dummyChatContextClient}>{story()}</WithChatContextClient>
