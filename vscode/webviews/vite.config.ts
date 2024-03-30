@@ -8,6 +8,9 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [react()],
     root: __dirname,
     base: './',
+    define: {
+        'import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS': 'false',
+    },
     build: {
         emptyOutDir: false,
         outDir: __dirname + '/../dist/webviews',
