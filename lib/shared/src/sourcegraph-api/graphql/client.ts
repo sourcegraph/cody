@@ -382,6 +382,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteVersion(): Promise<string | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return '5.99.0'
+        }
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
             CURRENT_SITE_VERSION_QUERY,
             {}
@@ -394,6 +397,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return { siteid: 'noodle-dev', hashedLicenseKey: 'noodle-dev' }
+        }
+
         const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
             CURRENT_SITE_IDENTIFICATION,
             {}
@@ -441,6 +448,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return {
+                codyProEnabled: true,
+            }
+        }
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
             CURRENT_USER_CODY_PRO_ENABLED_QUERY,
             {}
@@ -452,6 +464,15 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return {
+                applyProRateLimits: false,
+                plan: 'PRO',
+                status: 'ACTIVE',
+                currentPeriodStartAt: new Date(2020, 0),
+                currentPeriodEndAt: new Date(2030, 1),
+            }
+        }
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
             CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
             {}
@@ -465,6 +486,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return { id: 'noodle-dev-id', username: 'noodle-dev', hasVerifiedEmail: true, avatarURL: '' }
+        }
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
             CURRENT_USER_INFO_QUERY,
             {}
@@ -490,6 +514,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return undefined
+        }
+
         // fetch Cody LLM provider separately for backward compatability
         const [configResponse, providerResponse] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
@@ -606,6 +634,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<ContextFilters> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
@@ -660,6 +692,10 @@ export class SourcegraphGraphQLAPIClient {
      * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
      */
     public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return { enabled: true, version: '5.99.0' }
+        }
+
         // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
@@ -813,6 +849,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return {}
+        }
         this.anonymizeEvent(event)
         const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(
             LOG_EVENT_MUTATION,
@@ -822,6 +861,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return {}
+        }
         this.anonymizeEvent(event)
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
             LOG_EVENT_MUTATION,
@@ -864,6 +906,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return {}
+        }
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
             {}
@@ -878,6 +923,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return false
+        }
         return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(
             EVALUATE_FEATURE_FLAG_QUERY,
             {
@@ -1026,6 +1074,10 @@ export class ConfigFeaturesSingleton {
 
     // Fetches the config features from the server and handles errors
     private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
+        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+            return { attribution: false, autoComplete: false, chat: true, commands: false }
+        }
+
         // Execute the GraphQL query to fetch the configuration features
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {

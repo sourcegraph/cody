@@ -69,6 +69,8 @@ export default defineProjectWithDefaults(__dirname, {
                 JSON.stringify(value),
             ])
         ),
+
+        'import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS': Boolean(process.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS),
     },
     build: {
         emptyOutDir: false,
