@@ -96,19 +96,17 @@ export const TranscriptItem: React.FunctionComponent<{
                     <ErrorItem error={message.error} userInfo={userInfo} postMessage={postMessage} />
                 )
             ) : null}
-            <div className={classNames(styles.contentPadding, styles.content)}>
-                {displayMarkdown ? (
-                    <ChatMessageContent
-                        displayMarkdown={displayMarkdown}
-                        wrapLinksWithCodyCommand={message.speaker !== 'human'}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        guardrails={guardrails}
-                    />
-                ) : (
-                    inProgress && <BlinkingCursor />
-                )}
-            </div>
+            {displayMarkdown ? (
+                <ChatMessageContent
+                    displayMarkdown={displayMarkdown}
+                    wrapLinksWithCodyCommand={message.speaker !== 'human'}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    guardrails={guardrails}
+                />
+            ) : (
+                inProgress && <BlinkingCursor />
+            )}
             {/* Enhanced Context list shows up on human message only */}
             {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
