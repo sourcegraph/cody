@@ -1,0 +1,127 @@
+/*
+We want to use the default VS Code theme colors here for accuracy and consistency. To regenerate
+this theme CSS from VS Code, go to https://vscode.dev and run the following JavaScript in the
+devtools console:
+
+const lines = [':root {']
+for (const [name, value] of document.querySelector('.monaco-workbench').computedStyleMap()) {
+    if (/^--vscode-(button|foreground|checkbox|editor|focusBorder|font|input|inputOption|inputValidation|link|list|problemsErrorIcon|quickInput|pickerGroup|sideBar|sideBarTitle|sideBarSectionHeader|tab|textLink|widget|dropdown|quickInputList)-/.test(name)){
+        lines.push(`    ${name}: ${value};`);
+    }
+}
+lines.push('}')
+console.log(lines.join('\n'))
+*/
+
+:root {
+    --vscode-button-background: #0078d4;
+    --vscode-button-border: rgba(255, 255, 255, 0.07);
+    --vscode-button-foreground: #ffffff;
+    --vscode-button-hoverBackground: #026ec1;
+    --vscode-button-secondaryBackground: #313131;
+    --vscode-button-secondaryForeground: #cccccc;
+    --vscode-button-secondaryHoverBackground: #3c3c3c;
+    --vscode-button-separator: rgba(255, 255, 255, 0.4);
+    --vscode-checkbox-background: #313131;
+    --vscode-checkbox-border: #3c3c3c;
+    --vscode-checkbox-foreground: #cccccc;
+    --vscode-checkbox-selectBackground: #202020;
+    --vscode-checkbox-selectBorder: #cccccc;
+    --vscode-dropdown-background: #313131;
+    --vscode-dropdown-border: #3c3c3c;
+    --vscode-dropdown-foreground: #cccccc;
+    --vscode-dropdown-listBackground: #1f1f1f;
+    --vscode-editor-background: #1f1f1f;
+    --vscode-editor-findMatchBackground: #9e6a03;
+    --vscode-editor-findMatchHighlightBackground: rgba(234, 92, 0, 0.33);
+    --vscode-editor-findRangeHighlightBackground: rgba(58, 61, 65, 0.4);
+    --vscode-editor-focusedStackFrameHighlightBackground: rgba(122, 189, 122, 0.3);
+    --vscode-editor-foldBackground: rgba(38, 79, 120, 0.3);
+    --vscode-editor-foreground: #cccccc;
+    --vscode-editor-hoverHighlightBackground: rgba(38, 79, 120, 0.25);
+    --vscode-editor-inactiveSelectionBackground: #3a3d41;
+    --vscode-editor-inlineValuesBackground: rgba(255, 200, 0, 0.2);
+    --vscode-editor-inlineValuesForeground: rgba(255, 255, 255, 0.5);
+    --vscode-editor-lineHighlightBorder: #282828;
+    --vscode-editor-linkedEditingBackground: rgba(255, 0, 0, 0.3);
+    --vscode-editor-rangeHighlightBackground: rgba(255, 255, 255, 0.04);
+    --vscode-editor-selectionBackground: #264f78;
+    --vscode-editor-selectionHighlightBackground: rgba(173, 214, 255, 0.15);
+    --vscode-editor-snippetFinalTabstopHighlightBorder: #525252;
+    --vscode-editor-snippetTabstopHighlightBackground: rgba(124, 124, 124, 0.3);
+    --vscode-editor-stackFrameHighlightBackground: rgba(255, 255, 0, 0.2);
+    --vscode-editor-symbolHighlightBackground: rgba(234, 92, 0, 0.33);
+    --vscode-editor-wordHighlightBackground: rgba(87, 87, 87, 0.72);
+    --vscode-editor-wordHighlightStrongBackground: rgba(0, 73, 114, 0.72);
+    --vscode-editor-wordHighlightTextBackground: rgba(87, 87, 87, 0.72);
+    --vscode-input-background: #313131;
+    --vscode-input-border: #3c3c3c;
+    --vscode-input-foreground: #cccccc;
+    --vscode-input-placeholderForeground: #989898;
+    --vscode-inputOption-activeBackground: rgba(36, 137, 219, 0.51);
+    --vscode-inputOption-activeBorder: #2488db;
+    --vscode-inputOption-activeForeground: #ffffff;
+    --vscode-inputOption-hoverBackground: rgba(90, 93, 94, 0.5);
+    --vscode-inputValidation-errorBackground: #5a1d1d;
+    --vscode-inputValidation-errorBorder: #be1100;
+    --vscode-inputValidation-infoBackground: #063b49;
+    --vscode-inputValidation-infoBorder: #007acc;
+    --vscode-inputValidation-warningBackground: #352a05;
+    --vscode-inputValidation-warningBorder: #b89500;
+    --vscode-list-activeSelectionBackground: #04395e;
+    --vscode-list-activeSelectionForeground: #ffffff;
+    --vscode-list-activeSelectionIconForeground: #ffffff;
+    --vscode-list-deemphasizedForeground: #8c8c8c;
+    --vscode-list-dropBackground: #383b3d;
+    --vscode-list-dropBetweenBackground: #cccccc;
+    --vscode-list-errorForeground: #f88070;
+    --vscode-list-filterMatchBackground: rgba(234, 92, 0, 0.33);
+    --vscode-list-focusHighlightForeground: #2aaaff;
+    --vscode-list-focusOutline: #0078d4;
+    --vscode-list-highlightForeground: #2aaaff;
+    --vscode-list-hoverBackground: #2a2d2e;
+    --vscode-list-inactiveSelectionBackground: #37373d;
+    --vscode-list-invalidItemForeground: #b89500;
+    --vscode-list-warningForeground: #cca700;
+    --vscode-pickerGroup-border: #3c3c3c;
+    --vscode-pickerGroup-foreground: #3794ff;
+    --vscode-problemsErrorIcon-foreground: #f14c4c;
+    --vscode-quickInput-background: #222222;
+    --vscode-quickInput-foreground: #cccccc;
+    --vscode-quickInputList-focusBackground: #04395e;
+    --vscode-quickInputList-focusForeground: #ffffff;
+    --vscode-quickInputList-focusIconForeground: #ffffff;
+    --vscode-sideBar-background: #181818;
+    --vscode-sideBar-border: #2b2b2b;
+    --vscode-sideBar-dropBackground: rgba(83, 89, 93, 0.5);
+    --vscode-sideBar-foreground: #cccccc;
+    --vscode-sideBarSectionHeader-background: #181818;
+    --vscode-sideBarSectionHeader-border: #2b2b2b;
+    --vscode-sideBarSectionHeader-foreground: #cccccc;
+    --vscode-sideBarTitle-foreground: #cccccc;
+    --vscode-tab-activeBackground: #1f1f1f;
+    --vscode-tab-activeBorder: #1f1f1f;
+    --vscode-tab-activeBorderTop: #0078d4;
+    --vscode-tab-activeForeground: #ffffff;
+    --vscode-tab-activeModifiedBorder: #3399cc;
+    --vscode-tab-border: #2b2b2b;
+    --vscode-tab-dragAndDropBorder: #ffffff;
+    --vscode-tab-hoverBackground: #1f1f1f;
+    --vscode-tab-inactiveBackground: #181818;
+    --vscode-tab-inactiveForeground: #9d9d9d;
+    --vscode-tab-inactiveModifiedBorder: rgba(51, 153, 204, 0.5);
+    --vscode-tab-lastPinnedBorder: rgba(204, 204, 204, 0.2);
+    --vscode-tab-unfocusedActiveBackground: #1f1f1f;
+    --vscode-tab-unfocusedActiveBorder: #1f1f1f;
+    --vscode-tab-unfocusedActiveBorderTop: #2b2b2b;
+    --vscode-tab-unfocusedActiveForeground: rgba(255, 255, 255, 0.5);
+    --vscode-tab-unfocusedActiveModifiedBorder: rgba(51, 153, 204, 0.5);
+    --vscode-tab-unfocusedHoverBackground: #1f1f1f;
+    --vscode-tab-unfocusedInactiveBackground: #181818;
+    --vscode-tab-unfocusedInactiveForeground: rgba(157, 157, 157, 0.5);
+    --vscode-tab-unfocusedInactiveModifiedBorder: rgba(51, 153, 204, 0.25);
+    --vscode-textLink-activeForeground: #4daafc;
+    --vscode-textLink-foreground: #4daafc;
+    --vscode-widget-border: #313131;
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
+}

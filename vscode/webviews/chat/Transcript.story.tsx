@@ -4,7 +4,7 @@ import { Transcript } from './Transcript'
 import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 
-import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
 import styles from './Transcript.story.module.css'
 
 const meta: Meta<typeof Transcript> = {
@@ -23,7 +23,7 @@ const meta: Meta<typeof Transcript> = {
         transcript: FIXTURE_TRANSCRIPT.simple,
     },
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeWebview],
 }
 
 export default meta
