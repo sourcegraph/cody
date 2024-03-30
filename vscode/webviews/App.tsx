@@ -45,7 +45,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         isCodyProUser: false,
     })
 
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>([])
+    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -192,7 +192,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-    const isNewInstall = useMemo(() => !userHistory.some(c => c.interactions.length > 0), [userHistory])
+    const isNewInstall = useMemo(
+        () => userHistory && !userHistory.some(c => c.interactions.length > 0),
+        [userHistory]
+    )
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }

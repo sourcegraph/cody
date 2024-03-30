@@ -42,7 +42,7 @@ interface ChatboxProps {
     guardrails?: Guardrails
     chatIDHistory: string[]
     isWebviewActive: boolean
-    isNewInstall: boolean
+    isNewInstall: boolean | undefined
 }
 
 const isMac = isMacOS()
@@ -524,7 +524,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 isOpen={isEnhancedContextOpen}
                                 setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                                isFirstChat={isNewInstall}
+                                isNewInstall={isNewInstall}
                             />
                         </div>
                     </div>
