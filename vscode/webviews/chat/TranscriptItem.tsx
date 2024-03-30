@@ -46,10 +46,6 @@ export const TranscriptItem: React.FunctionComponent<
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        abortMessageInProgressComponent?: React.FunctionComponent<{
-            onAbortMessageInProgress: () => void
-        }>
-        onAbortMessageInProgress?: () => void
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
