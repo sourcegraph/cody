@@ -63,7 +63,7 @@ query SiteGraphQLFields {
 }`
 
 export const CURRENT_SITE_CODY_LLM_PROVIDER = `
-query CurrentSiteCodyLlmConfiguration {
+query CurrentSiteCodyLlmProvider {
     site {
         codyLLMConfiguration {
             provider

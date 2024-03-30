@@ -224,7 +224,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73ecdebf2edf31b5376a37167a419a72
+    - _id: fcc3c2072923be71955c06142a3602b3
       _order: 0
       cache: {}
       request:
@@ -264,7 +264,7 @@ log:
           textJSON:
             query: |-
               
-              query CurrentSiteCodyLlmConfiguration {
+              query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
                           provider
@@ -273,9 +273,9 @@ log:
               }
             variables: {}
         queryString:
-          - name: CurrentSiteCodyLlmConfiguration
+          - name: CurrentSiteCodyLlmProvider
             value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
         bodySize: 131
         content:
