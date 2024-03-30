@@ -2,7 +2,7 @@ import * as child_process from 'node:child_process'
 
 import * as vscode from 'vscode'
 
-import { MessageHandler } from '../../jsonrpc/jsonrpc'
+import { type MessageHandler, NodeMessageHandler } from '../../jsonrpc/jsonrpc'
 import { logDebug } from '../../log'
 
 import { downloadBfg } from './download-bfg'
@@ -11,7 +11,7 @@ export async function spawnBfg(
     context: vscode.ExtensionContext,
     reject: (reason?: any) => void
 ): Promise<MessageHandler> {
-    const bfg = new MessageHandler()
+    const bfg = new NodeMessageHandler()
     const codyrpc = await downloadBfg(context)
     if (!codyrpc) {
         throw new Error(

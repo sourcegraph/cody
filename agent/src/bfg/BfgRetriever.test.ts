@@ -76,7 +76,7 @@ describe('BfgRetriever', async () => {
         },
         activate
     )
-    const client = agent.messageHandler.clientForThisInstance()
+    const client = agent.messageHandler.clientForThisInstance!()
 
     const filePath = path.join(dir, testFile)
     const uri = vscode.Uri.file(filePath)

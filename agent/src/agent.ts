@@ -32,6 +32,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import type { MessageConnection } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
@@ -49,7 +50,13 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
-import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import {
+    BrowserMessageHandler,
+    type MessageHandler,
+    NodeMessageHandler,
+    type RequestCallback,
+    type RequestMethodName,
+} from './jsonrpc-alias'
 import type {
     AutocompleteItem,
     ClientInfo,
@@ -132,7 +139,7 @@ export async function newAgentClient(
     clientInfo: ClientInfo & { codyAgentPath?: string }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const serverHandler = new MessageHandler()
+        const serverHandler = new NodeMessageHandler()
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
@@ -162,13 +169,13 @@ export async function newEmbeddedAgentClient(
 ): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
     const agent = new Agent({ extensionActivate })
-    const debugHandler = new MessageHandler()
+    const debugHandler = new NodeMessageHandler()
     debugHandler.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
-    debugHandler.messageEncoder.pipe(agent.messageHandler.messageDecoder)
-    agent.messageHandler.messageEncoder.pipe(debugHandler.messageDecoder)
-    const client = agent.messageHandler.clientForThisInstance()
+    debugHandler.messageEncoder.pipe((agent.messageHandler as NodeMessageHandler).messageDecoder)
+    ;(agent.messageHandler as NodeMessageHandler).messageEncoder.pipe(debugHandler.messageDecoder)
+    const client = agent.messageHandler.clientForThisInstance!()
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
     return agent
@@ -248,13 +255,13 @@ export class Agent implements ExtensionClient {
         new NoOpTelemetryRecorderProvider([
             {
                 processEvent: event =>
-                    process.stderr.write(
+                    console.error(
                         `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
                     ),
             },
         ])
 
-    public messageHandler = new MessageHandler()
+    public messageHandler: MessageHandler
 
     constructor(
         readonly params: {
@@ -262,8 +269,14 @@ export class Agent implements ExtensionClient {
             networkRequests?: Request[]
             requestErrors?: PollyRequestError[]
             extensionActivate: ExtensionActivate
+            conn?: MessageConnection
         }
     ) {
+        if (!params?.conn) {
+            throw new Error('no conn')
+        }
+        this.messageHandler = new BrowserMessageHandler(params?.conn) // TODO(sqs): or NodeMessageHandler depending on the environment
+
         vscode_shim.setAgent(this)
         this.messageHandler.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
@@ -285,7 +298,7 @@ export class Agent implements ExtensionClient {
                 )
             }
             if (process.env.CODY_DEBUG === 'true') {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
                 )
             }
@@ -331,7 +344,7 @@ export class Agent implements ExtensionClient {
                     authStatus,
                 }
             } catch (error) {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
                 )
                 process.exit(1)
@@ -1259,6 +1272,8 @@ export class Agent implements ExtensionClient {
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
 
-    public request = this.messageHandler.request.bind(this.messageHandler)
-    public notify = this.messageHandler.notify.bind(this.messageHandler)
+    public request: MessageHandler['request'] = (...args: Parameters<MessageHandler['request']>) =>
+        this.messageHandler.request(...args)
+    public notify: MessageHandler['notify'] = (...args: Parameters<MessageHandler['notify']>) =>
+        this.messageHandler.notify(...args)
 }
