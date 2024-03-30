@@ -12,7 +12,7 @@ import {
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { CodeBlockActionsProps } from './CodeBlocks'
+import type { CodeBlockActionsProps } from './ChatMessageContent'
 
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 

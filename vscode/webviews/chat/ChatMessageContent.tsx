@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -13,14 +13,14 @@ import {
     ShieldIcon,
 } from '../icons/CodeBlockActionIcons'
 
-import styles from './CodeBlocks.module.css'
+import styles from './ChatMessageContent.module.css'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
 }
 
-interface CodeBlocksProps {
+interface ChatMessageContentProps {
     displayMarkdown: string
     wrapLinksWithCodyCommand: boolean
 
@@ -31,6 +31,7 @@ interface CodeBlocksProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     guardrails?: Guardrails
+    className?: string
 }
 
 function createButtons(
@@ -239,7 +240,10 @@ class GuardrailsStatusController {
     }
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
+/**
+ * A component presenting the content of a chat message.
+ */
+export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
     wrapLinksWithCodyCommand,
     copyButtonClassName,
@@ -247,6 +251,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
     insertButtonClassName,
     insertButtonOnSubmit,
     guardrails,
+    className,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -313,19 +318,17 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
         guardrails,
     ])
 
-    return useMemo(
-        () => (
-            <div
-                ref={rootRef}
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
-                dangerouslySetInnerHTML={{
-                    // wrapLinksWithCodyCommand opens all links in assistant responses using the
-                    // _cody.vscode.open command (but not human messages because those already
-                    // have the right URIs and are trusted).
-                    __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
-                }}
-            />
-        ),
-        [displayMarkdown, wrapLinksWithCodyCommand]
+    return (
+        <div
+            ref={rootRef}
+            className={className}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
+            dangerouslySetInnerHTML={{
+                // wrapLinksWithCodyCommand opens all links in assistant responses using the
+                // _cody.vscode.open command (but not human messages because those already
+                // have the right URIs and are trusted).
+                __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
+            }}
+        />
     )
 }

@@ -6,10 +6,8 @@ import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@s
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { CodeBlockActionsProps } from './CodeBlocks'
-
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
-import { CodeBlocks } from './CodeBlocks'
+import { ChatMessageContent, type CodeBlockActionsProps } from './ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext } from './components/EnhancedContext'
 
@@ -126,7 +124,7 @@ export const TranscriptItem: React.FunctionComponent<
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
                 {displayMarkdown ? (
-                    <CodeBlocks
+                    <ChatMessageContent
                         displayMarkdown={displayMarkdown}
                         wrapLinksWithCodyCommand={message.speaker !== 'human'}
                         copyButtonClassName={codeBlocksCopyButtonClassName}
