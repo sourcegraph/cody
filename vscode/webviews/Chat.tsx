@@ -15,7 +15,6 @@ import {
 import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
-import { FileLink } from './Components/FileLink'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
 import {
@@ -472,7 +471,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}
-                    fileLinkComponent={FileLink}
                     codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
                     codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
                     transcriptItemClassName={styles.transcriptItem}

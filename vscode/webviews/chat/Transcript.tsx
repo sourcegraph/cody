@@ -15,7 +15,6 @@ import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './CodeBlocks'
 
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
-import type { FileLinkProps } from './components/EnhancedContext'
 
 import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
@@ -27,7 +26,6 @@ export const Transcript: React.FunctionComponent<
         messageInProgress: ChatMessage | null
         messageBeingEdited: number | undefined
         setMessageBeingEdited: (index?: number) => void
-        fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -45,7 +43,6 @@ export const Transcript: React.FunctionComponent<
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
-    fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -173,7 +170,6 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        fileLinkComponent={fileLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}
@@ -218,7 +214,6 @@ export const Transcript: React.FunctionComponent<
                         message={welcomeTranscriptMessage}
                         beingEdited={undefined}
                         inProgress={false}
-                        fileLinkComponent={fileLinkComponent}
                         setBeingEdited={() => {}}
                         showEditButton={false}
                         showFeedbackButtons={false}
@@ -235,7 +230,6 @@ export const Transcript: React.FunctionComponent<
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        fileLinkComponent={fileLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                         transcriptItemClassName={transcriptItemClassName}

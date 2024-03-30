@@ -11,7 +11,7 @@ import type { CodeBlockActionsProps } from './CodeBlocks'
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
+import { EnhancedContext } from './components/EnhancedContext'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
@@ -42,7 +42,6 @@ export const TranscriptItem: React.FunctionComponent<
         beingEdited: number | undefined
         setBeingEdited: (index?: number) => void
         showEditButton: boolean
-        fileLinkComponent: React.FunctionComponent<FileLinkProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -61,7 +60,6 @@ export const TranscriptItem: React.FunctionComponent<
     inProgress,
     beingEdited,
     setBeingEdited,
-    fileLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -151,7 +149,6 @@ export const TranscriptItem: React.FunctionComponent<
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext
                             contextFiles={message.contextFiles}
-                            fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
                         />
                     ) : (

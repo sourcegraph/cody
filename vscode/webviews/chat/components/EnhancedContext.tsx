@@ -4,6 +4,7 @@ import type { URI } from 'vscode-uri'
 
 import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
 
+import { FileLink } from '../../Components/FileLink'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { TranscriptAction } from '../actions/TranscriptAction'
 
@@ -25,9 +26,8 @@ export interface FileLinkProps {
 
 export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextItem[]
-    fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-}> = ({ contextFiles, fileLinkComponent: FileLink, className }) => {
+}> = ({ contextFiles, className }) => {
     if (!contextFiles.length) {
         return
     }
