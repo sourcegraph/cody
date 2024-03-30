@@ -487,7 +487,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
-                    ChatButtonComponent={ChatButtonComponent}
                     isTranscriptError={isTranscriptError}
                     chatModels={chatModels}
                     onCurrentChatModelChange={onCurrentChatModelChange}
@@ -556,29 +555,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         </div>
     )
 }
-
-export interface ChatButtonProps {
-    label: string
-    action: string
-    onClick: (action: string) => void
-    appearance?: 'primary' | 'secondary' | 'icon'
-}
-
-const ChatButtonComponent: React.FunctionComponent<ChatButtonProps> = ({
-    label,
-    action,
-    onClick,
-    appearance,
-}) => (
-    <VSCodeButton
-        type="button"
-        onClick={() => onClick(action)}
-        className={styles.chatButton}
-        appearance={appearance}
-    >
-        {label}
-    </VSCodeButton>
-)
 
 const submitButtonTypes = {
     user: { icon: 'codicon codicon-arrow-up', title: 'Send Message' },

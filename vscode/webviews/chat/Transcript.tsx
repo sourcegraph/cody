@@ -11,7 +11,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { ChatButtonProps } from '../Chat'
 import type { EditButtonProps } from '../Chat'
 import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -37,7 +36,6 @@ export const Transcript: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         isTranscriptError?: boolean
         chatModels?: ModelProvider[]
         ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
@@ -65,7 +63,6 @@ export const Transcript: React.FunctionComponent<
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    ChatButtonComponent,
     isTranscriptError,
     chatModels,
     ChatModelDropdownMenu,
@@ -197,7 +194,6 @@ export const Transcript: React.FunctionComponent<
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        ChatButtonComponent={ChatButtonComponent}
                         userInfo={userInfo}
                         postMessage={postMessage}
                         guardrails={guardrails}
@@ -260,7 +256,6 @@ export const Transcript: React.FunctionComponent<
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
                         userInfo={userInfo}
                     />

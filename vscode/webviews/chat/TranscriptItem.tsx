@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { ChatButtonProps } from '../Chat'
 import type { EditButtonProps } from '../Chat'
 import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -53,7 +52,6 @@ export const TranscriptItem: React.FunctionComponent<
             onAbortMessageInProgress: () => void
         }>
         onAbortMessageInProgress?: () => void
-        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
@@ -78,7 +76,6 @@ export const TranscriptItem: React.FunctionComponent<
     showFeedbackButtons,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    ChatButtonComponent,
     userInfo,
     postMessage,
     guardrails,
@@ -133,12 +130,7 @@ export const TranscriptItem: React.FunctionComponent<
                 typeof message.error === 'string' ? (
                     <RequestErrorItem error={message.error} />
                 ) : (
-                    <ErrorItem
-                        error={message.error}
-                        ChatButtonComponent={ChatButtonComponent}
-                        userInfo={userInfo}
-                        postMessage={postMessage}
-                    />
+                    <ErrorItem error={message.error} userInfo={userInfo} postMessage={postMessage} />
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
