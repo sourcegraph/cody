@@ -15,7 +15,7 @@ import {
 } from './EnhancedContextSettings'
 
 const meta: Meta<typeof EnhancedContextSettings> = {
-    title: 'cody/Enhanced Context',
+    title: 'cody/Enhanced Context Settings',
     component: EnhancedContextSettings,
     decorators: [VSCodeStandaloneComponent],
 }
