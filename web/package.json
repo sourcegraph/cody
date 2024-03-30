@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "name": "@sourcegraph/cody-web",
+  "version": "0.0.1",
+  "description": "Cody standalone web app",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "web"
+  },
+  "main": "src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "vite --mode development",
+    "build": "tsc --build && vite build --mode production",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@vitest/web-worker": "^1.4.0",
+    "@vscode/codicons": "^0.0.35",
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
+    "path-browserify": "^1.0.1",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5",
+    "vscode-uri": "^3.0.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-swc": "^3.6.0"
+  }
+}

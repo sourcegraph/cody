@@ -1,0 +1,28 @@
+@import '../../vscode/webviews/storybook/vscode-dark-theme.css';
+@import '../node_modules/@vscode/codicons/dist/codicon.css';
+
+:root {
+    color-scheme: dark;
+
+    --vscode-font-size: 13px;
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+
+    background-color: var(--vscode-editor-background);
+    font-size: var(--vscode-font-size);
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-editor-foreground);
+}
+
+#root {
+    height: 100%;
+}
+
+a {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+}
