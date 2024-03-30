@@ -10,6 +10,7 @@ import {
     GuardrailsPost,
     type ModelProvider,
     type SerializedChatTranscript,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
@@ -237,7 +238,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         isTranscriptError={isTranscriptError}
                                         chatModels={chatModels}
                                         setChatModels={setChatModels}
-                                        welcomeMessage={getWelcomeMessageByOS(config?.os)}
+                                        welcomeMessage={welcomeMessageMarkdown}
                                         guardrails={attributionEnabled ? guardrails : undefined}
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
@@ -272,18 +273,15 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-function getWelcomeMessageByOS(os: string): string {
-    const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
+const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
 To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
-        os === 'darwin' ? '⌥' : 'Alt'
-    }</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
+    isMacOS() ? '⌥' : 'Alt'
+}</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
 
 You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
-        os === 'darwin' ? '⌥' : 'Alt'
-    }</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
+    isMacOS() ? '⌥' : 'Alt'
+}</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
 
 For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
-    return welcomeMessageMarkdown
-}

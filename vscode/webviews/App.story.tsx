@@ -27,11 +27,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             config: {
                 debugEnable: true,
                 serverEndpoint: 'https://example.com',
-                os: 'linux',
-                arch: 'x64',
-                homeDir: '/home/user',
                 uiKindIsWeb: false,
-                extensionVersion: '0.0.0',
                 experimentalGuardrails: false,
             },
             authStatus: {

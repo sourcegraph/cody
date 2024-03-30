@@ -254,14 +254,7 @@ export const networkErrorAuthStatus = {
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The  operating system kind
-    os: string
-    arch: string
-    homeDir?: string | undefined
-
-    extensionVersion: string
-
-    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 }
 
