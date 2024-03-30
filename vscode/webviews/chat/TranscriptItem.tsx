@@ -6,7 +6,6 @@ import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@s
 
 import type { UserAccountInfo } from '../Chat'
 import type { EditButtonProps } from '../Chat'
-import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './CodeBlocks'
 
@@ -17,6 +16,7 @@ import { EnhancedContext, type FileLinkProps } from './components/EnhancedContex
 
 import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
 import styles from './TranscriptItem.module.css'
+import { FeedbackButtons } from './components/FeedbackButtons'
 
 /**
  * CSS class names used for the {@link TranscriptItem} component.
@@ -43,7 +43,6 @@ export const TranscriptItem: React.FunctionComponent<
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -71,7 +70,6 @@ export const TranscriptItem: React.FunctionComponent<
     transcriptActionClassName,
     EditButtonContainer,
     showEditButton,
-    FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
@@ -163,24 +161,16 @@ export const TranscriptItem: React.FunctionComponent<
                 </div>
             )}
             {/* Display feedback buttons on assistant messages only */}
-            {!isHumanMessage &&
-                showFeedbackButtons &&
-                FeedbackButtonsContainer &&
-                feedbackButtonsOnSubmit && (
-                    <footer
-                        className={classNames(
-                            styles.footerContainer,
-                            transcriptItemParticipantClassName
-                        )}
-                    >
-                        {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
-                        {/* Hide the feedback buttons during editing mode */}
-                        <FeedbackButtonsContainer
-                            className={styles.feedbackEditButtonsContainer}
-                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        />
-                    </footer>
-                )}
+            {!isHumanMessage && showFeedbackButtons && feedbackButtonsOnSubmit && (
+                <footer
+                    className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}
+                >
+                    <FeedbackButtons
+                        className={styles.feedbackEditButtonsContainer}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    />
+                </footer>
+            )}
         </div>
     )
 }

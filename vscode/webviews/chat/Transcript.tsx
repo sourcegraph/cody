@@ -12,7 +12,6 @@ import {
 
 import type { UserAccountInfo } from '../Chat'
 import type { EditButtonProps } from '../Chat'
-import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
 import type { CodeBlockActionsProps } from './CodeBlocks'
@@ -32,7 +31,6 @@ export const Transcript: React.FunctionComponent<
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -59,7 +57,6 @@ export const Transcript: React.FunctionComponent<
     transcriptItemParticipantClassName,
     transcriptActionClassName,
     EditButtonContainer,
-    FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
@@ -189,7 +186,6 @@ export const Transcript: React.FunctionComponent<
                         humanTranscriptItemClassName={humanTranscriptItemClassName}
                         transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                         transcriptActionClassName={transcriptActionClassName}
-                        FeedbackButtonsContainer={FeedbackButtonsContainer}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}

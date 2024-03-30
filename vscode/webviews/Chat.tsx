@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
@@ -12,7 +12,6 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { CODY_FEEDBACK_URL } from '../src/chat/protocol'
 import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
 import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
@@ -483,7 +482,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     transcriptActionClassName={styles.transcriptAction}
                     className={styles.transcriptContainer}
                     EditButtonContainer={EditButtonContainer}
-                    FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
@@ -627,85 +625,6 @@ const EditButtonContainer: React.FunctionComponent<EditButtonProps> = ({
         <i className="codicon codicon-edit" />
     </VSCodeButton>
 )
-
-export interface FeedbackButtonsProps {
-    className: string
-    disabled?: boolean
-    feedbackButtonsOnSubmit: (text: string) => void
-}
-
-const FeedbackButtonsContainer: React.FunctionComponent<FeedbackButtonsProps> = ({
-    className,
-    feedbackButtonsOnSubmit,
-}) => {
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState('')
-
-    const onFeedbackBtnSubmit = useCallback(
-        (text: string) => {
-            feedbackButtonsOnSubmit(text)
-            setFeedbackSubmitted(text)
-        },
-        [feedbackButtonsOnSubmit]
-    )
-
-    return (
-        <div className={classNames(styles.feedbackButtons, className)}>
-            {!feedbackSubmitted && (
-                <>
-                    <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
-                        appearance="icon"
-                        type="button"
-                        onClick={() => onFeedbackBtnSubmit('thumbsUp')}
-                    >
-                        <i className="codicon codicon-thumbsup" />
-                    </VSCodeButton>
-                    <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
-                        appearance="icon"
-                        type="button"
-                        onClick={() => onFeedbackBtnSubmit('thumbsDown')}
-                    >
-                        <i className="codicon codicon-thumbsdown" />
-                    </VSCodeButton>
-                </>
-            )}
-            {feedbackSubmitted === 'thumbsUp' && (
-                <VSCodeButton
-                    className={classNames(styles.feedbackButton)}
-                    appearance="icon"
-                    type="button"
-                    disabled={true}
-                    title="Thanks for your feedback"
-                >
-                    <i className="codicon codicon-thumbsup" />
-                    <i className="codicon codicon-check" />
-                </VSCodeButton>
-            )}
-            {feedbackSubmitted === 'thumbsDown' && (
-                <span className={styles.thumbsDownFeedbackContainer}>
-                    <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
-                        appearance="icon"
-                        type="button"
-                        disabled={true}
-                        title="Thanks for your feedback"
-                    >
-                        <i className="codicon codicon-thumbsdown" />
-                        <i className="codicon codicon-check" />
-                    </VSCodeButton>
-                    <VSCodeLink
-                        href={String(CODY_FEEDBACK_URL)}
-                        target="_blank"
-                        title="Help improve Cody by providing more feedback about the quality of this response"
-                    >
-                        Give Feedback
-                    </VSCodeLink>
-                </span>
-            )}
-        </div>
-    )
-}
 
 export interface UserAccountInfo {
     isDotComUser: boolean
