@@ -1,8 +1,6 @@
 import React from 'react'
 
-import type { URI } from 'vscode-uri'
-
-import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 
 import { FileLink } from '../../Components/FileLink'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -12,16 +10,6 @@ export const EnhancedContextEnabled: React.Context<boolean> = React.createContex
 
 export function useEnhancedContextEnabled(): boolean {
     return React.useContext(EnhancedContextEnabled)
-}
-
-export interface FileLinkProps {
-    uri: URI
-    repoName?: string
-    revision?: string
-    source?: string
-    range?: RangeData
-    title?: string
-    isTooLarge?: boolean
 }
 
 export const EnhancedContext: React.FunctionComponent<{
