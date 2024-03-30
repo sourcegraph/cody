@@ -25,7 +25,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
-        const parameters = new URLSearchParams(window.location.search)
+        const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
@@ -77,6 +77,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 // throw the error for not retrying
                 throw error
             },
+            fetch: globalThis.fetch,
         }).catch(error => {
             cb.onError(error.message)
             abort.abort()
@@ -93,4 +94,12 @@ if (isRunningInWebWorker) {
     // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
     // available in a worker.
     ;(self as any).document = { removeEventListener: () => {} }
+
+    // HACK: @microsoft/fetch-event-source tries to call window.clearTimeout.
+    ;(self as any).window = {
+        clearTimeout: (...args: Parameters<typeof clearTimeout>) => clearTimeout(...args),
+
+        // HACK: web-tree-sitter tries to read window.document.currentScript
+        document: { currentScript: null },
+    }
 }

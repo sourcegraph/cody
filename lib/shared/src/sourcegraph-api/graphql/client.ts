@@ -805,7 +805,8 @@ export class SourcegraphGraphQLAPIClient {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
         if (this.anonymousUserID) {
-            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
+            // TODO(sqs): caused CORS issues in web
+            // headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
 
         addTraceparent(headers)
