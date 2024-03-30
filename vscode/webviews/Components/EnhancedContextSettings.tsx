@@ -31,7 +31,7 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
-    isFirstChat: boolean
+    isNewInstall: boolean | undefined
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -340,7 +340,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
-    isFirstChat,
+    isNewInstall,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
@@ -392,10 +392,10 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     }, [isOpen])
 
     React.useEffect(() => {
-        if (!isOpen && isFirstChat) {
+        if (!isOpen && isNewInstall) {
             setOpen(true)
         }
-    }, [isOpen, isFirstChat, setOpen])
+    }, [isOpen, isNewInstall, setOpen])
 
     // Can't point at and use VSCodeButton type with 'ref'
 
@@ -421,7 +421,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
                 classNames={[popupStyles.popupTrail, styles.popup]}
-                isFirstChat={isFirstChat}
             >
                 <div className={styles.container}>
                     <div>
