@@ -16,7 +16,10 @@ const key = 'notices.last-dismissed-version'
  * The first time this is run on a fresh install, we consider the version
  * update as being dismissed.
  */
-const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [boolean, () => void] => {
+const useShowNotice = (
+    currentVersion: string,
+    probablyNewInstall: boolean | undefined
+): [boolean, () => void] => {
     /* If this is a new install, we consider the current version dismissed already */
     if (probablyNewInstall) {
         localStorage.setItem(key, currentVersion)
@@ -36,7 +39,7 @@ const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [bo
 }
 
 interface VersionUpdateNoticeProps {
-    probablyNewInstall: boolean
+    probablyNewInstall?: boolean
 }
 
 export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({
