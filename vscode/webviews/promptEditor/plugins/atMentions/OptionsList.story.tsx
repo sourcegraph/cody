@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import { VSCodeStoryDecorator, WithBorder } from '../../../storybook/VSCodeStoryDecorator'
+import { VSCodeDecorator } from '../../../storybook/VSCodeStoryDecorator'
 import { OptionsList } from './OptionsList'
 import { MentionTypeaheadOption } from './atMentions'
 
@@ -16,9 +16,14 @@ const meta: Meta<typeof OptionsList> = {
         selectedIndex: null,
         selectOptionAndCleanUp: () => {},
         setHighlightedIndex: () => {},
-    } as React.ComponentProps<typeof OptionsList>,
+    } satisfies React.ComponentProps<typeof OptionsList>,
 
-    decorators: [WithBorder, VSCodeStoryDecorator],
+    decorators: [
+        VSCodeDecorator(undefined, {
+            maxWidth: '300px',
+            border: 'solid 1px var(--vscode-dropdown-border)',
+        }),
+    ],
 }
 
 export default meta

@@ -1,21 +1,21 @@
-import type { ComponentMeta, ComponentStoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
 import { App } from './App'
-import { VSCodeStoryDecorator, WithBorder } from './storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-const meta: ComponentMeta<typeof App> = {
+const meta: Meta<typeof App> = {
     title: 'cody/App',
     component: App,
 
-    decorators: [WithBorder, VSCodeStoryDecorator],
+    decorators: [VSCodeWebview],
 }
 
 export default meta
 
-export const Simple: ComponentStoryObj<typeof App> = {
+export const Simple: StoryObj<typeof meta> = {
     render: () => <App vscodeAPI={dummyVSCodeAPI} />,
 }
 
