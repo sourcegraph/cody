@@ -12,12 +12,12 @@ import {
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
 import type { CodeBlockActionsProps } from './CodeBlocks'
 
 import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
 import type { FileLinkProps } from './components/EnhancedContext'
 
+import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
 
 export const Transcript: React.FunctionComponent<
@@ -34,8 +34,7 @@ export const Transcript: React.FunctionComponent<
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
         isTranscriptError?: boolean
         chatModels?: ModelProvider[]
-        ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-        onCurrentChatModelChange?: (model: ModelProvider) => void
+        onCurrentChatModelChange: (model: ModelProvider) => void
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
@@ -59,7 +58,6 @@ export const Transcript: React.FunctionComponent<
     insertButtonOnSubmit,
     isTranscriptError,
     chatModels,
-    ChatModelDropdownMenu,
     onCurrentChatModelChange,
     userInfo,
     postMessage,
@@ -203,7 +201,6 @@ export const Transcript: React.FunctionComponent<
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
                 {!!chatModels?.length &&
-                    ChatModelDropdownMenu &&
                     onCurrentChatModelChange &&
                     userInfo &&
                     userInfo.isDotComUser && (

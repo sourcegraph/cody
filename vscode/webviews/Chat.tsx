@@ -14,7 +14,6 @@ import {
 
 import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
 
-import { ChatModelDropdownMenu } from './Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { FileLink } from './Components/FileLink'
 import { Transcript } from './chat/Transcript'
@@ -487,7 +486,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     isTranscriptError={isTranscriptError}
                     chatModels={chatModels}
                     onCurrentChatModelChange={onCurrentChatModelChange}
-                    ChatModelDropdownMenu={ChatModelDropdownMenu}
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
