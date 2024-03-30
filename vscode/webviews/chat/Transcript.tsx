@@ -11,7 +11,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { EditButtonProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
 import type { CodeBlockActionsProps } from './CodeBlocks'
@@ -30,7 +29,6 @@ export const Transcript: React.FunctionComponent<
         setMessageBeingEdited: (index?: number) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -56,7 +54,6 @@ export const Transcript: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     transcriptActionClassName,
-    EditButtonContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
@@ -178,7 +175,6 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        EditButtonContainer={EditButtonContainer}
                         fileLinkComponent={fileLinkComponent}
                         codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                         codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}

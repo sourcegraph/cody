@@ -26,7 +26,7 @@ import {
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from './promptEditor/PromptEditor'
-import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -481,7 +481,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     transcriptItemParticipantClassName={styles.transcriptItemParticipant}
                     transcriptActionClassName={styles.transcriptAction}
                     className={styles.transcriptContainer}
-                    EditButtonContainer={EditButtonContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
@@ -591,38 +590,6 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
                 onAbortMessageInProgress ? submitButtonTypes.abort.icon : submitButtonTypes[type]?.icon
             }
         />
-    </VSCodeButton>
-)
-
-export interface EditButtonProps {
-    className: string
-    disabled?: boolean
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
-}
-
-const EditButtonContainer: React.FunctionComponent<EditButtonProps> = ({
-    className,
-    messageBeingEdited,
-    setMessageBeingEdited,
-    disabled,
-}) => (
-    <VSCodeButton
-        className={classNames(styles.editButton, className)}
-        appearance="icon"
-        title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
-        type="button"
-        disabled={disabled}
-        onClick={() => {
-            setMessageBeingEdited(messageBeingEdited)
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
-                properties: { source: 'chat' },
-            })
-        }}
-    >
-        <i className="codicon codicon-edit" />
     </VSCodeButton>
 )
 

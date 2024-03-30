@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { EditButtonProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './CodeBlocks'
 
@@ -14,7 +13,9 @@ import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
 import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './TranscriptItem.module.css'
 import { FeedbackButtons } from './components/FeedbackButtons'
 
@@ -40,7 +41,6 @@ export const TranscriptItem: React.FunctionComponent<
         inProgress: boolean
         beingEdited: number | undefined
         setBeingEdited: (index?: number) => void
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         feedbackButtonsOnSubmit?: (text: string) => void
@@ -68,7 +68,6 @@ export const TranscriptItem: React.FunctionComponent<
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
     transcriptActionClassName,
-    EditButtonContainer,
     showEditButton,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
@@ -100,7 +99,7 @@ export const TranscriptItem: React.FunctionComponent<
             )}
         >
             {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
-            {showEditButton && EditButtonContainer && (
+            {showEditButton && (
                 <div
                     className={classNames(
                         styles.editingButtonContainer,
@@ -115,7 +114,7 @@ export const TranscriptItem: React.FunctionComponent<
                             transcriptItemParticipantClassName
                         )}
                     >
-                        <EditButtonContainer
+                        <EditButton
                             className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
@@ -174,6 +173,31 @@ export const TranscriptItem: React.FunctionComponent<
         </div>
     )
 }
+
+const EditButton: React.FunctionComponent<{
+    className: string
+    disabled?: boolean
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
+}> = ({ className, messageBeingEdited, setMessageBeingEdited, disabled }) => (
+    <VSCodeButton
+        className={classNames(styles.editButton, className)}
+        appearance="icon"
+        title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+            setMessageBeingEdited(messageBeingEdited)
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
+                properties: { source: 'chat' },
+            })
+        }}
+    >
+        <i className="codicon codicon-edit" />
+    </VSCodeButton>
+)
 
 /**
  * React hook for returning the Markdown for rendering a chat message's text.
