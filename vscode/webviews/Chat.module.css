@@ -141,11 +141,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     opacity: 0.85;
 }
 
-.feedback-buttons {
-    display: flex;
-    flex-direction: row;
-    gap: 0.15rem;
-}
 
 .edit-button {
     border-radius: 0.5rem;
@@ -225,20 +220,6 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 
 .submit-button svg {
     opacity: 1;
-}
-
-.thumbs-down-feedback-container {
-    display: flex;
-    align-items: center;
-    gap: calc(var(--spacing) / 4);
-}
-
-.feedback-button[disabled] {
-    /* VSCodeButton's default cursor is not-allowed, but that's different to
-       native VS Code and feels off, especially when it quickly changes to
-       not-allowed after you submit feedback. So we reset it back to the
-       default cursor to fit in nicer with standard VS Code native behaviour */
-    cursor: default;
 }
 
 .text-area-container {

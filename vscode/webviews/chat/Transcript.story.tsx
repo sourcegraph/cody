@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { Transcript } from './Transcript'
-import type { FileLinkProps } from './components/EnhancedContext'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
@@ -28,14 +27,11 @@ const meta: Meta<typeof Transcript> = {
 
 export default meta
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri }) => <>{uri.toString()}</>
-
 export const Simple: StoryObj<typeof meta> = {
     args: {
         messageInProgress: null,
         messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
-        fileLinkComponent: FileLink,
         transcriptItemClassName: styles.transcriptItem,
         humanTranscriptItemClassName: styles.humanTranscriptItem,
         transcriptItemParticipantClassName: styles.transcriptItemParticipant,

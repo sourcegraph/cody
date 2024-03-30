@@ -5,19 +5,19 @@ import classNames from 'classnames'
 import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { ChatButtonProps } from '../Chat'
-import type { EditButtonProps } from '../Chat'
-import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './CodeBlocks'
 
 import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { EnhancedContext, type FileLinkProps } from './components/EnhancedContext'
+import { EnhancedContext } from './components/EnhancedContext'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './TranscriptItem.module.css'
+import { FeedbackButtons } from './components/FeedbackButtons'
 
 /**
  * CSS class names used for the {@link TranscriptItem} component.
@@ -41,19 +41,11 @@ export const TranscriptItem: React.FunctionComponent<
         inProgress: boolean
         beingEdited: number | undefined
         setBeingEdited: (index?: number) => void
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         showEditButton: boolean
-        fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
         insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        abortMessageInProgressComponent?: React.FunctionComponent<{
-            onAbortMessageInProgress: () => void
-        }>
-        onAbortMessageInProgress?: () => void
-        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
         userInfo: UserAccountInfo
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
@@ -64,21 +56,17 @@ export const TranscriptItem: React.FunctionComponent<
     inProgress,
     beingEdited,
     setBeingEdited,
-    fileLinkComponent,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
     transcriptActionClassName,
-    EditButtonContainer,
     showEditButton,
-    FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    ChatButtonComponent,
     userInfo,
     postMessage,
     guardrails,
@@ -105,7 +93,7 @@ export const TranscriptItem: React.FunctionComponent<
             )}
         >
             {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
-            {showEditButton && EditButtonContainer && (
+            {showEditButton && (
                 <div
                     className={classNames(
                         styles.editingButtonContainer,
@@ -120,7 +108,7 @@ export const TranscriptItem: React.FunctionComponent<
                             transcriptItemParticipantClassName
                         )}
                     >
-                        <EditButtonContainer
+                        <EditButton
                             className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
                             setMessageBeingEdited={setBeingEdited}
@@ -133,12 +121,7 @@ export const TranscriptItem: React.FunctionComponent<
                 typeof message.error === 'string' ? (
                     <RequestErrorItem error={message.error} />
                 ) : (
-                    <ErrorItem
-                        error={message.error}
-                        ChatButtonComponent={ChatButtonComponent}
-                        userInfo={userInfo}
-                        postMessage={postMessage}
-                    />
+                    <ErrorItem error={message.error} userInfo={userInfo} postMessage={postMessage} />
                 )
             ) : null}
             <div className={classNames(styles.contentPadding, styles.content)}>
@@ -162,7 +145,6 @@ export const TranscriptItem: React.FunctionComponent<
                     {message.contextFiles && message.contextFiles.length > 0 ? (
                         <EnhancedContext
                             contextFiles={message.contextFiles}
-                            fileLinkComponent={fileLinkComponent}
                             className={transcriptActionClassName}
                         />
                     ) : (
@@ -171,27 +153,44 @@ export const TranscriptItem: React.FunctionComponent<
                 </div>
             )}
             {/* Display feedback buttons on assistant messages only */}
-            {!isHumanMessage &&
-                showFeedbackButtons &&
-                FeedbackButtonsContainer &&
-                feedbackButtonsOnSubmit && (
-                    <footer
-                        className={classNames(
-                            styles.footerContainer,
-                            transcriptItemParticipantClassName
-                        )}
-                    >
-                        {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
-                        {/* Hide the feedback buttons during editing mode */}
-                        <FeedbackButtonsContainer
-                            className={styles.feedbackEditButtonsContainer}
-                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        />
-                    </footer>
-                )}
+            {!isHumanMessage && showFeedbackButtons && feedbackButtonsOnSubmit && (
+                <footer
+                    className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}
+                >
+                    <FeedbackButtons
+                        className={styles.feedbackEditButtonsContainer}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    />
+                </footer>
+            )}
         </div>
     )
 }
+
+const EditButton: React.FunctionComponent<{
+    className: string
+    disabled?: boolean
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
+}> = ({ className, messageBeingEdited, setMessageBeingEdited, disabled }) => (
+    <VSCodeButton
+        className={classNames(styles.editButton, className)}
+        appearance="icon"
+        title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+            setMessageBeingEdited(messageBeingEdited)
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
+                properties: { source: 'chat' },
+            })
+        }}
+    >
+        <i className="codicon codicon-edit" />
+    </VSCodeButton>
+)
 
 /**
  * React hook for returning the Markdown for rendering a chat message's text.
