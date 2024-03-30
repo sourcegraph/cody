@@ -1,6 +1,6 @@
-import React from 'react'
+import type { FunctionComponent } from 'react'
 
-export const CodyLogo = React.memo(() => (
+export const CodyLogo: FunctionComponent = () => (
     <svg
         width="30"
         height="25"
@@ -29,5 +29,4 @@ export const CodyLogo = React.memo(() => (
             fill="#00CBEC"
         />
     </svg>
-))
-CodyLogo.displayName = 'CodyLogo'
+)

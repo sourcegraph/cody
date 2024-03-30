@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import type React from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -45,7 +46,7 @@ export const Transcript: React.FunctionComponent<
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
     } & TranscriptItemClassNames
-> = React.memo(function TranscriptContent({
+> = ({
     transcript,
     welcomeMessage,
     messageInProgress,
@@ -72,7 +73,7 @@ export const Transcript: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
-}) {
+}) => {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
@@ -271,7 +272,7 @@ export const Transcript: React.FunctionComponent<
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
         </div>
     )
-})
+}
 
 function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
     for (let i = array.length - 1; i >= 0; i--) {

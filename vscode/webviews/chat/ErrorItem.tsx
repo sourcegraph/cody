@@ -16,7 +16,7 @@ export const ErrorItem: React.FunctionComponent<{
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+}> = ({ error, ChatButtonComponent, userInfo, postMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
@@ -29,21 +29,19 @@ export const ErrorItem: React.FunctionComponent<{
     }
 
     return <RequestErrorItem error={error.message} />
-})
+}
 
 /**
  * Renders a generic error message for chat request failures.
  */
 export const RequestErrorItem: React.FunctionComponent<{
     error: string
-}> = React.memo(function ErrorItemContent({ error }) {
-    return (
-        <div className={styles.requestError}>
-            <span className={styles.requestErrorTitle}>Request Failed: </span>
-            {error}
-        </div>
-    )
-})
+}> = ({ error }) => (
+    <div className={styles.requestError}>
+        <span className={styles.requestErrorTitle}>Request Failed: </span>
+        {error}
+    </div>
+)
 
 /**
  * An error message shown in the chat.
@@ -53,12 +51,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     userInfo: UserAccountInfo
     postMessage: ApiPostMessage
-}> = React.memo(function RateLimitErrorItemContent({
-    error,
-    ChatButtonComponent,
-    userInfo,
-    postMessage,
-}) {
+}> = ({ error, ChatButtonComponent, userInfo, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
     const isEnterpriseUser = userInfo.isDotComUser !== true
@@ -144,4 +137,4 @@ const RateLimitErrorItem: React.FunctionComponent<{
             )}
         </div>
     )
-})
+}
