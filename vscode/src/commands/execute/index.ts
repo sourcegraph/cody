@@ -9,6 +9,7 @@ import { executeExplainCommand } from './explain'
 import { executeSmellCommand } from './smell'
 import { executeTestChatCommand } from './test-chat'
 import { executeTestEditCommand } from './test-edit'
+import { executeEditCommand } from './edit'
 
 export { commands as defaultCommands } from './cody.json'
 
@@ -57,6 +58,12 @@ export async function executeDefaultCommand(
             return executeTestChatCommand({ additionalInstruction })
         case DefaultEditCommands.Test:
             return executeTestEditCommand({ additionalInstruction })
+        case DefaultEditCommands.Edit:
+            return executeEditCommand({
+                configuration: {
+                    instruction: additionalInstruction
+                }
+             })
         case DefaultEditCommands.Doc:
             return executeDocCommand({ additionalInstruction })
         default:
