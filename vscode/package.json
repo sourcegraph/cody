@@ -74,7 +74,7 @@
     "directory": "vscode"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/cody/issues"
+    "url": "https://github.com/sourcegraph/cody/issues/new?&labels=bug&projects=sourcegraph&template=bug_report.yml&title=bug:"
   },
   "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
@@ -510,6 +510,12 @@
         "group": "Debug",
         "title": "Enable Debug Mode",
         "when": "!config.cody.debug.verbose"
+      },
+      {
+        "command": "cody.support.reportIssue",
+        "category": "Cody Help",
+        "group": "Debug",
+        "title": "Report Issue"
       }
     ],
     "keybindings": [
@@ -744,6 +750,11 @@
           "command": "cody.debug.outputChannel",
           "when": "view == cody.support.tree.view",
           "group": "8_cody@2"
+        },
+        {
+          "command": "cody.support.reportIssue",
+          "when": "view == cody.support.tree.view",
+          "group": "9_cody@1"
         },
         {
           "command": "cody.search.index-update",
