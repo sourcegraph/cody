@@ -35,10 +35,7 @@ export async function evaluateSimpleChatStrategy(
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-    if (options.shouldUpdateEmbedding === 'true') {
-        await createEmbeddings(client, options)
-        await chatLogs.writeLog(repoDisplayName, `Embeddings creation done for repo: ${repoDisplayName}`)
-    }
+    await createEmbeddings(client, options)
     await simulateWorkspaceChat(client, options)
     await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
 }
@@ -58,7 +55,7 @@ async function createEmbeddings(
     const { workspace } = options
 
     const embeddingDoneFlag: EmbeddingFlag = {
-        isEmbeddingReady: false,
+        isEmbeddingReady: options.shouldUpdateEmbedding === 'true',
         isSearchIndexReady: true,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
@@ -68,7 +65,9 @@ async function createEmbeddings(
         const id = await client.request('chat/new', null)
         await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
         await client.request('command/execute', { command: 'cody.embeddings.resolveIssue' })
-        // await client.request('command/execute', { command: 'cody.search.index-update' })
+        await client.request('command/execute', { command: 'cody.search.index-update' })
+        await new Promise(resolve => setTimeout(resolve, 60_000))
+
         await waitForVariable(embeddingDoneFlag)
         await client.request('webview/didDispose', { id })
 
