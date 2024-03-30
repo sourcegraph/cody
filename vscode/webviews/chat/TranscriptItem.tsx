@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 import classNames from 'classnames'
 
@@ -58,7 +58,7 @@ export const TranscriptItem: React.FunctionComponent<
         postMessage?: ApiPostMessage
         guardrails?: Guardrails
     } & TranscriptItemClassNames
-> = React.memo(function TranscriptItemContent({
+> = ({
     index,
     message,
     inProgress,
@@ -82,7 +82,7 @@ export const TranscriptItem: React.FunctionComponent<
     userInfo,
     postMessage,
     guardrails,
-}) {
+}) => {
     // A boolean indicating whether the message was sent by a human speaker.
     const isHumanMessage = message.speaker === 'human'
     // A boolean that determines if any message is currently being edited.
@@ -191,7 +191,7 @@ export const TranscriptItem: React.FunctionComponent<
                 )}
         </div>
     )
-})
+}
 
 /**
  * React hook for returning the Markdown for rendering a chat message's text.

@@ -27,7 +27,7 @@ export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextItem[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
+}> = ({ contextFiles, fileLinkComponent: FileLink, className }) => {
     if (!contextFiles.length) {
         return
     }
@@ -102,4 +102,4 @@ export const EnhancedContext: React.FunctionComponent<{
             className={className}
         />
     )
-})
+}
