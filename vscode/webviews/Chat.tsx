@@ -12,9 +12,8 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
-
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
+import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
 import {

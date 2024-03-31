@@ -13,7 +13,7 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
+import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 

@@ -1,6 +1,6 @@
 import type React from 'react'
 
-import { useEnhancedContextEnabled } from './components/EnhancedContext'
+import { useEnhancedContextEnabled } from './EnhancedContext'
 
 import styles from './BlinkingCursor.module.css'
 
