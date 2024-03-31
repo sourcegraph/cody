@@ -5,11 +5,11 @@ import {
 } from '@sourcegraph/cody-shared/src/commands/types'
 import type { CommandResult } from '../../main'
 import { executeDocCommand } from './doc'
+import { executeEditCommand } from './edit'
 import { executeExplainCommand } from './explain'
 import { executeSmellCommand } from './smell'
 import { executeTestChatCommand } from './test-chat'
 import { executeTestEditCommand } from './test-edit'
-import { executeEditCommand } from './edit'
 
 export { commands as defaultCommands } from './cody.json'
 
@@ -61,9 +61,9 @@ export async function executeDefaultCommand(
         case DefaultEditCommands.Edit:
             return executeEditCommand({
                 configuration: {
-                    instruction: additionalInstruction
-                }
-             })
+                    instruction: additionalInstruction,
+                },
+            })
         case DefaultEditCommands.Doc:
             return executeDocCommand({ additionalInstruction })
         default:
