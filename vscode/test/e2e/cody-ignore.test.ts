@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, getContextCell, sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -55,7 +55,8 @@ test.extend<ExpectedEvents>({
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^Context:/).count()).toEqual(0)
+    const contextCell = getContextCell(chatPanel)
+    await expect(contextCell).not.toBeVisible()
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()

@@ -2,7 +2,13 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import {
+    createEmptyChatPanel,
+    expectContextCellCounts,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
@@ -85,7 +91,8 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context:/)).toHaveCount(1)
+    const contextCell = getContextCell(chatPanelFrame)
+    await expect(contextCell).toHaveCount(1)
     await expect(chatInput).not.toHaveText('Explain @Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
@@ -126,7 +133,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
-    await expect(chatPanelFrame.getByText(/^Context:/)).toHaveCount(2)
+    await expect(contextCell).toHaveCount(2)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -206,13 +213,14 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context: 1 file/)).toHaveCount(1)
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
     await chatInput.press('ArrowUp')
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    await expect(chatPanelFrame.getByText(/^Context: 1 file/)).toHaveCount(1)
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit it again, add a new @-mention, and resend.
     await chatInput.press('ArrowUp')
@@ -224,7 +232,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java and @index.html')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context: 2 files/)).toHaveCount(1)
+    await expectContextCellCounts(contextCell, { files: 2 })
 })
 
 test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
@@ -278,8 +286,10 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
 
     // @-file range with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('Context: 3 lines from 1 file').hover()
-    await chatPanelFrame.getByText('Context: 3 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1, lines: 3 })
+    await contextCell.hover()
+    await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
@@ -335,8 +345,10 @@ test.extend<ExpectedEvents>({
     await pinnedTab.getByRole('button', { name: /^Close/ }).click()
 
     // @-file with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('Context: 15 lines from 1 file').hover()
-    await chatPanelFrame.getByText('Context: 15 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1, lines: 15 })
+    await contextCell.hover()
+    await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
