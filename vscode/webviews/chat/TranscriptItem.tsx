@@ -18,7 +18,7 @@ import styles from './TranscriptItem.module.css'
 import { FeedbackButtons } from './components/FeedbackButtons'
 
 /**
- * A single message in the chat trans cript.
+ * A single message in the chat transcript.
  */
 export const TranscriptItem: React.FunctionComponent<{
     index: number
