@@ -149,7 +149,15 @@ export const App: React.FunctionComponent = () => {
                     ) : (
                         <Chat
                             chatEnabled={true}
-                            userInfo={{ isCodyProUser: true, isDotComUser: true }}
+                            userInfo={{
+                                isCodyProUser: true,
+                                isDotComUser: true,
+                                user: {
+                                    username: 'TODO some user, hardcoded to sqs',
+                                    displayName: 'TODO some user, hardcoded to sqs', // TODO(sqs)
+                                    avatarURL: 'https://avatars.githubusercontent.com/u/1976',
+                                },
+                            }}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
