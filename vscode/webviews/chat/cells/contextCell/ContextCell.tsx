@@ -69,7 +69,6 @@ export const ContextCell: React.FunctionComponent<{
             gutterIcon={<SourcegraphLogo width={20} height={20} />}
             disabled={disabled}
             containerClassName={className}
-            contentClassName={styles.cellContent}
         >
             {isLoading ? (
                 <LoadingContext />
