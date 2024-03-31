@@ -40,11 +40,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
-        isDotComUser: true,
-        isCodyProUser: false,
-        user: null,
-    })
+    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])

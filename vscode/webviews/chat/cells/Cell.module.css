@@ -12,12 +12,13 @@
 
 .gutter {
     flex: 0 0 auto;
-    width: 20px;
+    width: 24px;
     overflow: hidden;
+    text-align: center;
 }
 
 .content {
-    flex: 1 0 auto;
+    flex: 1 0;
 }
 
 .container--disabled {

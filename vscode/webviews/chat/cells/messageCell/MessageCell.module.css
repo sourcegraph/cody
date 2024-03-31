@@ -1,15 +1,9 @@
-.cell-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cell-spacing);
-}
-
 .message-content-container {
     display: flex;
     gap: var(--cell-spacing);
 }
 .message-content {
-    flex: 1 1 auto;
+    flex: 1 0;
 }
 .edit-button {
     flex: 0 0 auto;
@@ -29,7 +23,16 @@
     pointer-events: none;
 }
 
-
+/* Make feedback buttons take up less vertical space */
 .feedback-buttons {
+    margin-top: calc(0.25*var(--cell-spacing));
+    margin-bottom: calc(-0.5*var(--cell-spacing));
+}
 
+/* Buttons on hover */
+.cell-container .edit-button, .cell-container .feedback-buttons {
+    visibility: hidden;
+}
+.cell-container:hover .edit-button, .cell-container:hover .feedback-buttons {
+    visibility: visible;
 }

@@ -586,7 +586,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'> | null
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 
 type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'

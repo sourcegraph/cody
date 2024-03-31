@@ -1,3 +1,4 @@
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
@@ -20,7 +21,15 @@ const meta: Meta<typeof Chat> = {
         messageInProgress: null,
         chatIDHistory: [],
         chatEnabled: true,
-        userInfo: { isCodyProUser: true, isDotComUser: true },
+        chatModels: DEFAULT_DOT_COM_MODELS,
+        userInfo: {
+            isCodyProUser: true,
+            isDotComUser: true,
+            user: {
+                username: 'sqs',
+                avatarURL: 'https://avatars.githubusercontent.com/u/1976',
+            },
+        },
         isWebviewActive: true,
         vscodeAPI: {
             postMessage: () => {},

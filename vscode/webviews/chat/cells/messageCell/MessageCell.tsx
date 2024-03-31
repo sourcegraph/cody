@@ -1,4 +1,9 @@
-import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type Guardrails,
+    type ModelProvider,
+    reformatBotMessageForChat,
+} from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import type { ComponentProps, FunctionComponent } from 'react'
@@ -16,6 +21,7 @@ import { SpeakerIcon } from './SpeakerIcon'
 export const MessageCell: FunctionComponent<{
     message: ChatMessage
     messageIndexInTranscript: number
+    chatModel: ModelProvider | undefined
     isLoading: boolean
     disabled?: boolean
 
@@ -24,10 +30,10 @@ export const MessageCell: FunctionComponent<{
     setBeingEdited: (index?: number) => void
 
     showFeedbackButtons: boolean
-    feedbackButtonsOnSubmit: (text: string) => void
+    feedbackButtonsOnSubmit?: (text: string) => void
 
-    copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
-    insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     postMessage?: ApiPostMessage
     userInfo: UserAccountInfo
@@ -35,6 +41,7 @@ export const MessageCell: FunctionComponent<{
 }> = ({
     message,
     messageIndexInTranscript,
+    chatModel,
     isLoading,
     disabled,
     showEditButton,
@@ -59,13 +66,14 @@ export const MessageCell: FunctionComponent<{
     return (
         <Cell
             style={message.speaker === 'human' ? 'human' : 'assistant'}
-            gutterIcon={<SpeakerIcon message={message} userInfo={userInfo} size={20} />}
+            gutterIcon={
+                <SpeakerIcon message={message} userInfo={userInfo} chatModel={chatModel} size={24} />
+            }
             disabled={disabled}
-            containerClassName={classNames({
+            containerClassName={classNames(styles.cellContainer, {
                 [styles.focused]: isItemBeingEdited,
                 [styles.disabled]: disabled,
             })}
-            contentClassName={styles.cellContent}
         >
             <div className={styles.messageContentContainer}>
                 <div className={styles.messageContent}>
@@ -103,7 +111,7 @@ export const MessageCell: FunctionComponent<{
                     />
                 )}
             </div>
-            {message.speaker !== 'human' && showFeedbackButtons && (
+            {message.speaker !== 'human' && showFeedbackButtons && feedbackButtonsOnSubmit && (
                 <FeedbackButtons
                     className={styles.feedbackButtons}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}

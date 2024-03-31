@@ -14,8 +14,6 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { TranscriptItem } from './TranscriptItem'
-
 import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -137,6 +135,8 @@ export const Transcript: React.FunctionComponent<{
         lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
     }
 
+    const chatModel = chatModels?.find(m => m.default) ?? chatModels?.at(0)
+
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
@@ -162,6 +162,7 @@ export const Transcript: React.FunctionComponent<{
                         key={keyIndex}
                         message={message}
                         messageIndexInTranscript={keyIndex}
+                        chatModel={chatModel}
                         isLoading={isLoading}
                         disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
                         showEditButton={message.speaker === 'human'}
@@ -207,9 +208,10 @@ export const Transcript: React.FunctionComponent<{
                     )}
                 {transcript.length === 0 && (
                     // Show welcome message only when the chat is empty.
-                    <TranscriptItem
-                        index={0}
+                    <MessageCell
                         message={welcomeTranscriptMessage}
+                        messageIndexInTranscript={0}
+                        chatModel={undefined}
                         beingEdited={undefined}
                         isLoading={false}
                         setBeingEdited={() => {}}
@@ -222,9 +224,10 @@ export const Transcript: React.FunctionComponent<{
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
                 {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                    <TranscriptItem
-                        index={transcript.length}
+                    <MessageCell
                         message={messageInProgress}
+                        messageIndexInTranscript={transcript.length}
+                        chatModel={chatModel}
                         isLoading={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}

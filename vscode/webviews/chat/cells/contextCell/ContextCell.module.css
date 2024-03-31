@@ -1,6 +1,24 @@
-
 .summary {
     margin-bottom: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Custom open/close icons for <details> */
+.details > .summary {
+    font-family: "codicon";
+    font-size: 16px;
+}
+.details:not([open]) > .summary {
+    list-style-type: '\eab6'; /* codicon chevron-right */
+}
+.details[open] > .summary {
+    list-style-type: '\eab4'; /* codicon chevron-down */
+}
+.details > .summary > * {
+    /* Reset after using the 'codicon' font for the open/close icon. */
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
 }
 
 .heading {
@@ -20,6 +38,7 @@
     align-items:flex-start;
     gap: 0.25rem;
 }
+/* TODO(sqs) */
 .list-item {
 }
 

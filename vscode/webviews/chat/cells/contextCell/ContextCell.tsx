@@ -62,7 +62,7 @@ export const ContextCell: React.FunctionComponent<{
         })
     }
 
-    return (
+    return contextFiles && contextFiles.length > 0 ? (
         <Cell
             style="context"
             gutterIcon={<SourcegraphLogo width={20} height={20} />}
@@ -72,7 +72,7 @@ export const ContextCell: React.FunctionComponent<{
             {isLoading ? (
                 <LoadingContext />
             ) : (
-                <details>
+                <details className={styles.details}>
                     <summary
                         className={styles.summary}
                         onClick={logContextOpening}
@@ -102,5 +102,5 @@ export const ContextCell: React.FunctionComponent<{
                 </details>
             )}
         </Cell>
-    )
+    ) : null
 }
