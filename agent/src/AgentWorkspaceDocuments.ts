@@ -32,6 +32,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public openUri(uri: vscode.Uri): AgentTextDocument {
         return this.loadedDocument(ProtocolTextDocumentWithUri.from(uri))
     }
+    
     public loadedDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         const fromCache = this.agentDocuments.get(document.underlying.uri)
         if (!fromCache) {

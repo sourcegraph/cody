@@ -75,10 +75,11 @@
       "name": "Launch Agent port 3113",
       "program": "${workspaceFolder}/agent/dist/index.js",
       "runtimeArgs": ["--enable-source-maps"],
-      "preLaunchTask": "Build VS Code Extension (Desktop)",
+      "preLaunchTask": "Build Agent",
       "env": {
         "CODY_AGENT_DEBUG_REMOTE": "true",
-        "CODY_AGENT_DEBUG_PORT": "3113"
+        "CODY_AGENT_DEBUG_PORT": "3113",
+        "CODY_TESTING": "true",
       },
       "sourceMaps": true,
       "skipFiles": ["<node_internals>/**"],

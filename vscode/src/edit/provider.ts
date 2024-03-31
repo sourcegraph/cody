@@ -27,7 +27,7 @@ import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 
-interface EditProviderOptions extends EditManagerOptions {
+export interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     controller: FixupController
 }
@@ -119,6 +119,7 @@ export class EditProvider {
                         }
                         const text = message.text.slice(textConsumed)
                         textConsumed += text.length
+                        logError('DEBUG DEBUG text=', text)
                         void multiplexer.publish(text)
                         break
                     }
