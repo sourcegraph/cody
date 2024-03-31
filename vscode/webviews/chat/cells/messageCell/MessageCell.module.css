@@ -1,0 +1,38 @@
+.message-content-container {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--cell-spacing);
+}
+.message-content {
+    flex: 1 0;
+}
+.edit-button {
+    flex: 0 0 auto;
+}
+
+/* Editing state */
+.disabled .feedback-buttons, .disabled .edit-button {
+    opacity: 0;
+}
+.focused {
+    box-shadow: 0 -1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 0 2rem var(--vscode-widget-shadow);
+}
+.focused .edit-button {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Make feedback buttons take up less vertical space */
+.feedback-buttons {
+    margin-top: calc(0.25*var(--cell-spacing));
+}
+
+/* Buttons on hover */
+.cell-container .edit-button, .cell-container .feedback-buttons {
+    visibility: hidden;
+}
+.cell-container:hover .edit-button, .cell-container:hover .feedback-buttons {
+    visibility: visible;
+}

@@ -1,9 +1,12 @@
-import type React from 'react'
+import type { FunctionComponent } from 'react'
 
-export const AnthropicLogo: React.FC<{ className?: string }> = ({ className }) => (
+export const AnthropicLogo: FunctionComponent<{ size: number; className?: string }> = ({
+    size,
+    className,
+}) => (
     <svg
-        width="16"
-        height="16"
+        width={size}
+        height={size}
         viewBox="0 0 16 16"
         fill="currentColor"
         className={className}
@@ -15,10 +18,13 @@ export const AnthropicLogo: React.FC<{ className?: string }> = ({ className }) =
     </svg>
 )
 
-export const OpenAILogo: React.FC<{ className?: string }> = ({ className }) => (
+export const OpenAILogo: FunctionComponent<{ size: number; className?: string }> = ({
+    size,
+    className,
+}) => (
     <svg
-        width="16"
-        height="16"
+        width={size}
+        height={size}
         viewBox="0 0 16 16"
         fill="currentColor"
         className={className}
@@ -29,10 +35,13 @@ export const OpenAILogo: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 )
 
-export const MistralLogo: React.FC<{ className?: string }> = ({ className }) => (
+export const MistralLogo: FunctionComponent<{ size: number; className?: string }> = ({
+    size,
+    className,
+}) => (
     <svg
-        width="16"
-        height="16"
+        width={size}
+        height={size}
         viewBox="0 0 16 16"
         fill="currentColor"
         className={className}
@@ -63,10 +72,13 @@ export const MistralLogo: React.FC<{ className?: string }> = ({ className }) => 
     </svg>
 )
 
-export const OllamaLogo: React.FC<{ className?: string }> = ({ className }) => (
+export const OllamaLogo: FunctionComponent<{ size: number; className?: string }> = ({
+    size,
+    className,
+}) => (
     <svg
-        width="16"
-        height="16"
+        width={size}
+        height={size}
         viewBox="0 0 646 854"
         fill="currentColor"
         className={className}

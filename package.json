@@ -35,11 +35,14 @@
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",
     "@storybook/react-vite": "^8.0.5",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.2",
     "@types/node": "20.4.0",
     "@types/react": "18.2.42",
     "@types/react-dom": "18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
+    "happy-dom": "^14.3.10",
     "jsdom": "^22.1.0",
     "knip": "^3.13.2",
     "storybook": "^8.0.5",
@@ -68,9 +71,6 @@
         }
       }
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ]
+    "neverBuiltDependencies": ["deasync", "playwright"]
   }
 }

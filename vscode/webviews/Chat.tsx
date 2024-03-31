@@ -5,6 +5,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
+    type AuthStatus,
     type ChatMessage,
     type Guardrails,
     type ModelProvider,
@@ -587,6 +588,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 
 type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'
