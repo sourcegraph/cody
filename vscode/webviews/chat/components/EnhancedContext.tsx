@@ -1,16 +1,10 @@
-import React from 'react'
+import type React from 'react'
 
 import type { ContextItem } from '@sourcegraph/cody-shared'
 
 import { FileLink } from '../../Components/FileLink'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { TranscriptAction } from '../actions/TranscriptAction'
-
-export const EnhancedContextEnabled: React.Context<boolean> = React.createContext(true)
-
-export function useEnhancedContextEnabled(): boolean {
-    return React.useContext(EnhancedContextEnabled)
-}
 
 export const EnhancedContext: React.FunctionComponent<{
     contextFiles: ContextItem[]
