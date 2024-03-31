@@ -14,7 +14,9 @@
     margin: 0;
     text-align: left;
     font-weight: normal;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
 }
 
 .excluded {

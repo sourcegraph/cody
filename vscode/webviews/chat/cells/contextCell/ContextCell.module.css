@@ -1,0 +1,32 @@
+
+.summary {
+    margin-bottom: 0.5rem;
+}
+
+.heading {
+    margin: 0;
+    padding-top: 2px;
+    font-size: 1em;
+    display: inline-block;
+}
+
+
+.list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items:flex-start;
+    gap: 0.25rem;
+}
+.list-item {
+}
+
+.file-link {
+    padding: 2px 4px 2px 2px;
+    background-color: #0097fb30;
+    border-radius: 2px;
+}
+.file-link i {
+}

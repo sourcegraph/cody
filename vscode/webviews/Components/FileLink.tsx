@@ -22,7 +22,7 @@ interface FileLinkProps {
     isTooLarge?: boolean
 }
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({
+export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
     uri,
     range,
     source,
@@ -30,6 +30,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     title,
     revision,
     isTooLarge,
+    className,
 }) => {
     function logFileLinkClicked() {
         getVSCodeAPI().postMessage({
@@ -39,7 +40,6 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         })
     }
 
-    const icon = getIconByFileSource(source)
     if (source === 'unified') {
         // This is a remote search result.
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
@@ -47,8 +47,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
         return (
-            <span className="styles.item">
-                <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
+            <span className={classNames(styles.item, className)}>
                 {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
                 <a
                     href={uri.toString()}
@@ -58,6 +57,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                     className={styles.linkButton}
                     onClick={logFileLinkClicked}
                 >
+                    <i className="codicon codicon-file" title={getFileSourceIconTitle(source)} />
                     {pathWithRange}
                 </a>
             </span>
@@ -69,9 +69,9 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     const { href, target } = webviewOpenURIForContextItem({ uri, range })
     const warning = 'Excluded due to context window limit'
     return (
-        <span className={styles.linkContainer}>
+        <span className={classNames(styles.linkContainer, className)}>
             {isTooLarge && <i className="codicon codicon-warning" title={warning} />}
-            <i className={`codicon codicon-${icon}`} title={getFileSourceIconTitle(source)} />
+
             {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
                 className={classNames(styles.linkButton, isTooLarge && styles.excluded)}
@@ -80,20 +80,11 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({
                 target={target}
                 onClick={logFileLinkClicked}
             >
+                <i className="codicon codicon-file" title={getFileSourceIconTitle(source)} />
                 {pathWithRange}
             </a>
         </span>
     )
-}
-
-function getIconByFileSource(source?: string): string {
-    switch (source) {
-        case 'uri':
-        case 'user':
-            return 'mention'
-        default:
-            return 'sparkle'
-    }
 }
 
 function getFileSourceIconTitle(source?: string): string {

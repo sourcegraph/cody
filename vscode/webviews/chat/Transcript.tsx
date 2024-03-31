@@ -18,6 +18,8 @@ import { TranscriptItem } from './TranscriptItem'
 
 import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
+import { ContextCell } from './cells/contextCell/ContextCell'
+import { MessageCell } from './cells/messageCell/MessageCell'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
@@ -26,9 +28,9 @@ export const Transcript: React.FunctionComponent<{
     messageBeingEdited: number | undefined
     setMessageBeingEdited: (index?: number) => void
     className?: string
-    feedbackButtonsOnSubmit?: (text: string) => void
-    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    feedbackButtonsOnSubmit: (text: string) => void
+    copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
     chatModels?: ModelProvider[]
     onCurrentChatModelChange: (model: ModelProvider) => void
@@ -144,32 +146,42 @@ export const Transcript: React.FunctionComponent<{
             const offsetIndex = index + offset === earlierMessages.length
             const keyIndex = index + offset
 
+            const isLoading = Boolean(
+                offsetIndex &&
+                    messageInProgress &&
+                    messageInProgress.speaker === 'assistant' &&
+                    !messageInProgress.text
+            )
+
             const isItemBeingEdited = messageBeingEdited === keyIndex
 
             return (
                 <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
-                    <TranscriptItem
-                        index={keyIndex}
+                    <MessageCell
                         key={keyIndex}
                         message={message}
-                        inProgress={Boolean(
-                            offsetIndex &&
-                                messageInProgress &&
-                                messageInProgress.speaker === 'assistant' &&
-                                !messageInProgress.text
-                        )}
+                        messageIndexInTranscript={keyIndex}
+                        isLoading={isLoading}
+                        disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
+                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        userInfo={userInfo}
                         postMessage={postMessage}
+                        userInfo={userInfo}
                         guardrails={guardrails}
                     />
+                    {message.speaker === 'human' && (
+                        <ContextCell
+                            contextFiles={message.contextFiles}
+                            isLoading={isLoading}
+                            disabled={messageBeingEdited !== undefined}
+                        />
+                    )}
                 </div>
             )
         }
@@ -199,7 +211,7 @@ export const Transcript: React.FunctionComponent<{
                         index={0}
                         message={welcomeTranscriptMessage}
                         beingEdited={undefined}
-                        inProgress={false}
+                        isLoading={false}
                         setBeingEdited={() => {}}
                         showEditButton={false}
                         showFeedbackButtons={false}
@@ -213,7 +225,7 @@ export const Transcript: React.FunctionComponent<{
                     <TranscriptItem
                         index={transcript.length}
                         message={messageInProgress}
-                        inProgress={!!transcript[earlierMessages.length].contextFiles}
+                        isLoading={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
                         showEditButton={false}

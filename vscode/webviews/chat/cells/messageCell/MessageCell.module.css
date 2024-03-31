@@ -1,0 +1,35 @@
+.cell-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cell-spacing);
+}
+
+.message-content-container {
+    display: flex;
+    gap: var(--cell-spacing);
+}
+.message-content {
+    flex: 1 1 auto;
+}
+.edit-button {
+    flex: 0 0 auto;
+}
+
+/* Editing state */
+.disabled .feedback-buttons, .disabled .edit-button {
+    opacity: 0;
+}
+.focused {
+    box-shadow: 0 -1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 1px 0 var(--vscode-sideBarSectionHeader-border),
+                0 0 2rem var(--vscode-widget-shadow);
+}
+.focused .edit-button {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+.feedback-buttons {
+
+}

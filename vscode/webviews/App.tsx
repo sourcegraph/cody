@@ -43,6 +43,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
         isDotComUser: true,
         isCodyProUser: false,
+        user: null,
     })
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
@@ -112,6 +113,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
+                            user: message.authStatus,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)

@@ -2,20 +2,13 @@ import type React from 'react'
 
 import classNames from 'classnames'
 
-import { type ChatMessage, type Guardrails, reformatBotMessageForChat } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import { BlinkingCursor, LoadingContext } from './BlinkingCursor'
-import { ChatMessageContent, type CodeBlockActionsProps } from './ChatMessageContent'
-import { ErrorItem, RequestErrorItem } from './ErrorItem'
-import { EnhancedContext } from './components/EnhancedContext'
+import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-import { serializedPromptEditorStateFromChatMessage } from '../promptEditor/PromptEditor'
-import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './TranscriptItem.module.css'
-import { FeedbackButtons } from './components/FeedbackButtons'
 
 /**
  * A single message in the chat transcript.
@@ -23,7 +16,7 @@ import { FeedbackButtons } from './components/FeedbackButtons'
 export const TranscriptItem: React.FunctionComponent<{
     index: number
     message: ChatMessage
-    inProgress: boolean
+    isLoading: boolean
     beingEdited: number | undefined
     setBeingEdited: (index?: number) => void
     showEditButton: boolean
@@ -37,7 +30,7 @@ export const TranscriptItem: React.FunctionComponent<{
 }> = ({
     index,
     message,
-    inProgress,
+    isLoading,
     beingEdited,
     setBeingEdited,
     showEditButton,
@@ -49,15 +42,6 @@ export const TranscriptItem: React.FunctionComponent<{
     postMessage,
     guardrails,
 }) => {
-    // A boolean indicating whether the message was sent by a human speaker.
-    const isHumanMessage = message.speaker === 'human'
-    // A boolean that determines if any message is currently being edited.
-    const isInEditingMode = beingEdited !== undefined
-    // A boolean indicating whether the current transcript item is the one being edited.
-    const isItemBeingEdited = beingEdited === index
-
-    const displayMarkdown = useDisplayMarkdown(message)
-
     return (
         <div
             className={classNames(
@@ -68,99 +52,6 @@ export const TranscriptItem: React.FunctionComponent<{
                 isInEditingMode && (!isHumanMessage || !isItemBeingEdited) && styles.unfocused,
                 isItemBeingEdited && styles.focused
             )}
-        >
-            {/* Edit button shows up on all human messages, but are hidden during Editing Mode*/}
-            {showEditButton && (
-                <div
-                    className={classNames(
-                        styles.editingButtonContainer,
-                        isInEditingMode && styles.editingButtonContainerIsEditingMode
-                    )}
-                    tabIndex={isInEditingMode ? -1 : undefined}
-                    aria-hidden={isInEditingMode}
-                >
-                    <header className={styles.transcriptItemHeader}>
-                        <EditButton
-                            className={styles.feedbackEditButtonsContainer}
-                            messageBeingEdited={index}
-                            setMessageBeingEdited={setBeingEdited}
-                            disabled={isInEditingMode}
-                        />
-                    </header>
-                </div>
-            )}
-            {message.error ? (
-                typeof message.error === 'string' ? (
-                    <RequestErrorItem error={message.error} />
-                ) : (
-                    <ErrorItem error={message.error} userInfo={userInfo} postMessage={postMessage} />
-                )
-            ) : null}
-            {displayMarkdown ? (
-                <ChatMessageContent
-                    displayMarkdown={displayMarkdown}
-                    wrapLinksWithCodyCommand={message.speaker !== 'human'}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    insertButtonOnSubmit={insertButtonOnSubmit}
-                    guardrails={guardrails}
-                />
-            ) : (
-                inProgress && <BlinkingCursor />
-            )}
-            {/* Enhanced Context list shows up on human message only */}
-            {isHumanMessage && (
-                <div className={styles.contextFilesContainer}>
-                    {message.contextFiles && message.contextFiles.length > 0 ? (
-                        <EnhancedContext contextFiles={message.contextFiles} />
-                    ) : (
-                        inProgress && <LoadingContext />
-                    )}
-                </div>
-            )}
-            {/* Display feedback buttons on assistant messages only */}
-            {!isHumanMessage && showFeedbackButtons && feedbackButtonsOnSubmit && (
-                <footer className={styles.footerContainer}>
-                    <FeedbackButtons
-                        className={styles.feedbackEditButtonsContainer}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    />
-                </footer>
-            )}
-        </div>
+        ></div>
     )
-}
-
-const EditButton: React.FunctionComponent<{
-    className: string
-    disabled?: boolean
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
-}> = ({ className, messageBeingEdited, setMessageBeingEdited, disabled }) => (
-    <VSCodeButton
-        className={classNames(styles.editButton, className)}
-        appearance="icon"
-        title={disabled ? 'Cannot Edit Command' : 'Edit Your Message'}
-        type="button"
-        disabled={disabled}
-        onClick={() => {
-            setMessageBeingEdited(messageBeingEdited)
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chatEditButton:clicked',
-                properties: { source: 'chat' },
-            })
-        }}
-    >
-        <i className="codicon codicon-edit" />
-    </VSCodeButton>
-)
-
-/**
- * React hook for returning the Markdown for rendering a chat message's text.
- */
-function useDisplayMarkdown(message: ChatMessage): string {
-    if (message.speaker === 'assistant') {
-        return reformatBotMessageForChat(message.text ?? '')
-    }
-    return serializedPromptEditorStateFromChatMessage(message).html
 }
