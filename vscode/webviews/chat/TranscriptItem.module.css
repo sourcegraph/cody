@@ -30,20 +30,6 @@
     visibility: visible;
 }
 
-.actions {
-    display: flex;
-    flex-direction: column;
-    padding: 0 0 var(--spacing) 0;
-}
-
-
-.header-container {
-    position: absolute;
-    right: var(--spacing);
-    top: calc(var(--spacing) / 4);
-    visibility: hidden;
-}
-
 .transcript-item-header {
     display: flex;
     justify-content: space-between;
@@ -68,46 +54,6 @@
 
 .footer-container {
     padding-top: calc(var(--spacing) / 2);
-}
-
-.feedback-edit-buttons {
-    display: flex;
-    margin: 0;
-}
-
-.text-area-container {
-    position: relative;
-    display: flex;
-    width: 100%;
-    align-items: flex-end;
-    gap: 0.5rem;
-}
-
-.chat-input {
-    width: 100%;
-    height: 100%;
-    resize: none;
-}
-
-.cancel-edit-button,
-.submit-button {
-    fill: currentColor;
-    opacity: 0.8;
-    justify-content: center;
-    background: none;
-    border: none;
-    cursor: pointer;
-    height: 2rem;
-    width: 2rem;
-    border-radius: 50%;
-}
-
-.active-submit-button {
-    background: var(--vscode-textLink-foreground) !important;
-}
-
-.submit-button:hover {
-    opacity: 1;
 }
 
 .context-files-container {
