@@ -17,7 +17,7 @@ export interface ChatModelDropdownMenuProps {
     models: ModelProvider[]
     disabled: boolean // Disabled when transcript length > 1
     onCurrentChatModelChange: (model: ModelProvider) => void
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 }
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({

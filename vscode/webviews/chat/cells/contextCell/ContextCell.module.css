@@ -1,0 +1,52 @@
+.details {
+    overflow: hidden;
+}
+
+.summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Custom open/close icons for <details> */
+.details > .summary::marker {
+    font-family: "codicon";
+    font-size: 19px;
+}
+.details:not([open]) > .summary::marker {
+    content: '\eab6'; /* codicon chevron-right */
+}
+.details[open] > .summary::marker {
+    content: '\eab4'; /* codicon chevron-down */
+}
+.heading {
+    vertical-align: 4.5px;
+}
+
+.heading {
+    margin: 0;
+    font-size: 1em;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+
+.list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items:flex-start;
+    gap: 0.25rem;
+}
+.list > li {
+    max-width: 100%;
+}
+
+.file-link {
+    padding: 2px 4px 2px 2px;
+    background-color: var(--vscode-list-activeSelectionBackground);
+    border-radius: 2px;
+}
