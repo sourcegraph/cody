@@ -1,51 +1,49 @@
+.cell-content {
+    align-self2: center;
+}
+
 .summary {
-    margin-bottom: 0.5rem;
     cursor: pointer;
     user-select: none;
 }
 
 /* Custom open/close icons for <details> */
-.details > .summary {
+.details > .summary::marker {
     font-family: "codicon";
-    font-size: 16px;
+    font-size: 19px;
 }
-.details:not([open]) > .summary {
-    list-style-type: '\eab6'; /* codicon chevron-right */
+.details:not([open]) > .summary::marker {
+    content: '\eab6'; /* codicon chevron-right */
 }
-.details[open] > .summary {
-    list-style-type: '\eab4'; /* codicon chevron-down */
+.details[open] > .summary::marker {
+    content: '\eab4'; /* codicon chevron-down */
 }
-.details > .summary > * {
-    /* Reset after using the 'codicon' font for the open/close icon. */
-    font-family: var(--vscode-font-family);
-    font-size: var(--vscode-font-size);
+.heading {
+    vertical-align: 4.5px;
 }
 
 .heading {
     margin: 0;
-    padding-top: 2px;
     font-size: 1em;
-    display: inline-block;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 
 .list {
     list-style-type: none;
     padding: 0;
-    margin: 0;
+    margin: 0.25rem 0 0;
     display: flex;
     flex-direction: column;
     align-items:flex-start;
     gap: 0.25rem;
 }
-/* TODO(sqs) */
-.list-item {
-}
 
 .file-link {
     padding: 2px 4px 2px 2px;
-    background-color: #0097fb30;
+    background-color: var(--vscode-list-activeSelectionBackground);
     border-radius: 2px;
-}
-.file-link i {
 }

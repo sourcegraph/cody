@@ -1,4 +1,5 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
+import { VSCodeBadge } from '@vscode/webview-ui-toolkit/react'
 import type React from 'react'
 import { FileLink } from '../../../Components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
@@ -68,6 +69,7 @@ export const ContextCell: React.FunctionComponent<{
             gutterIcon={<SourcegraphLogo width={20} height={20} />}
             disabled={disabled}
             containerClassName={className}
+            contentClassName={styles.cellContent}
         >
             {isLoading ? (
                 <LoadingContext />
@@ -78,7 +80,9 @@ export const ContextCell: React.FunctionComponent<{
                         onClick={logContextOpening}
                         onKeyUp={logContextOpening}
                     >
-                        <h4 className={styles.heading}>Search</h4>
+                        <h4 className={styles.heading}>
+                            Context <VSCodeBadge>{contextFiles.length}</VSCodeBadge>
+                        </h4>
                     </summary>
                     <ul className={styles.list}>
                         {contextFiles?.map((file, i) => (
