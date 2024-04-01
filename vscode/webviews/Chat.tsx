@@ -42,7 +42,7 @@ interface ChatboxProps {
     guardrails?: Guardrails
     chatIDHistory: string[]
     isWebviewActive: boolean
-    isNewInstall: boolean | undefined
+    isNewInstall: boolean
 }
 
 const isMac = isMacOS()
@@ -66,7 +66,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
     // Display the enhanced context settings on first chats
-    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(isNewInstall)
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {

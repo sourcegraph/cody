@@ -192,11 +192,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-    const isNewInstall = useMemo(
-        () => userHistory && !userHistory.some(c => c.interactions.length > 0),
-        [userHistory]
-    )
-    if (!view || !authStatus || !config) {
+    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
+
+    // Wait for all the data to be loaded before rendering Chat View
+    if (!view || !authStatus || !config || !userHistory) {
         return <LoadingPage />
     }
 
@@ -211,7 +210,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />
+                    <Notices probablyNewInstall={userHistory && isNewInstall} vscodeAPI={vscodeAPI} />
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}

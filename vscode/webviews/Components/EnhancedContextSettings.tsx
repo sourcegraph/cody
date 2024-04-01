@@ -391,14 +391,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         }
     }, [isOpen])
 
-    React.useEffect(() => {
-        if (!isOpen && isNewInstall) {
-            setOpen(true)
-        }
-    }, [isOpen, isNewInstall, setOpen])
-
     // Can't point at and use VSCodeButton type with 'ref'
-
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
