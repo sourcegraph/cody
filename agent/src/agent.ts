@@ -1,6 +1,6 @@
-import { spawn } from 'child_process'
-import path from 'path'
-import * as fspromises from 'fs/promises'
+import { spawn } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
@@ -851,15 +851,26 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('chat/models', async ({ id }) => {
-            const panel = this.webPanels.getPanelOrError(id)
-            if (panel.models) {
-                return { models: panel.models, remoteRepos: panel.remoteRepos }
+        this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const providers = ModelProvider.getProviders(
+                modelUsage,
+                authStatus.isDotCom && !authStatus.userCanUpgrade
+            )
+            return { models: providers ?? [] }
+        })
+
+        this.registerAuthenticatedRequest('chat/export', async () => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = chatHistory.getLocalHistory(authStatus)
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat)
+                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
+                    .map(([chatID, chatTranscript]) => ({ chatID: chatID, transcript: chatTranscript }))
             }
-            await this.receiveWebviewMessage(id, {
-                command: 'get-chat-models',
-            })
-            return { models: panel.models ?? [] }
+
+            return []
         })
 
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {

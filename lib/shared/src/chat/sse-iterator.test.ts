@@ -1,4 +1,4 @@
-import { Readable } from 'stream'
+import { Readable } from 'node:stream'
 
 import { describe, expect, it } from 'vitest'
 import { createSSEIterator } from './sse-iterator'

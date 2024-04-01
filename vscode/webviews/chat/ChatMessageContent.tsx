@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react'
-
-import classNames from 'classnames'
+import type React from 'react'
+import { useEffect, useRef } from 'react'
 
 import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
@@ -12,31 +11,27 @@ import {
     ShieldIcon,
 } from '../icons/CodeBlockActionIcons'
 
-import styles from './CodeBlocks.module.css'
+import styles from './ChatMessageContent.module.css'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
 }
 
-interface CodeBlocksProps {
+interface ChatMessageContentProps {
     displayMarkdown: string
     wrapLinksWithCodyCommand: boolean
-
-    copyButtonClassName?: string
-    insertButtonClassName?: string
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     guardrails?: Guardrails
+    className?: string
 }
 
 function createButtons(
     text: string,
-    copyButtonClassName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonClassName?: string,
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
@@ -60,8 +55,7 @@ function createButtons(
         text,
         'Copy Code',
         CopyCodeBlockIcon,
-        codeBlockActions,
-        copyButtonClassName
+        codeBlockActions
     )
     buttons.append(copyButton)
 
@@ -73,8 +67,7 @@ function createButtons(
                 text,
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
-                codeBlockActions,
-                insertButtonClassName
+                codeBlockActions
             )
         )
 
@@ -84,8 +77,7 @@ function createButtons(
                 text,
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
-                codeBlockActions,
-                insertButtonClassName
+                codeBlockActions
             )
         )
     }
@@ -107,22 +99,21 @@ function createCodeBlockActionButton(
     codeBlockActions: {
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
-    },
-    className?: string
+    }
 ): HTMLElement {
     const button = document.createElement('button')
 
-    const styleClass = type === 'copy' ? styles.copyButton : styles.insertButton
+    const className = type === 'copy' ? styles.copyButton : styles.insertButton
 
     button.innerHTML = iconSvg
     button.title = title
-    button.className = classNames(styleClass, className)
+    button.className = className
 
     if (type === 'copy') {
         button.addEventListener('click', () => {
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
-            button.className = classNames(styleClass, className)
+            button.className = className
             codeBlockActions.copy(text, 'Button')
             setTimeout(() => {
                 button.innerHTML = iconSvg
@@ -238,95 +229,81 @@ class GuardrailsStatusController {
     }
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(
-    function CodeBlocksContent({
-        displayMarkdown,
-        wrapLinksWithCodyCommand,
-        copyButtonClassName,
-        copyButtonOnSubmit,
-        insertButtonClassName,
-        insertButtonOnSubmit,
-        guardrails,
-    }) {
-        const rootRef = useRef<HTMLDivElement>(null)
+/**
+ * A component presenting the content of a chat message.
+ */
+export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
+    displayMarkdown,
+    wrapLinksWithCodyCommand,
+    copyButtonOnSubmit,
+    insertButtonOnSubmit,
+    guardrails,
+    className,
+}) => {
+    const rootRef = useRef<HTMLDivElement>(null)
 
-        useEffect(() => {
-            const preElements = rootRef.current?.querySelectorAll('pre')
-            if (!preElements?.length || !copyButtonOnSubmit) {
-                return
-            }
+    useEffect(() => {
+        const preElements = rootRef.current?.querySelectorAll('pre')
+        if (!preElements?.length || !copyButtonOnSubmit) {
+            return
+        }
 
-            for (const preElement of preElements) {
-                const preText = preElement.textContent
-                if (preText?.trim() && preElement.parentNode) {
-                    const buttons = createButtons(
-                        preText,
-                        copyButtonClassName,
-                        copyButtonOnSubmit,
-                        insertButtonClassName,
-                        insertButtonOnSubmit
-                    )
-                    if (guardrails) {
-                        const container = document.createElement('div')
-                        container.classList.add(styles.attributionContainer)
-                        buttons.append(container)
+        for (const preElement of preElements) {
+            const preText = preElement.textContent
+            if (preText?.trim() && preElement.parentNode) {
+                const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                if (guardrails) {
+                    const container = document.createElement('div')
+                    container.classList.add(styles.attributionContainer)
+                    buttons.append(container)
 
-                        const g = new GuardrailsStatusController(container)
-                        g.setPending()
+                    const g = new GuardrailsStatusController(container)
+                    g.setPending()
 
-                        guardrails
-                            .searchAttribution(preText)
-                            .then(attribution => {
-                                if (isError(attribution)) {
-                                    g.setUnavailable(attribution)
-                                } else if (attribution.repositories.length === 0) {
-                                    g.setSuccess()
-                                } else {
-                                    g.setFailure(
-                                        attribution.repositories.map(r => r.name),
-                                        attribution.limitHit
-                                    )
-                                }
-                            })
-                            .catch(error => {
-                                g.setUnavailable(error)
-                                return
-                            })
-                    }
-
-                    // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
-
-                    // capture copy events (right click or keydown) on code block
-                    preElement.addEventListener('copy', () => {
-                        if (copyButtonOnSubmit) {
-                            copyButtonOnSubmit(preText, 'Keydown')
-                        }
-                    })
+                    guardrails
+                        .searchAttribution(preText)
+                        .then(attribution => {
+                            if (isError(attribution)) {
+                                g.setUnavailable(attribution)
+                            } else if (attribution.repositories.length === 0) {
+                                g.setSuccess()
+                            } else {
+                                g.setFailure(
+                                    attribution.repositories.map(r => r.name),
+                                    attribution.limitHit
+                                )
+                            }
+                        })
+                        .catch(error => {
+                            g.setUnavailable(error)
+                            return
+                        })
                 }
-            }
-        }, [
-            copyButtonClassName,
-            insertButtonClassName,
-            copyButtonOnSubmit,
-            insertButtonOnSubmit,
-            guardrails,
-        ])
 
-        return useMemo(
-            () => (
-                <div
-                    ref={rootRef}
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
-                    dangerouslySetInnerHTML={{
-                        // wrapLinksWithCodyCommand opens all links in assistant responses using the
-                        // _cody.vscode.open command (but not human messages because those already
-                        // have the right URIs and are trusted).
-                        __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
-                    }}
-                />
-            ),
-            [displayMarkdown, wrapLinksWithCodyCommand]
-        )
-    }
-)
+                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
+                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+
+                // capture copy events (right click or keydown) on code block
+                preElement.addEventListener('copy', () => {
+                    if (copyButtonOnSubmit) {
+                        copyButtonOnSubmit(preText, 'Keydown')
+                    }
+                })
+            }
+        }
+    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
+
+    return (
+        <div
+            ref={rootRef}
+            className={className}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
+            dangerouslySetInnerHTML={{
+                // wrapLinksWithCodyCommand opens all links in assistant responses using the
+                // _cody.vscode.open command (but not human messages because those already
+                // have the right URIs and are trusted).
+                __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
+            }}
+        />
+    )
+}

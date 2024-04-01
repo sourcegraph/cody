@@ -20,6 +20,9 @@ export interface ExecuteEditArguments {
         insertionPoint?: vscode.Position
     }
     source?: ChatEventSource
+    telemetryMetadata?: {
+        [key: string]: unknown
+    }
 }
 
 /**

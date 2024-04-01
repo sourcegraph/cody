@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { VSCodeStoryDecorator } from '../../storybook/VSCodeStoryDecorator'
+import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { ChatActions } from './ChatActions'
 
 const meta: Meta<typeof ChatActions> = {
@@ -18,7 +18,7 @@ const meta: Meta<typeof ChatActions> = {
         onRestoreLastChatClick: () => {},
     },
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeStandaloneComponent],
 } as Meta
 
 export default meta

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { expectContextCellCounts, getContextCell, sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -47,7 +47,9 @@ test.extend<ExpectedEvents>({
     // When no selection is made, we will try to create smart selection from the cursor position
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
-    await chatPanel.getByText('Context: 11 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanel)
+    await expectContextCellCounts(contextCell, { files: 1, lines: 11 })
+    await contextCell.click()
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
@@ -65,7 +67,8 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await chatPanel.getByText('Context: 20 lines from 1 file').click()
+    await expectContextCellCounts(contextCell, { files: 1, lines: 20 })
+    await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
@@ -78,8 +81,8 @@ test.extend<ExpectedEvents>({
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
-    await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
-    await chatPanel.getByText('Context: 9 lines from 1 file').click()
+    await expectContextCellCounts(contextCell, { files: 1, lines: 9 })
+    await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(0)
     await expect(editLastMessageButton).toBeVisible()

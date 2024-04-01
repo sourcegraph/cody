@@ -1,6 +1,6 @@
-import path from 'path'
-import fs from 'fs/promises'
-import process from 'process'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import process from 'node:process'
 
 import { build } from 'esbuild'
 ;(async () => {
