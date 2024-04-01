@@ -189,7 +189,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
             .then(hasFeatureFlag => {
                 this.isInTreatment = hasFeatureFlag
                 this.isActive = isHoverCommandsEnabled()
-                this.register
+                this.register()
             })
             .catch(error => {
                 logDebug('HoverCommandsProvider:failed', error)
