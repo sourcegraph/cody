@@ -471,12 +471,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     messageInProgress={messageInProgress}
                     messageBeingEdited={messageBeingEdited}
                     setMessageBeingEdited={setEditMessageState}
-                    codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-                    codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
-                    transcriptItemClassName={styles.transcriptItem}
-                    humanTranscriptItemClassName={styles.humanTranscriptItem}
-                    transcriptItemParticipantClassName={styles.transcriptItemParticipant}
-                    transcriptActionClassName={styles.transcriptAction}
                     className={styles.transcriptContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}

@@ -18,48 +18,28 @@ import styles from './TranscriptItem.module.css'
 import { FeedbackButtons } from './components/FeedbackButtons'
 
 /**
- * CSS class names used for the {@link TranscriptItem} component.
- */
-export interface TranscriptItemClassNames {
-    transcriptItemClassName?: string
-    humanTranscriptItemClassName?: string
-    transcriptItemParticipantClassName?: string
-    codeBlocksCopyButtonClassName?: string
-    codeBlocksInsertButtonClassName?: string
-    transcriptActionClassName?: string
-}
-
-/**
  * A single message in the chat trans cript.
  */
-export const TranscriptItem: React.FunctionComponent<
-    {
-        index: number
-        message: ChatMessage
-        inProgress: boolean
-        beingEdited: number | undefined
-        setBeingEdited: (index?: number) => void
-        showEditButton: boolean
-        feedbackButtonsOnSubmit?: (text: string) => void
-        showFeedbackButtons: boolean
-        copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
-        insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        userInfo: UserAccountInfo
-        postMessage?: ApiPostMessage
-        guardrails?: Guardrails
-    } & TranscriptItemClassNames
-> = ({
+export const TranscriptItem: React.FunctionComponent<{
+    index: number
+    message: ChatMessage
+    inProgress: boolean
+    beingEdited: number | undefined
+    setBeingEdited: (index?: number) => void
+    showEditButton: boolean
+    feedbackButtonsOnSubmit?: (text: string) => void
+    showFeedbackButtons: boolean
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    userInfo: UserAccountInfo
+    postMessage?: ApiPostMessage
+    guardrails?: Guardrails
+}> = ({
     index,
     message,
     inProgress,
     beingEdited,
     setBeingEdited,
-    transcriptItemClassName,
-    humanTranscriptItemClassName,
-    transcriptItemParticipantClassName,
-    codeBlocksCopyButtonClassName,
-    codeBlocksInsertButtonClassName,
-    transcriptActionClassName,
     showEditButton,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
@@ -82,8 +62,7 @@ export const TranscriptItem: React.FunctionComponent<
         <div
             className={classNames(
                 styles.row,
-                transcriptItemClassName,
-                isHumanMessage ? humanTranscriptItemClassName : styles.assistantRow,
+                isHumanMessage ? styles.humanRow : styles.assistantRow,
                 // When editing a message, all other messages (both human and assistant messages) are blurred (unfocused)
                 // except for the current message (transcript item) that is being edited (focused)
                 isInEditingMode && (!isHumanMessage || !isItemBeingEdited) && styles.unfocused,
@@ -100,12 +79,7 @@ export const TranscriptItem: React.FunctionComponent<
                     tabIndex={isInEditingMode ? -1 : undefined}
                     aria-hidden={isInEditingMode}
                 >
-                    <header
-                        className={classNames(
-                            styles.transcriptItemHeader,
-                            transcriptItemParticipantClassName
-                        )}
-                    >
+                    <header className={styles.transcriptItemHeader}>
                         <EditButton
                             className={styles.feedbackEditButtonsContainer}
                             messageBeingEdited={index}
@@ -127,9 +101,7 @@ export const TranscriptItem: React.FunctionComponent<
                     <ChatMessageContent
                         displayMarkdown={displayMarkdown}
                         wrapLinksWithCodyCommand={message.speaker !== 'human'}
-                        copyButtonClassName={codeBlocksCopyButtonClassName}
                         copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonClassName={codeBlocksInsertButtonClassName}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         guardrails={guardrails}
                     />
@@ -141,10 +113,7 @@ export const TranscriptItem: React.FunctionComponent<
             {isHumanMessage && (
                 <div className={styles.contextFilesContainer}>
                     {message.contextFiles && message.contextFiles.length > 0 ? (
-                        <EnhancedContext
-                            contextFiles={message.contextFiles}
-                            className={transcriptActionClassName}
-                        />
+                        <EnhancedContext contextFiles={message.contextFiles} />
                     ) : (
                         inProgress && <LoadingContext />
                     )}
@@ -152,9 +121,7 @@ export const TranscriptItem: React.FunctionComponent<
             )}
             {/* Display feedback buttons on assistant messages only */}
             {!isHumanMessage && showFeedbackButtons && feedbackButtonsOnSubmit && (
-                <footer
-                    className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}
-                >
+                <footer className={styles.footerContainer}>
                     <FeedbackButtons
                         className={styles.feedbackEditButtonsContainer}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}

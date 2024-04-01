@@ -4,7 +4,6 @@ import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT } from './fixtures'
 
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
-import styles from './Transcript.story.module.css'
 
 const meta: Meta<typeof Transcript> = {
     title: 'ui/Transcript',
@@ -32,9 +31,5 @@ export const Simple: StoryObj<typeof meta> = {
         messageInProgress: null,
         messageBeingEdited: undefined,
         setMessageBeingEdited: () => {},
-        transcriptItemClassName: styles.transcriptItem,
-        humanTranscriptItemClassName: styles.humanTranscriptItem,
-        transcriptItemParticipantClassName: styles.transcriptItemParticipant,
-        transcriptActionClassName: styles.transcriptAction,
     },
 }

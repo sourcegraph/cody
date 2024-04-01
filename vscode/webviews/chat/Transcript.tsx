@@ -14,42 +14,34 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
+import { TranscriptItem } from './TranscriptItem'
 
 import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
 
-export const Transcript: React.FunctionComponent<
-    {
-        transcript: ChatMessage[]
-        welcomeMessage?: string
-        messageInProgress: ChatMessage | null
-        messageBeingEdited: number | undefined
-        setMessageBeingEdited: (index?: number) => void
-        className?: string
-        feedbackButtonsOnSubmit?: (text: string) => void
-        copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
-        insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        isTranscriptError?: boolean
-        chatModels?: ModelProvider[]
-        onCurrentChatModelChange: (model: ModelProvider) => void
-        userInfo: UserAccountInfo
-        postMessage?: ApiPostMessage
-        guardrails?: Guardrails
-    } & TranscriptItemClassNames
-> = ({
+export const Transcript: React.FunctionComponent<{
+    transcript: ChatMessage[]
+    welcomeMessage?: string
+    messageInProgress: ChatMessage | null
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
+    className?: string
+    feedbackButtonsOnSubmit?: (text: string) => void
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    isTranscriptError?: boolean
+    chatModels?: ModelProvider[]
+    onCurrentChatModelChange: (model: ModelProvider) => void
+    userInfo: UserAccountInfo
+    postMessage?: ApiPostMessage
+    guardrails?: Guardrails
+}> = ({
     transcript,
     welcomeMessage,
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
     className,
-    codeBlocksCopyButtonClassName,
-    codeBlocksInsertButtonClassName,
-    transcriptItemClassName,
-    humanTranscriptItemClassName,
-    transcriptItemParticipantClassName,
-    transcriptActionClassName,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
@@ -170,12 +162,6 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                        transcriptItemClassName={transcriptItemClassName}
-                        humanTranscriptItemClassName={humanTranscriptItemClassName}
-                        transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                        transcriptActionClassName={transcriptActionClassName}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
@@ -230,11 +216,6 @@ export const Transcript: React.FunctionComponent<
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                        transcriptItemClassName={transcriptItemClassName}
-                        transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                        transcriptActionClassName={transcriptActionClassName}
                         showEditButton={false}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}

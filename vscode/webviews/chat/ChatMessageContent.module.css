@@ -24,6 +24,20 @@
     background-color: transparent;
 }
 
+.copy-button,
+.insert-button {
+    cursor: pointer;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+.copy-button:hover,
+.insert-button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+
 .status {
     font-size: 12px;
     line-height: 1;
@@ -35,10 +49,6 @@
     margin-left: auto;
 }
 
-.copy-button,
-.insert-button {
-    cursor: pointer;
-}
 
 .attribution-icon-unavailable {
     color: var(--hl-orange);

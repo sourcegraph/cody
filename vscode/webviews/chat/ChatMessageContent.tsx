@@ -1,8 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 
-import classNames from 'classnames'
-
 import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import {
@@ -24,9 +22,6 @@ interface ChatMessageContentProps {
     displayMarkdown: string
     wrapLinksWithCodyCommand: boolean
 
-    copyButtonClassName?: string
-    insertButtonClassName?: string
-
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
@@ -36,9 +31,7 @@ interface ChatMessageContentProps {
 
 function createButtons(
     text: string,
-    copyButtonClassName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonClassName?: string,
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
@@ -62,8 +55,7 @@ function createButtons(
         text,
         'Copy Code',
         CopyCodeBlockIcon,
-        codeBlockActions,
-        copyButtonClassName
+        codeBlockActions
     )
     buttons.append(copyButton)
 
@@ -75,8 +67,7 @@ function createButtons(
                 text,
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
-                codeBlockActions,
-                insertButtonClassName
+                codeBlockActions
             )
         )
 
@@ -86,8 +77,7 @@ function createButtons(
                 text,
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
-                codeBlockActions,
-                insertButtonClassName
+                codeBlockActions
             )
         )
     }
@@ -109,22 +99,21 @@ function createCodeBlockActionButton(
     codeBlockActions: {
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
-    },
-    className?: string
+    }
 ): HTMLElement {
     const button = document.createElement('button')
 
-    const styleClass = type === 'copy' ? styles.copyButton : styles.insertButton
+    const className = type === 'copy' ? styles.copyButton : styles.insertButton
 
     button.innerHTML = iconSvg
     button.title = title
-    button.className = classNames(styleClass, className)
+    button.className = className
 
     if (type === 'copy') {
         button.addEventListener('click', () => {
             button.innerHTML = CheckCodeBlockIcon
             navigator.clipboard.writeText(text).catch(error => console.error(error))
-            button.className = classNames(styleClass, className)
+            button.className = className
             codeBlockActions.copy(text, 'Button')
             setTimeout(() => {
                 button.innerHTML = iconSvg
@@ -246,9 +235,7 @@ class GuardrailsStatusController {
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
     wrapLinksWithCodyCommand,
-    copyButtonClassName,
     copyButtonOnSubmit,
-    insertButtonClassName,
     insertButtonOnSubmit,
     guardrails,
     className,
@@ -264,13 +251,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         for (const preElement of preElements) {
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
-                const buttons = createButtons(
-                    preText,
-                    copyButtonClassName,
-                    copyButtonOnSubmit,
-                    insertButtonClassName,
-                    insertButtonOnSubmit
-                )
+                const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
@@ -310,13 +291,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 })
             }
         }
-    }, [
-        copyButtonClassName,
-        insertButtonClassName,
-        copyButtonOnSubmit,
-        insertButtonOnSubmit,
-        guardrails,
-    ])
+    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
 
     return (
         <div
