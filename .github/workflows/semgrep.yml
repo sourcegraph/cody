@@ -27,7 +27,7 @@ jobs:
           token: ${{ secrets.GH_SEMGREP_SAST_TOKEN }}
           path: semgrep-rules
 
-      - name: Run Semgrep SAST Scan
+      - name: Run Semgrep SAST
         run: |
           mv semgrep-rules ../
           semgrep ci -f ../semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit "$(git merge-base main HEAD)" || true
