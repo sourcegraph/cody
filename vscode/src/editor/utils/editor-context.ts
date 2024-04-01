@@ -1,5 +1,3 @@
-import path from 'path'
-
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
@@ -91,7 +89,7 @@ export async function getFileContextFiles(
 
     // Apply a penalty for segments that are in the low scoring list.
     const adjustedResults = [...results].map(result => {
-        const segments = result.obj.uri.fsPath.split(path.sep)
+        const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {

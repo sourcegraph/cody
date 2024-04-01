@@ -1,6 +1,6 @@
-import React from 'react'
+import type { FunctionComponent } from 'react'
 
-export const SparkleSlash = React.memo(() => (
+export const SparkleSlash: FunctionComponent = () => (
     <svg
         width="16"
         height="16"
@@ -16,6 +16,4 @@ export const SparkleSlash = React.memo(() => (
         />
         <rect x="1" y="14.5" width="20" height="1" transform="rotate(-45 1 14.5)" />
     </svg>
-))
-
-SparkleSlash.displayName = 'SparkleSlash'
+)

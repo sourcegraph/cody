@@ -224,7 +224,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73ecdebf2edf31b5376a37167a419a72
+    - _id: fcc3c2072923be71955c06142a3602b3
       _order: 0
       cache: {}
       request:
@@ -264,7 +264,7 @@ log:
           textJSON:
             query: |-
               
-              query CurrentSiteCodyLlmConfiguration {
+              query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
                           provider
@@ -273,9 +273,9 @@ log:
               }
             variables: {}
         queryString:
-          - name: CurrentSiteCodyLlmConfiguration
+          - name: CurrentSiteCodyLlmProvider
             value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
         bodySize: 131
         content:
@@ -552,7 +552,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 64c2c0dd71915ba8dd8b8c199b53b281
+    - _id: e2d2cb6bfb34ea0f9a209071e9bf6b8a
       _order: 0
       cache: {}
       request:
@@ -604,7 +604,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -619,7 +619,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:33 GMT
+            value: Thu, 28 Mar 2024 12:09:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -647,7 +647,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:33.292Z
+      startedDateTime: 2024-03-28T12:09:30.998Z
       time: 0
       timings:
         blocked: -1
@@ -657,7 +657,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73a556deccc5551b2004852054dc0142
+    - _id: fbbaad4a9285d868933c9fa4bb7951e8
       _order: 0
       cache: {}
       request:
@@ -709,7 +709,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -724,7 +724,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:33 GMT
+            value: Thu, 28 Mar 2024 12:09:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -752,7 +752,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-21T19:50:33.355Z
+      startedDateTime: 2024-03-28T12:09:31.049Z
       time: 0
       timings:
         blocked: -1
@@ -762,7 +762,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b9da0c2e00eca0c945a4749ef4effc83
+    - _id: c51e2a6ccd3f79f922908ccb404688b0
       _order: 0
       cache: {}
       request:
@@ -818,7 +818,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.0
+                    clientVersion: 1.10.1
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -839,7 +839,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 21 Mar 2024 19:50:33 GMT
+            value: Thu, 28 Mar 2024 12:09:31 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -870,7 +870,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-21T19:50:33.377Z
+      startedDateTime: 2024-03-28T12:09:31.092Z
       time: 0
       timings:
         blocked: -1

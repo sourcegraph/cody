@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
-import { VSCodeStoryDecorator, WithBorder } from './storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -31,8 +31,8 @@ const meta: Meta<typeof Chat> = {
         isNewInstall: false,
     } satisfies React.ComponentProps<typeof Chat>,
 
-    decorators: [WithBorder, VSCodeStoryDecorator],
-} as Meta
+    decorators: [VSCodeWebview],
+}
 
 export default meta
 

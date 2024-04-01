@@ -46,7 +46,7 @@ const VALID_CHARS = '[^' + TRIGGERS + PUNCTUATION + '\\s]'
 
 const MAX_LENGTH = 250
 
-const RANGE_REGEXP = '(?::\\d+-\\d+)?'
+const RANGE_REGEXP = '(?::\\d+(?:-\\d*)?)?'
 
 const AT_MENTIONS_REGEXP = new RegExp(
     '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +

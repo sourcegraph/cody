@@ -31,7 +31,7 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
-    isFirstChat: boolean
+    isNewInstall: boolean | undefined
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -340,7 +340,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
-    isFirstChat,
+    isNewInstall,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
@@ -387,20 +387,18 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            autofocusTarget.current?.focus()
+            // Set focus to the checkbox when the popup is opened
+            // after a 100ms delay to ensure the popup is fully rendered
+            setTimeout(() => {
+                autofocusTarget.current?.focus()
+            }, 100)
         }
     }, [isOpen])
 
-    React.useEffect(() => {
-        setOpen(isFirstChat)
-    }, [isFirstChat, setOpen])
-
     // Can't point at and use VSCodeButton type with 'ref'
-
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
-        restoreFocusTarget.current?.focus()
     }, [setOpen])
 
     const onKeyDown = React.useCallback(
@@ -419,7 +417,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
                 classNames={[popupStyles.popupTrail, styles.popup]}
-                isFirstChat={isFirstChat}
             >
                 <div className={styles.container}>
                     <div>
