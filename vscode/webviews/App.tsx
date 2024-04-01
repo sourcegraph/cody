@@ -192,10 +192,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-    const isNewInstall = useMemo(
-        () => userHistory && !userHistory.some(c => c.interactions.length > 0),
-        [userHistory]
-    )
+    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
+
+    // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -211,11 +210,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />
+                    {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}
-                    {view === 'chat' && (
+                    {view === 'chat' && userHistory && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
                                 onChooseRemoteSearchRepo,
