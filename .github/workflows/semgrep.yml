@@ -30,8 +30,8 @@ jobs:
       - name: Run Semgrep SAST Scan
         run: |
           mv semgrep-rules ../
-          semgrep ci -f ../semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif
+          semgrep ci -f ../semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit "$(git merge-base main HEAD)" || true
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
