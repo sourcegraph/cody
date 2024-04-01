@@ -1,7 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
-import { parseLineRangeInMention } from './atMentions'
+import { LINE_RANGE_REGEXP, RANGE_MATCHES_REGEXP, parseLineRangeInMention } from './atMentions'
 
 export interface ChatContextClient {
     getChatContextItems(query: string): Promise<ContextItem[]>
@@ -64,6 +64,13 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
         if (query === null) {
             setResults(undefined)
             return
+        }
+
+        // If user is typing a line range, no need to fetch new chat context items.
+        if (results?.length && RANGE_MATCHES_REGEXP.test(query)) {
+            if (!LINE_RANGE_REGEXP.test(query)) {
+                return
+            }
         }
 
         // Track if the query changed since this request was sent (which would make our results

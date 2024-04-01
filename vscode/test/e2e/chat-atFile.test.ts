@@ -87,6 +87,8 @@ test.extend<ExpectedEvents>({
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
     await expect(chatInput).toHaveText('Explain @Main.java ')
+    await expect(chatInput.getByText('@Main.java')).not.toHaveClass(/context-item-mention-node/)
+    await chatInput.press('Enter')
     await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
@@ -102,6 +104,7 @@ test.extend<ExpectedEvents>({
         chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
     ).toBeVisible()
     await chatInput.press('Tab')
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
     await chatInput.focus()
     await chatInput.pressSequentially('and ')
@@ -114,6 +117,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/var\.go/)
     await chatInput.press('ArrowDown') // second item again
     await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
+    await chatInput.press('Tab')
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
         withPlatformSlashes(
@@ -142,12 +146,14 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('@Main.java', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java ')
 
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
     await chatInput.pressSequentially('and @Main.ja', { delay: 10 })
+    await chatInput.press('Tab')
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('@Main.java and @Main.java ')
 
@@ -163,6 +169,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Space') // 'Explain the | file'
     await chatInput.pressSequentially('@Main', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
+    await chatInput.press('Tab')
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain the @Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
@@ -208,6 +215,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     // Send a message with an @-mention.
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
+    await chatInput.press('Enter')
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
     await chatInput.press('Enter')
@@ -227,6 +235,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.pressSequentially('and @index.ht')
     await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
+    await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
     await expect(chatInput).toHaveText('Explain @Main.java and @index.html')
     await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
     await chatInput.press('Enter')
@@ -245,6 +254,7 @@ test('pressing Enter with @-mention menu open selects item, does not submit mess
     await chatInput.fill('Explain @index.htm')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Enter')
+    await chatInput.press('Enter')
     await expect(chatInput).toHaveText('Explain @index.html')
     await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
 })
@@ -258,6 +268,7 @@ test('@-mention links in transcript message', async ({ page, sidebar }) => {
     // Submit a message with an @-mention.
     await chatInput.fill('Hello @buzz.ts')
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts' }).click()
+    await chatInput.press('Enter')
     await chatInput.press('Enter')
 
     // In the transcript, the @-mention is linked, and clicking the link opens the file.
@@ -281,6 +292,8 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
+    // Enter again to turn it into a token
+    await chatInput.press('Enter')
 
     // Submit the message
     await chatInput.press('Enter')
@@ -298,6 +311,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
+// NOTE: @symbols does not require double tabbing to select an option.
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
 })('@-mention symbol in chat', async ({ page, sidebar }) => {

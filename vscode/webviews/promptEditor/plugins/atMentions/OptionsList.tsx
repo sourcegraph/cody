@@ -1,5 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    type RangeData,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -18,7 +19,7 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
-import type { MentionTypeaheadOption } from './atMentions'
+import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -31,25 +32,8 @@ export const OptionsList: FunctionComponent<
     useEffect(() => {
         // Scroll to top when options change because the prior `selectedIndex` is invalidated.
         ref?.current?.scrollTo(0, 0)
-        const validIndex = options.findIndex(o => o?.item?.type === 'file' && !o?.item?.isTooLarge)
-        setHighlightedIndex(validIndex < 0 ? 0 : validIndex)
+        setHighlightedIndex(0)
     }, [options])
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `selectedIndex` changes.
-    useEffect(() => {
-        if (selectedIndex === null) {
-            return
-        }
-        // If the selectedIndex isTooLarge, set it to the next valid option.
-        const current = options[selectedIndex]
-        const currentOptionIsInvalid = current?.item?.type === 'file' && current?.item?.isTooLarge
-        if (currentOptionIsInvalid) {
-            const validIndex = options.findIndex(
-                (o, i) => i > selectedIndex && o?.item?.type === 'file' && !o?.item?.isTooLarge
-            )
-            setHighlightedIndex(validIndex)
-        }
-    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query)
 
@@ -74,6 +58,7 @@ export const OptionsList: FunctionComponent<
                 <ul ref={ref} className={styles.list}>
                     {options.map((option, i) => (
                         <Item
+                            query={query}
                             isSelected={selectedIndex === i}
                             onClick={() => {
                                 setHighlightedIndex(i)
@@ -94,17 +79,18 @@ export const OptionsList: FunctionComponent<
 }
 
 const Item: FunctionComponent<{
+    query: string
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
     option: MentionTypeaheadOption
     className?: string
-}> = ({ isSelected, onClick, onMouseEnter, option, className }) => {
+}> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const icon =
         item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
     const title = item.title ?? (item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName)
-    const range = item.range ? displayLineRange(item.range) : ''
+    const range = getLineRangeInMention(query, item.range)
     const dirname = displayPathDirname(item.uri)
     const description =
         item.type === 'file'
@@ -120,7 +106,7 @@ const Item: FunctionComponent<{
             className={classNames(
                 className,
                 styles.optionItem,
-                isSelected && !warning && styles.selected,
+                isSelected && styles.selected,
                 warning && styles.disabled
             )}
             ref={option.setRefElement}
@@ -147,4 +133,20 @@ const Item: FunctionComponent<{
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
         </li>
     )
+}
+
+/**
+ * Gets the display line range from the query string.
+ */
+function getLineRangeInMention(query: string, range?: RangeData): string {
+    // Parses out the start and end line numbers from the query if it contains a line range match.
+    const queryRange = query.match(RANGE_MATCHES_REGEXP)
+    if (query && queryRange?.[1]) {
+        const [_, start, end] = queryRange
+        const startLine = parseInt(start)
+        const endLine = end ? parseInt(end) : Number.POSITIVE_INFINITY
+        return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
+    }
+    // Passed in range string if no line number match.
+    return range ? displayLineRange(range) : ''
 }
