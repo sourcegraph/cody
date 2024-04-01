@@ -387,7 +387,11 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            autofocusTarget.current?.focus()
+            // Set focus to the checkbox when the popup is opened
+            // after a 100ms delay to ensure the popup is fully rendered
+            setTimeout(() => {
+                autofocusTarget.current?.focus()
+            }, 100)
         }
     }, [isOpen])
 
@@ -395,7 +399,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
-        restoreFocusTarget.current?.focus()
     }, [setOpen])
 
     const onKeyDown = React.useCallback(

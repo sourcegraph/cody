@@ -413,6 +413,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
     // `Cody: Focus on Chat View` with the keyboard.
     useEffect(() => {
+        // Focus the input when the enhanced context settings modal is closed
+        setInputFocus(!isEnhancedContextOpen)
+        // Add window focus event listener to focus the input when the window is focused
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed && !isEnhancedContextOpen) {
                 setInputFocus(true)
