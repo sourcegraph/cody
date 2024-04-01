@@ -19,12 +19,14 @@ const Backdrop: React.FunctionComponent<React.PropsWithoutRef<BackdropProps>> = 
     }
     const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.stopPropagation()
+        e.preventDefault()
         dismiss()
     }
     return (
         <div
             className={styles.backdrop}
             onClick={handleClick}
+            onMouseDown={handleClick}
             onKeyUp={handleKeyUp}
             role="presentation"
         />
