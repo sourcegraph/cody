@@ -245,7 +245,6 @@ test('pressing Enter with @-mention menu open selects item, does not submit mess
     await chatInput.fill('Explain @index.htm')
     await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
     await chatInput.press('Enter')
-    await chatInput.press('Enter')
     await expect(chatInput).toHaveText('Explain @index.html')
     await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
 })
