@@ -121,7 +121,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 const isLargeFile = isFile && selectedItem.isTooLarge && !selectedItem.range
                 if (isFile && (!currentInputText.endsWith(textNode.__text) || isLargeFile)) {
                     nodeToReplace.replace(textNode)
-                    const suffix = $createTextNode(isLargeFile ? ' ' : '')
+                    const suffix = $createTextNode(isLargeFile ? ':1-10' : '')
                     textNode.insertAfter(suffix)
                     suffix.select()
                     closeMenu()
