@@ -4,7 +4,6 @@ import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
@@ -20,21 +19,13 @@ const meta: Meta<typeof Transcript> = {
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
         },
-        messageBeingEdited: {
-            name: 'messageBeingEdited',
-            control: { type: 'number', step: 2 },
-        },
     },
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
         feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
-        chatModels: DEFAULT_DOT_COM_MODELS,
-        onCurrentChatModelChange: () => {},
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
     } satisfies ComponentProps<typeof Transcript>,
@@ -59,19 +50,6 @@ export const Empty: StoryObj<typeof meta> = {
 
 export const WithContext: StoryObj<typeof meta> = {
     args: {
-        transcript: FIXTURE_TRANSCRIPT.explainCode2,
-    },
-}
-
-export const Editing: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
-    },
-}
-
-export const EditingWithContext: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
         transcript: FIXTURE_TRANSCRIPT.explainCode2,
     },
 }

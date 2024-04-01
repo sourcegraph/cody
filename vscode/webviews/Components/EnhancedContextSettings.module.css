@@ -1,6 +1,7 @@
 .popup {
     max-width: 300px;
     cursor: default;
+    z-index: 999;
 }
 
 .container {
@@ -182,23 +183,23 @@
     outline-offset: 2px;
 }
 
-.settings-btns {
-    position: relative;
-    display: flex;
-    color: var(--vscode-editor-foreground);
-    border: 1px solid var(--vscode-button-border, transparent);
-    border-radius: 3px;
-}
-
-.settings-indicator {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
 .settings-btn {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left-width: 0;
+    color: var(--vscode-foreground);
+    background: transparent;
+    &::part(control) {
+        background: transparent;
+        padding: 0;
+        border: none;
+    }
+}
+
+.button-label {
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+}
+.button-label i {
+    margin-inline-start: 2px;
 }
 
 /* Active borders on keyboard focus but not mousedown (:focus-visible doesn't seem to work) */
@@ -219,11 +220,6 @@
 .settings-indicator img {
     width: 16px;
     height: 16px;
-}
-
-.settings-indicator-active {
-    color: var(--vscode-inputOption-activeForeground);
-    background-color: var(--vscode-inputOption-activeBackground);
 }
 
 .popup .hint {

@@ -15,6 +15,8 @@ import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
+    contentEditableClassName?: string
+    seamless?: boolean
 
     placeholder?: string
 
@@ -30,7 +32,7 @@ interface Props extends KeyboardEventPluginProps {
 export interface PromptEditorRefAPI {
     setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean): void
+    setFocus(focus: boolean, moveCursorToEnd?: boolean): void
 }
 
 /**
@@ -38,6 +40,8 @@ export interface PromptEditorRefAPI {
  */
 export const PromptEditor: FunctionComponent<Props> = ({
     editorClassName,
+    contentEditableClassName,
+    seamless,
     placeholder,
     initialEditorState,
     onChange,
@@ -78,11 +82,17 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus) {
+            setFocus(focus, moveCursorToEnd) {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus()
+                        editor.focus(
+                            moveCursorToEnd
+                                ? () => {
+                                      editor.update(() => $getRoot().selectEnd())
+                                  }
+                                : undefined
+                        )
                     } else {
                         editor.blur()
                     }
@@ -103,7 +113,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
+            className={classNames(styles.editor, editorClassName, {
+                [styles.disabled]: disabled,
+                [styles.seamless]: seamless,
+            })}
+            contentEditableClassName={contentEditableClassName}
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}

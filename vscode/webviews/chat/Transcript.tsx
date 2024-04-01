@@ -9,12 +9,14 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import { CodyLogo } from '../icons/CodyLogo'
+import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { MessageCell } from './cells/messageCell/MessageCell'
+import { AssistantMessageCell } from './cells/messageCell/assistantMessage/AssistantMessageCell'
+import { HumanMessageCell } from './cells/messageCell/humanMessage/HumanMessageCell'
 import { useChatModelContext, useCurrentChatModel } from './models/chatModelContext'
 
 export const Transcript: React.FunctionComponent<{
@@ -119,7 +121,7 @@ export const Transcript: React.FunctionComponent<{
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
-            const keyIndex = index + offset
+            const messageIndexInTranscript = index + offset
 
             const isLoading = Boolean(
                 offsetIndex &&
@@ -127,26 +129,47 @@ export const Transcript: React.FunctionComponent<{
                     messageInProgress.speaker === 'assistant' &&
                     !messageInProgress.text
             )
-            const isLastMessage = keyIndex === transcript.length - 1
+            const isLastMessage = messageIndexInTranscript === transcript.length - 1
 
             return (
                 <React.Fragment key={index}>
-                    <MessageCell
-                        message={message}
-                        chatModel={chatModel}
-                        isLoading={isLoading}
-                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        postMessage={postMessage}
-                        userInfo={userInfo}
-                        guardrails={guardrails}
-                    />
-                    {message.speaker === 'human' &&
-                        ((message.contextFiles && message.contextFiles.length > 0) || isLastMessage) && (
-                            <ContextCell contextFiles={message.contextFiles} />
-                        )}
+                    {message.speaker === 'human' ? (
+                        <>
+                            <HumanMessageCell
+                                message={message}
+                                userInfo={userInfo}
+                                isFirstMessageInTranscript={index === 0}
+                                onSubmit={(
+                                    editorValue: SerializedPromptEditorValue,
+                                    addEnhancedContext: boolean
+                                ): void => {
+                                    getVSCodeAPI().postMessage({
+                                        command: 'edit',
+                                        index: messageIndexInTranscript,
+                                        text: editorValue.text,
+                                        editorState: editorValue.editorState,
+                                        contextFiles: editorValue.contextItems,
+                                        addEnhancedContext,
+                                    })
+                                }}
+                            />
+                            {((message.contextFiles && message.contextFiles.length > 0) ||
+                                isLastMessage) && <ContextCell contextFiles={message.contextFiles} />}
+                        </>
+                    ) : (
+                        <AssistantMessageCell
+                            message={message}
+                            userInfo={userInfo}
+                            chatModel={chatModel}
+                            isLoading={isLoading}
+                            showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            postMessage={postMessage}
+                            guardrails={guardrails}
+                        />
+                    )}
                 </React.Fragment>
             )
         }
@@ -154,17 +177,6 @@ export const Transcript: React.FunctionComponent<{
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length &&
-                    onCurrentChatModelChange &&
-                    userInfo &&
-                    userInfo.isDotComUser && (
-                        <ChatModelDropdownMenu
-                            models={chatModels}
-                            disabled={transcript.length > 0}
-                            onCurrentChatModelChange={onCurrentChatModelChange}
-                            userInfo={userInfo}
-                        />
-                    )}
                 {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
@@ -172,17 +184,42 @@ export const Transcript: React.FunctionComponent<{
                 {messageInProgress &&
                     messageInProgress.speaker === 'assistant' &&
                     Boolean(transcript[earlierMessages.length].contextFiles) && (
-                        <MessageCell
+                        <AssistantMessageCell
                             message={messageInProgress}
+                            userInfo={userInfo}
                             chatModel={chatModel}
                             isLoading={true}
                             showFeedbackButtons={false}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             postMessage={postMessage}
-                            userInfo={userInfo}
                         />
                     )}
+                {messageInProgress && messageInProgress.speaker === 'assistant' && (
+                    <div className={styles.rowInProgress} />
+                )}
+                {!messageInProgress && (
+                    <HumanMessageCell
+                        message={null}
+                        isFirstMessageInTranscript={transcript.length === 0}
+                        userInfo={userInfo}
+                        chatModels={chatModels}
+                        onCurrentChatModelChange={onCurrentChatModelChange}
+                        onSubmit={(
+                            editorValue: SerializedPromptEditorValue,
+                            addEnhancedContext: boolean
+                        ): void => {
+                            getVSCodeAPI().postMessage({
+                                command: 'submit',
+                                submitType: 'user',
+                                text: editorValue.text,
+                                editorState: editorValue.editorState,
+                                contextFiles: editorValue.contextItems,
+                                addEnhancedContext,
+                            })
+                        }}
+                    />
+                )}
             </div>
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
         </div>

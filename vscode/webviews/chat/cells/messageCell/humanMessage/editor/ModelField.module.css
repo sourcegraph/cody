@@ -1,0 +1,18 @@
+.dropdown {
+    --type-ramp-base-font-size: 0.7rem;
+    --design-unit: 4;
+    --input-height: 16;
+
+    height: calc(var(--input-height)*1px);
+
+    outline: none !important;
+    &::part(control)  {
+        border: none;
+        --padding-x: calc(var(--design-unit)/2*1px);
+        padding: calc(var(--design-unit)/2*1px) var(--padding-x);
+
+        /** Make it flush with the editor text in HumanMessageEditor. */
+        margin-left: calc(-1*var(--padding-x));
+        margin-right: var(--padding-x);
+    }
+}

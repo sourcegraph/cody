@@ -1,0 +1,71 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--human-message-editor-gap);
+}
+
+/* Make the whole container look like a big input field. */
+.container {
+    border-radius: 2px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    padding: var(--prompt-editor-padding);
+    outline: solid 1px var(--vscode-input-border);
+}
+.container:has(:focus-within) {
+    outline-color: var(--vscode-focusBorder);
+}
+
+.editor-content-editable {
+    min-height: 1lh;
+}
+
+/* Hide/show toolbar. */
+:root {
+    --human-message-editor-toolbar-height: 16px;
+    --human-message-editor-gap: var(--prompt-editor-padding);
+    --human-message-editor-toolbar-bottom-padding: calc(0.5*var(--prompt-editor-padding));
+}
+.container {
+    padding-bottom: var(--human-message-editor-toolbar-bottom-padding);
+}
+.toolbar {
+    height: var(--human-message-editor-toolbar-height);
+}
+.container:not(.always-show-toolbar):not(.focused):not(:active):not(:hover):not(:focus-within):not(:focus-visible) {
+    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--prompt-editor-padding) - var(--human-message-editor-toolbar-bottom-padding)));
+    padding-bottom: var(--prompt-editor-padding);
+    .toolbar {
+        display: none;
+    }
+}
+
+.toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--prompt-editor-padding);
+}
+.toolbar .spacer {
+    flex: 1;
+}
+
+.button {
+    --button-padding-vertical: 1px;
+    --button-padding-horizontal: 4px;
+    --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
+    font-size: 0.7rem;
+
+    &::part(content) {
+        display: inline-flex;
+        align-items: center;
+    }
+    kbd {
+        font-family: inherit;
+        font-size: 90%;
+        text-transform: lowercase;
+        opacity: 0.7;
+        margin-left: 0.25rem;
+    }
+}

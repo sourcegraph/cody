@@ -5,7 +5,7 @@
     color-scheme: dark;
 
     --vscode-font-size: 13px;
-    --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
 }
 
 body {
@@ -16,6 +16,9 @@ body {
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
+
+    /* Override VS Code Webview Toolkit elements */
+    --border-width: none;
 }
 
 #root {
@@ -25,4 +28,12 @@ body {
 a {
     color: var(--vscode-textLink-foreground);
     text-decoration: none;
+}
+
+vscode-button {
+    /* Avoid secondary buttons from @vscode/webview-ui-toolkit blending in with the editor background. */
+    --button-secondary-background: color-mix(in lch, var(--vscode-button-secondaryBackground) 40%, var(--vscode-button-secondaryHoverBackground));
+}
+vscode-button::part(control) {
+    font-size: inherit;
 }

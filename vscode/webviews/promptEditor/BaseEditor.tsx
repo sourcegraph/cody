@@ -1,4 +1,3 @@
-import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { type InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
@@ -30,6 +29,7 @@ interface Props extends KeyboardEventPluginProps {
     placeholder?: string
     disabled?: boolean
     className?: string
+    contentEditableClassName?: string
     'aria-label'?: string
 }
 
@@ -44,6 +44,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     placeholder,
     disabled,
     className,
+    contentEditableClassName,
     'aria-label': ariaLabel,
 
     // KeyboardEventPluginProps
@@ -73,7 +74,10 @@ export const BaseEditor: FunctionComponent<Props> = ({
                             <div className={styles.editorScroller}>
                                 <div className={styles.editor}>
                                     <ContentEditable
-                                        className={styles.contentEditable}
+                                        className={classNames(
+                                            styles.contentEditable,
+                                            contentEditableClassName
+                                        )}
                                         ariaLabel={ariaLabel}
                                     />
                                 </div>
@@ -86,7 +90,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
                     <MentionsPlugin />
                     <CodeHighlightPlugin />
-                    <AutoFocusPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin

@@ -54,6 +54,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .container--style-assistant:
     background-color: rgb(255 255 255 / 16%);
 }
 /* Background color: apply a slight tint */
+/* TODO!(sqs): trying to reduce boxiness
 body[data-vscode-theme-kind='vscode-light'] .container--style-assistant,
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .container--style-assistant {
     background-color: rgb(0 0 0 / 3%);
@@ -62,3 +63,4 @@ body[data-vscode-theme-kind='vscode-dark'] .container--style-assistant,
 body[data-vscode-theme-kind='vscode-high-contrast'] .container--style-assistant {
     background-color: rgb(255 255 255 / 3%);
 }
+*/

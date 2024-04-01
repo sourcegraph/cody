@@ -17,7 +17,6 @@ import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import popupStyles from '../Popups/Popup.module.css'
-import { SparkleSlash } from '../icons/SparkleSlash'
 import styles from './EnhancedContextSettings.module.css'
 
 export enum EnhancedContextPresentationMode {
@@ -464,31 +463,16 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 </div>
             </PopupFrame>
             <VSCodeButton
-                className={classNames(
-                    styles.settingsBtns,
-                    styles.settingsIndicator,
-                    enabled && styles.settingsIndicatorActive
-                )}
-                onClick={() => enabledChanged(!enabled, 'btn')}
-                appearance="icon"
-                type="button"
-                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}
-            >
-                {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
-            </VSCodeButton>
-            <VSCodeButton
-                className={classNames(
-                    styles.settingsBtns,
-                    styles.settingsBtn,
-                    isOpen && styles.settingsBtnActive
-                )}
-                appearance="icon"
+                className={styles.settingsBtn}
+                appearance="secondary"
                 type="button"
                 onClick={() => setOpen(!isOpen)}
                 title="Configure Enhanced Context"
                 ref={restoreFocusTarget}
             >
-                <i className="codicon codicon-chevron-down" />
+                <span className={styles.buttonLabel}>
+                    Context <i className="codicon codicon-chevron-down" />
+                </span>
             </VSCodeButton>
         </div>
     )

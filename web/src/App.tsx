@@ -7,13 +7,17 @@ import {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Chat } from '../../vscode/webviews/Chat'
 import { Settings } from './settings/Settings'
 import { useConfig } from './settings/useConfig'
 
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
+import {
+    type ChatModelContext,
+    ChatModelContextProvider,
+} from '../../vscode/webviews/chat/models/chatModelContext'
 import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
 import styles from './App.module.css'
 import { type AgentClient, createAgentClient } from './agent/client'
@@ -136,6 +140,28 @@ export const App: React.FunctionComponent = () => {
         vscodeAPI.postMessage({ command: 'ready' })
     }, [vscodeAPI])
 
+    // TODO!(sqs): dedupe
+    const onCurrentChatModelChange = useCallback(
+        (selected: ModelProvider): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({
+                command: 'chatModel',
+                model: selected.model,
+            })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, vscodeAPI]
+    )
+    const chatModelContext = useMemo<ChatModelContext>(
+        () => ({ chatModels, onCurrentChatModelChange }),
+        [chatModels, onCurrentChatModelChange]
+    )
+
     return (
         <div className={styles.container}>
             <header className={styles.header} style={{ display: 'none' }}>
@@ -147,20 +173,29 @@ export const App: React.FunctionComponent = () => {
                     isErrorLike(client) ? (
                         <p>Error: {client.message}</p>
                     ) : (
-                        <Chat
-                            chatEnabled={true}
-                            userInfo={{ isCodyProUser: true, isDotComUser: true }}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={NOOP_TELEMETRY_SERVICE /* TODO(sqs): add telemetry */}
-                            isTranscriptError={isTranscriptError}
-                            chatModels={chatModels}
-                            setChatModels={setChatModels}
-                            chatIDHistory={[]}
-                            isWebviewActive={true}
-                            isNewInstall={false}
-                        />
+                        <ChatModelContextProvider value={chatModelContext}>
+                            <Chat
+                                chatEnabled={true}
+                                userInfo={{
+                                    isCodyProUser: true,
+                                    isDotComUser: true,
+                                    user: {
+                                        // TODO(sqs)
+                                        displayName: 'Cody',
+                                        username: 'cody',
+                                        avatarURL: '',
+                                    },
+                                }}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                telemetryService={NOOP_TELEMETRY_SERVICE /* TODO(sqs): add telemetry */}
+                                isTranscriptError={isTranscriptError}
+                                chatIDHistory={[]}
+                                isWebviewActive={true}
+                                isNewInstall={false}
+                            />
+                        </ChatModelContextProvider>
                     )
                 ) : (
                     <>Loading...</>

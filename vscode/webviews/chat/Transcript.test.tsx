@@ -8,13 +8,9 @@ import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     messageInProgress: null,
-    messageBeingEdited: undefined,
-    setMessageBeingEdited: () => {},
     feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
-    chatModels: [],
-    onCurrentChatModelChange: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     postMessage: () => {},
 }
