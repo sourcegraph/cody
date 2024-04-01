@@ -11,7 +11,11 @@ import * as vscode from 'vscode'
  * or fallback to the limit from the authentication status if not configured.
  */
 export function syncModelProviders(authStatus: AuthStatus): void {
-    if (authStatus.endpoint && isDotCom(authStatus.endpoint)) {
+    if (!authStatus.endpoint) {
+        return
+    }
+
+    if (isDotCom(authStatus.endpoint)) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
         return
     }
@@ -22,6 +26,9 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // This is similiar to the behavior we had before introducing the new chat and allows BYOK
     // customers to set a model of their choice without us having to map it to a known model on
     // the client.
+    //
+    // NOTE: If authStatus?.configOverwrites?.chatModel is empty, we will not set any model providers.
+    // Which means it will fallback to use the default model on the server.
     if (authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')

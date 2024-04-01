@@ -1,5 +1,4 @@
 import { DEFAULT_FAST_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
-import { DEFAULT_DOT_COM_MODELS } from './dotcom'
 import type { ModelUsage } from './types'
 import { fetchLocalOllamaModels, getModelInfo } from './utils'
 
@@ -42,7 +41,7 @@ export class ModelProvider {
     /**
      * Providers available on the user's Sourcegraph instance
      */
-    private static primaryProviders: ModelProvider[] = DEFAULT_DOT_COM_MODELS
+    private static primaryProviders: ModelProvider[] = []
     /**
      * Providers available from user's local instances, e.g. Ollama
      */
