@@ -71,3 +71,101 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/*
+ * Content
+ */
+:root {
+    --spacing: 1rem;
+}
+
+.content {
+    word-break: break-word;
+    line-height: 150%;
+}
+
+/* Style @-file tokens to match TranscriptAction context files */
+.content a[href^="vscode://file"] em,
+.content a[href^="vscode-insiders://file"] em,
+.content a[href^="vscodium://file"] em,
+.content a[href^="cursor://file"] em
+{
+    padding: 1px 2px;
+    box-sizing: border-box;
+    background-color: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+    border-radius: 2px;
+    font-style: normal;
+    word-break: break-all;
+}
+
+.content p {
+    word-break: break-word;
+}
+
+.content pre {
+    padding: calc(var(--spacing) * 0.5);
+    overflow-x: auto;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vscode-sideBarSectionHeader-border);
+    border-bottom: none;
+}
+
+.content code,
+.content pre {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+}
+
+.content pre,
+.content pre > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    margin-bottom: 0;
+}
+body[data-vscode-theme-kind='vscode-light'] .content pre,
+body[data-vscode-theme-kind='vscode-light'] .content pre > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+    color: var(--code-foreground);
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+    margin: 1.2em 0;
+}
+
+.content h1 {
+    font-size: 1.15em;
+    font-weight: 700;
+}
+
+.content h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.content h3 {
+    font-size: inherit;
+    font-weight: 700;
+}
+
+.content h4,
+.content h5,
+.content h6 {
+    font-size: inherit;
+    font-weight: 600;
+}
+
+.content > *:first-child {
+    margin-top: 0;
+}
+
+.content > *:last-child {
+    margin-bottom: 0;
+}
