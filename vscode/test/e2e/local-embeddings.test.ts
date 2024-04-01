@@ -5,7 +5,7 @@ import { expect } from '@playwright/test'
 
 import { SERVER_URL } from '../fixtures/mock-server'
 
-import { sidebarSignin } from './common'
+import { expectContextCellCounts, getContextCell, sidebarSignin } from './common'
 import * as helpers from './helpers'
 import { newChat, openFile, spawn, withTempDir } from './helpers'
 
@@ -153,7 +153,10 @@ test
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('hello world')
     await chatInput.press('Enter')
-    await expect(chatFrame.getByText(/Context: \d+ lines from 2 files/)).toBeVisible({
+    const contextCell = getContextCell(chatFrame)
+    await expectContextCellCounts(contextCell, {
+        files: 2,
+        lines: 2,
         timeout: 10000,
     })
 })
