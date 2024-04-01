@@ -74,7 +74,7 @@
     "directory": "vscode"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/cody/issues/new?&labels=bug&projects=sourcegraph&template=bug_report.yml&title=bug:"
+    "url": "https://github.com/sourcegraph/cody/issues"
   },
   "homepage": "https://sourcegraph.com/docs/cody",
   "badges": [
