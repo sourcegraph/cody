@@ -1,4 +1,4 @@
-import type React from 'react'
+import React from 'react'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
@@ -21,8 +21,6 @@ export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
     welcomeMessage?: string
     messageInProgress: ChatMessage | null
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
     className?: string
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -35,8 +33,6 @@ export const Transcript: React.FunctionComponent<{
     transcript,
     welcomeMessage,
     messageInProgress,
-    messageBeingEdited,
-    setMessageBeingEdited,
     className,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -50,34 +46,18 @@ export const Transcript: React.FunctionComponent<{
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
     const lastHumanMessageTopRef = useRef<HTMLDivElement>(null)
-    const itemBeingEditedRef = useRef<HTMLDivElement>(null)
 
     const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
     // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
     useEffect(() => {
-        if (!messageBeingEdited && !transcriptContainerRef?.current) {
+        if (!transcriptContainerRef?.current) {
             lastHumanMessageTopRef?.current?.scrollIntoView({
                 behavior: 'auto',
                 block: 'start',
                 inline: 'nearest',
             })
         }
-    }, [humanMessageCount, messageBeingEdited])
-
-    // Scroll item being edited to view if it's off-screen
-    useEffect(() => {
-        if (messageBeingEdited === undefined) {
-            return
-        }
-        if (messageBeingEdited !== undefined && itemBeingEditedRef?.current) {
-            itemBeingEditedRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'nearest',
-            })
-            return
-        }
-    }, [messageBeingEdited])
+    }, [humanMessageCount])
 
     // When the content was not scrollable, then becomes scrollable, manually
     // scroll the anchor into view. This overrides the browser's default
@@ -149,21 +129,12 @@ export const Transcript: React.FunctionComponent<{
             )
             const isLastMessage = keyIndex === transcript.length - 1
 
-            const isItemBeingEdited = messageBeingEdited === keyIndex
-
             return (
-                <div key={index}>
-                    {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
+                <React.Fragment key={index}>
                     <MessageCell
-                        key={keyIndex}
                         message={message}
-                        messageIndexInTranscript={keyIndex}
                         chatModel={chatModel}
                         isLoading={isLoading}
-                        disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
-                        showEditButton={message.speaker === 'human'}
-                        beingEdited={messageBeingEdited}
-                        setBeingEdited={setMessageBeingEdited}
                         showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
@@ -174,12 +145,9 @@ export const Transcript: React.FunctionComponent<{
                     />
                     {message.speaker === 'human' &&
                         ((message.contextFiles && message.contextFiles.length > 0) || isLastMessage) && (
-                            <ContextCell
-                                contextFiles={message.contextFiles}
-                                disabled={messageBeingEdited !== undefined}
-                            />
+                            <ContextCell contextFiles={message.contextFiles} />
                         )}
-                </div>
+                </React.Fragment>
             )
         }
 
@@ -206,12 +174,8 @@ export const Transcript: React.FunctionComponent<{
                     Boolean(transcript[earlierMessages.length].contextFiles) && (
                         <MessageCell
                             message={messageInProgress}
-                            messageIndexInTranscript={transcript.length}
                             chatModel={chatModel}
                             isLoading={true}
-                            beingEdited={messageBeingEdited}
-                            setBeingEdited={setMessageBeingEdited}
-                            showEditButton={false}
                             showFeedbackButtons={false}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}

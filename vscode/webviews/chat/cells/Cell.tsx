@@ -10,7 +10,6 @@ export const Cell: FunctionComponent<
     PropsWithChildren<{
         style?: 'human' | 'context' | 'assistant'
         gutterIcon: React.ReactNode
-        disabled?: boolean
         containerClassName?: string
         contentClassName?: string
         'data-testid'?: string
@@ -18,7 +17,6 @@ export const Cell: FunctionComponent<
 > = ({
     style,
     gutterIcon,
-    disabled,
     containerClassName,
     contentClassName,
     'data-testid': dataTestID,
@@ -30,7 +28,6 @@ export const Cell: FunctionComponent<
             {
                 [styles.containerStyleAssistant]: style === 'assistant',
                 [styles.containerStyleContext]: style === 'context',
-                [styles.containerDisabled]: disabled,
             },
             containerClassName
         )}

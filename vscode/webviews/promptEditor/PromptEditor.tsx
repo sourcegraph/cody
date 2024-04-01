@@ -20,7 +20,7 @@ interface Props extends KeyboardEventPluginProps {
 
     initialEditorState?: SerializedPromptEditorState
     onChange?: (value: SerializedPromptEditorValue) => void
-    onFocusChange?: (focused: boolean) => void
+    onFocusChange?: (focused: boolean) => void // TODO!(sqs): remove?
 
     disabled?: boolean
 
