@@ -506,7 +506,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <div className={styles.textAreaContainer}>
                     <div className={styles.editorOuterContainer}>
                         <PromptEditor
-                            containerClassName={styles.editorInnerContainer}
                             placeholder={placeholder}
                             onChange={onEditorChange}
                             onFocusChange={setIsEditorFocused}
