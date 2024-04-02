@@ -137,7 +137,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
             return Object.values(commandsOnHovers)
         }
 
-        // Show Socument and Explain commands on documentable nodes
+        // Show Document and Explain commands on documentable nodes
         const [docNode] = execQuery({
             document,
             position,
