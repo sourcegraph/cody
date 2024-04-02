@@ -15,6 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -312,9 +313,11 @@ const register = async (
     })
 
     // Sync initial auth status
-    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    const initAuthStatus = authProvider.getAuthStatus()
+    syncModelProviders(initAuthStatus)
+    await chatManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
-    statusBar.syncAuthStatus(authProvider.getAuthStatus())
+    statusBar.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -533,6 +536,7 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
 

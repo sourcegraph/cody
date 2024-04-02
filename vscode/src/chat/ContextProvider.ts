@@ -12,7 +12,6 @@ import { ContextStatusAggregator } from '../local-context/enhanced-context-statu
 import type { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
@@ -186,9 +185,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-                ...localProcess,
+                uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,

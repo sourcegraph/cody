@@ -1,7 +1,13 @@
 import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
-import { getChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import {
+    expectContextCellCounts,
+    getChatPanel,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
@@ -165,8 +171,9 @@ test.extend<ExpectedEvents>({
 
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
     // Show the current file numbers used as context
-    await expect(chatPanel.getByText('Context: 56 lines from 5 files')).toBeVisible()
-    await chatPanel.getByText('Context: 56 lines from 5 files').click()
+    const contextCell = getContextCell(chatPanel)
+    await expectContextCellCounts(contextCell, { files: 5, lines: 56 })
+    await contextCell.click()
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'error.ts:1-9' })).toBeVisible()
@@ -184,7 +191,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
-    await expect(chatPanel.getByText('Context: 12 lines from 2 files')).toBeVisible()
+    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
 
     /* Test: context.directory with directory command */
 
@@ -194,8 +201,8 @@ test.extend<ExpectedEvents>({
     await page.getByPlaceholder('Search command to run...').fill('directory')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
-    await expect(chatPanel.getByText('Context: 12 lines from 2 file')).toBeVisible()
-    await chatPanel.getByText('Context: 12 lines from 2 file').click()
+    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await contextCell.click()
     await expect(
         chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
@@ -215,8 +222,8 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context
-    await expect(chatPanel.getByText('Context: 12 lines from 2 files')).toBeVisible()
-    await chatPanel.getByText('Context: 12 lines from 2 files').click()
+    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await contextCell.click()
     await expect(chatContext.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     await expect(
         chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
@@ -265,8 +272,12 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await expect(page.getByRole('button', { name: 'Open or Create Settings File' })).toBeVisible()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).click()
+
+    // Close file.
+    const codyJSONFileTab = page.getByRole('tab', { name: 'cody.json' })
     await page.getByRole('tab', { name: 'cody.json' }).hover()
-    await expect(page.getByRole('tab', { name: 'cody.json' })).toBeVisible()
+    await expect(codyJSONFileTab).toBeVisible()
+    await codyJSONFileTab.getByRole('button', { name: /^Close/ }).click()
 
     // Check button click to delete the cody.json file from the workspace tree view
     await customCommandSidebar.click()
@@ -275,18 +286,20 @@ test.extend<ExpectedEvents>({
     await page.locator('a').filter({ hasText: 'Open Workspace Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).hover()
     await page.getByRole('button', { name: 'Delete Settings File' }).click()
-
     // Because we have turned off notification, we will need to check the notification center
-    // for the confirmation message.
+    // for the deletion-confirmation message.
     await page.getByRole('button', { name: 'Do Not Disturb' }).click()
-    await page.getByRole('button', { name: /^Move to / }).click()
+    await page.getByRole('button', { name: /^Move to / }).click() // Move to trash on Mac and bin on Windows
 
-    // The opened cody.json file should be shown as "Deleted"
-    await expect(page.getByRole('list').getByLabel(/cody.json(.*)Deleted$/)).toBeVisible()
+    // Confirm cody.json has been deleted from workspace
+    await sidebarExplorer(page).click()
+    await expect(page.getByRole('treeitem', { name: 'cody.json' }).locator('a')).not.toBeVisible()
 
     // Open the cody.json from User Settings
+
     // NOTE: This is expected to fail locally if you currently have User commands configured
     await page.waitForTimeout(100)
+    await page.click('.badge[aria-label="Cody"]')
     await customCommandSidebar.click()
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
@@ -314,8 +327,9 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
 
     // Check the context list to confirm the terminal output is added as file
     const panel = getChatPanel(page)
-    await expect(panel.getByText('Context: 1 line from 2 files')).toBeVisible()
-    await panel.getByText('Context: 1 line from 2 files').click()
+    const contextCell = getContextCell(panel)
+    await expectContextCellCounts(contextCell, { files: 2, lines: 1 })
+    await contextCell.click()
     const chatContext = panel.locator('details').last()
     await expect(
         chatContext.getByRole('link', { name: withPlatformSlashes('/terminal-output') })

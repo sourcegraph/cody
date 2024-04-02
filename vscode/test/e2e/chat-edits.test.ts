@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { createEmptyChatPanel, sidebarSignin } from './common'
+import { createEmptyChatPanel, expectContextCellCounts, getContextCell, sidebarSignin } from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 const osKey = isMacOS() ? 'Meta' : 'Control'
@@ -105,6 +105,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).not.toHaveText('Four')
     await expect(chatFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText('Explain @Main.java ')
 
     // Enter should submit the message and exit editing mode
@@ -121,13 +122,15 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.type('and @vgo', { delay: 50 })
     await chatInput.press('Tab')
+    await chatInput.press('Tab')
     await expect(chatInput).toHaveText(
         withPlatformSlashes('Explain @Main.java and @lib/batches/env/var.go ')
     )
     await chatInput.press('Enter')
     // both main.java and var.go should be used
-    await expect(chatFrame.getByText(/Context: 2 files/)).toBeVisible()
-    await chatFrame.getByText(/Context: 2 files/).click()
+    const contextCell = getContextCell(chatFrame)
+    await expectContextCellCounts(contextCell, { files: 2 })
+    await contextCell.click()
     const chatContext = chatFrame.locator('details').last()
     await expect(chatContext.getByRole('link', { name: 'Main.java' })).toBeVisible()
     await expect(

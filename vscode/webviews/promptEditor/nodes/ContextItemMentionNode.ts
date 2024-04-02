@@ -176,8 +176,11 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
     const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
-    // Large file cannot be added to the context file list.
     if (contextItem.type === 'file' && !contextItem.isTooLarge) {
+        return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}`
+    }
+    // Large file cannot be added to the context file list unless it has a range.
+    if (contextItem.type === 'file' && contextItem.isTooLarge && rangeText) {
         return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}`
     }
     if (contextItem.type === 'symbol') {
@@ -205,4 +208,10 @@ export function isSerializedContextItemMentionNode(
     node: SerializedLexicalNode | null | undefined
 ): node is SerializedContextItemMentionNode {
     return Boolean(node && node.type === ContextItemMentionNode.getType())
+}
+
+export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {
+    const atNode = new ContextItemMentionNode(contextItem)
+    const textNode = new TextNode(atNode.__text)
+    return $applyNodeReplacement(textNode)
 }

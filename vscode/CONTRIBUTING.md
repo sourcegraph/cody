@@ -16,6 +16,11 @@ Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings dur
 - `resources`: everything in this directory will be moved to the ./dist directory automatically during build time for easy packaging
 - `index.html`: the entry file that Vite looks for to build the webviews. The extension host reads this file at run time and replace the variables inside the file with webview specific uri and info
 
+## Architecture
+
+Read [ARCHITECTURE.md](../ARCHITECTURE.md) and follow the principles described
+there.
+
 ## Reporting autocomplete issues
 
 The best way to help us improve code completions is by contributing your examples in the [Unhelpful Completions](https://github.com/sourcegraph/cody/discussions/358) discussion together with some context of how the autocomplete request was build.
@@ -40,7 +45,7 @@ We also have some build-in UI to help during the development of autocomplete req
 
 ### Stable builds
 
-To publish a new release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai):
+To publish a new **major** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 
 1. Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
 2. `pnpm update-agent-recordings` to update the version in agent recordings.
@@ -49,6 +54,35 @@ To publish a new release to the [VS Code Marketplace](https://marketplace.visual
 5. `git push --tags`
 6. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
 7. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
+
+### Patch Release
+
+To publish a **patch** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
+
+1. Make sure all the changes for the patch are already committed to the `main` branch.
+2. Create a patch release branch if one does not already exist:
+   1. For example, if you are releasing `v1.10.<patch>`, then you should look to see if there is already a `vscode/1.10` branch.
+   2. If there is not, then create the branch using the [last stable release tag](https://github.com/sourcegraph/cody/tags) for the version you are trying to patch, e.g., `git checkout vscode-v1.10.0 -B vscode/1.10` and push this branch.
+      1. Note: Do not push your changes to this branch directly; treat it like a `main` branch where all changes that are merged should be reviewed first.
+3. Create a PR with your changes that will go into the release, and send that PR to the e.g., `vscode/1.10` branch:
+   1. Create your PR branch: `git checkout vscode/1.10 -b me/1.10.1-patch-release`
+   2. Make changes:
+      1. Cherry-pick (`git cherry-pick $COMMIT_FROM_MAIN`) the relevant patches from `main` into your PR branch. If there are any conflicts, address them in your branch.
+      2. Increment the `version` in [`package.json`](package.json)
+      3. Update the [`CHANGELOG`](CHANGELOG.md)
+      4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
+   3. Send a PR to merge your branch, e.g., `me/1.10.1-patch-release` into `vscode/1.10`
+   4. Ensure your PR branch passes CI tests, and get your PR reviewed/approved/merged.
+4. Tag the patch release:
+   1. `git tag vscode-v$(jq -r .version package.json)`
+   2. `git push --tags`
+5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
+6. Once the patch has been published, update `main`:
+   1. Create a new PR branch off `main`
+   2. Update the `version` in [`package.json`](package.json) if appropriate.
+   3. Update the [`CHANGELOG`](CHANGELOG.md)
+   4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
+   5. Commit the version increment, e.g., `VS Code: Release 1.10.1` and get your `main` PR merged.
 
 ### Insiders builds
 
@@ -128,65 +162,3 @@ pnpm --filter cody-ai run start:dev:desktop
 4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
-
-## Telemetry events
-
-Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://sourcegraph.com/docs/dev/background-information/telemetry). Events primarily comprise of:
-
-1. `feature`, a string denoting the feature that the event is associated with.
-   1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`
-   2. The feature name should not include the name of the extension, as that is already included in the event metadata.
-2. `action`, a string denoting the action on the feature that the event is associated with.
-3. `parameters`, which includes safe numeric `metadata` and [unsafe arbitrarily-shaped `privateMetadata`](https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes).
-
-Extensive additional context is added by the extension itself (e.g. extension name and version) and the Sourcegraph backend (e.g. feature flags and actor information), so the event should only provide metadata about the specific action. Learn more in [events lifecycle](https://sourcegraph.com/docs/dev/background-information/telemetry#event-lifecycle).
-
-For now, all events in VSCode should be updated to use both the legacy event clients and the new clients, for example:
-
-```ts
-// Legacy events client
-import { telemetryService } from "../services/telemetry";
-// New events client
-import { telemetryRecorder } from "../services/telemetry-v2";
-
-// Legacy instrumentation
-telemetryService.log(
-  "CodyVSCodeExtension:fixup:applied",
-  { ...codeCount, source },
-  // Indicate the legacy instrumentation has a coexisting v2 instrumentation
-  { hasV2Event: true }
-);
-// New instrumentation, alonsgide the legacy instrumentation
-telemetryRecorder.recordEvent("cody.fixup.apply", "succeeded", {
-  metadata: {
-    /**
-     * metadata, exported by default, must be numeric.
-     */
-    lineCount: codeCount.lineCount,
-    charCount: codeCount.charCount,
-  },
-  privateMetadata: {
-    /**
-     * privateMetadata is NOT exported by default, because it can accidentally
-     * contain data considered sensitive. Export of privateMetadata can be
-     * enabled serverside on an allowlist basis, but requires a Sourcegraph
-     * release.
-     *
-     * Where possible, convert the data into a number representing a known
-     * enumeration of categorized values instead, so that it can be included
-     * in the exported-by-default metadata field instead.
-     *
-     * Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes
-     */
-    source,
-  },
-});
-```
-
-When events are recorded to both systems:
-
-1. `telemetryService` will _only_ send the event directly to dotcom's `event_logs`.
-2. `telemetryRecorder` will make sure the connected instance receives the event in the new framework, if the instance is 5.2.0 or later, or translated to the legacy `event_logs` format, if the instance is older.
-   1. In instances 5.2.1 or later, the event will [also be exported from the instance](https://sourcegraph.com/docs/dev/background-information/telemetry/architecture).
-
-Allowed values for various fields are declared and tracked in [`lib/shared/src/telemetry-v2`](../lib/shared/src/telemetry-v2).

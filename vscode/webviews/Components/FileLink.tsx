@@ -1,11 +1,26 @@
 import classNames from 'classnames'
 import type React from 'react'
 
-import { displayLineRange, displayPath, webviewOpenURIForContextItem } from '@sourcegraph/cody-shared'
-import type { FileLinkProps } from '../chat/components/EnhancedContext'
+import {
+    type RangeData,
+    displayLineRange,
+    displayPath,
+    webviewOpenURIForContextItem,
+} from '@sourcegraph/cody-shared'
 
+import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './FileLink.module.css'
+
+interface FileLinkProps {
+    uri: URI
+    repoName?: string
+    revision?: string
+    source?: string
+    range?: RangeData
+    title?: string
+    isTooLarge?: boolean
+}
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({
     uri,

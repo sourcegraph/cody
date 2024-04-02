@@ -35,7 +35,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
-import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
@@ -344,9 +343,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleReady(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = getProcessInfo()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-            ...localProcess,
+            uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,

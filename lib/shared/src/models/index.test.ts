@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ModelProvider } from '../models/index'
-import { DEFAULT_FAST_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
+import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { DEFAULT_DOT_COM_MODELS } from './dotcom'
 import { ModelUsage } from './types'
@@ -12,7 +12,7 @@ describe('getMaxCharsByModel', () => {
 
     it('returns default token limit for unknown model', () => {
         const maxChars = ModelProvider.getMaxCharsByModel('unknown-model')
-        expect(maxChars).toEqual(tokensToChars(DEFAULT_FAST_MODEL_TOKEN_LIMIT))
+        expect(maxChars).toEqual(tokensToChars(DEFAULT_CHAT_MODEL_TOKEN_LIMIT))
     })
 
     it('returns max token limit for known chat model', () => {
@@ -23,7 +23,7 @@ describe('getMaxCharsByModel', () => {
     it('returns default token limit for unknown model - Enterprise user', () => {
         ModelProvider.getProviders(ModelUsage.Chat, false, 'https://example.com')
         const maxChars = ModelProvider.getMaxCharsByModel('unknown-model')
-        expect(maxChars).toEqual(tokensToChars(DEFAULT_FAST_MODEL_TOKEN_LIMIT))
+        expect(maxChars).toEqual(tokensToChars(DEFAULT_CHAT_MODEL_TOKEN_LIMIT))
     })
 
     it('returns max token limit for known model - Enterprise user', () => {
