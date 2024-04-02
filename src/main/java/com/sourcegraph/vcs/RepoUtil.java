@@ -17,7 +17,6 @@ import java.io.File;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 public class RepoUtil {
@@ -60,7 +59,7 @@ public class RepoUtil {
       }
     } catch (Exception err) {
       String message;
-      if (err instanceof PerforceAuthenticationException) {
+      if (err.getClass().getName().contains("PerforceAuthenticationException")) {
         message = "Perforce authentication error: " + err.getMessage();
       } else {
         message = "Error determining repository info: " + err.getMessage();
