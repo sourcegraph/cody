@@ -1,11 +1,6 @@
 import * as vscode from 'vscode'
 
-import {
-    type AuthStatus,
-    type ChatClient,
-    ConfigFeaturesSingleton,
-    type ModelProvider,
-} from '@sourcegraph/cody-shared'
+import { type ChatClient, ConfigFeaturesSingleton } from '@sourcegraph/cody-shared'
 
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
@@ -23,7 +18,6 @@ import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
-import { getEditModelsForUser } from './utils/edit-models'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
 export interface EditManagerOptions {
@@ -41,10 +35,8 @@ export class EditManager implements vscode.Disposable {
     private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
-    private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
         this.controller = new FixupController(options.authProvider, options.extensionClient)
         this.disposables.push(
             this.controller,
@@ -53,11 +45,6 @@ export class EditManager implements vscode.Disposable {
             )
         )
     }
-
-    public syncAuthStatus(authStatus: AuthStatus): void {
-        this.models = getEditModelsForUser(authStatus)
-    }
-
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
         const {
             configuration = {},
