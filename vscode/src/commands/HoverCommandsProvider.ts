@@ -69,7 +69,12 @@ export class HoverCommandsProvider implements vscode.Disposable {
         doc: vscode.TextDocument,
         position: vscode.Position
     ): Promise<vscode.Hover | undefined> {
-        if (!this.isActive || !doc?.uri || !position || isCodyIgnoredFile(doc.uri)) {
+        // Only show hover commands for files
+        if (doc.uri?.scheme !== 'file' || isCodyIgnoredFile(doc.uri)) {
+            return undefined
+        }
+
+        if (!this.isActive) {
             // Skip if isEnrolled is false so that we can log the first enrollment event.
             if (this.isEnrolled) {
                 this.reset()
