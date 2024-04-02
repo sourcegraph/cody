@@ -512,8 +512,8 @@
         "when": "!config.cody.debug.verbose"
       },
       {
-        "command": "cody.support.reportIssue",
-        "category": "Cody Help",
+        "command": "cody.debug.reportIssue",
+        "category": "Cody Debug",
         "group": "Debug",
         "title": "Report Issue"
       }
@@ -752,7 +752,7 @@
           "group": "8_cody@2"
         },
         {
-          "command": "cody.support.reportIssue",
+          "command": "cody.debug.reportIssue",
           "when": "view == cody.support.tree.view",
           "group": "9_cody@1"
         },

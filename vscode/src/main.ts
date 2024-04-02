@@ -534,7 +534,7 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
-        vscode.commands.registerCommand('cody.support.reportIssue', () => openCodyIssueReporter()),
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
 
