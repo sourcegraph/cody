@@ -315,9 +315,10 @@ const register = async (
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
     syncModelProviders(initAuthStatus)
-    await chatManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    await chatManager.syncAuthStatus(initAuthStatus)
     statusBar.syncAuthStatus(initAuthStatus)
+    editorManager.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)

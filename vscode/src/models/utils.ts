@@ -1,4 +1,4 @@
-import { type AuthStatus, ModelProvider, isDotCom } from '@sourcegraph/cody-shared'
+import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
 import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import * as vscode from 'vscode'
@@ -15,7 +15,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
         return
     }
 
-    if (isDotCom(authStatus.endpoint)) {
+    if (authStatus.isDotCom) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
         return
     }
@@ -38,7 +38,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                tokenLimit
+                tokenLimit,
+                true
             ),
         ])
     }

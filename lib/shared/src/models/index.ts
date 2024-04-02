@@ -9,7 +9,7 @@ import { fetchLocalOllamaModels, getModelInfo } from './utils'
  */
 export class ModelProvider {
     // Whether the model is the default model
-    public default = false
+    public default
     // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
@@ -25,11 +25,13 @@ export class ModelProvider {
         public readonly usage: ModelUsage[],
         // The maximum number of tokens that can be processed by the model in a single request.
         // NOTE: A token is equivalent to 4 characters/bytes.
-        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT
+        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        isDefaultModel = false
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
         this.title = title
+        this.default = isDefaultModel
     }
 
     /**

@@ -44,7 +44,6 @@ export class EditManager implements vscode.Disposable {
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
         this.controller = new FixupController(options.authProvider, options.extensionClient)
         this.disposables.push(
             this.controller,
