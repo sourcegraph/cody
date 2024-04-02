@@ -1,6 +1,6 @@
 <idea-plugin require-restart="true">
     <id>com.sourcegraph.jetbrains</id>
-    <name>Sourcegraph Cody + Code Search</name>
+    <name>Cody: AI Coding Assistant with Autocomplete &amp; Chat</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
     <change-notes>
         <![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
