@@ -26,6 +26,7 @@ import {
 } from './promptEditor/PromptEditor'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import { telemetryRecorder } from '../src/services/telemetry-v2'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
@@ -145,14 +146,27 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
-                transcript: '',
             }
 
-            if (userInfo.isDotComUser) {
-                eventData.transcript = JSON.stringify(transcript)
-            }
-
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent(`cody.${text}`, 'feedback', {
+                metadata: {
+                    lastChatUsedEmbeddings: transcript
+                        .at(-1)
+                        ?.contextFiles?.some(file => file.source === 'embeddings')
+                        ? 1
+                        : 0,
+                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 0 : 1,
+                },
+                privateMetadata: {
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: JSON.stringify(transcript),
+                },
+            })
         },
         [telemetryService, transcript, userInfo]
     )
