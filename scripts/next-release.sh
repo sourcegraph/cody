@@ -13,35 +13,10 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
-if [[ "$(uname)" == "Darwin" ]]; then
-  if ! command -v gdate &>/dev/null; then
-    echo "Command not found: gdate"
-    echo "The command gdate is required to compute the next version number"
-    echo "To fix this problem, run:\n  brew install coreutils"
-    exit 1
-  fi
-  date_program() {
-    gdate "$@"
-  }
-else
-  if ! command -v date &>/dev/null; then
-    echo "Command not found: date"
-    exit 1
-  fi
-  date_program() {
-    date "$@"
-  }
-fi
-
-if ! command -v gh &>/dev/null; then
-  echo "Command not found: gh"
-  exit 1
-fi
-
 LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/jetbrains --limit 20 --exclude-drafts | sed 's/Latest//' | sed 's/Pre-release//' | awk '$2 ~ /v[0-9]+\.[0-9]+\.[0-9]+$/ { print $2, $3; exit }')
 MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1)
 MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f2)
-LAST_RELEASE_TIMESTAMP=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $2 }')
+PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f3)
 
 NEXT_RELEASE_ARG="$1"
 # Check the argument and take appropriate action
@@ -52,16 +27,8 @@ elif [ "$NEXT_RELEASE_ARG" == "--minor" ]; then
   MINOR=$((MINOR+1))
   echo "$MAJOR.$MINOR.0"
 elif [ "$NEXT_RELEASE_ARG" == "--patch" ]; then
-  # Current year
-  MILLIS_START_YEAR="$(date_program -d "$LAST_RELEASE_TIMESTAMP" +%s%3N)"
-  MILLIS_NOW="$(date_program +%s%3N)"
-  BUILDNUM_MILLIS="$(($MILLIS_NOW - $MILLIS_START_YEAR))"
-  MILLIS_IN_ONE_MINUTE=60000
-  MINUTES_IN_ONE_YEAR=525600 # assuming 365 days
-  MAX_SEMVER_PATCH_NUMBER=65535 # per Microsoft guidelines
-  BUILDNUM_MINUTES="$(($BUILDNUM_MILLIS / $MILLIS_IN_ONE_MINUTE))"
-  BUILDNUM="$(($BUILDNUM_MINUTES * $MAX_SEMVER_PATCH_NUMBER / $MINUTES_IN_ONE_YEAR ))"
-  echo "$MAJOR.$MINOR.$BUILDNUM"
+  PATCH=$(($PATCH+1))
+  echo "$MAJOR.$MINOR.$PATCH"
 else
   echo "Invalid argument. Usage: $0 [--major | --minor | --patch]"
   exit 1
