@@ -1,6 +1,7 @@
 import {
     type AuthStatus,
     FeatureFlag,
+    displayPath,
     featureFlagProvider,
     isCodyIgnoredFile,
     logDebug,
@@ -11,6 +12,8 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
+import { getContextFileFromCursor } from './context/selection'
+import { executeChat } from './execute/ask'
 
 /**
  * NOTE: Behind the feature flag `cody-hover-commands`.
@@ -32,6 +35,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
     private currentLangID: string | undefined
     private currentPosition: vscode.Position | undefined
     private currentDocument: vscode.Uri | undefined
+    private currentHoverSymbol: string | undefined
     private symbolStore: vscode.DocumentSymbol[] = []
 
     private register(): void {
@@ -82,6 +86,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
         this.currentLangID = doc.languageId
         this.currentDocument = doc.uri
         this.currentPosition = position
+        this.currentHoverSymbol = undefined
 
         // Get the clickable commands for the current hover
         const hoverCommands = await this.getHoverCommands(doc, position)
@@ -143,7 +148,12 @@ export class HoverCommandsProvider implements vscode.Disposable {
             position,
             queryWrapper: 'getDocumentableNode',
         })
-        if (docNode.symbol?.node) {
+
+        if (!docNode.symbol?.node) {
+            return []
+        }
+
+        if (docNode.meta?.showHint) {
             commandsOnHovers.explain.enabled = true
             commandsOnHovers.doc.enabled = true
             return Object.values(commandsOnHovers)
@@ -153,6 +163,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
         const activeSymbolRange = document.getWordRangeAtPosition(position)
         const activeSymbol = activeSymbolRange && document.getText(activeSymbolRange)
         if (activeSymbolRange && this.symbolStore.some(s => s.name === activeSymbol)) {
+            this.currentHoverSymbol = activeSymbol
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
             return Object.values(commandsOnHovers)
@@ -169,11 +180,31 @@ export class HoverCommandsProvider implements vscode.Disposable {
         const args = { id, languageID: this.currentLangID }
         telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', args, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: args })
-        if (this.currentDocument && this.currentPosition) {
-            const editor = await vscode.window.showTextDocument(this.currentDocument)
-            editor.selection = new vscode.Selection(this.currentPosition, this.currentPosition)
-            vscode.commands.executeCommand(id, { source: 'hover' })
+        if (!this.currentDocument || !this.currentPosition) {
+            return
         }
+
+        const commandArgs = { source: 'hover', additionalInstruction: '' }
+
+        // On New Chat click from hovered symbol
+        if (id === 'cody.action.chat' && this.currentHoverSymbol) {
+            const contextFiles = [...(await getContextFileFromCursor())]
+            executeChat({
+                text: `Explain \`${this.currentHoverSymbol}\` from @${displayPath(
+                    this.currentDocument
+                )}`,
+                submitType: 'user-newchat',
+                contextFiles,
+                addEnhancedContext: true,
+                source: 'hover',
+            })
+            return
+        }
+
+        const editor = await vscode.window.showTextDocument(this.currentDocument)
+        editor.selection = new vscode.Selection(this.currentPosition, this.currentPosition)
+
+        vscode.commands.executeCommand(id, commandArgs)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): boolean {
