@@ -14,6 +14,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Added buttons in the chat input box for enabling/disabling Enhanced Context. [pull/3547](https://github.com/sourcegraph/cody/pull/3547)
 - Edit: Display warnings for large @-mentioned files during selection. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
 - Edit: Automatically show open tabs as available options when triggering an @-mention. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
+- `Cody Debug: Report Issue` command to easily file a pre-filled GitHub issue form for reporting bugs and issues directly inside VS Code. The `Cody Debug: Report Issue` command is accessible from the command palette and the `...` menu in the Cody Support sidebar. [pull/3624](https://github.com/sourcegraph/cody/pull/3624)
 
 ### Fixed
 

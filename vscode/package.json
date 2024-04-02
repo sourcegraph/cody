@@ -510,6 +510,12 @@
         "group": "Debug",
         "title": "Enable Debug Mode",
         "when": "!config.cody.debug.verbose"
+      },
+      {
+        "command": "cody.debug.reportIssue",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Report Issue"
       }
     ],
     "keybindings": [
@@ -744,6 +750,11 @@
           "command": "cody.debug.outputChannel",
           "when": "view == cody.support.tree.view",
           "group": "8_cody@2"
+        },
+        {
+          "command": "cody.debug.reportIssue",
+          "when": "view == cody.support.tree.view",
+          "group": "9_cody@1"
         },
         {
           "command": "cody.search.index-update",
