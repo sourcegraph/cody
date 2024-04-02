@@ -102,7 +102,7 @@ const Item: FunctionComponent<{
 
     const isLargeFile = isFileType && item.isTooLarge
     const warning =
-        isLargeFile && !item.range && !isValideLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
+        isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:
@@ -141,7 +141,7 @@ const Item: FunctionComponent<{
     )
 }
 
-const isValideLineRangeQuery = (query: string): boolean =>
+const isValidLineRangeQuery = (query: string): boolean =>
     query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
 
 /**
