@@ -290,6 +290,7 @@ const register = async (
         syncModelProviders(authStatus)
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
@@ -315,6 +316,7 @@ const register = async (
     const initAuthStatus = authProvider.getAuthStatus()
     syncModelProviders(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
+    editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
     statusBar.syncAuthStatus(initAuthStatus)
 

@@ -176,7 +176,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
         this.treeView = treeView
-        this.chatModel = new SimpleChatModel(chatModel.get(authProvider))
+        this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
 
         if (TestSupport.instance) {
