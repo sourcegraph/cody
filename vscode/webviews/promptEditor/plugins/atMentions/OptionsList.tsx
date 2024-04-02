@@ -50,7 +50,7 @@ export const OptionsList: FunctionComponent<
                                 : NO_SYMBOL_MATCHES_LABEL +
                                   (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
                           : options.length > 0
-                              ? isValideLineRangeQuery(query)
+                              ? isValidLineRangeQuery(query)
                                     ? FILE_RANGE_TOOLTIP_LABEL
                                     : FILE_HELP_LABEL
                               : NO_FILE_MATCHES_LABEL}
