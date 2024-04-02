@@ -12,6 +12,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
+import { getGhostHintEnablement } from './GhostHintDecorator'
 import { executeHoverChatCommand } from './execute/hover-explain'
 import type { CodyCommandArgs } from './types'
 
@@ -191,11 +192,12 @@ export class HoverCommandsProvider implements vscode.Disposable {
             return false
         }
 
-        // Check if the feature flag is enabled for the user
+        // Check if the feature flag for Hover Command is enabled for the user
         featureFlagProvider
             .evaluateFeatureFlag(this.id)
-            .then(hasFeatureFlag => {
-                this.isInTreatment = hasFeatureFlag
+            .then(async hoverFlag => {
+                const ghostConfig = await getGhostHintEnablement()
+                this.isInTreatment = hoverFlag && !(ghostConfig?.Document || ghostConfig?.EditOrChat)
                 this.isActive = isHoverCommandsEnabled()
                 this.register()
             })

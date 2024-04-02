@@ -98,17 +98,16 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
     const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
+    const featureFlagValue = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
         /**
-         * We're not running an A/B test on the "Opt+K to Text".
-         * We can safely set the default of this to `true`.
+         * We want to use the featureFlagValue to toggle settings for EditOrChat & Document for the
+         * HoverCommands A/B test, which will only be enabled if EditOrChat & Document are disabled.
          */
-        EditOrChat: settingValue ?? true,
-        Document:
-            settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+        EditOrChat: settingValue ?? featureFlagValue,
+        Document: settingValue ?? featureFlagValue,
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
