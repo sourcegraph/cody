@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.chat.ui
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -11,6 +12,8 @@ import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.config.AccountTier
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.ui.LlmComboBoxRenderer
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.CodyBundle
@@ -53,10 +56,17 @@ class LlmDropdown(
   private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
     removeAllItems()
     models.sortedBy { it.codyProOnly }.forEach(::addItem)
-    models.find { it.default }?.let { this.selectedItem = it }
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
       isCurrentUserFree = accountTier == AccountTier.DOTCOM_FREE
+
+      val selectedModel = HistoryService.getInstance(project).getDefaultLlm()
+      val defaultModel =
+          if (accountTier == AccountTier.DOTCOM_PRO)
+              models.find { it.model == selectedModel?.model } ?: models.find { it.default }
+          else models.find { it.default }
+
+      ApplicationManager.getApplication().invokeLater { selectedItem = defaultModel }
     }
 
     val isEnterpriseAccount =
@@ -72,6 +82,7 @@ class LlmDropdown(
     return super.getModel() as MutableCollectionComboBoxModel
   }
 
+  @RequiresEdt
   override fun setSelectedItem(anObject: Any?) {
     val modelProvider = anObject as? ChatModelsResponse.ChatModelProvider
     if (modelProvider != null) {
@@ -79,6 +90,9 @@ class LlmDropdown(
         BrowserOpener.openInBrowser(project, "https://sourcegraph.com/cody/subscription")
         return
       }
+
+      HistoryService.getInstance(project).setDefaultLlm(LLMState.fromChatModel(modelProvider))
+
       super.setSelectedItem(anObject)
       onSetSelectedItem(modelProvider)
     }

@@ -48,7 +48,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
       LlmDropdown(
           modelUsage = ModelUsage.EDIT,
           project = controller.project,
-          onSetSelectedItem = controller::setCurrentModel,
+          onSetSelectedItem = {},
           chatModelProviderFromState = null)
 
   // History navigation helper
@@ -181,9 +181,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
     @RequiresEdt
     override fun doOKAction() {
       val text = instructionsField.text
-      val chatModelProvider = llmDropdown.item
       super.doOKAction()
-      controller.setCurrentModel(chatModelProvider)
       if (text.isNotBlank()) {
         addToHistory(text)
         val project = editor.project
@@ -193,7 +191,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
           return
         }
         controller.addSession(
-            EditSession(controller, editor, project, editor.document, text, chatModelProvider))
+            EditSession(controller, editor, project, editor.document, text, llmDropdown.item))
       }
     }
 

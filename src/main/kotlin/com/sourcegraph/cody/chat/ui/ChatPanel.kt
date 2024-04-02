@@ -14,6 +14,7 @@ import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.ui.EnhancedContextPanel
 import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.ui.ChatScrollPane
 import com.sourcegraph.cody.vscode.CancellationToken
 import java.awt.BorderLayout
@@ -109,6 +110,7 @@ class ChatPanel(
     }
 
     HistoryService.getInstance(project)
-        .updateChatLlmProvider(chatSession.getInternalId(), chatModelProvider)
+        .updateChatLlmProvider(
+            chatSession.getInternalId(), LLMState.fromChatModel(chatModelProvider))
   }
 }

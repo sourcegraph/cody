@@ -7,7 +7,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.state.ChatState
@@ -29,17 +28,8 @@ class HistoryService(private val project: Project) :
   }
 
   @Synchronized
-  fun updateChatLlmProvider(
-      internalId: String,
-      chatModelProvider: ChatModelsResponse.ChatModelProvider
-  ) {
-    val found = getOrCreateChat(internalId)
-    found.llm =
-        LLMState().also {
-          it.model = chatModelProvider.model
-          it.title = chatModelProvider.title
-          it.provider = chatModelProvider.provider
-        }
+  fun updateChatLlmProvider(internalId: String, llmState: LLMState) {
+    getOrCreateChat(internalId).llm = llmState
   }
 
   @Synchronized
@@ -76,6 +66,20 @@ class HistoryService(private val project: Project) :
   @Synchronized
   fun getDefaultContextReadOnly(): EnhancedContextState? {
     return copyEnhancedContextState(state.defaultEnhancedContext)
+  }
+
+  @Synchronized
+  fun getDefaultLlm(): LLMState? {
+    val defaultLlm = LLMState()
+    defaultLlm.copyFrom(state.defaultLlm ?: return null)
+    return defaultLlm
+  }
+
+  @Synchronized
+  fun setDefaultLlm(defaultLlm: LLMState) {
+    val newDefaultLlm = LLMState()
+    newDefaultLlm.copyFrom(defaultLlm)
+    state.defaultLlm = newDefaultLlm
   }
 
   @Synchronized
