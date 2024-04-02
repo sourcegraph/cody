@@ -1,6 +1,7 @@
 import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
 import { onAbort } from '../common/abortController'
 import { CompletionStopReason } from '../inferenceClient/misc'
+import { ps } from '../prompt/prompt-string'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
@@ -32,7 +33,7 @@ export function ollamaChatClient(
         messages: params.messages.map(msg => {
             return {
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text ?? '',
+                content: msg.text ?? ps``,
             }
         }),
         options: {

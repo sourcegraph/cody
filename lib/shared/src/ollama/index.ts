@@ -1,4 +1,5 @@
 import type { OllamaGenerateParameters } from '../configuration'
+import { PromptString } from '../prompt/prompt-string'
 
 export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
 
@@ -31,7 +32,7 @@ export interface OllamaChatParams {
 
 interface OllamaChatMessage {
     role: string
-    content: string
+    content: PromptString
     images?: string[]
 }
 

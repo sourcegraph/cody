@@ -1,9 +1,9 @@
 import type { ChatMessage } from '../chat/transcript/messages'
+import { type PromptString, ps } from './prompt-string'
 
-const identity = 'Reply as Cody, a coding assistant developed by Sourcegraph.'
-const hallucinate =
-    'If context is available: never make any assumptions nor provide any misleading or hypothetical examples.'
-const CODY_INTRO_PROMPT = `(${identity} ${hallucinate}) `
+const identity = ps`Reply as Cody, a coding assistant developed by Sourcegraph.`
+const hallucinate = ps`If context is available: never make any assumptions nor provide any misleading or hypothetical examples.`
+const CODY_INTRO_PROMPT = ps`(${identity} ${hallucinate}) `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -34,7 +34,7 @@ export class PromptMixin {
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in `text`.
-            return { ...humanMessage, text: `${mixins}${humanMessage.text}` }
+            return { ...humanMessage, text: ps`${mixins}${humanMessage.text}` }
         }
         return humanMessage
     }
@@ -42,9 +42,9 @@ export class PromptMixin {
     /**
      * Creates a mixin with the given, fixed prompt to insert.
      */
-    constructor(private readonly prompt: string) {}
+    constructor(private readonly prompt: PromptString) {}
 }
 
-export function newPromptMixin(text: string): PromptMixin {
+export function newPromptMixin(text: PromptString): PromptMixin {
     return new PromptMixin(text)
 }

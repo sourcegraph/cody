@@ -1,3 +1,5 @@
+import { PromptString } from '../../prompt/prompt-string'
+
 interface DoneEvent {
     type: 'done'
 }
@@ -16,7 +18,7 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
-    text?: string
+    text?: PromptString
 }
 
 export interface CompletionResponse {
