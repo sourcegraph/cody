@@ -6,7 +6,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Cody Enterprise users now have access to an `experimental-openaicompatible` which allows bringing your own LLM via any OpenAI-compatible API. For now, this is only supported with Starchat and specific configurations - but we continue to generalize this work to support more models and OpenAI-compatible endpoints. [pull/3218](https://github.com/sourcegraph/cody/pull/3218)
 - Edit/Chat: Cody now expands the selection to the nearest enclosing function, if available, before attempting to expand to the nearest enclosing block. [pull/3507](https://github.com/sourcegraph/cody/pull/3507)
 - Edit: New `cody.edit.preInstruction` configuration option for adding custom instruction at the end of all your requests. [pull/3542](https://github.com/sourcegraph/cody/pull/3542)
 - Edit: Add support for the new `cody.edit.preInstruction` setting. [pull/3542](https://github.com/sourcegraph/cody/pull/3542)
@@ -33,6 +32,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Auth: Enable the new onboarding flow that does not require the redirect back to VS Code for everyone. [pull/3574](https://github.com/sourcegraph/cody/pull/3574)
 - Chat: Claude 3 Sonnet is now the default model for every Cody Free or Pro user. [pull/3575](https://github.com/sourcegraph/cody/pull/3575)
 - Edit: Removed a previous Edit shortcut (`Shift+Cmd/Ctrl+v`), use `Opt/Alt+K` to trigger Edits. [pull/3591](https://github.com/sourcegraph/cody/pull/3591)
+
+## [1.10.2]
+
+### Added
+
+- Cody Enterprise users now have access to an `experimental-openaicompatible` which allows bringing your own LLM via any OpenAI-compatible API. For now, this is only supported with Starchat and specific configurations - but we continue to generalize this work to support more models and OpenAI-compatible endpoints. [pull/3218](https://github.com/sourcegraph/cody/pull/3218)
 
 ## [1.10.1]
 
