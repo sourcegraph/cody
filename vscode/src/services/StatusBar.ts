@@ -263,7 +263,7 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus && !authStatus.isLoggedIn) {
-            statusBarItem.text = 'Sign In'
+            statusBarItem.text = '$(cody-logo-heavy) Sign In'
             statusBarItem.tooltip = 'Sign in to get started with Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             return
