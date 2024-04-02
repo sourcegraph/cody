@@ -268,7 +268,7 @@ interface HoverCommand {
 const HoverCommands: () => Record<string, HoverCommand> = () => ({
     explain: {
         id: 'cody.command.explain-code',
-        title: '[Ask Cody to Explain](command:cody.experiment.hover.commands?{params})',
+        title: '[Explain Code](command:cody.experiment.hover.commands?{params})',
         enabled: false,
     },
     doc: {
