@@ -131,10 +131,12 @@ const UNICODE_SPACE = '\u00a0'
  */
 const HINT_DECORATIONS: Record<
     GhostVariant,
-    { text: string; decoration: vscode.TextEditorDecorationType }
+    { text: string; decoration: vscode.TextEditorDecorationType; hoverText: string }
 > = {
     EditOrChat: {
         text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
+        hoverText:
+            '[Edit Code](command:cody.command.edit-code) | [New Chat](command:cody.chat.panel.new)',
         decoration: vscode.window.createTextEditorDecorationType({
             isWholeLine: true,
             after: {
@@ -145,12 +147,14 @@ const HINT_DECORATIONS: Record<
     },
     Document: {
         text: `${DOC_SHORTCUT_LABEL} to Document`,
+        hoverText: '[Document Code](command:cody.command.document-code)',
         decoration: vscode.window.createTextEditorDecorationType({
             after: { color: GHOST_TEXT_COLOR },
         }),
     },
     Generate: {
         text: `${EDIT_SHORTCUT_LABEL} to Generate Code`,
+        hoverText: '[Generate Code](command:cody.command.edit-code)',
         decoration: vscode.window.createTextEditorDecorationType({
             after: {
                 color: GHOST_TEXT_COLOR,
@@ -370,9 +374,13 @@ export class GhostHintDecorator implements vscode.Disposable {
         const decorationText = UNICODE_SPACE.repeat(textPadding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
 
+        const hoverMessage = new vscode.MarkdownString(decorationHint.hoverText)
+        hoverMessage.isTrusted = true
+
         editor.setDecorations(HINT_DECORATIONS[variant].decoration, [
             {
                 range: this.activeDecorationRange,
+                hoverMessage,
                 renderOptions: { after: { contentText: decorationText } },
             },
         ])
