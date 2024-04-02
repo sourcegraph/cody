@@ -1,5 +1,7 @@
 import type { ChatEventSource, CodyCommand, ContextItem } from '@sourcegraph/cody-shared'
 
+import type { Range, Uri } from 'vscode'
+
 /**
  * The name of the file for configuring Custom Commands.
  */
@@ -31,4 +33,12 @@ export interface CodyCommandArgs {
     // current context to add on top of the command context
     userContextFiles?: ContextItem[]
     additionalInstruction?: string
+
+    /**
+     * Editor Context
+     */
+    // The URI of the file in the editor
+    uri?: Uri
+    // The range of the selection in the editor
+    range?: Range
 }

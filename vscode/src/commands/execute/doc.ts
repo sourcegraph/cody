@@ -104,7 +104,12 @@ export async function executeDocCommand(
             return undefined
         }
 
-        const { range, insertionPoint } = getDocumentableRange(editor)
+        let { range, insertionPoint } = getDocumentableRange(editor)
+
+        if (args?.range) {
+            range = args?.range
+            insertionPoint = args?.range.start
+        }
 
         return {
             type: 'edit',
