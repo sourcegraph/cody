@@ -1,4 +1,3 @@
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
@@ -21,7 +20,6 @@ const meta: Meta<typeof Chat> = {
         messageInProgress: null,
         chatIDHistory: [],
         chatEnabled: true,
-        chatModels: DEFAULT_DOT_COM_MODELS,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         isWebviewActive: true,
         vscodeAPI: {
