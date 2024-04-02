@@ -74,12 +74,10 @@ export class HoverCommandsProvider implements vscode.Disposable {
             return undefined
         }
 
-        if (!this.isActive) {
-            // Skip if isEnrolled is false so that we can log the first enrollment event.
-            if (this.isEnrolled) {
-                this.reset()
-                return undefined
-            }
+        // Skip if isEnrolled is false so that we can log the first enrollment event.
+        if (!this.isActive && this.isEnrolled) {
+            this.reset()
+            return undefined
         }
 
         this.current.document = doc
@@ -89,6 +87,16 @@ export class HoverCommandsProvider implements vscode.Disposable {
         const commands = await this.getHoverCommands(doc, position)
         if (!commands.length) {
             return undefined
+        }
+
+        // Log Enrollment event at the first Hover Commands for all users,
+        // then dispose the provider if the user is not in the treatment group.
+        if (!this.isEnrolled) {
+            this.isEnrolled = logFirstEnrollmentEvent(this.id, this.isInTreatment)
+            if (!this.isInTreatment) {
+                this.dispose()
+                return undefined
+            }
         }
 
         // Create contents for the hover with clickable commands
@@ -102,16 +110,6 @@ export class HoverCommandsProvider implements vscode.Disposable {
         contents.supportThemeIcons = true
         contents.isTrusted = true
 
-        // Log Enrollment event at the first Hover Commands for all users,
-        // then dispose the provider if the user is not in the treatment group.
-        if (!this.isEnrolled) {
-            this.isEnrolled = logFirstEnrollmentEvent(this.id, this.isInTreatment)
-            if (!this.isInTreatment) {
-                this.dispose()
-                return undefined
-            }
-        }
-
         // Log the visibility of the hover commands
         const args = { commands: commands.filter(c => c.enabled).join(','), languageId: doc.languageId }
         telemetryService.log('CodyVSCodeExtension:hoverCommands:visible', args, { hasV2Event: true })
@@ -124,49 +122,30 @@ export class HoverCommandsProvider implements vscode.Disposable {
         document: vscode.TextDocument,
         position: vscode.Position
     ): Promise<HoverCommand[]> {
-        // Copy the hoverCommands object to avoid modifying the original.
-        // This way we know everything is disabled by default.
         const commandsOnHovers = { ...HoverCommands() }
-
-        // Display Chat & Edit commands when the current position is over multi-lines highlights
         const selection = vscode.window.activeTextEditor?.selection
+        const [docNode] = execQuery({ document, position, queryWrapper: 'getDocumentableNode' })
+        const activeSymbol = (await fetchDocumentSymbols(document)).findLast(s =>
+            s.range.contains(position)
+        )
+
         this.current.selection = selection
+        this.current.symbol = activeSymbol
+
         if (selection?.contains(position) && !selection?.isSingleLine) {
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
-            return Object.values(commandsOnHovers)
-        }
-
-        // Show Document and Explain commands on documentable nodes
-        const [docNode] = execQuery({
-            document,
-            position,
-            queryWrapper: 'getDocumentableNode',
-        })
-
-        if (!docNode.symbol?.node || !this.current?.document) {
+        } else if (docNode.symbol?.node && docNode.meta?.showHint) {
+            commandsOnHovers.explain.enabled = true
+            commandsOnHovers.doc.enabled = true
+        } else if (docNode.symbol?.node && activeSymbol) {
+            commandsOnHovers.chat.enabled = true
+            commandsOnHovers.edit.enabled = true
+        } else {
             return []
         }
 
-        const activeSymbol = (await fetchDocumentSymbols(this.current?.document)).findLast(s =>
-            s.range.contains(position)
-        )
-        this.current.symbol = activeSymbol
-
-        if (docNode.meta?.showHint) {
-            commandsOnHovers.explain.enabled = true
-            commandsOnHovers.doc.enabled = true
-            return Object.values(commandsOnHovers)
-        }
-
-        // Display Chat & Edit commands if cursor is on one of the cached LSP symbols
-        if (activeSymbol) {
-            commandsOnHovers.chat.enabled = true
-            commandsOnHovers.edit.enabled = true
-            return Object.values(commandsOnHovers)
-        }
-
-        return []
+        return Object.values(commandsOnHovers)
     }
 
     /**
@@ -178,34 +157,31 @@ export class HoverCommandsProvider implements vscode.Disposable {
         telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', args, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: args })
 
-        if (!this.current?.document || !this.current?.position) {
+        const { document, position, symbol, selection } = this.current ?? {}
+        if (!document || !position) {
             return
         }
+        const range = symbol?.range ?? selection
+        const commandArgs = { source: 'hover', uri: document.uri, range } as CodyCommandArgs
 
-        const symbolInfo = this.current?.symbol
-        const range = symbolInfo?.range ?? this.current.selection
-        const commandArgs = { source: 'hover' } as CodyCommandArgs
-        commandArgs.uri = this.current.document.uri
-        commandArgs.range = range
-
-        // New Chat Commands
-        if (id === 'cody.action.chat') {
-            // Get the name of the symbolInfo.kind from the SymbolKind enum key
-            const symbolKind = vscode.SymbolKind[symbolInfo?.kind as vscode.SymbolKind].toLowerCase()
-            const symbolPrompt = symbolInfo?.name && `RE: \`${symbolInfo.name}\` ${symbolKind}`
-            commandArgs.additionalInstruction = symbolPrompt
-            executeHoverChatCommand(commandArgs)
-            return
+        switch (id) {
+            // New Chat Commands
+            case 'cody.action.chat': {
+                const symbolKind = symbol?.kind ? vscode.SymbolKind[symbol.kind].toLowerCase() : ''
+                const symbolPrompt = symbol?.name ? `RE: \`${symbol.name}\` ${symbolKind}` : ''
+                commandArgs.additionalInstruction = symbolPrompt
+                executeHoverChatCommand(commandArgs)
+                break
+            }
+            // Edit Commands
+            case 'cody.command.edit-code':
+            case 'cody.command.document-code':
+                await vscode.commands.executeCommand(id, commandArgs as ExecuteEditArguments)
+                break
+            default:
+                await vscode.commands.executeCommand(id, commandArgs)
+                break
         }
-
-        // Edit Commands
-        if (id === 'cody.command.edit-code' || id === 'cody.command.document-code') {
-            vscode.commands.executeCommand(id, commandArgs as ExecuteEditArguments)
-            return
-        }
-
-        // Move the cursor to the current position so that the command can be executed at the right location
-        vscode.commands.executeCommand(id, commandArgs)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): boolean {
