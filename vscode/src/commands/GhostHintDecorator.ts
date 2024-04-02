@@ -1,4 +1,4 @@
-import { type AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
+import { type AuthStatus, isMacOS } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
@@ -106,9 +106,7 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
          * We can safely set the default of this to `true`.
          */
         EditOrChat: settingValue ?? true,
-        Document:
-            settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+        Document: settingValue ?? true,
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
@@ -131,11 +129,11 @@ const UNICODE_SPACE = '\u00a0'
  */
 const HINT_DECORATIONS: Record<
     GhostVariant,
-    { text: string; decoration: vscode.TextEditorDecorationType; hoverText: string }
+    { text: string; decoration: vscode.TextEditorDecorationType; hoverMessage: string }
 > = {
     EditOrChat: {
         text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
-        hoverText:
+        hoverMessage:
             '[Edit Code](command:cody.command.edit-code) | [New Chat](command:cody.chat.panel.new)',
         decoration: vscode.window.createTextEditorDecorationType({
             isWholeLine: true,
@@ -147,14 +145,14 @@ const HINT_DECORATIONS: Record<
     },
     Document: {
         text: `${DOC_SHORTCUT_LABEL} to Document`,
-        hoverText: '[Document Code](command:cody.command.document-code)',
+        hoverMessage: '[Document Code](command:cody.command.document-code)',
         decoration: vscode.window.createTextEditorDecorationType({
             after: { color: GHOST_TEXT_COLOR },
         }),
     },
     Generate: {
         text: `${EDIT_SHORTCUT_LABEL} to Generate Code`,
-        hoverText: '[Generate Code](command:cody.command.edit-code)',
+        hoverMessage: '[Generate Code](command:cody.command.edit-code)',
         decoration: vscode.window.createTextEditorDecorationType({
             after: {
                 color: GHOST_TEXT_COLOR,
@@ -373,8 +371,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         const decorationHint = HINT_DECORATIONS[variant]
         const decorationText = UNICODE_SPACE.repeat(textPadding) + decorationHint.text
         this.activeDecorationRange = new vscode.Range(position, position)
-
-        const hoverMessage = new vscode.MarkdownString(decorationHint.hoverText)
+        const hoverMessage = new vscode.MarkdownString(decorationHint.hoverMessage)
         hoverMessage.isTrusted = true
 
         editor.setDecorations(HINT_DECORATIONS[variant].decoration, [
