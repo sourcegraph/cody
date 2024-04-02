@@ -413,7 +413,7 @@ export const getInput = async (
                         label: shortLabel || key,
                         description: shortLabel ? key : undefined,
                         detail:
-                            item.type === 'file && item.isTooLarge
+                            item.type === 'file' && item.isTooLarge
                                 ? LARGE_FILE_WARNING_LABEL
                                 : undefined,
                     })),
