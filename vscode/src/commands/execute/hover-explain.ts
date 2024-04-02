@@ -6,30 +6,21 @@ import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
-import type { Span } from '@opentelemetry/api'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromUri } from '../context/file-path'
 
-async function hoverChatCommand(
-    span: Span,
-    args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments> {
-    const { uri, range, userContextFiles } = args ?? {}
+async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+    const { uri, range, userContextFiles = [], additionalInstruction } = args
 
     if (!uri) {
         throw new Error('No URI provided for the hover command')
     }
 
-    const contextFiles = [...(userContextFiles ?? [])]
-    contextFiles.push(...(await getContextFileFromUri(uri, range)))
+    const contextFiles = [...userContextFiles, ...(await getContextFileFromUri(uri, range))]
 
-    let prompt = `Answer my questions based on the code from @${displayPath(uri)}${
+    const prompt = `Answer my questions based on the code from @${displayPath(uri)}${
         range?.start?.line ?? ''
-    }.`
-    if (args?.additionalInstruction) {
-        span.addEvent('additionalInstruction')
-        prompt = `${prompt} ${args.additionalInstruction}`
-    }
+    }.${additionalInstruction ? ` ${additionalInstruction}` : ''}`
 
     return {
         text: prompt,
@@ -44,7 +35,7 @@ async function hoverChatCommand(
  * Executes the hover command
  */
 export async function executeHoverChatCommand(
-    args?: Partial<CodyCommandArgs>
+    args: Partial<CodyCommandArgs>
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.hover', async span => {
         span.setAttribute('sampled', true)
@@ -69,7 +60,7 @@ export async function executeHoverChatCommand(
 
         return {
             type: 'chat',
-            session: await executeChat(await hoverChatCommand(span, args)),
+            session: await executeChat(await hoverChatCommand(args)),
         }
     })
 }
