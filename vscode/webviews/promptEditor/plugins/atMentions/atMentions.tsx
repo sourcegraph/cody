@@ -113,26 +113,22 @@ export default function MentionsPlugin(): JSX.Element | null {
                 }
 
                 const selectedItem = selectedOption.item
-                const textNode = $createContextItemTextNode(selectedItem)
                 const isLargeFile = selectedItem.type === 'file' && selectedItem.isTooLarge
-                // When selecting a large file without range, add the selected option as text and append
-                // example range.
-                // This allows users to autocomplete the file path, and provide them with
-                // the options to make additional changes, e.g. add range, before inserting the mention.
+                // When selecting a large file without range, add the selected option as text node with : at the end.
+                // This allows users to autocomplete the file path, and provide them with the options to add range.
                 if (isLargeFile && !selectedItem.range) {
+                    const textNode = $createContextItemTextNode(selectedItem)
                     nodeToReplace.replace(textNode)
-                    const suffix = $createTextNode(':')
-                    textNode.insertAfter(suffix)
-                    suffix.select()
-                    closeMenu()
-                    return
+                    const colonNode = $createTextNode(':')
+                    textNode.insertAfter(colonNode)
+                    colonNode.select()
+                } else {
+                    const mentionNode = $createContextItemMentionNode(selectedItem)
+                    nodeToReplace.replace(mentionNode)
+                    const spaceNode = $createTextNode(' ')
+                    mentionNode.insertAfter(spaceNode)
+                    spaceNode.select()
                 }
-
-                const mentionNode = $createContextItemMentionNode(selectedItem)
-                nodeToReplace?.replace(mentionNode)
-                const spaceAfter = $createTextNode(' ')
-                mentionNode.insertAfter(spaceAfter)
-                spaceAfter.select()
                 closeMenu()
             })
         },

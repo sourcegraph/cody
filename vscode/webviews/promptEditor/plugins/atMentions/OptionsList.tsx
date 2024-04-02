@@ -98,14 +98,11 @@ const Item: FunctionComponent<{
     const dir = displayPathDirname(item.uri)
     const description = isFileType
         ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-        : displayPath(item.uri) + `:${range}`
+        : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
 
     const isLargeFile = isFileType && item.isTooLarge
-    const warning = isLargeFile
-        ? !item.range && !isValideLineRangeQuery(query)
-            ? LARGE_FILE_WARNING_LABEL
-            : ''
-        : undefined
+    const warning =
+        isLargeFile && !item.range && !isValideLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:
