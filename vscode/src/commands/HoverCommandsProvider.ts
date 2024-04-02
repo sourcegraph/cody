@@ -186,6 +186,19 @@ export class HoverCommandsProvider implements vscode.Disposable {
 
         const commandArgs = { source: 'hover', additionalInstruction: '' }
 
+        // Return early if the command is to edit the code
+        // as users can update the selection range via the menu
+        if (id === 'cody.command.edit-code') {
+            vscode.commands.executeCommand(id, commandArgs)
+            return
+        }
+
+        // Move the cursor to the current position so that the command
+        // can be executed at the right location
+        const editor = await vscode.window.showTextDocument(this.currentDocument)
+        const currentSelection = editor.selection
+        editor.selection = new vscode.Selection(this.currentPosition, this.currentPosition)
+
         // On New Chat click from hovered symbol
         if (id === 'cody.action.chat' && this.currentHoverSymbol) {
             const contextFiles = [...(await getContextFileFromCursor())]
@@ -198,13 +211,12 @@ export class HoverCommandsProvider implements vscode.Disposable {
                 addEnhancedContext: true,
                 source: 'hover',
             })
-            return
+        } else {
+            vscode.commands.executeCommand(id, commandArgs)
         }
 
-        const editor = await vscode.window.showTextDocument(this.currentDocument)
-        editor.selection = new vscode.Selection(this.currentPosition, this.currentPosition)
-
-        vscode.commands.executeCommand(id, commandArgs)
+        // Revert the selection back to the original
+        editor.selection = currentSelection
     }
 
     public syncAuthStatus(authStatus: AuthStatus): boolean {
