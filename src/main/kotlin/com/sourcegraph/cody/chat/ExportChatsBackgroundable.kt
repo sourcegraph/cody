@@ -28,6 +28,8 @@ class ExportChatsBackgroundable(
 ) : Task.Backgroundable(project, /* title = */ "Exporting chats...", /* canBeCancelled = */ true) {
 
   override fun run(indicator: ProgressIndicator) {
+    indicator.isIndeterminate = false
+
     val accountId = CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
     val chats =
         HistoryService.getInstance(project)

@@ -51,7 +51,12 @@ class ExportChatsAction : DumbAwareBGTAction() {
     // do it automatically.
     val fileName: String = "Untitled" + (if (SystemInfo.isMac) ".$EXTENSION" else "")
 
-    val result = saveFileDialog.save(outputDir, fileName) ?: return
+    val result = saveFileDialog.save(outputDir, fileName)
+
+    if (result == null) {
+      token.abort() // User canceled the file save dialog
+      return
+    }
 
     CodyAgentService.withAgent(project) { agent ->
       ExportChatsBackgroundable(
