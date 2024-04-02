@@ -44,7 +44,7 @@ class CodyFormatter {
             existingStart + addition + psiFile.text.substring(cursor)
           } else psiFile.text
       return formattedText.substring(
-          range.startOffset, cursor + formattedText.length - document.textLength)
+          range.startOffset, range.endOffset + formattedText.length - document.textLength)
     }
   }
 }

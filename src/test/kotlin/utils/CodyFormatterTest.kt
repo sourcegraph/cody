@@ -2,6 +2,7 @@ package utils
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.text.findTextRange
 import com.sourcegraph.utils.CodyFormatter
 import junit.framework.TestCase
 
@@ -81,5 +82,14 @@ class CodyFormatterTest : BasePlatformTestCase() {
            |    }"""
             .trimMargin(),
         formatText(completion, rangeEnd, TextRange(rangeStart, rangeEnd), testFileContent))
+  }
+
+  fun `test formatting with cursor in the middle of the line`() {
+    val existingLine = "VirtualFile vcsRoot = VcsUtil.getVcsRootFor(project, file);"
+    val testFileContent = testFileContent.replace("// MAIN", existingLine)
+    val range = testFileContent.findTextRange(existingLine)
+    val offset = testFileContent.indexOf("file")
+
+    TestCase.assertEquals(existingLine, formatText(existingLine, offset, range, testFileContent))
   }
 }

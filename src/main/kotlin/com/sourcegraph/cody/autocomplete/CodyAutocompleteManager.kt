@@ -372,7 +372,13 @@ class CodyAutocompleteManager {
     }
 
     defaultItem.insertText = formattedInsertText
-    val completionText = formattedInsertText.removePrefix(originalText)
+    val cursorPositionInOriginalText = offset - range.startOffset
+    val originalTextBeforeCursor = originalText.substring(0, cursorPositionInOriginalText)
+    val originalTextAfterCursor = originalText.substring(cursorPositionInOriginalText)
+    val completionText =
+        formattedInsertText
+            .removePrefix(originalTextBeforeCursor)
+            .removeSuffix(originalTextAfterCursor)
     if (completionText.trim().isBlank()) return
 
     val lineBreaks = listOf("\r\n", "\n", "\r")
