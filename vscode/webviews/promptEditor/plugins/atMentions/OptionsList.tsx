@@ -14,7 +14,6 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
-    LARGE_FILE_WITH_RANGE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
@@ -103,9 +102,9 @@ const Item: FunctionComponent<{
 
     const isLargeFile = isFileType && item.isTooLarge
     const warning = isLargeFile
-        ? item.range
-            ? LARGE_FILE_WITH_RANGE_WARNING_LABEL
-            : LARGE_FILE_WARNING_LABEL
+        ? !item.range && !isValideLineRangeQuery(query)
+            ? LARGE_FILE_WARNING_LABEL
+            : ''
         : undefined
 
     return (
@@ -145,7 +144,8 @@ const Item: FunctionComponent<{
     )
 }
 
-const isValideLineRangeQuery = (query: string): boolean => RANGE_MATCHES_REGEXP.test(query)
+const isValideLineRangeQuery = (query: string): boolean =>
+    query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
 
 /**
  * Gets the display line range from the query string.

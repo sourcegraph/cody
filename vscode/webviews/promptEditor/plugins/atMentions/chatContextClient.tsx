@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LINE_RANGE_REGEXP, RANGE_MATCHES_REGEXP, parseLineRangeInMention } from './atMentions'
@@ -63,6 +63,13 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
         // while a null query means this is not an at-mention query.
         if (query === null) {
             setResults(undefined)
+            return
+        }
+
+        // If the query ends with a colon, we will reuse current results but remove the range.
+        if (query.endsWith(':')) {
+            const selected = results?.find(r => displayPath(r.uri) === query.slice(0, -1))
+            setResults(selected ? [selected] : results?.map(r => ({ ...r, range: undefined })))
             return
         }
 

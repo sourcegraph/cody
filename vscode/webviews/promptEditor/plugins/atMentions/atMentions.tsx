@@ -121,7 +121,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 // the options to make additional changes, e.g. add range, before inserting the mention.
                 if (isLargeFile && !selectedItem.range) {
                     nodeToReplace.replace(textNode)
-                    const suffix = $createTextNode('')
+                    const suffix = $createTextNode(':')
                     textNode.insertAfter(suffix)
                     suffix.select()
                     closeMenu()
