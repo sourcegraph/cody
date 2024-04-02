@@ -69,7 +69,8 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
         // If the query ends with a colon, we will reuse current results but remove the range.
         if (query.endsWith(':')) {
             const selected = results?.find(r => displayPath(r.uri) === query.slice(0, -1))
-            setResults(selected ? [selected] : results?.map(r => ({ ...r, range: undefined })))
+            const updatedResults = selected ? [selected] : results
+            setResults(updatedResults?.map(r => ({ ...r, range: undefined })))
             return
         }
 
