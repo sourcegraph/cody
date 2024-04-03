@@ -443,16 +443,18 @@ To open the context menu:
 
 1. Login to Cody Pro account
 2. Create new chat
-3. User is able to change default LLM
-4. Change model to ChatGPT 4
-5. Send message
+3. Default model for new Pro users is Claude 3 Sonnet
+   - Default model for existing Pro users is their previously selected model
+4. User is able to change default LLM
+5. Change model to ChatGPT 4
+6. Send message
    > What model are you?
-6. User should get the response that model is ChatGPT
-7. Change account to different one and then back to your pro account
-8. Open `What model are you?` chat from the history
-9. Send again message
+7. User should get the response that model is ChatGPT
+8. Change account to different one and then back to your pro account
+9. Open `What model are you?` chat from the history
+10. Send again message
    > What model are you?
-10. User should again get the response that model is ChatGPT
+11. User should again get the response that model is ChatGPT
 
 #### Commands
 
@@ -465,7 +467,8 @@ To open the context menu:
 
 1. Login to Cody Free account
 2. Create new chat
-3. User doesn't see model dropdown
+3. User sees model dropdown, but non-default LLM is disabled
+4. Default model is Claude 3 Sonnet
 
 ### Pro account after trial
 
