@@ -338,13 +338,17 @@ export function spawn(...args: Parameters<typeof child_process.spawn>): Promise<
 
 // Uses VSCode command palette to open a file by typing its name.
 export async function openFile(page: Page, filename: string): Promise<void> {
+    const metaKey = getMetaKeyByOS()
     // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type(`${filename}\n`)
+    await page.keyboard.press(`${metaKey}+P`)
+    // Makes sure the file picker input box has the focus
+    await page.getByPlaceholder(/Search files by name/).click()
+    await page.keyboard.type(`${filename}`)
+    // Makes sure the file is visible in the file picker
+    expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
+    await page.keyboard.press('Enter')
+    // Makes sure the file is opened in the editor
+    await page.getByRole('tab').getByText(filename).click()
 }
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
