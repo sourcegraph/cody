@@ -10,7 +10,7 @@
 /* Custom open/close icons for <details> */
 .details > .summary::marker {
     font-family: "codicon";
-    font-size: 19px;
+    font-size: 16px;
 }
 .details:not([open]) > .summary::marker {
     content: '\eab6'; /* codicon chevron-right */
@@ -19,7 +19,8 @@
     content: '\eab4'; /* codicon chevron-down */
 }
 .heading {
-    vertical-align: 4.5px;
+    padding-left: 3px;
+    vertical-align: 3.5px;
 }
 
 .heading {
