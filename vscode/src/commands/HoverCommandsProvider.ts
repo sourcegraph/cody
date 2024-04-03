@@ -56,10 +56,20 @@ class HoverCommandsProvider implements vscode.Disposable {
             vscode.languages.registerHoverProvider('*', { provideHover: this.onHover.bind(this) }),
             //  Registers the 'cody.experiment.hover.commands' command to handle clicking hover commands.
             vscode.commands.registerCommand('cody.experiment.hover.commands', id => this.onClick(id)),
+            // Log telemetry for users in the treatment group but disabled the configuration after enrollment
             vscode.workspace.onDidChangeConfiguration(e => {
-                if (this.isInTreatment && e.affectsConfiguration('cody')) {
-                    this.isActive = isHoverCommandsEnabled()
+                if (!this.isEnrolled || !this.isInTreatment || !e.affectsConfiguration('cody')) {
+                    return
                 }
+                const updated = isHoverCommandsEnabled()
+                if (this.isActive && !updated) {
+                    const v2 = { hasV2Event: true }
+                    telemetryService.log('CodyVSCodeExtension:hoverCommands:disabled', {}, v2)
+                    telemetryRecorder.recordEvent('cody.hoverCommands', 'disabled', {
+                        privateMetadata: {},
+                    })
+                }
+                this.isActive = updated
             })
         )
     }
