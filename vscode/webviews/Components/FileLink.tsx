@@ -22,6 +22,8 @@ interface FileLinkProps {
     isTooLarge?: boolean
 }
 
+const WARNING = 'Excluded due to context window limit'
+
 export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
     uri,
     range,
@@ -40,39 +42,34 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         })
     }
 
+    let tooltip: string
+    let pathWithRange: string
+    let href: string
+    let target: string | undefined
     if (source === 'unified') {
-        // This is a remote search result.
+        // Remote search result.
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
-        const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        const tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
-        return (
-            /* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */
-            <a
-                href={uri.toString()}
-                target="_blank"
-                rel="noreferrer"
-                title={tooltip}
-                className={styles.linkButton}
-                onClick={logFileLinkClicked}
-            >
-                <i className="codicon codicon-file" title={getFileSourceIconTitle(source)} />
-                <div className={styles.path}>{pathWithRange}</div>
-            </a>
-        )
+        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
+        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
+        href = uri.toString()
+        target = '_blank'
+    } else {
+        const pathToDisplay = `${displayPath(uri)}`
+        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
+        const openURI = webviewOpenURIForContextItem({ uri, range })
+        tooltip = isTooLarge ? WARNING : pathWithRange
+        href = openURI.href
+        target = openURI.target
     }
 
-    const pathToDisplay = `${displayPath(uri)}`
-    const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-    const { href, target } = webviewOpenURIForContextItem({ uri, range })
-    const warning = 'Excluded due to context window limit'
     return (
         <div className={classNames(styles.linkContainer, className)}>
-            {isTooLarge && <i className="codicon codicon-warning" title={warning} />}
+            {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
             {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
                 className={classNames(styles.linkButton, isTooLarge && styles.excluded)}
-                title={isTooLarge ? warning : pathWithRange}
+                title={tooltip}
                 href={href}
                 target={target}
                 onClick={logFileLinkClicked}

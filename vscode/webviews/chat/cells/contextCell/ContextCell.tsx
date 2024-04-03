@@ -15,7 +15,10 @@ export const ContextCell: React.FunctionComponent<{
     contextFiles: ContextItem[] | undefined
     disabled?: boolean
     className?: string
-}> = ({ contextFiles, disabled, className }) => {
+
+    /** For use in storybooks only. */
+    __storybook__initialOpen?: boolean
+}> = ({ contextFiles, disabled, className, __storybook__initialOpen }) => {
     const usedContext = []
     const excludedAtContext = []
     if (contextFiles) {
@@ -73,7 +76,7 @@ export const ContextCell: React.FunctionComponent<{
             {contextFiles === undefined ? (
                 <LoadingDots />
             ) : (
-                <details className={styles.details}>
+                <details className={styles.details} open={__storybook__initialOpen}>
                     <summary
                         className={styles.summary}
                         onClick={logContextOpening}
