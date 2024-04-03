@@ -72,7 +72,6 @@
     background-color: var(--vscode-list-hoverBackground);
 }
 .option-item.disabled {
-    opacity: 0.8;
     cursor: default;
 }
 
