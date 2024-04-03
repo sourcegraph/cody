@@ -12,7 +12,6 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
-import { getGhostHintEnablement } from './GhostHintDecorator'
 import { executeHoverChatCommand } from './execute/hover-explain'
 import type { CodyCommandArgs } from './types'
 
@@ -185,19 +184,18 @@ export class HoverCommandsProvider implements vscode.Disposable {
         }
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): boolean {
+    public syncAuthStatus(authStatus: AuthStatus): void {
         if (!authStatus.isLoggedIn || !authStatus.isDotCom) {
             this.isActive = false
             this.reset()
-            return false
+            return
         }
 
         // Check if the feature flag for Hover Command is enabled for the user
         featureFlagProvider
             .evaluateFeatureFlag(this.id)
             .then(async hoverFlag => {
-                const ghostConfig = await getGhostHintEnablement()
-                this.isInTreatment = hoverFlag && !(ghostConfig?.Document || ghostConfig?.EditOrChat)
+                this.isInTreatment = hoverFlag
                 this.isActive = isHoverCommandsEnabled()
                 this.register()
             })
@@ -205,7 +203,13 @@ export class HoverCommandsProvider implements vscode.Disposable {
                 logDebug('HoverCommandsProvider:failed', error)
             })
 
-        return this.isInTreatment
+        // Log telemetry for users who are in the treatment group but disabled the configuration
+        if (this.isInTreatment && !this.isActive && !this.isEnrolled) {
+            telemetryService.log('CodyVSCodeExtension:hoverCommands:disabled', {}, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.hoverCommands', 'disabled', {
+                privateMetadata: {},
+            })
+        }
     }
 
     public getEnablement(): boolean {
