@@ -321,14 +321,14 @@
       },
       {
         "command": "cody.menu.custom-commands",
-        "category": "Cody Command",
+        "category": "Cody Menu",
         "title": "Custom Commands",
         "icon": "$(tools)",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.menu.commands-settings",
-        "category": "Cody Command",
+        "category": "Cody Settings",
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
         "when": "cody.activated"
@@ -399,8 +399,8 @@
       },
       {
         "command": "cody.menu.commands",
-        "category": "Cody",
-        "title": "Commands",
+        "category": "Cody Menu",
+        "title": "Cody Commands",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },
@@ -783,7 +783,7 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -894,12 +894,6 @@
               "plaintext": false
             }
           ]
-        },
-        "cody.editorTitleCommandIcon": {
-          "order": 7,
-          "type": "boolean",
-          "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
-          "default": true
         },
         "cody.commandCodeLenses": {
           "order": 8,

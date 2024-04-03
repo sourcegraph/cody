@@ -268,7 +268,6 @@ async function buildWorkSpaceSettings(
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
-        'cody.editorTitleCommandIcon': true,
         ...extraSettings,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory

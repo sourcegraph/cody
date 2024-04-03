@@ -33,7 +33,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('ArrowDown')
 
     // Enter instruction in the command palette via clicking on the Cody Icon
-    await page.getByRole('button', { name: 'Commands' }).click()
+    await page.getByRole('button', { name: 'Cody Commands' }).click()
     await page.getByRole('option', { name: 'Edit code' }).click()
 
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
