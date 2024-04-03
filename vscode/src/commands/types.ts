@@ -1,6 +1,7 @@
 import type { ChatEventSource, CodyCommand, ContextItem } from '@sourcegraph/cody-shared'
 
 import type { Range, Uri } from 'vscode'
+import type { ExecuteEditArguments } from '../edit/execute'
 
 /**
  * The name of the file for configuring Custom Commands.
@@ -23,7 +24,7 @@ export interface CodyCommandsFile {
     commands: Map<string, CodyCommand>
 }
 
-export interface CodyCommandArgs {
+export interface CodyCommandArgs extends ExecuteEditArguments {
     // for tracing the life of the request
     requestID: string
     // where the command was triggered from

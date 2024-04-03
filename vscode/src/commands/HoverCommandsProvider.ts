@@ -6,13 +6,14 @@ import {
     logDebug,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { ExecuteEditArguments } from '../edit/execute'
+import { executeEdit } from '../edit/execute'
 import { fetchDocumentSymbols } from '../edit/input/utils'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
-import { executeHoverChatCommand } from './execute/hover-explain'
+import { executeDocCommand } from './execute'
+import { executeHoverChatCommand } from './execute/hover'
 import type { CodyCommandArgs } from './types'
 
 /**
@@ -104,10 +105,11 @@ class HoverCommandsProvider implements vscode.Disposable {
 
         // Create contents for the hover with clickable commands
         const contents = new vscode.MarkdownString(
-            commands
-                .filter(c => c.enabled)
-                .map(c => createHoverCommandTitle(c.id, c.title))
-                .join(' | ')
+            '$(cody-logo) ' +
+                commands
+                    .filter(c => c.enabled)
+                    .map(c => createHoverCommandTitle(c.id, c.title))
+                    .join(' | ')
         )
         contents.supportThemeIcons = true
         contents.isTrusted = true
@@ -177,16 +179,20 @@ class HoverCommandsProvider implements vscode.Disposable {
         telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', args, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: args })
 
-        const range = symbol?.range ?? selection
+        const cursor = new vscode.Range(position, position)
+        const range = symbol?.range ?? selection ?? cursor
         const commandArgs = { source: 'hover', uri: document.uri, range } as CodyCommandArgs
 
         switch (id) {
-            // Edit Commands
-            // biome-ignore lint/suspicious/noFallthroughSwitchClause: <explanation>
             case 'cody.command.document-code':
-                commandArgs.range = new vscode.Range(position, position)
+                // Use the current cursor position to let the document command
+                // determind the correct insertion point for the documentable node
+                commandArgs.range = cursor
+                executeDocCommand(commandArgs)
+                break
             case 'cody.command.edit-code':
-                await vscode.commands.executeCommand(id, commandArgs as ExecuteEditArguments)
+                commandArgs.configuration = { range, document }
+                executeEdit(commandArgs)
                 break
             // New Chat Commands
             case 'cody.action.chat': {
@@ -198,8 +204,7 @@ class HoverCommandsProvider implements vscode.Disposable {
                 break
             }
             default:
-                await vscode.commands.executeCommand(id, commandArgs)
-                break
+                vscode.commands.executeCommand(id, commandArgs)
         }
     }
 
@@ -260,11 +265,6 @@ interface HoverCommand {
 }
 
 const HoverCommands: () => Record<string, HoverCommand> = () => ({
-    menu: {
-        id: 'cody.menu.commands',
-        title: '$(cody-logo)',
-        enabled: true,
-    },
     explain: {
         id: 'cody.command.explain-code',
         title: 'Explain Code',
