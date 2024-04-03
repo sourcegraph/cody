@@ -15,7 +15,8 @@
         "noUnusedPrivateClassMembers": "error",
         "noInvalidUseBeforeDeclaration": "error",
         "noUselessTernary": "error",
-        "noDuplicateJsonKeys": "error"
+        "noDuplicateJsonKeys": "error",
+        "useNodejsImportProtocol": "error"
       },
       "suspicious": {
         "noExplicitAny": "off"

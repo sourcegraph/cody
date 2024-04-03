@@ -1,6 +1,6 @@
-import path from 'path'
+import fspromises from 'node:fs/promises'
+import path from 'node:path'
 import dedent from 'dedent'
-import fspromises from 'fs/promises'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { IndentationBasedFoldingRangeProvider } from '../../../vscode/src/lsp/foldingRanges'

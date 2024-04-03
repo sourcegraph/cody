@@ -37,8 +37,6 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.editorTitleCommandIcon':
-                        return true
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.codeActions.enabled':
@@ -67,6 +65,8 @@ describe('getConfiguration', () => {
                         return 'off'
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
+                    case 'cody.edit.preInstruction':
+                        return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
                     case 'cody.autocomplete.advanced.model':
@@ -102,6 +102,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.supercompletions':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -116,15 +118,16 @@ describe('getConfiguration', () => {
                 'Proxy-Authenticate': 'Basic',
             },
             chatPreInstruction: 'My name is Jeff.',
+            editPreInstruction: 'My name is not Jeff.',
             autocomplete: false,
             autocompleteLanguages: {
                 '*': true,
             },
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
+            experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
-            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             codeActions: true,

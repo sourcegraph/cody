@@ -16,7 +16,7 @@ describe('DefaultPrompter', () => {
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
-        ).makePrompt(chat, 100000)
+        ).makePrompt(chat, 0, 100000)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -49,7 +49,7 @@ describe('DefaultPrompter', () => {
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
-        ).makePrompt(chat, 100000)
+        ).makePrompt(chat, 0, 100000)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -76,6 +76,7 @@ describe('DefaultPrompter', () => {
                 type: 'file',
                 uri: vscode.Uri.file('/foo/bar'),
                 content: 'foobar',
+                isTooLarge: true,
             },
         ]
 

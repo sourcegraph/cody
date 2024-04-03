@@ -1,5 +1,5 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
@@ -806,15 +806,16 @@ export const DEFAULT_VSCODE_SETTINGS = {
     codebase: '',
     customHeaders: {},
     chatPreInstruction: '',
+    editPreInstruction: '',
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
     },
     commandCodeLenses: false,
-    editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
+    experimentalSupercompletions: false,
     experimentalOllamaChat: false,
     experimentalSymfContext: true,
     experimentalTracing: false,

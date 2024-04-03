@@ -1,10 +1,11 @@
-import path from 'path'
+import path from 'node:path'
 
 import * as vscode from 'vscode'
 import type Parser from 'web-tree-sitter'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { Tree } from 'web-tree-sitter'
+import { captureException } from '../services/sentry/sentry'
 import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
 const ParserImpl = require('web-tree-sitter') as typeof Parser
@@ -46,11 +47,18 @@ async function isRegularFile(uri: vscode.Uri): Promise<boolean> {
     }
 }
 
+type SafeParse = (
+    input: string | Parser.Input,
+    previousTree?: Parser.Tree,
+    options?: Parser.Options
+) => Parser.Tree | undefined
+
 export type WrappedParser = Pick<Parser, 'parse' | 'getLanguage'> & {
     /**
      * Wraps `parser.parse()` call into an OpenTelemetry span.
      */
-    observableParse: Parser['parse']
+    observableParse: SafeParse
+    safeParse: SafeParse
 }
 
 export async function createParser(settings: ParserSettings): Promise<WrappedParser | undefined> {
@@ -82,10 +90,25 @@ export async function createParser(settings: ParserSettings): Promise<WrappedPar
         parser.setTimeoutMicros(70_000)
     }
 
+    const safeParse: SafeParse = (...args) => {
+        try {
+            return parser.parse(...args)
+        } catch (error) {
+            captureException(error)
+
+            if (process.env.NODE_ENV === 'development') {
+                console.error('parser.parse() error:', error)
+            }
+
+            return undefined
+        }
+    }
+
     const wrappedParser: WrappedParser = {
         getLanguage: () => parser.getLanguage(),
         parse: (...args) => parser.parse(...args),
-        observableParse: (...args) => wrapInActiveSpan('parser.parse', () => parser.parse(...args)),
+        observableParse: (...args) => wrapInActiveSpan('parser.parse', () => safeParse(...args)),
+        safeParse,
     }
 
     PARSERS_LOCAL_CACHE[language] = wrappedParser

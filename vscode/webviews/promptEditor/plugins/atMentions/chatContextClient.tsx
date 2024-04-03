@@ -1,7 +1,7 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
-import { parseLineRangeInMention } from './atMentions'
+import { LINE_RANGE_REGEXP, RANGE_MATCHES_REGEXP, parseLineRangeInMention } from './atMentions'
 
 export interface ChatContextClient {
     getChatContextItems(query: string): Promise<ContextItem[]>
@@ -54,10 +54,34 @@ function useChatContextClient(): ChatContextClient {
 }
 
 /** Hook to get the chat context items for the given query. */
-export function useChatContextItems(query: string): ContextItem[] | undefined {
+export function useChatContextItems(query: string | null): ContextItem[] | undefined {
     const chatContextClient = useChatContextClient()
     const [results, setResults] = useState<ContextItem[]>()
+    // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
+        // An empty query is a valid query that we use to get open tabs context,
+        // while a null query means this is not an at-mention query.
+        if (query === null) {
+            setResults(undefined)
+            return
+        }
+
+        // If the query ends with a colon, we will reuse current results but remove the range.
+        if (query.endsWith(':')) {
+            const selected = results?.find(r => displayPath(r.uri) === query.slice(0, -1))
+            setResults(
+                selected
+                    ? [{ ...selected, range: undefined }]
+                    : results?.map(r => ({ ...r, range: undefined }))
+            )
+            return
+        }
+
+        // If user is typing a line range, fetch new chat context items only if there are no results
+        if (results?.length && RANGE_MATCHES_REGEXP.test(query) && !LINE_RANGE_REGEXP.test(query)) {
+            return
+        }
+
         // Track if the query changed since this request was sent (which would make our results
         // no longer valid).
         let invalidated = false
@@ -80,6 +104,6 @@ export function useChatContextItems(query: string): ContextItem[] | undefined {
         return () => {
             invalidated = true
         }
-    }, [chatContextClient, query])
+    }, [query])
     return results
 }

@@ -205,3 +205,9 @@ export function isSerializedContextItemMentionNode(
 ): node is SerializedContextItemMentionNode {
     return Boolean(node && node.type === ContextItemMentionNode.getType())
 }
+
+export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {
+    const atNode = new ContextItemMentionNode(contextItem)
+    const textNode = new TextNode(atNode.__text)
+    return $applyNodeReplacement(textNode)
+}

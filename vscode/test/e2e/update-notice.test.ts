@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { sidebarSignin } from './common'
+import { createEmptyChatPanel, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const versionUpdateStorageKey = 'notices.last-dismissed-version'
@@ -10,8 +10,7 @@ const updateToastText = /Cody updated to v\d+\.\d+/
 test('new installs should not show the update toast', async ({ page, sidebar }) => {
     // Sign in and start a chat
     await sidebarSignin(page, sidebar)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const [chatFrame] = await createEmptyChatPanel(page)
 
     // The "updated" toast should not appear
     const introChat = chatFrame.getByText(greetingChatText)
@@ -36,11 +35,7 @@ test('existing installs should show the update toast when the last dismissed ver
     await sidebarSignin(page, sidebar)
 
     // Use chat.
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    let chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await chatInput.fill('hey buddy')
-    await chatInput.press('Enter')
+    let [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Forge an older dismissed version into local storage.
     expect(
@@ -50,10 +45,16 @@ test('existing installs should show the update toast when the last dismissed ver
         }, versionUpdateStorageKey)
     ).toBe('0.7')
 
+    // Submit a chat message
+    await chatInput.fill('hey buddy')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('hey buddy')).toBeVisible()
+    await page.getByLabel(/Close /).click()
+    await expect(chatFrame.getByText('hey buddy')).not.toBeVisible()
+
     // Wait for this chat to be available in the sidebar
     const chatHistoryEntry = page.getByRole('treeitem', { name: 'hey buddy' })
     await expect(chatHistoryEntry).toBeVisible()
-    await page.locator('*[aria-label="Tab actions"] *[aria-label~="Close"]').click()
 
     // Reopen the chat; the update notice should be visible.
     // Welcome message is removed.

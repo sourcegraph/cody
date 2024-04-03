@@ -1,6 +1,6 @@
-import path from 'path'
+import path from 'node:path'
 import { expect } from '@playwright/test'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, getContextCell, sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -15,6 +15,7 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
@@ -45,18 +46,17 @@ test.extend<ExpectedEvents>({
     await page.click('.badge[aria-label="Cody"]')
 
     // Start new chat
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
 
     /* TEST: Chat Context - Ignored file do not show up with context */
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
     await chatInput.focus()
     await chatInput.fill('Ignore me')
     await chatInput.press('Enter')
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
+    const contextCell = getContextCell(chatPanel)
+    await expect(contextCell).not.toBeVisible()
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()
@@ -65,7 +65,6 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
-    await page.waitForTimeout(1000) // seems to make it less flaky on Windows
     await expect(
         chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()

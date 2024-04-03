@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs'
-import path from 'path'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { URI } from 'vscode-uri'
 import { type Diagnostic, Severity } from './Diagnostic'
 import { scip } from './scip'

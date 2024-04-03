@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import type React from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,69 +11,47 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { ChatButtonProps } from '../Chat'
-import type { EditButtonProps } from '../Chat'
-import type { FeedbackButtonsProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { ChatModelDropdownMenuProps } from '../Components/ChatModelDropdownMenu'
-import type { CodeBlockActionsProps } from './CodeBlocks'
+import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { TranscriptItem, type TranscriptItemClassNames } from './TranscriptItem'
-import type { FileLinkProps } from './components/EnhancedContext'
+import { TranscriptItem } from './TranscriptItem'
 
+import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
 import styles from './Transcript.module.css'
 
-export const Transcript: React.FunctionComponent<
-    {
-        transcript: ChatMessage[]
-        welcomeMessage?: string
-        messageInProgress: ChatMessage | null
-        messageBeingEdited: number | undefined
-        setMessageBeingEdited: (index?: number) => void
-        fileLinkComponent: React.FunctionComponent<FileLinkProps>
-        className?: string
-        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
-        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
-        feedbackButtonsOnSubmit?: (text: string) => void
-        copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
-        insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-        isTranscriptError?: boolean
-        chatModels?: ModelProvider[]
-        ChatModelDropdownMenu?: React.FunctionComponent<ChatModelDropdownMenuProps>
-        onCurrentChatModelChange?: (model: ModelProvider) => void
-        userInfo: UserAccountInfo
-        postMessage?: ApiPostMessage
-        guardrails?: Guardrails
-    } & TranscriptItemClassNames
-> = React.memo(function TranscriptContent({
+export const Transcript: React.FunctionComponent<{
+    transcript: ChatMessage[]
+    welcomeMessage?: string
+    messageInProgress: ChatMessage | null
+    messageBeingEdited: number | undefined
+    setMessageBeingEdited: (index?: number) => void
+    className?: string
+    feedbackButtonsOnSubmit?: (text: string) => void
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    isTranscriptError?: boolean
+    chatModels?: ModelProvider[]
+    onCurrentChatModelChange: (model: ModelProvider) => void
+    userInfo: UserAccountInfo
+    postMessage?: ApiPostMessage
+    guardrails?: Guardrails
+}> = ({
     transcript,
     welcomeMessage,
     messageInProgress,
     messageBeingEdited,
     setMessageBeingEdited,
-    fileLinkComponent,
     className,
-    codeBlocksCopyButtonClassName,
-    codeBlocksInsertButtonClassName,
-    transcriptItemClassName,
-    humanTranscriptItemClassName,
-    transcriptItemParticipantClassName,
-    transcriptActionClassName,
-    EditButtonContainer,
-    FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    ChatButtonComponent,
     isTranscriptError,
     chatModels,
-    ChatModelDropdownMenu,
     onCurrentChatModelChange,
     userInfo,
     postMessage,
     guardrails,
-}) {
+}) => {
     // Scroll the last human message to the top whenever a new human message is received as input.
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
@@ -183,20 +162,10 @@ export const Transcript: React.FunctionComponent<
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        EditButtonContainer={EditButtonContainer}
-                        fileLinkComponent={fileLinkComponent}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                        transcriptItemClassName={transcriptItemClassName}
-                        humanTranscriptItemClassName={humanTranscriptItemClassName}
-                        transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                        transcriptActionClassName={transcriptActionClassName}
-                        FeedbackButtonsContainer={FeedbackButtonsContainer}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        ChatButtonComponent={ChatButtonComponent}
                         userInfo={userInfo}
                         postMessage={postMessage}
                         guardrails={guardrails}
@@ -214,7 +183,6 @@ export const Transcript: React.FunctionComponent<
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
                 {!!chatModels?.length &&
-                    ChatModelDropdownMenu &&
                     onCurrentChatModelChange &&
                     userInfo &&
                     userInfo.isDotComUser && (
@@ -232,7 +200,6 @@ export const Transcript: React.FunctionComponent<
                         message={welcomeTranscriptMessage}
                         beingEdited={undefined}
                         inProgress={false}
-                        fileLinkComponent={fileLinkComponent}
                         setBeingEdited={() => {}}
                         showEditButton={false}
                         showFeedbackButtons={false}
@@ -249,17 +216,10 @@ export const Transcript: React.FunctionComponent<
                         inProgress={!!transcript[earlierMessages.length].contextFiles}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
-                        fileLinkComponent={fileLinkComponent}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
-                        transcriptItemClassName={transcriptItemClassName}
-                        transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                        transcriptActionClassName={transcriptActionClassName}
                         showEditButton={false}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        ChatButtonComponent={ChatButtonComponent}
                         postMessage={postMessage}
                         userInfo={userInfo}
                     />
@@ -271,7 +231,7 @@ export const Transcript: React.FunctionComponent<
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
         </div>
     )
-})
+}
 
 function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
     for (let i = array.length - 1; i >= 0; i--) {

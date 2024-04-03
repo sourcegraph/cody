@@ -27,7 +27,7 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-3-sonnet-20240229': claude,
     'anthropic/claude-3-haiku-20240307': claude,
     'openai/gpt-3.5-turbo': openai,
-    'openai/gpt-4-1106-preview': openai,
+    'openai/gpt-4-turbo-preview': openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -53,6 +53,7 @@ const getInteractionArgsFromIntent = (
 
 interface BuildInteractionOptions {
     model: EditModel
+    codyApiVersion: number
     contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
@@ -66,6 +67,7 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    codyApiVersion,
     contextWindow,
     task,
     editor,
@@ -99,10 +101,17 @@ export const buildInteraction = async ({
 
     const promptBuilder = new PromptBuilder(contextWindow)
 
-    const preamble = getSimplePreamble(model)
+    const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
+    // Add pre-instruction for edit commands to end of human prompt to override the default
+    // prompt. This is used for providing additional information and guidelines by the user.
+    const preInstruction: string | undefined = vscode.workspace
+        .getConfiguration('cody.edit')
+        .get('preInstruction')
+    const additionalRule = preInstruction ? `\nIMPORTANT: ${preInstruction.trim()}` : ''
+
+    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt.instruction + additionalRule }]
     if (assistantText) {
         transcript.push({ speaker: 'assistant', text: assistantText })
     }

@@ -3,25 +3,21 @@ import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    if (authStatus?.configOverwrites?.chatModel) {
-        ModelProvider.add(
-            new ModelProvider(authStatus.configOverwrites.chatModel, [
-                ModelUsage.Chat,
-                // TODO: Add configOverwrites.editModel for separate edit support
-                ModelUsage.Edit,
-            ])
-        )
-    }
-    return ModelProvider.get(ModelUsage.Edit, authStatus.endpoint)
+    return ModelProvider.getProviders(ModelUsage.Edit, !authStatus.userCanUpgrade)
 }
 
 export function getOverridenModelForIntent(intent: EditIntent, currentModel: EditModel): EditModel {
     switch (intent) {
         case 'fix':
-            // Edit commands have only been tested with Claude 2. Default to that for now.
-            return 'anthropic/claude-2.0'
+            // Fix is a case where we want to ensure that users do not end up with a broken edit model.
+            // It is outside of the typical Edit flow so it is more likely a user could become "stuck" here.
+            // TODO: Make the model usage more visible to users outside of the normal edit flow. This means
+            // we could let the user provide any model they want for `fix`.
+            // Issue: https://github.com/sourcegraph/cody/issues/3512
+            return 'anthropic/claude-3-sonnet-20240229'
         case 'doc':
-            return 'anthropic/claude-instant-1.2'
+            // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
+            return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':
         case 'edit':

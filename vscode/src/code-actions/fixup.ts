@@ -35,7 +35,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         // const importDiagnostics = diagnostics.filter(diagnostic => diagnostic.message.includes('import'))
 
         // Expand range by getting the folding range contains the target (error) area
-        const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
+        const targetAreaRange = await getSmartSelection(document.uri, range.start)
 
         const newRange = targetAreaRange
             ? new vscode.Range(targetAreaRange.start, targetAreaRange.end)
@@ -58,6 +58,12 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
                 {
                     configuration: { instruction, range, intent: 'fix', document },
                     source,
+                    telemetryMetadata: {
+                        diagnostics: diagnostics.map(diagnostic => ({
+                            code: getDiagnosticCode(diagnostic.code),
+                            source: diagnostic.source,
+                        })),
+                    },
                 } satisfies ExecuteEditArguments,
             ],
             title: 'Ask Cody to Fix',
@@ -113,4 +119,13 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         }
         return prompt
     }
+}
+
+function getDiagnosticCode(diagnosticCode: vscode.Diagnostic['code']): string | undefined {
+    if (!diagnosticCode) {
+        return
+    }
+
+    const code = typeof diagnosticCode === 'object' ? diagnosticCode.value : diagnosticCode
+    return code.toString()
 }

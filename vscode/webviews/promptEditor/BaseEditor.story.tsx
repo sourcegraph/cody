@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import type { EditorState } from 'lexical'
 import { useState } from 'react'
-import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
+import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './BaseEditor.story.module.css'
 
@@ -16,7 +16,7 @@ const meta: Meta<typeof BaseEditor> = {
         className: styles.editor,
     } as React.ComponentProps<typeof BaseEditor>,
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeStandaloneComponent],
 } as Meta
 
 export default meta

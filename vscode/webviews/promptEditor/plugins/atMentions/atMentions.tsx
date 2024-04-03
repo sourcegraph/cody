@@ -18,9 +18,15 @@ import {
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
+import {
+    $createContextItemMentionNode,
+    $createContextItemTextNode,
+} from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
+
+export const RANGE_MATCHES_REGEXP = /:(\d+)?-?(\d+)?$/
+export const LINE_RANGE_REGEXP = /:(\d+)-(\d+)$/
 
 /**
  * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
@@ -31,7 +37,7 @@ export function parseLineRangeInMention(text: string): {
     textWithoutRange: string
     range?: RangeData
 } {
-    const match = text.match(/:(\d+)-(\d+)$/)
+    const match = text.match(LINE_RANGE_REGEXP)
     if (match === null) {
         return { textWithoutRange: text }
     }
@@ -74,7 +80,7 @@ export class MentionTypeaheadOption extends MenuOption {
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState<string | null>(null)
 
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
@@ -101,22 +107,35 @@ export default function MentionsPlugin(): JSX.Element | null {
             closeMenu: () => void
         ) => {
             editor.update(() => {
-                const mentionNode = $createContextItemMentionNode(selectedOption.item)
-                if (nodeToReplace) {
-                    nodeToReplace.replace(mentionNode)
+                const currentInputText = nodeToReplace?.__text
+                if (!currentInputText) {
+                    return
                 }
 
-                const spaceAfter = $createTextNode(' ')
-                mentionNode.insertAfter(spaceAfter)
-                spaceAfter.select()
-
+                const selectedItem = selectedOption.item
+                const isLargeFile = selectedItem.type === 'file' && selectedItem.isTooLarge
+                // When selecting a large file without range, add the selected option as text node with : at the end.
+                // This allows users to autocomplete the file path, and provide them with the options to add range.
+                if (isLargeFile && !selectedItem.range) {
+                    const textNode = $createContextItemTextNode(selectedItem)
+                    nodeToReplace.replace(textNode)
+                    const colonNode = $createTextNode(':')
+                    textNode.insertAfter(colonNode)
+                    colonNode.select()
+                } else {
+                    const mentionNode = $createContextItemMentionNode(selectedItem)
+                    nodeToReplace.replace(mentionNode)
+                    const spaceNode = $createTextNode(' ')
+                    mentionNode.insertAfter(spaceNode)
+                    spaceNode.select()
+                }
                 closeMenu()
             })
         },
         [editor]
     )
 
-    const onQueryChange = useCallback((query: string | null) => setQuery(query ?? ''), [])
+    const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
@@ -157,7 +176,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={classNames(styles.popover)}
                             >
                                 <OptionsList
-                                    query={query}
+                                    query={query ?? ''}
                                     options={options}
                                     selectedIndex={selectedIndex}
                                     setHighlightedIndex={setHighlightedIndex}

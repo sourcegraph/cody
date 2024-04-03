@@ -1,7 +1,15 @@
-import * as child_process from 'child_process'
-import { type PathLike, type RmOptions, mkdir, mkdtempSync, promises as fs, rmSync, writeFile } from 'fs'
-import * as os from 'os'
-import * as path from 'path'
+import * as child_process from 'node:child_process'
+import {
+    type PathLike,
+    type RmOptions,
+    mkdir,
+    mkdtempSync,
+    promises as fs,
+    rmSync,
+    writeFile,
+} from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 
 import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
 import { _electron as electron } from 'playwright'
@@ -260,7 +268,6 @@ async function buildWorkSpaceSettings(
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
-        'cody.editorTitleCommandIcon': true,
         ...extraSettings,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
@@ -342,7 +349,7 @@ export async function openFile(page: Page, filename: string): Promise<void> {
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
 export async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat' }).click()
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 

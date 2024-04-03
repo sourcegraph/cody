@@ -213,6 +213,7 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const unauthenticatedStatus = {
@@ -230,6 +231,7 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
@@ -247,18 +249,12 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The  operating system kind
-    os: string
-    arch: string
-    homeDir?: string | undefined
-
-    extensionVersion: string
-
-    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 }
 

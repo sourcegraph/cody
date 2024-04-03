@@ -1,24 +1,29 @@
 import { XMLParser } from 'fast-xml-parser'
 
-import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import { type SourcegraphCompletionsClient, getSimplePreamble } from '@sourcegraph/cody-shared'
 
 export async function symfExpandQuery(
     completionsClient: SourcegraphCompletionsClient,
     query: string
 ): Promise<string> {
-    const stream = completionsClient.stream({
-        messages: [
-            {
-                speaker: 'human',
-                text: `You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
-            },
-            { speaker: 'assistant' },
-        ],
-        maxTokensToSample: 400,
-        temperature: 0,
-        topK: 1,
-        fast: true,
-    })
+    const preamble = getSimplePreamble(undefined, 0)
+    const stream = completionsClient.stream(
+        {
+            messages: [
+                ...preamble,
+                {
+                    speaker: 'human',
+                    text: `You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                },
+                { speaker: 'assistant' },
+            ],
+            maxTokensToSample: 400,
+            temperature: 0,
+            topK: 1,
+            fast: true,
+        },
+        0 // Use legacy API version for now
+    )
 
     const streamingText: string[] = []
     for await (const message of stream) {

@@ -8,23 +8,26 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import {
+    FILE_HELP_LABEL,
+    GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
-import {
-    FILE_HELP_LABEL,
-    NO_MATCHES_LABEL,
-    OTHER_MENTION_HELP_LABEL,
-    SYMBOL_HELP_LABEL,
-} from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
@@ -79,6 +82,9 @@ export const getInput = async (
     if (!editor) {
         return null
     }
+
+    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
+    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -369,22 +375,7 @@ export const getInput = async (
                     ? parseMentionQuery(mentionTrigger.matchingString)
                     : undefined
 
-                // If we have the beginning of a file or symbol match, show a helpful label
-                if (mentionQuery?.text === '') {
-                    if (mentionQuery.type === 'empty' || mentionQuery.type === 'file') {
-                        input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                        return
-                    }
-                    if (mentionQuery.type === 'symbol') {
-                        input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
-                        return
-                    }
-                    input.items = [{ alwaysShow: true, label: OTHER_MENTION_HELP_LABEL }]
-                    return
-                }
-
-                const matchingContext = mentionQuery ? await getMatchingContext(mentionQuery) : null
-                if (matchingContext === null) {
+                if (!mentionQuery) {
                     // Nothing to match, re-render existing items
                     input.items = getEditInputItems(
                         input.value,
@@ -395,23 +386,55 @@ export const getInput = async (
                     return
                 }
 
+                const matchingContext = await getMatchingContext(mentionQuery)
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
-                    input.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
+                    input.items = [
+                        {
+                            alwaysShow: true,
+                            label:
+                                mentionQuery.type === 'symbol'
+                                    ? mentionQuery.text.length === 0
+                                        ? SYMBOL_HELP_LABEL
+                                        : NO_SYMBOL_MATCHES_LABEL
+                                    : mentionQuery.text.length === 0
+                                      ? FILE_HELP_LABEL
+                                      : NO_FILE_MATCHES_LABEL,
+                        },
+                    ]
                     return
                 }
 
                 // Update stored context items so we can retrieve them later
-                for (const { key, file } of matchingContext) {
-                    contextItems.set(key, file)
+                for (const { key, item } of matchingContext) {
+                    contextItems.set(key, item)
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them
-                input.items = matchingContext.map(({ key, shortLabel }) => ({
-                    alwaysShow: true,
-                    label: shortLabel || key,
-                    description: shortLabel ? key : undefined,
-                }))
+                input.items = [
+                    ...matchingContext.map(({ key, shortLabel, item }) => ({
+                        alwaysShow: true,
+                        label: shortLabel || key,
+                        description: shortLabel ? key : undefined,
+                        detail:
+                            item.type === 'file' && item.isTooLarge
+                                ? LARGE_FILE_WARNING_LABEL
+                                : undefined,
+                    })),
+                    {
+                        kind: vscode.QuickPickItemKind.Separator,
+                        label: 'help',
+                    },
+                    {
+                        alwaysShow: true,
+                        label:
+                            mentionQuery?.type === 'symbol'
+                                ? SYMBOL_HELP_LABEL
+                                : mentionQuery?.type === 'file'
+                                  ? FILE_HELP_LABEL
+                                  : GENERAL_HELP_LABEL,
+                    },
+                ]
             },
             onDidAccept: () => {
                 const input = editInput.input
@@ -431,6 +454,14 @@ export const getInput = async (
                         return
                     case TEST_ITEM.label:
                         unitTestInput.render(activeTitle, '')
+                        return
+                    case FILE_HELP_LABEL:
+                    case LARGE_FILE_WARNING_LABEL:
+                    case SYMBOL_HELP_LABEL:
+                    case NO_FILE_MATCHES_LABEL:
+                    case NO_SYMBOL_MATCHES_LABEL:
+                    case GENERAL_HELP_LABEL:
+                        // Noop, the user has actioned an item that is non intended to be actionable.
                         return
                 }
 

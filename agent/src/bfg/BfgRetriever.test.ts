@@ -1,8 +1,8 @@
-import * as child_process from 'child_process'
-import * as fs from 'fs'
-import path from 'path'
-import * as util from 'util'
-import * as fspromises from 'fs/promises'
+import * as child_process from 'node:child_process'
+import * as fs from 'node:fs'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
+import * as util from 'node:util'
 
 import envPaths from 'env-paths'
 import * as rimraf from 'rimraf'
@@ -12,6 +12,7 @@ import * as vscode from 'vscode'
 import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
+import { defaultVSCodeExtensionClient } from '../../../vscode/src/extension-client'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -34,7 +35,7 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        await initializeVscodeExtension(vscode.Uri.file(process.cwd()))
+        await initializeVscodeExtension(vscode.Uri.file(process.cwd()), defaultVSCodeExtensionClient())
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
