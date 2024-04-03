@@ -115,17 +115,13 @@ class HoverCommandsProvider implements vscode.Disposable {
 
         // Create contents for the hover with clickable commands
         const contents = new vscode.MarkdownString(
-            '$(cody-logo) ' +
-                commands
-                    .filter(c => c.enabled)
-                    .map(c => createHoverCommandTitle(c.id, c.title))
-                    .join(' | ')
+            '$(cody-logo) ' + commands.map(c => createHoverCommandTitle(c.id, c.title)).join(' | ')
         )
         contents.supportThemeIcons = true
         contents.isTrusted = true
 
         // Log the visibility of the hover commands
-        const args = { commands: commands.filter(c => c.enabled).join(','), languageId: doc.languageId }
+        const args = { commands: commands.map(c => c.title).join(', '), languageId: doc.languageId }
         telemetryService.log('CodyVSCodeExtension:hoverCommands:visible', args, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.hoverCommands', 'visible', { privateMetadata: args })
 
@@ -168,7 +164,7 @@ class HoverCommandsProvider implements vscode.Disposable {
             return []
         }
 
-        return Object.values(commandsOnHovers)
+        return Object.values(commandsOnHovers).filter(c => c.enabled)
     }
 
     /**
