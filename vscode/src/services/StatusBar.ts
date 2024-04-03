@@ -5,6 +5,7 @@ import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourceg
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
+import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
 import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
@@ -189,6 +190,18 @@ export function createStatusBar(): CodyStatusBar {
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
             ),
+            ...(hoverCommandsProvider.getEnablement()
+                ? [
+                      await createFeatureToggle(
+                          'Commands on Hover',
+                          'Experimental',
+                          'Enable Cody commands to appear on hover',
+                          'cody.experimental.hoverCommands',
+                          () => isHoverCommandsEnabled()
+                      ),
+                  ]
+                : []),
+
             await createFeatureToggle(
                 'Search Context',
                 'Beta',

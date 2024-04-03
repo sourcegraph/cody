@@ -90,18 +90,22 @@ export async function executeDocCommand(
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { args })
-        let prompt = defaultCommands.doc.prompt
 
+        let prompt = defaultCommands.doc.prompt
         if (args?.additionalInstruction) {
             span.addEvent('additionalInstruction')
             prompt = `${prompt} ${args.additionalInstruction}`
         }
 
-        const editor = getEditor()?.active
+        const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active
         const document = editor?.document
 
         if (!document) {
             return undefined
+        }
+
+        if (args?.range) {
+            editor.selection = new vscode.Selection(args.range.start, args.range.end)
         }
 
         const { range, insertionPoint } = getDocumentableRange(editor)
