@@ -345,10 +345,10 @@ export async function openFile(page: Page, filename: string): Promise<void> {
     await page.getByPlaceholder(/Search files by name/).click()
     await page.keyboard.type(`${filename}`)
     // Makes sure the file is visible in the file picker
-    expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
+    await expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
     await page.keyboard.press('Enter')
     // Makes sure the file is opened in the editor
-    await page.getByRole('tab').getByText(filename).click()
+    await expect(page.getByRole('tab', { name: filename })).toBeVisible()
 }
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
