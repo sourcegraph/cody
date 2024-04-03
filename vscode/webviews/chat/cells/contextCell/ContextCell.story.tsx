@@ -32,7 +32,11 @@ export const Default: Story = {
                 title: 'my/file.java',
                 source: ContextItemSource.Unified,
             },
-            { type: 'file', uri: URI.parse('https://example.com/some-page') },
+            {
+                type: 'file',
+                uri: URI.parse('https://example.com/some-page'),
+                source: ContextItemSource.User,
+            },
             {
                 type: 'file',
                 uri: URI.file('/internal/file.go'),

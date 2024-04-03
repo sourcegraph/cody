@@ -68,14 +68,22 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
             {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
             {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
-                className={classNames(styles.linkButton, isTooLarge && styles.excluded)}
+                className={styles.linkButton}
                 title={tooltip}
                 href={href}
                 target={target}
                 onClick={logFileLinkClicked}
             >
-                <i className="codicon codicon-file" title={getFileSourceIconTitle(source)} />
-                <div className={styles.path}>{pathWithRange}</div>
+                <i
+                    className={classNames(
+                        'codicon',
+                        `codicon-${source === 'user' ? 'mention' : 'file'}`
+                    )}
+                    title={getFileSourceIconTitle(source)}
+                />
+                <div className={classNames(styles.path, isTooLarge && styles.excluded)}>
+                    {pathWithRange}
+                </div>
             </a>
         </div>
     )
