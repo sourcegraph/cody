@@ -5,7 +5,7 @@ devtools console:
 
 const lines = [':root {']
 for (const [name, value] of document.querySelector('.monaco-workbench').computedStyleMap()) {
-    if (/^--vscode-(button|foreground|checkbox|editor|focusBorder|font|input|inputOption|inputValidation|link|list|problemsErrorIcon|quickInput|pickerGroup|sideBar|sideBarTitle|sideBarSectionHeader|tab|textLink|widget|dropdown|quickInputList)-/.test(name)){
+    if (/^--vscode-(button|foreground|checkbox|editor|focusBorder|font|input|inputOption|inputValidation|link|list|problemsErrorIcon|quickInput|pickerGroup|sideBar|sideBarTitle|sideBarSectionHeader|tab|textLink|widget|dropdown|quickInputList)(-|$)/.test(name)){
         lines.push(`    ${name}: ${value};`);
     }
 }
@@ -54,6 +54,8 @@ console.log(lines.join('\n'))
     --vscode-editor-wordHighlightBackground: rgba(87, 87, 87, 0.72);
     --vscode-editor-wordHighlightStrongBackground: rgba(0, 73, 114, 0.72);
     --vscode-editor-wordHighlightTextBackground: rgba(87, 87, 87, 0.72);
+    --vscode-focusBorder: #0078d4;
+    --vscode-foreground: #cccccc;
     --vscode-input-background: #313131;
     --vscode-input-border: #3c3c3c;
     --vscode-input-foreground: #cccccc;
