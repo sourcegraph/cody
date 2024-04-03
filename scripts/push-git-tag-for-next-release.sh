@@ -53,4 +53,4 @@ fi
 bash "$SCRIPT_DIR/verify-release.sh"
 TAG="v$NEXT_VERSION"
 echo "$TAG"
-git tag -fa "$TAG" -m "$TAG" && git push -f origin "$TAG"
+git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"

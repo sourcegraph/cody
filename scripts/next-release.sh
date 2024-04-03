@@ -13,10 +13,10 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(gh release list --repo sourcegraph/jetbrains --limit 20 --exclude-drafts | sed 's/Latest//' | sed 's/Pre-release//' | awk '$2 ~ /v[0-9]+\.[0-9]+\.[0-9]+$/ { print $2, $3; exit }')
-MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f1)
-MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f2)
-PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | awk '{ print $1 }' | sed 's/v//' | cut -d. -f3)
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep "v\d*\\.\d*\\.\d*" | uniq | sort | tail -1)
+MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f1)
+MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f2)
+PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f3)
 
 NEXT_RELEASE_ARG="$1"
 # Check the argument and take appropriate action
