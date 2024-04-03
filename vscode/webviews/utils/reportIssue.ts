@@ -7,7 +7,6 @@ export function openCodyIssueReporter() {
         extensionId: `${packageJson.publisher}.${packageJson.name}`,
         issueBody,
         issueTitle: 'bug: ',
-        uri: packageJson.bugs,
     })
 }
 
