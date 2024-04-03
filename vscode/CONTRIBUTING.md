@@ -55,6 +55,20 @@ To publish a new **major** release to the [VS Code Marketplace](https://marketpl
 6. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
 7. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
 
+### Release Checklist
+
+Version Bump:
+
+- [x] [vscode/CHANGELOG.md](./CHANGELOG.md)
+- [x] [vscode/package.json](./package.json)
+- [x] Update agent recordings
+
+  ```
+  source agent/scripts/export-cody-http-recording-tokens.sh
+  src login
+  pnpm update-agent-recordings
+  ```
+
 ### Patch Release
 
 To publish a **patch** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
