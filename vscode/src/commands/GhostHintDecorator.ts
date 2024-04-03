@@ -100,11 +100,7 @@ type EnabledFeatures = Record<GhostVariant, boolean>
  * NOTE: Ghost Text should be disabled for users in the HoverCommands A/B test treatment group.
  */
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
-    const [ghostTextFeatureFlag, hoverFeatureFlag] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands),
-    ])
-
+    const hoverFeatureFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
     const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
