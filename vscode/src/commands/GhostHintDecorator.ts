@@ -114,8 +114,8 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
         /**
          * Toggle the default settings for EditOrChat & Document based on the feature flagss for hover commands and ghost text.
          */
-        EditOrChat: settingValue ?? (ghostTextFeatureFlag && !hoverFeatureFlag),
-        Document: settingValue ?? (ghostTextFeatureFlag && !hoverFeatureFlag),
+        EditOrChat: settingValue ?? !hoverFeatureFlag,
+        Document: settingValue ?? !hoverFeatureFlag,
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
