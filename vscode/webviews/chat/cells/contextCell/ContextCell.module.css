@@ -32,7 +32,10 @@
     align-items: center;
     gap: 0.35rem;
 }
-
+.stats {
+    font-weight: normal;
+    opacity: 0.6;
+}
 
 .list {
     list-style-type: none;
