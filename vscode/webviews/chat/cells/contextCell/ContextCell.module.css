@@ -25,6 +25,7 @@
 .heading {
     margin: 0;
     font-size: 1em;
+    font-weight: 500;
 
     display: inline-flex;
     align-items: center;
