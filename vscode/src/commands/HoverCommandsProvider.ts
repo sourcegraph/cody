@@ -20,7 +20,7 @@ import type { CodyCommandArgs } from './types'
  *
  * Provides clickable commands on hover and handles clicking on commands.
  */
-export class HoverCommandsProvider implements vscode.Disposable {
+class HoverCommandsProvider implements vscode.Disposable {
     private readonly id = FeatureFlag.CodyHoverCommands
     private disposables: vscode.Disposable[] = []
 
@@ -104,11 +104,10 @@ export class HoverCommandsProvider implements vscode.Disposable {
 
         // Create contents for the hover with clickable commands
         const contents = new vscode.MarkdownString(
-            '$(cody-logo) ' +
-                commands
-                    .filter(c => c.enabled)
-                    .map(c => c.title.replace('{params}', encodeURIComponent(JSON.stringify([c.id]))))
-                    .join(' | ')
+            commands
+                .filter(c => c.enabled)
+                .map(c => createHoverCommandTitle(c.id, c.title))
+                .join(' | ')
         )
         contents.supportThemeIcons = true
         contents.isTrusted = true
@@ -141,12 +140,16 @@ export class HoverCommandsProvider implements vscode.Disposable {
             this.current.error = onError
             commandsOnHovers.ask.enabled = true
         } else if (selection?.contains(position) && !selection?.isSingleLine) {
+            // CHAT & EDIT for multi-line selections
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
         } else if (docNode.symbol?.node && docNode.meta?.showHint) {
+            // EXPLAIN AND DOC for documentable nodes
             commandsOnHovers.explain.enabled = true
             commandsOnHovers.doc.enabled = true
+            commandsOnHovers.edit.enabled = true
         } else if (docNode.symbol?.node && activeSymbol) {
+            // CHAT & EDIT for workspace symbols
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
         } else {
@@ -178,20 +181,22 @@ export class HoverCommandsProvider implements vscode.Disposable {
         const commandArgs = { source: 'hover', uri: document.uri, range } as CodyCommandArgs
 
         switch (id) {
+            // Edit Commands
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: <explanation>
+            case 'cody.command.document-code':
+                commandArgs.range = new vscode.Range(position, position)
+            case 'cody.command.edit-code':
+                await vscode.commands.executeCommand(id, commandArgs as ExecuteEditArguments)
+                break
             // New Chat Commands
             case 'cody.action.chat': {
                 const symbolKind = symbol?.kind ? vscode.SymbolKind[symbol.kind].toLowerCase() : ''
                 const symbolPrompt = symbol?.name ? `#${symbol.name} (${symbolKind})` : ''
-                const helpPrompt = error ? '\nExplain this error: ' + error : ''
+                const helpPrompt = error ? '\nExplain this error:\n' + error : ''
                 commandArgs.additionalInstruction = symbolPrompt + helpPrompt
                 executeHoverChatCommand(commandArgs)
                 break
             }
-            // Edit Commands
-            case 'cody.command.edit-code':
-            case 'cody.command.document-code':
-                await vscode.commands.executeCommand(id, commandArgs as ExecuteEditArguments)
-                break
             default:
                 await vscode.commands.executeCommand(id, commandArgs)
                 break
@@ -255,31 +260,44 @@ interface HoverCommand {
 }
 
 const HoverCommands: () => Record<string, HoverCommand> = () => ({
+    menu: {
+        id: 'cody.menu.commands',
+        title: '$(cody-logo)',
+        enabled: true,
+    },
     explain: {
         id: 'cody.command.explain-code',
-        title: '[Explain Code](command:cody.experiment.hover.commands?{params})',
+        title: 'Explain Code',
         enabled: false,
     },
     doc: {
         id: 'cody.command.document-code',
-        title: '[Document Code](command:cody.experiment.hover.commands?{params})',
+        title: 'Document Code',
         enabled: false,
     },
     chat: {
         id: 'cody.action.chat',
-        title: '[New Chat](command:cody.experiment.hover.commands?{params})',
+        title: 'New Chat',
         enabled: false,
     },
     edit: {
         id: 'cody.command.edit-code',
-        title: '[Edit Code](command:cody.experiment.hover.commands?{params})',
+        title: 'Edit Code',
         enabled: false,
     },
     ask: {
         id: 'cody.action.chat',
-        title: '[Explain Error](command:cody.experiment.hover.commands?{params})',
+        title: 'Explain Error',
         enabled: false,
     },
 })
+
+const HOVER_COMMAND_TITLE_TEMPLATE = '[{title}](command:cody.experiment.hover.commands?{params})'
+const createHoverCommandTitle = (id: string, title: string): string => {
+    return HOVER_COMMAND_TITLE_TEMPLATE.replace('{title}', title).replace(
+        '{params}',
+        encodeURIComponent(JSON.stringify([id]))
+    )
+}
 
 export const hoverCommandsProvider = new HoverCommandsProvider()
