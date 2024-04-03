@@ -208,18 +208,18 @@ class HoverCommandsProvider implements vscode.Disposable {
         }
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): boolean {
+    public syncAuthStatus(authStatus: AuthStatus): void {
         if (!authStatus.isLoggedIn || !authStatus.isDotCom) {
             this.isActive = false
             this.reset()
-            return false
+            return
         }
 
-        // Check if the feature flag is enabled for the user
+        // Check if the feature flag for Hover Command is enabled for the user
         featureFlagProvider
             .evaluateFeatureFlag(this.id)
-            .then(hasFeatureFlag => {
-                this.isInTreatment = hasFeatureFlag
+            .then(async hoverFlag => {
+                this.isInTreatment = hoverFlag
                 this.isActive = isHoverCommandsEnabled()
                 this.register()
             })
@@ -227,7 +227,13 @@ class HoverCommandsProvider implements vscode.Disposable {
                 logDebug('HoverCommandsProvider:failed', error)
             })
 
-        return this.isInTreatment
+        // Log telemetry for users who are in the treatment group but disabled the configuration
+        if (this.isInTreatment && !this.isActive && !this.isEnrolled) {
+            telemetryService.log('CodyVSCodeExtension:hoverCommands:disabled', {}, { hasV2Event: true })
+            telemetryRecorder.recordEvent('cody.hoverCommands', 'disabled', {
+                privateMetadata: {},
+            })
+        }
     }
 
     public getEnablement(): boolean {
