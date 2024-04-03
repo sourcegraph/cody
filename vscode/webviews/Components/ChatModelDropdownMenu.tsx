@@ -27,14 +27,13 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     userInfo,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
-    const currentModelIndex = models.indexOf(models.find(m => m.default) || models[0])
     const dropdownRef = useRef<DropdownProps>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
-    const handleChange = useCallback(
+    const onChange = useCallback(
         (event: any): void => {
             const selectedModel = models[event.target?.selectedIndex]
             if (showCodyProBadge && selectedModel.codyProOnly) {
@@ -88,8 +87,8 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 ref={dropdownRef}
                 disabled={disabled}
                 className={styles.dropdownContainer}
-                onChange={handleChange}
-                selectedIndex={currentModelIndex}
+                onChange={onChange}
+                value={currentModel.model}
                 aria-label="Choose a model"
                 {...(!disabled && enabledDropdownProps)}
             >
@@ -97,7 +96,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                     <VSCodeOption
                         className={styles.option}
                         key={option.model}
-                        id={index.toString()}
+                        value={option.model}
                         title={
                             isModelDisabled(option.codyProOnly)
                                 ? `Upgrade to Cody Pro to use ${option.title}`
