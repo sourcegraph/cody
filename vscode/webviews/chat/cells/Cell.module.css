@@ -14,7 +14,8 @@
     flex: 0 0 auto;
     width: 24px;
     overflow: hidden;
-    text-align: center;
+    display: flex;
+    justify-content: center;
 }
 
 .content {
