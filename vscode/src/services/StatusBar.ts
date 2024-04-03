@@ -167,28 +167,11 @@ export function createStatusBar(): CodyStatusBar {
                 c => c.codeActions
             ),
             await createFeatureToggle(
-                'Editor Title Icon',
-                undefined,
-                'Enable Cody to appear in editor title menu for quick access to Cody commands',
-                'cody.editorTitleCommandIcon',
-                c => c.editorTitleCommandIcon
-            ),
-            await createFeatureToggle(
                 'Code Lenses',
                 undefined,
                 'Enable Code Lenses in documents for quick access to Cody commands',
                 'cody.commandCodeLenses',
                 c => c.commandCodeLenses
-            ),
-            await createFeatureToggle(
-                'Command Hints',
-                undefined,
-                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
-                'cody.commandHints.enabled',
-                async () => {
-                    const enablement = await getGhostHintEnablement()
-                    return enablement.Document || enablement.EditOrChat || enablement.Generate
-                }
             ),
             ...(hoverCommandsProvider.getEnablement()
                 ? [
@@ -200,7 +183,18 @@ export function createStatusBar(): CodyStatusBar {
                           () => isHoverCommandsEnabled()
                       ),
                   ]
-                : []),
+                : [
+                      await createFeatureToggle(
+                          'Command Hints',
+                          undefined,
+                          'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
+                          'cody.commandHints.enabled',
+                          async () => {
+                              const enablement = await getGhostHintEnablement()
+                              return enablement.Document || enablement.EditOrChat || enablement.Generate
+                          }
+                      ),
+                  ]),
 
             await createFeatureToggle(
                 'Search Context',
