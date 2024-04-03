@@ -1,5 +1,4 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import { VSCodeBadge } from '@vscode/webview-ui-toolkit/react'
 import type React from 'react'
 import { FileLink } from '../../../Components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
@@ -50,7 +49,7 @@ export const ContextCell: React.FunctionComponent<{
     let title = lineCount ? `${lines} from ${files}` : `${files}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
-        title = `${title} - ⚠️ ${excludedAtContext.length} ${excludedAtUnit} excluded`
+        title = `${title} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
     function logContextOpening() {
@@ -84,7 +83,7 @@ export const ContextCell: React.FunctionComponent<{
                         title={title}
                     >
                         <h4 className={styles.heading}>
-                            Context <VSCodeBadge>{contextFiles.length}</VSCodeBadge>
+                            Context <span className={styles.stats}>&mdash; {title}</span>
                         </h4>
                     </summary>
                     <ul className={styles.list}>
