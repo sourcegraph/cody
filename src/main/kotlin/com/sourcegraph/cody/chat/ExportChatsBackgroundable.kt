@@ -17,6 +17,7 @@ import com.sourcegraph.cody.initialization.EndOfTrialNotificationScheduler
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class ExportChatsBackgroundable(
@@ -40,6 +41,7 @@ class ExportChatsBackgroundable(
             .filter { it.internalId != null }
             .filter { chat -> if (internalId != null) chat.internalId == internalId else true }
 
+    var dummyInternalId = UUID.randomUUID().toString()
     chats.forEachIndexed { index, chatState ->
       val chatMessages =
           chatState.messages.map { message ->
@@ -53,7 +55,8 @@ class ExportChatsBackgroundable(
             ChatMessage(speaker = parsed, message.text)
           }
 
-      restoreChatSession(agent, chatMessages, chatModelProvider = null, chatState.internalId!!)
+      dummyInternalId = UUID.randomUUID().toString()
+      restoreChatSession(agent, chatMessages, chatModelProvider = null, dummyInternalId)
       indicator.fraction = ((index + 1.0) / (chats.size + 1.0))
 
       if (indicator.isCanceled) {
@@ -68,7 +71,7 @@ class ExportChatsBackgroundable(
 
     if (result != null) {
       if (internalId != null) {
-        val singleChatHistory = result.find { it.chatID == internalId }
+        val singleChatHistory = result.find { it.chatID == dummyInternalId }
         if (singleChatHistory != null) {
           onSuccess.invoke(singleChatHistory)
         } else {
