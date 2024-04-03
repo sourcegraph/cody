@@ -22,7 +22,8 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
                 throw new Error('No file content')
             }
 
-            range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
+            const startLine = range?.start?.line ?? 0
+            range = new vscode.Range(startLine, 0, startLine + truncatedContent.split('\n').length, 0)
 
             return [
                 {

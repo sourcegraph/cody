@@ -8,19 +8,22 @@ import { type ExecuteChatArguments, executeChat } from './ask'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromUri } from '../context/file-path'
+import { getContextFileFromCursor } from '../context/selection'
 
 async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
-    const { uri, range, userContextFiles = [], additionalInstruction } = args
+    const { uri, range, additionalInstruction } = args
 
     if (!uri) {
         throw new Error('No URI provided for the hover command')
     }
 
-    const contextFiles = [...userContextFiles, ...(await getContextFileFromUri(uri, range))]
+    const contextFiles = [...(await getContextFileFromUri(uri, range))]
+    contextFiles.push(...(await getContextFileFromCursor(range?.start)))
 
-    const prompt = `Answer my questions based on the code from @${displayPath(uri)}${
-        range?.start?.line ?? ''
-    }.${additionalInstruction ? ` ${additionalInstruction}` : ''}`
+    const startLine = range?.start?.line ?? 0
+    const prompt = `Summarize @${displayPath(uri)}${startLine ? ':' + startLine : ''}${
+        additionalInstruction ? `${additionalInstruction}` : ''
+    } in one sentence.`
 
     return {
         text: prompt,

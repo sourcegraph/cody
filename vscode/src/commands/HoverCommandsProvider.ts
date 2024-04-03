@@ -168,7 +168,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
             // New Chat Commands
             case 'cody.action.chat': {
                 const symbolKind = symbol?.kind ? vscode.SymbolKind[symbol.kind].toLowerCase() : ''
-                const symbolPrompt = symbol?.name ? `RE: \`${symbol.name}\` ${symbolKind}` : ''
+                const symbolPrompt = symbol?.name ? `#${symbol.name} (${symbolKind})` : ''
                 commandArgs.additionalInstruction = symbolPrompt
                 executeHoverChatCommand(commandArgs)
                 break
