@@ -22,6 +22,7 @@ import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
@@ -81,6 +82,9 @@ export const getInput = async (
     if (!editor) {
         return null
     }
+
+    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
+    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
