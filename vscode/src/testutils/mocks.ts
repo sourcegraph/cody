@@ -813,7 +813,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         '*': true,
     },
     commandCodeLenses: false,
-    editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,

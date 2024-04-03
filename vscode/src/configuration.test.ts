@@ -37,8 +37,6 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.editorTitleCommandIcon':
-                        return true
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.codeActions.enabled':
@@ -130,7 +128,6 @@ describe('getConfiguration', () => {
             experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
-            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             codeActions: true,

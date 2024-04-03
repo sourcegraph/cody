@@ -101,7 +101,6 @@ export function getConfiguration(
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
         editPreInstruction: config.get(CONFIG_KEY.editPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(

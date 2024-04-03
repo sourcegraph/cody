@@ -319,7 +319,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await page.locator('a').filter({ hasText: 'index.js' }).click()
 
     // Run the custom command that uses terminal output as context
-    await page.getByRole('button', { name: 'Commands' }).click()
+    await page.getByRole('button', { name: 'Cody Commands' }).click()
     const menuInputBox = page.getByPlaceholder('Search for a command or enter your question here...')
     await expect(menuInputBox).toBeVisible()
     await menuInputBox.fill('shellOutput')
