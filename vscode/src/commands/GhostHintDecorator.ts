@@ -178,14 +178,6 @@ export class GhostHintDecorator implements vscode.Disposable {
     /** Store the last line that the user typed on, we want to avoid showing the text here */
     private lastLineTyped: number | null = null
 
-    /**
-     * Tracks whether the user has recorded an enrollment for each ghost variant.
-     * This is _only_ to help us measure usage via an A/B test.
-     */
-    private enrollmentRecorded: Record<Exclude<GhostVariant, 'Generate' | 'EditOrChat'>, boolean> = {
-        Document: false,
-    }
-
     constructor(authProvider: AuthProvider) {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
             leading: false,
@@ -282,7 +274,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                             ) {
                                 this.clearGhostText(editor)
                             }
-                            this.firePossibleEnrollmentEvent('Document', enabledFeatures)
                             return this.setThrottledGhostText(
                                 editor,
                                 new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -324,7 +315,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                             this.clearGhostText(editor)
                         }
 
-                        this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
                         /**
                          * Edit code flow.
                          * Show alongside a users' active selection
@@ -416,28 +406,6 @@ export class GhostHintDecorator implements vscode.Disposable {
     private _fireDisplayEvent(variant: GhostVariant): void {
         telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
-    }
-
-    /**
-     * Fire an additional telemetry enrollment event for when the user has hit a scenario where they would
-     * trigger a possible ghost text variant.
-     * This code is _only_ to be used to support the ongoing A/B tests for ghost hint usage.
-     */
-    private firePossibleEnrollmentEvent(variant: GhostVariant, enablement: EnabledFeatures): void {
-        if (variant === 'Document' && !this.enrollmentRecorded.Document) {
-            const testGroup = enablement.Document ? 'treatment' : 'control'
-            telemetryService.log(
-                'CodyVSCodeExtension:experiment:documentGhostText:enrolled',
-                { variant: testGroup },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.experiment.documentGhostText', 'enrolled', {
-                privateMetadata: { variant: testGroup },
-            })
-            // Mark this enrollment as recorded for the current session
-            // We do not need to repeatedly mark the users' enrollment.
-            this.enrollmentRecorded.Document = true
-        }
     }
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {
