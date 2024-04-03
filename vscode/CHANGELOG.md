@@ -34,6 +34,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Claude 3 Sonnet is now the default model for every Cody Free or Pro user. [pull/3575](https://github.com/sourcegraph/cody/pull/3575)
 - Edit: Removed a previous Edit shortcut (`Shift+Cmd/Ctrl+v`), use `Opt/Alt+K` to trigger Edits. [pull/3591](https://github.com/sourcegraph/cody/pull/3591)
 
+### Feature Flags
+
+> This section covers experiments that run behind feature flags.
+
+- Hover Commands: Cody commands are now integrated with the native hover provider, allowing you to seamlessly access essential commands on mouse hover. [pull/3585](https://github.com/sourcegraph/cody/pull/3585)
+
 ## [1.10.2]
 
 ### Added
