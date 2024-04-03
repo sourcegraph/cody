@@ -31,8 +31,8 @@
 
 /* Buttons on hover */
 .cell-container .edit-button, .cell-container .feedback-buttons {
-    visibility: hidden;
+    opacity: 0.25;
 }
 .cell-container:hover .edit-button, .cell-container:hover .feedback-buttons {
-    visibility: visible;
+    opacity: 1;
 }
