@@ -23,7 +23,7 @@ async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<Execute
     const startLine = range?.start?.line ?? 0
     const prompt = `Summarize @${displayPath(uri)}${startLine ? ':' + startLine : ''}${
         additionalInstruction ? `${additionalInstruction}` : ''
-    } in one sentence.`
+    }`
 
     return {
         text: prompt,

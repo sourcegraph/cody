@@ -41,6 +41,8 @@ export class HoverCommandsProvider implements vscode.Disposable {
         symbol?: vscode.DocumentSymbol
         // Selection range if the cursor is on a multi-line highlight
         selection?: vscode.Selection
+        // Diagnostics error message if the cursor is on an error
+        error?: string
     } = {}
 
     private register(): void {
@@ -70,6 +72,7 @@ export class HoverCommandsProvider implements vscode.Disposable {
         position: vscode.Position
     ): Promise<vscode.Hover | undefined> {
         // Only show hover commands for files
+        this.current = {}
         if (doc.uri?.scheme !== 'file' || isCodyIgnoredFile(doc.uri)) {
             return undefined
         }
@@ -128,11 +131,16 @@ export class HoverCommandsProvider implements vscode.Disposable {
         const activeSymbol = (await fetchDocumentSymbols(document)).findLast(s =>
             s.range.contains(position)
         )
+        const diagnostics = vscode.languages.getDiagnostics(document.uri)
+        const onError = diagnostics.find(d => d.range.contains(position))?.message
 
         this.current.selection = selection
         this.current.symbol = activeSymbol
 
-        if (selection?.contains(position) && !selection?.isSingleLine) {
+        if (onError) {
+            this.current.error = onError
+            commandsOnHovers.ask.enabled = true
+        } else if (selection?.contains(position) && !selection?.isSingleLine) {
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
         } else if (docNode.symbol?.node && docNode.meta?.showHint) {
@@ -153,14 +161,19 @@ export class HoverCommandsProvider implements vscode.Disposable {
      * current position, and executes the given command id.
      */
     private async onClick(id: string): Promise<void> {
-        const args = { id, languageID: this.current.document?.languageId }
-        telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', args, { hasV2Event: true })
-        telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: args })
-
-        const { document, position, symbol, selection } = this.current ?? {}
+        const { document, position, symbol, selection, error } = this.current ?? {}
         if (!document || !position) {
             return
         }
+
+        const args = {
+            id,
+            languageID: this.current.document?.languageId,
+            type: error ? 'error' : symbol ? 'symbol' : 'selection',
+        }
+        telemetryService.log('CodyVSCodeExtension:hoverCommands:clicked', args, { hasV2Event: true })
+        telemetryRecorder.recordEvent('cody.hoverCommands', 'clicked', { privateMetadata: args })
+
         const range = symbol?.range ?? selection
         const commandArgs = { source: 'hover', uri: document.uri, range } as CodyCommandArgs
 
@@ -169,7 +182,8 @@ export class HoverCommandsProvider implements vscode.Disposable {
             case 'cody.action.chat': {
                 const symbolKind = symbol?.kind ? vscode.SymbolKind[symbol.kind].toLowerCase() : ''
                 const symbolPrompt = symbol?.name ? `#${symbol.name} (${symbolKind})` : ''
-                commandArgs.additionalInstruction = symbolPrompt
+                const helpPrompt = error ? '\nExplain this error: ' + error : ''
+                commandArgs.additionalInstruction = symbolPrompt + helpPrompt
                 executeHoverChatCommand(commandArgs)
                 break
             }
@@ -259,6 +273,11 @@ const HoverCommands: () => Record<string, HoverCommand> = () => ({
     edit: {
         id: 'cody.command.edit-code',
         title: '[Edit Code](command:cody.experiment.hover.commands?{params})',
+        enabled: false,
+    },
+    ask: {
+        id: 'cody.action.chat',
+        title: '[Explain Error](command:cody.experiment.hover.commands?{params})',
         enabled: false,
     },
 })
