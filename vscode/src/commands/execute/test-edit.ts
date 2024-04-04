@@ -1,5 +1,4 @@
 import { type ContextItem, logError } from '@sourcegraph/cody-shared'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -67,7 +66,7 @@ export async function executeTestEditCommand(
                     userContextFiles: contextFiles.slice(0, 2),
                     destinationFile,
                 },
-                source: DefaultEditCommands.Test,
+                source: args?.source ?? 'editor',
             } satisfies ExecuteEditArguments),
         }
     })

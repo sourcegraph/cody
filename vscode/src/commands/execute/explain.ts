@@ -1,5 +1,4 @@
 import { type ContextItem, displayLineRange, displayPath, logDebug } from '@sourcegraph/cody-shared'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -49,7 +48,7 @@ async function explainCommand(
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Explain,
+        source: args?.source ?? 'editor',
     }
 }
 

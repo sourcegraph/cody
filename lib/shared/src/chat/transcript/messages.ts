@@ -2,7 +2,6 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
-import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
@@ -60,7 +59,7 @@ export type ChatEventSource =
     | 'test'
     | 'code-lens'
     | 'hover'
-    | DefaultCodyCommands
+    | 'terminal'
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,
