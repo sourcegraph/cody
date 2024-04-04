@@ -122,7 +122,8 @@ export class EditManager implements vscode.Disposable {
                 model,
                 source,
                 configuration.destinationFile,
-                configuration.insertionPoint
+                configuration.insertionPoint,
+                telemetryMetadata
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -132,7 +133,8 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 intent,
-                source
+                source,
+                telemetryMetadata
             )
         }
 
