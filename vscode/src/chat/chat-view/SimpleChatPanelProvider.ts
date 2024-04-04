@@ -18,7 +18,6 @@ import {
     featureFlagProvider,
     hydrateAfterPostMessage,
     isDefined,
-    isDotCom,
     isError,
     isFileURI,
     isRateLimitError,
@@ -51,7 +50,11 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import {
+    ANSWER_TOKENS,
+    MAX_BYTES_PER_FILE,
+    tokensToChars,
+} from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -410,16 +413,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 metadata: {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
                 },
                 privateMetadata: {
                     ...sharedProperties,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
-                    promptText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? inputText : undefined,
+                    promptText: authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
                 },
             })
 
@@ -485,8 +486,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             ...contextSummary,
                             // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                             // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                            recordsPrivateMetadataTranscript:
-                                authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                            recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
                         },
                         privateMetadata: {
                             properties,
@@ -494,9 +494,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
                             promptText:
-                                authStatus.endpoint && isDotCom(authStatus.endpoint)
-                                    ? inputText
-                                    : undefined,
+                                authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
                         },
                     })
                 }
@@ -970,16 +968,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     ...codeCount,
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                    recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
                 },
                 privateMetadata: {
                     requestID,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? messageText : undefined,
+                    responseText: authStatus.isDotCom && messageText.substring(0, MAX_BYTES_PER_FILE),
                 },
             })
         }
