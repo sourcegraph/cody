@@ -19,11 +19,10 @@ export const ToolbarButton: FunctionComponent<
     </VSCodeButton>
 )
 
-export const ToolbarPopoverButton: FunctionComponent<PropsWithChildren<{ className?: string }>> = ({
-    className,
-    children,
-}) => (
-    <ToolbarButton type="button" className={classNames(styles.popoverButton, className)}>
+export const ToolbarPopoverButton: FunctionComponent<
+    PropsWithChildren<Partial<Pick<VSCodeButtonProps, 'onClick' | 'title' | 'className'>>>
+> = ({ className, children, ...props }) => (
+    <ToolbarButton type="button" className={classNames(styles.popoverButton, className)} {...props}>
         {children}
         <div slot="end" className={styles.end}>
             <i className="codicon codicon-chevron-down" />
