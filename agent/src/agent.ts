@@ -439,7 +439,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             let closestDistance = Number.MAX_VALUE
             let closest = ''
             if (polly) {
-                const persister = polly.persister._cache as Map<string, Promise<Har>>
+                // @ts-ignore
+                const persister = polly?.persister?._cache as Map<string, Har> || {}
                 for (const [, har] of persister) {
                     for (const entry of (await har).log.entries) {
                         if (entry.request.url !== url) {
