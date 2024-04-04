@@ -1,0 +1,18 @@
+.button {
+    --button-padding-vertical: 1px;
+    --button-padding-horizontal: 4px;
+    --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
+    font-size: 0.7rem;
+
+    &::part(content) {
+        display: inline-flex;
+        align-items: center;
+    }
+    kbd {
+        font-family: inherit;
+        font-size: 90%;
+        text-transform: lowercase;
+        opacity: 0.7;
+        margin-left: 0.25rem;
+    }
+}

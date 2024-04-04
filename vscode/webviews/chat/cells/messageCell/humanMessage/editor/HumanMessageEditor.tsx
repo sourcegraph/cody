@@ -1,5 +1,3 @@
-import { isMacOS } from '@sourcegraph/cody-shared'
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useRef, useState } from 'react'
@@ -12,6 +10,7 @@ import {
 } from '../../../../../promptEditor/PromptEditor'
 import { useEnhancedContextEnabled } from '../../../../EnhancedContext'
 import styles from './HumanMessageEditor.module.css'
+import { SubmitButton } from './SubmitButton'
 import { Toolbar } from './Toolbar'
 
 /**
@@ -55,7 +54,7 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const addEnhancedContext = useEnhancedContextEnabled()
-    const submit = useCallback(() => {
+    const onSubmitClick = useCallback(() => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
         }
@@ -67,11 +66,11 @@ export const HumanMessageEditor: FunctionComponent<{
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                submit()
+                onSubmitClick()
                 return
             }
         },
-        [isEmptyEditorValue, submit]
+        [isEmptyEditorValue, onSubmitClick]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -117,27 +116,7 @@ export const HumanMessageEditor: FunctionComponent<{
             <div className={styles.toolbar} onMouseDown={onToolbarClick} onClick={onToolbarClick}>
                 <Toolbar userInfo={userInfo} setEditorFocus={editorRef.current?.setFocus} />
                 <div className={styles.spacer} />
-                <VSCodeButton
-                    type="submit"
-                    onClick={submit}
-                    appearance="secondary"
-                    aria-label="Submit message"
-                    className={styles.button}
-                    disabled={!isDirty || isEmptyEditorValue}
-                >
-                    Chat <kbd>{/* TODO!(sqs): factor out */ isMacOS() ? 'Opt' : 'Alt'}+⏎</kbd>
-                </VSCodeButton>
-                <VSCodeButton
-                    type="submit"
-                    onClick={submit}
-                    appearance="primary"
-                    aria-label="Submit message"
-                    className={styles.button}
-                    disabled={!isDirty || isEmptyEditorValue}
-                >
-                    Chat with context{' '}
-                    <kbd>{/* TODO!(sqs): factor out */ isMacOS() ? '⌘' : 'Ctrl'}+⏎</kbd>
-                </VSCodeButton>
+                <SubmitButton onClick={onSubmitClick} disabled={!isDirty || isEmptyEditorValue} />
             </div>
         </div>
     )

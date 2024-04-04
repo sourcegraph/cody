@@ -2,14 +2,21 @@
     display: flex;
     flex-direction: column;
     gap: var(--human-message-editor-gap);
+
+    padding: var(--prompt-editor-padding);
+    border-radius: 2px;
 }
 
-/* Make the whole container look like a big input field. */
-.container {
-    border-radius: 2px;
+/* Dim toolbar when unfocused. */
+.container:not(:is(.focused, :active, :focus-within, :focus-visible)) .toolbar {
+    opacity: 0.3;
+}
+
+/* Make the whole container look like a big input field when focused. */
+.container:is(.focused, :active, :focus-within, :focus-visible) {
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
-    padding: var(--prompt-editor-padding);
+
     outline: solid 1px var(--vscode-input-border);
 }
 .container:has(:focus-within) {
@@ -32,7 +39,7 @@
 .toolbar {
     height: var(--human-message-editor-toolbar-height);
 }
-.container:not(.always-show-toolbar):not(.focused):not(:active):not(:hover):not(:focus-within):not(:focus-visible) {
+.container:not(.firstMessage):not(.always-show-toolbar):not(:is(.focused, :active, :focus-within, :focus-visible)) {
     margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--prompt-editor-padding) - var(--human-message-editor-toolbar-bottom-padding)));
     padding-bottom: var(--prompt-editor-padding);
     .toolbar {
@@ -51,21 +58,3 @@
     flex: 1;
 }
 
-.button {
-    --button-padding-vertical: 1px;
-    --button-padding-horizontal: 4px;
-    --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
-    font-size: 0.7rem;
-
-    &::part(content) {
-        display: inline-flex;
-        align-items: center;
-    }
-    kbd {
-        font-family: inherit;
-        font-size: 90%;
-        text-transform: lowercase;
-        opacity: 0.7;
-        margin-left: 0.25rem;
-    }
-}
