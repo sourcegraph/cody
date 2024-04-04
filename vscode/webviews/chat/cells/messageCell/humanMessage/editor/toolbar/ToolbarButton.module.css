@@ -10,20 +10,9 @@
     user-select: none;
 
     &::part(control) {
-        background: transparent;
         padding: 0;
-        border: none;
-
         display: flex;
         align-items: center;
-    }
-    &::part(end) {
-        margin-inline-start: 2px;
-    }
-
-    &:hover {
-        background-color: unset;
-        color: var(--vscode-button-foreground);
     }
 }
 
@@ -50,8 +39,16 @@
         margin-right: var(--padding-x);
     }
 
-    &:hover {
-        background-color: unset;
-        color: var(--vscode-button-foreground);
-    }
+
+}
+
+/* Hover state */
+.button:hover, .dropdown-button:hover {
+    background-color: unset;
+    color: var(--vscode-button-foreground);
+}
+
+/* Positioning of chevron */
+.button::part(end), .dropdown-button::part(indicator) {
+    margin-inline-start: 2px;
 }

@@ -18,10 +18,6 @@
     outline-offset: -1px;
 }
 
-.dropdown::part(indicator) {
-    margin-inline-start: 2px;
-}
-
 .dropdown[disabled] {
     opacity: 0.6;
 }
