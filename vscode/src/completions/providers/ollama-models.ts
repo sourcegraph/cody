@@ -129,6 +129,40 @@ class StarCoder2 extends DefaultOllamaModel {
     }
 }
 
+
+class CodeGemma extends DefaultOllamaModel {
+    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+        const { context, currentFileNameComment, prefix, suffix, isInfill } = ollamaPrompt
+
+        if (isInfill) {
+            const infillPrefix = context + prefix
+            return `${currentFileNameComment}<|fim_prefix|>${infillPrefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+        }
+        return context + currentFileNameComment + prefix
+    }
+
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<|fim_prefix|>', '<|fim_suffix|>', '<|fim_middle|>', '<|file_separator|>']
+
+        const params = {
+            stop: ['\n', ...stop],
+            temperature: 0.2,
+            // repeat_penalty has to be 1.0, the default one will not work.
+            repeat_penalty: 1.0,
+            top_k: -1,
+            top_p: -1,
+            num_predict: 256,
+        }
+
+        if (isMultiline) {
+            params.stop = ['\n\n', ...stop]
+        }
+
+        return params
+    }
+}
+
+
 export function getModelHelpers(model: string) {
     if (model.includes('codellama')) {
         return new CodeLlama()
@@ -140,6 +174,10 @@ export function getModelHelpers(model: string) {
 
     if (model.includes('starcoder2')) {
         return new StarCoder2()
+    }
+
+    if (model.includes('codegemma')) {
+        return new CodeGemma()
     }
 
     return new DefaultOllamaModel()
