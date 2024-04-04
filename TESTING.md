@@ -282,7 +282,7 @@ Tests:
 
 Prerequisites:
 
-- An Enterprise endpoint
+- Two Enterprise endpoints (Cody Gateway and AWS Bedrock)
 - Enterprise credentials
 - Some git repositories indexed by the enterprise.
 
@@ -305,6 +305,16 @@ Tests:
 - [ ] Sign in as a Free user, open a new chat, and verify that the default LLM is Claude 2, and there is no option to switch LLMs (without upgrading to Pro).
 - [ ] Sign in as a Pro user and verify that there is a list of LLM options and you can switch between them.
 - [ ] Sign in as an enterprise user and verify that you cannot change the LLM.
+
+### Claude 3 Testing
+#### Cody Gateway Instance
+- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Sonnet** for chatModel and **Claude 3 Haiku** for completionModel
+- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Opus** for chatModel and **Claude 3 Haiku** for completionModel
+- [ ] Generate a completion using the manual-trigger key binding on any primary languages (Javascript, Typescript, TypescriptReact, Python, Go).
+
+#### AWS Bedrock Instance
+- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Sonnet** for chatModel and **Claude 3 Haiku** for completionModel
+- [ ] Generate a completion using the manual-trigger key binding on any primary languages (Javascript, Typescript, TypescriptReact, Python, Go).
 
 ## Search
 
