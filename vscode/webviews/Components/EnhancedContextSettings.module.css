@@ -183,45 +183,6 @@
     outline-offset: 2px;
 }
 
-.settings-btn {
-    color: var(--vscode-foreground);
-    background: transparent;
-    &::part(control) {
-        background: transparent;
-        padding: 0;
-        border: none;
-    }
-}
-
-.button-label {
-    font-size: 0.7rem;
-    display: flex;
-    align-items: center;
-}
-.button-label i {
-    margin-inline-start: 2px;
-}
-
-/* Active borders on keyboard focus but not mousedown (:focus-visible doesn't seem to work) */
-
-.settings-indicator:focus:not(:active) {
-    border-color: var(--vscode-inputOption-activeBorder);
-}
-
-.settings-btn:focus:not(:active) {
-    border-color: var(--vscode-inputOption-activeBorder);
-    border-left-width: 1px;
-}
-
-.settings-indicator:has(+ .settings-btn:focus:not(:active)) {
-    border-right-width: 0;
-}
-
-.settings-indicator img {
-    width: 16px;
-    height: 16px;
-}
-
 .popup .hint {
     font-size: 11px;
     line-height: 1.3;

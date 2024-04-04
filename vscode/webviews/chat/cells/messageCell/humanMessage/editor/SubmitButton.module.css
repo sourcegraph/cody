@@ -1,13 +1,4 @@
 .button {
-    --button-padding-vertical: 1px;
-    --button-padding-horizontal: 4px;
-    --button-icon-padding: 2px;
-    --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
-    font-size: 0.7rem;
-
-    outline: none;
-    user-select: none;
-
     /* Align prompt editor padding with button content, not button padding. */
     margin-right: calc(-1*var(--button-icon-padding));
 
@@ -45,13 +36,5 @@
 .button:is(:not(.editorFocused), :disabled) {
     .icon-circle {
         fill: color-mix(in srgb, var(--vscode-button-secondaryBackground) 60%, var(--vscode-button-secondaryForeground));
-    }
-}
-
-/* Hover state */
-.button:hover {
-    background-color: unset;
-    &.editorFocused:not(:disabled) {
-        color: var(--vscode-button-foreground);
     }
 }

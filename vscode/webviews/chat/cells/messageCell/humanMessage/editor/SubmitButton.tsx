@@ -1,7 +1,7 @@
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import type { FunctionComponent } from 'react'
 import styles from './SubmitButton.module.css'
+import { ToolbarButton } from './toolbar/ToolbarButton'
 
 export const SubmitButton: FunctionComponent<{
     onClick: () => void
@@ -10,10 +10,9 @@ export const SubmitButton: FunctionComponent<{
     disabled?: boolean
 }> = ({ onClick, isEditorFocused, isParentHovered, disabled }) => {
     return (
-        <VSCodeButton
+        <ToolbarButton
             type="submit"
             onClick={onClick}
-            appearance="icon"
             aria-label="Submit message"
             className={classNames(styles.button, {
                 [styles.editorFocused]: isEditorFocused || isParentHovered,
@@ -25,7 +24,7 @@ export const SubmitButton: FunctionComponent<{
             </span>
             Run
             <kbd>⏎</kbd>
-        </VSCodeButton>
+        </ToolbarButton>
     )
 }
 

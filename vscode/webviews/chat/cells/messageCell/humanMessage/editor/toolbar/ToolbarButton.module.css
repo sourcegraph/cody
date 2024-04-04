@@ -1,0 +1,57 @@
+.button {
+    --button-padding-vertical: 1px;
+    --button-padding-horizontal: 4px;
+    --button-icon-padding: 2px;
+    --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
+
+    font-size: 0.7rem;
+    color: var(--vscode-foreground);
+    background: transparent;
+    user-select: none;
+
+    &::part(control) {
+        background: transparent;
+        padding: 0;
+        border: none;
+
+        display: flex;
+        align-items: center;
+    }
+    &::part(end) {
+        margin-inline-start: 2px;
+    }
+
+    &:hover {
+        background-color: unset;
+        color: var(--vscode-button-foreground);
+    }
+}
+
+.end {
+    /* Makes the chevron vertically aligned with the text. */
+    display: flex;
+}
+
+.dropdown-button {
+    --type-ramp-base-font-size: 0.7rem;
+    --design-unit: 4;
+    --input-height: 16;
+
+    height: calc(var(--input-height)*1px);
+
+    outline: none !important;
+    &::part(control)  {
+        border: none;
+        --padding-x: calc(var(--design-unit)/2*1px);
+        padding: calc(var(--design-unit)/2*1px) var(--padding-x);
+
+        /** Make it flush with the editor text in HumanMessageEditor. */
+        margin-left: calc(-1*var(--padding-x));
+        margin-right: var(--padding-x);
+    }
+
+    &:hover {
+        background-color: unset;
+        color: var(--vscode-button-foreground);
+    }
+}

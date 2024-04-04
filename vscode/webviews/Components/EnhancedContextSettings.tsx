@@ -12,6 +12,7 @@ import type {
     RemoteSearchProvider,
 } from '@sourcegraph/cody-shared'
 import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
+import { ToolbarPopoverButton } from '../chat/cells/messageCell/humanMessage/editor/toolbar/ToolbarButton'
 
 import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -394,8 +395,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         }
     }, [isOpen])
 
-    // Can't point at and use VSCodeButton type with 'ref'
-    const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
     }, [setOpen])
@@ -462,18 +461,9 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                     </div>
                 </div>
             </PopupFrame>
-            <VSCodeButton
-                className={styles.settingsBtn}
-                appearance="secondary"
-                type="button"
-                onClick={() => setOpen(!isOpen)}
-                title="Configure Enhanced Context"
-                ref={restoreFocusTarget}
-            >
-                <span className={styles.buttonLabel}>
-                    Context <i className="codicon codicon-chevron-down" />
-                </span>
-            </VSCodeButton>
+            <ToolbarPopoverButton onClick={() => setOpen(!isOpen)} title="Configure Enhanced Context">
+                Context
+            </ToolbarPopoverButton>
         </div>
     )
 }

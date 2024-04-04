@@ -1,7 +1,8 @@
 import { type FunctionComponent, useCallback, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
+import { ChatModelDropdownMenu } from '../../../../../Components/ChatModelDropdownMenu'
 import { EnhancedContextSettings } from '../../../../../Components/EnhancedContextSettings'
-import { ModelField } from './ModelField'
+import { useChatModelContext } from '../../../../models/chatModelContext'
 
 /**
  * The toolbar for the human message editor.
@@ -21,9 +22,19 @@ export const Toolbar: FunctionComponent<{
         [setEditorFocus]
     )
 
+    const { chatModels, onCurrentChatModelChange } = useChatModelContext()
+
     return (
         <>
-            <ModelField userInfo={userInfo} />
+            {chatModels && onCurrentChatModelChange ? (
+                <ChatModelDropdownMenu
+                    models={chatModels}
+                    onCurrentChatModelChange={onCurrentChatModelChange}
+                    userInfo={{ isCodyProUser: true, isDotComUser: true }}
+                    disabled={false}
+                    showSelectionIcon={false}
+                />
+            ) : null}
             <EnhancedContextSettings
                 isOpen={isEnhancedContextOpen}
                 setOpen={onEnhancedContextTogglerClick}

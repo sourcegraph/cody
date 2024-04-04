@@ -1,17 +1,24 @@
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useCallback, useRef, useState } from 'react'
+import {
+    type CustomComponentPropsWithRef,
+    type FunctionComponent,
+    useCallback,
+    useRef,
+    useState,
+} from 'react'
 
-import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
+import { type VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import type { ModelProvider } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
+import { ToolbarDropdownButton } from '../chat/cells/messageCell/humanMessage/editor/toolbar/ToolbarButton'
 import styles from './ChatModelDropdownMenu.module.css'
 import { chatModelIconComponent } from './ChatModelIcon'
 
-type DropdownProps = ComponentProps<typeof VSCodeDropdown>
+type DropdownProps = CustomComponentPropsWithRef<typeof VSCodeDropdown>
 
 export interface ChatModelDropdownMenuProps {
     models: ModelProvider[]
@@ -86,7 +93,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     }
 
     return (
-        <VSCodeDropdown
+        <ToolbarDropdownButton
             ref={dropdownRef}
             disabled={disabled}
             className={classNames(styles.dropdown, className)}
@@ -131,7 +138,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                     <span className={styles.title}>{currentModel.title}</span>
                 </span>
             </div>
-        </VSCodeDropdown>
+        </ToolbarDropdownButton>
     )
 }
 
