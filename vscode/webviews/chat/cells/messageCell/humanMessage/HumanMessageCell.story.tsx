@@ -13,7 +13,7 @@ const meta: Meta<typeof HumanMessageCell> = {
     args: {
         message: null,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
-        isFirstMessageInTranscript: true,
+        isFirstMessage: true,
         onSubmit: () => {},
     } satisfies ComponentProps<typeof HumanMessageCell>,
 

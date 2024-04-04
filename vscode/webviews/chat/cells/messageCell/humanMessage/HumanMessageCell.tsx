@@ -19,19 +19,17 @@ export const HumanMessageCell: FunctionComponent<{
     userInfo: UserAccountInfo
 
     /** Whether this editor is for the first message (not a followup). */
-    isFirstMessageInTranscript: boolean
+    isFirstMessage: boolean
 
     onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
 
     /** For use in storybooks only. */
     __storybook__alwaysShowToolbar?: boolean
-}> = ({ message, userInfo, isFirstMessageInTranscript, onSubmit, __storybook__alwaysShowToolbar }) => {
+}> = ({ message, userInfo, isFirstMessage, onSubmit, __storybook__alwaysShowToolbar }) => {
     const initialEditorState = useMemo(
         () => (message ? serializedPromptEditorStateFromChatMessage(message) : undefined),
         [message]
     )
-
-    const TIPS = '(@ for files, @# for symbols)'
 
     return (
         <BaseMessageCell
@@ -40,10 +38,8 @@ export const HumanMessageCell: FunctionComponent<{
             content={
                 <HumanMessageEditor
                     initialEditorState={initialEditorState}
-                    placeholder={
-                        isFirstMessageInTranscript ? `Message ${TIPS}` : `Follow-up Message ${TIPS}`
-                    }
-                    isFirstMessageInTranscript={isFirstMessageInTranscript}
+                    placeholder={isFirstMessage ? 'Message...' : 'Followup...'}
+                    isFirstMessage={isFirstMessage}
                     onSubmit={onSubmit}
                     userInfo={userInfo}
                     __storybook__alwaysShowToolbar={__storybook__alwaysShowToolbar}

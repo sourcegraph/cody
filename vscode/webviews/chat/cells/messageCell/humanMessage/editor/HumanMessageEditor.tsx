@@ -22,7 +22,7 @@ export const HumanMessageEditor: FunctionComponent<{
     placeholder: string
 
     /** Whether this editor is for the first message (not a followup). */
-    isFirstMessageInTranscript: boolean
+    isFirstMessage: boolean
 
     onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
     userInfo: UserAccountInfo
@@ -33,7 +33,7 @@ export const HumanMessageEditor: FunctionComponent<{
 }> = ({
     initialEditorState,
     placeholder,
-    isFirstMessageInTranscript,
+    isFirstMessage,
     onSubmit,
     userInfo,
     className,
@@ -96,6 +96,7 @@ export const HumanMessageEditor: FunctionComponent<{
             className={classNames(
                 styles.container,
                 {
+                    [styles.firstMessage]: isFirstMessage,
                     [styles.focused]: isEditorFocused,
                     [styles.alwaysShowToolbar]: __storybook__alwaysShowToolbar,
                 },

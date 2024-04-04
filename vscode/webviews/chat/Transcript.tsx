@@ -138,7 +138,7 @@ export const Transcript: React.FunctionComponent<{
                             <HumanMessageCell
                                 message={message}
                                 userInfo={userInfo}
-                                isFirstMessageInTranscript={index === 0}
+                                isFirstMessage={index === 0}
                                 onSubmit={(
                                     editorValue: SerializedPromptEditorValue,
                                     addEnhancedContext: boolean
@@ -201,7 +201,7 @@ export const Transcript: React.FunctionComponent<{
                 {!messageInProgress && (
                     <HumanMessageCell
                         message={null}
-                        isFirstMessageInTranscript={transcript.length === 0}
+                        isFirstMessage={transcript.length === 0}
                         userInfo={userInfo}
                         chatModels={chatModels}
                         onCurrentChatModelChange={onCurrentChatModelChange}
