@@ -12,7 +12,7 @@ import { CodyTaskState } from './utils'
 export type FixupTaskID = string
 
 /**
- * Arbitary metadata that will be included in telemetry events for this task.
+ * Arbitrary metadata that will be included in telemetry events for this task.
  */
 export type FixupTelemetryMetadata = {
     [key: string]: unknown
