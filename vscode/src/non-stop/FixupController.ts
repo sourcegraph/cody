@@ -413,6 +413,7 @@ export class FixupController
             intent: task.intent,
             mode: task.mode,
             source: task.source,
+            model: task.model,
             ...countCode(task.replacement || ''),
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
@@ -422,10 +423,7 @@ export class FixupController
             })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
                 metadata,
-                privateMetadata: {
-                    ...privateMetadata,
-                    model: task.model,
-                },
+                privateMetadata,
             })
 
             // TODO: Try to recover, for example by respinning
@@ -440,10 +438,7 @@ export class FixupController
         telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
-            privateMetadata: {
-                ...privateMetadata,
-                model: task.model,
-            },
+            privateMetadata,
         })
 
         /**
@@ -474,11 +469,52 @@ export class FixupController
             insertText: task.replacement,
             insertRange: trackedRange,
             document,
-            metadata: {
-                model: task.model,
-                mode: task.mode,
-                intent: task.intent,
-            },
+            metadata,
+        })
+
+        let isUndone = false
+        /**
+         * Tracks the initial persistence of a Fixup task.
+         * As in, if the user immediately undos the change, or if they persist to make new edits to the file.
+         *
+         * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
+         * When a change is made, it logs telemetry about whether the change was persisted or removed.
+         */
+        const initialPersistenceListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
+                // Irrelevant change, ignore
+                return
+            }
+
+            if (event.reason === vscode.TextDocumentChangeReason.Undo) {
+                // Set state, but don't fire telemetry yet as the user could still "Redo".
+                isUndone = true
+                return
+            }
+
+            if (isUndone && event.reason === vscode.TextDocumentChangeReason.Redo) {
+                // User re-did the change, so reset state
+                isUndone = false
+                return
+            }
+
+            // User has made a change, we can now fire our stored state as to if the change was undone or not
+            const telemetryState = isUndone ? 'removed' : 'persisted'
+
+            telemetryService.log(
+                `CodyVSCodeExtension:fixup:initialPersistence:${telemetryState}`,
+                metadata,
+                {
+                    hasV2Event: true,
+                }
+            )
+            telemetryRecorder.recordEvent('cody.fixup.initialPersistence', telemetryState, {
+                metadata,
+                privateMetadata,
+            })
+
+            // Dispose of this listener, we only want to fire initialPersistence once.
+            initialPersistenceListener.dispose()
         })
     }
 
@@ -525,8 +561,6 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, document, editOk)
-
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = {
@@ -552,6 +586,7 @@ export class FixupController
 
             // TODO: See if we can discard a FixupFile now.
             this.setTaskState(task, CodyTaskState.applied)
+            this.logTaskCompletion(task, document, editOk)
 
             // Inform the user about the change if it happened in the background
             // TODO: This will show a new notification for each unique file name.
@@ -637,8 +672,6 @@ export class FixupController
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        this.logTaskCompletion(task, document, editOk)
-
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
         const formatEditOptions = {
@@ -663,6 +696,7 @@ export class FixupController
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.applied)
+        this.logTaskCompletion(task, document, editOk)
 
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
