@@ -26,6 +26,12 @@ export const Toolbar: FunctionComponent<{
 
     return (
         <>
+            <EnhancedContextSettings
+                isOpen={isEnhancedContextOpen}
+                setOpen={onEnhancedContextTogglerClick}
+                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
+                isNewInstall={IS_NEW_INSTALL}
+            />
             {chatModels && onCurrentChatModelChange ? (
                 <ChatModelDropdownMenu
                     models={chatModels}
@@ -35,12 +41,6 @@ export const Toolbar: FunctionComponent<{
                     showSelectionIcon={false}
                 />
             ) : null}
-            <EnhancedContextSettings
-                isOpen={isEnhancedContextOpen}
-                setOpen={onEnhancedContextTogglerClick}
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                isNewInstall={IS_NEW_INSTALL}
-            />
         </>
     )
 }
