@@ -624,7 +624,7 @@ export class FixupController
         this.updateDiffs()
 
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
-        const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
+        const applyEditOptions = { undoStopBefore: false, undoStopAfter: false }
 
         let editOk: boolean
         if (task.mode === 'edit') {
