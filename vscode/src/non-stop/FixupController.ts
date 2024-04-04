@@ -486,6 +486,7 @@ export class FixupController
                 model: task.model,
                 mode: task.mode,
                 intent: task.intent,
+                ...task.telemetryMetadata,
             },
         })
     }
