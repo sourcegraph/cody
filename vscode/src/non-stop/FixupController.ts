@@ -499,16 +499,16 @@ export class FixupController
             }
 
             // User has made a change, we can now fire our stored state as to if the change was undone or not
-            const telemetryState = isUndone ? 'removed' : 'persisted'
+            const persistence = isUndone ? 'removed' : 'persisted'
 
             telemetryService.log(
-                `CodyVSCodeExtension:fixup:initialPersistence:${telemetryState}`,
+                `CodyVSCodeExtension:fixup:initialPersistence:${persistence}`,
                 metadata,
                 {
                     hasV2Event: true,
                 }
             )
-            telemetryRecorder.recordEvent('cody.fixup.initialPersistence', telemetryState, {
+            telemetryRecorder.recordEvent('cody.fixup.initialPersistence', persistence, {
                 metadata,
                 privateMetadata,
             })
