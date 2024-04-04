@@ -7,6 +7,7 @@ import {
     serializedPromptEditorStateFromChatMessage,
 } from '../../../../promptEditor/PromptEditor'
 import { BaseMessageCell } from '../BaseMessageCell'
+import styles from './HumanMessageCell.module.css'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 // TODO!(sqs): make sure command prompts can't be edited
@@ -24,8 +25,8 @@ export const HumanMessageCell: FunctionComponent<{
     onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
 
     /** For use in storybooks only. */
-    __storybook__alwaysShowToolbar?: boolean
-}> = ({ message, userInfo, isFirstMessage, onSubmit, __storybook__alwaysShowToolbar }) => {
+    __storybook__focus?: boolean
+}> = ({ message, userInfo, isFirstMessage, onSubmit, __storybook__focus }) => {
     const initialEditorState = useMemo(
         () => (message ? serializedPromptEditorStateFromChatMessage(message) : undefined),
         [message]
@@ -34,7 +35,7 @@ export const HumanMessageCell: FunctionComponent<{
     return (
         <BaseMessageCell
             speaker="human"
-            speakerIcon={<UserAvatar user={userInfo.user} size={20} />}
+            speakerIcon={<UserAvatar user={userInfo.user} size={20} className={styles.speakerIcon} />}
             content={
                 <HumanMessageEditor
                     initialEditorState={initialEditorState}
@@ -42,9 +43,10 @@ export const HumanMessageCell: FunctionComponent<{
                     isFirstMessage={isFirstMessage}
                     onSubmit={onSubmit}
                     userInfo={userInfo}
-                    __storybook__alwaysShowToolbar={__storybook__alwaysShowToolbar}
+                    __storybook__focus={__storybook__focus}
                 />
             }
+            contentClassName={styles.editor}
         />
     )
 }

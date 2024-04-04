@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { HumanMessageCell } from './HumanMessageCell'
 
-import type { ComponentProps } from 'react'
 import { VSCodeWebview } from '../../../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from '../../../fixtures'
 
@@ -13,28 +12,38 @@ const meta: Meta<typeof HumanMessageCell> = {
     args: {
         message: null,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
-        isFirstMessage: true,
         onSubmit: () => {},
-    } satisfies ComponentProps<typeof HumanMessageCell>,
+        __storybook__focus: false,
+    },
 
     decorators: [VSCodeWebview],
 }
 
 export default meta
 
-export const Empty: StoryObj<typeof meta> = {
-    args: {},
-}
-
-export const WithText: StoryObj<typeof meta> = {
+export const FirstMessageEmpty: StoryObj<typeof meta> = {
     args: {
-        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        isFirstMessage: true,
     },
 }
 
-export const AlwaysShowToolbar: StoryObj<typeof meta> = {
+export const FirstMessageWithText: StoryObj<typeof meta> = {
     args: {
         message: FIXTURE_TRANSCRIPT.explainCode2[0],
-        __storybook__alwaysShowToolbar: true,
+        isFirstMessage: true,
+    },
+}
+
+export const FollowupEmpty: StoryObj<typeof meta> = {
+    args: {
+        message: null,
+        isFirstMessage: false,
+    },
+}
+
+export const FollowupWithText: StoryObj<typeof meta> = {
+    args: {
+        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        isFirstMessage: false,
     },
 }

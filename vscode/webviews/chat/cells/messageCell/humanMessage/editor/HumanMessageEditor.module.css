@@ -8,12 +8,12 @@
 }
 
 /* Dim toolbar when unfocused. */
-.container:not(:is(.focused, :active, :focus-within, :focus-visible)) .toolbar {
+.container:not(:is(.focused, :focus-within, :focus-visible, :hover)) .toolbar {
     opacity: 0.3;
 }
 
 /* Make the whole container look like a big input field when focused. */
-.container:is(.focused, :active, :focus-within, :focus-visible) {
+.container:is(.focused, :focus-within, :focus-visible, :hover) {
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
 
@@ -29,7 +29,7 @@
 
 /* Hide/show toolbar. */
 :root {
-    --human-message-editor-toolbar-height: 16px;
+    --human-message-editor-toolbar-height: 20px;
     --human-message-editor-gap: var(--prompt-editor-padding);
     --human-message-editor-toolbar-bottom-padding: calc(0.5*var(--prompt-editor-padding));
 }
@@ -39,7 +39,7 @@
 .toolbar {
     height: var(--human-message-editor-toolbar-height);
 }
-.container:not(.firstMessage):not(.always-show-toolbar):not(:is(.focused, :active, :focus-within, :focus-visible)) {
+.container:not(.firstMessage):not(:is(.focused, :focus-within, :focus-visible, :hover)) {
     margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--prompt-editor-padding) - var(--human-message-editor-toolbar-bottom-padding)));
     padding-bottom: var(--prompt-editor-padding);
     .toolbar {
@@ -49,8 +49,7 @@
 
 .toolbar {
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
+    align-items: center;
     flex-wrap: wrap;
     gap: var(--prompt-editor-padding);
 }

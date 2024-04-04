@@ -10,12 +10,14 @@ export const BaseMessageCell: FunctionComponent<{
     speaker: ChatMessage['speaker']
     speakerIcon?: React.ReactNode
     content: React.ReactNode
+    contentClassName?: string
     footer?: React.ReactNode
-}> = ({ speaker, speakerIcon, content, footer }) => (
+}> = ({ speaker, speakerIcon, content, contentClassName, footer }) => (
     <Cell
         style={speaker === 'human' ? 'human' : 'assistant'}
         gutterIcon={speakerIcon}
         containerClassName={styles.cellContainer}
+        contentClassName={contentClassName}
         data-testid="message"
     >
         {content}

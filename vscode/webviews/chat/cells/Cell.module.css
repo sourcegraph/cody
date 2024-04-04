@@ -1,11 +1,12 @@
 :root {
     --cell-spacing: 1rem;
+    --cell-gap: 12px;
 }
 
 .container {
     padding: 15px;
     display: flex;
-    gap: 10px;
+    gap: var(--cell-gap);
 
     border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
 }

@@ -1,18 +1,57 @@
 .button {
     --button-padding-vertical: 1px;
     --button-padding-horizontal: 4px;
+    --button-icon-padding: 2px;
     --button-primary-background: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
     font-size: 0.7rem;
 
+    outline: none;
+    user-select: none;
+
+    /* Align prompt editor padding with button content, not button padding. */
+    margin-right: calc(-1*var(--button-icon-padding));
+
     &::part(content) {
         display: inline-flex;
+        gap: 0.3rem;
         align-items: center;
     }
+
     kbd {
         font-family: inherit;
-        font-size: 90%;
-        text-transform: lowercase;
-        opacity: 0.7;
-        margin-left: 0.25rem;
+        font-size: 75%;
+        background-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 85%, var(--vscode-button-secondaryForeground));
+        padding: 0.05rem 0.3rem;
+        margin-top: 1px; /* vertically center */
+        border-radius: 20px;
+        display: flex;
+    }
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* State: Enabled & editor focused */
+.button.editorFocused:not(:disabled) {
+    .icon-circle {
+        fill: var(--vscode-button-background);
+    }
+}
+
+/* State: Disabled or editor unfocused */
+.button:is(:not(.editorFocused), :disabled) {
+    .icon-circle {
+        fill: color-mix(in srgb, var(--vscode-button-secondaryBackground) 60%, var(--vscode-button-secondaryForeground));
+    }
+}
+
+/* Hover state */
+.button:hover {
+    background-color: unset;
+    &.editorFocused:not(:disabled) {
+        color: var(--vscode-button-foreground);
     }
 }

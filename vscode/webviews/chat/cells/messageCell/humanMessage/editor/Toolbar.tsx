@@ -1,4 +1,3 @@
-import { set } from 'lodash'
 import { type FunctionComponent, useCallback, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { EnhancedContextSettings } from '../../../../../Components/EnhancedContextSettings'
@@ -19,7 +18,7 @@ export const Toolbar: FunctionComponent<{
             }
             setIsEnhancedContextOpen(open)
         },
-        [set]
+        [setEditorFocus]
     )
 
     return (

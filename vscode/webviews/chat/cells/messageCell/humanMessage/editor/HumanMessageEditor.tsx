@@ -28,7 +28,7 @@ export const HumanMessageEditor: FunctionComponent<{
     className?: string
 
     /** For use in storybooks only. */
-    __storybook__alwaysShowToolbar?: boolean
+    __storybook__focus?: boolean
 }> = ({
     initialEditorState,
     placeholder,
@@ -36,12 +36,12 @@ export const HumanMessageEditor: FunctionComponent<{
     onSubmit,
     userInfo,
     className,
-    __storybook__alwaysShowToolbar,
+    __storybook__focus,
 }) => {
     const editorRef = useRef<PromptEditorRefAPI>(null)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
-    const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(true)
+    const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
     const [isDirty, setIsDirty] = useState(false)
     const onEditorChange = useCallback(
         (value: SerializedPromptEditorValue): void => {
@@ -79,9 +79,9 @@ export const HumanMessageEditor: FunctionComponent<{
         // TODO(sqs): close all toolbar dropdowns
     }, [])
 
-    // If the user clicks on the toolbar outside of any of its buttons, pass through to focus the
-    // editor.
-    const onToolbarClick = useCallback((event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    // If the user clicks in a gap or on the toolbar outside of any of its buttons, pass through to
+    // focus the editor.
+    const onGapClick = useCallback((event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         const targetIsToolbarButton = event.target !== event.currentTarget
         if (!targetIsToolbarButton) {
             event.preventDefault()
@@ -90,17 +90,25 @@ export const HumanMessageEditor: FunctionComponent<{
         }
     }, [])
 
+    const [isHovered, setIsHovered] = useState(false)
+    const onMouseEnter = useCallback(() => setIsHovered(true), [])
+    const onMouseLeave = useCallback(() => setIsHovered(false), [])
+
     return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <div
             className={classNames(
                 styles.container,
                 {
                     [styles.firstMessage]: isFirstMessage,
-                    [styles.focused]: isEditorFocused,
-                    [styles.alwaysShowToolbar]: __storybook__alwaysShowToolbar,
+                    [styles.focused]: isEditorFocused || __storybook__focus,
                 },
                 className
             )}
+            onMouseDown={onGapClick}
+            onClick={onGapClick}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
             <PromptEditor
                 contentEditableClassName={styles.editorContentEditable}
@@ -113,10 +121,15 @@ export const HumanMessageEditor: FunctionComponent<{
                 editorRef={editorRef}
             />
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas */}
-            <div className={styles.toolbar} onMouseDown={onToolbarClick} onClick={onToolbarClick}>
+            <div className={styles.toolbar} onMouseDown={onGapClick} onClick={onGapClick}>
                 <Toolbar userInfo={userInfo} setEditorFocus={editorRef.current?.setFocus} />
                 <div className={styles.spacer} />
-                <SubmitButton onClick={onSubmitClick} disabled={!isDirty || isEmptyEditorValue} />
+                <SubmitButton
+                    onClick={onSubmitClick}
+                    isEditorFocused={isEditorFocused}
+                    isParentHovered={isHovered}
+                    disabled={isEmptyEditorValue}
+                />
             </div>
         </div>
     )
