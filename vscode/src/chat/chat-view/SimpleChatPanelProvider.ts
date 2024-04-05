@@ -2,16 +2,20 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    ANSWER_TOKENS,
     type ChatClient,
     type ChatEventSource,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type ContextItemWithContent,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
+    MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
+    ModelUsage,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -21,7 +25,10 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    recordErrorToSpan,
     reformatBotMessageForChat,
+    tokensToChars,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -48,14 +55,6 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import {
-    ANSWER_TOKENS,
-    MAX_BYTES_PER_FILE,
-    tokensToChars,
-} from '@sourcegraph/cody-shared/src/prompt/constants'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'

@@ -4,6 +4,7 @@ import {
     type ContextGroup,
     type ContextItem,
     type ContextItemFile,
+    ContextItemSource,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
@@ -12,7 +13,6 @@ import {
     isError,
 } from '@sourcegraph/cody-shared'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { URI } from 'vscode-uri'
 import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
 import type * as repofetcher from './repo-fetcher'

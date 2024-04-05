@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type ConfigurationUseContext,
     type ContextItem,
+    ContextItemSource,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
@@ -13,7 +14,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'

@@ -1,4 +1,4 @@
-import { type ContextItem, logDebug, logError } from '@sourcegraph/cody-shared'
+import { type ContextItem, logDebug, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -9,7 +9,6 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.

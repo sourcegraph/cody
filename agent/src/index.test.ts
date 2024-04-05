@@ -7,9 +7,8 @@ import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { isWindows } from '@sourcegraph/cody-shared'
+import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
-import { ModelUsage } from '@sourcegraph/cody-shared/dist/models/types'
 import { URI } from 'vscode-uri'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
