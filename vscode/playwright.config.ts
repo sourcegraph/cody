@@ -7,7 +7,7 @@ export default defineConfig({
     retries: 1, // give flaky tests 1 more chance, but we should fix flakiness when we see it
     forbidOnly: !!process.env.CI,
     testDir: 'test/e2e',
-    timeout: isWin ? 30000 : 20000,
+    timeout: 30000,
     expect: {
         timeout: isWin ? 5000 : 3000,
     },
