@@ -8,6 +8,7 @@ import {
     ConfigFeaturesSingleton,
     type ContextItem,
     type ContextItemWithContent,
+    type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
     type FeatureFlagProvider,
@@ -29,7 +30,6 @@ import {
     reformatBotMessageForChat,
     tokensToChars,
     tracer,
-    type DefaultChatCommands,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
