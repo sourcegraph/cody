@@ -35,7 +35,9 @@ export async function evaluateSimpleChatStrategy(
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
-    await createEmbeddings(client, options)
+    if(options.shouldUpdateEmbedding==="true"){
+        await createEmbeddings(client, options)
+    }
     await simulateWorkspaceChat(client, options)
     await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
 }
@@ -55,7 +57,7 @@ async function createEmbeddings(
     const { workspace } = options
 
     const embeddingDoneFlag: EmbeddingFlag = {
-        isEmbeddingReady: options.shouldUpdateEmbedding === 'true',
+        isEmbeddingReady: false,
         isSearchIndexReady: true,
     }
     registerEmbeddingsHandlers(client, repoDisplayName, embeddingDoneFlag, chatLogs, workspace)
@@ -66,8 +68,8 @@ async function createEmbeddings(
         await client.request('webview/receiveMessage', { id, message: { command: 'embeddings/index' } })
         await client.request('command/execute', { command: 'cody.embeddings.resolveIssue' })
         await client.request('command/execute', { command: 'cody.search.index-update' })
-        await new Promise(resolve => setTimeout(resolve, 60_000))
 
+        await new Promise(resolve => setTimeout(resolve, 600_000))
         await waitForVariable(embeddingDoneFlag)
         await client.request('webview/didDispose', { id })
 
@@ -311,9 +313,9 @@ interface ChatReply {
 async function appendAllContextCandidatesToFile(file_path: string, jsonString: string) {
     if (!fs.existsSync(file_path)) {
         await fspromises.mkdir(path.dirname(file_path), { recursive: true })
-        await fspromises.writeFile(file_path, jsonString + '\n')
+        await fspromises.writeFile(file_path, `${jsonString}\n`)
     } else {
-        await fspromises.appendFile(file_path, jsonString + '\n')
+        await fspromises.appendFile(file_path, `${jsonString}\n`)
     }
 }
 
@@ -362,7 +364,7 @@ async function simulateWorkspaceChat(
     //     await chatLogs.writeLog(repoDisplayName, `Number of questions remaining: ${totalQuestions}`)
     // }
 
-    const concurrencyLimit = 5
+    const concurrencyLimit = 2
     const semaphore = new Semaphore(concurrencyLimit)
     const replies = await Promise.all(
         all_chat_configs.map(async single_chat_config => {
@@ -518,7 +520,8 @@ async function checkInvalidReplyAndExit(
     // exit(1)
 }
 
-async function saveListToFile(list: any[], filePath: string): Promise<void> {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+async  function saveListToFile(list: any[], filePath: string): Promise<void> {
     const data = JSON.stringify(list)
     await fspromises.mkdir(path.dirname(filePath), { recursive: true })
     await fspromises.writeFile(filePath, data)

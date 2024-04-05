@@ -46,8 +46,8 @@ export class StrategySimpleChatLogs {
         try {
             await this.logMutex.runExclusive(async () => {
                 console.log(log)
-                await fspromises.appendFile(this.logFilePath, log + '\n')
-                await fspromises.appendFile(this.logFilePathLatest, log + '\n')
+                await fspromises.appendFile(this.logFilePath, `${log}\n`)
+                await fspromises.appendFile(this.logFilePathLatest, `${log}\n`)
             })
         } catch (error) {
             console.error('Error writing log:', error)
