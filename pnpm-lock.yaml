@@ -114,9 +114,6 @@ importers:
       '@types/js-levenshtein':
         specifier: ^1.1.1
         version: 1.1.1
-      async-mutex:
-        specifier: ^0.4.0
-        version: 0.4.0
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -169,6 +166,9 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
+      async-mutex:
+        specifier: ^0.4.0
+        version: 0.4.0
       diff:
         specifier: ^5.2.0
         version: 5.2.0
@@ -6043,7 +6043,6 @@ packages:
     resolution: {integrity: sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==}
     dependencies:
       tslib: 2.1.0
-    dev: false
 
   /async@3.2.4:
     resolution: {integrity: sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==}
