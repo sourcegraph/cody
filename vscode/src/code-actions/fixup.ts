@@ -169,7 +169,7 @@ const DIAGNOSTIC_SYMBOL_EXCLUSIONS = [
 ]
 
 export function extractSymbolLikeInformationFromDiagnosticMessage(message: string) {
-    const regex = /'\w+(\s*\|\s*\w+)*'/g
+    const regex = /('|"|`|```)\w+(\s*\|\s*\w+)*('|"|`|```)/g
     const matches = message.match(regex)
 
     if (matches) {
