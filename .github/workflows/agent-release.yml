@@ -39,9 +39,11 @@ jobs:
           fi
       - run: pnpm build
       - run: pnpm run test
-      - run: pnpm publish --no-git-checks agent
+      - name: Set npm publishing config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NODE_AUTH_TOKEN}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm publish --no-git-checks agent
       - run: pnpm -C agent run build-agent-binaries
       - name: create release
         id: create_release
@@ -58,7 +60,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./agent/dist/agent-linux-arm64
+          asset_path: ./agent/dist/cody-agent-linux-arm64
           asset_name: cody-agent-linux-arm64-${{ env.EXT_VERSION }}
           asset_content_type: application/octet-stream
       - name: upload release asset (linux-x64)
@@ -67,7 +69,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./agent/dist/agent-linux-x64
+          asset_path: ./agent/dist/cody-agent-linux-x64
           asset_name: cody-agent-linux-x64-${{ env.EXT_VERSION }}
           asset_content_type: application/octet-stream
       - name: upload release asset (macos-arm64)
@@ -76,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./agent/dist/agent-macos-arm64
+          asset_path: ./agent/dist/cody-agent-macos-arm64
           asset_name: cody-agent-macos-arm64-${{ env.EXT_VERSION }}
           asset_content_type: application/octet-stream
       - name: upload release asset (macos-x64)
@@ -85,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./agent/dist/agent-macos-x64
+          asset_path: ./agent/dist/cody-agent-macos-x64
           asset_name: cody-agent-macos-x64-${{ env.EXT_VERSION }}
           asset_content_type: application/octet-stream
       - name: upload release asset (win-x64)
@@ -94,6 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./agent/dist/agent-win-x64
-          asset_name: cody-agent-win-x64-${{ env.EXT_VERSION }}
+          asset_path: ./agent/dist/cody-agent-win-x64.exe
+          asset_name: cody-agent-win-x64-${{ env.EXT_VERSION }}.exe
           asset_content_type: application/octet-stream
