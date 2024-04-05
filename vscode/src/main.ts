@@ -15,6 +15,10 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
+import {
+    registerInteractiveWalkthrough,
+    triggerInteractiveWalkthrough,
+} from '../walkthroughs/interactive'
 import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -118,6 +122,7 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    registerInteractiveWalkthrough()
     const authProvider = new AuthProvider(initialConfig)
 
     const disposables: vscode.Disposable[] = []
@@ -164,6 +169,7 @@ const register = async (
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
+    triggerInteractiveWalkthrough()
 
     const {
         chatClient,
