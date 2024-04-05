@@ -11,23 +11,16 @@ import { getConfiguration } from './configuration'
 
 export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
 
-export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel(
-    CODY_OUTPUT_CHANNEL,
-    'json'
-)
-
-/**
- * Logs a debug message to the "Cody by Sourcegraph" output channel.
- *
- * Usage:
- *
- *   logDebug('label', 'this is a message')
- *   logDebug('label', 'this is a message', 'some', 'args')
- *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
- */
-export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
-    log('debug', filterLabel, text, ...args)
+export function logWords(text: string): void {
+    const words = text.split(' ')
+    words.forEach(word => console.log(word))
 }
+
+
+
+
+
+
 
 /**
  * Logs an error message to the "Cody by Sourcegraph" output channel.

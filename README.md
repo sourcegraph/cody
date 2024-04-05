@@ -37,7 +37,7 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 
 - **Chat:** Ask Cody questions about your entire codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions.
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
-- **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
+- **Edit Code:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
 - **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
   - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
@@ -51,6 +51,18 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 **Codebase-wide chat:**
 
 > <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+
+**Fix Errors:**
+
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+
+**Edit Code:**
+
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+
+
+
+
 
 ## Contributing
 
