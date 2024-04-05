@@ -54,11 +54,11 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 
 **Fix Errors:**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/AskCodyToFixDemo.gif" width=400>
 
 **Edit Code:**
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/CodyEdit.gif" width=400>
 
 
 

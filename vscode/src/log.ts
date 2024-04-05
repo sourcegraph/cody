@@ -16,12 +16,6 @@ export function logWords(text: string): void {
     words.forEach(word => console.log(word))
 }
 
-
-
-
-
-
-
 /**
  * Logs an error message to the "Cody by Sourcegraph" output channel.
  *
