@@ -39,7 +39,7 @@ jobs:
           fi
       - run: pnpm build
       - run: pnpm run test
-      - run: pnpm run publish --no-git-checks agent
+      - run: pnpm publish --no-git-checks agent
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm -C agent run build-agent-binaries
