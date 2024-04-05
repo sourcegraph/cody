@@ -18,7 +18,7 @@ import { ToolbarDropdownButton } from '../chat/cells/messageCell/humanMessage/ed
 import styles from './ChatModelDropdownMenu.module.css'
 import { chatModelIconComponent } from './ChatModelIcon'
 
-type DropdownProps = CustomComponentPropsWithRef<typeof VSCodeDropdown>
+type VSCodeDropdownProps = CustomComponentPropsWithRef<typeof VSCodeDropdown>
 
 export interface ChatModelDropdownMenuProps {
     models: ModelProvider[]
@@ -38,7 +38,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     className,
 }) => {
     const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
-    const dropdownRef = useRef<DropdownProps>(null)
+    const dropdownRef = useRef<VSCodeDropdownProps['ref']>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -78,7 +78,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
         return null
     }
 
-    const enabledDropdownProps: Pick<DropdownProps, 'title' | 'onClickCapture'> = {
+    const enabledDropdownProps: Pick<VSCodeDropdownProps, 'title' | 'onClickCapture'> = {
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
         onClickCapture: () => {
             // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
@@ -102,7 +102,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
             aria-label="Choose a model"
             {...(!disabled && enabledDropdownProps)}
         >
-            {models?.map((option, index) => (
+            {models?.map(option => (
                 <VSCodeOption
                     className={styles.option}
                     key={option.model}

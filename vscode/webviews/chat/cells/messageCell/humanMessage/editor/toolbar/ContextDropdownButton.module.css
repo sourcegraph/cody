@@ -1,0 +1,7 @@
+.popover {
+    font-size: var(--vscode-font-size);
+    background-color: var(--vscode-dropdown-background);
+    border: solid 1px var(--vscode-dropdown-border);
+    color: var(--vscode-dropdown-foreground);
+    padding: 0.5rem;
+}

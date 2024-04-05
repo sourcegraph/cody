@@ -1,6 +1,11 @@
 import { VSCodeButton, VSCodeDropdown } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import type { CustomComponentPropsWithRef, FunctionComponent, LegacyRef, PropsWithChildren } from 'react'
+import {
+    type CustomComponentPropsWithRef,
+    type FunctionComponent,
+    type PropsWithChildren,
+    forwardRef,
+} from 'react'
 import styles from './ToolbarButton.module.css'
 
 // The components in this file are wrappers of other components with the right styles applied for
@@ -11,24 +16,35 @@ type VSCodeButtonProps = CustomComponentPropsWithRef<typeof VSCodeButton>
 
 export const ToolbarButton: FunctionComponent<
     PropsWithChildren<
-        Partial<Pick<VSCodeButtonProps, 'type' | 'onClick' | 'disabled' | 'title' | 'className'>>
+        Partial<Pick<VSCodeButtonProps, 'type' | 'onClick' | 'disabled' | 'title' | 'className'>> & {
+            ref?: VSCodeButtonProps['ref']
+        }
     >
-> = ({ className, children, ...props }) => (
-    <VSCodeButton className={classNames(styles.button, className)} {...props}>
+> = forwardRef(({ className, children, ...props }, ref) => (
+    <VSCodeButton className={classNames(styles.button, className)} ref={ref} {...props}>
         {children}
     </VSCodeButton>
-)
+))
 
 export const ToolbarPopoverButton: FunctionComponent<
-    PropsWithChildren<Partial<Pick<VSCodeButtonProps, 'onClick' | 'title' | 'className'>>>
-> = ({ className, children, ...props }) => (
-    <ToolbarButton type="button" className={classNames(styles.popoverButton, className)} {...props}>
+    PropsWithChildren<
+        Partial<Pick<VSCodeButtonProps, 'onClick' | 'title' | 'className'>> & {
+            ref?: VSCodeButtonProps['ref']
+        }
+    >
+> = forwardRef(({ className, children, ...props }, ref) => (
+    <ToolbarButton
+        type="button"
+        className={classNames(styles.popoverButton, className)}
+        ref={ref}
+        {...props}
+    >
         {children}
         <div slot="end" className={styles.end}>
             <i className="codicon codicon-chevron-down" />
         </div>
     </ToolbarButton>
-)
+))
 
 type VSCodeDropdownProps = CustomComponentPropsWithRef<typeof VSCodeDropdown>
 
@@ -45,8 +61,8 @@ export const ToolbarDropdownButton: FunctionComponent<
                 | 'aria-label'
                 | 'className'
             >
-        > & { ref?: LegacyRef<VSCodeDropdownProps> }
+        > & { ref?: VSCodeDropdownProps['ref'] }
     >
-> = ({ className, ref, ...props }) => (
-    <VSCodeDropdown className={classNames(styles.dropdownButton, className)} {...props} />
-)
+> = forwardRef(({ className, ...props }, ref) => (
+    <VSCodeDropdown className={classNames(styles.dropdownButton, className)} ref={ref} {...props} />
+))

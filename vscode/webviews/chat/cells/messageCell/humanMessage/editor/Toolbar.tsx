@@ -1,8 +1,8 @@
 import { type FunctionComponent, useCallback, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { ChatModelDropdownMenu } from '../../../../../Components/ChatModelDropdownMenu'
-import { EnhancedContextSettings } from '../../../../../Components/EnhancedContextSettings'
 import { useChatModelContext } from '../../../../models/chatModelContext'
+import { ContextDropdownButton } from './toolbar/ContextDropdownButton'
 
 /**
  * The toolbar for the human message editor.
@@ -26,12 +26,7 @@ export const Toolbar: FunctionComponent<{
 
     return (
         <>
-            <EnhancedContextSettings
-                isOpen={isEnhancedContextOpen}
-                setOpen={onEnhancedContextTogglerClick}
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                isNewInstall={IS_NEW_INSTALL}
-            />
+            <ContextDropdownButton />
             {chatModels && onCurrentChatModelChange ? (
                 <ChatModelDropdownMenu
                     models={chatModels}
