@@ -1,5 +1,4 @@
 import { isMacOS } from '@sourcegraph/cody-shared'
-import type { CodyCommandArgs } from './types'
 
 const osIcon = isMacOS() ? '⌥' : 'Alt+'
 
@@ -11,7 +10,6 @@ export const CodyCommandMenuItems = [
         icon: 'comment',
         command: {
             command: 'cody.chat.panel.new',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: `${osIcon}L`,
         mode: 'ask',
@@ -24,7 +22,6 @@ export const CodyCommandMenuItems = [
         icon: 'wand',
         command: {
             command: 'cody.command.edit-code',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: `${osIcon}K`,
         mode: 'edit',
@@ -36,7 +33,6 @@ export const CodyCommandMenuItems = [
         icon: 'book',
         command: {
             command: 'cody.command.document-code',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: '',
         mode: 'edit',
@@ -48,7 +44,6 @@ export const CodyCommandMenuItems = [
         icon: 'file-binary',
         command: {
             command: 'cody.command.explain-code',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: '',
         mode: 'ask',
@@ -60,7 +55,6 @@ export const CodyCommandMenuItems = [
         icon: 'package',
         command: {
             command: 'cody.command.unit-tests',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: '',
         mode: 'edit',
@@ -72,7 +66,6 @@ export const CodyCommandMenuItems = [
         icon: 'checklist',
         command: {
             command: 'cody.command.smell-code',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: '',
         mode: 'ask',
@@ -84,7 +77,6 @@ export const CodyCommandMenuItems = [
         icon: 'tools',
         command: {
             command: 'cody.menu.custom-commands',
-            args: [{ source: 'sidebar' } satisfies Partial<CodyCommandArgs>],
         },
         keybinding: `${osIcon}⇧C`,
         type: 'default',
