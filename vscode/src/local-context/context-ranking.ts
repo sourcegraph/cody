@@ -300,7 +300,7 @@ export class ContextRankingController implements ContextRanker {
                     uri: result.uri,
                     range,
                     content: result.content,
-                    source: ContextItemSource.Embeddings,
+                    source: ContextItemSource.SENTENCE_TRANSFORMER_EMBED,
                 })
             }
             return contextItems

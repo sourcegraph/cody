@@ -70,6 +70,8 @@ export enum ContextItemSource {
 
     /** From URI */
     Uri = 'uri',
+
+    SENTENCE_TRANSFORMER_EMBED = 'sentence-transformer-embedding'
 }
 
 /**
