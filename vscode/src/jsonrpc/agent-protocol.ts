@@ -5,6 +5,7 @@ import type {
     ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
+    ModelUsage,
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
@@ -16,7 +17,6 @@ import type {
 } from '@sourcegraph/telemetry'
 import type * as vscode from 'vscode'
 
-import type { ModelUsage } from '@sourcegraph/cody-shared/dist/models/types'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'

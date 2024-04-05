@@ -1,14 +1,12 @@
 import * as vscode from 'vscode'
 
-import { logDebug } from '@sourcegraph/cody-shared'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { DefaultEditCommands, logDebug, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
