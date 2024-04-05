@@ -1,4 +1,5 @@
-import { DefaultChatCommands, displayPath, logDebug, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { displayPath } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -27,7 +28,7 @@ async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<Execute
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext: false,
-        source: DefaultChatCommands.Hover,
+        source: 'hover',
     }
 }
 
@@ -39,7 +40,6 @@ export async function executeHoverChatCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.hover', async span => {
         span.setAttribute('sampled', true)
-        logDebug('hoverChatCommand', 'executing', { args })
         telemetryService.log('CodyVSCodeExtension:command:hover:executed', {
             useCodebaseContex: false,
             requestID: args?.requestID,

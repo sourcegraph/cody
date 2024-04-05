@@ -1,4 +1,4 @@
-import { DefaultEditCommands, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
@@ -23,7 +23,7 @@ export async function executeEditCommand(
                     document,
                     mode: 'edit',
                 },
-                source: DefaultEditCommands.Edit,
+                source: args.source,
             } satisfies ExecuteEditArguments),
         }
     })

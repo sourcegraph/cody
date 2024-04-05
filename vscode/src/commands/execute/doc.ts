@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { DefaultEditCommands, logDebug, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { logDebug } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -118,7 +119,7 @@ export async function executeDocCommand(
                     range,
                     insertionPoint,
                 },
-                source: DefaultEditCommands.Doc,
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

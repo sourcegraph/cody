@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 
@@ -187,7 +187,7 @@ export class FixupController
 
     // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
-    public async retry(task: FixupTask, source: ChatEventSource): Promise<FixupTask | undefined> {
+    public async retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
@@ -271,7 +271,7 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         intent: EditIntent,
-        source: ChatEventSource,
+        source: EventSource,
         telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
@@ -317,7 +317,7 @@ export class FixupController
         intent: EditIntent,
         mode: EditMode,
         model: EditModel,
-        source?: ChatEventSource,
+        source?: EventSource,
         destinationFile?: vscode.Uri,
         insertionPoint?: vscode.Position,
         telemetryMetadata?: FixupTelemetryMetadata
