@@ -54,7 +54,8 @@ async function explainCommand(
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Explain,
+        source: args?.source,
+        command: DefaultChatCommands.Explain,
     }
 }
 

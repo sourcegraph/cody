@@ -4,11 +4,12 @@ import * as vscode from 'vscode'
 import {
     ANSWER_TOKENS,
     type ChatClient,
-    type ChatEventSource,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
     type ContextItemWithContent,
+    type DefaultChatCommands,
+    type EventSource,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
@@ -393,7 +394,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
-        source?: ChatEventSource
+        source?: EventSource,
+        command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             const useFusedContextPromise = featureFlagProvider.evaluateFeatureFlag(
@@ -405,6 +407,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 requestID,
                 chatModel: this.chatModel.modelID,
                 source,
+                command,
                 traceId: span.spanContext().traceId,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)

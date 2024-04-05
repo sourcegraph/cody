@@ -1,7 +1,7 @@
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -76,7 +76,7 @@ export const getInput = async (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
-    source: ChatEventSource
+    source: EventSource
 ): Promise<QuickPickInput | null> => {
     const editor = getEditor().active
     if (!editor) {
