@@ -39,9 +39,11 @@ jobs:
           fi
       - run: pnpm build
       - run: pnpm run test
-      - run: pnpm publish --no-git-checks agent
+      - name: Set npm publishing config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NODE_AUTH_TOKEN}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm publish --no-git-checks agent
       - run: pnpm -C agent run build-agent-binaries
       - name: create release
         id: create_release
