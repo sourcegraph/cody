@@ -440,9 +440,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             let closest = ''
             if (polly) {
                 // @ts-ignore
-                const persister = polly?.persister?._cache as Map<string, Har> || {}
+                const persister = (polly?.persister._cache as Map<string, Har>) || {}
                 for (const [, har] of persister) {
-                    for (const entry of (await har).log.entries) {
+                    for (const entry of har.log.entries) {
                         if (entry.request.url !== url) {
                             continue
                         }
