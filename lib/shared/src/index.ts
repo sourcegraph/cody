@@ -15,7 +15,7 @@ export type {
 export { errorToChatError } from './chat/transcript/messages'
 export type {
     ChatError,
-    ChatEventSource,
+    EventSource,
     ChatHistory,
     ChatMessage,
     UserLocalHistory,

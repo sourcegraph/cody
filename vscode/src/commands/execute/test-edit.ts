@@ -66,7 +66,7 @@ export async function executeTestEditCommand(
                     userContextFiles: contextFiles.slice(0, 2),
                     destinationFile,
                 },
-                source: args?.source ?? 'editor',
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

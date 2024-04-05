@@ -1,5 +1,4 @@
 import { type ContextItem, logError } from '@sourcegraph/cody-shared'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { Range } from 'vscode'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -54,7 +53,7 @@ export async function executeTestCaseEditCommand(
                     userContextFiles: contextFiles,
                     destinationFile: document.uri,
                 },
-                source: DefaultEditCommands.Test,
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

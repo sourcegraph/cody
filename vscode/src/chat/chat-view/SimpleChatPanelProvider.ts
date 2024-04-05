@@ -3,10 +3,10 @@ import * as vscode from 'vscode'
 
 import {
     type ChatClient,
-    type ChatEventSource,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type EventSource,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
@@ -391,7 +391,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
-        source?: ChatEventSource
+        source?: EventSource
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             const useFusedContextPromise = featureFlagProvider.evaluateFeatureFlag(

@@ -23,7 +23,7 @@ export async function executeEditCommand(
                     document,
                     mode: 'edit',
                 },
-                source: args.source ?? 'editor',
+                source: args.source,
             } satisfies ExecuteEditArguments),
         }
     })

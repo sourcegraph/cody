@@ -119,7 +119,7 @@ export async function executeDocCommand(
                     range,
                     insertionPoint,
                 },
-                source: args?.source || 'editor',
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

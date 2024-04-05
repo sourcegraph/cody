@@ -1,5 +1,4 @@
 import { displayPath, logDebug } from '@sourcegraph/cody-shared'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -30,7 +29,7 @@ async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<Execute
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext: false,
-        source: DefaultChatCommands.Hover,
+        source: 'hover',
     }
 }
 
