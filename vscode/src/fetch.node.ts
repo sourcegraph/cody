@@ -1,4 +1,4 @@
-import http from 'node:http'
+import type http from 'node:http'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
@@ -7,8 +7,8 @@ import type { Configuration } from '@sourcegraph/cody-shared'
 import { agent } from '@sourcegraph/cody-shared/src/fetch'
 import { getConfiguration } from './configuration'
 
-import { HttpProxyAgent } from 'http-proxy-agent';
-import {HttpsProxyAgent} from "https-proxy-agent";
+import { HttpProxyAgent } from 'http-proxy-agent'
+import { HttpsProxyAgent } from 'https-proxy-agent'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -36,9 +36,9 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
         // http_proxy/https_proxy in the format of 'https://[username:password]@your-proxy.com'
         // (see :https://github.com/TooTallNate/proxy-agents/issues/12)
         if (protocol === 'http:') {
-            return new HttpProxyAgent(process.env.http_proxy ?? "")
+            return new HttpProxyAgent(process.env.http_proxy ?? '')
         }
-        return new HttpsProxyAgent(process.env.https_proxy ?? "")
+        return new HttpsProxyAgent(process.env.https_proxy ?? '')
     }
 }
 
