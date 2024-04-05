@@ -27,6 +27,7 @@ test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:sidebar:custom:clicked',
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
         'CodyVSCodeExtension:command:custom:build:executed',
