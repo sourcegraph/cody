@@ -1,12 +1,11 @@
 import { logDebug } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeChat } from './ask'
 
 import * as uuid from 'uuid'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 interface TerminalOutputArguments {
     name: string

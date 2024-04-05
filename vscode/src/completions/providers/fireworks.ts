@@ -19,7 +19,10 @@ import {
     isAbortError,
     isNodeResponse,
     isRateLimitError,
+    logResponseHeadersToSpan,
+    recordErrorToSpan,
     tokensToChars,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
 import { fetch } from '@sourcegraph/cody-shared/src/fetch'
@@ -29,11 +32,6 @@ import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
-import {
-    logResponseHeadersToSpan,
-    recordErrorToSpan,
-    tracer,
-} from '@sourcegraph/cody-shared/src/tracing'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
 import {

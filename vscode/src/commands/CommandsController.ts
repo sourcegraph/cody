@@ -9,7 +9,7 @@ import { CommandRunner } from './services/runner'
 import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic

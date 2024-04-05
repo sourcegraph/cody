@@ -8,6 +8,7 @@ import {
     type FeatureFlagProvider,
     type Guardrails,
     ModelProvider,
+    ModelUsage,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -20,7 +21,6 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage } from '../protocol'
 
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'

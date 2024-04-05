@@ -1,12 +1,17 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { ignores, isCodyIgnoredFile, testFileUri, uriBasename } from '@sourcegraph/cody-shared'
+import {
+    CODY_IGNORE_URI_PATH,
+    ignores,
+    isCodyIgnoredFile,
+    testFileUri,
+    uriBasename,
+} from '@sourcegraph/cody-shared'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
 import type { ContextRetriever, ContextSnippet } from '../types'
 
-import { CODY_IGNORE_URI_PATH } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'

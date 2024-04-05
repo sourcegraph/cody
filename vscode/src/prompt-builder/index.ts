@@ -1,12 +1,12 @@
 import {
     type ChatMessage,
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     type Message,
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 

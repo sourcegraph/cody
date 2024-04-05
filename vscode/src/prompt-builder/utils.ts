@@ -1,11 +1,11 @@
 import {
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { URI } from 'vscode-uri'
 

@@ -1,12 +1,11 @@
 import { type ContextItem, logError } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { Range } from 'vscode'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case'
 import type { CodyCommandArgs } from '../types'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Adds generated test cases to the selected test suite inline.

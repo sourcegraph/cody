@@ -25,7 +25,7 @@ import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask, type FixupTaskID } from './FixupTask'
+import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { type Diff, computeDiff } from './diff'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
@@ -154,6 +154,7 @@ export class FixupController
             mode: task.mode,
             source: task.source,
             ...countCode(replacementText),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -270,7 +271,8 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         intent: EditIntent,
-        source: EventSource
+        source: EventSource,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -295,7 +297,10 @@ export class FixupController
             input.intent,
             mode,
             input.model,
-            source
+            source,
+            undefined,
+            undefined,
+            telemetryMetadata
         )
 
         // Return focus to the editor
@@ -314,7 +319,8 @@ export class FixupController
         model: EditModel,
         source?: EventSource,
         destinationFile?: vscode.Uri,
-        insertionPoint?: vscode.Position
+        insertionPoint?: vscode.Position,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -327,7 +333,8 @@ export class FixupController
             model,
             source,
             destinationFile,
-            insertionPoint
+            insertionPoint,
+            telemetryMetadata
         )
         this.tasks.set(task.id, task)
         return task
@@ -414,6 +421,7 @@ export class FixupController
             mode: task.mode,
             source: task.source,
             ...countCode(task.replacement || ''),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -478,6 +486,7 @@ export class FixupController
                 model: task.model,
                 mode: task.mode,
                 intent: task.intent,
+                ...task.telemetryMetadata,
             },
         })
     }
