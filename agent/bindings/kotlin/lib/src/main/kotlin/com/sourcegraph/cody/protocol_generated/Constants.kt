@@ -13,6 +13,7 @@ object Constants {
   const val notice = "notice"
   const val `transcript-errors` = "transcript-errors"
   const val userContextFiles = "userContextFiles"
+  const val `chat-input-context` = "chat-input-context"
   const val chatModels = "chatModels"
   const val `update-search-results` = "update-search-results"
   const val `index-updated` = "index-updated"
