@@ -1,4 +1,4 @@
-import { displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { displayPath } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -40,7 +40,6 @@ export async function executeHoverChatCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.hover', async span => {
         span.setAttribute('sampled', true)
-        logDebug('hoverChatCommand', 'executing', { args })
         telemetryService.log('CodyVSCodeExtension:command:hover:executed', {
             useCodebaseContex: false,
             requestID: args?.requestID,
