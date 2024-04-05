@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { testFileUri } from '@sourcegraph/cody-shared'
 
-import { FixupCodeAction } from './fixup'
+import { FixupCodeAction, extractSymbolLikeInformationFromDiagnosticMessage } from './fixup'
 
 describe('fixup code action', () => {
     test('produces correct prompt for code with a single diagnostic', async () => {
@@ -147,5 +147,19 @@ describe('fixup code action', () => {
         const codeAction = new FixupCodeAction()
         const prompt = await codeAction.getCodeActionInstruction('         .taur', diagnostics)
         expect(prompt).toMatchSnapshot()
+    })
+})
+
+describe('extractSymbolLikeInformationFromDiagnosticMessage', () => {
+    test('extracts correct symbols from error message', () => {
+        const message = `Argument of type 'Element' is not assignable to parameter of type 'Element'.\nType 'null' is not assignable to type 'Element'.`
+        const symbols = extractSymbolLikeInformationFromDiagnosticMessage(message)
+        expect(symbols).toStrictEqual(['Element'])
+    })
+
+    test('extracts correct symbols from error message with union types', () => {
+        const message = `Argument of type 'Element | null' is not assignable to parameter of type 'Element | DocumentFragment'.\nType 'null' is not assignable to type 'Element | DocumentFragment'.`
+        const symbols = extractSymbolLikeInformationFromDiagnosticMessage(message)
+        expect(symbols).toStrictEqual(['Element', 'DocumentFragment'])
     })
 })

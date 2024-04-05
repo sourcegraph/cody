@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
+import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
 import type { ExecuteEditArguments } from '../edit/execute'
+import { fetchDocumentSymbols } from '../edit/input/utils'
 import { getSmartSelection } from '../editor/utils'
 
 const FIX_PROMPT_TOPICS = {
@@ -51,12 +53,20 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
     ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
         const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
+        const contextSymbols = await this.getRelatedSymbolContext(document, diagnostics)
+        console.log('Context symbols', contextSymbols)
         const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [
                 {
-                    configuration: { instruction, range, intent: 'fix', document },
+                    configuration: {
+                        instruction,
+                        range,
+                        intent: 'fix',
+                        document,
+                        userContextFiles: contextSymbols,
+                    },
                     source,
                     telemetryMetadata: {
                         diagnostics: diagnostics.map(diagnostic => ({
@@ -118,6 +128,124 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             )
         }
         return prompt
+    }
+
+    private async getRelatedSymbolContext(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[]
+    ): Promise<ContextItem[]> {
+        const documentSymbols = await fetchDocumentSymbols(document)
+
+        const messageContext: ContextItem[] = []
+        const documentContext: ContextItem[] = []
+
+        for (const diagnostic of diagnostics) {
+            documentContext.push(
+                ...(await getSymbolsFromRange(documentSymbols, document, diagnostic.range))
+            )
+            messageContext.push(
+                ...(await getSymbolsFromDiagnosticMessage(diagnostic.message, document, documentSymbols))
+            )
+        }
+
+        // TODO: Ensure message context takes precedence
+        return [...messageContext, ...documentContext]
+    }
+}
+
+const DIAGNOSTIC_SYMBOL_EXCLUSIONS = [
+    'string',
+    'number',
+    'boolean',
+    'true',
+    'false',
+    'null',
+    'undefined',
+    'type',
+    'assignable',
+    'not',
+    'to',
+    'is',
+]
+
+export function extractSymbolLikeInformationFromDiagnosticMessage(message: string) {
+    const regex = /'\w+(\s*\|\s*\w+)*'/g
+    const matches = message.match(regex)
+
+    if (matches) {
+        const symbols = matches.flatMap(match => {
+            return match.replace(/'/g, '').split(/\s*\|\s*/)
+        })
+
+        return [...new Set(symbols)].filter(symbol => !DIAGNOSTIC_SYMBOL_EXCLUSIONS.includes(symbol))
+    }
+
+    return []
+}
+
+async function getSymbolsFromDiagnosticMessage(
+    message: string,
+    document: vscode.TextDocument,
+    documentSymbols: vscode.DocumentSymbol[]
+): Promise<ContextItem[]> {
+    const extractedSymbols = extractSymbolLikeInformationFromDiagnosticMessage(message)
+
+    console.log('Extracted symbols...', extractedSymbols)
+    const symbols: ContextItem[] = []
+
+    for (const symbol of extractedSymbols) {
+        const symbolFromDocument = documentSymbols.find(docSymbol => docSymbol.name === symbol)
+        if (symbolFromDocument) {
+            symbols.push(getSymbolAsContextItem(document, symbolFromDocument))
+            continue
+        }
+
+        const symbolFromWorkspace = (
+            await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+                'vscode.executeWorkspaceSymbolProvider',
+                symbol
+            )
+        )?.filter(workspaceSymbol => workspaceSymbol.name === symbol)[0]
+        if (symbolFromWorkspace) {
+            symbols.push(getSymbolAsContextItem(document, symbolFromWorkspace))
+        }
+    }
+
+    return symbols
+}
+
+async function getSymbolsFromRange(
+    documentSymbols: vscode.DocumentSymbol[],
+    document: vscode.TextDocument,
+    range: vscode.Range
+): Promise<ContextItem[]> {
+    return documentSymbols
+        .filter(symbol => range.contains(symbol.range))
+        .map(symbol => getSymbolAsContextItem(document, symbol))
+}
+
+function getSymbolAsContextItem(
+    document: vscode.TextDocument,
+    symbol: vscode.DocumentSymbol | vscode.SymbolInformation
+): ContextItem {
+    if ('location' in symbol) {
+        return {
+            type: 'symbol',
+            uri: symbol.location.uri,
+            symbolName: symbol.name,
+            range: symbol.location.range,
+            kind: 'function', // todo fix symbolkind limits
+            source: ContextItemSource.Editor,
+        }
+    }
+
+    return {
+        type: 'symbol',
+        uri: document.uri,
+        symbolName: symbol.name,
+        range: symbol.range,
+        kind: 'function', // todo fix symbolkind limits
+        source: ContextItemSource.Editor,
     }
 }
 
