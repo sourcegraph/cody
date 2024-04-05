@@ -123,6 +123,7 @@ export class ChatManager implements vscode.Disposable {
         editorState,
         addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
+        command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.getChatProvider()
         await provider?.handleUserMessageSubmission(
@@ -132,7 +133,8 @@ export class ChatManager implements vscode.Disposable {
             contextFiles ?? [],
             editorState,
             addEnhancedContext ?? true,
-            source
+            source,
+            command
         )
         return provider
     }
