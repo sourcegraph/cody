@@ -1,6 +1,9 @@
-import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import {
+    type AuthStatus,
+    DEFAULT_DOT_COM_MODELS,
+    ModelProvider,
+    ModelUsage,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 /**

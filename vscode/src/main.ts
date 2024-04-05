@@ -5,6 +5,7 @@ import {
     type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    type DefaultCodyCommands,
     ModelProvider,
     PromptMixin,
     featureFlagProvider,
@@ -14,7 +15,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'

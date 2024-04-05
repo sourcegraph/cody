@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import type { Command } from 'commander'
 
 console.log = console.error

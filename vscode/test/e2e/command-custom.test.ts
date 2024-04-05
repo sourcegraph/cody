@@ -27,6 +27,7 @@ test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:sidebar:custom:clicked',
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
         'CodyVSCodeExtension:command:custom:build:executed',
@@ -35,8 +36,14 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
     ],
 })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
-    // Sign into Cody
     await sidebarSignin(page, sidebar)
+
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
@@ -47,17 +54,7 @@ test.extend<ExpectedEvents>({
 
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
-
-    // Open the new chat panel
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
-
-    // Click the Custom Commands button in the Command view
+    // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
     await page.getByText('Custom Commands').click()
 
     const commandName = 'ATestCommand'
@@ -139,8 +136,14 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
     ],
 })('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
-    // Sign into Cody
     await sidebarSignin(page, sidebar)
+
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
@@ -153,13 +156,6 @@ test.extend<ExpectedEvents>({
 
     // Open the chat sidebar to click on the Custom Command option
     // Search for the command defined in cody.json and execute it
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
 
     /* Test: context.currentDir with currentDir command */
     await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
@@ -242,8 +238,14 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:menu:command:config:clicked',
     ],
 })('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
-    // Sign into Cody
     await sidebarSignin(page, sidebar)
+
+    // Minimize other sidebar items to make room for the command view,
+    // else the test will fail because the Custom Command button is not visible
+    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
+    await page.getByLabel('Natural Language Search (Beta) Section').click()
+    await page.getByLabel('Settings & Support Section').click()
+    await page.getByLabel('Chats Section').click()
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
@@ -253,12 +255,6 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'cody.json' }).hover()
 
     await page.click('.badge[aria-label="Cody"]')
-
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
 
     // Check button click to open the cody.json file in the editor
     // const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'

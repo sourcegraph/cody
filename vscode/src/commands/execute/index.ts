@@ -2,7 +2,7 @@ import {
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
-} from '@sourcegraph/cody-shared/src/commands/types'
+} from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../main'
 import { executeDocCommand } from './doc'
 import { executeExplainCommand } from './explain'

@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test } from './helpers'
+import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -80,6 +80,13 @@ test('chat input focus', async ({ page, sidebar }) => {
     await chatInput.fill('delay')
     await chatInput.press('Enter')
     await expect(chatInput).toBeFocused()
+
+    // Ensure equal-width columns so we can be sure the code we're about to click is in view (and is
+    // not out of the editor's scroll viewport). This became required due to new (undocumented)
+    // behavior in VS Code 1.88.0 where the Cody panel would take up ~80% of the width when it was
+    // focused, meaning that the buzz.ts editor tab would take up ~20% and the text we intend to
+    // click would be only partially visible, making the click() call fail.
+    await executeCommandInPalette(page, 'View: Reset Editor Group Sizes')
 
     // Make sure the chat input box does not steal focus from the editor when editor
     // is focused.

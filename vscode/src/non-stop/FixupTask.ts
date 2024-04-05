@@ -11,6 +11,13 @@ import { CodyTaskState } from './utils'
 
 export type FixupTaskID = string
 
+/**
+ * Arbitrary metadata that will be included in telemetry events for this task.
+ */
+export type FixupTelemetryMetadata = {
+    [key: string]: unknown
+}
+
 export class FixupTask {
     public id: FixupTaskID
     public state_: CodyTaskState = CodyTaskState.idle
@@ -65,7 +72,8 @@ export class FixupTask {
         public source?: ChatEventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri,
-        public insertionPoint?: vscode.Position
+        public insertionPoint?: vscode.Position,
+        public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()

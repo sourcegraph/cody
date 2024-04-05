@@ -1,14 +1,11 @@
-import { displayPath, logDebug } from '@sourcegraph/cody-shared'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { DefaultChatCommands, displayPath, logDebug, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
-import type { CodyCommandArgs } from '../types'
-import { type ExecuteChatArguments, executeChat } from './ask'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromUri } from '../context/file-path'
 import { getContextFileFromCursor } from '../context/selection'
+import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
 async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const { uri, range, additionalInstruction } = args
