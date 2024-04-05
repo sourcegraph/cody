@@ -23,6 +23,10 @@ export function registerSidebarCommands(): vscode.Disposable[] {
     }
 
     return [
+        vscode.commands.registerCommand('cody.sidebar.commands', (feature: string, command: string) => {
+            logSidebarClick(feature)
+            void vscode.commands.executeCommand(command, { source: 'sidebar' })
+        }),
         vscode.commands.registerCommand('cody.show-page', (page: string) => {
             logSidebarClick(page)
             let url: URL
