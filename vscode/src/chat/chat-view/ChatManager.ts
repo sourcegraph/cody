@@ -88,7 +88,8 @@ export class ChatManager implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
-            )
+            ),
+            vscode.commands.registerCommand('cody.chat.context.add', () => this.sendSelectionToChat())
         )
     }
 
@@ -127,6 +128,11 @@ export class ChatManager implements vscode.Disposable {
             args?.source
         )
         return provider
+    }
+
+    private async sendSelectionToChat(): Promise<void> {
+        const provider = await this.getChatProvider()
+        await provider.handleGetUserEditorContext()
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

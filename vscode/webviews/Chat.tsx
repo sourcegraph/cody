@@ -6,6 +6,7 @@ import classNames from 'classnames'
 
 import {
     type ChatMessage,
+    type ContextItem,
     type Guardrails,
     type ModelProvider,
     type TelemetryService,
@@ -43,6 +44,7 @@ interface ChatboxProps {
     chatIDHistory: string[]
     isWebviewActive: boolean
     isNewInstall: boolean
+    userContextFromSelection: ContextItem[]
 }
 
 const isMac = isMacOS()
@@ -62,6 +64,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatIDHistory,
     isWebviewActive,
     isNewInstall,
+    userContextFromSelection,
 }) => {
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
@@ -408,6 +411,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             postMessage,
         ]
     )
+
+    // Set up the message listener for adding new context from user's editor to chat.
+    // Turns the new context into @-mentions token in chat.
+    useEffect(() => {
+        if (!userContextFromSelection.length) {
+            return
+        }
+        editorRef.current?.addContextItemAsToken(userContextFromSelection)
+    }, [userContextFromSelection])
 
     // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
