@@ -483,7 +483,7 @@
         "command": "cody.chat.context.add",
         "category": "Cody",
         "group": "Cody",
-        "title": "Add Selection to Chat",
+        "title": "Cody Chat: Add context",
         "icon": "$(new-file)",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
