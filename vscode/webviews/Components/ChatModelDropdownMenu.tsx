@@ -1,16 +1,15 @@
 import type React from 'react'
-import { type ComponentProps, useCallback, useRef, useState } from 'react'
+import { type ComponentProps, type FunctionComponent, useCallback, useRef, useState } from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-
-import { AnthropicLogo, MistralLogo, OllamaLogo, OpenAILogo } from '../icons/LLMProviderIcons'
 
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import type { ModelProvider } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
 import styles from './ChatModelDropdownMenu.module.css'
+import { chatModelIconComponent } from './ChatModelIcon'
 
 type DropdownProps = ComponentProps<typeof VSCodeDropdown>
 
@@ -18,7 +17,7 @@ export interface ChatModelDropdownMenuProps {
     models: ModelProvider[]
     disabled: boolean // Disabled when transcript length > 1
     onCurrentChatModelChange: (model: ModelProvider) => void
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 }
 
 export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMenuProps> = ({
@@ -105,7 +104,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                 : undefined
                         }
                     >
-                        <ProviderIcon model={option.model} />
+                        <ChatModelIcon model={option.model} />
                         <span
                             className={classNames(
                                 styles.titleContainer,
@@ -127,7 +126,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 ))}
 
                 <div slot="selected-value" className={styles.selectedValue}>
-                    <ProviderIcon model={currentModel.model} />
+                    <ChatModelIcon model={currentModel.model} />
                     <span>
                         <span className={styles.title}>{currentModel.title}</span>
                     </span>
@@ -137,18 +136,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     )
 }
 
-const ProviderIcon = ({ model, className }: { model: string; className?: string }): JSX.Element => {
-    if (model.startsWith('openai/')) {
-        return <OpenAILogo className={className} />
-    }
-    if (model.startsWith('anthropic/')) {
-        return <AnthropicLogo className={className} />
-    }
-    if (model.includes('mixtral')) {
-        return <MistralLogo className={className} />
-    }
-    if (model.includes('ollama')) {
-        return <OllamaLogo className={className} />
-    }
-    return <></>
+const ChatModelIcon: FunctionComponent<{ model: string }> = ({ model }) => {
+    const ModelIcon = chatModelIconComponent(model)
+    return ModelIcon ? <ModelIcon size={16} /> : null
 }

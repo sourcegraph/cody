@@ -36,6 +36,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Chat: A new design for chat messages, with avatars and a separate context row. [pull/3639](https://github.com/sourcegraph/cody/pull/3639)
 - Chat: The Enhanced Context Settings modal is opened by default for the first chat session. [pull/3547](https://github.com/sourcegraph/cody/pull/3547)
 - Add information on which Cody tier is being used to analytics events. [pull/3508](https://github.com/sourcegraph/cody/pull/3508)
 - Auth: Enable the new onboarding flow that does not require the redirect back to VS Code for everyone. [pull/3574](https://github.com/sourcegraph/cody/pull/3574)

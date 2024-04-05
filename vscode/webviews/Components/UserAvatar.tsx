@@ -1,0 +1,65 @@
+import classNames from 'classnames'
+import type { FunctionComponent } from 'react'
+import type { UserAccountInfo } from '../Chat'
+import styles from './UserAvatar.module.css'
+
+interface Props {
+    user: NonNullable<UserAccountInfo['user']>
+    size: number
+    className?: string
+}
+
+/**
+ * UserAvatar displays the avatar of a user.
+ */
+export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) => {
+    const title = user.displayName || user.username
+
+    if (user?.avatarURL) {
+        let url = user.avatarURL
+        try {
+            const urlObject = new URL(user.avatarURL)
+            // Add a size param for non-data URLs. This will resize the image if it is hosted on
+            // certain places like Gravatar and GitHub.
+            if (size && !user.avatarURL.startsWith('data:')) {
+                const highDPISize = size * 2
+                urlObject.searchParams.set('s', highDPISize.toString())
+            }
+            url = urlObject.href
+        } catch {
+            // noop
+        }
+
+        return (
+            <img
+                className={classNames(styles.userAvatar, className)}
+                src={url}
+                role="presentation"
+                title={title}
+                alt={`Avatar for ${user.username}`}
+                width={size}
+                height={size}
+            />
+        )
+    }
+    return (
+        <div
+            title={title}
+            className={classNames(styles.userAvatar, className)}
+            style={{ width: `${size}px`, height: `${size}px` }}
+        >
+            <span className={styles.initials}>
+                {getInitials(user?.displayName || user?.username || '')}
+            </span>
+        </div>
+    )
+}
+
+function getInitials(fullName: string): string {
+    const names = fullName.split(' ')
+    const initials = names.map(name => name.charAt(0).toUpperCase())
+    if (initials.length > 1) {
+        return `${initials[0]}${initials.at(-1)}`
+    }
+    return initials[0]
+}
