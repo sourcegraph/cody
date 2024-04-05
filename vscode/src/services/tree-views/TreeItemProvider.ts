@@ -22,9 +22,9 @@ export class CodyTreeItem extends vscode.TreeItem {
         }
         if (command) {
             this.command = {
-                command: 'cody.sidebar.commands',
+                command: command.command,
                 title,
-                arguments: [id, command.command],
+                arguments: command.args,
             }
         }
         if (contextValue) {

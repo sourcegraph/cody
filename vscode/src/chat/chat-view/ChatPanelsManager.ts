@@ -168,8 +168,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             return emptyNewChatProvider
         }
 
-        logDebug('ChatPanelsManager:createWebviewPanel', this.panelProviders.length.toString())
-
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
