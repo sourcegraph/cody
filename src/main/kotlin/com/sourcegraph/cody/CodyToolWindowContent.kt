@@ -17,8 +17,8 @@ import com.sourcegraph.cody.commands.ui.CommandsTabPanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.history.ChatHistoryPanel
 import com.sourcegraph.cody.history.HistoryService
-import com.sourcegraph.cody.history.HistoryTree
 import com.sourcegraph.cody.history.state.ChatState
 import java.awt.CardLayout
 import javax.swing.JComponent
@@ -32,7 +32,8 @@ class CodyToolWindowContent(private val project: Project) {
 
   private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
   private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
-  private val historyTree = HistoryTree(project, ::selectChat, ::removeChat, ::removeAllChats)
+  private val chatHistoryPanel =
+      ChatHistoryPanel(project, ::selectChat, ::removeChat, ::removeAllChats)
   private val tabbedPane = TabbedPaneWrapper(CodyAgentService.getInstance(project))
   private val currentChatSession: AtomicReference<AgentChatSession?> = AtomicReference(null)
 
@@ -54,7 +55,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   init {
     tabbedPane.insertSimpleTab("Chat", chatContainerPanel, CHAT_TAB_INDEX)
-    tabbedPane.insertSimpleTab("Chat History", historyTree, HISTORY_TAB_INDEX)
+    tabbedPane.insertSimpleTab("Chat History", chatHistoryPanel, HISTORY_TAB_INDEX)
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
 
     allContentPanel.add(tabbedPane.component, MAIN_PANEL, CHAT_PANEL_INDEX)
@@ -99,7 +100,7 @@ class CodyToolWindowContent(private val project: Project) {
     }
   }
 
-  @RequiresEdt fun refreshHistoryTree() = historyTree.rebuildTree()
+  @RequiresEdt fun refreshChatHistoryPanel() = chatHistoryPanel.rebuildTree()
 
   @RequiresEdt
   fun refreshPanelsVisibility() {

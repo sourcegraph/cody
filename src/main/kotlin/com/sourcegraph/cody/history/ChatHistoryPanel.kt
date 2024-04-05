@@ -41,7 +41,7 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
-class HistoryTree(
+class ChatHistoryPanel(
     private val project: Project,
     private val onSelect: (ChatState) -> Unit,
     private val onRemove: (ChatState) -> Unit,
@@ -140,7 +140,9 @@ class HistoryTree(
       }
     } else {
       val currentPeriodText = DurationGroupFormatter.format(chat.getUpdatedTimeAt())
-      val currentPeriod = root.periods().find { it.periodText == currentPeriodText } ?: return
+      val currentPeriod =
+          root.periods().find { it.periodText == currentPeriodText }
+              ?: PeriodNode(currentPeriodText)
       val leafWithChangedPeriod =
           root
               .periods()

@@ -34,7 +34,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
                 refreshPanelsVisibility()
                 refreshMyAccountTab()
-                refreshHistoryTree()
+                refreshChatHistoryPanel()
               }
             }
 

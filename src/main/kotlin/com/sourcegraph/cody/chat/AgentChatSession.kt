@@ -253,6 +253,7 @@ private constructor(
 
           ChatMessage(speaker = parsed, message.text)
         }
+
     val newConnectionId =
         restoreChatSession(agent, chatMessages, chatModelProviderFromState, state.internalId!!)
     connectionId.getAndSet(newConnectionId)
@@ -295,18 +296,20 @@ private constructor(
           })
 
       chatSession.addMessageAtIndex(
-          ChatMessage(
-              Speaker.HUMAN,
-              commandId.displayName,
-          ),
-          chatSession.messages.count())
+          message =
+              ChatMessage(
+                  speaker = Speaker.HUMAN,
+                  text = commandId.displayName,
+              ),
+          index = chatSession.messages.count())
       chatSession.addMessageAtIndex(
-          ChatMessage(
-              Speaker.ASSISTANT,
-              text = "",
-              displayText = "",
-          ),
-          chatSession.messages.count())
+          message =
+              ChatMessage(
+                  Speaker.ASSISTANT,
+                  text = "",
+                  displayText = "",
+              ),
+          index = chatSession.messages.count())
       AgentChatSessionService.getInstance(project).addSession(chatSession)
       return chatSession
     }

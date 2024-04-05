@@ -62,7 +62,7 @@ class SettingsMigration : Activity {
         .filter { it.accountId == null }
         .forEach { it.accountId = activeAccountId }
     // required because this activity is executed later than tool window creation
-    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshHistoryTree() }
+    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshChatHistoryPanel() }
   }
 
   private fun refreshAccountsIds(project: Project) {
