@@ -7,6 +7,7 @@
 
 - `ollama pull deepseek-coder:6.7b-base-q4_K_M` for [deepseek-coder](https://ollama.ai/library/deepseek-coder)
 - `ollama pull codellama:7b-code` for [codellama](https://ollama.ai/library/codellama)
+- `ollama pull codegemma:2b` for [codelgemma](https://ollama.ai/library/codegemma)
 
 1. Update Cody's VS Code settings to use the `experimental-ollama` autocomplete provider and configure the right model:
 
