@@ -36,7 +36,12 @@ export async function evaluateSimpleChatStrategy(
 ): Promise<void> {
     const [repoDisplayName, chatLogs] = getMetaDataInfo(options)
     if(options.shouldUpdateEmbedding==="true"){
-        await createEmbeddings(client, options)
+        try {
+            await createEmbeddings(client, options)
+        } catch (error) {
+            console.error('unexpected error running evaluate-autocomplete', error)
+        }
+        
     }
     await simulateWorkspaceChat(client, options)
     await chatLogs.writeLog(repoDisplayName, `Chat simulation done for repo: ${repoDisplayName}`)
@@ -69,7 +74,7 @@ async function createEmbeddings(
         await client.request('command/execute', { command: 'cody.embeddings.resolveIssue' })
         await client.request('command/execute', { command: 'cody.search.index-update' })
 
-        await new Promise(resolve => setTimeout(resolve, 600_000))
+        // await new Promise(resolve => setTimeout(resolve, 600_000))
         await waitForVariable(embeddingDoneFlag)
         await client.request('webview/didDispose', { id })
 
@@ -126,161 +131,178 @@ function registerEmbeddingsHandlers(
 ): void {
     // override existing debug message
     client.registerNotification('debug/message', async param => {
-        await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
+        try {
+            await chatLogs.writeLog(repoDisplayName, `debug/message: ${JSON.stringify(param)}`)
 
-        // Add handler for the index length here
-        if (param.channel === 'Cody by Sourcegraph') {
-            const debug_message = param.message
+            // Add handler for the index length here
+            if (param.channel === 'Cody by Sourcegraph') {
+                const debug_message = param.message
 
-            if (debug_message.startsWith('█ LocalEmbeddingsController: index-health ')) {
-                const jsonString = debug_message.replace(
-                    '█ LocalEmbeddingsController: index-health ',
-                    ''
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    `Got index-health message for repo: ${repoDisplayName}, message: ${jsonString}`
-                )
-                try {
-                    const indexHealthObj = JSON.parse(jsonString)
-                    if (indexHealthObj.numItemsNeedEmbedding === 0) {
-                        await addRepoToCompletedRepoLogs(workspaceName, repoDisplayName)
-                        embeddingDoneFlag.isEmbeddingReady = true
-                        await chatLogs.writeLog(
-                            repoDisplayName,
-                            `embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
-                                embeddingDoneFlag
-                            )}`
-                        )
-                    }
-                } catch (error) {
+                if (debug_message.startsWith('█ LocalEmbeddingsController: index-health ')) {
+                    const jsonString = debug_message.replace(
+                        '█ LocalEmbeddingsController: index-health ',
+                        ''
+                    )
                     await chatLogs.writeLog(
                         repoDisplayName,
-                        `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`
+                        `Got index-health message for repo: ${repoDisplayName}, message: ${jsonString}`
                     )
+                    try {
+                        const indexHealthObj = JSON.parse(jsonString)
+                        if (indexHealthObj.numItemsNeedEmbedding > 5_000) {
+                            // too large: skip it
+                            embeddingDoneFlag.isEmbeddingReady = true
+                        }
+                        if (indexHealthObj.numItemsNeedEmbedding === 0) {
+                            await addRepoToCompletedRepoLogs(workspaceName, repoDisplayName)
+                            embeddingDoneFlag.isEmbeddingReady = true
+                            await chatLogs.writeLog(
+                                repoDisplayName,
+                                `embeddingDoneFlag.isNumItemNeedIndexZero is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
+                                    embeddingDoneFlag
+                                )}`
+                            )
+                        }
+                    } catch (error) {
+                        await chatLogs.writeLog(
+                            repoDisplayName,
+                            `Got error while trying to parse the index-health message: ${jsonString}, error is: ${error}`
+                        )
+                    }
+                } else if (debug_message.startsWith('█ Symf Custom Log Symf [Done]: ')) {
+                    embeddingDoneFlag.isSearchIndexReady = true
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        `Indexing is again done.. : ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
+                            embeddingDoneFlag
+                        )}`
+                    )
+                } else if (debug_message.includes('Access denied')) {
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        `SourceGraph restricted access message: ${debug_message}`
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        'Access denied | sourcegraph.com used Cloudflare to restrict access'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+                    exit(1)
+                } else if (debug_message.includes('403 Forbidden')) {
+                    await addRepoToBlockedRepo(workspaceName, repoDisplayName)
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        `SourceGraph restricted access message: ${debug_message}`
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+
+                    // Make all true, don't get stuck
+                    embeddingDoneFlag.isEmbeddingReady = true
+                    // embeddingDoneFlag.isSearchIndexReady = true
+
+                    // exit(1)
+                } else if (debug_message.includes('Too Many Requests')) {
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        `SourceGraph restricted access message: ${debug_message}`
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        'Cody Gateway request failed: 429 Too Many Requests'
+                    )
+                    await chatLogs.writeLog(
+                        repoDisplayName,
+                        '--------- --------- --------- --------- --------- --------- ---------'
+                    )
+                    embeddingDoneFlag.isEmbeddingReady = true
+                    exit(1)
+                } else if (
+                    debug_message.startsWith('█ LocalEmbeddingsController') &&
+                    debug_message.includes('error')
+                ) {
+                    embeddingDoneFlag.isEmbeddingReady = true
+                    // embeddingDoneFlag.isSearchIndexReady = true
+                } else if (debug_message.startsWith('█ symf: symf index creation failed EvalError')) {
+                    embeddingDoneFlag.isEmbeddingReady = true
+                    embeddingDoneFlag.isSearchIndexReady = true
                 }
-            } else if (debug_message.startsWith('█ Symf Custom Log Symf [Done]: ')) {
-                embeddingDoneFlag.isSearchIndexReady = true
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    `Indexing is again done.. : ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
-                        embeddingDoneFlag
-                    )}`
-                )
-            } else if (debug_message.includes('Access denied')) {
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    `SourceGraph restricted access message: ${debug_message}`
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    'Access denied | sourcegraph.com used Cloudflare to restrict access'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-                exit(1)
-            } else if (debug_message.includes('403 Forbidden')) {
-                await addRepoToBlockedRepo(workspaceName, repoDisplayName)
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    `SourceGraph restricted access message: ${debug_message}`
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '█ CodyEngine: stderr error: Cody Gateway request failed: 403 Forbidden'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-
-                // Make all true, don't get stuck
-                embeddingDoneFlag.isEmbeddingReady = true
-                // embeddingDoneFlag.isSearchIndexReady = true
-
-                // exit(1)
-            } else if (debug_message.includes('Too Many Requests')) {
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    `SourceGraph restricted access message: ${debug_message}`
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    'Cody Gateway request failed: 429 Too Many Requests'
-                )
-                await chatLogs.writeLog(
-                    repoDisplayName,
-                    '--------- --------- --------- --------- --------- --------- ---------'
-                )
-                embeddingDoneFlag.isEmbeddingReady = true
-                exit(1)
-            } else if (
-                debug_message.startsWith('█ LocalEmbeddingsController') &&
-                debug_message.includes('error')
-            ) {
-                embeddingDoneFlag.isEmbeddingReady = true
-                // embeddingDoneFlag.isSearchIndexReady = true
-            } else if (debug_message.startsWith('█ symf: symf index creation failed EvalError')) {
-                embeddingDoneFlag.isEmbeddingReady = true
-                embeddingDoneFlag.isSearchIndexReady = true
             }
+        } catch (error) {
+            console.log('error')
+        }
+        finally {
+            embeddingDoneFlag.isEmbeddingReady = true
         }
     })
 
     client.registerNotification('webview/postMessage', async param => {
-        await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`)
+        try {
+            await chatLogs.writeLog(repoDisplayName, `webview/postMessage: ${JSON.stringify(param)}`)
 
-        const messageType = param.message.type
-        switch (messageType) {
-            case 'enhanced-context': {
-                const repo_context_data = param.message.context.groups.filter(
-                    (group: { displayName: string }) => group.displayName === repoDisplayName
-                )
-                if (repo_context_data.length <= 0) break
-
-                const embedding_state = repo_context_data[0].providers.filter(
-                    (provider: { kind: string }) => provider.kind === 'embeddings'
-                )
-                const search_state = repo_context_data[0].providers.filter(
-                    (provider: { kind: string }) => provider.kind === 'search'
-                )
-
-                if (embedding_state.length > 0 && embedding_state[0].state === 'ready') {
-                    embeddingDoneFlag.isEmbeddingReady = true
-                    await chatLogs.writeLog(
-                        repoDisplayName,
-                        `embeddingDoneFlag.isEmbeddingReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
-                            embeddingDoneFlag
-                        )}`
+            const messageType = param.message.type
+            switch (messageType) {
+                case 'enhanced-context': {
+                    const repo_context_data = param.message.context?.groups.filter(
+                        (group: { displayName: string }) => group.displayName === repoDisplayName
                     )
-                }
-                if (search_state.length > 0 && search_state[0].state === 'ready') {
-                    embeddingDoneFlag.isSearchIndexReady = true
-                    await chatLogs.writeLog(
-                        repoDisplayName,
-                        `embeddingDoneFlag.isSearchIndexReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
-                            embeddingDoneFlag
-                        )}`
+                    if (repo_context_data?.length <= 0) break
+
+                    const embedding_state = repo_context_data[0].providers.filter(
+                        (provider: { kind: string }) => provider.kind === 'embeddings'
                     )
+                    const search_state = repo_context_data[0].providers.filter(
+                        (provider: { kind: string }) => provider.kind === 'search'
+                    )
+
+                    if (embedding_state?.length > 0 && embedding_state[0].state === 'ready') {
+                        embeddingDoneFlag.isEmbeddingReady = true
+                        await chatLogs.writeLog(
+                            repoDisplayName,
+                            `embeddingDoneFlag.isEmbeddingReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
+                                embeddingDoneFlag
+                            )}`
+                        )
+                    }
+                    if (search_state?.length > 0 && search_state[0].state === 'ready') {
+                        embeddingDoneFlag.isSearchIndexReady = true
+                        await chatLogs.writeLog(
+                            repoDisplayName,
+                            `embeddingDoneFlag.isSearchIndexReady is ready for repo: ${repoDisplayName}, setting flag to true. Flag val: ${JSON.stringify(
+                                embeddingDoneFlag
+                            )}`
+                        )
+                    }
+                    break
                 }
-                break
+                default:
+                    break
             }
-            default:
-                break
+        } catch (error) {
+            console.log('error')
+        } finally {
+            embeddingDoneFlag.isEmbeddingReady = true
         }
     })
 }
@@ -388,7 +410,7 @@ async function simulateWorkspaceChat(
 
     // const replies = await Promise.all(all_chat_configs.map(single_chat_config => simulateChatInRepo(client, options, single_chat_config)))
 
-    if (replies.length <= 0) {
+    if (replies?.length <= 0) {
         await chatLogs.writeLog(
             repoDisplayName,
             '--------- --------- --------- --------- --------- --------- ---------'

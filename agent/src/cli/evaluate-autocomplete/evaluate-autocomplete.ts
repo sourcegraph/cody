@@ -362,15 +362,20 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.SimpleChat) {
-            const timeoutPromise = new Promise<void>(resolve => {
-                setTimeout(
-                    () => {
-                        resolve()
-                    },
-                    20 * 60 * 1000
-                ) // 10 minutes
-            })
-            await Promise.race([evaluateSimpleChatStrategy(client, options), timeoutPromise])
+            try {
+                await evaluateSimpleChatStrategy(client, options)
+            } catch (error) {
+                console.error('unexpected error running evaluate-autocomplete', error)
+            }
+            // await Promise.race([evaluateSimpleChatStrategy(client, options), timeoutPromise])
+            // const timeoutPromise = new Promise<void>(resolve => {
+            //     setTimeout(
+            //         () => {
+            //             resolve()
+            //         },
+            //         20 * 60 * 1000
+            //     ) // 10 minutes
+            // })
         }
     } catch (error) {
         console.error('unexpected error running evaluate-autocomplete', error)
