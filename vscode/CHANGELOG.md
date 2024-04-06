@@ -15,6 +15,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Added buttons in the chat input box for enabling/disabling Enhanced Context. [pull/3547](https://github.com/sourcegraph/cody/pull/3547)
 - Edit: Display warnings for large @-mentioned files during selection. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
 - Edit: Automatically show open tabs as available options when triggering an @-mention. [pull/3494](https://github.com/sourcegraph/cody/pull/3494)
+- Autocomplete: local inference support with CodeGemma. [pull/????](https://github.com/sourcegraph/cody/pull/????)
 
 ### Fixed
 
