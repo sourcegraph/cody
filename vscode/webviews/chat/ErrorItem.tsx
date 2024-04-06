@@ -3,9 +3,9 @@ import React, { useCallback } from 'react'
 import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
-import type { ChatButtonProps } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import styles from './ErrorItem.module.css'
 
 /**
@@ -13,15 +13,13 @@ import styles from './ErrorItem.module.css'
  */
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
-    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
-}> = React.memo(function ErrorItemContent({ error, ChatButtonComponent, userInfo, postMessage }) {
+}> = ({ error, userInfo, postMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
                 error={error as RateLimitError}
-                ChatButtonComponent={ChatButtonComponent}
                 userInfo={userInfo}
                 postMessage={postMessage}
             />
@@ -29,36 +27,28 @@ export const ErrorItem: React.FunctionComponent<{
     }
 
     return <RequestErrorItem error={error.message} />
-})
+}
 
 /**
  * Renders a generic error message for chat request failures.
  */
 export const RequestErrorItem: React.FunctionComponent<{
     error: string
-}> = React.memo(function ErrorItemContent({ error }) {
-    return (
-        <div className={styles.requestError}>
-            <span className={styles.requestErrorTitle}>Request Failed: </span>
-            {error}
-        </div>
-    )
-})
+}> = ({ error }) => (
+    <div className={styles.requestError}>
+        <span className={styles.requestErrorTitle}>Request Failed: </span>
+        {error}
+    </div>
+)
 
 /**
  * An error message shown in the chat.
  */
 const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
-    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
-}> = React.memo(function RateLimitErrorItemContent({
-    error,
-    ChatButtonComponent,
-    userInfo,
-    postMessage,
-}) {
+}> = ({ error, userInfo, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
     const isEnterpriseUser = userInfo.isDotComUser !== true
@@ -105,28 +95,27 @@ const RateLimitErrorItem: React.FunctionComponent<{
                             ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
                     </p>
                 </header>
-                {ChatButtonComponent && (
-                    <div className={styles.actions}>
-                        {canUpgrade && (
-                            <ChatButtonComponent
-                                label="Upgrade"
-                                action=""
-                                onClick={() => onButtonClick('upgrade', 'upgrade')}
-                                appearance="primary"
-                            />
-                        )}
-                        <ChatButtonComponent
-                            label={canUpgrade ? 'See Plans →' : 'Learn More'}
-                            action=""
-                            onClick={() =>
-                                canUpgrade
-                                    ? onButtonClick('upgrade', 'upgrade')
-                                    : onButtonClick('rate-limits', 'learn-more')
-                            }
-                            appearance="secondary"
-                        />
-                    </div>
-                )}
+                <div className={styles.actions}>
+                    {canUpgrade && (
+                        <VSCodeButton
+                            onClick={() => onButtonClick('upgrade', 'upgrade')}
+                            appearance="primary"
+                        >
+                            Upgrade
+                        </VSCodeButton>
+                    )}
+                    <VSCodeButton
+                        type="button"
+                        onClick={() =>
+                            canUpgrade
+                                ? onButtonClick('upgrade', 'upgrade')
+                                : onButtonClick('rate-limits', 'learn-more')
+                        }
+                        appearance="secondary"
+                    >
+                        {canUpgrade ? 'See Plans →' : 'Learn More'}
+                    </VSCodeButton>
+                </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
             </div>
             {canUpgrade && (
@@ -144,4 +133,4 @@ const RateLimitErrorItem: React.FunctionComponent<{
             )}
         </div>
     )
-})
+}

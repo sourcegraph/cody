@@ -52,7 +52,10 @@ export function getConfiguration(
     }
 
     let autocompleteAdvancedProvider = config.get<
-        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+        | Configuration['autocompleteAdvancedProvider']
+        | 'unstable-ollama'
+        | 'unstable-fireworks'
+        | 'experimental-openaicompatible'
     >(CONFIG_KEY.autocompleteAdvancedProvider, null)
 
     // Handle deprecated provider identifiers
@@ -98,7 +101,6 @@ export function getConfiguration(
         chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
         editPreInstruction: config.get(CONFIG_KEY.editPreInstruction, ''),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(
@@ -127,6 +129,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+        experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 

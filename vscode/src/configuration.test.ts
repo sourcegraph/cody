@@ -37,8 +37,6 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.editorTitleCommandIcon':
-                        return true
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.codeActions.enabled':
@@ -104,6 +102,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.supercompletions':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -125,9 +125,9 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
+            experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
-            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             codeActions: true,

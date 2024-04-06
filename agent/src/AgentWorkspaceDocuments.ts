@@ -1,4 +1,4 @@
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
 
 import * as vscode from 'vscode'
 

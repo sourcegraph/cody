@@ -18,7 +18,6 @@ import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
-import { OnboardingExperimentBranch, logExposure, pickBranch } from '../../services/OnboardingExperiment'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -67,46 +66,40 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                     const endpoint = DOTCOM_URL.href
 
                     let tokenReceiverUrl: string | undefined = undefined
-                    const branch = pickBranch()
-                    if (this.startTokenReceiver) {
-                        logExposure()
-                        if (branch === OnboardingExperimentBranch.RemoveAuthenticationStep) {
+                    closeAuthProgressIndicator()
+                    startAuthProgressIndicator()
+                    tokenReceiverUrl = await this.startTokenReceiver?.(
+                        endpoint,
+                        async (token, endpoint) => {
                             closeAuthProgressIndicator()
-                            startAuthProgressIndicator()
-                            tokenReceiverUrl = await this.startTokenReceiver(
-                                endpoint,
-                                async (token, endpoint) => {
-                                    closeAuthProgressIndicator()
-                                    const authStatus = await this.authProvider.auth(endpoint, token)
-                                    telemetryService.log(
-                                        'CodyVSCodeExtension:auth:fromTokenReceiver',
-                                        {
-                                            type: 'callback',
-                                            from: 'web',
-                                            success: Boolean(authStatus?.isLoggedIn),
-                                        },
-                                        {
-                                            hasV2Event: true,
-                                        }
-                                    )
-                                    telemetryRecorder.recordEvent(
-                                        'cody.auth.fromTokenReceiver.web',
-                                        'succeeded',
-                                        {
-                                            metadata: {
-                                                success: authStatus?.isLoggedIn ? 1 : 0,
-                                            },
-                                        }
-                                    )
-                                    if (!authStatus?.isLoggedIn) {
-                                        void vscode.window.showErrorMessage(
-                                            'Authentication failed. Please check your token and try again.'
-                                        )
-                                    }
+                            const authStatus = await this.authProvider.auth(endpoint, token)
+                            telemetryService.log(
+                                'CodyVSCodeExtension:auth:fromTokenReceiver',
+                                {
+                                    type: 'callback',
+                                    from: 'web',
+                                    success: Boolean(authStatus?.isLoggedIn),
+                                },
+                                {
+                                    hasV2Event: true,
                                 }
                             )
+                            telemetryRecorder.recordEvent(
+                                'cody.auth.fromTokenReceiver.web',
+                                'succeeded',
+                                {
+                                    metadata: {
+                                        success: authStatus?.isLoggedIn ? 1 : 0,
+                                    },
+                                }
+                            )
+                            if (!authStatus?.isLoggedIn) {
+                                void vscode.window.showErrorMessage(
+                                    'Authentication failed. Please check your token and try again.'
+                                )
+                            }
                         }
-                    }
+                    )
 
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'

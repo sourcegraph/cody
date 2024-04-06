@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextItem, ContextMessage, EditModel } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextMessage, EditModel, EventSource } from '@sourcegraph/cody-shared'
 
-import type { FixupTask } from '../non-stop/FixupTask'
+import type { FixupTask, FixupTelemetryMetadata } from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
 
 export interface ExecuteEditArguments {
@@ -19,7 +19,8 @@ export interface ExecuteEditArguments {
         destinationFile?: vscode.Uri
         insertionPoint?: vscode.Position
     }
-    source?: ChatEventSource
+    source?: EventSource
+    telemetryMetadata?: FixupTelemetryMetadata
 }
 
 /**

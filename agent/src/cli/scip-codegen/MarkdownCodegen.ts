@@ -1,5 +1,5 @@
+import fspromises from 'node:fs/promises'
 import dedent from 'dedent'
-import fspromises from 'fs/promises'
 import {
     BaseCodegen,
     ProtocolMethodDirection,

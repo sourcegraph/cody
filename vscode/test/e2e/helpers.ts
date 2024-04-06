@@ -1,7 +1,15 @@
-import * as child_process from 'child_process'
-import { type PathLike, type RmOptions, mkdir, mkdtempSync, promises as fs, rmSync, writeFile } from 'fs'
-import * as os from 'os'
-import * as path from 'path'
+import * as child_process from 'node:child_process'
+import {
+    type PathLike,
+    type RmOptions,
+    mkdir,
+    mkdtempSync,
+    promises as fs,
+    rmSync,
+    writeFile,
+} from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 
 import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
 import { _electron as electron } from 'playwright'
@@ -260,7 +268,6 @@ async function buildWorkSpaceSettings(
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
-        'cody.editorTitleCommandIcon': true,
         ...extraSettings,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
@@ -331,13 +338,17 @@ export function spawn(...args: Parameters<typeof child_process.spawn>): Promise<
 
 // Uses VSCode command palette to open a file by typing its name.
 export async function openFile(page: Page, filename: string): Promise<void> {
+    const metaKey = getMetaKeyByOS()
     // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type(`${filename}\n`)
+    await page.keyboard.press(`${metaKey}+P`)
+    // Makes sure the file picker input box has the focus
+    await page.getByPlaceholder(/Search files by name/).click()
+    await page.keyboard.type(`${filename}`)
+    // Makes sure the file is visible in the file picker
+    await expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
+    await page.keyboard.press('Enter')
+    // Makes sure the file is opened in the editor
+    await expect(page.getByRole('tab', { name: filename })).toBeVisible()
 }
 
 // Starts a new panel chat and returns a FrameLocator for the chat.

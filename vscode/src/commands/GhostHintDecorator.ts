@@ -13,6 +13,8 @@ const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
 const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
 
 /**
+ * NOTE: When the HoverCommands A/B test is running, Ghost Text is disabled for users in the HoverCommands treatment group.
+ *
  * Checks if the given selection in the document is an incomplete line selection.
  * @param document - The text document containing the selection
  * @param selection - The selection to check
@@ -94,7 +96,11 @@ function getSymbolDecorationPadding(
 type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 type EnabledFeatures = Record<GhostVariant, boolean>
 
+/**
+ * NOTE: Ghost Text should be disabled for users in the HoverCommands A/B test treatment group.
+ */
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
+    const hoverFeatureFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
     const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
@@ -102,13 +108,10 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
         /**
-         * We're not running an A/B test on the "Opt+K to Text".
-         * We can safely set the default of this to `true`.
+         * Toggle the default settings for EditOrChat & Document based on the feature flagss for hover commands and ghost text.
          */
-        EditOrChat: settingValue ?? true,
-        Document:
-            settingValue ??
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDocumentHints)),
+        EditOrChat: settingValue ?? !hoverFeatureFlag,
+        Document: settingValue ?? !hoverFeatureFlag,
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
@@ -174,14 +177,6 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     /** Store the last line that the user typed on, we want to avoid showing the text here */
     private lastLineTyped: number | null = null
-
-    /**
-     * Tracks whether the user has recorded an enrollment for each ghost variant.
-     * This is _only_ to help us measure usage via an A/B test.
-     */
-    private enrollmentRecorded: Record<Exclude<GhostVariant, 'Generate' | 'EditOrChat'>, boolean> = {
-        Document: false,
-    }
 
     constructor(authProvider: AuthProvider) {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
@@ -279,7 +274,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                             ) {
                                 this.clearGhostText(editor)
                             }
-                            this.firePossibleEnrollmentEvent('Document', enabledFeatures)
                             return this.setThrottledGhostText(
                                 editor,
                                 new vscode.Position(precedingLine, Number.MAX_VALUE),
@@ -321,7 +315,6 @@ export class GhostHintDecorator implements vscode.Disposable {
                             this.clearGhostText(editor)
                         }
 
-                        this.firePossibleEnrollmentEvent('EditOrChat', enabledFeatures)
                         /**
                          * Edit code flow.
                          * Show alongside a users' active selection
@@ -413,28 +406,6 @@ export class GhostHintDecorator implements vscode.Disposable {
     private _fireDisplayEvent(variant: GhostVariant): void {
         telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
-    }
-
-    /**
-     * Fire an additional telemetry enrollment event for when the user has hit a scenario where they would
-     * trigger a possible ghost text variant.
-     * This code is _only_ to be used to support the ongoing A/B tests for ghost hint usage.
-     */
-    private firePossibleEnrollmentEvent(variant: GhostVariant, enablement: EnabledFeatures): void {
-        if (variant === 'Document' && !this.enrollmentRecorded.Document) {
-            const testGroup = enablement.Document ? 'treatment' : 'control'
-            telemetryService.log(
-                'CodyVSCodeExtension:experiment:documentGhostText:enrolled',
-                { variant: testGroup },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.experiment.documentGhostText', 'enrolled', {
-                privateMetadata: { variant: testGroup },
-            })
-            // Mark this enrollment as recorded for the current session
-            // We do not need to repeatedly mark the users' enrollment.
-            this.enrollmentRecorded.Document = true
-        }
     }
 
     private async updateEnablement(authStatus: AuthStatus): Promise<void> {

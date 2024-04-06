@@ -9,12 +9,20 @@
     color: var(--vscode-textLink-foreground);
     cursor: pointer;
     font-size: inherit;
-    text-decoration: underline;
     padding: 0;
     margin: 0;
     text-align: left;
     font-weight: normal;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    overflow: hidden;
+}
+
+.path {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .excluded {

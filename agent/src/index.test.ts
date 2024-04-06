@@ -1,13 +1,13 @@
-import assert from 'assert'
-import { execSync } from 'child_process'
-import os from 'os'
-import path from 'path'
-import fspromises from 'fs/promises'
+import assert from 'node:assert'
+import { execSync } from 'node:child_process'
+import fspromises from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { isWindows } from '@sourcegraph/cody-shared'
+import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { TestClient, asTranscriptMessage } from './TestClient'
@@ -265,7 +265,7 @@ describe('Agent', () => {
             //  and assert that it can retrieve my name from the transcript.
             const {
                 models: [model],
-            } = await client.request('chat/models', { id: id1 })
+            } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
             const id2 = await client.request('chat/restore', {
                 modelID: model.model,
@@ -325,6 +325,53 @@ describe('Agent', () => {
                 `"I'm afraid I don't know the specific details of what model architecture or training approach was used to create me. That information hasn't been shared publicly by the Anthropic team that developed me. What I can say is that I am a large language model focused on coding assistance and technical topics. But the exact model name or type is not something I'm aware of. Please let me know if there are any other ways I can try to help!"`,
                 explainPollyError
             )
+        }, 30_000)
+
+        it('chat/restore (multiple) & export', async () => {
+            const date = new Date(1997, 7, 2, 12, 0, 0, 0)
+
+            // Step 1: Restore multiple chats
+            const NUMBER_OF_CHATS_TO_RESTORE = 300
+            for (let i = 0; i < NUMBER_OF_CHATS_TO_RESTORE; i++) {
+                const myDate = new Date(date.getTime() + i * 60 * 1000)
+                await client.request('chat/restore', {
+                    modelID: 'anthropic/claude-2.0',
+                    messages: [
+                        { text: 'What model are you?', speaker: 'human', contextFiles: [] },
+                        {
+                            text: " I'm Claude, an AI assistant created by Anthropic.",
+                            speaker: 'assistant',
+                        },
+                    ],
+                    chatID: myDate.toISOString(), // Create new Chat ID with a different timestamp
+                })
+            }
+
+            // Step 2: export history
+            const chatHistory = await client.request('chat/export', null)
+
+            chatHistory.forEach((result, index) => {
+                const myDate = new Date(date.getTime() + index * 60 * 1000).toISOString()
+
+                expect(result.transcript).toMatchInlineSnapshot(`{
+  "chatModel": "anthropic/claude-2.0",
+  "id": "${myDate}",
+  "interactions": [
+    {
+      "assistantMessage": {
+        "speaker": "assistant",
+        "text": " I'm Claude, an AI assistant created by Anthropic.",
+      },
+      "humanMessage": {
+        "contextFiles": [],
+        "speaker": "human",
+        "text": "What model are you?",
+      },
+    },
+  ],
+  "lastInteractionTimestamp": "${myDate}",
+}`)
+            })
         }, 30_000)
 
         it('chat/submitMessage (addEnhancedContext: true)', async () => {
@@ -880,11 +927,11 @@ describe('Agent', () => {
             checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
-                   * Sums two numbers together.
+                   * Adds two numbers together and returns the result.
                    *
-                   * @param a - The first number to add.
-                   * @param b - The second number to add.
-                   * @returns The sum of the two numbers.
+                   * @param a The first number to add.
+                   * @param b The second number to add.
+                   * @returns The sum of \`a\` and \`b\`.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
@@ -905,7 +952,7 @@ describe('Agent', () => {
                           constructor(private shouldGreet: boolean) {}
 
                               /**
-                           * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
+                           * Greets the user with "Hello World!" if the \`shouldGreet\` flag is true.
                            */
                       public functionName() {
                               if (this.shouldGreet) {
@@ -964,8 +1011,8 @@ describe('Agent', () => {
                           it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
                                       /**
-                               * Retrieves the current time in milliseconds since the page was loaded.
-                               * This can be used to measure the elapsed time of an operation.
+                               * Returns the current time in milliseconds since the page was loaded.
+                               * This can be used to measure the duration of an operation.
                                */
                       const startTime = performance.now(/* CURSOR */)
                           })
@@ -1130,14 +1177,16 @@ describe('Agent', () => {
             const originalDocument = client.workspace.getDocument(animalUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
                 `
-              "export interface Animal {
+              "/* SELECTION_START */
+              export interface Animal {
                   name: string
                   makeAnimalSound(): string
                   isMammal: boolean
                   logName(): void {
-                      console.log(this.name)
+                      console.log(this.name);
                   }
               }
+              /* SELECTION_END */
               "
             `,
                 explainPollyError
@@ -1290,10 +1339,11 @@ describe('Agent', () => {
                   import { describe } from 'vitest'
 
                   /**
-                   * Test block that contains 3 sample test cases.
-                   * The 1st case asserts true is true.
-                   * The 2nd case asserts true is true.
-                   * The 3rd case attempts to error by incorrectly using \`performance.now\`.
+                   * Describe block that runs vitest tests.
+                   * Contains 3 test cases:
+                   * - Does test 1
+                   * - Does test 2
+                   * - Does something else (has incorrect usage of performance.now)
                   */
                   describe('test block', () => {
                       it('does 1', () => {

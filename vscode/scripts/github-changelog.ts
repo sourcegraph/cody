@@ -14,8 +14,8 @@
  * **Full Changelog**: https://github.com/sourcegraph/cody/compare/vscode-v0.18.5...vscode-v0.18.6
  */
 
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import dedent from 'dedent'
 

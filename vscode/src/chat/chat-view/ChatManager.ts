@@ -18,6 +18,7 @@ import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -115,16 +116,25 @@ export class ChatManager implements vscode.Disposable {
     /**
      * Execute a chat request in a new chat panel
      */
-    public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
+    public async executeChat({
+        text,
+        submitType,
+        contextFiles,
+        editorState,
+        addEnhancedContext,
+        source = DEFAULT_EVENT_SOURCE,
+        command,
+    }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.getChatProvider()
         await provider?.handleUserMessageSubmission(
             uuid.v4(),
-            args.text,
-            args?.submitType,
-            args?.contextFiles ?? [],
-            args?.editorState,
-            args?.addEnhancedContext ?? true,
-            args?.source
+            text,
+            submitType,
+            contextFiles ?? [],
+            editorState,
+            addEnhancedContext ?? true,
+            source,
+            command
         )
         return provider
     }

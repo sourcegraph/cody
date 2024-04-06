@@ -26,7 +26,6 @@ export interface Configuration {
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
-    editorTitleCommandIcon: boolean
 
     /**
      * Autocomplete
@@ -37,6 +36,7 @@ export interface Configuration {
         | 'anthropic'
         | 'fireworks'
         | 'unstable-openai'
+        | 'experimental-openaicompatible'
         | 'experimental-ollama'
         | null
     autocompleteAdvancedModel: string | null
@@ -53,6 +53,7 @@ export interface Configuration {
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
+    experimentalSupercompletions: boolean
 
     /**
      * Unstable Features for internal testing only

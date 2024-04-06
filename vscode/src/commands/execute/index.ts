@@ -2,7 +2,7 @@ import {
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
-} from '@sourcegraph/cody-shared/src/commands/types'
+} from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../main'
 import { executeDocCommand } from './doc'
 import { executeEditCommand } from './edit'
@@ -20,6 +20,7 @@ export { executeDocCommand } from './doc'
 export { executeTestEditCommand } from './test-edit'
 export { executeTestCaseEditCommand } from './test-case'
 export { executeExplainOutput } from './terminal'
+export { executeHoverChatCommand } from './hover'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any

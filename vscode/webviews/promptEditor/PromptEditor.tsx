@@ -14,7 +14,6 @@ import {
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
-    containerClassName?: string
     editorClassName?: string
 
     placeholder?: string
@@ -38,7 +37,6 @@ export interface PromptEditorRefAPI {
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
-    containerClassName,
     editorClassName,
     placeholder,
     initialEditorState,
@@ -104,23 +102,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={classNames(styles.container, containerClassName)}>
-            <BaseEditor
-                className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
-                initialEditorState={initialEditorState?.lexicalEditorState ?? null}
-                onChange={onBaseEditorChange}
-                onFocusChange={onFocusChange}
-                editorRef={editorRef}
-                placeholder={placeholder}
-                disabled={disabled}
-                aria-label="Chat message"
-                //
-                // KeyboardEventPluginProps
-                onKeyDown={onKeyDown}
-                onEnterKey={onEnterKey}
-                onEscapeKey={onEscapeKey}
-            />
-        </div>
+        <BaseEditor
+            className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
+            initialEditorState={initialEditorState?.lexicalEditorState ?? null}
+            onChange={onBaseEditorChange}
+            onFocusChange={onFocusChange}
+            editorRef={editorRef}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-label="Chat message"
+            //
+            // KeyboardEventPluginProps
+            onKeyDown={onKeyDown}
+            onEnterKey={onEnterKey}
+            onEscapeKey={onEscapeKey}
+        />
     )
 }
 

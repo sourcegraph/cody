@@ -2,9 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    type DefaultCodyCommands,
+    type EventSource,
     ModelProvider,
     PromptMixin,
     featureFlagProvider,
@@ -14,7 +15,7 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -23,6 +24,7 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
+import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -63,6 +65,7 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 
 /**
@@ -263,6 +266,8 @@ const register = async (
         })
     )
 
+    const statusBar = createStatusBar()
+
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
@@ -277,7 +282,9 @@ const register = async (
         )
     }
 
-    const statusBar = createStatusBar()
+    if (config.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
@@ -300,16 +307,19 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
-
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
     // Sync initial auth status
-    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    const initAuthStatus = authProvider.getAuthStatus()
+    syncModelProviders(initAuthStatus)
+    await chatManager.syncAuthStatus(initAuthStatus)
+    editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
-    statusBar.syncAuthStatus(authProvider.getAuthStatus())
+    statusBar.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -516,7 +526,7 @@ const register = async (
         ),
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: ChatEventSource = 'sidebar'
+            const source: EventSource = 'sidebar'
             telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
@@ -528,8 +538,13 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
+
+    // Experimental features: Hover Commands
+    disposables.push(hoverCommandsProvider)
+    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

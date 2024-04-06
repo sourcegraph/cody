@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { Transcript } from './Transcript'
-import type { FileLinkProps } from './components/EnhancedContext'
-import { FIXTURE_TRANSCRIPT } from './fixtures'
+import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
-import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
-import styles from './Transcript.story.module.css'
+import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
+import type { ComponentProps } from 'react'
+import { URI } from 'vscode-uri'
+import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Transcript> = {
     title: 'ui/Transcript',
@@ -18,27 +20,139 @@ const meta: Meta<typeof Transcript> = {
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
         },
+        messageBeingEdited: {
+            name: 'messageBeingEdited',
+            control: { type: 'number', step: 2 },
+        },
     },
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
-    },
+        messageInProgress: null,
+        messageBeingEdited: undefined,
+        setMessageBeingEdited: () => {},
+        feedbackButtonsOnSubmit: () => {},
+        copyButtonOnSubmit: () => {},
+        insertButtonOnSubmit: () => {},
+        chatModels: DEFAULT_DOT_COM_MODELS,
+        onCurrentChatModelChange: () => {},
+        userInfo: FIXTURE_USER_ACCOUNT_INFO,
+        postMessage: () => {},
+    } satisfies ComponentProps<typeof Transcript>,
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [
+        story => <div style={{ minHeight: 'max(500px, 80vh)', display: 'flex' }}>{story()}</div>,
+        VSCodeWebview,
+    ],
 }
 
 export default meta
 
-const FileLink: React.FunctionComponent<FileLinkProps> = ({ uri }) => <>{uri.toString()}</>
+export const Default: StoryObj<typeof meta> = {
+    args: {},
+}
 
-export const Simple: StoryObj<typeof meta> = {
+export const Empty: StoryObj<typeof meta> = {
     args: {
-        messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
-        fileLinkComponent: FileLink,
-        transcriptItemClassName: styles.transcriptItem,
-        humanTranscriptItemClassName: styles.humanTranscriptItem,
-        transcriptItemParticipantClassName: styles.transcriptItemParticipant,
-        transcriptActionClassName: styles.transcriptAction,
+        transcript: [],
+    },
+}
+
+export const WithContext: StoryObj<typeof meta> = {
+    args: {
+        transcript: FIXTURE_TRANSCRIPT.explainCode2,
+    },
+}
+
+export const Editing: StoryObj<typeof meta> = {
+    args: {
+        messageBeingEdited: 0,
+    },
+}
+
+export const EditingWithContext: StoryObj<typeof meta> = {
+    args: {
+        messageBeingEdited: 0,
+        transcript: FIXTURE_TRANSCRIPT.explainCode2,
+    },
+}
+
+const SIMPLE_TRANSCRIPT = FIXTURE_TRANSCRIPT.simple
+
+export const WaitingForContext: StoryObj<typeof meta> = {
+    args: {
+        transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: 'What color is the sky?' }],
+        messageInProgress: { speaker: 'assistant' },
+    },
+}
+
+export const WaitingForAssistantMessageWithContext: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: 'What color is the sky?',
+                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+            },
+        ],
+        messageInProgress: { speaker: 'assistant' },
+    },
+}
+
+export const WaitingForAssistantMessageNoContext: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: 'What color is the sky?',
+                contextFiles: [],
+            },
+        ],
+        messageInProgress: { speaker: 'assistant' },
+    },
+}
+
+export const AssistantMessageInProgress: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: 'What color is the sky?',
+                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+            },
+        ],
+        messageInProgress: {
+            speaker: 'assistant',
+            text: 'The sky is ',
+        },
+    },
+}
+
+export const WithError: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            ...SIMPLE_TRANSCRIPT,
+            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
+            { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
+        ],
+        isTranscriptError: true,
+    },
+}
+
+export const WithRateLimitError: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            ...SIMPLE_TRANSCRIPT,
+            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
+            {
+                speaker: 'assistant',
+                error: errorToChatError(
+                    new RateLimitError('chat messages and commands', 'rate limit error', true)
+                ),
+            },
+        ],
+        isTranscriptError: true,
     },
 }

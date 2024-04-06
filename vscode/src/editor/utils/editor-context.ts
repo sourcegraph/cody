@@ -1,15 +1,15 @@
-import path from 'path'
-
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    type ContextFileSource,
+    CHARS_PER_TOKEN,
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
+    ContextItemSource,
     type ContextItemSymbol,
+    type ContextItemWithContent,
     type Editor,
     MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
@@ -21,11 +21,6 @@ import {
     isWindows,
 } from '@sourcegraph/cody-shared'
 
-import {
-    ContextItemSource,
-    type ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { getOpenTabsUris } from '.'
 import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
@@ -91,7 +86,7 @@ export async function getFileContextFiles(
 
     // Apply a penalty for segments that are in the low scoring list.
     const adjustedResults = [...results].map(result => {
-        const segments = result.obj.uri.fsPath.split(path.sep)
+        const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {
@@ -193,7 +188,7 @@ export async function getOpenTabsContextFile(charsLimit?: number): Promise<Conte
 
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: 'symbol',
     selectionRange: vscode.Range,
     kind: SymbolKind,
@@ -201,13 +196,13 @@ function createContextFileFromUri(
 ): ContextItemSymbol[]
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: 'file',
     selectionRange?: vscode.Range
 ): ContextItemFile[]
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: ContextFileType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,

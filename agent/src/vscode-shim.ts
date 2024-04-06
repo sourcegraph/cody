@@ -1,10 +1,10 @@
-import { execSync } from 'child_process'
-import path from 'path'
+import { execSync } from 'node:child_process'
+import path from 'node:path'
 
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug, logError } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -44,7 +44,6 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
-import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'

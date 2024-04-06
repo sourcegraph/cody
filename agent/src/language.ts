@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 
 import extensionMapping from './language-file-extensions.json'
 
