@@ -11,7 +11,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
