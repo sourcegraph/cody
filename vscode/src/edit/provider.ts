@@ -119,7 +119,6 @@ export class EditProvider {
                         }
                         const text = message.text.slice(textConsumed)
                         textConsumed += text.length
-                        logError('DEBUG DEBUG text=', text)
                         void multiplexer.publish(text)
                         break
                     }
@@ -129,7 +128,6 @@ export class EditProvider {
                     }
                     case 'error': {
                         let err = message.error
-                        logError('EditProvider:onError', err.message)
 
                         if (isAbortError(err)) {
                             void this.handleResponse(text, false)
