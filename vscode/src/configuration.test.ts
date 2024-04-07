@@ -96,6 +96,8 @@ describe('getConfiguration', () => {
                         return 'bfg'
                     case 'cody.autocomplete.experimental.smartThrottle':
                         return false
+                    case 'cody.experimental.foldingRanges':
+                        return 'lsp'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
@@ -155,6 +157,7 @@ describe('getConfiguration', () => {
                 multiline: undefined,
                 singleline: undefined,
             },
+            experimentalFoldingRanges: 'lsp',
             testingLocalEmbeddingsEndpoint: undefined,
             testingLocalEmbeddingsIndexLibraryPath: undefined,
             testingLocalEmbeddingsModel: undefined,
