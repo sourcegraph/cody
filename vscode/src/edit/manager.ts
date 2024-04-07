@@ -195,7 +195,7 @@ export class EditManager implements vscode.Disposable {
 
         if (!provider) {
             provider =
-                process.env.CODY_TESTING === 'blarg'
+                process.env.CODY_TESTING === 'true'
                     ? new MockEditProvider({ task, controller: this.controller, ...this.options })
                     : new EditProvider({ task, controller: this.controller, ...this.options })
             this.editProviders.set(task, provider)
