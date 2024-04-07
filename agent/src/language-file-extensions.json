@@ -6,7 +6,7 @@
   "applescript": ["applescript", "scpt"],
   "beancount": ["beancount"],
   "bibtex": ["bib"],
-  "clojure": ["clj", "cljs", "cljx"],
+  "clojure": ["clj", "cljs", "cljx", "cljc"],
   "cmake": ["cmake", "cmake.in", "in"],
   "coffescript": ["coffee", "cake", "cson", "cjsx", "iced"],
   "cpp": ["c", "cc", "cpp", "cxx", "c++", "h++", "hh", "h", "hpp", "pc", "pcc"],
