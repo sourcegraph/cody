@@ -23,26 +23,23 @@ class LlmDropdown(
     private val modelUsage: ModelUsage,
     private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
-    private val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
+    chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
 
   var isCurrentUserFree = true
 
   init {
     renderer = LlmComboBoxRenderer(this)
-    if (chatModelProviderFromState != null) {
-      addItem(chatModelProviderFromState)
-    }
-
     isVisible = false
-    updateModels()
+
+    if (chatModelProviderFromState != null) {
+      updateModelsInUI(listOf(chatModelProviderFromState))
+    } else {
+      updateModels()
+    }
   }
 
   private fun updateModels() {
-    if (chatModelProviderFromState != null) {
-      return
-    }
-
     CodyAgentService.withAgent(project) { agent ->
       val chatModels = agent.server.chatModels(ChatModelsParams(modelUsage.value))
       val response =
@@ -54,7 +51,6 @@ class LlmDropdown(
 
   @RequiresEdt
   private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
-    removeAllItems()
     models.sortedBy { it.codyProOnly }.forEach(::addItem)
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
