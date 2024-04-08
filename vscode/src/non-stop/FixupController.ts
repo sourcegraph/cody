@@ -59,7 +59,7 @@ export class FixupController
     })
     /**
      * The event that fires when the user clicks the undo button on a code lens.
-     * Used to help track the implied Edit acceptance rate.
+     * Used to help track the Edit rejection rate.
      */
     private readonly undoCommandEvent = new vscode.EventEmitter<FixupTaskID>()
 
@@ -544,7 +544,7 @@ export class FixupController
         })
         let undoCount = 0
         /**
-         * Tracks the implied acceptance of a Fixup task via the users' next action.
+         * Tracks the rejection of a Fixup task via the users' next action.
          * As in, if the user immediately undos the change via the system undo command,
          * or if they persist to make new edits to the file.
          *
