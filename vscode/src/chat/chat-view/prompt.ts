@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
+    TokenCounter,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -24,8 +25,6 @@ interface PromptInfo {
 export interface IPrompter {
     makePrompt(chat: SimpleChatModel, codyApiVersion: number, charLimit: number): Promise<PromptInfo>
 }
-
-const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% of the context window
 
 export class DefaultPrompter implements IPrompter {
     constructor(
@@ -47,8 +46,8 @@ export class DefaultPrompter implements IPrompter {
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
-            const promptBuilder = new PromptBuilder(charLimit)
+            const tokenCounter = new TokenCounter(charLimit)
+            const promptBuilder = new PromptBuilder(tokenCounter)
             const newContextUsed: ContextItem[] = []
             const preInstruction: string | undefined = vscode.workspace
                 .getConfiguration('cody.chat')
@@ -76,7 +75,9 @@ export class DefaultPrompter implements IPrompter {
 
             {
                 // Add context from new user-specified context items, e.g. @-mentions, @-uri
-                const { limitReached, used, ignored } = promptBuilder.tryAddContext(this.explicitContext)
+                const { limitReached, used, ignored } = promptBuilder.tryAddUserContext(
+                    this.explicitContext
+                )
                 newContextUsed.push(...used)
                 if (limitReached) {
                     logDebug(
@@ -115,13 +116,11 @@ export class DefaultPrompter implements IPrompter {
                 // Add additional context from current editor or broader search
                 const additionalContextItems = await this.getEnhancedContext(
                     lastMessage.text,
-                    enhancedContextCharLimit
+                    tokenCounter.remainingTokens.context.enhanced
                 )
                 sortContextItems(additionalContextItems)
-                const { limitReached, used, ignored } = promptBuilder.tryAddContext(
-                    additionalContextItems,
-                    enhancedContextCharLimit
-                )
+                const { limitReached, used, ignored } =
+                    promptBuilder.tryAddContext(additionalContextItems)
                 newContextUsed.push(...used)
                 if (limitReached) {
                     logDebug(

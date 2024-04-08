@@ -233,6 +233,9 @@ importers:
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
+      js-tiktoken:
+        specifier: ^1.0.10
+        version: 1.0.10
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -6144,7 +6147,6 @@ packages:
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
-    dev: true
 
   /base@0.11.2:
     resolution: {integrity: sha512-5T6P4xPgpp0YDFvSWwEZ4NoE3aM4QBQXDzmVbraCkFj8zHM+mba8SyqB5DbZWyR7mYHo6Y7BdQo3MoA4m0TeQg==}
@@ -9434,6 +9436,12 @@ packages:
   /js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /js-tiktoken@1.0.10:
+    resolution: {integrity: sha512-ZoSxbGjvGyMT13x6ACo9ebhDha/0FHdKA+OsQcMOWcm1Zs7r90Rhk5lhERLzji+3rA7EKpXCgwXcM5fF3DMpdA==}
+    dependencies:
+      base64-js: 1.5.1
     dev: false
 
   /js-tokens@4.0.0:

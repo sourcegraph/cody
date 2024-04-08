@@ -1,6 +1,6 @@
 import {
     type ContextItem,
-    MAX_CURRENT_FILE_TOKENS,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
     truncateText,
     wrapInActiveSpan,
@@ -46,10 +46,11 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
+                    content: truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES),
                     source: ContextItemSource.Selection,
                     range: selection,
                     size,
+                    isTooLarge: size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
                 } satisfies ContextItemFile,
             ]
         } catch (error) {

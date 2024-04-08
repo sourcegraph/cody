@@ -14,13 +14,16 @@ import styles from './atMentions.module.css'
 import {
     type ContextItem,
     type RangeData,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
+import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
+    ContextItemMentionNode,
 } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
@@ -82,23 +85,42 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const [query, setQuery] = useState<string | null>(null)
 
+    const [tokenBytesAdded, setTokenBytesAdded] = useState<number>(0)
+
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
         middleware: [offset(6), flip(), shift()],
     })
 
     const results = useChatContextItems(query)
-    const options = useMemo(
-        () =>
+    const options = useMemo(() => {
+        return (
             results
-                ?.map(result => new MentionTypeaheadOption(result))
-                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? [],
-        [results]
-    )
+                ?.map(r => {
+                    if (r.size && r.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES - tokenBytesAdded) {
+                        r.isTooLarge = true
+                    }
+                    return new MentionTypeaheadOption(r)
+                })
+                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
+        )
+    }, [results, tokenBytesAdded])
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
         update()
     }, [options, update])
+
+    // Listen for changes to ContextItemMentionNode to update the token count.
+    // This updates the token count when a mention is added or removed.
+    editor.registerMutationListener(ContextItemMentionNode, node => {
+        const items = toSerializedPromptEditorValue(editor)?.contextItems
+        if (!items?.length) {
+            setTokenBytesAdded(0)
+            return
+        }
+        const tokenBytes = items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0
+        setTokenBytesAdded(tokenBytes)
+    })
 
     const onSelectOption = useCallback(
         (

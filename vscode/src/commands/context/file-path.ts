@@ -1,7 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_CURRENT_FILE_TOKENS,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
     truncateText,
     wrapInActiveSpan,
@@ -17,7 +17,7 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
         try {
             const doc = await vscode.workspace.openTextDocument(file)
             const decoded = doc?.getText(range)
-            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS).trim()
+            const truncatedContent = truncateText(decoded, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES).trim()
             if (!decoded || !truncatedContent) {
                 throw new Error('No file content')
             }
@@ -28,10 +28,11 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
             return [
                 {
                     type: 'file',
-                    content: decoded,
+                    content: truncatedContent,
                     uri: file,
                     source: ContextItemSource.Editor,
                     range,
+                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET_IN_BYTES < decoded.length,
                 },
             ] satisfies ContextItem[]
         } catch (error) {

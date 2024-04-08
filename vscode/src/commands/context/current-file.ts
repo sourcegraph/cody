@@ -1,7 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_CURRENT_FILE_TOKENS,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
     truncateText,
     wrapInActiveSpan,
@@ -35,9 +35,10 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
+                    content: truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES),
                     source: ContextItemSource.Editor,
                     range: selection,
+                    isTooLarge: content.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
                 } satisfies ContextItem,
             ]
         } catch (error) {

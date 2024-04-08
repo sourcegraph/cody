@@ -10,7 +10,7 @@ import path from 'node:path/posix'
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_CURRENT_FILE_TOKENS,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -48,10 +48,11 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
 
             const file = {
                 type: 'file',
-                content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
+                content: truncateText(context, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES),
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
                 source: ContextItemSource.Terminal,
+                isTooLarge: context.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
             } satisfies ContextItem
 
             return [file]

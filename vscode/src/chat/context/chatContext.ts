@@ -19,9 +19,7 @@ export async function getChatContextItemsForMention(
     telemetryRecorder?: {
         empty: () => void
         withType: (type: MentionQuery['type']) => void
-    },
-    // The number of characters left in current context window.
-    maxChars?: number
+    }
 ): Promise<ContextItem[]> {
     const mentionQuery = typeof query === 'string' ? parseMentionQuery(query) : query
 
@@ -37,12 +35,12 @@ export async function getChatContextItemsForMention(
     const MAX_RESULTS = 20
     switch (mentionQuery.type) {
         case 'empty':
-            return getOpenTabsContextFile(maxChars)
+            return getOpenTabsContextFile()
         case 'symbol':
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
         case 'file':
-            return getFileContextFiles(mentionQuery.text, MAX_RESULTS, maxChars)
+            return getFileContextFiles(mentionQuery.text, MAX_RESULTS)
         case 'url':
             return (await isURLContextFeatureFlagEnabled())
                 ? getURLContextItems(

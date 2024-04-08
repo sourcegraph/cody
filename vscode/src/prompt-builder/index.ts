@@ -4,6 +4,7 @@ import {
     ContextItemSource,
     type ContextMessage,
     type Message,
+    type TokenCounter,
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
@@ -21,24 +22,21 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private charsUsed = 0
     private seenContext = new Set<string>()
-    constructor(private readonly charLimit: number) {}
+    constructor(private tokenCounter: TokenCounter) {}
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        let numChars = 0
         for (const message of messages) {
-            numChars += messageChars(message)
-        }
-        if (numChars + this.charsUsed > this.charLimit) {
-            return false
+            const isAdded = this.tokenCounter.updateChatUsage([message])
+            if (!isAdded) {
+                return false
+            }
         }
         this.prefixMessages.push(...messages)
-        this.charsUsed += numChars
         return true
     }
 
@@ -59,18 +57,84 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            const countChar = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
-            const msgLen = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
-            if (this.charsUsed + msgLen > this.charLimit) {
+            const isAdded = this.tokenCounter.updateChatUsage([humanMsg, assistantMsg])
+            if (!isAdded) {
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
-            this.charsUsed += msgLen
         }
         return 0
+    }
+
+    /**
+     * Tries to add context items and messages to the prompt builder, tracking which ones were used, ignored, or duplicated.
+     * Returns an object with the results of the operation.
+     *
+     * Validates that the context items are not in the Cody ignore list, and that they have not been seen before.
+     * Stops adding context items when the token budget would be exceeded.
+     *
+     * @param contextItemsMessages - An array of context items or context messages to add to the prompt builder.
+     */
+    public tryAddUserContext(contextItemsMessages: (ContextItem | ContextMessage)[]): {
+        limitReached: boolean
+        used: ContextItem[]
+        ignored: ContextItem[]
+        duplicate: ContextItem[]
+    } {
+        const result = {
+            limitReached: false, // Indicates if the token budget was exceeded
+            used: [] as ContextItem[], // The context items that were successfully added
+            ignored: [] as ContextItem[], // The context items that were ignored
+            duplicate: [] as ContextItem[], // The context items that were duplicates of previously seen items
+        }
+
+        // Create a new array to avoid modifying the original array,
+        // then reverse it to process the newest context items first.
+        const reversedContextItems = contextItemsMessages.slice().reverse()
+        for (const item of reversedContextItems) {
+            const userContextItem = contextItem(item)
+            const id = contextItemId(item)
+
+            // Skip context items that are in the Cody ignore list
+            if (isCodyIgnoredFile(userContextItem.uri)) {
+                result.ignored.push(userContextItem)
+                continue
+            }
+
+            // Skip context items that have already been seen
+            if (this.seenContext.has(id)) {
+                result.duplicate.push(userContextItem)
+                continue
+            }
+
+            this.seenContext.add(id)
+
+            const contextMessage = isContextItem(item) ? renderContextItem(item) : item
+            const isAdded = contextMessage
+                ? this.tokenCounter.updateUserContextUsage([contextMessage])
+                : false
+            userContextItem.isTooLarge = !isAdded
+
+            // Skip context items that would exceed the token budget
+            if (userContextItem.isTooLarge) {
+                result.ignored.push(userContextItem)
+                result.limitReached = true
+                continue
+            }
+
+            if (contextMessage) {
+                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
+                this.reverseMessages.push(contextMessage)
+            }
+
+            this.seenContext.add(id)
+            result.used.push(userContextItem)
+        }
+
+        return result
     }
 
     /**
@@ -81,20 +145,12 @@ export class PromptBuilder {
      * amount of context added from contextItems. This does not affect the
      * overall character limit, which is still enforced.
      */
-    public tryAddContext(
-        contextItemsAndMessages: (ContextItem | ContextMessage)[],
-        charLimit?: number
-    ): {
+    public tryAddContext(contextItemsAndMessages: (ContextItem | ContextMessage)[]): {
         limitReached: boolean
         used: ContextItem[]
         ignored: ContextItem[]
         duplicate: ContextItem[]
     } {
-        let effectiveCharLimit = this.charLimit - this.charsUsed
-        if (charLimit && charLimit < effectiveCharLimit) {
-            effectiveCharLimit = charLimit
-        }
-
         let limitReached = false
         const used: ContextItem[] = []
         const ignored: ContextItem[] = []
@@ -131,10 +187,9 @@ export class PromptBuilder {
                 continue
             }
             const contextMessage = isContextItem(v) ? renderContextItem(v) : v
-            const contextLen = contextMessage
-                ? contextMessage.speaker.length + contextMessage.text.length + 3
-                : 0
-            if (this.charsUsed + contextLen > effectiveCharLimit) {
+            const isAdded =
+                contextMessage && this.tokenCounter.updateEnhancedContextUsage([contextMessage])
+            if (!isAdded) {
                 // Marks excluded context items as too large to be displayed in UI
                 if (item.type === 'file') {
                     item.isTooLarge = true
@@ -148,7 +203,6 @@ export class PromptBuilder {
                 this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
                 this.reverseMessages.push(contextMessage)
             }
-            this.charsUsed += contextLen
             // Marks added file items as not too large
             if (item.type === 'file') {
                 item.isTooLarge = false
@@ -188,8 +242,4 @@ function contextItemId(value: ContextItem | ContextMessage): string {
     }
 
     return item.uri.toString()
-}
-
-function messageChars(message: Message): number {
-    return message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
 }

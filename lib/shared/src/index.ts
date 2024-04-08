@@ -224,3 +224,9 @@ export {
     isURLContextItem,
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
+export { TokenCounter } from './token'
+export {
+    USER_CONTEXT_TOKEN_BUDGET,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+    ENHANCED_CONTEXT_ALLOCATION,
+} from './token/constants'

@@ -3,11 +3,10 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    CHARS_PER_TOKEN,
     type ContextItem,
     type ContextItemFile,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     ignores,
     testFileUri,
     uriBasename,
@@ -159,7 +158,7 @@ describe('filterLargeFiles', () => {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const oneByteOverTokenLimit = MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1
+        const oneByteOverTokenLimit = USER_CONTEXT_TOKEN_BUDGET_IN_BYTES + 1
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: oneByteOverTokenLimit,
             type: vscode.FileType.File,

@@ -3,7 +3,6 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    CHARS_PER_TOKEN,
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
@@ -11,8 +10,8 @@ import {
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
+    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     displayPath,
     fetchContentForURLContextItem,
     isCodyIgnoredFile,
@@ -50,8 +49,7 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number,
-    charsLimit?: number
+    maxResults: number
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
@@ -111,7 +109,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return await filterLargeFiles(sortedResults, charsLimit)
+    return await filterLargeFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -177,12 +175,11 @@ export async function getSymbolContextFiles(
  * Gets context files for each open editor tab in VS Code.
  * Filters out large files over 1MB to avoid expensive parsing.
  */
-export async function getOpenTabsContextFile(charsLimit?: number): Promise<ContextItemFile[]> {
+export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterLargeFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
-            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file')),
-        charsLimit
+            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
     )
 }
 
@@ -247,12 +244,9 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets {@link ContextItemFile.isTooLarge} for files contains more characters than the token limit.
+ * Sets {@link ContextItemFile.isTooLarge} for files contains context over the user context budget.
  */
-export async function filterLargeFiles(
-    contextFiles: ContextItemFile[],
-    charsLimit = CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS
-): Promise<ContextItemFile[]> {
+export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
         // Remove file larger than 1MB and non-text files
@@ -267,9 +261,8 @@ export async function filterLargeFiles(
         // Check if file contains more characters than the token limit based on fileStat.size
         // and set {@link ContextItemFile.isTooLarge} for webview to display file size
         // warning.
-        if (fileStat.size > charsLimit) {
-            cf.isTooLarge = true
-        }
+        cf.size = fileStat.size
+        cf.isTooLarge = fileStat.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES
         filtered.push(cf)
     }
     return filtered

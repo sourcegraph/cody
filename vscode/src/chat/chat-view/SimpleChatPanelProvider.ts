@@ -46,7 +46,7 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
+import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
@@ -55,7 +55,6 @@ import type {
     ContextItemWithContent,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
@@ -595,20 +594,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             },
         }
-        // Use the number of characters left in the chat model as the limit
-        // for adding user context files to the chat.
-        const contextLimit = getContextWindowLimitInBytes(
-            [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
-        )
 
         try {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder,
-                contextLimit
+                scopedTelemetryRecorder
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -629,18 +620,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(): Promise<void> {
-        const contextLimit = getContextWindowLimitInBytes(
-            [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
-        )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
         await this.postMessage({
             type: 'chat-input-context',
             items: selectionFiles.map(f => ({
                 ...f,
                 content: undefined,
-                isTooLarge: f.size ? f.size > contextLimit : undefined,
             })),
         })
     }

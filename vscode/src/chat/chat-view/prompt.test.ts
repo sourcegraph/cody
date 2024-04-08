@@ -1,4 +1,4 @@
-import type { ContextItem, Message } from '@sourcegraph/cody-shared'
+import { type ContextItem, type Message, TokenCounter } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -70,7 +70,7 @@ describe('DefaultPrompter', () => {
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
         const overallLimit = 1
-        const promptBuilder = new PromptBuilder(overallLimit)
+        const promptBuilder = new PromptBuilder(new TokenCounter(overallLimit))
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
@@ -80,10 +80,7 @@ describe('DefaultPrompter', () => {
             },
         ]
 
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
-            contextItems,
-            10_000_000
-        )
+        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(contextItems)
         expect(limitReached).toBeTruthy()
         expect(ignored).toEqual(contextItems)
         expect(duplicate).toEqual([])
