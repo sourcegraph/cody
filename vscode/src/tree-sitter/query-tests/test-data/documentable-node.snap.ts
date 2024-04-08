@@ -212,6 +212,11 @@
 
 // ------------------------------------
 
-let changingName = 'test'
-changingName = 'other'
-// |
+  let changingName = 'test'
+//^^^^^^^^^^^^^^^^^^^^^^^^^ range.identifier[1]
+  changingName = 'other'
+//   █
+
+// Nodes types:
+// range.identifier[1]: lexical_declaration
+

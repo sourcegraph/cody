@@ -88,9 +88,9 @@
 #^ start range.class[1]
      BaseClass1,
      BaseClass2):
-#               ^ insertion.point[1]
 #        █
      def __init__(self, name):
+#                            ^ insertion.point[1]
          self.name = name
 #                       ^ end range.class[1]
 
