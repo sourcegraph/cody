@@ -49,12 +49,13 @@ export class FixupController
             })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
-        onRemoved: ({ metadata, ...event }) => {
+        onRemoved: ({ metadata, id }) => {
+            const event = { id, difference: 100 }
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', safeMetadata, {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
     })
 
