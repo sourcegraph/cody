@@ -1,11 +1,11 @@
 import {
     type ContextItem,
+    ContextItemSource,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
 import { getEditor } from '../../editor/active-editor'

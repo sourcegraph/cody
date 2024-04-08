@@ -1,6 +1,7 @@
 import { URI } from 'vscode-uri'
 
 import type { ChatMessage } from '@sourcegraph/cody-shared'
+import type { UserAccountInfo } from '../Chat'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
 export const FIXTURE_TRANSCRIPT: Record<
@@ -33,7 +34,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     codeQuestion: [
         {
             speaker: 'human',
-            text: 'What does `document.getSelection()?.isCollapsed` mean?',
+            text: 'What does `document.getSelection()?.isCollapsed` mean? I am trying to use it in a web application that has a textarea and want to manage the user selection.',
         },
         {
             speaker: 'assistant',
@@ -45,8 +46,17 @@ export const FIXTURE_TRANSCRIPT: Record<
             speaker: 'human',
             text: "Explain the following code at a high level:\n\n```\nprivate getNonce(): string {\n  let text = ''\n  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'\n  for (let i = 0; i < 32; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length))\n  }\n  return text\n}\n```",
             contextFiles: [
-                { type: 'file', uri: URI.file('/vscode/src/chat/ChatViewProvider.ts') },
+                {
+                    type: 'file',
+                    uri: URI.file('/vscode/src/chat/ChatViewProvider.ts'),
+                },
                 { type: 'file', uri: URI.file('/lib/shared/src/timestamp.ts') },
+                {
+                    type: 'file',
+                    uri: URI.file(
+                        '/vscode/src/contrib/platform/common/ui/providers/chat/ChatViewProvider.ts'
+                    ),
+                },
             ],
         },
         {
@@ -88,4 +98,14 @@ export const FIXTURE_TRANSCRIPT: Record<
             text: 'This code is very cool.',
         },
     ],
+}
+
+export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
+    isCodyProUser: true,
+    isDotComUser: true,
+    user: {
+        username: 'sqs',
+        displayName: 'Quinn Slack',
+        avatarURL: 'https://avatars.githubusercontent.com/u/1976',
+    },
 }

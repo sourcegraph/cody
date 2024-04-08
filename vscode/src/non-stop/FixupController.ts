@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 
@@ -25,7 +25,7 @@ import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask, type FixupTaskID } from './FixupTask'
+import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { type Diff, computeDiff } from './diff'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
@@ -153,7 +153,8 @@ export class FixupController
             intent: task.intent,
             mode: task.mode,
             source: task.source,
-            ...countCode(replacementText),
+            ...this.countEditInsertions(task),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -186,7 +187,7 @@ export class FixupController
 
     // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
-    public async retry(task: FixupTask, source: ChatEventSource): Promise<FixupTask | undefined> {
+    public async retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
@@ -270,7 +271,8 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         intent: EditIntent,
-        source: ChatEventSource
+        source: EventSource,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -295,7 +297,10 @@ export class FixupController
             input.intent,
             mode,
             input.model,
-            source
+            source,
+            undefined,
+            undefined,
+            telemetryMetadata
         )
 
         // Return focus to the editor
@@ -312,9 +317,10 @@ export class FixupController
         intent: EditIntent,
         mode: EditMode,
         model: EditModel,
-        source?: ChatEventSource,
+        source?: EventSource,
         destinationFile?: vscode.Uri,
-        insertionPoint?: vscode.Position
+        insertionPoint?: vscode.Position,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -327,7 +333,8 @@ export class FixupController
             model,
             source,
             destinationFile,
-            insertionPoint
+            insertionPoint,
+            telemetryMetadata
         )
         this.tasks.set(task.id, task)
         return task
@@ -408,13 +415,39 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
+    private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {
+        if (!task.replacement) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        if (task.mode === 'insert') {
+            return countCode(task.replacement)
+        }
+
+        if (!task.diff) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        const countedLines = new Set<number>()
+        let charCount = 0
+        for (const edit of task.diff.edits) {
+            charCount += edit.text.length
+            for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
+                countedLines.add(line)
+            }
+        }
+
+        return { lineCount: countedLines.size, charCount }
+    }
+
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
             model: task.model,
-            ...countCode(task.replacement || ''),
+            ...this.countEditInsertions(task),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -472,7 +505,7 @@ export class FixupController
             metadata,
         })
 
-        let isUndone = false
+        let undoCount = 0
         /**
          * Tracks the initial persistence of a Fixup task.
          * As in, if the user immediately undos the change, or if they persist to make new edits to the file.
@@ -488,18 +521,18 @@ export class FixupController
 
             if (event.reason === vscode.TextDocumentChangeReason.Undo) {
                 // Set state, but don't fire telemetry yet as the user could still "Redo".
-                isUndone = true
+                undoCount = undoCount + 1
                 return
             }
 
-            if (isUndone && event.reason === vscode.TextDocumentChangeReason.Redo) {
+            if (event.reason === vscode.TextDocumentChangeReason.Redo) {
                 // User re-did the change, so reset state
-                isUndone = false
+                undoCount = Math.max(0, undoCount - 1)
                 return
             }
 
             // User has made a change, we can now fire our stored state as to if the change was undone or not
-            const persistence = isUndone ? 'removed' : 'persisted'
+            const persistence = undoCount > 0 ? 'removed' : 'persisted'
 
             telemetryService.log(
                 `CodyVSCodeExtension:fixup:initialPersistence:${persistence}`,

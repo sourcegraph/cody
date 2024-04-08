@@ -1,5 +1,4 @@
-import { type AuthStatus, ModelProvider } from '@sourcegraph/cody-shared'
-import { type EditModel, ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { type AuthStatus, type EditModel, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {

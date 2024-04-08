@@ -2,9 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    type DefaultCodyCommands,
+    type EventSource,
     ModelProvider,
     PromptMixin,
     featureFlagProvider,
@@ -14,7 +15,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -526,7 +526,7 @@ const register = async (
         ),
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: ChatEventSource = 'sidebar'
+            const source: EventSource = 'sidebar'
             telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
