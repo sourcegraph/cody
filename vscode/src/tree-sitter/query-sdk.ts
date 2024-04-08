@@ -163,9 +163,8 @@ function getLanguageSpecificQueryWrappers(
                     rangeCaptures.push(capture)
                 } else if (capture.name.startsWith('symbol')) {
                     symbolCaptures.push(capture)
-                } else if (capture.name.startsWith('comment')) {
-                    // Docstring are named "docstring" in Python,
-                    // and "comment" in other languages.
+                } else if (languageId !== 'python' && capture.name.startsWith('comment')) {
+                    // Docstring are "string" in Python but  named "comment" in other languages.
                     docstringFound = true
                 }
             }
@@ -213,13 +212,18 @@ function getLanguageSpecificQueryWrappers(
                             insertionPoint = capture
                         }
                     }
-                    // A valid docstring should be directly below the insertion point, with 1/2 of the indentation.
-                    if (!docstringFound && insertionPoint && name.startsWith('docstring')) {
-                        if (node.startPosition.row - 1 === insertionPoint.node.startPosition.row) {
-                            if (node.startPosition.column / 2 === range.node.startPosition.column) {
-                                docstringFound = true
-                            }
-                        }
+
+                    // A valid docstring should be directly below the insertion point,
+                    // with 1/2 of the indentation for node that is not at the start of the line.
+                    if (
+                        insertionPoint &&
+                        !docstringFound &&
+                        name.startsWith('docstring') &&
+                        node.startPosition.row - 1 === insertionPoint.node.startPosition.row
+                    ) {
+                        docstringFound =
+                            range.node.startPosition.column === 0 ||
+                            node.startPosition.column / 2 === range.node.startPosition.column
                     }
                 }
             }
