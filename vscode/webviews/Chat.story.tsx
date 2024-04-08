@@ -31,6 +31,7 @@ const meta: Meta<typeof Chat> = {
         telemetryService: null as any,
         isTranscriptError: false,
         isNewInstall: false,
+        userContextFromSelection: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],

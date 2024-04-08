@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type Configuration,
+    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
@@ -57,6 +58,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+
+    const [userContextFromSelection, setUserContextFromSelection] = useState<ContextItem[]>([])
+
     const onChooseRemoteSearchRepo = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
     }, [vscodeAPI])
@@ -124,6 +128,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
+                        break
+                    case 'chat-input-context':
+                        setUserContextFromSelection(message.items)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
@@ -243,6 +250,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
                                         isNewInstall={isNewInstall}
+                                        userContextFromSelection={userContextFromSelection}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

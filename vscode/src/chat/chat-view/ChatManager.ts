@@ -24,7 +24,7 @@ import type { EnterpriseContextFactory } from '../../context/enterprise-context-
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
-import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import type { ChatSession } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 
@@ -89,13 +89,9 @@ export class ChatManager implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
-            )
+            ),
+            vscode.commands.registerCommand('cody.chat.context.add', () => this.sendSelectionToChat())
         )
-    }
-
-    private async getChatProvider(): Promise<SimpleChatPanelProvider> {
-        const provider = await this.chatPanelsManager.getChatPanel()
-        return provider
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -109,7 +105,7 @@ export class ChatManager implements vscode.Disposable {
             return vscode.commands.executeCommand('cody.focus')
         }
 
-        const chatProvider = await this.getChatProvider()
+        const chatProvider = await this.chatPanelsManager.getNewChatPanel()
         await chatProvider?.setWebviewView(view)
     }
 
@@ -125,7 +121,7 @@ export class ChatManager implements vscode.Disposable {
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const provider = await this.getChatProvider()
+        const provider = await this.chatPanelsManager.getNewChatPanel()
         await provider?.handleUserMessageSubmission(
             uuid.v4(),
             text,
@@ -137,6 +133,11 @@ export class ChatManager implements vscode.Disposable {
             command
         )
         return provider
+    }
+
+    private async sendSelectionToChat(): Promise<void> {
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
+        await provider?.handleGetUserEditorContext()
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -216,7 +217,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async triggerNotice(notice: { key: string }): Promise<void> {
-        const provider = await this.getChatProvider()
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
         provider.webviewPanel?.onDidChangeViewState(e => {
             if (e.webviewPanel.visible) {
                 void provider?.webview?.postMessage({
