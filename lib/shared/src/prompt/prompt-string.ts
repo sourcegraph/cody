@@ -32,7 +32,7 @@ export class PromptString {
         return promptStringToString(this)
     }
 
-    public getReferences(): StringReference[] {
+    public getReferences(): Set<StringReference> {
         return promptStringReferences(this)
     }
 
@@ -55,12 +55,27 @@ export class PromptString {
     public trimEnd(): PromptString {
         return makePromptString(promptStringToString(this).trimEnd(), this.getReferences())
     }
+
+    public static join(promptStrings: PromptString[], boundary: PromptString): PromptString {
+        const stringBoundary = promptStringToString(boundary)
+
+        const buffer: string[] = []
+        const references: Set<StringReference> = new Set(promptStringReferences(boundary).values())
+        for (const promptString of promptStrings) {
+            buffer.push(promptStringToString(promptString))
+            for (const reference of promptStringReferences(promptString).values()) {
+                references.add(reference)
+            }
+        }
+
+        return makePromptString(buffer.join(stringBoundary), references)
+    }
 }
 
 type StringReference = vscode.Uri
 
 // This helper function is unsafe and should only be used within this module.
-function makePromptString(string: string, references: StringReference[]): PromptString {
+function makePromptString(string: string, references: Set<StringReference>): PromptString {
     const handle = PromptString.unsafe_createInstance()
     pocket.set(handle, new PromptStringPocket(string, references))
     return handle
@@ -70,7 +85,7 @@ export function promptStringToString(s: PromptString): string {
     return pocket.get(s)!.value
 }
 
-export function promptStringReferences(s: PromptString): StringReference[] {
+export function promptStringReferences(s: PromptString): Set<StringReference> {
     return pocket.get(s)!.references
 }
 
@@ -82,23 +97,30 @@ export function promptStringReferences(s: PromptString): StringReference[] {
  * @param format the format string pieces.
  * @param args the arguments to splice into the format string.
  */
-export function ps(format: TemplateStringsArray, ...args: readonly PromptString[]): PromptString {
+export function ps(
+    format: TemplateStringsArray,
+    ...args: readonly (PromptString | undefined)[]
+): PromptString {
     if (!(Array.isArray(format) && Object.isFrozen(format) && format.length > 0)) {
         // Deter casual direct calls.
         throw new Error('ps is only intended to be used in tagged template literals.')
     }
 
     const buffer: string[] = []
-    const references: StringReference[] = []
+    const references: Set<StringReference> = new Set()
     for (let i = 0; i < format.length; i++) {
         buffer.push(format[i])
         if (i < args.length) {
             const arg = args[i]
 
-            if (arg instanceof PromptString) {
+            if (arg === undefined) {
+                // Ignore undefined values
+            } else if (arg instanceof PromptString) {
                 // PromptString inherit all references
                 buffer.push(promptStringToString(arg))
-                references.push(...promptStringReferences(arg))
+                for (const ref of promptStringReferences(arg).values()) {
+                    references.add(ref)
+                }
             } else {
                 // Do not allow arbitrary types like dynamic strings, classes with
                 // toString, etc. here.
@@ -112,7 +134,7 @@ export function ps(format: TemplateStringsArray, ...args: readonly PromptString[
     return makePromptString(buffer.join(''), references)
 }
 
-export function createPromptString(value: string, references: StringReference[]): PromptString {
+export function createPromptString(value: string, references: Set<StringReference>): PromptString {
     return makePromptString(value, references)
 }
 
@@ -125,6 +147,6 @@ const pocket = new WeakMap<PromptString, PromptStringPocket>()
 class PromptStringPocket {
     constructor(
         public value: string,
-        public references: StringReference[]
+        public references: Set<StringReference>
     ) {}
 }

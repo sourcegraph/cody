@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../chat/transcript/messages'
-import { type PromptString, ps } from './prompt-string'
+import { PromptString, ps } from './prompt-string'
 
 const identity = ps`Reply as Cody, a coding assistant developed by Sourcegraph.`
 const hallucinate = ps`If context is available: never make any assumptions nor provide any misleading or hypothetical examples.`
@@ -28,9 +28,12 @@ export class PromptMixin {
      */
     public static mixInto(humanMessage: ChatMessage): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
-        const mixins = [...PromptMixin.mixins, ...PromptMixin.customMixin, PromptMixin.defaultMixin]
-            .map(mixin => mixin.prompt)
-            .join('\n\n')
+        const mixins = PromptString.join(
+            [...PromptMixin.mixins, ...PromptMixin.customMixin, PromptMixin.defaultMixin].map(
+                mixin => mixin.prompt
+            ),
+            ps`\n\n`
+        )
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in `text`.

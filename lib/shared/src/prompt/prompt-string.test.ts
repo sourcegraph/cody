@@ -30,10 +30,10 @@ describe('PromptString', () => {
 
     it('keeps track of references', () => {
         const uri = testFileUri('/foo/bar.ts')
-        const inner = createPromptString('i am from a file', [uri])
+        const inner = createPromptString('i am from a file', new Set([uri]))
         const outer = ps`foo${ps`bar${inner}`}`
 
-        expect(outer.getReferences()).toEqual([uri])
+        expect(outer.getReferences()).toEqual(new Set([uri]))
     })
 
     it('behaves like a string', () => {
@@ -43,5 +43,23 @@ describe('PromptString', () => {
         expect(s.slice(1, 3).toString()).toBe(' f')
         expect(s.trim().toString()).toBe('foobarbaz')
         expect(s.trimEnd().toString()).toBe('  foobarbaz')
+    })
+
+    it('can join', () => {
+        const uri1 = testFileUri('/foo/bar.ts')
+        const uri2 = testFileUri('/foo/bar1.ts')
+        const uri3 = testFileUri('/foo/bar2.ts')
+
+        const joined = PromptString.join(
+            [
+                createPromptString('foo', new Set([uri1])),
+                ps`bar`,
+                createPromptString('baz', new Set([uri2])),
+            ],
+            createPromptString(' ', new Set([uri3]))
+        )
+
+        expect(joined.toString()).toBe('foo bar baz')
+        expect(joined.getReferences()).toEqual(new Set([uri1, uri2, uri3]))
     })
 })
