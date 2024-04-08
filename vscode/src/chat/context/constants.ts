@@ -4,7 +4,9 @@ export const SYMBOL_HELP_LABEL = 'Search for a symbol to include...'
 export const NO_SYMBOL_MATCHES_LABEL = 'No symbols found'
 export const NO_FILE_MATCHES_LABEL = 'No files found'
 export const NO_SYMBOL_MATCHES_HELP_LABEL = ' (language extensions may be loading)'
-export const FILE_TOO_LARGE_LABEL = 'File too large. Type @# to choose a symbol.'
+export const FILE_RANGE_TOOLTIP_LABEL = 'Type a line range to include, e.g. 5-10...'
+export const LARGE_FILE_WARNING_LABEL =
+    'File too large. Add line range with : or use @# to choose a symbol'
 
 export const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0'
 export const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check)'

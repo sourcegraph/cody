@@ -9,5 +9,5 @@
   },
   "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
   "exclude": ["dist", "bindings", "src/__tests__", "src/bfg/__tests__", "vitest.config.ts"],
-  "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
+  "references": [{"path": "../cli"}, { "path": "../lib/shared" }, { "path": "../vscode" }],
 }

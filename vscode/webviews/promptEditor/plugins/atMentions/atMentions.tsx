@@ -111,22 +111,24 @@ export default function MentionsPlugin(): JSX.Element | null {
                 if (!currentInputText) {
                     return
                 }
-                // On first selection, add the selected option as text.
-                // This allows users to autocomplete the file path, and provide them with
-                // the options to make additional changes, e.g. add range, before inserting the mention.
-                const textNode = $createContextItemTextNode(selectedOption.item)
-                if (!currentInputText.endsWith(textNode.__text) && !currentInputText.startsWith('@#')) {
-                    nodeToReplace.replace(textNode)
-                    textNode.select()
-                    closeMenu()
-                    return
-                }
 
-                const mentionNode = $createContextItemMentionNode(selectedOption.item)
-                nodeToReplace?.replace(mentionNode)
-                const spaceAfter = $createTextNode(' ')
-                mentionNode.insertAfter(spaceAfter)
-                spaceAfter.select()
+                const selectedItem = selectedOption.item
+                const isLargeFile = selectedItem.type === 'file' && selectedItem.isTooLarge
+                // When selecting a large file without range, add the selected option as text node with : at the end.
+                // This allows users to autocomplete the file path, and provide them with the options to add range.
+                if (isLargeFile && !selectedItem.range) {
+                    const textNode = $createContextItemTextNode(selectedItem)
+                    nodeToReplace.replace(textNode)
+                    const colonNode = $createTextNode(':')
+                    textNode.insertAfter(colonNode)
+                    colonNode.select()
+                } else {
+                    const mentionNode = $createContextItemMentionNode(selectedItem)
+                    nodeToReplace.replace(mentionNode)
+                    const spaceNode = $createTextNode(' ')
+                    mentionNode.insertAfter(spaceNode)
+                    spaceNode.select()
+                }
                 closeMenu()
             })
         },

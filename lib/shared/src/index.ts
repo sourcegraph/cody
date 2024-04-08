@@ -1,11 +1,17 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export type { ChatModel, EditModel } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage } from './models/types'
+export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
+export {
+    IgnoreHelper,
+    CODY_IGNORE_POSIX_GLOB,
+    type IgnoreFileContent,
+    CODY_IGNORE_URI_PATH,
+} from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export type {
@@ -15,7 +21,7 @@ export type {
 export { errorToChatError } from './chat/transcript/messages'
 export type {
     ChatError,
-    ChatEventSource,
+    EventSource,
     ChatHistory,
     ChatMessage,
     UserLocalHistory,
@@ -37,23 +43,25 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export type {
-    ContextItem,
-    ContextItemFile,
-    ContextItemSource as ContextFileSource,
-    ContextItemSymbol,
-    ContextFileType,
-    ContextMessage,
-    SymbolKind,
+export {
+    type ContextItem,
+    type ContextItemFile,
+    ContextItemSource,
+    type ContextItemWithContent,
+    type ContextItemSymbol,
+    type ContextFileType,
+    type ContextMessage,
+    type SymbolKind,
 } from './codebase-context/messages'
 export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
-export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
+export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
+    extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths } from './common/path'
@@ -127,6 +135,8 @@ export {
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
+    CHARS_PER_TOKEN,
+    ANSWER_TOKENS,
     MAX_HUMAN_INPUT_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
@@ -191,7 +201,14 @@ export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider
 export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
-export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
+export {
+    addTraceparent,
+    getActiveTraceAndSpanId,
+    wrapInActiveSpan,
+    recordErrorToSpan,
+    tracer,
+    logResponseHeadersToSpan,
+} from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'

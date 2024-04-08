@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 
 import {
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
     populateCodeContextTemplate,
@@ -14,7 +15,6 @@ import {
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 

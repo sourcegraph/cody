@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import type { ChatEventSource } from '@sourcegraph/cody-shared'
+import type { EventSource } from '@sourcegraph/cody-shared'
 import type { FixupFile } from './FixupFile'
 import type { FixupTask, FixupTaskID } from './FixupTask'
 import type { CodyTaskState } from './utils'
@@ -38,7 +38,7 @@ export interface FixupActor {
      * @param task the task to retry.
      * @param source the source of the retry, for event logging.
      */
-    retry(task: FixupTask, source: ChatEventSource): Promise<FixupTask | undefined>
+    retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined>
 }
 
 /**

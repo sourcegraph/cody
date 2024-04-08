@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { RateLimitError } from '@sourcegraph/cody-shared'
+import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
 import { ErrorItem } from './chat/ErrorItem'
 
-import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+import { VSCodeStandaloneComponent } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof ErrorItem> = {
     title: 'cody/Chat Error Item',
     component: ErrorItem,
-    decorators: [VSCodeWebview],
+    decorators: [VSCodeStandaloneComponent],
     render: args => (
         <div style={{ position: 'relative', padding: '1rem' }}>
             <ErrorItem {...args} />
@@ -19,6 +19,13 @@ const meta: Meta<typeof ErrorItem> = {
 export default meta
 
 type Story = StoryObj<typeof ErrorItem>
+
+export const GenericError: Story = {
+    args: {
+        error: errorToChatError(new Error('some error')),
+        postMessage: () => {},
+    },
+}
 
 export const ChatRateLimitFree: Story = {
     args: {

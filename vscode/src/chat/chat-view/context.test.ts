@@ -1,5 +1,4 @@
-import { type ContextItem, testFileUri } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ContextItem, ContextItemSource, testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { fuseContext } from './context'
 

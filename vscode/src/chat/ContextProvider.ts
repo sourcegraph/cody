@@ -35,7 +35,6 @@ export type Config = Pick<
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'experimentalSymfContext'
-    | 'editorTitleCommandIcon'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
 >

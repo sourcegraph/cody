@@ -2,9 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    type DefaultCodyCommands,
+    type EventSource,
     ModelProvider,
     PromptMixin,
     featureFlagProvider,
@@ -14,7 +15,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -24,6 +24,7 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
+import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -306,16 +307,19 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
-
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
     // Sync initial auth status
-    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    const initAuthStatus = authProvider.getAuthStatus()
+    syncModelProviders(initAuthStatus)
+    await chatManager.syncAuthStatus(initAuthStatus)
+    editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
-    statusBar.syncAuthStatus(authProvider.getAuthStatus())
+    statusBar.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -522,7 +526,7 @@ const register = async (
         ),
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: ChatEventSource = 'sidebar'
+            const source: EventSource = 'sidebar'
             telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
@@ -537,6 +541,10 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
+
+    // Experimental features: Hover Commands
+    disposables.push(hoverCommandsProvider)
+    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

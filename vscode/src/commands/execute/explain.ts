@@ -1,5 +1,11 @@
-import { type ContextItem, displayLineRange, displayPath, logDebug } from '@sourcegraph/cody-shared'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import {
+    type ContextItem,
+    DefaultChatCommands,
+    displayLineRange,
+    displayPath,
+    logDebug,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -10,7 +16,6 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
@@ -32,7 +37,7 @@ async function explainCommand(
     // fetches the context file from the current cursor position using getContextFileFromCursor().
     const contextFiles: ContextItem[] = []
 
-    const currentSelection = await getContextFileFromCursor()
+    const currentSelection = await getContextFileFromCursor(args?.range?.start)
     contextFiles.push(...currentSelection)
 
     const currentFile = await getContextFileFromCurrentFile()
@@ -49,7 +54,8 @@ async function explainCommand(
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Explain,
+        source: args?.source,
+        command: DefaultChatCommands.Explain,
     }
 }
 
