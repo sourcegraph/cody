@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 // This module is designed to encourage, and to some degree enforce, safe
 // handling of file content that gets constructed into prompts. It works this
 // way:
@@ -21,8 +23,17 @@
  * A "safe" string class for constructing prompts.
  */
 export class PromptString {
+    private constructor() {}
+    public static unsafe_createInstance() {
+        return new PromptString()
+    }
+
     public toString(): string {
         return promptStringToString(this)
+    }
+
+    public getReferences(): StringReference[] {
+        return promptStringReferences(this)
     }
 
     public toJSON(): string {
@@ -34,27 +45,33 @@ export class PromptString {
     }
 
     public slice(start?: number, end?: number): PromptString {
-        return makePromptString(promptStringToString(this).slice(start, end))
+        return makePromptString(promptStringToString(this).slice(start, end), this.getReferences())
     }
 
     public trim(): PromptString {
-        return makePromptString(promptStringToString(this).trim())
+        return makePromptString(promptStringToString(this).trim(), this.getReferences())
     }
 
     public trimEnd(): PromptString {
-        return makePromptString(promptStringToString(this).trimEnd())
+        return makePromptString(promptStringToString(this).trimEnd(), this.getReferences())
     }
 }
 
+type StringReference = vscode.Uri
+
 // This helper function is unsafe and should only be used within this module.
-function makePromptString(s: string): PromptString {
-    const handle = new PromptString()
-    pocket.set(handle, new PromptStringPocket(s))
+function makePromptString(string: string, references: StringReference[]): PromptString {
+    const handle = PromptString.unsafe_createInstance()
+    pocket.set(handle, new PromptStringPocket(string, references))
     return handle
 }
 
 export function promptStringToString(s: PromptString): string {
     return pocket.get(s)!.value
+}
+
+export function promptStringReferences(s: PromptString): StringReference[] {
+    return pocket.get(s)!.references
 }
 
 /**
@@ -65,33 +82,38 @@ export function promptStringToString(s: PromptString): string {
  * @param format the format string pieces.
  * @param args the arguments to splice into the format string.
  */
-export function ps(format: TemplateStringsArray, ...args: readonly any[]): PromptString {
+export function ps(format: TemplateStringsArray, ...args: readonly PromptString[]): PromptString {
     if (!(Array.isArray(format) && Object.isFrozen(format) && format.length > 0)) {
         // Deter casual direct calls.
         throw new Error('ps is only intended to be used in tagged template literals.')
     }
 
-    const buffer = [format[0]]
+    const buffer: string[] = []
+    const references: StringReference[] = []
     for (let i = 0; i < format.length; i++) {
-        const arg = args[i]
-        // Do not add arbitrary types like dynamic strings, classes with
-        // toString, etc. here.
-        if (arg instanceof String) {
-            throw new Error(
-                'Use ps`...` or a PromptString helper to handle string data for prompts safely.'
-            )
-        }
-        if (arg instanceof PromptString) {
-            buffer.push(promptStringToString(arg))
-        } else if (arg instanceof Number) {
-            // An attacker could poison Number.prototype and defeat this, but
-            // this allows numbers while detering casual toString overriding.
-            buffer.push(Number.prototype.toString.call(arg))
+        buffer.push(format[i])
+        if (i < args.length) {
+            const arg = args[i]
+
+            if (arg instanceof PromptString) {
+                // PromptString inherit all references
+                buffer.push(promptStringToString(arg))
+                references.push(...promptStringReferences(arg))
+            } else {
+                // Do not allow arbitrary types like dynamic strings, classes with
+                // toString, etc. here.
+                throw new Error(
+                    'Use ps`...` or a PromptString helper to handle string data for prompts safely.'
+                )
+            }
         }
     }
-    buffer.push(format[format.length - 1])
 
-    return makePromptString(buffer.join(''))
+    return makePromptString(buffer.join(''), references)
+}
+
+export function createPromptString(value: string, references: StringReference[]): PromptString {
+    return makePromptString(value, references)
 }
 
 // When PromptStrings are created, their properties are stored in a side pocket
@@ -101,5 +123,8 @@ export function ps(format: TemplateStringsArray, ...args: readonly any[]): Promp
 const pocket = new WeakMap<PromptString, PromptStringPocket>()
 
 class PromptStringPocket {
-    constructor(public value: string) {}
+    constructor(
+        public value: string,
+        public references: StringReference[]
+    ) {}
 }
