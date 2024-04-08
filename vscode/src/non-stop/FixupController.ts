@@ -57,6 +57,11 @@ export class FixupController
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
         },
     })
+    /**
+     * The event that fires when the user clicks the undo button on a code lens.
+     * Used to help track the implied Edit acceptance rate.
+     */
+    private readonly undoCommandEvent = new vscode.EventEmitter<FixupTaskID>()
 
     private _disposables: vscode.Disposable[] = []
 
@@ -131,6 +136,8 @@ export class FixupController
         if (task.state !== CodyTaskState.applied) {
             return
         }
+
+        this.undoCommandEvent.fire(task.id)
 
         let editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri === task.fixupFile.uri
@@ -505,15 +512,46 @@ export class FixupController
             metadata,
         })
 
+        const logImpliedAcceptance = (acceptance: 'rejected' | 'accepted') => {
+            telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
+                metadata,
+                privateMetadata,
+            })
+        }
+
+        /**
+         * Tracks when a user clicks "Undo" in the Edit codelens.
+         * This is important as VS Code doesn't let us easily differentiate between
+         * document changes made by specific commands.
+         *
+         * This logic ensures we can still mark as task as rejected if a user clicks "Undo".
+         */
+        const commandUndoListener = this.undoCommandEvent.event(id => {
+            if (id !== task.id) {
+                return
+            }
+
+            // Immediately dispose of the impliedAcceptanceListener, otherwise this will also
+            // run and mark the undo change here as an "acccepted" change made by the user.
+            impliedAcceptanceListener.dispose()
+            commandUndoListener.dispose()
+
+            // If a user manually clicked "Undo", we can be confident that they reject the fixup.
+            logImpliedAcceptance('rejected')
+        })
         let undoCount = 0
         /**
-         * Tracks the initial persistence of a Fixup task.
-         * As in, if the user immediately undos the change, or if they persist to make new edits to the file.
+         * Tracks the implied acceptance of a Fixup task via the users' next action.
+         * As in, if the user immediately undos the change via the system undo command,
+         * or if they persist to make new edits to the file.
          *
          * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
-         * When a change is made, it logs telemetry about whether the change was persisted or removed.
+         * When a change is made, it logs telemetry about whether the change was rejected or accepted.
          */
-        const initialPersistenceListener = vscode.workspace.onDidChangeTextDocument(event => {
+        const impliedAcceptanceListener = vscode.workspace.onDidChangeTextDocument(event => {
             if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
                 // Irrelevant change, ignore
                 return
@@ -521,7 +559,7 @@ export class FixupController
 
             if (event.reason === vscode.TextDocumentChangeReason.Undo) {
                 // Set state, but don't fire telemetry yet as the user could still "Redo".
-                undoCount = undoCount + 1
+                undoCount += 1
                 return
             }
 
@@ -532,22 +570,11 @@ export class FixupController
             }
 
             // User has made a change, we can now fire our stored state as to if the change was undone or not
-            const persistence = undoCount > 0 ? 'removed' : 'persisted'
+            logImpliedAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
 
-            telemetryService.log(
-                `CodyVSCodeExtension:fixup:initialPersistence:${persistence}`,
-                metadata,
-                {
-                    hasV2Event: true,
-                }
-            )
-            telemetryRecorder.recordEvent('cody.fixup.initialPersistence', persistence, {
-                metadata,
-                privateMetadata,
-            })
-
-            // Dispose of this listener, we only want to fire initialPersistence once.
-            initialPersistenceListener.dispose()
+            // We no longer need to track this change, so dispose of our listeners
+            impliedAcceptanceListener.dispose()
+            commandUndoListener.dispose()
         })
     }
 
