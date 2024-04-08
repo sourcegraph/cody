@@ -512,7 +512,7 @@ export class FixupController
             metadata,
         })
 
-        const logImpliedAcceptance = (acceptance: 'rejected' | 'accepted') => {
+        const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
             telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
                 hasV2Event: true,
             })
@@ -534,13 +534,13 @@ export class FixupController
                 return
             }
 
-            // Immediately dispose of the impliedAcceptanceListener, otherwise this will also
-            // run and mark the undo change here as an "acccepted" change made by the user.
-            impliedAcceptanceListener.dispose()
+            // Immediately dispose of the rejectionListener, otherwise this will also run
+            // and mark the "Undo" change here as an "acccepted" change made by the user.
+            rejectionListener.dispose()
             commandUndoListener.dispose()
 
             // If a user manually clicked "Undo", we can be confident that they reject the fixup.
-            logImpliedAcceptance('rejected')
+            logAcceptance('rejected')
         })
         let undoCount = 0
         /**
@@ -551,7 +551,7 @@ export class FixupController
          * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
          * When a change is made, it logs telemetry about whether the change was rejected or accepted.
          */
-        const impliedAcceptanceListener = vscode.workspace.onDidChangeTextDocument(event => {
+        const rejectionListener = vscode.workspace.onDidChangeTextDocument(event => {
             if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
                 // Irrelevant change, ignore
                 return
@@ -570,10 +570,10 @@ export class FixupController
             }
 
             // User has made a change, we can now fire our stored state as to if the change was undone or not
-            logImpliedAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
+            logAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
 
             // We no longer need to track this change, so dispose of our listeners
-            impliedAcceptanceListener.dispose()
+            rejectionListener.dispose()
             commandUndoListener.dispose()
         })
     }
