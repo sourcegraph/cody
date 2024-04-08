@@ -153,7 +153,7 @@ export class FixupController
             intent: task.intent,
             mode: task.mode,
             source: task.source,
-            ...countCode(replacementText),
+            ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
@@ -415,12 +415,37 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
+    private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {
+        if (!task.replacement) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        if (task.mode === 'insert') {
+            return countCode(task.replacement)
+        }
+
+        if (!task.diff) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        const countedLines = new Set<number>()
+        let charCount = 0
+        for (const edit of task.diff.edits) {
+            charCount += edit.text.length
+            for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
+                countedLines.add(line)
+            }
+        }
+
+        return { lineCount: countedLines.size, charCount }
+    }
+
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
-            ...countCode(task.replacement || ''),
+            ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
