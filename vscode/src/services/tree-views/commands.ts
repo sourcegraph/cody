@@ -25,7 +25,7 @@ export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem
                     command =>
                         new CodyTreeItem(command.key, command.key, 'tools', {
                             command: 'cody.sidebar.commands',
-                            args: ['custom', 'cody.action.command'],
+                            args: [command.key, 'cody.action.command'],
                         })
                 )
             } catch (e) {

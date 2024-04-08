@@ -5,6 +5,7 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
+    type AuthStatus,
     type ChatMessage,
     type ContextItem,
     type Guardrails,
@@ -13,9 +14,8 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
-
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
+import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
 import {
@@ -600,6 +600,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 
 type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'

@@ -42,3 +42,9 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
         </div>
     )
 }
+
+if (!(window as any).acquireVsCodeApi) {
+    ;(window as any).acquireVsCodeApi = () => ({
+        postMessage: () => {},
+    })
+}
