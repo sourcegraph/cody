@@ -122,12 +122,26 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
     }
 
-    public async getChatPanel(): Promise<SimpleChatPanelProvider> {
+    public async getNewChatPanel(): Promise<SimpleChatPanelProvider> {
+        const provider = await this.createWebviewPanel()
+        return provider
+    }
+
+    /**
+     * Gets the currently active chat panel provider.
+     *
+     * If an active panel provider already exists and the application is not running inside an agent, it returns the existing provider.
+     * Otherwise, it creates a new webview panel and returns the new provider.
+     *
+     * @returns {Promise<SimpleChatPanelProvider>} The active chat panel provider.
+     */
+    public async getActiveChatPanel(): Promise<SimpleChatPanelProvider> {
         // Check if any existing panel is available
         // NOTE: Never reuse webviews when running inside the agent.
         if (this.activePanelProvider && !this.options.config.isRunningInsideAgent) {
             return this.activePanelProvider
         }
+
         const provider = await this.createWebviewPanel()
         return provider
     }
