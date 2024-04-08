@@ -11,8 +11,9 @@ import classNames from 'classnames'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
-    FILE_TOO_LARGE_LABEL,
+    FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
@@ -49,7 +50,9 @@ export const OptionsList: FunctionComponent<
                                 : NO_SYMBOL_MATCHES_LABEL +
                                   (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
                           : options.length > 0
-                              ? FILE_HELP_LABEL
+                              ? isValidLineRangeQuery(query)
+                                    ? FILE_RANGE_TOOLTIP_LABEL
+                                    : FILE_HELP_LABEL
                               : NO_FILE_MATCHES_LABEL}
                 </span>
                 <br />
@@ -87,16 +90,19 @@ const Item: FunctionComponent<{
     className?: string
 }> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
-    const icon =
-        item.type === 'file' ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.title ?? (item.type === 'file' ? displayPathBasename(item.uri) : item.symbolName)
+    const isFileType = item.type === 'file'
+    const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+    const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
+
     const range = getLineRangeInMention(query, item.range)
-    const dirname = displayPathDirname(item.uri)
-    const description =
-        item.type === 'file'
-            ? `${range ? `Lines ${range} · ` : ''}${dirname === '.' ? '' : dirname}`
-            : displayPath(item.uri) + `:${range}`
-    const warning = item.type === 'file' && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined
+    const dir = displayPathDirname(item.uri)
+    const description = isFileType
+        ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+        : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+
+    const isLargeFile = isFileType && item.isTooLarge
+    const warning =
+        isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:
@@ -134,6 +140,9 @@ const Item: FunctionComponent<{
         </li>
     )
 }
+
+const isValidLineRangeQuery = (query: string): boolean =>
+    query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
 
 /**
  * Gets the display line range from the query string.

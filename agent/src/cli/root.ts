@@ -1,5 +1,6 @@
 import { Command } from 'commander'
 
+import { cliCommand } from '../../../cli/src/command'
 import { evaluateAutocompleteCommand } from './evaluate-autocomplete/evaluate-autocomplete'
 import { jsonrpcCommand } from './jsonrpc'
 
@@ -12,3 +13,4 @@ export const rootCommand = new Command()
     )
     .addCommand(jsonrpcCommand)
     .addCommand(evaluateAutocompleteCommand)
+    .addCommand(cliCommand)

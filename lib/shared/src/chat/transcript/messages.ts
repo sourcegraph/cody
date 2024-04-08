@@ -2,7 +2,6 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
-import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
@@ -46,9 +45,16 @@ export interface ChatHistory {
     [chatID: string]: SerializedChatTranscript
 }
 
-export type ChatEventSource =
+/**
+ * We need to specific a default event source as some commands can be
+ * executed directly through VS Code where we cannot provide a custom source.
+ * For example: Commands executed through the command palette, right-click menu or through keyboard shortcuts.
+ */
+export const DEFAULT_EVENT_SOURCE = 'editor'
+
+export type EventSource =
+    | typeof DEFAULT_EVENT_SOURCE
     | 'chat'
-    | 'editor' // e.g. shortcut, right-click menu or VS Code command palette
     | 'menu' // Cody command palette
     | 'sidebar'
     | 'code-action:explain'
@@ -57,9 +63,9 @@ export type ChatEventSource =
     | 'code-action:fix'
     | 'code-action:generate'
     | 'custom-commands'
-    | 'test'
     | 'code-lens'
-    | DefaultCodyCommands
+    | 'hover'
+    | 'terminal'
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

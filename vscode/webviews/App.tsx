@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type Configuration,
+    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
@@ -13,7 +14,7 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
+import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
@@ -40,10 +41,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
-        isDotComUser: true,
-        isCodyProUser: false,
-    })
+    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
@@ -60,6 +58,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+
+    const [userContextFromSelection, setUserContextFromSelection] = useState<ContextItem[]>([])
+
     const onChooseRemoteSearchRepo = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
     }, [vscodeAPI])
@@ -112,6 +113,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
+                            user: message.authStatus,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
@@ -126,6 +128,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
+                        break
+                    case 'chat-input-context':
+                        setUserContextFromSelection(message.items)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
@@ -192,17 +197,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
-    const isNewInstall = useMemo(
-        () => userHistory && !userHistory.some(c => c.interactions.length > 0),
-        [userHistory]
-    )
+    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
+
+    // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
 
     return (
         <div className="outer-container">
-            {view === 'login' || !authStatus.isLoggedIn ? (
+            {view === 'login' || !authStatus.isLoggedIn || !userAccountInfo ? (
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
@@ -211,11 +215,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />
+                    {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
                     {errorMessages && (
                         <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
                     )}
-                    {view === 'chat' && (
+                    {view === 'chat' && userHistory && (
                         <EnhancedContextEventHandlers.Provider
                             value={{
                                 onChooseRemoteSearchRepo,
@@ -246,6 +250,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         chatIDHistory={chatIDHistory}
                                         isWebviewActive={isWebviewActive}
                                         isNewInstall={isNewInstall}
+                                        userContextFromSelection={userContextFromSelection}
                                     />
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>

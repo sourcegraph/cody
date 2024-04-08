@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import {
-    type ChatEventSource,
     type CodyCommand,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type EventSource,
 } from '@sourcegraph/cody-shared'
 
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
@@ -154,7 +154,7 @@ export class CommandRunner implements vscode.Disposable {
                     mode: this.command.mode as EditMode,
                     userContextFiles,
                 },
-                source: 'custom-commands' as ChatEventSource,
+                source: 'custom-commands' as EventSource,
             } satisfies ExecuteEditArguments),
         }
     }

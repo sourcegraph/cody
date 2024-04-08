@@ -26,7 +26,6 @@ export interface Configuration {
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
-    editorTitleCommandIcon: boolean
 
     /**
      * Autocomplete
