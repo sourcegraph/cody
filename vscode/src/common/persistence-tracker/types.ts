@@ -19,7 +19,7 @@ export interface PersistenceRemovedEventPayload<T = string> {
     /** An ID to uniquely identify an accepted insertion. */
     id: T
     /** Levenshtein distance between the current document state and the accepted completion */
-    difference: 100
+    difference: 1
     /** Attached metadata to the insertion */
     metadata?: PersistenceEventMetadata
 }

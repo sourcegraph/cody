@@ -228,7 +228,7 @@ describe('PersistenceTracker', () => {
         vi.advanceTimersToNextTimer()
         expect(onRemoveSpy).toHaveBeenCalledWith({
             id: '123',
-            difference: 100,
+            difference: 1,
         })
         expect(onPresentSpy).not.toHaveBeenCalled()
     })

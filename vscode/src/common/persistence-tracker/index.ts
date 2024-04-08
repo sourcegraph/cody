@@ -120,7 +120,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
             // Text was fully deleted
             this.logger.onRemoved({
                 id: trackedInsertion.id,
-                difference: 100,
+                difference: 1,
                 metadata: trackedInsertion.metadata,
             })
         } else {
