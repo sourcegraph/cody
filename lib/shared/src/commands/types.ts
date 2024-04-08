@@ -6,7 +6,6 @@ export enum DefaultChatCommands {
     Explain = 'explain', // Explain code
     Unit = 'unit', // Generate unit tests in Chat
     Smell = 'smell', // Generate code smell report in Chat
-    Terminal = 'terminal', // Explain terminal output
 }
 
 // Default Cody Commands that runs as an Inline Edit command

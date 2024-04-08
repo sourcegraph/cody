@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type ChatMessage,
     type ContextItem,
+    type ContextItemWithContent,
     type Message,
     getSimplePreamble,
     wrapInActiveSpan,
@@ -10,7 +11,6 @@ import {
 
 import { logDebug } from '../../log'
 
-import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 import { sortContextItems } from './agentContextSorting'

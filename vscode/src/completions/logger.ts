@@ -241,7 +241,7 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'persistence:removed',
+        'persistence:present',
         {
             version: 0,
             metadata,

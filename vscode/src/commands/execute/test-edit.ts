@@ -1,5 +1,5 @@
 import { type ContextItem, logError } from '@sourcegraph/cody-shared'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -9,8 +9,6 @@ import type { CodyCommandArgs } from '../types'
 
 import type { URI } from 'vscode-uri'
 import { isTestFileForOriginal } from '../utils/test-commands'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Command that generates a new test file for the selected code with unit tests added.
@@ -67,7 +65,7 @@ export async function executeTestEditCommand(
                     userContextFiles: contextFiles.slice(0, 2),
                     destinationFile,
                 },
-                source: DefaultEditCommands.Test,
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

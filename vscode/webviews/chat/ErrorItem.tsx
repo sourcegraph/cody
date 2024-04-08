@@ -13,7 +13,7 @@ import styles from './ErrorItem.module.css'
  */
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
 }> = ({ error, userInfo, postMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
@@ -46,7 +46,7 @@ export const RequestErrorItem: React.FunctionComponent<{
  */
 const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
-    userInfo: UserAccountInfo
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
 }> = ({ error, userInfo, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
