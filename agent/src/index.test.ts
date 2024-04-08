@@ -733,21 +733,27 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The selected TypeScript code from file \`src/animal.ts\` is defining an interface called \`Animal\`. An interface in TypeScript is a blueprint or a contract that defines the structure of an object. It specifies the properties and methods that an object implementing this interface should have.
+              "The code \`@src/animal.ts:1-6\` defines an interface called \`Animal\` in TypeScript. An interface is a way to describe the structure of an object, including its properties and methods. In this case, the \`Animal\` interface specifies that any object implementing it should have the following:
 
-              The \`Animal\` interface has three members:
+              1. A property called \`name\` of type \`string\`, which presumably represents the name of the animal.
+              2. A method called \`makeAnimalSound()\` that returns a \`string\`, which likely represents the sound that the animal makes.
+              3. A property called \`isMammal\` of type \`boolean\`, which indicates whether the animal is a mammal or not.
 
-              1. \`name\`: This is a property of type \`string\`, which means that any object implementing the \`Animal\` interface must have a \`name\` property of type string. This property is likely intended to hold the name of the animal.
+              The purpose of this code is to define a contract or a set of rules that any object representing an animal must follow. It does not take any direct input, but rather serves as a blueprint for creating objects that conform to the \`Animal\` interface.
 
-              2. \`makeAnimalSound()\`: This is a method that returns a \`string\`. Any object implementing the \`Animal\` interface must have a method named \`makeAnimalSound\` that doesn't take any input and returns a string. The returned string is likely intended to represent the sound made by the animal.
+              The output of this code is not a value, but rather a description or a shape that other parts of the code can use to create and work with animal objects. For example, another part of the code could create an object that implements the \`Animal\` interface, like this:
 
-              3. \`isMammal\`: This is a property of type \`boolean\`. Any object implementing the \`Animal\` interface must have a property named \`isMammal\` that is either \`true\` or \`false\`. This property is likely intended to indicate whether the animal is a mammal or not.
+              \`\`\`typescript
+              const dog: Animal = {
+                name: 'Buddy',
+                makeAnimalSound: () => 'Woof!',
+                isMammal: true
+              };
+              \`\`\`
 
-              The purpose of this code is to define a common structure for representing animals in an application. By defining an \`Animal\` interface, developers can ensure that any object representing an animal in their codebase adheres to this predefined structure, which includes having a \`name\`, a \`makeAnimalSound\` method, and an \`isMammal\` property.
+              The code achieves its purpose by using TypeScript's interface feature, which allows developers to define the structure of objects in a way that can be checked by the TypeScript compiler. This helps catch errors early and ensures that objects conform to the expected shape, making the code more maintainable and less prone to bugs.
 
-              The code itself doesn't take any input or produce any output directly. Instead, it serves as a blueprint or a contract that other parts of the application can use to create objects representing animals. These objects would then need to provide values for the \`name\` and \`isMammal\` properties, as well as implement the \`makeAnimalSound\` method according to the requirements defined in the interface.
-
-              Overall, the code aims to promote code consistency and maintainability by defining a standardized structure for representing animals in the application. It doesn't contain any complex logic or data transformations but serves as a foundational building block for working with animal-related objects in the codebase."
+              There is no complex logic flow or data transformation happening in this code snippet itself, as it is simply a structural definition. However, it plays an important role in ensuring that other parts of the code that work with animal objects follow the defined structure and behave consistently."
             `,
                 explainPollyError
             )
@@ -765,19 +771,21 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the provided code context, it appears that the test framework being used is Vitest, which is a test runner and assertion library for Vite and Vue.js projects. The \`vitest\` package is being imported and used in the \`src/example.test.ts\` file.
+                  "Based on the shared code context, it appears that the test framework being used is Vitest, a vite-native test runner. The code snippet from \`src/example.test.ts\` shows the usage of \`describe\`, \`it\`, and \`expect\` functions from Vitest.
 
-                  To generate a suite of unit tests for the \`Animal\` interface, I will import Vitest and use its testing utilities.
+                  No new imports needed - using existing libs.
 
-                  Here's a summary of the test coverage and limitations:
+                  The \`Animal\` interface defines the expected structure and behavior of an animal object. The test suite should cover the following aspects:
 
-                  - The tests will cover the expected behavior of the \`Animal\` interface, including checking that objects implementing this interface have the required properties and methods.
-                  - Edge cases such as handling empty or invalid inputs will be tested.
-                  - Since \`Animal\` is an interface, we cannot instantiate it directly. Instead, we'll create a mock implementation to test against.
-                  - The tests will not cover any actual implementation details of the \`makeAnimalSound\` method, as it is not provided in the shared code.
+                  1. Ensure that an object implementing the \`Animal\` interface has the required properties (\`name\` and \`isMammal\`) and methods (\`makeAnimalSound\`).
+                  2. Test that the \`makeAnimalSound\` method returns a non-empty string.
+                  3. Validate the \`isMammal\` property for different types of animals (mammals and non-mammals).
+
+                  Here's a test suite that covers the above cases:
 
                   \`\`\`typescript
                   import { describe, it, expect } from 'vitest'
+                  import { Animal } from './animal'
 
                   // Mock implementation of the Animal interface
                   class MockAnimal implements Animal {
@@ -790,41 +798,37 @@ describe('Agent', () => {
                     }
 
                     makeAnimalSound(): string {
-                      return 'Mock animal sound'
+                      return \`\${this.name} makes a sound\`
                     }
                   }
 
                   describe('Animal', () => {
-                    it('should have a name property', () => {
-                      const animal = new MockAnimal('Tiger', true)
-                      expect(animal).toHaveProperty('name', 'Tiger')
-                    })
-
-                    it('should have an isMammal property', () => {
-                      const animal = new MockAnimal('Tiger', true)
-                      expect(animal).toHaveProperty('isMammal', true)
-                    })
-
-                    it('should have a makeAnimalSound method', () => {
-                      const animal = new MockAnimal('Tiger', true)
+                    it('should have required properties and methods', () => {
+                      const animal = new MockAnimal('Dog', true)
+                      expect(animal).toHaveProperty('name')
+                      expect(animal).toHaveProperty('isMammal')
                       expect(animal).toHaveProperty('makeAnimalSound')
-                      expect(typeof animal.makeAnimalSound).toBe('function')
                     })
 
-                    it('should return a string from makeAnimalSound method', () => {
-                      const animal = new MockAnimal('Tiger', true)
+                    it('should return a non-empty string for makeAnimalSound', () => {
+                      const animal = new MockAnimal('Cat', true)
                       const sound = animal.makeAnimalSound()
-                      expect(typeof sound).toBe('string')
+                      expect(sound).not.toBeNull()
+                      expect(sound).not.toBeUndefined()
+                      expect(sound).not.toBeInstanceOf(String)
+                      expect(sound).not.toBe('')
                     })
 
-                    it('should handle empty name', () => {
-                      const animal = new MockAnimal('', false)
-                      expect(animal.name).toBe('')
+                    it('should correctly identify mammals and non-mammals', () => {
+                      const mammal = new MockAnimal('Elephant', true)
+                      const nonMammal = new MockAnimal('Parrot', false)
+                      expect(mammal.isMammal).toBe(true)
+                      expect(nonMammal.isMammal).toBe(false)
                     })
                   })
                   \`\`\`
 
-                  This suite of tests covers the basic requirements of the \`Animal\` interface, including checking for the presence of the required properties and methods, and ensuring that the \`makeAnimalSound\` method returns a string. Additionally, it tests an edge case where the \`name\` property is an empty string."
+                  This test suite covers the basic functionality and expectations of the \`Animal\` interface. However, it does not cover any edge cases or specific implementations of the \`makeAnimalSound\` method, as the implementation details are not provided in the shared code context."
                 `,
                     explainPollyError
                 )
@@ -1043,17 +1047,17 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the file paths you shared, the file names are:
+              "Based on the file paths you've shared, the files are:
 
-              1. trickyLogic.ts
-              2. TestLogger.ts
-              3. TestClass.ts
-              4. sum.ts
-              5. squirrel.ts
-              6. multiple-selections.ts
-              7. example.test.ts
-              8. animal.ts
-              9. .cody/ignore"
+              1. \`.cody/ignore\`
+              2. \`src/animal.ts\`
+              3. \`src/example.test.ts\`
+              4. \`src/multiple-selections.ts\`
+              5. \`src/squirrel.ts\`
+              6. \`src/sum.ts\`
+              7. \`src/TestClass.ts\`
+              8. \`src/TestLogger.ts\`
+              9. \`src/trickyLogic.ts\`"
             `,
                 explainPollyError
             )
@@ -1138,23 +1142,19 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
-            expect(reply).toMatchInlineSnapshot(
-                `
-              "You have shared codebase context from 10 different file paths:
+            expect(reply).toMatchInlineSnapshot(`
+              "You have shared codebase context from 9 different files:
 
-              1. \`src/trickyLogic.ts\`
-              2. \`src/TestLogger.ts\`
-              3. \`src/TestClass.ts\`
-              4. \`src/sum.ts\`
-              5. \`src/squirrel.ts\`
-              6. \`src/multiple-selections.ts\`
-              7. \`src/example.test.ts\`
-              8. \`src/animal.ts\` (with a code selection)
-
-              And you also provided the selected code from \`src/animal.ts\` separately."
-            `,
-                explainPollyError
-            )
+              1. \`src/animal.ts\`
+              2. \`src/example.test.ts\`
+              3. \`src/multiple-selections.ts\`
+              4. \`src/squirrel.ts\`
+              5. \`src/sum.ts\`
+              6. \`src/TestClass.ts\`
+              7. \`src/TestLogger.ts\`
+              8. \`src/trickyLogic.ts\`
+              9. (The current file which just has a cursor position)"
+            `)
         }, 30_000)
 
         it('commands/custom, edit command, insert mode', async () => {
