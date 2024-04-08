@@ -114,6 +114,11 @@ export interface QueryWrappers {
           ]
     getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
     getEnclosingFunction: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
+    getTestableNode: (
+        node: SyntaxNode,
+        start: Point,
+        end?: Point
+    ) => [] | readonly [{ readonly node: SyntaxNode }]
 }
 
 /**

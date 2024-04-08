@@ -21,14 +21,13 @@
 // ------------------------------------
 
   function testFunc() {
-//^ start range.function[1]
+//         ^^^^^^^^ symbol.function[1]
 //              █
       wrapper
   }
-//^ end range.function[1]
 
 // Nodes types:
-// range.function[1]: function_declaration
+// symbol.function[1]: identifier
 
 // ------------------------------------
 
@@ -57,28 +56,23 @@
 // ------------------------------------
 
   function arrowWrapper() {
+//^ start range.function[1]
       const arrow = (value: string) => {
-//                  ^ start range.function[1]
           console.log('hello')
 //            █
       }
-//    ^ end range.function[1]
-  }
-
-// Nodes types:
-// range.function[1]: arrow_function
-
-// ------------------------------------
-
-  const arrowFunc = (value: string) => {
-//                  ^ start range.function[1]
-      console.log('hello')
-//        █
   }
 //^ end range.function[1]
 
 // Nodes types:
-// range.function[1]: arrow_function
+// range.function[1]: function_declaration
+
+// ------------------------------------
+
+const arrowFunc = (value: string) => {
+    console.log('hello')
+    //  |
+}
 
 // ------------------------------------
 
