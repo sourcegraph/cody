@@ -481,8 +481,7 @@
       },
       {
         "command": "cody.chat.context.add",
-        "category": "Cody",
-        "group": "Cody",
+        "group": "Chat",
         "title": "Cody Chat: Add context",
         "icon": "$(new-file)",
         "when": "cody.activated && editorTextFocus && editorHasSelection"

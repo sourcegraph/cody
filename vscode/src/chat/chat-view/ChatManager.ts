@@ -136,6 +136,11 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private async sendSelectionToChat(): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+
         const provider = await this.chatPanelsManager.getActiveChatPanel()
         await provider?.handleGetUserEditorContext()
     }
