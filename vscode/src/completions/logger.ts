@@ -247,7 +247,7 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
             metadata,
             privateMetadata,
         },
-        { ...params, difference: 100 }
+        params
     )
 }
 function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
