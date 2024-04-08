@@ -142,7 +142,7 @@ export class ChatManager implements vscode.Disposable {
 
     private async sendSelectionToChat(): Promise<void> {
         const provider = await this.getChatProvider()
-        await provider.handleGetUserEditorContext()
+        await provider?.handleGetUserEditorContext()
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

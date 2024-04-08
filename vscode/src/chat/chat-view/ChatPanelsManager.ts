@@ -123,15 +123,13 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     public async getChatPanel(): Promise<SimpleChatPanelProvider> {
-        const provider = await this.createWebviewPanel()
-
-        if (this.options.config.isRunningInsideAgent) {
-            // Never reuse webviews when running inside the agent.
-            return provider
-        }
-
         // Check if any existing panel is available
-        return this.activePanelProvider || provider
+        // NOTE: Never reuse webviews when running inside the agent.
+        if (this.activePanelProvider && !this.options.config.isRunningInsideAgent) {
+            return this.activePanelProvider
+        }
+        const provider = await this.createWebviewPanel()
+        return provider
     }
 
     /**
@@ -180,6 +178,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
         if (panel) {
+            this.activePanelProvider = provider
             await provider.revive(panel)
         } else {
             await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
@@ -317,9 +316,11 @@ export class ChatPanelsManager implements vscode.Disposable {
             const provider = this.panelProviders.find(p => p.sessionID === chatID)
             if (provider?.sessionID === chatID) {
                 provider.webviewPanel?.reveal()
+                this.activePanelProvider = provider
                 return provider
             }
-            return await this.createWebviewPanel(chatID, chatQuestion)
+            this.activePanelProvider = await this.createWebviewPanel(chatID, chatQuestion)
+            return this.activePanelProvider
         } catch (error) {
             console.error(error, 'errored restoring panel')
             return undefined
