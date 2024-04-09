@@ -149,12 +149,10 @@ function getLanguageSpecificQueryWrappers(
         getDocumentableNode: (root, start, end) => {
             const captures = queries.documentableNodes.compiled.captures(
                 root,
-                // Capture the line above to check if it is comment
-                { row: Math.max(start.row - 1, 0), column: 0 },
+                { ...start, column: 0 },
                 end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
             )
 
-            let docstringFound = false
             const symbolCaptures = []
             const rangeCaptures = []
 
@@ -163,9 +161,6 @@ function getLanguageSpecificQueryWrappers(
                     rangeCaptures.push(capture)
                 } else if (capture.name.startsWith('symbol')) {
                     symbolCaptures.push(capture)
-                } else if (languageId !== 'python' && capture.name.startsWith('comment')) {
-                    // Docstring are "string" in Python but  named "comment" in other languages.
-                    docstringFound = true
                 }
             }
 
@@ -194,39 +189,32 @@ function getLanguageSpecificQueryWrappers(
                  *
                  * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
                  */
-                docstringFound = false
-                const { startPosition, endPosition } = range.node
-                const pyCaptures = queries.documentableNodes.compiled.captures(
-                    root,
-                    startPosition,
-                    endPosition
+                const insertionCaptures = queries.documentableNodes.compiled
+                    .captures(root, range.node.startPosition, range.node.endPosition)
+                    .filter(({ name }) => name.startsWith('insertion'))
+
+                insertionPoint = insertionCaptures.find(
+                    ({ node }) =>
+                        node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
                 )
-
-                for (const capture of pyCaptures) {
-                    const { name, node } = capture
-                    if (name.startsWith('insertion')) {
-                        if (
-                            node.startIndex >= range.node.startIndex &&
-                            node.endIndex <= range.node.endIndex
-                        ) {
-                            insertionPoint = capture
-                        }
-                    }
-
-                    // A valid docstring should be directly below the insertion point,
-                    // with 1/2 of the indentation for node that is not at the start of the line.
-                    if (
-                        insertionPoint &&
-                        !docstringFound &&
-                        name.startsWith('docstring') &&
-                        node.startPosition.row - 1 === insertionPoint.node.startPosition.row
-                    ) {
-                        docstringFound =
-                            range.node.startPosition.column === 0 ||
-                            node.startPosition.column / 2 === range.node.startPosition.column
-                    }
-                }
             }
+
+            /**
+             * Modify where we look for a docstring depending on the language and syntax.
+             * For Python functions and classes, we will have a provided `insertionPoint`, use the line below this.
+             * For all other cases, docstrings should be attached above the symbol range, use this.
+             */
+            const docStringLine =
+                languageId === 'python' && insertionPoint
+                    ? insertionPoint.node.startPosition.row + 1
+                    : start.row - 1
+            const docstringCaptures = queries.documentableNodes.compiled
+                .captures(
+                    root,
+                    { row: docStringLine, column: 0 },
+                    { row: docStringLine, column: Number.MAX_SAFE_INTEGER }
+                )
+                .filter(node => node.name.startsWith('comment'))
 
             /**
              * Heuristic to determine if we should show a prominent hint for the symbol.
@@ -235,7 +223,8 @@ function getLanguageSpecificQueryWrappers(
              * 3. Don't show hint if there is no docstring already present.
              */
             const showHint = Boolean(
-                (documentableRanges.length === 1 || symbol?.name.includes('function')) && !docstringFound
+                (documentableRanges.length === 1 || symbol?.name.includes('function')) &&
+                    docstringCaptures.length === 0
             )
 
             return [
