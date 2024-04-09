@@ -17,7 +17,7 @@ export function registerLocalCertificates() {
 
     // Installs windows root certs onto the global agent
     // This is a no op for non-windows environments
-    require('win-ca/fallback')
+    require('win-ca/fallback').inject('+')
 
     // Installs linux root certs onto the global agent
     // This is a no op for non-linux environments
@@ -57,7 +57,7 @@ async function loadLinuxCerts(): Promise<Array<string>> {
             content
                 .split(/(?=-----BEGIN CERTIFICATE-----)/g)
                 .filter(pem => !!pem.length)
-                .map(certs.add)
+                .map(pem => certs.add(pem))
         } catch (err: any) {
             // this is the error code for "no such file"
             if (err?.code !== 'ENOENT') {
