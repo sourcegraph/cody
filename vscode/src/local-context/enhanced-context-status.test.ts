@@ -25,6 +25,7 @@ class TestProvider implements status.ContextStatusProvider {
                         {
                             kind: 'embeddings',
                             state: 'unconsented',
+                            useSourcegraphEmbeddings:false
                         },
                     ],
                 },
@@ -50,6 +51,7 @@ describe('ContextStatusAggregator', () => {
                     {
                         kind: 'embeddings',
                         state: 'unconsented',
+                        useSourcegraphEmbeddings:false,
                     },
                 ],
             },
@@ -93,6 +95,7 @@ describe('ContextStatusAggregator', () => {
                     {
                         kind: 'embeddings',
                         state: 'unconsented',
+                        useSourcegraphEmbeddings:false,
                     },
                     {
                         kind: 'search',

@@ -31,6 +31,7 @@ export interface LocalEmbeddingsProvider {
     kind: 'embeddings'
     state: 'indeterminate' | 'no-match' | 'unconsented' | 'indexing' | 'ready'
     errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
+    useSourcegraphEmbeddings: boolean
 }
 
 export type SearchProvider = LocalSearchProvider | RemoteSearchProvider

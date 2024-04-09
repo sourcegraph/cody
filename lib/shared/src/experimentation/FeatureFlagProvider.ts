@@ -109,6 +109,9 @@ export class FeatureFlagProvider {
             if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
             }
+            if(flagName===FeatureFlag.CodyUseSourcegraphEmbeddings){
+                return true;
+            }
 
             const cachedValue = this.getFromCache(flagName, endpoint)
             if (cachedValue !== undefined) {

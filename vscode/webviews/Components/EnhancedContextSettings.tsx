@@ -241,7 +241,7 @@ const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbed
     return (
         <div>
             <p className={styles.providerExplanatoryText}>
-                The repository&apos;s contents will be uploaded to OpenAI&apos;s Embeddings API and then
+                The repository&apos;s contents will be uploaded to {provider.useSourcegraphEmbeddings ? "Sourcegraph" : "OpenAI"}&apos;s Embeddings API and then
                 stored locally.
                 {/* To exclude files, set up a <a href="about:blank#TODO">Cody ignore file.</a> */}
             </p>

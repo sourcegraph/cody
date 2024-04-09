@@ -153,7 +153,7 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                         {
                             displayName: '~/projects/foo',
                             providers: [
-                                { kind: 'embeddings', state: 'unconsented' },
+                                { kind: 'embeddings', state: 'unconsented', useSourcegraphEmbeddings:false },
                                 { kind: 'search', type: 'local', state: 'indexing' },
                             ],
                         },

@@ -7,9 +7,11 @@ import {
     type ContextGroup,
     type ContextStatusProvider,
     type EmbeddingsSearchResult,
+    FeatureFlag,
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
+    featureFlagProvider,
     isDotCom,
     isFileURI,
     uriBasename,
@@ -21,11 +23,12 @@ import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
-export function createLocalEmbeddingsController(
+export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
     config: LocalEmbeddingsConfig
-): LocalEmbeddingsController {
-    return new LocalEmbeddingsController(context, config)
+): Promise<LocalEmbeddingsController> {
+    const useSourcegraphEmbeddings = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings)
+    return new LocalEmbeddingsController(context, config, useSourcegraphEmbeddings)
 }
 
 export type LocalEmbeddingsConfig = Pick<
@@ -98,7 +101,8 @@ export class LocalEmbeddingsController
 
     constructor(
         private readonly context: vscode.ExtensionContext,
-        config: LocalEmbeddingsConfig
+        config: LocalEmbeddingsConfig,
+        private readonly useSourcegraphEmbeddings: boolean,
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -112,8 +116,8 @@ export class LocalEmbeddingsController
         this.accessToken = config.accessToken || undefined
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
-        this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
-        this.dimension = config.testingLocalEmbeddingsDimension || 1536
+        this.model = config.testingLocalEmbeddingsModel || useSourcegraphEmbeddings? 'sourcegraph/st-multi-qa-mpnet-base-dot-v1': 'openai/text-embedding-ada-002'
+        this.dimension = config.testingLocalEmbeddingsDimension || useSourcegraphEmbeddings? 768:1536
         this.endpoint =
             config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
         this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
@@ -290,6 +294,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'indeterminate',
+                            useSourcegraphEmbeddings:this.useSourcegraphEmbeddings,
                         },
                     ],
                 },
@@ -300,7 +305,7 @@ export class LocalEmbeddingsController
                 {
                     dir,
                     displayName: uriBasename(dir),
-                    providers: [{ kind: 'embeddings', state: 'indexing' }],
+                    providers: [{ kind: 'embeddings', state: 'indexing',useSourcegraphEmbeddings:this.useSourcegraphEmbeddings }],
                 },
             ]
         }
@@ -313,6 +318,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'ready',
+                            useSourcegraphEmbeddings:this.useSourcegraphEmbeddings
                         },
                     ],
                 },
@@ -340,6 +346,7 @@ export class LocalEmbeddingsController
                     {
                         kind: 'embeddings',
                         ...stateAndErrors,
+                        useSourcegraphEmbeddings: this.useSourcegraphEmbeddings,
                     },
                 ],
             },
