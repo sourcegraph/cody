@@ -7,7 +7,7 @@ import {
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import type { ContextItemBudgetType } from '@sourcegraph/cody-shared/src/token/constants'
+import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token/constants'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
@@ -35,14 +35,11 @@ export class PromptBuilder {
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        for (const message of messages) {
-            const isAdded = this.tokenCounter.updateChatUsage([message])
-            if (!isAdded) {
-                return false
-            }
+        const isAdded = this.tokenCounter.updateChatUsage(messages)
+        if (isAdded) {
+            this.prefixMessages.push(...messages)
         }
-        this.prefixMessages.push(...messages)
-        return true
+        return isAdded
     }
 
     /**
@@ -75,7 +72,7 @@ export class PromptBuilder {
     }
 
     public tryAddContext(
-        type: ContextItemBudgetType,
+        type: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
     ): PromptBuilderContextResult {
         const result = {

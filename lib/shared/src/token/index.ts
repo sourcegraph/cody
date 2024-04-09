@@ -1,77 +1,108 @@
 import { getEncoding } from 'js-tiktoken'
 import type { Message } from '..'
-import {
-    CHAT_TOKEN_BUDGET,
-    type ContextItemBudgetType,
-    ENHANCED_CONTEXT_ALLOCATION,
-    USER_CONTEXT_TOKEN_BUDGET,
-} from './constants'
+import { CHAT_TOKEN_BUDGET, type ContextTokenUsageType, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 
+interface MessageTokenUsage {
+    chat: number
+}
+
+interface ContextTokenUsage {
+    user: number
+    enhanced: number
+}
+
+/**
+ * A class to manage the token usage during prompt building.
+ */
 export class TokenCounter {
     /**
      * The maximum number of tokens that can be used by Chat Messages.
      */
-    private maxTokens: number
+    private maxChatTokens: number
     /**
-     * The maximum number of tokens that can be used by each context type.
+     * The maximum number of tokens that can be used by the context.
      */
-    private maxContextTokens: { user: number; enhanced: number }
+    private maxContextTokens: ContextTokenUsage
     /**
-     * The number of tokens used by each token limit type.
+     * The number of tokens used by messages and context.
      */
-    private usedTokens: { messages: number; context: { user: number; enhanced: number } }
+    private usedTokens: MessageTokenUsage & ContextTokenUsage
 
-    constructor(modelTokenLimit: number) {
-        // If the model token limit is less than the default chat token budget,
+    constructor(totalTokenLimit: number) {
+        // If the token limit for the chat model is less than the default chat token budget,
         // set the chat token budget based on the model token limit.
-        const chatTokenBudget = Math.min(modelTokenLimit, CHAT_TOKEN_BUDGET)
-        this.maxTokens = chatTokenBudget
-        this.maxContextTokens = {
-            user: USER_CONTEXT_TOKEN_BUDGET,
-            enhanced: Math.floor(chatTokenBudget * ENHANCED_CONTEXT_ALLOCATION),
+        const messageTokenBudget = Math.min(totalTokenLimit, CHAT_TOKEN_BUDGET)
+        this.maxChatTokens = messageTokenBudget
+
+        const contextTokenBudget = totalTokenLimit - messageTokenBudget
+        if (contextTokenBudget < USER_CONTEXT_TOKEN_BUDGET) {
+            console.warn('Total token limit is too low to accommodate the user context token budget.')
         }
+
+        // Adjusted the calculation of maxContextTokens to ensure that user and enhanced budgets are
+        // within the available contextTokenBudget.
+        this.maxContextTokens = {
+            user: Math.min(contextTokenBudget, USER_CONTEXT_TOKEN_BUDGET),
+            enhanced: Math.max(0, contextTokenBudget - USER_CONTEXT_TOKEN_BUDGET),
+        }
+
         this.usedTokens = {
-            messages: 0,
-            context: {
-                user: 0,
-                enhanced: 0,
-            },
+            chat: 0,
+            user: 0,
+            enhanced: 0,
         }
     }
 
     /**
      * Gets the current remaining token usage for the TokenCounter.
      */
-    public get remainingTokens(): { messages: number; context: { user: number; enhanced: number } } {
+    public get remainingTokens(): { chat: number; context: { user: number; enhanced: number } } {
         return {
-            messages: this.maxTokens - this.usedTokens.messages,
+            chat: this.maxChatTokens - this.usedTokens.chat,
             context: {
-                user: this.maxContextTokens.user - this.usedTokens.context.user,
-                enhanced: this.maxContextTokens.enhanced - this.usedTokens.context.enhanced,
+                user: this.maxContextTokens.user - this.usedTokens.user,
+                enhanced: this.maxContextTokens.enhanced - this.usedTokens.enhanced,
             },
         }
     }
 
+    /**
+     * Updates the chat token usage by calculating the token count for the provided messages and adding it to the used token count.
+     * Returns a boolean indicating whether the updated token usage is within the maximum chat token limit.
+     *
+     * @param messages - The messages to calculate the token count for.
+     * @returns A boolean indicating whether the updated token usage is within the maximum chat token limit.
+     */
     public updateChatUsage(messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.maxTokens > this.usedTokens.messages + count
+        const isWithinLimit = this.maxChatTokens > this.usedTokens.chat + count
         if (isWithinLimit) {
-            this.usedTokens.messages += count
+            this.usedTokens.chat += count
         }
         return isWithinLimit
     }
 
-    public updateContextUsage(type: ContextItemBudgetType, messages: Message[]): boolean {
+    /**
+     * Updates the usage of context tokens for the specified context token usage type.
+     *
+     * @param type - The context token usage type (e.g. 'user', 'enhanced').
+     * @param messages - The messages to calculate the token count for.
+     * @returns `true` if the token usage is within the limit, `false` otherwise.
+     */
+    public updateContextUsage(type: ContextTokenUsageType, messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
         const maxContextTokens = this.maxContextTokens[type]
-        const usedContextTokens = this.usedTokens.context[type]
+        const usedContextTokens = this.usedTokens[type]
         const isWithinLimit = maxContextTokens > usedContextTokens + count
         if (isWithinLimit) {
-            this.usedTokens.context[type] += count
+            this.usedTokens[type] += count
         }
         return isWithinLimit
     }
 
+    /**
+     * The default tokenizer is cl100k_base.
+     */
     private static tokenize = getEncoding('cl100k_base')
 
     /**
@@ -81,10 +112,6 @@ export class TokenCounter {
      */
     public static encode(text: string): number[] {
         return TokenCounter.tokenize.encode(text.normalize('NFKC'), 'all')
-    }
-
-    public static decode(encoded: number[]): string {
-        return TokenCounter.tokenize.decode(encoded)
     }
 
     /**

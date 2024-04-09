@@ -17,4 +17,4 @@ export const ENHANCED_CONTEXT_ALLOCATION = 0.6
  */
 export const CHARACTERS_PER_TOKEN = 3.5
 
-export type ContextItemBudgetType = 'user' | 'enhanced'
+export type ContextTokenUsageType = 'user' | 'enhanced'
