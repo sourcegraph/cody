@@ -1,11 +1,14 @@
 import {
     type ContextItem,
     ContextItemSource,
+    TokenCounter,
+    USER_CONTEXT_TOKEN_BUDGET,
     USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { tokensToBytes } from '@sourcegraph/cody-shared/src/token/utils'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
 import { getEditor } from '../../editor/active-editor'
@@ -59,6 +62,8 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 const decoded = new TextDecoder('utf-8').decode(bytes)
                 const truncatedContent = truncateText(decoded, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES)
                 const range = new vscode.Range(0, 0, truncatedContent.split('\n').length - 1 || 0, 0)
+                const tokenCount = TokenCounter.countTokens(truncatedContent)
+                const size = tokensToBytes(tokenCount)
 
                 contextFiles.push({
                     type: 'file',
@@ -66,7 +71,8 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                     content: truncatedContent,
                     source: ContextItemSource.Editor,
                     range,
-                    isTooLarge: decoded.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+                    size,
+                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < tokenCount,
                 })
 
                 // Limit the number of files to 10

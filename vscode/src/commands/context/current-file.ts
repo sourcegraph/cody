@@ -1,11 +1,14 @@
 import {
     type ContextItem,
     ContextItemSource,
+    TokenCounter,
+    USER_CONTEXT_TOKEN_BUDGET,
     USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { tokensToBytes } from '@sourcegraph/cody-shared/src/token/utils'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 
@@ -26,6 +29,9 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
             )
 
             const content = document.getText(selection)
+            const truncatedContent = truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES)
+            const tokenCount = TokenCounter.countTokens(truncatedContent)
+            const size = tokensToBytes(tokenCount)
 
             if (!content.trim()) {
                 throw new Error('No content')
@@ -35,10 +41,11 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES),
+                    content: truncatedContent,
                     source: ContextItemSource.Editor,
                     range: selection,
-                    isTooLarge: content.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+                    size,
+                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < tokenCount,
                 } satisfies ContextItem,
             ]
         } catch (error) {

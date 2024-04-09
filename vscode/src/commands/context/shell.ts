@@ -10,10 +10,13 @@ import path from 'node:path/posix'
 import {
     type ContextItem,
     ContextItemSource,
+    TokenCounter,
+    USER_CONTEXT_TOKEN_BUDGET,
     USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { tokensToBytes } from '@sourcegraph/cody-shared/src/token/utils'
 
 const _exec = promisify(exec)
 
@@ -45,14 +48,18 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             }
 
             const context = outputWrapper.replace('{command}', command).replace('{output}', outputString)
+            const truncatedContent = truncateText(context, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES)
+            const tokenCount = TokenCounter.countTokens(truncatedContent)
+            const size = tokensToBytes(tokenCount)
 
             const file = {
                 type: 'file',
-                content: truncateText(context, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES),
+                content: truncatedContent,
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
                 source: ContextItemSource.Terminal,
-                isTooLarge: context.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+                size,
+                isTooLarge: USER_CONTEXT_TOKEN_BUDGET < tokenCount,
             } satisfies ContextItem
 
             return [file]

@@ -2,11 +2,13 @@ import {
     type ContextItem,
     FeatureFlag,
     type MentionQuery,
+    type RangeData,
     featureFlagProvider,
     getURLContextItems,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getContextFileFromUri } from '../../commands/context/file-path'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -19,7 +21,8 @@ export async function getChatContextItemsForMention(
     telemetryRecorder?: {
         empty: () => void
         withType: (type: MentionQuery['type']) => void
-    }
+    },
+    range?: RangeData
 ): Promise<ContextItem[]> {
     const mentionQuery = typeof query === 'string' ? parseMentionQuery(query) : query
 
@@ -39,8 +42,20 @@ export async function getChatContextItemsForMention(
         case 'symbol':
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
-        case 'file':
-            return getFileContextFiles(mentionQuery.text, MAX_RESULTS)
+        case 'file': {
+            const files = await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
+
+            // If a range is provided, that means user is trying to mention a specific line range.
+            // We will get the content of the file for that range to display file size warning if needed.
+            if (range && files.length) {
+                return getContextFileFromUri(
+                    files[0].uri,
+                    new vscode.Range(range.start.line, 0, range.end.line, 0)
+                )
+            }
+
+            return files
+        }
         case 'url':
             return (await isURLContextFeatureFlagEnabled())
                 ? getURLContextItems(

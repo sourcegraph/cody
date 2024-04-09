@@ -66,7 +66,7 @@ describe('PromptBuilder', () => {
         })
 
         it('stops adding message-pairs when limit has been reached', () => {
-            const builder = new PromptBuilder(new TokenCounter(30))
+            const builder = new PromptBuilder(new TokenCounter(20))
             const longTranscript: ChatMessage[] = [
                 { speaker: 'human', text: 'Hi assistant!' },
                 { speaker: 'assistant', text: 'Hello there!' },
@@ -75,8 +75,7 @@ describe('PromptBuilder', () => {
                     speaker: 'assistant',
                     text: 'This is a very long message that should exceed the character limit',
                 },
-                // Only this message should be added
-                { speaker: 'human', text: 'This should be added.' },
+                { speaker: 'human', text: 'Only this message should be added as messages.' },
             ]
             const numberOfMessagesIgnored = builder.tryAddMessages(longTranscript.reverse())
             expect(numberOfMessagesIgnored).toBe(4)

@@ -110,27 +110,26 @@ export class PromptBuilder {
                 continue
             }
 
-            this.seenContext.add(id)
-
             const contextMessage = isContextItem(item) ? renderContextItem(item) : item
             const isAdded = contextMessage
                 ? this.tokenCounter.updateUserContextUsage([contextMessage])
                 : false
+
             userContextItem.isTooLarge = !isAdded
 
             // Skip context items that would exceed the token budget
-            if (userContextItem.isTooLarge) {
+            if (!isAdded) {
+                userContextItem.content = undefined
                 result.ignored.push(userContextItem)
                 result.limitReached = true
                 continue
             }
 
+            this.seenContext.add(id)
             if (contextMessage) {
                 this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
                 this.reverseMessages.push(contextMessage)
             }
-
-            this.seenContext.add(id)
             result.used.push(userContextItem)
         }
 

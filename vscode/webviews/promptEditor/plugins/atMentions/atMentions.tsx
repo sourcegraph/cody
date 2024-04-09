@@ -13,6 +13,7 @@ import styles from './atMentions.module.css'
 
 import {
     type ContextItem,
+    ContextItemSource,
     type RangeData,
     USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     displayPath,
@@ -93,18 +94,23 @@ export default function MentionsPlugin(): JSX.Element | null {
     })
 
     const results = useChatContextItems(query)
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
     const options = useMemo(() => {
         return (
             results
                 ?.map(r => {
-                    if (r.size && r.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES - tokenBytesAdded) {
-                        r.isTooLarge = true
+                    if (r.size) {
+                        r.isTooLarge = r.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES - tokenBytesAdded
                     }
+                    // All @-mentions should have a source of `User`.
+                    r.source = ContextItemSource.User
                     return new MentionTypeaheadOption(r)
                 })
                 .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
         )
-    }, [results, tokenBytesAdded])
+    }, [results])
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
         update()
