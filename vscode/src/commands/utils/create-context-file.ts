@@ -1,8 +1,8 @@
 import {
     type ContextItem,
     ContextItemSource,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
-    truncateText,
+    TokenCounter,
+    USER_CONTEXT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
@@ -10,17 +10,17 @@ import type { URI } from 'vscode-uri'
 
 export async function createContextFile(file: URI, content: string): Promise<ContextItem | undefined> {
     try {
-        const truncatedContent = truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES)
-        // From line 0 to the end of truncatedContent
-        const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
+        const range = new vscode.Range(0, 0, content.split('\n').length, 0)
+        const size = TokenCounter.countTokens(content)
 
         return {
             type: 'file',
             uri: file,
-            content: truncatedContent,
+            content,
             source: ContextItemSource.Editor,
             range,
-            isTooLarge: content.length > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+            size,
+            isTooLarge: size > USER_CONTEXT_TOKEN_BUDGET,
         } satisfies ContextItem
     } catch (error) {
         console.error(error)
