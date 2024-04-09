@@ -17,6 +17,7 @@ export enum RepoFetcherState {
 // - Fetches repositories from a Sourcegraph instance.
 // - Fetching can be paused and restarted.
 // - Notifies a listener when the set of repositories has changed.
+// - A configuration change will reset the repository list and pause fetching.
 export class RepoFetcher implements vscode.Disposable {
     private state_: RepoFetcherState = RepoFetcherState.Paused
     private readonly stateChangedEmitter = new vscode.EventEmitter<RepoFetcherState>()
@@ -46,6 +47,7 @@ export class RepoFetcher implements vscode.Disposable {
         this.after = undefined
         this.state = RepoFetcherState.Paused
         this.configurationEpoch++
+        this.repoListChangedEmitter.fire(this.repos)
     }
 
     public pause(): void {

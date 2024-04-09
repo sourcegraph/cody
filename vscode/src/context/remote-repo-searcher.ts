@@ -6,6 +6,8 @@ export interface RemoteRepoListResult {
     repos: Repo[]
     startIndex: number
     count: number
+    state: RepoFetcherState
+    lastError: Error | undefined
 }
 
 /**
@@ -95,19 +97,7 @@ export class RemoteRepoSearcher implements vscode.Disposable {
      * filtered list.
      */
     public list(query: string | undefined, first: number, after?: string): RemoteRepoListResult {
-        // If we haven't finished fetching repos, then keep fetching.
-        if (this.fetcher.state !== RepoFetcherState.Complete) {
-            // TODO: There's a dependency between RemoteRepoPicker, which
-            // starts and pauses the repo fetcher, and this RemoteRepoSearcher
-            // which also starts the fetcher. Currently RemoteRepoSearcher is
-            // only used by Agent and RemoteRepoPicker is only used by VSCode.
-            // When RemoteRepoSearcher and RemoteRepoPicker are used at the same
-            // time, clarify this dependency. Simplest thing is to remove
-            // 'pause' and let the fetcher fetch and cache all the repos. Need
-            // to audit the change callbacks to make sure they can be called
-            // when the picker/searcher is not in use.
-            this.fetcher.resume()
-        }
+        this.ensureCompleteOrFetching()
         // If we haven't cached this result, execute the query.
         if (query !== this.cachedQuery) {
             this.cachedQuery = query
@@ -123,6 +113,8 @@ export class RemoteRepoSearcher implements vscode.Disposable {
                     repos: [],
                     startIndex: -1,
                     count: this.cachedResult.length,
+                    state: this.fetcher.state,
+                    lastError: this.fetcher.lastError,
                 }
             }
             start = afterIndex + 1
@@ -134,6 +126,8 @@ export class RemoteRepoSearcher implements vscode.Disposable {
             repos: this.cachedResult.slice(start, start + first),
             startIndex: start,
             count: this.cachedResult.length,
+            state: this.fetcher.state,
+            lastError: this.fetcher.lastError,
         }
     }
 
@@ -167,5 +161,98 @@ export class RemoteRepoSearcher implements vscode.Disposable {
         // Evident that fuzzyRepoTargetMap is initialized above.
         // fuzzyRepoTargetMap contains an entry for every prepared target.
         this.cachedResult = result.map(r => this.fuzzyTargetRepoMap?.get(r.target)!)
+    }
+
+    /**
+     * Gets whether `repoName` is a remote repository. This tracks the loading
+     * state and will wait for loading to finish before resolving, if necessary.
+     * If the configuration changes or fetching is paused while waiting,
+     * rejects.
+     *
+     * @param repoName the repository to search for.
+     * @returns A Promise which resolves `true` (`false`) if the remote
+     * repository does (doesn't) exist. Otherwise, rejects. Rejections are
+     * common: Network errors, configuration changes, etc.
+     */
+    public async has(repoName: string): Promise<boolean> {
+        this.ensureCompleteOrFetching()
+        let startIndex = 0
+        const searchStep = (): boolean => {
+            // TODO: If performance is critical, add a binary search here.
+            // Search the next available chunk of the repository list.
+            for (; startIndex < this.fetcher.repositories.length; startIndex++) {
+                if (this.fetcher.repositories[startIndex].name === repoName) {
+                    return true
+                }
+            }
+            // TODO: Could terminate this search early by using the sort order
+            // of the repo fetcher; searchStep would need to return tri-state
+            // true/false/continue.
+            return false
+        }
+        if (searchStep()) {
+            return true
+        }
+        if (this.fetcher.state === RepoFetcherState.Complete) {
+            return false
+        }
+        return new Promise((rawResolve, rawReject) => {
+            const disposables: vscode.Disposable[] = []
+            const resolve = (result: boolean) => {
+                vscode.Disposable.from(...disposables).dispose()
+                rawResolve(result)
+            }
+            const reject = (error: Error) => {
+                vscode.Disposable.from(...disposables).dispose()
+                rawReject(error)
+            }
+            disposables.push(
+                this.onRepoListChanged(() => {
+                    if (searchStep()) {
+                        resolve(true)
+                    }
+                }),
+                this.onFetchStateChanged(state => {
+                    switch (state.state) {
+                        case RepoFetcherState.Complete:
+                            resolve(searchStep())
+                            break
+                        case RepoFetcherState.Errored:
+                            if (searchStep()) {
+                                resolve(true)
+                                return
+                            }
+                            reject(
+                                new Error(`repo fetcher errored while waiting for "has" (${repoName})`, {
+                                    cause: state.error,
+                                })
+                            )
+                            break
+                        case RepoFetcherState.Paused:
+                            reject(
+                                new Error(`repo fetcher paused while waiting for "has" (${repoName})`)
+                            )
+                            break
+                    }
+                })
+            )
+        })
+    }
+
+    // Ensures that if the fetcher hasn't finished retrieving repos, that it
+    // will resume.
+    private ensureCompleteOrFetching(): void {
+        if (this.fetcher.state !== RepoFetcherState.Complete) {
+            // TODO: There's a dependency between RemoteRepoPicker, which
+            // starts and pauses the repo fetcher, and this RemoteRepoSearcher
+            // which also starts the fetcher. Currently RemoteRepoSearcher is
+            // only used by Agent and RemoteRepoPicker is only used by VSCode.
+            // When RemoteRepoSearcher and RemoteRepoPicker are used at the same
+            // time, clarify this dependency. Simplest thing is to remove
+            // 'pause' and let the fetcher fetch and cache all the repos. Need
+            // to audit the change callbacks to make sure they can be called
+            // when the picker/searcher is not in use.
+            this.fetcher.resume()
+        }
     }
 }

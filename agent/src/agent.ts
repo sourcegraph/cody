@@ -962,10 +962,29 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('remoteRepo/has', async ({ repoName }, cancelToken) => {
+            return {
+                result: await this.extension.enterpriseContextFactory.repoSearcher.has(repoName),
+            }
+        })
+
         this.registerAuthenticatedRequest(
             'remoteRepo/list',
             async ({ query, first, afterId }, cancelToken) => {
-                return this.extension.enterpriseContextFactory.repoSearcher.list(query, first, afterId)
+                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                    query,
+                    first,
+                    afterId
+                )
+                return {
+                    repos: result.repos,
+                    startIndex: result.startIndex,
+                    count: result.count,
+                    state: {
+                        state: result.state,
+                        error: errorToCodyError(result.lastError),
+                    },
+                }
             }
         )
     }

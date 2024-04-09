@@ -177,6 +177,9 @@ export type ClientRequests = {
         },
     ]
 
+    // Gets whether the specific repo name is known on the remote.
+    'remoteRepo/has': [{ repoName: string }, { result: boolean }]
+
     // Gets paginated list of repositories matching a fuzzy search query (or ''
     // for all repositories.) Remote repositories are fetched concurrently, so
     // subscribe to 'remoteRepo/didChange' to invalidate results.
@@ -207,13 +210,9 @@ export type ClientRequests = {
                 name: string // eg github.com/sourcegraph/cody
                 id: string // for use in afterId, Sourcegraph remotes
             }[]
+            // The state of the underlying repo fetching.
+            state: RemoteRepoFetchState
         },
-    ]
-    // Gets the state of the remote repo list.
-    'remoteRepo/state': [
-        // biome-ignore lint/complexity/noBannedTypes: May want to add parameters.
-        {},
-        RemoteRepoFetchState,
     ]
 }
 
