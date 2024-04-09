@@ -1,0 +1,56 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex: 1 0;
+    color: var(--vscode-editor-foreground);
+}
+
+.message {
+    max-width: 40ch;
+    margin: 0;
+}
+
+ul.causes {
+    margin: 0;
+    padding: 0 0 0 1rem;
+
+    & > li {
+        margin-bottom: 0.25rem;
+    }
+}
+
+.message-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    max-width: 400px;
+    gap: 2rem;
+}
+
+.icon {
+    margin: 0 auto;
+
+    & > :global(i.codicon) { /* we need this specificity because codicons hardcodes the fontsize */
+        display: block;
+        font-size: 32px;
+    }
+}
+
+.actions {
+    display: flex;
+    flex-flow: row-reverse wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+}
+
+.action-button {
+    flex: 1 1 auto;
+    min-width: max-content;
+}

@@ -26,6 +26,7 @@ import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import { ConnectionIssuesPage } from './Troubleshooting'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
@@ -195,6 +196,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
+    }
+
+    if (authStatus?.showNetworkError) {
+        return (
+            <ConnectionIssuesPage
+                configuredEndpoint={authStatus.endpoint}
+                telemetryService={telemetryService}
+                vscodeAPI={vscodeAPI}
+            />
+        )
     }
 
     return (

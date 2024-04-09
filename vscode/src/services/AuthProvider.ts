@@ -56,6 +56,10 @@ export class AuthProvider {
     public async init(): Promise<void> {
         let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        logDebug(
+            'AuthProvider:init',
+            token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage'
+        )
         if (lastEndpoint === LOCAL_APP_URL.toString()) {
             // If the user last signed in to app, which talks to dotcom, try
             // signing them in to dotcom.

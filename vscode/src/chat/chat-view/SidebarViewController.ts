@@ -18,6 +18,7 @@ import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
+import { enableDebugMode } from '../../services/utils/export-logs'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -150,6 +151,9 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 break
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
+                break
+            case 'debug/enable':
+                enableDebugMode()
                 break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')

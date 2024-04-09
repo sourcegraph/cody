@@ -90,6 +90,9 @@ export type WebviewMessage =
           command: 'attribution-search'
           snippet: string
       }
+    | {
+          command: 'debug/enable'
+      }
 
 /**
  * A message sent from the extension host to the webview.
