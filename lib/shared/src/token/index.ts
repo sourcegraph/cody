@@ -3,36 +3,35 @@ import { type Message, tokensToChars } from '..'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 
 export class TokenCounter {
-    private max = {
-        messages: CHAT_TOKEN_BUDGET,
-        context: {
-            user: USER_CONTEXT_TOKEN_BUDGET,
-            enhanced: Math.floor(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION),
-        },
-    }
-
-    private usage = {
-        messages: 0,
-        context: {
-            user: 0,
-            enhanced: 0,
-        },
-    }
-
     /**
-     * Initializes the TokenCounter with a maximum token limit for the model.
-     * If the provided `modelTokenLimit` is less than the global `CHAT_TOKEN_BUDGET`,
-     * the maximum number of tokens for messages is set to the provided limit.
-     * The maximum number of tokens for enhanced context is calculated as a fraction
-     * of the maximum message tokens, based on the `ENHANCED_CONTEXT_ALLOCATION` constant.
-     *
-     * @param modelTokenLimit - The maximum number of tokens the model can handle.
+     * The maximum number of tokens that can be used by Chat Messages.
      */
+    private maxTokens: number
+    /**
+     * The maximum number of tokens that can be used by each context type.
+     */
+    private maxContextTokens: { user: number; enhanced: number }
+    /**
+     * The number of tokens used by each token limit type.
+     */
+    private usedTokens: { messages: number; context: { user: number; enhanced: number } }
+
     constructor(modelTokenLimit: number) {
-        if (modelTokenLimit < CHAT_TOKEN_BUDGET) {
-            this.max.messages = modelTokenLimit
+        // If the model token limit is less than the default chat token budget,
+        // set the chat token budget based on the model token limit.
+        const chatTokenBudget = Math.min(modelTokenLimit, CHAT_TOKEN_BUDGET)
+        this.maxTokens = chatTokenBudget
+        this.maxContextTokens = {
+            user: USER_CONTEXT_TOKEN_BUDGET,
+            enhanced: Math.floor(chatTokenBudget * ENHANCED_CONTEXT_ALLOCATION),
         }
-        this.max.context.enhanced = Math.floor(this.max.messages * ENHANCED_CONTEXT_ALLOCATION)
+        this.usedTokens = {
+            messages: 0,
+            context: {
+                user: 0,
+                enhanced: 0,
+            },
+        }
     }
 
     /**
@@ -40,37 +39,41 @@ export class TokenCounter {
      */
     public get remainingTokens(): { messages: number; context: { user: number; enhanced: number } } {
         return {
-            messages: this.max.messages - this.usage.messages,
+            messages: this.maxTokens - this.usedTokens.messages,
             context: {
-                user: this.max.context.user - this.usage.context.user,
-                enhanced: this.max.context.enhanced - this.usage.context.enhanced,
+                user: this.maxContextTokens.user - this.usedTokens.context.user,
+                enhanced: this.maxContextTokens.enhanced - this.usedTokens.context.enhanced,
             },
         }
     }
 
     public updateChatUsage(messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.max.messages > this.usage.messages + count
+        const isWithinLimit = this.maxTokens >= this.usedTokens.messages + count
         if (isWithinLimit) {
-            this.usage.messages += count
+            this.usedTokens.messages += count
         }
         return isWithinLimit
     }
 
     public updateEnhancedContextUsage(messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.max.context.enhanced > this.usage.context.enhanced + count
+        const maxContextTokens = this.maxContextTokens.enhanced
+        const usedContextTokens = this.usedTokens.context.enhanced
+        const isWithinLimit = maxContextTokens > usedContextTokens + count
         if (isWithinLimit) {
-            this.usage.context.enhanced += count
+            this.usedTokens.context.enhanced += count
         }
         return isWithinLimit
     }
 
     public updateUserContextUsage(messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.max.context.user > this.usage.context.user + count
+        const maxContextTokens = this.maxContextTokens.user
+        const usedContextTokens = this.usedTokens.context.user
+        const isWithinLimit = maxContextTokens > usedContextTokens + count
         if (isWithinLimit) {
-            this.usage.context.user += count
+            this.usedTokens.context.user += count
         }
         return isWithinLimit
     }
