@@ -1,7 +1,5 @@
 import fspromises from 'node:fs/promises'
-import { globalAgent } from 'node:https';
-
-
+import { globalAgent } from 'node:https'
 
 /**
  * Registers local root certificates onto the global HTTPS agent.
@@ -30,22 +28,18 @@ export function registerLocalCertificates() {
     }
 }
 
+const linuxPossibleCertPaths = ['/etc/ssl/certs/ca-certificates.crt', '/etc/ssl/certs/ca-bundle.crt']
 
-const linuxPossibleCertPaths = [
-    '/etc/ssl/certs/ca-certificates.crt',
-    '/etc/ssl/certs/ca-bundle.crt'
-]
-
- function addLinuxCerts()  {
+function addLinuxCerts() {
     if (process.platform !== 'linux') {
-        return 
+        return
     }
     const originalCA = globalAgent.options.ca
-    let cas: (string | Buffer)[];
+    let cas: (string | Buffer)[]
     if (!Array.isArray(originalCA)) {
-        cas = typeof originalCA !== 'undefined' ? [originalCA] : [];
+        cas = typeof originalCA !== 'undefined' ? [originalCA] : []
     } else {
-        cas = Array.from(originalCA);
+        cas = Array.from(originalCA)
     }
 
     loadLinuxCerts()
@@ -54,23 +48,22 @@ const linuxPossibleCertPaths = [
     globalAgent.options.ca = cas
 }
 
-async function loadLinuxCerts(): Promise<Array<string>>{
-    
+async function loadLinuxCerts(): Promise<Array<string>> {
     const certs = new Set<string>()
 
-    for  (const path of linuxPossibleCertPaths) {
-		try {
-			const content :string = await fspromises.readFile(path, { encoding: 'utf8' });
-			content.split(/(?=-----BEGIN CERTIFICATE-----)/g)
-				.filter(pem => !!pem.length)
+    for (const path of linuxPossibleCertPaths) {
+        try {
+            const content: string = await fspromises.readFile(path, { encoding: 'utf8' })
+            content
+                .split(/(?=-----BEGIN CERTIFICATE-----)/g)
+                .filter(pem => !!pem.length)
                 .map(certs.add)
-		} catch (err: any) {
+        } catch (err: any) {
             // this is the error code for "no such file"
-			if (err?.code !== 'ENOENT') {
-				console.warn(err);  
-			}
-		}
-	}
+            if (err?.code !== 'ENOENT') {
+                console.warn(err)
+            }
+        }
+    }
     return Array.from(certs)
 }
-
