@@ -3,12 +3,9 @@ import {
     ContextItemSource,
     TokenCounter,
     USER_CONTEXT_TOKEN_BUDGET,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
-    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { tokensToBytes } from '@sourcegraph/cody-shared/src/token/utils'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
@@ -19,26 +16,24 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
             const doc = await vscode.workspace.openTextDocument(file)
-            const decoded = doc?.getText(range).trim()
-            const truncatedContent = truncateText(decoded, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES).trim()
-            if (!decoded) {
+            const content = doc?.getText(range).trim()
+            if (!content) {
                 throw new Error('No file content')
             }
 
             const startLine = range?.start?.line ?? 0
-            range = new vscode.Range(startLine, 0, startLine + truncatedContent.split('\n').length, 0)
-            const tokenCount = TokenCounter.countTokens(truncatedContent)
-            const size = tokensToBytes(tokenCount)
+            range = new vscode.Range(startLine, 0, startLine + content.split('\n').length, 0)
+            const size = TokenCounter.countTokens(content)
 
             return [
                 {
                     type: 'file',
-                    content: truncatedContent,
+                    content,
                     uri: file,
                     source: ContextItemSource.Editor,
                     range,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < tokenCount,
+                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 },
             ] satisfies ContextItem[]
         } catch (error) {

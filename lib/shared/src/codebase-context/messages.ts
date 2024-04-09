@@ -38,7 +38,7 @@ interface ContextItemCommon {
     source?: ContextItemSource
 
     /**
-     * The size of the file in bytes.
+     * The characters count in the content of the item.
      */
     size?: number
 

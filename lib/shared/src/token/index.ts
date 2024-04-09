@@ -1,6 +1,11 @@
 import { getEncoding } from 'js-tiktoken'
-import { type Message, tokensToChars } from '..'
-import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
+import type { Message } from '..'
+import {
+    CHAT_TOKEN_BUDGET,
+    type ContextItemBudgetType,
+    ENHANCED_CONTEXT_ALLOCATION,
+    USER_CONTEXT_TOKEN_BUDGET,
+} from './constants'
 
 export class TokenCounter {
     /**
@@ -49,31 +54,20 @@ export class TokenCounter {
 
     public updateChatUsage(messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.maxTokens >= this.usedTokens.messages + count
+        const isWithinLimit = this.maxTokens > this.usedTokens.messages + count
         if (isWithinLimit) {
             this.usedTokens.messages += count
         }
         return isWithinLimit
     }
 
-    public updateEnhancedContextUsage(messages: Message[]): boolean {
+    public updateContextUsage(type: ContextItemBudgetType, messages: Message[]): boolean {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const maxContextTokens = this.maxContextTokens.enhanced
-        const usedContextTokens = this.usedTokens.context.enhanced
+        const maxContextTokens = this.maxContextTokens[type]
+        const usedContextTokens = this.usedTokens.context[type]
         const isWithinLimit = maxContextTokens > usedContextTokens + count
         if (isWithinLimit) {
-            this.usedTokens.context.enhanced += count
-        }
-        return isWithinLimit
-    }
-
-    public updateUserContextUsage(messages: Message[]): boolean {
-        const count = TokenCounter.getMessagesTokenCount(messages)
-        const maxContextTokens = this.maxContextTokens.user
-        const usedContextTokens = this.usedTokens.context.user
-        const isWithinLimit = maxContextTokens > usedContextTokens + count
-        if (isWithinLimit) {
-            this.usedTokens.context.user += count
+            this.usedTokens.context[type] += count
         }
         return isWithinLimit
     }
@@ -81,17 +75,26 @@ export class TokenCounter {
     private static tokenize = getEncoding('cl100k_base')
 
     /**
-     * Counts the number of tokens in the given text using the tokenizer.
+     * Encode the given text using the tokenizer.
      * The text is first normalized to NFKC to handle different character representations consistently.
      * All special tokens are included in the token count.
+     */
+    public static encode(text: string): number[] {
+        return TokenCounter.tokenize.encode(text.normalize('NFKC'), 'all')
+    }
+
+    public static decode(encoded: number[]): string {
+        return TokenCounter.tokenize.decode(encoded)
+    }
+
+    /**
+     * Counts the number of tokens in the given text using the tokenizer.
      *
      * @param text - The input text to count tokens for.
      * @returns The number of tokens in the input text.
      */
     public static countTokens(text: string): number {
-        // Normalize the text to NFKC to handle different character representations consistently.
-        // Set allowedSpecial to 'all' to include all special tokens in the token count.
-        return TokenCounter.tokenize.encode(text.normalize('NFKC'), 'all').length
+        return TokenCounter.encode(text).length
     }
 
     /**
@@ -116,15 +119,5 @@ export class TokenCounter {
      */
     public static getMessagesTokenCount(messages: Message[]): number {
         return messages.reduce((acc, m) => acc + TokenCounter.getTokenCountForMessage(m), 0)
-    }
-
-    /**
-     * Calculates the total number of bytes required to represent the given array of messages.
-     *
-     * @param messages - An array of messages to calculate the total byte count for.
-     * @returns The total number of bytes required to represent the provided messages.
-     */
-    public static getMessagesByteCount(messages: Message[]): number {
-        return tokensToChars(TokenCounter.getMessagesTokenCount(messages))
     }
 }

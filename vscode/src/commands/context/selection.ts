@@ -2,9 +2,7 @@ import {
     type ContextItem,
     TokenCounter,
     USER_CONTEXT_TOKEN_BUDGET,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     logError,
-    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import {
@@ -14,7 +12,6 @@ import {
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
-import { tokensToBytes } from '@sourcegraph/cody-shared/src/token/utils'
 import { type Position, Selection } from 'vscode'
 /**
  * Gets context file content from the current editor selection.
@@ -43,19 +40,17 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
             const selection = activeSelection ?? visibleRange
 
             const content = document.getText(selection)
-            const truncatedContent = truncateText(content, USER_CONTEXT_TOKEN_BUDGET_IN_BYTES)
-            const tokenCount = TokenCounter.countTokens(truncatedContent)
-            const size = tokensToBytes(tokenCount)
+            const size = TokenCounter.countTokens(content)
 
             return [
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncatedContent,
+                    content,
                     source: ContextItemSource.Selection,
                     range: selection,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < tokenCount,
+                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 } satisfies ContextItemFile,
             ]
         } catch (error) {

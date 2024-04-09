@@ -1,4 +1,10 @@
-import { type ContextItem, type Message, TokenCounter } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type Message,
+    ModelProvider,
+    ModelUsage,
+    TokenCounter,
+} from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -11,12 +17,13 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
+        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
-        ).makePrompt(chat, 0, 100000)
+        ).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -44,12 +51,13 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
+        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
-        ).makePrompt(chat, 0, 100000)
+        ).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -80,7 +88,10 @@ describe('DefaultPrompter', () => {
             },
         ]
 
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(contextItems)
+        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
+            'enhanced',
+            contextItems
+        )
         expect(limitReached).toBeTruthy()
         expect(ignored).toEqual(contextItems)
         expect(duplicate).toEqual([])

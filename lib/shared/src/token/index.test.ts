@@ -49,22 +49,4 @@ describe('TokenCounter static', () => {
             expect(tokenCount).toBe(0)
         })
     })
-
-    describe('getMessagesByteCount', () => {
-        it('should calculate the total byte count for an array of messages', () => {
-            const messages: Message[] = [
-                { text: 'Hello', speaker: 'human' },
-                { text: 'How are you?', speaker: 'assistant' },
-                { text: 'I am doing well, thank you.', speaker: 'human' },
-            ]
-            const byteCount = TokenCounter.getMessagesByteCount(messages)
-            expect(byteCount).toBe(64)
-        })
-
-        it('should return 0 for an empty array of messages', () => {
-            const messages: Message[] = []
-            const byteCount = TokenCounter.getMessagesByteCount(messages)
-            expect(byteCount).toBe(0)
-        })
-    })
 })

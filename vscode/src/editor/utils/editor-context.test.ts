@@ -6,12 +6,14 @@ import {
     type ContextItem,
     type ContextItemFile,
     type Editor,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+    USER_CONTEXT_TOKEN_BUDGET,
+    charsToTokens,
     ignores,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
+import { CHARACTERS_PER_TOKEN } from '@sourcegraph/cody-shared/src/token/constants'
 import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
@@ -158,9 +160,9 @@ describe('filterLargeFiles', () => {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const oneByteOverTokenLimit = USER_CONTEXT_TOKEN_BUDGET_IN_BYTES + 1
+        const characters = USER_CONTEXT_TOKEN_BUDGET * CHARACTERS_PER_TOKEN + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
-            size: oneByteOverTokenLimit,
+            size: characters,
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
@@ -170,7 +172,7 @@ describe('filterLargeFiles', () => {
             type: 'file',
             uri: largeTextFile.uri,
             isTooLarge: true,
-            size: oneByteOverTokenLimit,
+            size: charsToTokens(characters),
         })
     })
 })

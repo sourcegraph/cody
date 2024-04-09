@@ -23,7 +23,7 @@ interface PromptInfo {
 }
 
 export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, codyApiVersion: number, charLimit: number): Promise<PromptInfo>
+    makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo>
 }
 
 export class DefaultPrompter implements IPrompter {
@@ -38,15 +38,14 @@ export class DefaultPrompter implements IPrompter {
     // prompt for the current message.
     public async makePrompt(
         chat: SimpleChatModel,
-        codyApiVersion: number,
-        charLimit: number
+        codyApiVersion: number
     ): Promise<{
         prompt: Message[]
         newContextUsed: ContextItem[]
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const tokenCounter = new TokenCounter(charLimit)
+            const tokenCounter = new TokenCounter(chat.maxToken)
             const promptBuilder = new PromptBuilder(tokenCounter)
             const newContextUsed: ContextItem[] = []
             const preInstruction: string | undefined = vscode.workspace
@@ -56,7 +55,7 @@ export class DefaultPrompter implements IPrompter {
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
-                throw new Error(`Preamble length exceeded context window size ${charLimit}`)
+                throw new Error(`Preamble length exceeded context window size ${chat.maxToken}`)
             }
 
             // Add existing transcript messages
@@ -74,8 +73,10 @@ export class DefaultPrompter implements IPrompter {
             }
 
             {
+                sortContextItems(this.explicitContext)
                 // Add context from new user-specified context items, e.g. @-mentions, @-uri
-                const { limitReached, used, ignored } = promptBuilder.tryAddUserContext(
+                const { limitReached, used, ignored } = promptBuilder.tryAddContext(
+                    'user',
                     this.explicitContext
                 )
                 newContextUsed.push(...used)
@@ -94,6 +95,7 @@ export class DefaultPrompter implements IPrompter {
             {
                 // Add context from previous messages
                 const { limitReached } = promptBuilder.tryAddContext(
+                    'enhanced',
                     reverseTranscript.flatMap(message => message.contextFiles || [])
                 )
                 if (limitReached) {
@@ -119,8 +121,10 @@ export class DefaultPrompter implements IPrompter {
                     tokenCounter.remainingTokens.context.enhanced
                 )
                 sortContextItems(additionalContextItems)
-                const { limitReached, used, ignored } =
-                    promptBuilder.tryAddContext(additionalContextItems)
+                const { limitReached, used, ignored } = promptBuilder.tryAddContext(
+                    'enhanced',
+                    additionalContextItems
+                )
                 newContextUsed.push(...used)
                 if (limitReached) {
                     logDebug(

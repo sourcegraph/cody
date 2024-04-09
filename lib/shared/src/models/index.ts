@@ -1,4 +1,4 @@
-import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
+import { CHAT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelUsage } from './types'
 import { fetchLocalOllamaModels, getModelInfo } from './utils'
 
@@ -24,8 +24,7 @@ export class ModelProvider {
         // The usage of the model, e.g. chat or edit.
         public readonly usage: ModelUsage[],
         // The maximum number of tokens that can be processed by the model in a single request.
-        // NOTE: A token is equivalent to 4 characters/bytes.
-        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT
+        public readonly maxToken: number = CHAT_TOKEN_BUDGET
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
@@ -90,8 +89,8 @@ export class ModelProvider {
      * The limit is calculated based on the max number of tokens the model can process.
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
-    public static getMaxCharsByModel(modelID: string): number {
+    public static getMaxTokenByID(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return tokensToChars(model?.maxToken || DEFAULT_CHAT_MODEL_TOKEN_LIMIT)
+        return model?.maxToken || CHAT_TOKEN_BUDGET
     }
 }

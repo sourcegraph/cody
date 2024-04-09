@@ -796,8 +796,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<Message[]> {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
+            this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction

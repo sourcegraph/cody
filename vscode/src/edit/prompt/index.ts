@@ -83,7 +83,8 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = document.getText(task.selectionRange)
-    if (selectedText.length > contextWindow) {
+    const tokenCount = TokenCounter.countTokens(selectedText)
+    if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText
@@ -128,7 +129,7 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext(contextItemsAndMessages)
+    promptBuilder.tryAddContext('user', contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),

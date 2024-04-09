@@ -1,17 +1,22 @@
 import {
     type ChatMessage,
     type ContextItem,
-    ContextItemSource,
     type ContextMessage,
     type Message,
     type TokenCounter,
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
+import type { ContextItemBudgetType } from '@sourcegraph/cody-shared/src/token/constants'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+interface PromptBuilderContextResult {
+    limitReached: boolean
+    used: ContextItem[]
+    ignored: ContextItem[]
+    duplicate: ContextItem[]
+}
 
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
@@ -69,54 +74,40 @@ export class PromptBuilder {
         return 0
     }
 
-    /**
-     * Tries to add context items and messages to the prompt builder, tracking which ones were used, ignored, or duplicated.
-     * Returns an object with the results of the operation.
-     *
-     * Validates that the context items are not in the Cody ignore list, and that they have not been seen before.
-     * Stops adding context items when the token budget would be exceeded.
-     *
-     * @param contextItemsMessages - An array of context items or context messages to add to the prompt builder.
-     */
-    public tryAddUserContext(contextItemsMessages: (ContextItem | ContextMessage)[]): {
-        limitReached: boolean
-        used: ContextItem[]
-        ignored: ContextItem[]
-        duplicate: ContextItem[]
-    } {
+    public tryAddContext(
+        type: ContextItemBudgetType,
+        contextMessages: (ContextItem | ContextMessage)[]
+    ): PromptBuilderContextResult {
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
-            used: [] as ContextItem[], // The context items that were successfully added
-            ignored: [] as ContextItem[], // The context items that were ignored
-            duplicate: [] as ContextItem[], // The context items that were duplicates of previously seen items
+            used: [] as ContextItem[], // The items that were successfully added
+            ignored: [] as ContextItem[], // The items that were ignored
+            duplicate: [] as ContextItem[], // The items that were duplicates of previously seen items
         }
-
-        // Create a new array to avoid modifying the original array,
-        // then reverse it to process the newest context items first.
-        const reversedContextItems = contextItemsMessages.slice().reverse()
+        // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
+        const reversedContextItems = contextMessages.slice().reverse()
         for (const item of reversedContextItems) {
             const userContextItem = contextItem(item)
             const id = contextItemId(item)
-
             // Skip context items that are in the Cody ignore list
             if (isCodyIgnoredFile(userContextItem.uri)) {
                 result.ignored.push(userContextItem)
                 continue
             }
-
             // Skip context items that have already been seen
             if (this.seenContext.has(id)) {
                 result.duplicate.push(userContextItem)
                 continue
             }
-
-            const contextMessage = isContextItem(item) ? renderContextItem(item) : item
-            const isAdded = contextMessage
-                ? this.tokenCounter.updateUserContextUsage([contextMessage])
-                : false
-
+            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
+            if (!contextMsg) {
+                continue
+            }
+            const assistantMsg = { speaker: 'assistant', text: 'Ok.' } as Message
+            const isAdded = this.tokenCounter.updateContextUsage(type, [contextMsg, assistantMsg])
+            // Marks excluded context items as too large and vice versa
             userContextItem.isTooLarge = !isAdded
-
+            this.seenContext.add(id)
             // Skip context items that would exceed the token budget
             if (!isAdded) {
                 userContextItem.content = undefined
@@ -124,96 +115,10 @@ export class PromptBuilder {
                 result.limitReached = true
                 continue
             }
-
-            this.seenContext.add(id)
-            if (contextMessage) {
-                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
-                this.reverseMessages.push(contextMessage)
-            }
+            this.reverseMessages.push(assistantMsg, contextMsg)
             result.used.push(userContextItem)
         }
-
         return result
-    }
-
-    /**
-     * Tries to add context items to the prompt, tracking characters used.
-     * Returns info about which items were used vs. ignored.
-     *
-     * If charLimit is specified, then imposes an additional limit on the
-     * amount of context added from contextItems. This does not affect the
-     * overall character limit, which is still enforced.
-     */
-    public tryAddContext(contextItemsAndMessages: (ContextItem | ContextMessage)[]): {
-        limitReached: boolean
-        used: ContextItem[]
-        ignored: ContextItem[]
-        duplicate: ContextItem[]
-    } {
-        let limitReached = false
-        const used: ContextItem[] = []
-        const ignored: ContextItem[] = []
-        const duplicate: ContextItem[] = []
-        if (isAgentTesting) {
-            // Need deterministic ordering of context files for the tests to pass
-            // consistently across different file systems.
-            contextItemsAndMessages.sort((a, b) =>
-                contextItem(a).uri.path.localeCompare(contextItem(b).uri.path)
-            )
-            // Move the selectionContext to the first position so that it'd be
-            // the last context item to be read by the LLM to avoid confusions where
-            // other files also include the selection text in test files.
-            const selectionContext = contextItemsAndMessages.find(
-                item =>
-                    (isContextItem(item) ? item.source : item.file.source) ===
-                    ContextItemSource.Selection
-            )
-            if (selectionContext) {
-                contextItemsAndMessages.splice(contextItemsAndMessages.indexOf(selectionContext), 1)
-                contextItemsAndMessages.unshift(selectionContext)
-            }
-        }
-        for (const v of contextItemsAndMessages) {
-            const item = contextItem(v)
-            const uri = contextItem(v).uri
-            if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
-                ignored.push(item)
-                continue
-            }
-            const id = contextItemId(v)
-            if (this.seenContext.has(id)) {
-                duplicate.push(item)
-                continue
-            }
-            const contextMessage = isContextItem(v) ? renderContextItem(v) : v
-            const isAdded =
-                contextMessage && this.tokenCounter.updateEnhancedContextUsage([contextMessage])
-            if (!isAdded) {
-                // Marks excluded context items as too large to be displayed in UI
-                if (item.type === 'file') {
-                    item.isTooLarge = true
-                }
-                ignored.push(item)
-                limitReached = true
-                continue
-            }
-            this.seenContext.add(id)
-            if (contextMessage) {
-                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
-                this.reverseMessages.push(contextMessage)
-            }
-            // Marks added file items as not too large
-            if (item.type === 'file') {
-                item.isTooLarge = false
-            }
-            used.push(item)
-        }
-        return {
-            limitReached,
-            used,
-            ignored,
-            duplicate,
-        }
     }
 }
 

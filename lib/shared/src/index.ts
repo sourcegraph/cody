@@ -141,7 +141,6 @@ export {
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
-    tokensToChars,
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
@@ -227,6 +226,6 @@ export {
 export { TokenCounter } from './token'
 export {
     USER_CONTEXT_TOKEN_BUDGET,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
     ENHANCED_CONTEXT_ALLOCATION,
 } from './token/constants'
+export { tokensToChars, charsToTokens } from './token/utils'

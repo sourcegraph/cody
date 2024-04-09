@@ -416,10 +416,7 @@ export const getInput = async (
                         alwaysShow: true,
                         label: shortLabel || key,
                         description: shortLabel ? key : undefined,
-                        detail:
-                            item.type === 'file' && item.isTooLarge
-                                ? LARGE_FILE_WARNING_LABEL
-                                : undefined,
+                        detail: item.isTooLarge ? LARGE_FILE_WARNING_LABEL : undefined,
                     })),
                     {
                         kind: vscode.QuickPickItemKind.Separator,

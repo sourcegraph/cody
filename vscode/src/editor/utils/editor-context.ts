@@ -11,7 +11,8 @@ import {
     type ContextItemWithContent,
     type Editor,
     type SymbolKind,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+    USER_CONTEXT_TOKEN_BUDGET,
+    charsToTokens,
     displayPath,
     fetchContentForURLContextItem,
     isCodyIgnoredFile,
@@ -258,11 +259,10 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
-        // Check if file contains more characters than the token limit based on fileStat.size
-        // and set {@link ContextItemFile.isTooLarge} for webview to display file size
-        // warning.
-        cf.size = fileStat.size
-        cf.isTooLarge = fileStat.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES
+        // Convert file size to token size by dividing by CHARACTERS_PER_TOKEN.
+        cf.size = charsToTokens(fileStat.size)
+        // Set {@link ContextItemFile.isTooLarge} for webview to display file size warning.
+        cf.isTooLarge = cf.size > USER_CONTEXT_TOKEN_BUDGET
         filtered.push(cf)
     }
     return filtered

@@ -15,7 +15,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type RangeData,
-    USER_CONTEXT_TOKEN_BUDGET_IN_BYTES,
+    USER_CONTEXT_TOKEN_BUDGET,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
@@ -86,7 +86,7 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const [query, setQuery] = useState<string | null>(null)
 
-    const [tokenBytesAdded, setTokenBytesAdded] = useState<number>(0)
+    const [tokenAdded, setTokenAdded] = useState<number>(0)
 
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
@@ -101,7 +101,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             results
                 ?.map(r => {
                     if (r.size) {
-                        r.isTooLarge = r.size > USER_CONTEXT_TOKEN_BUDGET_IN_BYTES - tokenBytesAdded
+                        r.isTooLarge = r.size > USER_CONTEXT_TOKEN_BUDGET - tokenAdded
                     }
                     // All @-mentions should have a source of `User`.
                     r.source = ContextItemSource.User
@@ -121,11 +121,10 @@ export default function MentionsPlugin(): JSX.Element | null {
     editor.registerMutationListener(ContextItemMentionNode, node => {
         const items = toSerializedPromptEditorValue(editor)?.contextItems
         if (!items?.length) {
-            setTokenBytesAdded(0)
+            setTokenAdded(0)
             return
         }
-        const tokenBytes = items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0
-        setTokenBytesAdded(tokenBytes)
+        setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
     })
 
     const onSelectOption = useCallback(
