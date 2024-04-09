@@ -63,7 +63,7 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
     ;--------------------------------
     (assignment
         left: (identifier) @symbol.identifier) @range.identifier
-    (string) @comment
+    (expression_statement (string)) @comment
     (comment) @comment
 `
 
