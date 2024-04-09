@@ -8,6 +8,7 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { googleChatClient } from '../../google/chat-client'
 import { ollamaChatClient } from '../../ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
@@ -47,6 +48,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             if (params.model?.startsWith('ollama')) {
                 ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
+            }
+
+            if (params.model?.startsWith('google')) {
+                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
 

@@ -20,6 +20,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
 
     if (authStatus.isDotCom) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
+        getChatModelsFromConfiguration(authStatus)
         return
     }
 
@@ -45,4 +46,44 @@ export function syncModelProviders(authStatus: AuthStatus): void {
             ),
         ])
     }
+}
+
+interface ChatModelProviderConfig {
+    provider: string
+    model: string
+    tokens?: number
+    apiKey?: string
+    apiEndpoint?: string
+}
+
+/**
+ * NOTE: DotCom Pro Users only
+ *
+ * Gets an array of `ModelProvider` instances based on the configuration for experimental chat models.
+ * If the `cody.experimental.chatModels` setting is not configured or is empty, the function returns an empty array.
+ *
+ * @returns An array of `ModelProvider` instances for the configured chat models.
+ */
+export function getChatModelsFromConfiguration(authStatus: AuthStatus): ModelProvider[] {
+    const codyConfig = vscode.workspace.getConfiguration('cody')
+    const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('experimental.chatModels')
+    if (!authStatus.isDotCom || !modelsConfig?.length) {
+        return []
+    }
+
+    const providers: ModelProvider[] = []
+    for (const m of modelsConfig) {
+        const provider = new ModelProvider(
+            `${m.provider}/${m.model}`,
+            [ModelUsage.Chat, ModelUsage.Edit],
+            m.tokens,
+            m.apiKey,
+            m.apiEndpoint
+        )
+        provider.codyProOnly = true
+        providers.push(provider)
+    }
+
+    ModelProvider.addProviders(providers)
+    return providers
 }

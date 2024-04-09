@@ -33,6 +33,14 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    /**
+     * For custom model that requires API key and a different endpoint.
+     * For example, Google Gemini Chat model requires a key.
+     */
+    modelAPI?: {
+        key?: string
+        endpoint?: string
+    }
 }
 
 export interface CompletionCallbacks {

@@ -917,10 +917,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.cancelInProgressCompletion()
         const abortController = new AbortController()
         this.completionCanceller = () => abortController.abort()
+        const model = ModelProvider.getProviderByModel(this.chatModel.modelID)
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID },
+                {
+                    model: this.chatModel.modelID,
+                    modelAPI: {
+                        key: model?.apiKey,
+                        endpoint: model?.apiEndpoint,
+                    },
+                },
                 abortController.signal
             )
 
