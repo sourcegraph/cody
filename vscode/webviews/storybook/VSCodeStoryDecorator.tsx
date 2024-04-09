@@ -32,6 +32,12 @@ export const VSCodeSidebar: Decorator = VSCodeDecorator(styles.containerSidebar)
 export const VSCodeStandaloneComponent: Decorator = VSCodeDecorator(undefined)
 
 /**
+ * A decorator that displays a story with VS Code theme colors applied and maximizes the viewport.
+ */
+export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = style =>
+    VSCodeDecorator(styles.containerViewport, style)
+
+/**
  * A customizable decorator for components with VS Code theme colors applied.
  */
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
