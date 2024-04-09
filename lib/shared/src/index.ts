@@ -135,7 +135,6 @@ export {
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
-    CHARS_PER_TOKEN,
     ANSWER_TOKENS,
     MAX_HUMAN_INPUT_TOKENS,
     NUM_CODE_RESULTS,
@@ -227,5 +226,6 @@ export { TokenCounter } from './token'
 export {
     USER_CONTEXT_TOKEN_BUDGET,
     ENHANCED_CONTEXT_ALLOCATION,
+    CHARACTERS_PER_TOKEN,
 } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'

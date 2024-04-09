@@ -114,6 +114,10 @@ export class TokenCounter {
         return TokenCounter.tokenize.encode(text.normalize('NFKC'), 'all')
     }
 
+    public static decode(encoded: number[]): string {
+        return TokenCounter.tokenize.decode(encoded)
+    }
+
     /**
      * Counts the number of tokens in the given text using the tokenizer.
      *
