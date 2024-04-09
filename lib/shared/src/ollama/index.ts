@@ -1,5 +1,5 @@
 import type { OllamaGenerateParameters } from '../configuration'
-import { PromptString } from '../prompt/prompt-string'
+import type { PromptString } from '../prompt/prompt-string'
 
 export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
 
