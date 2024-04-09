@@ -921,13 +921,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                {
-                    model: this.chatModel.modelID,
-                    modelAPI: {
-                        key: model?.apiKey,
-                        endpoint: model?.apiEndpoint,
-                    },
-                },
+                model?.apiKey
+                    ? {
+                          model: this.chatModel.modelID,
+                          modelAPI: {
+                              key: model?.apiKey,
+                              endpoint: model?.apiEndpoint,
+                          },
+                      }
+                    : { model: this.chatModel.modelID },
                 abortController.signal
             )
 
