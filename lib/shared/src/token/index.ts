@@ -1,6 +1,11 @@
 import { getEncoding } from 'js-tiktoken'
 import type { Message } from '..'
-import { CHAT_TOKEN_BUDGET, type ContextTokenUsageType, USER_CONTEXT_TOKEN_BUDGET } from './constants'
+import {
+    CHAT_TOKEN_BUDGET,
+    type ContextTokenUsageType,
+    ENHANCED_CONTEXT_ALLOCATION,
+    USER_CONTEXT_TOKEN_BUDGET,
+} from './constants'
 
 interface MessageTokenUsage {
     chat: number
@@ -31,19 +36,17 @@ export class TokenCounter {
     constructor(totalTokenLimit: number) {
         // If the token limit for the chat model is less than the default chat token budget,
         // set the chat token budget based on the model token limit.
-        const messageTokenBudget = Math.min(totalTokenLimit, CHAT_TOKEN_BUDGET)
-        this.maxChatTokens = messageTokenBudget
+        const chatTokenBudget = Math.min(totalTokenLimit, CHAT_TOKEN_BUDGET)
+        this.maxChatTokens = chatTokenBudget
 
-        const contextTokenBudget = totalTokenLimit - messageTokenBudget
-        if (contextTokenBudget < USER_CONTEXT_TOKEN_BUDGET) {
-            console.warn('Total token limit is too low to accommodate the user context token budget.')
+        if (chatTokenBudget < USER_CONTEXT_TOKEN_BUDGET) {
+            // TODO (bee) Total token limit is too low to accommodate the user context token budget.
         }
 
-        // Adjusted the calculation of maxContextTokens to ensure that user and enhanced budgets are
-        // within the available contextTokenBudget.
+        // Adjusted the calculation of maxContextTokens
         this.maxContextTokens = {
-            user: Math.min(contextTokenBudget, USER_CONTEXT_TOKEN_BUDGET),
-            enhanced: Math.max(0, contextTokenBudget - USER_CONTEXT_TOKEN_BUDGET),
+            user: USER_CONTEXT_TOKEN_BUDGET,
+            enhanced: Math.floor(chatTokenBudget * ENHANCED_CONTEXT_ALLOCATION),
         }
 
         this.usedTokens = {
