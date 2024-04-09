@@ -253,7 +253,7 @@ tasks {
     // Apple M1 computers. This is required to prevent the following issue
     // https://github.com/vercel/pkg/issues/2004
     if (isLdidSign) {
-      val arm64Binary = buildCodyDir.resolve("agent-macos-arm64").toString()
+      val arm64Binary = buildCodyDir.resolve("cody-agent-macos-arm64").toString()
       println("Signing ldid -S $arm64Binary")
       exec { commandLine("ldid", "-S", arm64Binary) }
     }
