@@ -210,7 +210,7 @@ private constructor(
       // Only use x86 for macOS because of this issue here https://github.com/vercel/pkg/issues/2004
       // TLDR; we're not able to run macos-arm64 binaries when they're created on ubuntu-latest
       val arch = if (CpuArch.isArm64()) "arm64" else "x64"
-      return "agent-" + os + "-" + arch + binarySuffix()
+      return "cody-agent-" + os + "-" + arch + binarySuffix()
     }
 
     private fun agentDirectory(): Path? {

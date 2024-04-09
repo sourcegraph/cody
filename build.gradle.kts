@@ -326,11 +326,11 @@ tasks {
             throw Error("Agent binary '$path' not found in plugin zip $pluginPath")
           }
         }
-        assertExists("agent-macos-arm64")
-        assertExists("agent-macos-x64")
-        assertExists("agent-linux-arm64")
-        assertExists("agent-linux-x64")
-        assertExists("agent-win-x64.exe")
+        assertExists("cody-agent-macos-arm64")
+        assertExists("cody-agent-macos-x64")
+        assertExists("cody-agent-linux-arm64")
+        assertExists("cody-agent-linux-x64")
+        assertExists("cody-agent-win-x64.exe")
       }
     }
   }
