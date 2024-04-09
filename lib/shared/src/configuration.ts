@@ -1,3 +1,5 @@
+import type { PromptString } from './prompt/prompt-string'
+
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 /**
@@ -21,8 +23,8 @@ export interface Configuration {
     telemetryLevel: 'all' | 'off' | 'agent'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
-    chatPreInstruction: string
-    editPreInstruction: string
+    chatPreInstruction: PromptString
+    editPreInstruction: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean

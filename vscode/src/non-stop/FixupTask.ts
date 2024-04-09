@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { ContextItem, EditModel, EventSource } from '@sourcegraph/cody-shared'
+import type { ContextItem, EditModel, EventSource, PromptString } from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
@@ -59,7 +59,7 @@ export class FixupTask {
          * and will be updated by the FixupController for tasks using the 'new' mode
          */
         public fixupFile: FixupFile,
-        public readonly instruction: string,
+        public readonly instruction: PromptString,
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,

@@ -1,4 +1,4 @@
-import { logDebug } from '@sourcegraph/cody-shared'
+import { logDebug, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -52,7 +52,7 @@ export async function executeExplainOutput(
             return undefined
         }
 
-        let prompt = template.replace('{{PROCESS}}', args.name).replace('{{OUTPUT}}', output)
+        let prompt = template.replaceAll('{{PROCESS}}', args.name).replaceAll('{{OUTPUT}}', output)
         const options = JSON.stringify(args.creationOptions ?? {})
         if (options) {
             span.addEvent('hasCreationOptions')
@@ -72,7 +72,7 @@ export async function executeExplainOutput(
     })
 }
 
-const template = `
+const template = ps`
 Review and analyze this terminal output from the \`{{PROCESS}}\` process and summarize the key information. If this indicates an error, provide step-by-step instructions on how I can resolve this:
 \n\`\`\`
 \n{{OUTPUT}}

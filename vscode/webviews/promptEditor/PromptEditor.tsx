@@ -243,7 +243,7 @@ export function serializedPromptEditorStateFromChatMessage(
     // It would be smoother to automatically import or convert textual @-mentions to the Lexical
     // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
     // of editing old messages in your chat history.
-    return serializedPromptEditorStateFromText(chatMessage.text ?? '')
+    return serializedPromptEditorStateFromText(chatMessage.text ? chatMessage.text.toString() : '')
 }
 
 export function contextItemsFromPromptEditorValue(

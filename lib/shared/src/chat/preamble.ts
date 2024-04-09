@@ -7,7 +7,7 @@ export function getSimplePreamble(
     preInstruction?: PromptString
 ): Message[] {
     const intro = ps`You are Cody, an AI coding assistant from Sourcegraph. ${
-        preInstruction ?? ps``
+        preInstruction ?? ''
     }`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for

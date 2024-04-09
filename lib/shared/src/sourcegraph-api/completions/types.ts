@@ -1,4 +1,4 @@
-import { PromptString } from '../../prompt/prompt-string'
+import type { PromptString } from '../../prompt/prompt-string'
 
 interface DoneEvent {
     type: 'done'

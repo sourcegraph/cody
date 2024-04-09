@@ -4,6 +4,7 @@ import {
     type ContextItem,
     type EditModel,
     type EventSource,
+    PromptString,
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 
@@ -311,7 +312,7 @@ export class FixupController
 
     public async createTask(
         document: vscode.TextDocument,
-        instruction: string,
+        instruction: PromptString,
         userContextFiles: ContextItem[],
         selectionRange: vscode.Range,
         intent: EditIntent,

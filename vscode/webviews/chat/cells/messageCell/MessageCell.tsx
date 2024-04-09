@@ -163,7 +163,7 @@ const EditButton: React.FunctionComponent<
  */
 function useDisplayMarkdown(message: ChatMessage): string {
     if (message.speaker === 'assistant') {
-        return reformatBotMessageForChat(message.text ?? '')
+        return reformatBotMessageForChat(message.text ? message.text.toString() : '')
     }
     return serializedPromptEditorStateFromChatMessage(message).html
 }

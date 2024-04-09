@@ -14,6 +14,7 @@ import {
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -805,8 +806,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,
     codebase: '',
     customHeaders: {},
-    chatPreInstruction: '',
-    editPreInstruction: '',
+    chatPreInstruction: ps``,
+    editPreInstruction: ps``,
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {

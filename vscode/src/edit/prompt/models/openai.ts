@@ -1,8 +1,9 @@
+import { ps } from '@sourcegraph/cody-shared'
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
-const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>\n`
+const RESPONSE_PREFIX = ps`<${PROMPT_TOPICS.OUTPUT}>\n`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],
@@ -30,13 +31,13 @@ export const openai: EditLLMInteraction = {
         }
     },
     getAdd(options) {
-        let assistantPreamble = ''
+        let assistantPreamble = ps``
         if (options.precedingText) {
-            assistantPreamble = `<${PROMPT_TOPICS.PRECEDING}>${options.precedingText}</${PROMPT_TOPICS.PRECEDING}>`
+            assistantPreamble = ps`<${PROMPT_TOPICS.PRECEDING}>${options.precedingText}</${PROMPT_TOPICS.PRECEDING}>`
         }
         return {
             ...SHARED_PARAMETERS,
-            assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
+            assistantText: ps`${assistantPreamble}${RESPONSE_PREFIX}`,
             prompt: buildGenericPrompt('add', options),
         }
     },

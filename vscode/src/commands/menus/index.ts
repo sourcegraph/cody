@@ -1,4 +1,4 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
+import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
 import { commands, window } from 'vscode'
 import { CommandMenuOption, CustomCommandConfigMenuItems } from './items'
 
@@ -135,7 +135,7 @@ export async function showCommandMenu(
 
         quickPick.onDidAccept(async () => {
             const selection = quickPick.activeItems[0] as CommandMenuItem
-            const value = normalize(quickPick.value)
+            const value = PromptString.unsafe_fromUserQuery(normalize(quickPick.value))
             const source = 'menu'
 
             // On item button click
@@ -171,7 +171,10 @@ export async function showCommandMenu(
 
                 // Check if it's an edit command
                 if (selection.key === 'edit') {
-                    void executeEdit({ configuration: { instruction: value }, source })
+                    void executeEdit({
+                        configuration: { instruction: value },
+                        source,
+                    })
                     quickPick.hide()
                     return
                 }

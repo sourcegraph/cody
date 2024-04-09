@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
-import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
+import { RateLimitError, errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
@@ -80,7 +80,7 @@ const SIMPLE_TRANSCRIPT = FIXTURE_TRANSCRIPT.simple
 
 export const WaitingForContext: StoryObj<typeof meta> = {
     args: {
-        transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: 'What color is the sky?' }],
+        transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: ps`What color is the sky?` }],
         messageInProgress: { speaker: 'assistant' },
     },
 }
@@ -91,7 +91,7 @@ export const WaitingForAssistantMessageWithContext: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: 'What color is the sky?',
+                text: ps`What color is the sky?'`,
                 contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
             },
         ],
@@ -105,7 +105,7 @@ export const WaitingForAssistantMessageNoContext: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: 'What color is the sky?',
+                text: ps`What color is the sky?'`,
                 contextFiles: [],
             },
         ],
@@ -119,13 +119,13 @@ export const AssistantMessageInProgress: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: 'What color is the sky?',
+                text: ps`What color is the sky?'`,
                 contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
             },
         ],
         messageInProgress: {
             speaker: 'assistant',
-            text: 'The sky is ',
+            text: ps`The sky is `,
         },
     },
 }
@@ -134,7 +134,7 @@ export const WithError: StoryObj<typeof meta> = {
     args: {
         transcript: [
             ...SIMPLE_TRANSCRIPT,
-            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
+            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
         ],
         isTranscriptError: true,
@@ -145,7 +145,7 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
     args: {
         transcript: [
             ...SIMPLE_TRANSCRIPT,
-            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
+            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             {
                 speaker: 'assistant',
                 error: errorToChatError(

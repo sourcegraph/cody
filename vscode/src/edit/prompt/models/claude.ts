@@ -1,8 +1,9 @@
+import { ps } from '@sourcegraph/cody-shared'
 import { PROMPT_TOPICS } from '../constants'
 import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
-const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>`
+const RESPONSE_PREFIX = ps`<${PROMPT_TOPICS.OUTPUT}>`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],
@@ -19,7 +20,7 @@ export const claude: EditLLMInteraction = {
     },
     getDoc(options) {
         const docStopSequences = [...SHARED_PARAMETERS.stopSequences]
-        const firstLine = options.selectedText.split('\n')[0]
+        const firstLine = options.selectedText.toString().split('\n')[0]
         if (firstLine.trim().length > 0) {
             docStopSequences.push(firstLine)
         }
@@ -37,13 +38,13 @@ export const claude: EditLLMInteraction = {
         }
     },
     getAdd(options) {
-        let assistantPreamble = ''
+        let assistantPreamble = ps``
         if (options.precedingText) {
-            assistantPreamble = `<${PROMPT_TOPICS.PRECEDING}>${options.precedingText}</${PROMPT_TOPICS.PRECEDING}>`
+            assistantPreamble = ps`<${PROMPT_TOPICS.PRECEDING}>${options.precedingText}</${PROMPT_TOPICS.PRECEDING}>`
         }
         return {
             ...SHARED_PARAMETERS,
-            assistantText: `${assistantPreamble}${RESPONSE_PREFIX}`,
+            assistantText: ps`${assistantPreamble}${RESPONSE_PREFIX}`,
             prompt: buildGenericPrompt('add', options),
         }
     },

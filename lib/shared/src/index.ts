@@ -101,6 +101,7 @@ export {
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export * from './editor/utils'
 export {
     FeatureFlag,
     FeatureFlagProvider,
@@ -224,3 +225,4 @@ export {
     isURLContextItem,
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
+export * from './prompt/prompt-string'

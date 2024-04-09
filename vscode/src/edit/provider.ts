@@ -91,7 +91,7 @@ export class EditProvider {
             // Allows Cody to let us know which test file we should add the new content to
             if (this.config.task.intent === 'test') {
                 let filepath = ''
-                multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
                     onResponse: async (content: string) => {
                         filepath += content
                         void this.handleFileCreationResponse(filepath, true)

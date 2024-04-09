@@ -1,8 +1,8 @@
-import dedent from 'dedent'
+import { ps, psDedent } from '@sourcegraph/cody-shared'
 
 export const MODEL = 'anthropic/claude-3-haiku-20240307'
 
-export const SYSTEM = dedent`
+export const SYSTEM = psDedent`
     You are Cody, an AI coding assistant from Sourcegraph. You are an expert at
     suggesting next updates to code. You will receive the latest source file inside
     a <source/> XML tag and the most recent change that lead to that source file in
@@ -41,7 +41,7 @@ export const SYSTEM = dedent`
     </change>
 `
 
-export const PROMPT = dedent`
+export const PROMPT = psDedent`
     <source file="{filename}">
     {source}
     </source>
@@ -50,10 +50,10 @@ export const PROMPT = dedent`
     </recent-change>
 `
 
-export const HUMAN_EXAMPLE = PROMPT.replace('{filename}', 'magic.ts')
-    .replace(
+export const HUMAN_EXAMPLE = PROMPT.replaceAll('{filename}', ps`magic.ts`)
+    .replaceAll(
         '{source}',
-        dedent`
+        psDedent`
             function main() {
             ____function getMagicNumber(): string {
             ________return "thirteen";
@@ -62,9 +62,9 @@ export const HUMAN_EXAMPLE = PROMPT.replace('{filename}', 'magic.ts')
             }
         `
     )
-    .replace(
+    .replaceAll(
         '{git-diff}',
-        dedent`
+        psDedent`
             --- a/magic.ts
             +++ b/magic.ts
             @@ -1,3 +1,3 @@
@@ -77,7 +77,7 @@ export const HUMAN_EXAMPLE = PROMPT.replace('{filename}', 'magic.ts')
         `
     )
 
-export const ASSISTANT_EXAMPLE = dedent`
+export const ASSISTANT_EXAMPLE = psDedent`
     <task>Update getMagicString to getMagicNumber</task>
 
     <next-change>
