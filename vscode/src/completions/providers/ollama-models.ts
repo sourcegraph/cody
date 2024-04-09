@@ -132,12 +132,9 @@ class StarCoder2 extends DefaultOllamaModel {
 class CodeGemma extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string {
         const { context, prefix, suffix } = ollamaPrompt
-
-        // `currentFileNameComment` is not included because it causes StarCoder2 to output
-        // invalid suggestions.
-        const infillPrefix = context + prefix
-
-        return `<|fim_prefix|>${infillPrefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+        // c.f. https://huggingface.co/blog/codegemma
+        // c.f. https://huggingface.co/google/codegemma-7b/blob/main/tokenizer.json
+        return `<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
