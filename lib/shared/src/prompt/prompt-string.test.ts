@@ -6,6 +6,7 @@ describe('PromptString', () => {
     it('can not be generated dynamically unless it consists of allowed sources', () => {
         expect(ps`foo`).toBeInstanceOf(PromptString)
         expect(ps`foo${ps`bar`}`).toBeInstanceOf(PromptString)
+        expect(ps`foo${1234}`).toBeInstanceOf(PromptString)
 
         // @ts-expect-error: Can't inline a string
         expect(() => ps`foo${'ho ho'}bar`).toThrowError()
@@ -23,8 +24,8 @@ describe('PromptString', () => {
 
     it('correctly assembles', () => {
         expect(ps`one`.toString()).toBe('one')
-        expect(ps`one ${ps`two`} three ${ps`four ${ps`five`} six`} seven`.toString()).toBe(
-            'one two three four five six seven'
+        expect(ps`one ${ps`two`} three ${ps`four ${ps`five`} six`} seven ${8}`.toString()).toBe(
+            'one two three four five six seven 8'
         )
     })
 
@@ -43,6 +44,24 @@ describe('PromptString', () => {
         expect(s.slice(1, 3).toString()).toBe(' f')
         expect(s.trim().toString()).toBe('foobarbaz')
         expect(s.trimEnd().toString()).toBe('  foobarbaz')
+    })
+
+    it('can split', () => {
+        const uri1 = testFileUri('/foo/bar.ts')
+        const uri2 = testFileUri('/foo/bar1.ts')
+
+        const split = temporary_createPromptString('foo\nbar\nbaz', [uri1, uri2]).split('\n')
+
+        expect(split).toHaveLength(3)
+        expect(split[0]).toBeInstanceOf(PromptString)
+        expect(split[0].toString()).toBe('foo')
+        expect(split[0].getReferences()).toEqual([uri1, uri2])
+        expect(split[1]).toBeInstanceOf(PromptString)
+        expect(split[1].toString()).toBe('bar')
+        expect(split[1].getReferences()).toEqual([uri1, uri2])
+        expect(split[2]).toBeInstanceOf(PromptString)
+        expect(split[2].toString()).toBe('baz')
+        expect(split[2].getReferences()).toEqual([uri1, uri2])
     })
 
     it('can join', () => {

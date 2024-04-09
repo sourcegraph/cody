@@ -89,7 +89,7 @@ class CommandsController implements vscode.Disposable {
 }
 
 /**
- * A aingleton instance of the CommandsController class.
+ * A singleton instance of the CommandsController class.
  * Activate on extension activation that will initialize the CommandsProvider.
  */
 const controller = new CommandsController()

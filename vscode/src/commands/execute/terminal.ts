@@ -1,4 +1,4 @@
-import { logDebug, ps } from '@sourcegraph/cody-shared'
+import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -47,16 +47,18 @@ export async function executeExplainOutput(
             },
         })
 
-        const output = args.selection?.trim()
+        const promptArgs = PromptString.fromTerminalOutputArguments(args)
+
+        const output = promptArgs.selection?.trim()
         if (!output) {
             return undefined
         }
 
-        let prompt = template.replaceAll('{{PROCESS}}', args.name).replaceAll('{{OUTPUT}}', output)
-        const options = JSON.stringify(args.creationOptions ?? {})
+        let prompt = template.replaceAll('{{PROCESS}}', promptArgs.name).replaceAll('{{OUTPUT}}', output)
+        const options = promptArgs.creationOptions
         if (options) {
             span.addEvent('hasCreationOptions')
-            prompt += `\nProcess options: ${options}`
+            prompt = prompt.concat(ps`\nProcess options: ${options}`)
         }
 
         return {

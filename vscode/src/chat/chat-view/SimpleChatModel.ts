@@ -119,7 +119,7 @@ export class SimpleChatModel {
             return this.customChatTitle
         }
         const lastHumanMessage = this.getLastHumanMessage()
-        return getChatPanelTitle(lastHumanMessage?.text ?? '')
+        return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
     public getCustomChatTitle(): string | undefined {

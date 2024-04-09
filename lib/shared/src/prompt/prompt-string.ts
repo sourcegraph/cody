@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
-import { ActiveTextEditorDiagnostic } from '../editor'
+import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
@@ -65,6 +65,18 @@ export class PromptString {
 
     public trimEnd(): PromptString {
         return internal_createPromptString(internal_toString(this).trimEnd(), this.getReferences())
+    }
+
+    public split(separator: string): PromptString[] {
+        const string = internal_toString(this)
+        const references = internal_toReferences(this)
+
+        const split = string.split(separator)
+        const result: PromptString[] = []
+        for (const part of split) {
+            result.push(internal_createPromptString(part, references))
+        }
+        return result
     }
 
     public static join(promptStrings: PromptString[], boundary: PromptString): PromptString {
@@ -159,26 +171,69 @@ export class PromptString {
     //
     // TODO: This should probably take a vscode.Diagnostic object instead.
     public static fromTextEditorDiagnostic(
-        template: PromptString,
         diagnostic: ActiveTextEditorDiagnostic,
         uri: vscode.Uri
-    ): PromptString {
-        const templateString = internal_toString(template)
-        const templateReferences = internal_toReferences(template)
-
-        const replaced = templateString
-            .replace('{type}', diagnostic.type)
-            .replace('{filePath}', displayPath(uri))
-            .replace('{prefix}', diagnostic.type)
-            .replace('{message}', diagnostic.message)
-            .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(uri))
-            .replace('{code}', diagnostic.text)
-
-        return internal_createPromptString(replaced, [...templateReferences, uri])
+    ): {
+        type: PromptString
+        text: PromptString
+        message: PromptString
+    } {
+        return {
+            type: internal_createPromptString(diagnostic.type, [uri]),
+            text: internal_createPromptString(diagnostic.text, [uri]),
+            message: internal_createPromptString(diagnostic.message, [uri]),
+        }
     }
 
     public static fromMarkdownCodeBlockLanguageIDForFilename(uri: vscode.Uri) {
         return internal_createPromptString(markdownCodeBlockLanguageIDForFilename(uri), [uri])
+    }
+
+    // TODO: Find a better way to handle this. Maybe we should migrate the default commands json to
+    // a TypesScript object?
+    public static fromDefaultCommands(
+        commands: { [name: string]: { prompt: string } },
+        name: 'doc' | 'explain' | 'test' | 'smell'
+    ) {
+        const prompt = commands[name].prompt
+        return internal_createPromptString(prompt, [])
+    }
+
+    // TODO: Need to check in the runtime if we have something we can append as an URI here
+    public static fromTerminalOutputArguments(output: TerminalOutputArguments) {
+        return {
+            name: internal_createPromptString(output.name, []),
+            selection: output.selection ? internal_createPromptString(output.selection, []) : undefined,
+            creationOptions: output.creationOptions
+                ? internal_createPromptString(JSON.stringify(output.creationOptions), [])
+                : undefined,
+        }
+    }
+
+    // TODO: Should we refactor the AC doc context to use PromptString instead of string?
+    public static fromAutocompleteDocContext(docContext: DocumentContext, uri: vscode.Uri) {
+        return {
+            prefix: internal_createPromptString(docContext.prefix, [uri]),
+            suffix: internal_createPromptString(docContext.suffix, [uri]),
+            injectedPrefix: docContext.injectedPrefix
+                ? internal_createPromptString(docContext.injectedPrefix, [uri])
+                : null,
+        }
+    }
+
+    // TODO: Should we propagate the PromptString into the context objects? It would
+    // mean a lot of refactoring but it could avoid this helper method (since I
+    // assume we use the getText API when we build these values)
+    public static fromAutocompleteContextSnippet(
+        contextSnippet: FileContextSnippet | SymbolContextSnippet
+    ) {
+        return {
+            content: internal_createPromptString(contextSnippet.content, [contextSnippet.uri]),
+            symbol:
+                'symbol' in contextSnippet
+                    ? internal_createPromptString(contextSnippet.symbol, [contextSnippet.uri])
+                    : undefined,
+        }
     }
 
     // 🚨 Use this function only for user-generated queries.
@@ -216,7 +271,10 @@ function internal_createPromptString(
  * @param format the format string pieces.
  * @param args the arguments to splice into the format string.
  */
-export function ps(format: TemplateStringsArray, ...args: readonly (PromptString | '')[]): PromptString {
+export function ps(
+    format: TemplateStringsArray,
+    ...args: readonly (PromptString | '' | number)[]
+): PromptString {
     if (!(Array.isArray(format) && Object.isFrozen(format) && format.length > 0)) {
         // Deter casual direct calls.
         throw new Error('ps is only intended to be used in tagged template literals.')
@@ -229,7 +287,10 @@ export function ps(format: TemplateStringsArray, ...args: readonly (PromptString
         if (i < args.length) {
             const arg = args[i]
 
-            if (arg === '') {
+            if (typeof arg === 'number') {
+                // Boxed number types are not allowed, only number literals
+                buffer.push(Number.prototype.toString.call(arg))
+            } else if (arg === '') {
                 // We allow empty strings for situations like this:
                 // ps`... ${foo ? foo : ''}...`
             } else if (arg instanceof PromptString) {
@@ -254,7 +315,7 @@ export function ps(format: TemplateStringsArray, ...args: readonly (PromptString
 // A version of ps that removes the leading indentation of the first line.
 export function psDedent(
     format: TemplateStringsArray,
-    ...args: readonly (PromptString | '')[]
+    ...args: readonly (PromptString | '' | number)[]
 ): PromptString {
     const promptString = ps(format, ...args)
     const dedented = dedent(internal_toString(promptString))
@@ -292,4 +353,55 @@ function internal_toReferences(s: PromptString): readonly StringReference[] {
     const ref = pocket.get(s)!.references
     Object.freeze(ref)
     return ref
+}
+
+// TODO: move this to shared
+interface TerminalOutputArguments {
+    name: string
+    selection?: string
+    creationOptions?: { shellPath?: string; shellArgs?: string[] }
+}
+
+// TODO: move this to shared
+interface DocumentContext extends DocumentDependentContext {
+    position: vscode.Position
+    multilineTrigger: string | null
+    multilineTriggerPosition: vscode.Position | null
+    /**
+     * A temporary workaround for the fact that we cannot modify `TextDocument` text.
+     * Having these fields set on a `DocumentContext` means we can still get the full
+     * document text in the `parse-completion` function with the "virtually" inserted
+     * completion text.
+     *
+     * TODO(valery): we need a better abstraction that would allow us to mutate
+     * the `TextDocument` text in memory without actually pasting it into the `TextDocument`
+     * and that would not require copy-pasting and modifying the whole document text
+     * on every completion update or new virtual completion creation.
+     */
+    injectedCompletionText?: string
+    positionWithoutInjectedCompletionText?: vscode.Position
+}
+
+// TODO: move this to shared
+interface DocumentDependentContext {
+    prefix: string
+    suffix: string
+    /**
+     * This is set when the document context is looking at the selected item in the
+     * suggestion widget and injects the item into the prefix.
+     */
+    injectedPrefix: string | null
+}
+
+// TODO: move this to shared
+interface FileContextSnippet {
+    uri: vscode.Uri
+    startLine: number
+    endLine: number
+    content: string
+}
+
+// TODO: move this to shared
+export interface SymbolContextSnippet extends FileContextSnippet {
+    symbol: string
 }

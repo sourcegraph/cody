@@ -4,8 +4,9 @@ import {
     type ContextItem,
     type EditModel,
     type EventSource,
-    PromptString,
+    type PromptString,
     displayPathBasename,
+    getEditorInsertSpaces,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -14,7 +15,6 @@ import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
-import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
@@ -800,8 +800,8 @@ export class FixupController
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
                 {
-                    tabSize: getEditorTabSize(document.uri),
-                    insertSpaces: getEditorInsertSpaces(document.uri),
+                    tabSize: document.uri,
+                    insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
                 }
             )) || []
 

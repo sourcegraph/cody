@@ -69,7 +69,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
             }
         }
         if (lastHumanMessage?.text) {
-            const lastHumanText = lastHumanMessage.text.split('\n')[0]
+            const lastHumanText = lastHumanMessage.text.toString().split('\n')[0]
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
 
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)

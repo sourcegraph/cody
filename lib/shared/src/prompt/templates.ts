@@ -33,7 +33,14 @@ export function populateCurrentEditorDiagnosticsTemplate(
     diagnostic: ActiveTextEditorDiagnostic,
     uri: URI
 ): PromptString {
-    return PromptString.fromTextEditorDiagnostic(DIAGNOSTICS_CONTEXT_TEMPLATE, diagnostic, uri)
+    const { type, message, text } = PromptString.fromTextEditorDiagnostic(diagnostic, uri)
+
+    return DIAGNOSTICS_CONTEXT_TEMPLATE.replaceAll('{type}', type)
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(uri))
+        .replaceAll('{prefix}', type)
+        .replaceAll('{message}', message)
+        .replaceAll('{languageID}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri))
+        .replaceAll('{code}', text)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'

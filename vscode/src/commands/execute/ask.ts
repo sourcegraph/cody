@@ -6,17 +6,13 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
-import type { ChatSubmitType } from '../../chat/protocol'
+import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments {
+export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'> {
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
-    submitType: ChatSubmitType
-
-    /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-    editorState?: unknown
 }
 
 /**

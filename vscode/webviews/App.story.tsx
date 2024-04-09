@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
-import { DEFAULT_DOT_COM_MODELS, ps } from '@sourcegraph/cody-shared'
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -53,8 +53,8 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                         lastInteractionTimestamp: '2024-03-29',
                         interactions: [
                             {
-                                humanMessage: { speaker: 'human', text: ps`Hello, world!` },
-                                assistantMessage: { speaker: 'assistant', text: ps`Hi!` },
+                                humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                assistantMessage: { speaker: 'assistant', text: 'Hi!' },
                             },
                         ],
                     },
