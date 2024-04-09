@@ -47,13 +47,13 @@ import {
 
 export const SINGLE_LINE_STOP_SEQUENCES = [
     anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG,
+    CLOSING_CODE_TAG.toString(),
     MULTILINE_STOP_SEQUENCE,
 ]
 
 export const MULTI_LINE_STOP_SEQUENCES = [
     anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG,
+    CLOSING_CODE_TAG.toString(),
     MULTILINE_STOP_SEQUENCE,
 ]
 
