@@ -17,7 +17,7 @@ export function registerLocalCertificates() {
 
     // Installs windows root certs onto the global agent
     // This is a no op for non-windows environments
-    require('win-ca').inject('+')
+    require('win-ca/fallback')
 
     // Installs linux root certs onto the global agent
     // This is a no op for non-linux environments
