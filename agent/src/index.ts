@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import type { Command } from 'commander'
+import {registerLocalCertificates} from './certs'
 
 console.log = console.error
 
@@ -22,13 +23,7 @@ process.on('uncaughtException', e => {
     console.error('Uncaught exception:', e)
 })
 
-// Deduplicates and installs mac root certs onto the global agent
-// This is a no op for non-mac environments
-require('mac-ca').addToGlobalAgent({ excludeBundled: false })
-
-// Installs windows root certs onto the global agent
-// This is a no op for non-windows environments
-require('win-ca').inject('+')
+registerLocalCertificates()
 
 const args = process.argv.slice(2)
 const { operands } = rootCommand.parseOptions(args)
