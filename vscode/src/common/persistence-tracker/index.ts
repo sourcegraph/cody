@@ -118,7 +118,11 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
 
         if (latestText.length === 0) {
             // Text was fully deleted
-            this.logger.onRemoved({ id: trackedInsertion.id, metadata: trackedInsertion.metadata })
+            this.logger.onRemoved({
+                id: trackedInsertion.id,
+                difference: 1,
+                metadata: trackedInsertion.metadata,
+            })
         } else {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
