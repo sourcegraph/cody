@@ -181,7 +181,12 @@ function messageToSerializedChatInteraction(
         )
     }
 
-    return { humanMessage, assistantMessage: assistantMessage ?? null }
+    return {
+        humanMessage: { ...humanMessage, text: humanMessage?.text?.toString() },
+        assistantMessage: assistantMessage?.text
+            ? { ...assistantMessage, text: assistantMessage.text.toString() }
+            : null,
+    }
 }
 
 export function prepareChatMessage(message: ChatMessage): ChatMessage {

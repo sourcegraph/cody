@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ContextItem, EditModel, EventSource, PromptString } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type EditModel,
+    type EventSource,
+    type PromptString,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
@@ -76,7 +82,7 @@ export class FixupTask {
         public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
-        this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
+        this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         this.originalRange = selectionRange
         this.model = getOverridenModelForIntent(this.intent, this.model)
     }
