@@ -17,6 +17,7 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
+import type { EmbeddingsProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
@@ -27,28 +28,31 @@ export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
     config: LocalEmbeddingsConfig
 ): Promise<LocalEmbeddingsController> {
-    const useSourcegraphEmbeddings = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings)
+    const useSourcegraphEmbeddings = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyUseSourcegraphEmbeddings
+    )
     return new LocalEmbeddingsController(context, config, useSourcegraphEmbeddings)
 }
 
-export type LocalEmbeddingsConfig = Pick<
-    ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken'
-> & {
-    testingLocalEmbeddingsModel: string | undefined
-    testingLocalEmbeddingsDimension: number | undefined
-    testingLocalEmbeddingsEndpoint: string | undefined
-    testingLocalEmbeddingsIndexLibraryPath: string | undefined
-}
+export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'>
 
-function getIndexLibraryPath(): FileURI {
+function getIndexLibraryPath(modelSuffix: string): FileURI {
     switch (process.platform) {
         case 'darwin':
-            return URI.file(`${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`)
+            return URI.file(
+                `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings` +
+                    (modelSuffix !== '' ? '/' + modelSuffix : '')
+            )
         case 'linux':
-            return URI.file(`${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`)
+            return URI.file(
+                `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings` +
+                    (modelSuffix !== '' ? '/' + modelSuffix : '')
+            )
         case 'win32':
-            return URI.file(`${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`)
+            return URI.file(
+                `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings` +
+                    (modelSuffix !== '' ? '\\' + modelSuffix : '')
+            )
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
     }
@@ -65,11 +69,10 @@ export class LocalEmbeddingsController
 {
     private disposables: vscode.Disposable[] = []
 
-    // These properties are constants, but may be overridden for testing.
     private readonly model: string
     private readonly dimension: number
     private readonly endpoint: string
-    private readonly indexLibraryPath: FileURI | undefined
+    private readonly provider: EmbeddingsProvider
 
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
@@ -102,7 +105,7 @@ export class LocalEmbeddingsController
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
-        private readonly useSourcegraphEmbeddings: boolean,
+        private readonly useSourcegraphEmbeddings: boolean
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -116,13 +119,12 @@ export class LocalEmbeddingsController
         this.accessToken = config.accessToken || undefined
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
 
-        this.model = config.testingLocalEmbeddingsModel || useSourcegraphEmbeddings? 'sourcegraph/st-multi-qa-mpnet-base-dot-v1': 'openai/text-embedding-ada-002'
-        this.dimension = config.testingLocalEmbeddingsDimension || useSourcegraphEmbeddings? 768:1536
-        this.endpoint =
-            config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
-        this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
-            ? URI.file(config.testingLocalEmbeddingsIndexLibraryPath)
-            : undefined
+        this.model = useSourcegraphEmbeddings
+            ? 'sourcegraph/st-multi-qa-mpnet-base-dot-v1'
+            : 'openai/text-embedding-ada-002'
+        this.dimension = useSourcegraphEmbeddings ? 768 : 1536
+        this.endpoint = 'https://cody-gateway.sourcegraph.com/v1/embeddings'
+        this.provider = useSourcegraphEmbeddings ? 'sourcegraph' : 'openai'
     }
 
     public dispose(): void {
@@ -212,17 +214,10 @@ export class LocalEmbeddingsController
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        let indexPath = getIndexLibraryPath()
+        const indexPath = getIndexLibraryPath(this.getModelSuffix())
+
         // Tests may override the index library path
-        if (this.indexLibraryPath) {
-            logDebug(
-                'LocalEmbeddingsController',
-                'spawnAndBindService',
-                'overriding index library path',
-                this.indexLibraryPath
-            )
-            indexPath = this.indexLibraryPath
-        }
+
         const initResult = await service.request('embeddings/initialize', {
             codyGatewayEndpoint: this.endpoint,
             indexPath: indexPath.fsPath,
@@ -294,7 +289,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'indeterminate',
-                            useSourcegraphEmbeddings:this.useSourcegraphEmbeddings,
+                            embeddingsAPIProvider: this.provider,
                         },
                     ],
                 },
@@ -305,7 +300,13 @@ export class LocalEmbeddingsController
                 {
                     dir,
                     displayName: uriBasename(dir),
-                    providers: [{ kind: 'embeddings', state: 'indexing',useSourcegraphEmbeddings:this.useSourcegraphEmbeddings }],
+                    providers: [
+                        {
+                            kind: 'embeddings',
+                            state: 'indexing',
+                            embeddingsAPIProvider: this.provider,
+                        },
+                    ],
                 },
             ]
         }
@@ -318,7 +319,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'ready',
-                            useSourcegraphEmbeddings:this.useSourcegraphEmbeddings
+                            embeddingsAPIProvider: this.provider,
                         },
                     ],
                 },
@@ -346,7 +347,7 @@ export class LocalEmbeddingsController
                     {
                         kind: 'embeddings',
                         ...stateAndErrors,
-                        useSourcegraphEmbeddings: this.useSourcegraphEmbeddings,
+                        embeddingsAPIProvider: this.provider,
                     },
                 ],
             },
@@ -581,5 +582,14 @@ export class LocalEmbeddingsController
             logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
             return []
         }
+    }
+
+    // Add a suffix to allow switching models without conflicts
+    private getModelSuffix(): string {
+        if (this.useSourcegraphEmbeddings) {
+            return 'st-v1'
+        }
+        // Old default (OpenAI) gets an empty suffix
+        return ''
     }
 }

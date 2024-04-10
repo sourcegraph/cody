@@ -153,7 +153,11 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                         {
                             displayName: '~/projects/foo',
                             providers: [
-                                { kind: 'embeddings', state: 'unconsented', useSourcegraphEmbeddings:false },
+                                {
+                                    kind: 'embeddings',
+                                    state: 'unconsented',
+                                    embeddingsAPIProvider: 'openai',
+                                },
                                 { kind: 'search', type: 'local', state: 'indexing' },
                             ],
                         },
