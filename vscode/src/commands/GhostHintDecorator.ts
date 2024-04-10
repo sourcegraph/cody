@@ -11,6 +11,7 @@ import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
 const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
 const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
+const TEST_SHORTCUT_LABEL = isMacOS() ? 'Opt+T' : 'Alt+T'
 
 /**
  * NOTE: When the HoverCommands A/B test is running, Ghost Text is disabled for users in the HoverCommands treatment group.
@@ -93,7 +94,7 @@ function getSymbolDecorationPadding(
     return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
-type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
+type GhostVariant = 'EditOrChat' | 'Document' | 'Generate' | 'Test'
 type EnabledFeatures = Record<GhostVariant, boolean>
 
 /**
@@ -117,6 +118,7 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
          * We can safely set the default of this to `true`.
          */
         Generate: settingValue ?? true,
+        Test: settingValue ?? true,
     }
 }
 
@@ -152,6 +154,12 @@ const HINT_DECORATIONS: Record<
             after: { color: GHOST_TEXT_COLOR },
         }),
     },
+    Test: {
+        text: `${TEST_SHORTCUT_LABEL} to Test`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: { color: GHOST_TEXT_COLOR },
+        }),
+    },
     Generate: {
         text: `${EDIT_SHORTCUT_LABEL} to Generate Code`,
         decoration: vscode.window.createTextEditorDecorationType({
@@ -163,7 +171,7 @@ const HINT_DECORATIONS: Record<
     },
 }
 
-const DOCUMENTABLE_SYMBOL_THROTTLE = 10
+const GET_SYMBOL_THROTTLE = 10
 const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
 
@@ -174,6 +182,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
     private fireThrottledDisplayEvent: DebouncedFunc<typeof this._fireDisplayEvent>
     private getThrottledDocumentableSymbol: DebouncedFunc<typeof this.getDocumentableSymbol>
+    private getThrottledTestableSymbol: DebouncedFunc<typeof this.getTestableSymbol>
 
     /** Store the last line that the user typed on, we want to avoid showing the text here */
     private lastLineTyped: number | null = null
@@ -193,7 +202,15 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
         this.getThrottledDocumentableSymbol = throttle(
             this.getDocumentableSymbol.bind(this),
-            DOCUMENTABLE_SYMBOL_THROTTLE,
+            GET_SYMBOL_THROTTLE,
+            {
+                leading: true,
+                trailing: true,
+            }
+        )
+        this.getThrottledTestableSymbol = throttle(
+            this.getTestableSymbol.bind(this),
+            GET_SYMBOL_THROTTLE,
             {
                 leading: true,
                 trailing: true,
@@ -255,8 +272,49 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     const selection = event.selections[0]
+                    let testShown = false
+                    if (enabledFeatures.Test && selection.active.line !== this.lastLineTyped) {
+                        const testableSymbol = this.getThrottledTestableSymbol(
+                            editor.document,
+                            selection.active
+                        )
 
-                    if (enabledFeatures.Document && selection.active.line !== this.lastLineTyped) {
+                        if (testableSymbol) {
+                            /**
+                             * "Test" code flow.
+                             * Display ghost text above the relevant symbol.
+                             */
+                            const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
+                            if (
+                                this.activeDecorationRange &&
+                                this.activeDecorationRange.start.line !== precedingLine
+                            ) {
+                                this.clearGhostText(editor)
+                            }
+                            testShown = true
+                            return this.setThrottledGhostText(
+                                editor,
+                                new vscode.Position(precedingLine, Number.MAX_VALUE),
+                                'Test',
+                                getSymbolDecorationPadding(
+                                    editor.document,
+                                    editor.document.lineAt(precedingLine),
+                                    new vscode.Range(
+                                        testableSymbol.startPosition.row,
+                                        testableSymbol.startPosition.column,
+                                        testableSymbol.endPosition.row,
+                                        testableSymbol.endPosition.column
+                                    )
+                                )
+                            )
+                        }
+                    }
+
+                    if (
+                        !testShown &&
+                        !enabledFeatures.Document &&
+                        selection.active.line !== this.lastLineTyped
+                    ) {
                         const documentableSymbol = this.getThrottledDocumentableSymbol(
                             editor.document,
                             selection.active
@@ -393,6 +451,30 @@ export class GhostHintDecorator implements vscode.Disposable {
         }
 
         return documentableSymbol.node
+    }
+
+    private getTestableSymbol(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): SyntaxNode | undefined {
+        const [testableNode] = execQueryWrapper({
+            document,
+            position,
+            queryWrapper: 'getTestableNode',
+        })
+        if (!testableNode) {
+            return
+        }
+
+        const {
+            symbol: testableSymbol,
+            meta: { showHint },
+        } = testableNode
+        if (!testableSymbol || !showHint) {
+            return
+        }
+
+        return testableSymbol.node
     }
 
     public clearGhostText(editor: vscode.TextEditor): void {
