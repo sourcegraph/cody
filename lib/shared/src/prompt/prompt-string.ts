@@ -193,6 +193,20 @@ export class PromptString {
         return internal_createPromptString(markdownCodeBlockLanguageIDForFilename(uri), [uri])
     }
 
+    public static fromDiagnostic(uri: vscode.Uri, diagnostic: vscode.Diagnostic) {
+        return internal_createPromptString(diagnostic.message, [uri])
+    }
+
+    public static fromDocumentSymbol(
+        uri: vscode.Uri,
+        documentSymbol: vscode.DocumentSymbol,
+        SymbolKind: typeof vscode.SymbolKind
+    ) {
+        const symbolKind = documentSymbol.kind ? SymbolKind[documentSymbol.kind].toLowerCase() : ''
+        const symbolPrompt = documentSymbol.name ? `#${documentSymbol.name} (${symbolKind})` : ''
+        return internal_createPromptString(symbolPrompt, [uri])
+    }
+
     // TODO: Find a better way to handle this. Maybe we should migrate the default commands json to
     // a TypesScript object?
     public static fromDefaultCommands(

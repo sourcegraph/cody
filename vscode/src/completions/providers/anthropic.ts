@@ -1,11 +1,11 @@
 import * as anthropic from '@anthropic-ai/sdk'
-import * as vscode from 'vscode'
 
 import {
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type Message,
-    displayPath,
+    PromptString,
+    ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -96,37 +96,46 @@ class AnthropicProvider extends Provider {
     }
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        const prefixLines = this.options.docContext.prefix.split('\n')
+        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
+
+        const prefixLines = prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail, overlap } = getHeadAndTail(this.options.docContext.prefix)
+        const { head, tail, overlap } = getHeadAndTail(prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+        const infillBlock = tail.trimmed.toString().endsWith('{\n')
+            ? tail.trimmed.trimEnd()
+            : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
         const infillPrefix = head.raw
         // code after the cursor
-        const infillSuffix = this.options.docContext.suffix
-        const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
+        const infillSuffix = suffix
+        const relativeFilePath = PromptString.fromDisplayPath(this.options.document.uri)
 
         const prefixMessagesWithInfill: Message[] = [
             {
                 speaker: 'human',
-                text: `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only respond with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
+                text: ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only respond with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.',
+                text: ps`I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.`,
             },
             {
                 speaker: 'human',
-                text: `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
+                text: ps`Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${
+                    infillPrefix ? infillPrefix : ''
+                }${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
             },
             {
                 speaker: 'assistant',
-                text: `${OPENING_CODE_TAG}${infillBlock}`,
+                text: ps`${OPENING_CODE_TAG}${infillBlock}`,
             },
         ]
 
@@ -146,19 +155,20 @@ class AnthropicProvider extends Provider {
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of snippets) {
+            const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text:
-                        'symbol' in snippet && snippet.symbol !== ''
-                            ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                            : `Codebase context from file path '${displayPath(
-                                  snippet.uri
-                              )}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                    text: contextPrompts.symbol
+                        ? ps`Additional documentation for \`${contextPrompts.symbol}\`: ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`
+                        : ps`Codebase context from file path '${PromptString.fromDisplayPath(
+                              snippet.uri
+                          )}': ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'I will refer to this code to complete your next request.',
+                    text: ps`I will refer to this code to complete your next request.`,
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
