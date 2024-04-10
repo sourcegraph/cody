@@ -568,7 +568,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleSetChatModel(modelID: string): Promise<void> {
-        this.chatModel.modelID = modelID
+        this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
     }
 
