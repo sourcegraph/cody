@@ -24,7 +24,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
     async init() {
         await this.fetchContextFilters()
         this.startRefetchTimer()
-        return this.contextFilters
     }
 
     private async fetchContextFilters(): Promise<void> {
