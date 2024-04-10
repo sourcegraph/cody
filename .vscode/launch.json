@@ -16,12 +16,12 @@
       "env": {
         "NODE_ENV": "development",
         "CODY_DEBUG_ENABLE": "true",
-        "CODY_TESTING": "true",
+        //"CODY_TESTING": "true",
 
         // Enable the Node debug protocol for the TypeScript server:
         // "TSS_DEBUG": "5859"
         // Let extension behave like you're on dotcom when connected locally:
-        "TESTING_DOTCOM_URL": "https://sourcegraph.test:3443"
+        //"TESTING_DOTCOM_URL": "https://sourcegraph.test:3443"
         // Enable Sentry in local development mode:
         // "ENABLE_SENTRY": "true"
       }
