@@ -68,7 +68,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
         let isAllowed = Boolean(this.contextFilters)
 
         if (this.contextFilters?.include.length) {
-            isAllowed = false
             for (const parsedFilter of this.contextFilters.include) {
                 isAllowed = checkFilter(parsedFilter, repoName, relativePath)
 
