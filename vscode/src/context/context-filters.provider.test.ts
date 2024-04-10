@@ -1,4 +1,4 @@
-import { graphqlClient } from '@sourcegraph/cody-shared'
+import { type ContextFiltersResult, graphqlClient } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ContextFiltersProvider } from './context-filters-provider'
 
@@ -7,6 +7,7 @@ describe('ContextFiltersProvider', () => {
 
     beforeEach(() => {
         provider = new ContextFiltersProvider()
+        vi.useFakeTimers()
     })
 
     afterEach(() => {
@@ -14,81 +15,132 @@ describe('ContextFiltersProvider', () => {
         vi.restoreAllMocks()
     })
 
+    async function initProviderWithContextFilters(contextFilters: ContextFiltersResult): Promise<void> {
+        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(contextFilters)
+        await provider.init()
+    }
+
     it('allows a path if it matches the include pattern and does not match the exclude pattern', async () => {
-        const mockContextFilters = {
+        await initProviderWithContextFilters({
             include: [
                 { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
                 { repoNamePattern: '^github\\.com\\/evilcorp\\/.*' },
             ],
             exclude: [{ repoNamePattern: '.*sensitive.*' }],
-        }
-        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(mockContextFilters)
-        await provider.init()
+        })
 
-        const isAllowed = provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')
-        const isAllowed2 = provider.isPathAllowed('github.com/evilcorp/cody', 'src/main.ts')
-        expect(isAllowed).toBe(true)
-        expect(isAllowed2).toBe(true)
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+        expect(provider.isPathAllowed('github.com/evilcorp/cody', 'src/main.ts')).toBe(true)
     })
 
     it('does not allow a path if it does not match the include pattern', async () => {
-        const mockContextFilters = {
+        await initProviderWithContextFilters({
             include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
             exclude: [{ repoNamePattern: '.*sensitive.*' }],
-        }
-        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(mockContextFilters)
-        await provider.init()
+        })
 
-        const isAllowed = provider.isPathAllowed('github.com/other/repo', 'src/main.ts')
-        expect(isAllowed).toBe(false)
+        expect(provider.isPathAllowed('github.com/other/repo', 'src/main.ts')).toBe(false)
     })
 
     it('does not allow a path if it matches the exclude pattern', async () => {
-        const mockContextFilters = {
+        await initProviderWithContextFilters({
             include: [
                 { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
                 { repoNamePattern: '^github\\.com\\/sensitive\\/.*' },
             ],
             exclude: [{ repoNamePattern: '.*sensitive.*' }, { repoNamePattern: '.*not-allowed.*' }],
-        }
-        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(mockContextFilters)
-        await provider.init()
+        })
 
-        const isAllowed = provider.isPathAllowed('github.com/sensitive/sensitive-repo', 'src/main.ts')
-        const isAllowed2 = provider.isPathAllowed(
-            'github.com/sourcegraph/not-allowed-repo',
-            'src/main.ts'
+        expect(provider.isPathAllowed('github.com/sensitive/sensitive-repo', 'src/main.ts')).toBe(false)
+        expect(provider.isPathAllowed('github.com/sourcegraph/not-allowed-repo', 'src/main.ts')).toBe(
+            false
         )
-
-        expect(isAllowed).toBe(false)
-        expect(isAllowed2).toBe(false)
     })
 
     it('allows any path if include is empty and it does not match the exclude pattern', async () => {
-        const mockContextFilters = {
+        await initProviderWithContextFilters({
             include: [],
             exclude: [{ repoNamePattern: '.*sensitive.*' }],
-        }
-        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(mockContextFilters)
-        await provider.init()
+        })
 
-        const isAllowed = provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')
-        expect(isAllowed).toBe(true)
+        expect(provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')).toBe(true)
     })
 
     it('exclude everything on unknown API errors', async () => {
         vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(new Error('API error message'))
         await provider.init()
 
-        const isAllowed = provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')
-        expect(isAllowed).toBe(false)
+        expect(provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')).toBe(false)
     })
 
     it('exclude everything on network errors', async () => {
         vi.spyOn(graphqlClient, 'contextFilters').mockRejectedValue(new Error('network error'))
         await provider.init()
 
-        const isAllowed = provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')
-        expect(isAllowed).toBe(false)
+        expect(provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')).toBe(false)
+    })
+
+    it('matches file path patterns correctly', async () => {
+        await initProviderWithContextFilters({
+            include: [
+                { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*', filePathPattern: '.*\\.ts$' },
+            ],
+            exclude: [],
+        })
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.js')).toBe(false)
+    })
+
+    it('excludes paths that match both include and exclude patterns', async () => {
+        await initProviderWithContextFilters({
+            include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+            exclude: [{ repoNamePattern: '.*sensitive.*' }],
+        })
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/sensitive-repo', 'src/main.ts')).toBe(
+            false
+        )
+    })
+
+    it('handles invalid regular expressions gracefully', async () => {
+        await initProviderWithContextFilters({
+            include: [{ repoNamePattern: '(invalid_regex' }],
+            exclude: [],
+        })
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(false)
+    })
+
+    it('uses cached results for repeated calls', async () => {
+        await initProviderWithContextFilters({
+            include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+            exclude: [],
+        })
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+    })
+
+    it('refetches context filters after the specified interval', async () => {
+        const mockContextFilters1 = {
+            include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+            exclude: [],
+        }
+        const mockContextFilters2 = {
+            include: [{ repoNamePattern: '^github\\.com\\/other\\/.*' }],
+            exclude: [],
+        }
+        vi.spyOn(graphqlClient, 'contextFilters')
+            .mockResolvedValueOnce(mockContextFilters1)
+            .mockResolvedValueOnce(mockContextFilters2)
+        await provider.init()
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+
+        await vi.runOnlyPendingTimersAsync()
+
+        expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(false)
+        expect(provider.isPathAllowed('github.com/other/cody', 'src/main.ts')).toBe(true)
     })
 })

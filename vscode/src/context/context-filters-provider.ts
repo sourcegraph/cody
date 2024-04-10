@@ -4,7 +4,7 @@ import type * as vscode from 'vscode'
 
 import { type CodyContextFilterItem, graphqlClient, logError } from '@sourcegraph/cody-shared'
 
-const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
+export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
 interface ParsedContextFilters {
     include: ParsedContextFilterItem[]
@@ -34,6 +34,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
                 logError('ContextFiltersProvider', 'fetchContextFilters', response)
             } else {
                 this.cache.clear()
+                this.contextFilters = null
 
                 if (response) {
                     this.contextFilters = {
