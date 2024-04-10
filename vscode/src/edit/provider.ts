@@ -171,11 +171,10 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        if (
-            this.config.task.intent === 'test' &&
-            !this.config.task.destinationFile &&
-            !isMessageInProgress
-        ) {
+        if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
+            if (isMessageInProgress) {
+                return
+            }
             await this.handleFileCreationResponse('', isMessageInProgress)
         }
 
