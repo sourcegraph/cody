@@ -365,6 +365,7 @@ function internal_toString(s: PromptString): string {
 }
 function internal_toReferences(s: PromptString): readonly StringReference[] {
     // Return a shallow copy of the references so it can not be mutated
+    // TODO: Do we need to create an array or can we expose the iterator?
     return [...pocket.get(s)!.references.values()]
 }
 
