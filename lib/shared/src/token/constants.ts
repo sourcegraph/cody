@@ -16,5 +16,3 @@ export const ENHANCED_CONTEXT_ALLOCATION = 0.6
  * LINK: https://docs.anthropic.com/claude/docs/glossary#tokens
  */
 export const CHARACTERS_PER_TOKEN = 3.5
-
-export type ContextTokenUsageType = 'user' | 'enhanced'

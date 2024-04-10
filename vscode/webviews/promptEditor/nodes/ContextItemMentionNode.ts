@@ -5,8 +5,6 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemSymbol,
-    TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
     displayLineRange,
     displayPath,
     webviewOpenURIForContextItem,
@@ -38,9 +36,6 @@ export function serializeContextItem(
 ): SerializedContextItem {
     // Make sure we only bring over the fields on the context item that we need, or else we
     // could accidentally include tons of data (including the entire contents of files).
-    const isTooLarge = contextItem.content
-        ? TokenCounter.countTokens(contextItem.content) > USER_CONTEXT_TOKEN_BUDGET
-        : contextItem.isTooLarge
     return {
         ...contextItem,
         uri: contextItem.uri.toString(),
@@ -48,7 +43,6 @@ export function serializeContextItem(
         // Don't include the `content` (if it's present) because it's quite large, and we don't need
         // to serialize it here. It can be hydrated on demand.
         content: undefined,
-        isTooLarge,
     }
 }
 

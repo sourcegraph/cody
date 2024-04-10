@@ -19,7 +19,9 @@ import {
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
+import { FAST_CHAT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
+import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
@@ -97,11 +99,13 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
     const options = useMemo(() => {
+        const maxToken = useCurrentChatModel()?.maxRequestTokens ?? FAST_CHAT_TOKEN_BUDGET
+        const contextBudget = Math.min(maxToken, USER_CONTEXT_TOKEN_BUDGET)
         return (
             results
                 ?.map(r => {
                     if (r.size) {
-                        r.isTooLarge = r.size > USER_CONTEXT_TOKEN_BUDGET - tokenAdded
+                        r.isTooLarge = r.size > contextBudget - tokenAdded
                     }
                     // All @-mentions should have a source of `User`.
                     r.source = ContextItemSource.User
@@ -140,7 +144,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 }
 
                 const selectedItem = selectedOption.item
-                const isLargeFile = selectedItem.type === 'file' && selectedItem.isTooLarge
+                const isLargeFile = selectedItem.isTooLarge
                 // When selecting a large file without range, add the selected option as text node with : at the end.
                 // This allows users to autocomplete the file path, and provide them with the options to add range.
                 if (isLargeFile && !selectedItem.range) {

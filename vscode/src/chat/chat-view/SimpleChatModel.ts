@@ -7,6 +7,7 @@ import {
     ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    TokenCounter,
     errorToChatError,
     isCodyIgnoredFile,
     toRangeData,
@@ -16,7 +17,8 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    public maxToken: number
+    public tokenTracker: TokenCounter
+
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -24,12 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.maxToken = ModelProvider.getMaxTokenByID(this.modelID)
+        this.tokenTracker = new TokenCounter(ModelProvider.getMaxTokenByID(this.modelID))
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.maxToken = ModelProvider.getMaxTokenByID(newModelID)
+        this.tokenTracker = new TokenCounter(ModelProvider.getMaxTokenByID(newModelID))
     }
 
     public isEmpty(): boolean {

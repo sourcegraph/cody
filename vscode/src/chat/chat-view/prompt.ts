@@ -5,7 +5,6 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
-    TokenCounter,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -45,8 +44,7 @@ export class DefaultPrompter implements IPrompter {
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const tokenCounter = new TokenCounter(chat.maxToken)
-            const promptBuilder = new PromptBuilder(tokenCounter)
+            const promptBuilder = new PromptBuilder(chat.tokenTracker)
             const newContextUsed: ContextItem[] = []
             const preInstruction: string | undefined = vscode.workspace
                 .getConfiguration('cody.chat')
@@ -55,7 +53,9 @@ export class DefaultPrompter implements IPrompter {
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
-                throw new Error(`Preamble length exceeded context window size ${chat.maxToken}`)
+                throw new Error(
+                    `Preamble length exceeded context window size ${chat.tokenTracker.maxChatTokens}`
+                )
             }
 
             // Add existing transcript messages
@@ -114,11 +114,12 @@ export class DefaultPrompter implements IPrompter {
             if (lastMessage.speaker === 'assistant') {
                 throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
             }
+
             if (this.getEnhancedContext) {
                 // Add additional context from current editor or broader search
                 const additionalContextItems = await this.getEnhancedContext(
                     lastMessage.text,
-                    tokenCounter.remainingTokens.context.enhanced
+                    chat.tokenTracker.remainingTokens.context.enhanced
                 )
                 sortContextItems(additionalContextItems)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(

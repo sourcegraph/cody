@@ -1,5 +1,5 @@
 import type { ModelProvider } from '.'
-import { CHAT_TOKEN_BUDGET, FAST_CHAT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_TOKEN_BUDGET, FAST_CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } from '../token/constants'
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
@@ -47,7 +47,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +56,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET,
     },
     {
         title: 'GPT-3.5 Turbo',

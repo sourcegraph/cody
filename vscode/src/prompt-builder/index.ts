@@ -7,7 +7,7 @@ import {
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token/constants'
+import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
@@ -28,18 +28,20 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
     private seenContext = new Set<string>()
-    constructor(private tokenCounter: TokenCounter) {}
+    constructor(private tokenCounter: TokenCounter) {
+        tokenCounter.reset()
+    }
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        const isAdded = this.tokenCounter.updateChatUsage(messages)
-        if (isAdded) {
+        const withinLimit = this.tokenCounter.updateUsage('chat', messages)
+        if (withinLimit) {
             this.prefixMessages.push(...messages)
         }
-        return isAdded
+        return withinLimit
     }
 
     /**
@@ -59,8 +61,8 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            const isAdded = this.tokenCounter.updateChatUsage([humanMsg, assistantMsg])
-            if (!isAdded) {
+            const withinLimit = this.tokenCounter.updateUsage('chat', [humanMsg, assistantMsg])
+            if (!withinLimit) {
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
@@ -101,12 +103,12 @@ export class PromptBuilder {
                 continue
             }
             const assistantMsg = { speaker: 'assistant', text: 'Ok.' } as Message
-            const isAdded = this.tokenCounter.updateContextUsage(type, [contextMsg, assistantMsg])
+            const withinLimit = this.tokenCounter.updateUsage(type, [contextMsg, assistantMsg])
             // Marks excluded context items as too large and vice versa
-            userContextItem.isTooLarge = !isAdded
+            userContextItem.isTooLarge = !withinLimit
             this.seenContext.add(id)
             // Skip context items that would exceed the token budget
-            if (!isAdded) {
+            if (!withinLimit) {
                 userContextItem.content = undefined
                 result.ignored.push(userContextItem)
                 result.limitReached = true

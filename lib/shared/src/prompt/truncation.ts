@@ -1,5 +1,5 @@
 import type { RangeData } from '../common/range'
-import { TokenCounter } from '../token'
+import { TokenCounter } from '../token/counter'
 
 /**
  * Truncates text to the given number of tokens, keeping the start of the text.

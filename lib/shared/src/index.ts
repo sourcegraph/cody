@@ -229,7 +229,7 @@ export {
     isURLContextItem,
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
-export { TokenCounter } from './token'
+export { TokenCounter } from './token/counter'
 export {
     USER_CONTEXT_TOKEN_BUDGET,
     ENHANCED_CONTEXT_ALLOCATION,

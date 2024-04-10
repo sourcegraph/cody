@@ -1,4 +1,4 @@
-import { CHAT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelUsage } from './types'
 import { fetchLocalOllamaModels, getModelInfo } from './utils'
 
@@ -18,19 +18,27 @@ export class ModelProvider {
     public readonly title: string
 
     constructor(
-        // The model id that includes the provider name & the model name,
-        // e.g. "anthropic/claude-2.0"
+        /**
+         * The model id that includes the provider name & the model name,
+         * e.g. "anthropic/claude-2.0"
+         */
         public readonly model: string,
-        // The usage of the model, e.g. chat or edit.
+        /**
+         * The usage of the model, e.g. chat or edit.
+         */
         public readonly usage: ModelUsage[],
         /**
          * The context window of the model, which is the maximum number of tokens
          * that can be processed by the model in a single request.
          */
-        public readonly maxRequestTokens: number = CHAT_TOKEN_BUDGET,
-        // The API key for the model
+        public readonly maxRequestTokens = CHAT_TOKEN_BUDGET,
+        /**
+         * The API key for the model
+         */
         public readonly apiKey?: string,
-        // The API endpoint for the model
+        /**
+         * The API endpoint for the model
+         */
         public readonly apiEndpoint?: string
     ) {
         const { provider, title } = getModelInfo(model)
@@ -103,13 +111,21 @@ export class ModelProvider {
     }
 
     /**
-     * Finds the model provider with the given model ID and returns its characters limit.
+     * Finds the model provider with the given model ID and returns its token limit.
      * The limit is calculated based on the max number of tokens the model can process.
-     * E.g. 7000 tokens * 4 characters/token = 28000 characters
+     *
+     * NOTE: Currently, only 'claude-3' (except haiku) models have a higher token limit that includes user context tokens.
+     * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
      */
     public static getMaxTokenByID(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model?.maxRequestTokens || CHAT_TOKEN_BUDGET
+        const isModelWithHighBudget = ['claude-3-sonnet', 'claude-3-opus']
+        return (
+            model?.maxRequestTokens ??
+            (isModelWithHighBudget.some(m => modelID?.includes(m))
+                ? CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET
+                : CHAT_TOKEN_BUDGET)
+        )
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
