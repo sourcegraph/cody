@@ -20,8 +20,6 @@ export function syncModelProviders(authStatus: AuthStatus): void {
 
     if (authStatus.isDotCom) {
         ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
-        getChatModelsFromConfiguration(authStatus)
-        return
     }
 
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
@@ -33,7 +31,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     //
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty, we will not set any model providers.
     // Which means it will fallback to use the default model on the server.
-    if (authStatus?.configOverwrites?.chatModel) {
+    if (!authStatus.isDotCom && authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
         const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
@@ -46,6 +44,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
             ),
         ])
     }
+
+    getChatModelsFromConfiguration()
 }
 
 interface ChatModelProviderConfig {
@@ -57,17 +57,17 @@ interface ChatModelProviderConfig {
 }
 
 /**
- * NOTE: DotCom Pro Users only
+ * NOTE: DotCom Connections only as model options are not available for Enterprise
  *
- * Gets an array of `ModelProvider` instances based on the configuration for experimental chat models.
- * If the `cody.experimental.chatModels` setting is not configured or is empty, the function returns an empty array.
+ * Gets an array of `ModelProvider` instances based on the configuration for dev chat models.
+ * If the `cody.dev.models` setting is not configured or is empty, the function returns an empty array.
  *
  * @returns An array of `ModelProvider` instances for the configured chat models.
  */
-export function getChatModelsFromConfiguration(authStatus: AuthStatus): ModelProvider[] {
+export function getChatModelsFromConfiguration(): ModelProvider[] {
     const codyConfig = vscode.workspace.getConfiguration('cody')
-    const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('experimental.chatModels')
-    if (!authStatus.isDotCom || !modelsConfig?.length) {
+    const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
+    if (!modelsConfig?.length) {
         return []
     }
 

@@ -1,3 +1,5 @@
+import type { GeminiCompletionResponse } from '.'
+import { getCompletionsModelConfig } from '..'
 import { onAbort } from '../common/abortController'
 import { CompletionStopReason } from '../inferenceClient/misc'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
@@ -6,27 +8,18 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '../sourcegraph-api/completions/types'
+import { constructGeminiChatMessages } from './utils'
 
-interface GoogleChatResponse {
-    candidates: {
-        content: {
-            parts: { text: string }[]
-            role: string
-        }
-        finishReason: string
-        index: number
-        safetyRatings: {
-            category: string
-            probability: string
-        }[]
-    }[]
-}
-
+/**
+ * The URL for the Gemini API, which is used to interact with the Generative Language API provided by Google.
+ * The `{model}` placeholder should be replaced with the specific model being used.
+ */
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/{model}'
 
 /**
  * Calls the Google API for chat completions with history.
- * https://ai.google.dev/tutorials/rest_quickstart#multi-turn_conversations_chat
+ *
+ * REF: https://ai.google.dev/tutorials/rest_quickstart#multi-turn_conversations_chat
  */
 export function googleChatClient(
     params: CompletionParameters,
@@ -35,29 +28,26 @@ export function googleChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    if (!params.model || !params.modelAPI?.key) {
-        cb.onError(new Error('Model and modelAPIKey must be provided to use Google Chat model.'))
+    if (!params.model) {
+        return
+    }
+
+    const config = getCompletionsModelConfig(params.model)
+    if (!config?.key) {
+        cb.onError(new Error(`API key must be provided to use Google Chat model ${params.model}`))
         return
     }
 
     const log = logger?.startCompletion(params, completionsEndpoint)
-    const model = params.model?.replace('google/', '') || 'gemini-pro'
-    const key = params.modelAPI?.key
-    const apiEndpoint = new URL(GEMINI_API_URL.replace('{model}', model))
+
     // Add the stream endpoint to the URL
+    const apiEndpoint = new URL(GEMINI_API_URL.replace('{model}', config.model))
     apiEndpoint.pathname += ':streamGenerateContent'
     apiEndpoint.searchParams.append('alt', 'sse')
-    apiEndpoint.searchParams.append('key', key)
+    apiEndpoint.searchParams.append('key', config.key)
 
     // Construct the messages array for the API
-    const messages = params.messages.map(msg => ({
-        role: msg.speaker === 'human' ? 'user' : 'model',
-        parts: [{ text: msg.text ?? '' }],
-    }))
-    // Remove the last bot message from the messages array as expected by the API
-    if (messages[messages.length - 1].role === 'model') {
-        messages.pop()
-    }
+    const messages = constructGeminiChatMessages(params.messages)
 
     // Sends the completion parameters and callbacks to the API.
     fetch(apiEndpoint, {
@@ -67,56 +57,61 @@ export function googleChatClient(
             'Content-Type': 'application/json',
         },
         signal,
-    }).then(async response => {
-        if (!response.body) {
-            log?.onError('No response body')
-            throw new Error('No response body')
-        }
-
-        const reader = response.body.getReader()
-
-        onAbort(signal, () => reader.cancel())
-
-        // Handles the response stream to accumulate the full completion text.“
-        let insertText = ''
-        while (true) {
-            if (!response.ok) {
-                throw new Error(`HTTP error: ${response.status}`)
+    })
+        .then(async response => {
+            if (!response.body) {
+                throw new Error('No response body')
             }
 
-            // Create a streaming json parser to handle this without reading the whole stream first
-            const { done, value } = await reader.read()
-            const textDecoder = new TextDecoder()
-            const decoded = textDecoder.decode(value, { stream: true })
-            // Split the stream into individual messages
-            const messages = decoded.split(/^data: /).filter(Boolean)
-            for (const message of messages) {
-                // Remove the "data: " prefix from each message
-                const jsonString = message.replace(/^data: /, '').trim()
-                try {
-                    const parsed = JSON.parse(jsonString) as GoogleChatResponse
-                    const responseText = parsed.candidates?.[0]?.content?.parts[0]?.text
-                    if (responseText) {
-                        insertText += responseText
-                        cb.onChange(insertText)
+            const reader = response.body.getReader()
+            onAbort(signal, () => reader.cancel())
+
+            let responseText = ''
+
+            // Handles the response stream to accumulate the full completion text.
+            while (true) {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} Error: ${response.statusText}`)
+                }
+
+                // Create a streaming json parser to handle this without reading the whole stream first
+                const { done, value } = await reader.read()
+                const textDecoder = new TextDecoder()
+                const decoded = textDecoder.decode(value, { stream: true })
+                // Split the stream into individual messages
+                const messages = decoded.split(/^data: /).filter(Boolean)
+                for (const message of messages) {
+                    // Remove the "data: " prefix from each message
+                    const jsonString = message.replace(/^data: /, '').trim()
+                    try {
+                        const parsed = JSON.parse(jsonString) as GeminiCompletionResponse
+                        const streamText = parsed.candidates?.[0]?.content?.parts[0]?.text
+                        if (streamText) {
+                            responseText += streamText
+                            cb.onChange(responseText)
+                        }
+                    } catch (error) {
+                        console.error('Error parsing response:', error)
+                        log?.onError(`Response parsing error: ${error}`)
+                        break
                     }
-                } catch (error) {
-                    console.error('Error parsing response:', error)
-                    log?.onError(`Response parsing error: ${error}`)
+                }
+
+                if (done) {
+                    cb.onComplete()
                     break
                 }
             }
 
-            if (done) {
-                cb.onComplete()
-                break
+            const completionResponse: CompletionResponse = {
+                completion: responseText,
+                stopReason: CompletionStopReason.RequestFinished,
             }
-        }
 
-        const completionResponse: CompletionResponse = {
-            completion: insertText,
-            stopReason: CompletionStopReason.RequestFinished,
-        }
-        log?.onComplete(completionResponse)
-    })
+            log?.onComplete(completionResponse)
+        })
+        .catch(error => {
+            log?.onError(error)
+            cb.onError(error)
+        })
 }
