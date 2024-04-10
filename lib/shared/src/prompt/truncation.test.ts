@@ -33,7 +33,7 @@ describe('truncateTextStart', () => {
         const text = 'Hello world, this is a test string'
         const truncated = truncateTextStart(text, 5)
 
-        expect(truncated).toBe(', this is a test string')
+        expect(truncated).toBe('this is a test string')
     })
 
     it('returns original text if tokens is greater than text length', () => {
@@ -47,6 +47,6 @@ describe('truncateTextStart', () => {
         const text = 'Hello world test string'
         const truncated = truncateTextStart(text, 2)
 
-        expect(truncated).toBe(' world test string')
+        expect(truncated).toBe('test string')
     })
 })
