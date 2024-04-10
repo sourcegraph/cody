@@ -105,7 +105,10 @@ describe('ContextFiltersProvider', () => {
 
     it('handles invalid regular expressions gracefully', async () => {
         await initProviderWithContextFilters({
-            include: [{ repoNamePattern: '(invalid_regex' }],
+            include: [
+                { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
+                { repoNamePattern: '(invalid_regex' },
+            ],
             exclude: [],
         })
 
