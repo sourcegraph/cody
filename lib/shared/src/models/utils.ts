@@ -13,6 +13,8 @@ export function getProviderName(name: string): string {
             return 'OpenAI'
         case 'ollama':
             return 'Ollama'
+        case 'google':
+            return 'Google'
         default:
             return providerName
     }

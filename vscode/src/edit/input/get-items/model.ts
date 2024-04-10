@@ -18,6 +18,8 @@ const getModelProviderIcon = (provider: string): string => {
             return '$(mistral-logo)'
         case 'Ollama':
             return '$(ollama-logo)'
+        case 'Google':
+            return '$(gemini-logo)'
         default:
             return ''
     }
