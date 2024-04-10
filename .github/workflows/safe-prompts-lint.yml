@@ -1,0 +1,51 @@
+name: Safe Prompts Lint
+
+on:
+  pull_request_target:
+    types: [ closed, edited, opened, synchronize, ready_for_review ]
+
+jobs:
+  unsafe-function-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-20-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-20-pnpm-store-
+      - run: pnpm install
+
+      # TODO: Use lints/safe-prompt.ts here instead
+      #
+      # - name: Check for unsafe_ function usage
+      #   id: check-unsafe-usage
+      #   run: |
+      #     # Use git diff to check for added lines containing "unsafe_" function calls
+      #     if git diff --diff-filter=A --unified=0 HEAD^ HEAD | grep -q '\+.*unsafe_'; then
+      #       echo "unsafe_function_added=true" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "unsafe_function_added=false" >> $GITHUB_OUTPUT
+      #     fi
+
+      - name: Run lints
+        run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep ".ts$"`
+
+      - uses: actions/github-script@v6
+        # if: steps.check-unsafe-usage.outputs.unsafe_function_added == 'true'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '‼️ Hey @philipp-spiess, please review this PR carefully as it introduces usage of \`unsafe_\` functions.'
+            })

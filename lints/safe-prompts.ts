@@ -13,10 +13,13 @@
 // "safe" variants of string functions.
 //
 // Usage:
-// pnpm tsc lints/safe-prompts.ts
-// pnpm node lints/safe-prompts.js file.ts
+// pnpm ts-node lints/safe-prompts.ts file.ts
 //
 // Use `pnpm tsc --listFilesOnly` to get a list of TypeScript files to process.
+//
+//
+// In CI, we use `git diff --name-only main | grep ".ts$"` to get a list of files
+// that were changed.
 //
 // References:
 // https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
@@ -36,18 +39,31 @@ export function delint(sourceFile: ts.SourceFile) {
         switch (node.kind) {
             case ts.SyntaxKind.Identifier: {
                 const identifierNode = node as ts.Identifier
+                const text = identifierNode.escapedText.toString()
                 if (
-                    identifierNode.escapedText === 'ps' &&
+                    text === 'ps' &&
                     !(
                         (node.parent?.kind === ts.SyntaxKind.TaggedTemplateExpression &&
                             (node.parent as ts.TaggedTemplateExpression).tag === node) ||
                         (node.parent?.kind === ts.SyntaxKind.FunctionDeclaration &&
-                            (node.parent as ts.FunctionDeclaration).name === node)
+                            (node.parent as ts.FunctionDeclaration).name === node) ||
+                        (node.parent?.kind === ts.SyntaxKind.MethodDeclaration &&
+                            (node.parent as ts.MethodDeclaration).name === node) ||
+                        (node.parent?.kind === ts.SyntaxKind.ImportSpecifier &&
+                            (node.parent as ts.ImportSpecifier).name === node)
                     )
                 ) {
                     report(node, 'Use `ps` only as a tagged template literal')
+                    break
                 }
-                break
+
+                if (
+                    text.startsWith('unsafe_') &&
+                    node.parent?.kind !== ts.SyntaxKind.FunctionDeclaration
+                ) {
+                    report(node, `New \`${text}\` invocation found`)
+                    break
+                }
             }
         }
 
