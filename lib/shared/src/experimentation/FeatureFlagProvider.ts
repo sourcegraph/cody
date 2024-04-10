@@ -110,9 +110,6 @@ export class FeatureFlagProvider {
                 return false
             }
 
-            // if (flagName === FeatureFlag.CodyUseSourcegraphEmbeddings) {
-            //     return true
-            // }
             const cachedValue = this.getFromCache(flagName, endpoint)
             if (cachedValue !== undefined) {
                 return cachedValue
