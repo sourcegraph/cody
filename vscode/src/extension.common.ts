@@ -33,7 +33,9 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
-    createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => Promise<LocalEmbeddingsController>
+    createLocalEmbeddingsController?: (
+        config: LocalEmbeddingsConfig
+    ) => Promise<LocalEmbeddingsController>
     createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
