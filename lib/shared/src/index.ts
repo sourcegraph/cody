@@ -3,6 +3,12 @@
 export { ModelProvider } from './models'
 export { type ChatModel, type EditModel, ModelUsage } from './models/types'
 export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
+export {
+    getCompletionsModelConfig,
+    getProviderName,
+    getModelInfo,
+    fetchLocalOllamaModels,
+} from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'

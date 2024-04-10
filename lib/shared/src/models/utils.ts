@@ -2,6 +2,7 @@ import { ModelProvider } from '.'
 import { logError } from '../logger'
 import { OLLAMA_DEFAULT_URL } from '../ollama'
 import { DEFAULT_FAST_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
+import type { CompletionsModelConfig } from './types'
 import { ModelUsage } from './types'
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
@@ -56,4 +57,17 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
                 return []
             }
         )
+}
+
+export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
+    const provider = ModelProvider.getProviderByModel(modelID)
+    if (provider?.model.startsWith('google/') && provider?.apiKey) {
+        return {
+            model: provider.model.replace('google/', ''),
+            key: provider.apiKey,
+            endpoint: provider.apiEndpoint,
+        }
+    }
+
+    return undefined
 }
