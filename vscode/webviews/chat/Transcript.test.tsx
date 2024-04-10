@@ -13,8 +13,6 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
-    chatModels: [],
-    onCurrentChatModelChange: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     postMessage: () => {},
 }

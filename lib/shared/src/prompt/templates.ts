@@ -49,12 +49,12 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `"My selected {languageName} code from file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = `My selected {languageName} code from file \`{filePath}\`:
 <selected>
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
 <selected>
 {code}
 </selected>`

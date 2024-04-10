@@ -1,12 +1,20 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
 import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { $getRoot, CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
+import {
+    $createTextNode,
+    $getRoot,
+    $getSelection,
+    CLEAR_HISTORY_COMMAND,
+    type LexicalEditor,
+    type SerializedEditorState,
+} from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
+    $createContextItemMentionNode,
     type SerializedContextItem,
     deserializeContextItem,
     isSerializedContextItemMentionNode,
@@ -31,6 +39,7 @@ export interface PromptEditorRefAPI {
     setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean): void
+    addContextItemAsToken(items: ContextItem[]): void
 }
 
 /**
@@ -87,6 +96,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         editor.blur()
                     }
                 }
+            },
+            addContextItemAsToken(items: ContextItem[]) {
+                editorRef?.current?.update(() => {
+                    const selection = $getSelection()
+                    const spaceNode = $createTextNode(' ')
+                    const mentionNodes = items.map($createContextItemMentionNode)
+                    selection?.insertNodes([spaceNode, ...mentionNodes, spaceNode])
+                    spaceNode.select()
+                })
             },
         }),
         []

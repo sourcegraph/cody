@@ -9,7 +9,7 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
+import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
@@ -356,4 +356,47 @@ test.extend<ExpectedEvents>({
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
     await previewTab.hover()
     await expect(previewTab).toBeVisible()
+})
+
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:addChatContext:clicked',
+        'CodyVSCodeExtension:addChatContext:clicked',
+    ],
+})('add selected code as @-mention with "Cody Chat: Add context"', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    // Open the buzz.ts file to highlight line 2-13 in the editor
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).click()
+    await page.getByText('2', { exact: true }).click()
+    await page.getByText('13').click({
+        modifiers: ['Shift'],
+    })
+
+    // Open the Command Palette and run the "Cody Chat: Add context" command
+    const metaKey = getMetaKeyByOS()
+    await page.keyboard.press(`${metaKey}+Shift+P`)
+    const commandPaletteInputBox = page.getByPlaceholder('Type the name of a command to run.')
+    await expect(commandPaletteInputBox).toBeVisible()
+    await commandPaletteInputBox.fill('>Cody Chat: Add context')
+    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+
+    // Verify the chat input has the selected code as an @-mention item
+    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await expect(chatInput).toHaveText('@buzz.ts:2-13 ')
+
+    // Repeat the above steps to add another code selection as an @-mention item.
+    // The chat input should have the new code selections appended as @-mention items
+    // instead of replacing the existing one or adding to a new chat.
+    await page.getByRole('tab', { name: 'buzz.ts' }).click()
+    await page.getByText('4', { exact: true }).click()
+    await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
+    await page.keyboard.press(`${metaKey}+Shift+P`)
+    await expect(commandPaletteInputBox).toBeVisible()
+    await commandPaletteInputBox.fill('>Cody Chat: Add context')
+    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
 })

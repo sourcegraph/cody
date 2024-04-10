@@ -138,7 +138,6 @@ export {
     MAX_CURRENT_FILE_TOKENS,
     CHARS_PER_TOKEN,
     ANSWER_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
@@ -182,6 +181,8 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
+    type ContextFiltersResult,
+    type CodyContextFilterItem,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
