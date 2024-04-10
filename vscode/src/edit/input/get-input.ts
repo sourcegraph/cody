@@ -2,6 +2,7 @@ import {
     type ContextItem,
     type EditModel,
     type EventSource,
+    ModelProvider,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -410,16 +411,30 @@ export const getInput = async (
                     contextItems.set(key, item)
                 }
 
+                /**
+                 * Checks if the total size of the selected context items exceeds the context budget.
+                 */
+                const isOverLimit = (size?: number): boolean => {
+                    const currentInput = input.value
+                    const max = ModelProvider.getMaxCharsByModel(activeModel)
+                    let used = 0
+                    for (const [k, v] of selectedContextItems) {
+                        if (currentInput.includes(`@${k}`)) {
+                            used += v.size ?? 0
+                        } else {
+                            selectedContextItems.delete(k)
+                        }
+                    }
+                    return size ? max - used < size : false
+                }
+
                 // Add human-friendly labels to the quick pick so the user can select them
                 input.items = [
                     ...matchingContext.map(({ key, shortLabel, item }) => ({
                         alwaysShow: true,
                         label: shortLabel || key,
                         description: shortLabel ? key : undefined,
-                        detail:
-                            item.type === 'file' && item.isTooLarge
-                                ? LARGE_FILE_WARNING_LABEL
-                                : undefined,
+                        detail: isOverLimit(item.size) ? LARGE_FILE_WARNING_LABEL : undefined,
                     })),
                     {
                         kind: vscode.QuickPickItemKind.Separator,
