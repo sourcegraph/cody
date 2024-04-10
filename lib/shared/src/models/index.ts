@@ -23,8 +23,10 @@ export class ModelProvider {
         public readonly model: string,
         // The usage of the model, e.g. chat or edit.
         public readonly usage: ModelUsage[],
-        // The maximum number of tokens that can be processed by the model in a single request.
-        // NOTE: A token is equivalent to 4 characters/bytes.
+        /**
+         * The context window of the model, which is the maximum number of tokens
+         * that can be processed by the model in a single request.
+         */
         public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
         // The API key for the model
         public readonly apiKey?: string,
