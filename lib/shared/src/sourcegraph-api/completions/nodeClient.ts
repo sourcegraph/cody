@@ -8,12 +8,18 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+<<<<<<< HEAD
 
 import { agent } from '../../fetch'
 import { googleChatClient } from '../../llm-providers/google/chat-client'
 import { groqChatClient } from '../../llm-providers/groq/chat-client'
 import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 
+=======
+import { agent } from '../../fetch'
+import { googleChatClient } from '../../google/chat-client'
+import { ollamaChatClient } from '../../ollama/chat-client'
+>>>>>>> b829c7267 (formatting)
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
@@ -105,7 +111,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized:
                         process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
-                    agent: agent.current?.(url)
+                    agent: agent.current?.(url),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
