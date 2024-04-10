@@ -1,0 +1,101 @@
+name: agent-release
+
+on:
+  push:
+    tags:
+      - agent-v*
+
+jobs:
+  release:
+    if: github.repository == 'sourcegraph/cody'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # for publishing the release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
+        with:
+          run_install: true
+      - name: get release version
+        id: release_version
+        run: |
+          TAGGED_VERSION="${GITHUB_REF/refs\/tags\/agent-v/}"
+
+          if [[ ! "${TAGGED_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            echo "Invalid version tag '${TAGGED_VERSION}'"
+            exit 1
+          fi
+
+          echo "EXT_VERSION=${TAGGED_VERSION}" >> $GITHUB_ENV
+          WRITTEN_VERSION="$(cat agent/package.json | jq '.version' -r)"
+
+          if [[ "${TAGGED_VERSION}" != "${WRITTEN_VERSION}" ]]; then
+            echo "Release tag and version in agent/package.json do not match: '${TAGGED_VERSION}' vs. '${WRITTEN_VERSION}'"
+            exit 1
+          fi
+      - run: pnpm build
+      - run: pnpm run test
+      - name: Set npm publishing config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NODE_AUTH_TOKEN}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm publish --no-git-checks agent
+      - run: pnpm -C agent run build-agent-binaries
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Cody Agent ${{ env.EXT_VERSION }}
+          draft: false
+      - name: upload release asset (linux-arm64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./agent/dist/cody-agent-linux-arm64
+          asset_name: cody-agent-linux-arm64-${{ env.EXT_VERSION }}
+          asset_content_type: application/octet-stream
+      - name: upload release asset (linux-x64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./agent/dist/cody-agent-linux-x64
+          asset_name: cody-agent-linux-x64-${{ env.EXT_VERSION }}
+          asset_content_type: application/octet-stream
+      - name: upload release asset (macos-arm64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./agent/dist/cody-agent-macos-arm64
+          asset_name: cody-agent-macos-arm64-${{ env.EXT_VERSION }}
+          asset_content_type: application/octet-stream
+      - name: upload release asset (macos-x64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./agent/dist/cody-agent-macos-x64
+          asset_name: cody-agent-macos-x64-${{ env.EXT_VERSION }}
+          asset_content_type: application/octet-stream
+      - name: upload release asset (win-x64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./agent/dist/cody-agent-win-x64.exe
+          asset_name: cody-agent-win-x64-${{ env.EXT_VERSION }}.exe
+          asset_content_type: application/octet-stream

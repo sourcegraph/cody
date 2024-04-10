@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.10.1",
+  "version": "1.12.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -38,7 +38,12 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
-  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "ai",
     "openai",
@@ -89,7 +94,11 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.chatPanel"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -312,14 +321,14 @@
       },
       {
         "command": "cody.menu.custom-commands",
-        "category": "Cody Command",
+        "category": "Cody Menu",
         "title": "Custom Commands",
         "icon": "$(tools)",
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.menu.commands-settings",
-        "category": "Cody Command",
+        "category": "Cody Settings",
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
         "when": "cody.activated"
@@ -390,8 +399,8 @@
       },
       {
         "command": "cody.menu.commands",
-        "category": "Cody",
-        "title": "Commands",
+        "category": "Cody Menu",
+        "title": "Cody Commands",
         "when": "cody.activated",
         "icon": "$(cody-logo)"
       },
@@ -471,6 +480,13 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.chat.context.add",
+        "group": "Chat",
+        "title": "Cody Chat: Add context",
+        "icon": "$(new-file)",
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
+      },
+      {
         "command": "cody.search.index-update-all",
         "category": "Cody",
         "group": "Cody",
@@ -510,6 +526,12 @@
         "group": "Debug",
         "title": "Enable Debug Mode",
         "when": "!config.cody.debug.verbose"
+      },
+      {
+        "command": "cody.debug.reportIssue",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Report Issue"
       }
     ],
     "keybindings": [
@@ -585,13 +607,17 @@
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["next"],
+        "args": [
+          "next"
+        ],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
+        "args": [
+          "previous"
+        ],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
@@ -657,6 +683,10 @@
       "editor/context": [
         {
           "submenu": "cody.submenu",
+          "group": "0_cody"
+        },
+        {
+          "command": "cody.chat.context.add",
           "group": "0_cody"
         }
       ],
@@ -746,6 +776,11 @@
           "group": "8_cody@2"
         },
         {
+          "command": "cody.debug.reportIssue",
+          "when": "view == cody.support.tree.view",
+          "group": "9_cody@1"
+        },
+        {
           "command": "cody.search.index-update",
           "when": "view == cody.search && cody.activated",
           "group": "navigation@1"
@@ -759,7 +794,7 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && config.cody.editorTitleCommandIcon && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -822,12 +857,20 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.useContext": {
           "order": 99,
           "type": "string",
-          "enum": ["embeddings", "keyword", "blended", "none"],
+          "enum": [
+            "embeddings",
+            "keyword",
+            "blended",
+            "none"
+          ],
           "default": "blended",
           "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
@@ -863,12 +906,6 @@
             }
           ]
         },
-        "cody.editorTitleCommandIcon": {
-          "order": 7,
-          "type": "boolean",
-          "markdownDescription": "Adds a Cody icon to the editor title menu for quick access to Cody commands.",
-          "default": true
-        },
         "cody.commandCodeLenses": {
           "order": 8,
           "type": "boolean",
@@ -891,13 +928,17 @@
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
-          "examples": ["Answer all my questions in Spanish."]
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.edit.preInstruction": {
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -962,8 +1003,14 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
@@ -991,7 +1038,13 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b", "starcoder2-hybrid", "llama-code-13b"],
+          "enum": [
+            null,
+            "starcoder-16b",
+            "starcoder-7b",
+            "starcoder2-hybrid",
+            "llama-code-13b"
+          ],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1011,13 +1064,26 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": ["lsp", "indentation-based"],
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
           ],
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
+        },
+        "cody.experimental.hoverCommands": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Display commands in hover tooltips for code elements.",
+          "description": "%config.experimental.hoverCommands%",
+          "tags": [
+            "experimental",
+            "feature-flag"
+          ]
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
@@ -1032,7 +1098,11 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "bfg", "bfg-mixed"],
+          "enum": [
+            null,
+            "bfg",
+            "bfg-mixed"
+          ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
@@ -1190,7 +1260,6 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
-    "@storybook/preview-api": "^7.6.2",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
@@ -1209,14 +1278,15 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
+    "re2": "^1.20.10",
+    "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
     "web-tree-sitter": "^0.21.0",
-    "wink-nlp-utils": "^2.1.0",
-    "semver": "^7.5.4"
+    "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
@@ -1225,6 +1295,7 @@
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
+    "@storybook/preview-api": "^8.0.5",
     "@types/axios": "^0.14.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",

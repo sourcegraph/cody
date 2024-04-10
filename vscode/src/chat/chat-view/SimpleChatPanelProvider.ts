@@ -3,13 +3,15 @@ import * as vscode from 'vscode'
 
 import {
     type ChatClient,
-    type ChatEventSource,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type DefaultChatCommands,
+    type EventSource,
     FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
+    MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
     type SerializedChatInteraction,
@@ -18,7 +20,6 @@ import {
     featureFlagProvider,
     hydrateAfterPostMessage,
     isDefined,
-    isDotCom,
     isError,
     isFileURI,
     isRateLimitError,
@@ -35,7 +36,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
-import { getProcessInfo } from '../../services/LocalAppDetector'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
@@ -50,10 +50,14 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import type {
+    ContextItemFile,
+    ContextItemWithContent,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -344,9 +348,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleReady(): Promise<void> {
         const config = await getFullConfig()
         const authStatus = this.authProvider.getAuthStatus()
-        const localProcess = getProcessInfo()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-            ...localProcess,
+            uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
@@ -393,7 +396,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
-        source?: ChatEventSource
+        source?: EventSource,
+        command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             const useFusedContextPromise = featureFlagProvider.evaluateFeatureFlag(
@@ -405,6 +409,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 requestID,
                 chatModel: this.chatModel.modelID,
                 source,
+                command,
                 traceId: span.spanContext().traceId,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
@@ -412,16 +417,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 metadata: {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                    recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
                 },
                 privateMetadata: {
                     ...sharedProperties,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
-                    promptText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? inputText : undefined,
+                    promptText: authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
                 },
             })
 
@@ -487,8 +490,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             ...contextSummary,
                             // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                             // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                            recordsPrivateMetadataTranscript:
-                                authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                            recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
                         },
                         privateMetadata: {
                             properties,
@@ -496,9 +498,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
                             promptText:
-                                authStatus.endpoint && isDotCom(authStatus.endpoint)
-                                    ? inputText
-                                    : undefined,
+                                authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
                         },
                     })
                 }
@@ -563,11 +563,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private handleAbort(): void {
         this.cancelInProgressCompletion()
-        telemetryService.log(
-            'CodyVSCodeExtension:abortButton:clicked',
-            { source: 'sidebar' },
-            { hasV2Event: true }
-        )
+        telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
@@ -630,6 +626,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         } finally {
             cancellation.dispose()
         }
+    }
+
+    public async handleGetUserEditorContext(): Promise<void> {
+        const contextLimit = getContextWindowLimitInBytes(
+            [...this.chatModel.getMessages()],
+            // Minus the character limit reserved for the answer token
+            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+        )
+        const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
+        await this.postMessage({
+            type: 'chat-input-context',
+            items: selectionFiles.map(f => ({
+                ...f,
+                content: undefined,
+                isTooLarge: f.size ? f.size > contextLimit : undefined,
+            })),
+        })
     }
 
     private async handleSymfIndex(): Promise<void> {
@@ -972,16 +985,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     ...codeCount,
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? 1 : 0,
+                    recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
                 },
                 privateMetadata: {
                     requestID,
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    responseText:
-                        authStatus.endpoint && isDotCom(authStatus.endpoint) ? messageText : undefined,
+                    responseText: authStatus.isDotCom && messageText.substring(0, MAX_BYTES_PER_FILE),
                 },
             })
         }

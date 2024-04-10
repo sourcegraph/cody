@@ -1,7 +1,7 @@
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -10,8 +10,8 @@ import * as vscode from 'vscode'
 
 import {
     FILE_HELP_LABEL,
-    FILE_TOO_LARGE_LABEL,
     GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
     SYMBOL_HELP_LABEL,
@@ -22,6 +22,7 @@ import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
@@ -75,12 +76,15 @@ export const getInput = async (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
-    source: ChatEventSource
+    source: EventSource
 ): Promise<QuickPickInput | null> => {
     const editor = getEditor().active
     if (!editor) {
         return null
     }
+
+    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
+    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -413,7 +417,9 @@ export const getInput = async (
                         label: shortLabel || key,
                         description: shortLabel ? key : undefined,
                         detail:
-                            'isTooLarge' in item && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined,
+                            item.type === 'file' && item.isTooLarge
+                                ? LARGE_FILE_WARNING_LABEL
+                                : undefined,
                     })),
                     {
                         kind: vscode.QuickPickItemKind.Separator,
@@ -450,7 +456,7 @@ export const getInput = async (
                         unitTestInput.render(activeTitle, '')
                         return
                     case FILE_HELP_LABEL:
-                    case FILE_TOO_LARGE_LABEL:
+                    case LARGE_FILE_WARNING_LABEL:
                     case SYMBOL_HELP_LABEL:
                     case NO_FILE_MATCHES_LABEL:
                     case NO_SYMBOL_MATCHES_LABEL:

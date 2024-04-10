@@ -1,30 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { DOTCOM_URL, ModelProvider } from '@sourcegraph/cody-shared'
+import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 
-import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
-
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared'
 import { ChatModelDropdownMenu } from './ChatModelDropdownMenu'
 
 const meta: Meta<typeof ChatModelDropdownMenu> = {
     title: 'cody/Chat Model Dropdown',
     component: ChatModelDropdownMenu,
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeStandaloneComponent],
     args: {
-        models: ModelProvider.getProviders(ModelUsage.Chat, true, String(DOTCOM_URL)),
+        models: DEFAULT_DOT_COM_MODELS,
         disabled: false,
-    },
-    parameters: {
-        backgrounds: {
-            default: 'vscode',
-            values: [
-                {
-                    name: 'vscode',
-                    value: 'var(--vscode-sideBar-background)',
-                },
-            ],
-        },
     },
 }
 
@@ -37,6 +24,15 @@ export const FreeUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: false,
+        },
+    },
+}
+
+export const ProUser: Story = {
+    args: {
+        userInfo: {
+            isDotComUser: true,
+            isCodyProUser: true,
         },
     },
 }

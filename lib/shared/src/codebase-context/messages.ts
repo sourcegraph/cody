@@ -36,6 +36,11 @@ interface ContextItemCommon {
      * The source of this context item.
      */
     source?: ContextItemSource
+
+    /**
+     * The size of the file in bytes.
+     */
+    size?: number
 }
 
 /**

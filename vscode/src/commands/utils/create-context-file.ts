@@ -1,5 +1,9 @@
-import { type ContextItem, MAX_CURRENT_FILE_TOKENS, truncateText } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import {
+    type ContextItem,
+    ContextItemSource,
+    MAX_CURRENT_FILE_TOKENS,
+    truncateText,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'

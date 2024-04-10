@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import type React from 'react'
+import { useEffect, useRef } from 'react'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
 import styles from './ChatActions.module.css'
@@ -15,7 +16,7 @@ export const ChatActions: React.FunctionComponent<{
     onEditLastMessageClick: () => void
     setInputFocus: (focus: boolean) => void
     onRestoreLastChatClick?: () => void
-}> = React.memo(function ContextFilesContent({
+}> = ({
     isEditing,
     isEmptyChat,
     isEmptyEditorValue,
@@ -27,7 +28,7 @@ export const ChatActions: React.FunctionComponent<{
     setInputFocus,
     onRestoreLastChatClick,
     isWebviewActive,
-}) {
+}) => {
     const buttonRef = useRef<HTMLButtonElement>(null)
 
     // "⌘" on Mac or "Ctrl" on other systems
@@ -150,4 +151,4 @@ export const ChatActions: React.FunctionComponent<{
                 ))}
         </div>
     )
-})
+}

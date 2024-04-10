@@ -63,7 +63,7 @@ query SiteGraphQLFields {
 }`
 
 export const CURRENT_SITE_CODY_LLM_PROVIDER = `
-query CurrentSiteCodyLlmConfiguration {
+query CurrentSiteCodyLlmProvider {
     site {
         codyLLMConfiguration {
             provider
@@ -150,6 +150,20 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
               chunkContent
         }
     }
+}`
+
+export const CONTEXT_FILTERS_QUERY = `
+query ContextFilters {
+	site {
+        codyContextFilters {
+            exclude {
+                repoNamePattern
+            }
+            include {
+                repoNamePattern
+            }
+        }
+	}
 }`
 
 export const SEARCH_ATTRIBUTION_QUERY = `

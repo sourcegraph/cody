@@ -8,6 +8,7 @@ import {
     type FeatureFlagProvider,
     type Guardrails,
     ModelProvider,
+    ModelUsage,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -20,7 +21,6 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage } from '../protocol'
 
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
@@ -122,16 +122,28 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
     }
 
-    public async getChatPanel(): Promise<SimpleChatPanelProvider> {
+    public async getNewChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
+        return provider
+    }
 
-        if (this.options.config.isRunningInsideAgent) {
-            // Never reuse webviews when running inside the agent.
-            return provider
+    /**
+     * Gets the currently active chat panel provider.
+     *
+     * If an active panel provider already exists and the application is not running inside an agent, it returns the existing provider.
+     * Otherwise, it creates a new webview panel and returns the new provider.
+     *
+     * @returns {Promise<SimpleChatPanelProvider>} The active chat panel provider.
+     */
+    public async getActiveChatPanel(): Promise<SimpleChatPanelProvider> {
+        // Check if any existing panel is available
+        // NOTE: Never reuse webviews when running inside the agent.
+        if (this.activePanelProvider && !this.options.config.isRunningInsideAgent) {
+            return this.activePanelProvider
         }
 
-        // Check if any existing panel is available
-        return this.activePanelProvider || provider
+        const provider = await this.createWebviewPanel()
+        return provider
     }
 
     /**
@@ -168,8 +180,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             return emptyNewChatProvider
         }
 
-        logDebug('ChatPanelsManager:createWebviewPanel', this.panelProviders.length.toString())
-
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
@@ -182,6 +192,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
         if (panel) {
+            this.activePanelProvider = provider
             await provider.revive(panel)
         } else {
             await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
@@ -319,9 +330,11 @@ export class ChatPanelsManager implements vscode.Disposable {
             const provider = this.panelProviders.find(p => p.sessionID === chatID)
             if (provider?.sessionID === chatID) {
                 provider.webviewPanel?.reveal()
+                this.activePanelProvider = provider
                 return provider
             }
-            return await this.createWebviewPanel(chatID, chatQuestion)
+            this.activePanelProvider = await this.createWebviewPanel(chatID, chatQuestion)
+            return this.activePanelProvider
         } catch (error) {
             console.error(error, 'errored restoring panel')
             return undefined

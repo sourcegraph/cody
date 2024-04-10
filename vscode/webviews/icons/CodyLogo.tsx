@@ -1,14 +1,17 @@
-import React from 'react'
+import type React from 'react'
 
-export const CodyLogo = React.memo(() => (
+export const CodyLogo: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGAttributes<SVGSVGElement>> & { size: number }
+> = ({ size, ...props }) => (
     <svg
-        width="30"
-        height="25"
-        viewBox="0 0 35 18"
+        width={size}
+        height={size}
+        viewBox="0 0 25 25"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="Cody logo"
+        {...props}
     >
         <path
             fillRule="evenodd"
@@ -29,5 +32,4 @@ export const CodyLogo = React.memo(() => (
             fill="#00CBEC"
         />
     </svg>
-))
-CodyLogo.displayName = 'CodyLogo'
+)

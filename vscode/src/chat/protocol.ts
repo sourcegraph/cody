@@ -111,10 +111,17 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    /**
+     * Context files returned from a @-mention search
+     */
     | {
           type: 'userContextFiles'
           userContextFiles: ContextItem[] | null
       }
+    /**
+     * Send Context Files to chat view as input context (@-mentions)
+     */
+    | { type: 'chat-input-context'; items: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
@@ -254,14 +261,7 @@ export const networkErrorAuthStatus = {
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The  operating system kind
-    os: string
-    arch: string
-    homeDir?: string | undefined
-
-    extensionVersion: string
-
-    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 }
 

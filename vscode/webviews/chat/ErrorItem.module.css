@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
-    margin-bottom: 1rem;
 }
 
 .error-item .icon {
@@ -130,7 +129,6 @@
     background-color: #f7bcbc;
     color: #de3400;
 
-    margin-top: 0.5rem;
     padding: 0.5rem;
 
     word-break: break-word;

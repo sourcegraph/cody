@@ -3,13 +3,13 @@ import * as path from 'node:path'
 import {
     type ConfigurationWithAccessToken,
     type ContextItem,
+    ContextItemSource,
     type EmbeddingsSearchResult,
     type FileURI,
     isDotCom,
     isFileURI,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'

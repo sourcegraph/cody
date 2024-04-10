@@ -2,8 +2,14 @@ import { expect } from '@playwright/test'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
+import {
+    createEmptyChatPanel,
+    expectContextCellCounts,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
+import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
@@ -85,7 +91,8 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context:/)).toHaveCount(1)
+    const contextCell = getContextCell(chatPanelFrame)
+    await expect(contextCell).toHaveCount(1)
     await expect(chatInput).not.toHaveText('Explain @Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
@@ -94,6 +101,7 @@ test.extend<ExpectedEvents>({
     await expect(
         chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
     ).toBeVisible()
+    await chatInput.press('Tab')
     await chatInput.press('Tab')
     await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
     await chatInput.focus()
@@ -126,7 +134,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
-    await expect(chatPanelFrame.getByText(/^Context:/)).toHaveCount(2)
+    await expect(contextCell).toHaveCount(2)
 
     // Check pressing tab after typing a complete filename.
     // https://github.com/sourcegraph/cody/issues/2200
@@ -206,13 +214,14 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context: 1 file/)).toHaveCount(1)
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
     await chatInput.press('ArrowUp')
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    await expect(chatPanelFrame.getByText(/^Context: 1 file/)).toHaveCount(1)
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit it again, add a new @-mention, and resend.
     await chatInput.press('ArrowUp')
@@ -224,7 +233,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java and @index.html')).toBeVisible()
-    await expect(chatPanelFrame.getByText(/^Context: 2 files/)).toHaveCount(1)
+    await expectContextCellCounts(contextCell, { files: 2 })
 })
 
 test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
@@ -273,13 +282,14 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
-
     // Submit the message
     await chatInput.press('Enter')
 
     // @-file range with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('Context: 3 lines from 1 file').hover()
-    await chatPanelFrame.getByText('Context: 3 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1, lines: 3 })
+    await contextCell.hover()
+    await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
@@ -288,6 +298,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
     await expect(previewTab).toBeVisible()
 })
 
+// NOTE: @symbols does not require double tabbing to select an option.
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:at-mention:symbol:executed'],
 })('@-mention symbol in chat', async ({ page, sidebar }) => {
@@ -335,12 +346,57 @@ test.extend<ExpectedEvents>({
     await pinnedTab.getByRole('button', { name: /^Close/ }).click()
 
     // @-file with the correct line range shows up in the chat view and it opens on click
-    await chatPanelFrame.getByText('Context: 15 lines from 1 file').hover()
-    await chatPanelFrame.getByText('Context: 15 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanelFrame)
+    await expectContextCellCounts(contextCell, { files: 1, lines: 15 })
+    await contextCell.hover()
+    await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
     await previewTab.hover()
     await expect(previewTab).toBeVisible()
+})
+
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyVSCodeExtension:addChatContext:clicked',
+        'CodyVSCodeExtension:addChatContext:clicked',
+    ],
+})('add selected code as @-mention with "Cody Chat: Add context"', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    // Open the buzz.ts file to highlight line 2-13 in the editor
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).click()
+    await page.getByText('2', { exact: true }).click()
+    await page.getByText('13').click({
+        modifiers: ['Shift'],
+    })
+
+    // Open the Command Palette and run the "Cody Chat: Add context" command
+    const metaKey = getMetaKeyByOS()
+    await page.keyboard.press(`${metaKey}+Shift+P`)
+    const commandPaletteInputBox = page.getByPlaceholder('Type the name of a command to run.')
+    await expect(commandPaletteInputBox).toBeVisible()
+    await commandPaletteInputBox.fill('>Cody Chat: Add context')
+    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+
+    // Verify the chat input has the selected code as an @-mention item
+    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    await expect(chatInput).toHaveText('@buzz.ts:2-13 ')
+
+    // Repeat the above steps to add another code selection as an @-mention item.
+    // The chat input should have the new code selections appended as @-mention items
+    // instead of replacing the existing one or adding to a new chat.
+    await page.getByRole('tab', { name: 'buzz.ts' }).click()
+    await page.getByText('4', { exact: true }).click()
+    await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
+    await page.keyboard.press(`${metaKey}+Shift+P`)
+    await expect(commandPaletteInputBox).toBeVisible()
+    await commandPaletteInputBox.fill('>Cody Chat: Add context')
+    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
 })
