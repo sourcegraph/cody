@@ -4,7 +4,6 @@ import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared/src/models/dotcom'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
@@ -33,8 +32,6 @@ const meta: Meta<typeof Transcript> = {
         feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
-        chatModels: DEFAULT_DOT_COM_MODELS,
-        onCurrentChatModelChange: () => {},
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
     } satisfies ComponentProps<typeof Transcript>,

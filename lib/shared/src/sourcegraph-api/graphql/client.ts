@@ -11,6 +11,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -180,6 +181,27 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+export interface ContextFiltersResult {
+    include: CodyContextFilterItem[]
+    exclude: CodyContextFilterItem[]
+}
+
+export interface CodyContextFilterItem {
+    repoNamePattern: string
+    // Not implemented
+    filePathPatterns?: string[]
+}
+
+const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
+    include: [],
+    exclude: [],
+}
+
+const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
+    include: [],
+    exclude: [{ repoNamePattern: '.*' }],
 }
 
 interface SearchAttributionResults {
@@ -513,6 +535,27 @@ export class SourcegraphGraphQLAPIClient {
                 }))
             )
         )
+    }
+
+    public async contextFilters(): Promise<ContextFiltersResult | null | Error> {
+        const response =
+            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResult | null>>(
+                CONTEXT_FILTERS_QUERY
+            )
+
+        const result = extractDataOrError(response, data => data)
+
+        if (result instanceof Error) {
+            // Ignore errors caused by outdated Sourcegraph API instances.
+            if (hasOutdatedAPIErrorMessages(result)) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            // Exclude everything in case of an unexpected error.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
+        return result
     }
 
     /**
@@ -871,9 +914,7 @@ export class ConfigFeaturesSingleton {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (
-                !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
-            ) {
+            if (!hasOutdatedAPIErrorMessages(error)) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
@@ -910,3 +951,7 @@ export type LogEventMode =
     | 'dotcom-only' // only log to dotcom
     | 'connected-instance-only' // only log to the connected instance
     | 'all' // log to both dotcom AND the connected instance
+
+function hasOutdatedAPIErrorMessages(error: Error): boolean {
+    return error.message.includes('FetchError') || error.message.includes('Cannot query field')
+}

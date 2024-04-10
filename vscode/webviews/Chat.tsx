@@ -9,7 +9,6 @@ import {
     type ChatMessage,
     type ContextItem,
     type Guardrails,
-    type ModelProvider,
     type TelemetryService,
     isMacOS,
 } from '@sourcegraph/cody-shared'
@@ -37,8 +36,6 @@ interface ChatboxProps {
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
     isTranscriptError: boolean
-    setChatModels?: (models: ModelProvider[]) => void
-    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
@@ -56,8 +53,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     telemetryService,
     isTranscriptError,
-    setChatModels,
-    chatModels,
     chatEnabled,
     userInfo,
     guardrails,
@@ -122,23 +117,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
         },
         [addEnhancedContext, messageBeingEdited, vscodeAPI]
-    )
-
-    const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
-            vscodeAPI.postMessage({
-                command: 'chatModel',
-                model: selected.model,
-            })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
-        },
-        [chatModels, setChatModels, vscodeAPI]
     )
 
     const feedbackButtonsOnSubmit = useCallback(
@@ -491,8 +469,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
                     isTranscriptError={isTranscriptError}
-                    chatModels={chatModels}
-                    onCurrentChatModelChange={onCurrentChatModelChange}
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}

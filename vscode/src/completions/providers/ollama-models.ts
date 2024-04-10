@@ -131,10 +131,11 @@ class StarCoder2 extends DefaultOllamaModel {
 
 class CodeGemma extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): string {
-        const { context, prefix, suffix } = ollamaPrompt
+        const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
         // c.f. https://huggingface.co/blog/codegemma
         // c.f. https://huggingface.co/google/codegemma-7b/blob/main/tokenizer.json
-        return `<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+        // c.f. https://storage.googleapis.com/deepmind-media/gemma/codegemma_report.pdf
+        return `${currentFileNameComment}<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
@@ -142,13 +143,14 @@ class CodeGemma extends DefaultOllamaModel {
             '<|fim_prefix|>',
             '<|fim_suffix|>',
             '<|fim_middle|>',
-            '<|endoftext|>',
             '<|file_separator|>',
+            '<end_of_turn>',
         ]
 
         const params = {
             stop: ['\n', ...stop],
             temperature: 0.2,
+            repeat_penalty: 1.0,
             top_k: -1,
             top_p: -1,
             num_predict: 256,
