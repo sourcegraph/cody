@@ -143,8 +143,8 @@ class CodeGemma extends DefaultOllamaModel {
             '<|fim_prefix|>',
             '<|fim_suffix|>',
             '<|fim_middle|>',
-            '<|endoftext|>',
             '<|file_separator|>',
+            '<end_of_turn>',
         ]
 
         const params = {
