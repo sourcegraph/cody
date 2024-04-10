@@ -7,9 +7,9 @@ import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } fro
 import type { CommandsProvider } from './services/provider'
 import { CommandRunner } from './services/runner'
 import type { CodyCommandArgs } from './types'
-import { fromSlashCommand } from './utils/common'
+import { fromSlashCommandPrompt } from './utils/common'
 
-import { PromptString, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { PromptString, ps, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -47,12 +47,13 @@ class CommandsController implements vscode.Disposable {
             const commandSplit = input?.trim().split(' ')
             // The unique key for the command. e.g. test, smell, explain
             // Using fromSlashCommand to support backward compatibility with old slash commands
-            const commandKey = fromSlashCommand(commandSplit[0] || input)
+            const commandKey = fromSlashCommandPrompt(commandSplit[0]?.toString() || input?.toString())
             // Additional instruction that will be added to end of prompt in the custom command prompt
             // It's added at execution time to allow dynamic arguments
             // E.g. if the command is `edit replace dash with period`,
             // the additionalInput is `replace dash with period`
-            const additionalInstruction = commandKey === input ? '' : commandSplit.slice(1).join(' ')
+            const additionalInstruction =
+                commandKey === input.toString() ? ps`` : PromptString.join(commandSplit.slice(1), ps` `)
 
             // Process default commands
             if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {

@@ -51,7 +51,7 @@ export class CustomCommandsBuilderMenu {
                     return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
                 // Remove leading slash before checking if command already exists
-                if (commandSet.has(fromSlashCommand(input))) {
+                if (commandSet.has(fromSlashCommand(input).toString())) {
                     return 'A command with the same name already exists.'
                 }
                 return
