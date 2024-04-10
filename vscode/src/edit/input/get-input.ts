@@ -417,7 +417,7 @@ export const getInput = async (
                 const isOverLimit = (size?: number): boolean => {
                     const currentInput = input.value
                     const max = ModelProvider.getMaxCharsByModel(activeModel)
-                    let used = 0
+                    let used = currentInput.length
                     for (const [k, v] of selectedContextItems) {
                         if (currentInput.includes(`@${k}`)) {
                             used += v.size ?? 0
