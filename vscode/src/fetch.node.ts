@@ -1,14 +1,10 @@
 import type http from 'node:http'
-
-import { SocksProxyAgent } from 'socks-proxy-agent'
-
 import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { agent } from '@sourcegraph/cody-shared/src/fetch'
 import { getConfiguration } from './configuration'
 
-import { HttpProxyAgent } from 'http-proxy-agent'
-import { HttpsProxyAgent } from 'https-proxy-agent'
+import { ProxyAgent } from 'proxy-agent'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -19,26 +15,11 @@ const pacProxyAgent = 'PacProxyAgent'
 /**
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
-let socksProxyAgent: SocksProxyAgent
+let proxyAgent: ProxyAgent
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
-    return ({ protocol }) => {
-        if (proxy?.startsWith('socks') && !socksProxyAgent) {
-            socksProxyAgent = new SocksProxyAgent(proxy, {
-                keepAlive: true,
-                keepAliveMsecs: 60000,
-            })
-            return socksProxyAgent
-        }
-
-        // For some reason adding 'keep-alive' in the constructor was causing proxy to not be picked up.
-
-        // http_proxy/https_proxy in the format of 'https://[username:password]@your-proxy.com'
-        // (see :https://github.com/TooTallNate/proxy-agents/issues/12)
-        if (protocol === 'http:') {
-            return new HttpProxyAgent(process.env.http_proxy ?? '')
-        }
-        return new HttpsProxyAgent(process.env.https_proxy ?? '')
+    return () => {
+        return proxyAgent
     }
 }
 
@@ -50,6 +31,13 @@ export function setCustomAgent(
 }
 
 export function initializeNetworkAgent(): void {
+    proxyAgent = new ProxyAgent()
+    proxyAgent.keepAlive = true
+    proxyAgent.connectOpts = {
+        keepAliveMsecs: 60000,
+        keepAlive: true,
+    }
+
     const customAgent = setCustomAgent(getConfiguration())
 
     /**
