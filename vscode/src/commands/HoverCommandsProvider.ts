@@ -12,7 +12,7 @@ import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { execQueryWrapper as execQuery } from '../tree-sitter/query-sdk'
-import { executeDocCommand } from './execute'
+import { executeDocCommand, executeTestEditCommand } from './execute'
 import { executeHoverChatCommand } from './execute/hover'
 import type { CodyCommandArgs } from './types'
 
@@ -135,6 +135,7 @@ class HoverCommandsProvider implements vscode.Disposable {
         const commandsOnHovers = { ...HoverCommands() }
         const selection = vscode.window.activeTextEditor?.selection
         const [docNode] = execQuery({ document, position, queryWrapper: 'getDocumentableNode' })
+        const [testNode] = execQuery({ document, position, queryWrapper: 'getTestableNode' })
         const activeSymbol = (await fetchDocumentSymbols(document)).findLast(s =>
             s.range.contains(position)
         )
@@ -144,6 +145,9 @@ class HoverCommandsProvider implements vscode.Disposable {
         this.current.selection = selection
         this.current.symbol = activeSymbol
 
+        const showDoc = docNode.symbol?.node && docNode.meta?.showHint
+        const showTest = testNode.symbol?.node && testNode.meta?.showHint
+
         if (onError) {
             this.current.error = onError
             commandsOnHovers.ask.enabled = true
@@ -151,10 +155,21 @@ class HoverCommandsProvider implements vscode.Disposable {
             // CHAT & EDIT for multi-line selections
             commandsOnHovers.chat.enabled = true
             commandsOnHovers.edit.enabled = true
-        } else if (docNode.symbol?.node && docNode.meta?.showHint) {
+        } else if (showDoc && showTest) {
+            // EXPLAIN, DOC and TEST for documentable + testable nodes
+            commandsOnHovers.explain.enabled = true
+            commandsOnHovers.doc.enabled = true
+            commandsOnHovers.test.enabled = true
+            commandsOnHovers.edit.enabled = true
+        } else if (showDoc) {
             // EXPLAIN AND DOC for documentable nodes
             commandsOnHovers.explain.enabled = true
             commandsOnHovers.doc.enabled = true
+            commandsOnHovers.edit.enabled = true
+        } else if (showTest) {
+            // EXPLAIN AND TEST for testable nodes
+            commandsOnHovers.explain.enabled = true
+            commandsOnHovers.test.enabled = true
             commandsOnHovers.edit.enabled = true
         } else if (docNode.symbol?.node && activeSymbol) {
             // CHAT & EDIT for workspace symbols
@@ -207,6 +222,13 @@ class HoverCommandsProvider implements vscode.Disposable {
                 const helpPrompt = error ? '\nExplain this error:\n' + error : ''
                 commandArgs.additionalInstruction = symbolPrompt + helpPrompt
                 executeHoverChatCommand(commandArgs)
+                break
+            }
+            case 'cody.action.unit-tests': {
+                // Use the current cursor position to let the test command
+                // determind the correct insertion point for the testable node
+                commandArgs.range = cursor
+                executeTestEditCommand(commandArgs)
                 break
             }
             default:
@@ -285,6 +307,11 @@ const HoverCommands: () => Record<string, HoverCommand> = () => ({
     doc: {
         id: 'cody.command.document-code',
         title: 'Document Code',
+        enabled: false,
+    },
+    test: {
+        id: 'cody.command.unit-tests',
+        title: 'Test Code',
         enabled: false,
     },
     chat: {

@@ -118,7 +118,15 @@ export interface QueryWrappers {
         node: SyntaxNode,
         start: Point,
         end?: Point
-    ) => [] | readonly [{ readonly node: SyntaxNode }]
+    ) =>
+        | []
+        | readonly [
+              {
+                  symbol?: QueryCapture
+                  range?: QueryCapture
+                  meta: { showHint: boolean }
+              },
+          ]
 }
 
 /**
@@ -238,6 +246,54 @@ function getLanguageSpecificQueryWrappers(
             }
 
             return [firstEnclosingFunction]
+        },
+        getTestableNode: (root, start, end) => {
+            const captures = queries.enclosingFunction.compiled.captures(
+                root,
+                { ...start, column: 0 },
+                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
+            )
+            const symbolCaptures = []
+            const rangeCaptures = []
+
+            for (const capture of captures) {
+                if (capture.name.startsWith('range')) {
+                    rangeCaptures.push(capture)
+                } else if (capture.name.startsWith('symbol')) {
+                    symbolCaptures.push(capture)
+                }
+            }
+
+            const symbol = findLast(symbolCaptures, ({ node }) => {
+                return (
+                    node.startPosition.row === start.row &&
+                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+
+            const testableRanges = rangeCaptures.filter(({ node }) => {
+                return (
+                    node.startPosition.row <= start.row &&
+                    (start.column <= node.endPosition.column || start.row < node.endPosition.row)
+                )
+            })
+            const range = testableRanges.at(-1)
+
+            /**
+             * Heuristic to determine if we should show a prominent hint for the symbol.
+             * 1. If there is only one testable range for this position, we can be confident it makes sense to test. Show the hint.
+             * 2. TODO: Look for usages of this function in test files, if it's already used then don't show the hint.
+             */
+            const showHint = Boolean(testableRanges.length === 1)
+
+            return [
+                {
+                    symbol,
+                    range,
+                    meta: { showHint },
+                },
+            ]
         },
     }
 }

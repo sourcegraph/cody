@@ -1,14 +1,58 @@
 import { type ContextItem, logError } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
+
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
+import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
 import type { CodyCommandArgs } from '../types'
-
-import type { URI } from 'vscode-uri'
 import { isTestFileForOriginal } from '../utils/test-commands'
+
+/**
+ * Gets the range to test.
+ *
+ * Checks for a testable node (e.g. function) at the position
+ * using a tree-sitter query. If found, returns the range for the symbol.
+ */
+function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
+    const { document, selection } = editor
+    if (!selection.isEmpty) {
+        const lineSelection = getEditLineSelection(editor.document, editor.selection)
+        // The user has made an active selection, use that as the testable range
+        return lineSelection
+    }
+
+    /**
+     * Attempt to get the range of a testable symbol at the current cursor position.
+     * If present, use this for the edit instead of expanding the range to the nearest block.
+     */
+    const [testableNode] = execQueryWrapper({
+        document,
+        position: editor.selection.active,
+        queryWrapper: 'getTestableNode',
+    })
+    if (!testableNode) {
+        return undefined
+    }
+
+    const { range: testableRange } = testableNode
+    if (!testableRange) {
+        // No user-provided selection, no testable range found.
+        // Fallback to expanding the range to the nearest block.
+        return undefined
+    }
+
+    const {
+        node: { startPosition, endPosition },
+    } = testableRange
+
+    return new vscode.Range(startPosition.row, startPosition.column, endPosition.row, endPosition.column)
+}
 
 /**
  * Command that generates a new test file for the selected code with unit tests added.
@@ -59,6 +103,7 @@ export async function executeTestEditCommand(
                 configuration: {
                     instruction: destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt,
                     document,
+                    range: getTestableRange(editor),
                     intent: 'test',
                     mode: 'insert',
                     // use 3 context files as sharing too many context could result in quality issue

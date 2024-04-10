@@ -3,6 +3,7 @@ import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
 const RESPONSE_PREFIX = `<${PROMPT_TOPICS.OUTPUT}>`
+const TEST_FILE_PREFIX = `<${PROMPT_TOPICS.FILENAME}>`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],
@@ -50,6 +51,8 @@ export const claude: EditLLMInteraction = {
     getTest(options) {
         return {
             ...SHARED_PARAMETERS,
+            assistantText: RESPONSE_PREFIX + TEST_FILE_PREFIX,
+            assistantPrefix: RESPONSE_PREFIX + TEST_FILE_PREFIX,
             prompt: buildGenericPrompt('test', options),
         }
     },
