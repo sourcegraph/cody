@@ -18,8 +18,8 @@
 // Use `pnpm tsc --listFilesOnly` to get a list of TypeScript files to process.
 //
 //
-// In CI, we use `git diff --name-only main | grep ".ts$"` to get a list of files
-// that were changed.
+// In CI, we use `git diff --name-only main | grep -E "\.(ts|tsx)$"` to get a list
+// of files that were changed.
 //
 // References:
 // https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API

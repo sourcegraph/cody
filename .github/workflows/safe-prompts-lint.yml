@@ -37,7 +37,7 @@ jobs:
       #     fi
 
       - name: Run lints
-        run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep ".ts$"`
+        run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep -E "\.(ts|tsx)$"`
 
       - uses: actions/github-script@v6
         # if: steps.check-unsafe-usage.outputs.unsafe_function_added == 'true'
