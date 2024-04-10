@@ -94,7 +94,7 @@ function getSymbolDecorationPadding(
     return Math.max(symbolAnchorCharacter - insertionEndCharacter, 2)
 }
 
-type GhostVariant = 'EditOrChat' | 'Document' | 'Generate' | 'Test'
+type GhostVariant = 'EditOrChat' | 'Document' | 'Generate' | 'Test' | 'TestOrDocument'
 type EnabledFeatures = Record<GhostVariant, boolean>
 
 /**
@@ -113,12 +113,13 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
          */
         EditOrChat: settingValue ?? !hoverFeatureFlag,
         Document: settingValue ?? !hoverFeatureFlag,
+        Test: settingValue ?? !hoverFeatureFlag,
+        TestOrDocument: settingValue ?? !hoverFeatureFlag,
         /**
          * We're not running an A/B test on the "Opt+K" to generate text.
          * We can safely set the default of this to `true`.
          */
         Generate: settingValue ?? true,
-        Test: settingValue ?? true,
     }
 }
 
@@ -156,6 +157,12 @@ const HINT_DECORATIONS: Record<
     },
     Test: {
         text: `${TEST_SHORTCUT_LABEL} to Test`,
+        decoration: vscode.window.createTextEditorDecorationType({
+            after: { color: GHOST_TEXT_COLOR },
+        }),
+    },
+    TestOrDocument: {
+        text: `${DOC_SHORTCUT_LABEL} to Document, ${TEST_SHORTCUT_LABEL} to Test`,
         decoration: vscode.window.createTextEditorDecorationType({
             after: { color: GHOST_TEXT_COLOR },
         }),
@@ -272,82 +279,99 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     const selection = event.selections[0]
-                    let testShown = false
-                    if (enabledFeatures.Test && selection.active.line !== this.lastLineTyped) {
-                        const testableSymbol = this.getThrottledTestableSymbol(
-                            editor.document,
-                            selection.active
-                        )
+                    const isOnTypingLine = selection.active.line === this.lastLineTyped
+                    const testableSymbol = enabledFeatures.Test
+                        ? this.getThrottledTestableSymbol(editor.document, selection.active)
+                        : null
+                    const documentableSymbol = enabledFeatures.Document
+                        ? this.getThrottledDocumentableSymbol(editor.document, selection.active)
+                        : null
 
-                        if (testableSymbol) {
-                            /**
-                             * "Test" code flow.
-                             * Display ghost text above the relevant symbol.
-                             */
-                            const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
-                            if (
-                                this.activeDecorationRange &&
-                                this.activeDecorationRange.start.line !== precedingLine
-                            ) {
-                                this.clearGhostText(editor)
-                            }
-                            testShown = true
-                            return this.setThrottledGhostText(
-                                editor,
-                                new vscode.Position(precedingLine, Number.MAX_VALUE),
-                                'Test',
-                                getSymbolDecorationPadding(
-                                    editor.document,
-                                    editor.document.lineAt(precedingLine),
-                                    new vscode.Range(
-                                        testableSymbol.startPosition.row,
-                                        testableSymbol.startPosition.column,
-                                        testableSymbol.endPosition.row,
-                                        testableSymbol.endPosition.column
-                                    )
+                    if (testableSymbol && documentableSymbol && !isOnTypingLine) {
+                        /**
+                         * "Test" and "Document" flow
+                         * Display ghost text above the relevant symbol.
+                         */
+                        const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
+                        if (
+                            this.activeDecorationRange &&
+                            this.activeDecorationRange.start.line !== precedingLine
+                        ) {
+                            this.clearGhostText(editor)
+                        }
+                        return this.setThrottledGhostText(
+                            editor,
+                            new vscode.Position(precedingLine, Number.MAX_VALUE),
+                            'TestOrDocument',
+                            getSymbolDecorationPadding(
+                                editor.document,
+                                editor.document.lineAt(precedingLine),
+                                new vscode.Range(
+                                    testableSymbol.startPosition.row,
+                                    testableSymbol.startPosition.column,
+                                    testableSymbol.endPosition.row,
+                                    testableSymbol.endPosition.column
                                 )
                             )
-                        }
+                        )
                     }
 
-                    if (
-                        !testShown &&
-                        !enabledFeatures.Document &&
-                        selection.active.line !== this.lastLineTyped
-                    ) {
-                        const documentableSymbol = this.getThrottledDocumentableSymbol(
-                            editor.document,
-                            selection.active
-                        )
-
-                        if (documentableSymbol) {
-                            /**
-                             * "Document" code flow.
-                             * Display ghost text above the relevant symbol.
-                             */
-                            const precedingLine = Math.max(0, documentableSymbol.startPosition.row - 1)
-                            if (
-                                this.activeDecorationRange &&
-                                this.activeDecorationRange.start.line !== precedingLine
-                            ) {
-                                this.clearGhostText(editor)
-                            }
-                            return this.setThrottledGhostText(
-                                editor,
-                                new vscode.Position(precedingLine, Number.MAX_VALUE),
-                                'Document',
-                                getSymbolDecorationPadding(
-                                    editor.document,
-                                    editor.document.lineAt(precedingLine),
-                                    new vscode.Range(
-                                        documentableSymbol.startPosition.row,
-                                        documentableSymbol.startPosition.column,
-                                        documentableSymbol.endPosition.row,
-                                        documentableSymbol.endPosition.column
-                                    )
+                    if (testableSymbol && !isOnTypingLine) {
+                        /**
+                         * "Test" flow
+                         * Display ghost text above the relevant symbol.
+                         */
+                        const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
+                        if (
+                            this.activeDecorationRange &&
+                            this.activeDecorationRange.start.line !== precedingLine
+                        ) {
+                            this.clearGhostText(editor)
+                        }
+                        return this.setThrottledGhostText(
+                            editor,
+                            new vscode.Position(precedingLine, Number.MAX_VALUE),
+                            'Test',
+                            getSymbolDecorationPadding(
+                                editor.document,
+                                editor.document.lineAt(precedingLine),
+                                new vscode.Range(
+                                    testableSymbol.startPosition.row,
+                                    testableSymbol.startPosition.column,
+                                    testableSymbol.endPosition.row,
+                                    testableSymbol.endPosition.column
                                 )
                             )
+                        )
+                    }
+
+                    if (documentableSymbol && !isOnTypingLine) {
+                        /**
+                         * "Document" code flow.
+                         * Display ghost text above the relevant symbol.
+                         */
+                        const precedingLine = Math.max(0, documentableSymbol.startPosition.row - 1)
+                        if (
+                            this.activeDecorationRange &&
+                            this.activeDecorationRange.start.line !== precedingLine
+                        ) {
+                            this.clearGhostText(editor)
                         }
+                        return this.setThrottledGhostText(
+                            editor,
+                            new vscode.Position(precedingLine, Number.MAX_VALUE),
+                            'Document',
+                            getSymbolDecorationPadding(
+                                editor.document,
+                                editor.document.lineAt(precedingLine),
+                                new vscode.Range(
+                                    documentableSymbol.startPosition.row,
+                                    documentableSymbol.startPosition.column,
+                                    documentableSymbol.endPosition.row,
+                                    documentableSymbol.endPosition.column
+                                )
+                            )
+                        )
                     }
 
                     if (isEmptyOrIncompleteSelection(editor.document, selection)) {
