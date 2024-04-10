@@ -266,18 +266,6 @@ export function isValidPromptString(promptString: PromptString) {
     return pocket.has(promptString)
 }
 
-type StringReference = vscode.Uri
-
-// This helper function is unsafe and should only be used within this module.
-function internal_createPromptString(
-    string: string,
-    references: readonly StringReference[]
-): PromptString {
-    const handle = new PromptString()
-    pocket.set(handle, new PromptStringPocket(string, references))
-    return handle
-}
-
 type TemplateArgs = readonly (PromptString | '' | number)[]
 
 /**
@@ -341,16 +329,13 @@ export function unsafe_temporary_createPromptString(
     return internal_createPromptString(value, references)
 }
 
-// When PromptStrings are created, their properties are stored in a side pocket
-// WeakMap. Consumers can do what they like with the PromptString, all of the
-// operations use data in the map and so are protected from the PromptString
-// constructor being disclosed, prototype pollution, property manipulation, etc.
-const pocket = new WeakMap<PromptString, PromptStringPocket>()
-
 class PromptStringPocket {
     constructor(
         public value: string,
-        public references: readonly StringReference[]
+        // We're using a set inside the pocket so we get deduplication for free and
+        // by converting from array (input) to Set, we also guarantee shallow copies
+        // are being created.
+        public references: Set<StringReference>
     ) {}
 }
 
@@ -358,13 +343,29 @@ interface ConfigGetter<T> {
     get<T>(section: string, defaultValue?: T): T
 }
 
+// When PromptStrings are created, their properties are stored in a side pocket
+// WeakMap. Consumers can do what they like with the PromptString, all of the
+// operations use data in the map and so are protected from the PromptString
+// constructor being disclosed, prototype pollution, property manipulation, etc.
+type StringReference = vscode.Uri
+const pocket = new WeakMap<PromptString, PromptStringPocket>()
+
+function internal_createPromptString(
+    string: string,
+    references: readonly StringReference[]
+): PromptString {
+    const handle = new PromptString()
+    // Create a shallow copy of the references list as a set, so it's both de-duped
+    // and can not be mutated by the caller
+    pocket.set(handle, new PromptStringPocket(string, new Set(references)))
+    return handle
+}
 function internal_toString(s: PromptString): string {
     return pocket.get(s)!.value
 }
 function internal_toReferences(s: PromptString): readonly StringReference[] {
-    const ref = pocket.get(s)!.references
-    Object.freeze(ref)
-    return ref
+    // Return a shallow copy of the references so it can not be mutated
+    return [...pocket.get(s)!.references.values()]
 }
 
 // TODO: move this to shared
