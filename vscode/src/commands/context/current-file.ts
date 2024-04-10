@@ -2,7 +2,6 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -40,7 +39,6 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
                     source: ContextItemSource.Editor,
                     range: selection,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 } satisfies ContextItem,
             ]
         } catch (error) {

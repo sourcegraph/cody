@@ -2,7 +2,6 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -67,7 +66,6 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                     source: ContextItemSource.Editor,
                     range,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 })
 
                 // Limit the number of files to 10

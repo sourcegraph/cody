@@ -1,9 +1,4 @@
-import {
-    type ContextItem,
-    ContextItemSource,
-    TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, TokenCounter } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
@@ -20,7 +15,6 @@ export async function createContextFile(file: URI, content: string): Promise<Con
             source: ContextItemSource.Editor,
             range,
             size,
-            isTooLarge: size > USER_CONTEXT_TOKEN_BUDGET,
         } satisfies ContextItem
     } catch (error) {
         console.error(error)

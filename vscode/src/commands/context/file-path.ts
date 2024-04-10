@@ -2,7 +2,6 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -33,7 +32,6 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
                     source: ContextItemSource.Editor,
                     range,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 },
             ] satisfies ContextItem[]
         } catch (error) {

@@ -11,7 +11,6 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -53,7 +52,6 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                 uri: vscode.Uri.file('terminal-output'),
                 source: ContextItemSource.Terminal,
                 size,
-                isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
             } satisfies ContextItem
 
             return [file]

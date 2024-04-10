@@ -1,10 +1,4 @@
-import {
-    type ContextItem,
-    TokenCounter,
-    USER_CONTEXT_TOKEN_BUDGET,
-    logError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, TokenCounter, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import {
     type ContextItemFile,
     ContextItemSource,
@@ -50,7 +44,6 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     source: ContextItemSource.Selection,
                     range: selection,
                     size,
-                    isTooLarge: USER_CONTEXT_TOKEN_BUDGET < size,
                 } satisfies ContextItemFile,
             ]
         } catch (error) {
