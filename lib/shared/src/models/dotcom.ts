@@ -3,7 +3,7 @@ import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, DEFAULT_FAST_MODEL_TOKEN_LIMIT } from '
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS = [
+export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
