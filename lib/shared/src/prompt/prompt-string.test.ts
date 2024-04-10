@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { testFileUri } from '../test/path-helpers'
-import { PromptString, ps, temporary_createPromptString } from './prompt-string'
+import { PromptString, ps, unsafe_temporary_createPromptString } from './prompt-string'
 
 describe('PromptString', () => {
     it('can not be generated dynamically unless it consists of allowed sources', () => {
@@ -20,6 +20,14 @@ describe('PromptString', () => {
         }
         // @ts-expect-error: Can't hack around the limitation
         expect(() => ps`foo${evil2}bar`).toThrowError()
+
+        class FakePromptString extends PromptString {
+            toString() {
+                return '😈'
+            }
+        }
+        const fake = new FakePromptString()
+        expect(() => ps`${fake}`).toThrowError()
     })
 
     it('correctly assembles', () => {
@@ -31,7 +39,7 @@ describe('PromptString', () => {
 
     it('keeps track of references', () => {
         const uri = testFileUri('/foo/bar.ts')
-        const inner = temporary_createPromptString('i am from a file', [uri])
+        const inner = unsafe_temporary_createPromptString('i am from a file', [uri])
         const outer = ps`foo${ps`bar${inner}`}`
 
         expect(outer.getReferences()).toEqual([uri])
@@ -52,7 +60,7 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
 
-        const split = temporary_createPromptString('foo\nbar\nbaz', [uri1, uri2]).split('\n')
+        const split = unsafe_temporary_createPromptString('foo\nbar\nbaz', [uri1, uri2]).split('\n')
 
         expect(split).toHaveLength(3)
         expect(split[0]).toBeInstanceOf(PromptString)
@@ -73,11 +81,11 @@ describe('PromptString', () => {
 
         const joined = PromptString.join(
             [
-                temporary_createPromptString('foo', [uri1]),
+                unsafe_temporary_createPromptString('foo', [uri1]),
                 ps`bar`,
-                temporary_createPromptString('baz', [uri2]),
+                unsafe_temporary_createPromptString('baz', [uri2]),
             ],
-            temporary_createPromptString(' ', [uri3])
+            unsafe_temporary_createPromptString(' ', [uri3])
         )
 
         expect(joined.toString()).toBe('foo bar baz')
@@ -88,9 +96,12 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
 
-        const template = temporary_createPromptString('foo REPLACE bar REPLACE baz', [uri1])
+        const template = unsafe_temporary_createPromptString('foo REPLACE bar REPLACE baz', [uri1])
 
-        const replaced = template.replaceAll('REPLACE', temporary_createPromptString('🇦🇹', [uri2]))
+        const replaced = template.replaceAll(
+            'REPLACE',
+            unsafe_temporary_createPromptString('🇦🇹', [uri2])
+        )
 
         expect(replaced.toString()).toBe('foo 🇦🇹 bar 🇦🇹 baz')
         expect(replaced.getReferences()).toEqual([uri1, uri2])
@@ -101,9 +112,9 @@ describe('PromptString', () => {
         const uri2 = testFileUri('/foo/bar1.ts')
         const uri3 = testFileUri('/foo/bar2.ts')
 
-        const first = temporary_createPromptString('foo', [uri1])
-        const second = temporary_createPromptString('bar', [uri2])
-        const third = temporary_createPromptString('baz', [uri3])
+        const first = unsafe_temporary_createPromptString('foo', [uri1])
+        const second = unsafe_temporary_createPromptString('bar', [uri2])
+        const third = unsafe_temporary_createPromptString('baz', [uri3])
 
         const concatenated = first.concat(second, third)
 
@@ -123,7 +134,7 @@ describe('PromptString', () => {
 
     it('can not mutate the references list', () => {
         const uri = testFileUri('/foo/bar.ts')
-        const ps = temporary_createPromptString('foo', [uri])
+        const ps = unsafe_temporary_createPromptString('foo', [uri])
 
         const arr: any = ps.getReferences()
         expect(() => {

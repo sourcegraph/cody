@@ -249,10 +249,7 @@ export class PromptString {
 
 // Validate that an input is indeed a PromptString and not just typecast to it.
 export function isValidPromptString(promptString: PromptString) {
-    if (pocket.has(promptString)) {
-        return true
-    }
-    return false
+    return pocket.has(promptString)
 }
 
 type StringReference = vscode.Uri
@@ -267,6 +264,8 @@ function internal_createPromptString(
     return handle
 }
 
+type TemplateArgs = readonly (PromptString | '' | number)[]
+
 /**
  * Constructs PromptStrings from template literals, numbers or other
  * PromptStrings. A linter in `/lint/safe-prompts.ts` checks that this function
@@ -275,10 +274,7 @@ function internal_createPromptString(
  * @param format the format string pieces.
  * @param args the arguments to splice into the format string.
  */
-export function ps(
-    format: TemplateStringsArray,
-    ...args: readonly (PromptString | '' | number)[]
-): PromptString {
+export function ps(format: TemplateStringsArray, ...args: TemplateArgs): PromptString {
     if (!(Array.isArray(format) && Object.isFrozen(format) && format.length > 0)) {
         // Deter casual direct calls.
         throw new Error('ps is only intended to be used in tagged template literals.')
@@ -317,16 +313,14 @@ export function ps(
 }
 
 // A version of ps that removes the leading indentation of the first line.
-export function psDedent(
-    format: TemplateStringsArray,
-    ...args: readonly (PromptString | '' | number)[]
-): PromptString {
+export function psDedent(format: TemplateStringsArray, ...args: TemplateArgs): PromptString {
     const promptString = ps(format, ...args)
     const dedented = dedent(internal_toString(promptString))
     return internal_createPromptString(dedented, promptString.getReferences())
 }
 
-export function temporary_createPromptString(
+// TODO: This is only temporarily exposed for writing tests.
+export function unsafe_temporary_createPromptString(
     value: string,
     references: readonly StringReference[]
 ): PromptString {
