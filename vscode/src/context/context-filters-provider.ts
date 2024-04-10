@@ -13,7 +13,7 @@ interface ParsedContextFilters {
 
 interface ParsedContextFilterItem {
     repoNamePattern: RE2
-    filePathPattern?: RE2
+    filePathPatterns?: RE2[]
 }
 
 export class ContextFiltersProvider implements vscode.Disposable {
@@ -109,18 +109,22 @@ function checkFilter(
 ): boolean {
     const matchesRepo = Boolean(parsedFilter.repoNamePattern.match(repoName))
 
-    if (!parsedFilter.filePathPattern) {
+    if (!parsedFilter.filePathPatterns) {
         return matchesRepo
     }
 
-    const matchesPath = Boolean(parsedFilter.filePathPattern.match(relativePath))
+    const matchesPath = parsedFilter.filePathPatterns.some(pattern =>
+        Boolean(pattern.match(relativePath))
+    )
 
     return matchesRepo && matchesPath
 }
 
 function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilterItem {
     const repoNamePattern = new RE2(item.repoNamePattern)
-    const filePathPattern = item.filePathPattern ? new RE2(item.filePathPattern) : undefined
+    const filePathPatterns = item.filePathPatterns
+        ? item.filePathPatterns.map(pattern => new RE2(pattern))
+        : undefined
 
-    return { repoNamePattern, filePathPattern }
+    return { repoNamePattern, filePathPatterns }
 }

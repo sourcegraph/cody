@@ -191,7 +191,7 @@ export interface ContextFiltersResult {
 export interface CodyContextFilterItem {
     repoNamePattern: string
     // Not implemented
-    filePathPattern?: string
+    filePathPatterns?: string[]
 }
 
 const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
@@ -201,7 +201,7 @@ const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
 
 const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
     include: [],
-    exclude: [{ repoNamePattern: '*' }],
+    exclude: [{ repoNamePattern: '.*' }],
 }
 
 interface SearchAttributionResults {

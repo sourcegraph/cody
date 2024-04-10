@@ -83,7 +83,7 @@ describe('ContextFiltersProvider', () => {
     it('matches file path patterns correctly', async () => {
         await initProviderWithContextFilters({
             include: [
-                { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*', filePathPattern: '.*\\.ts$' },
+                { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*', filePathPatterns: ['.*\\.ts$'] },
             ],
             exclude: [],
         })
