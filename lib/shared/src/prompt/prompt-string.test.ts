@@ -44,6 +44,8 @@ describe('PromptString', () => {
         expect(s.slice(1, 3).toString()).toBe(' f')
         expect(s.trim().toString()).toBe('foobarbaz')
         expect(s.trimEnd().toString()).toBe('  foobarbaz')
+        expect(s.indexOf('foo')).toBe(2)
+        expect(s.indexOf(ps`foo`)).toBe(2)
     })
 
     it('can split', () => {

@@ -67,6 +67,10 @@ export class PromptString {
         return internal_createPromptString(internal_toString(this).trimEnd(), this.getReferences())
     }
 
+    public indexOf(searchString: string | PromptString, start?: number): number {
+        return this.toString().indexOf(searchString.toString(), start)
+    }
+
     public split(separator: string): PromptString[] {
         const string = internal_toString(this)
         const references = internal_toReferences(this)

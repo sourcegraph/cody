@@ -131,7 +131,7 @@ export function getHeadAndTail(s: PromptString): PrefixComponents {
 
 function trimSpace(s: PromptString): TrimmedString {
     const trimmed = s.trim()
-    const headEnd = s.toString().indexOf(trimmed.toString())
+    const headEnd = s.indexOf(trimmed)
     return {
         raw: s,
         trimmed,
