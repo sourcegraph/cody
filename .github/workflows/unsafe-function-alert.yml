@@ -1,0 +1,32 @@
+name: Unsafe Function Alert
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  unsafe-function-alert:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Check for unsafe_ function usage
+      id: check-unsafe-usage
+      run: |
+        # Use git diff to check for added lines containing "unsafe_" function calls
+        if git diff --diff-filter=A --unified=0 HEAD^ HEAD | grep -q '\+.*unsafe_'; then
+          echo "unsafe_function_added=true" >> $GITHUB_OUTPUT
+        else
+          echo "unsafe_function_added=false" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: actions/github-script@v6
+      if: steps.check-unsafe-usage.outputs.unsafe_function_added == 'true'
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '‼️ Hey @philipp-spiess, please review this PR carefully as it introduces usage of \`unsafe_\` functions.'
+          })
