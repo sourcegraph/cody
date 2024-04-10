@@ -7,6 +7,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Chat: You can add highlighted code to the chat context by right-clicking on the code and selecting `Cody Chat: Add context`. The selected code will appear in the input box as `@-mentions`, allowing you to complete your question. [pull/3713](https://github.com/sourcegraph/cody/pull/3713)
+- Autocomplete: Add the proper infilling prompt for Codegemma when using Ollama. [pull/3754](https://github.com/sourcegraph/cody/pull/3754)
 
 ### Fixed
 

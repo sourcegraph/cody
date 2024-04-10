@@ -28,6 +28,7 @@ import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
+import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
@@ -200,6 +201,27 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
 
+    const onCurrentChatModelChange = useCallback(
+        (selected: ModelProvider): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({
+                command: 'chatModel',
+                model: selected.model,
+            })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, vscodeAPI]
+    )
+    const chatModelContext = useMemo<ChatModelContext>(
+        () => ({ chatModels, onCurrentChatModelChange }),
+        [chatModels, onCurrentChatModelChange]
+    )
+
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
@@ -246,23 +268,23 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         >
                             <EnhancedContextContext.Provider value={enhancedContextStatus}>
                                 <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        isTranscriptError={isTranscriptError}
-                                        chatModels={chatModels}
-                                        setChatModels={setChatModels}
-                                        welcomeMessage={welcomeMessageMarkdown}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        chatIDHistory={chatIDHistory}
-                                        isWebviewActive={isWebviewActive}
-                                        isNewInstall={isNewInstall}
-                                        userContextFromSelection={userContextFromSelection}
-                                    />
+                                    <ChatModelContextProvider value={chatModelContext}>
+                                        <Chat
+                                            chatEnabled={chatEnabled}
+                                            userInfo={userAccountInfo}
+                                            messageInProgress={messageInProgress}
+                                            transcript={transcript}
+                                            vscodeAPI={vscodeAPI}
+                                            telemetryService={telemetryService}
+                                            isTranscriptError={isTranscriptError}
+                                            welcomeMessage={welcomeMessageMarkdown}
+                                            guardrails={attributionEnabled ? guardrails : undefined}
+                                            chatIDHistory={chatIDHistory}
+                                            isWebviewActive={isWebviewActive}
+                                            isNewInstall={isNewInstall}
+                                            userContextFromSelection={userContextFromSelection}
+                                        />
+                                    </ChatModelContextProvider>
                                 </EnhancedContextEnabled.Provider>
                             </EnhancedContextContext.Provider>
                         </EnhancedContextEventHandlers.Provider>

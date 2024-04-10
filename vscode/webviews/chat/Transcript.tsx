@@ -3,12 +3,7 @@ import { type FunctionComponent, useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import {
-    type ChatMessage,
-    type Guardrails,
-    type ModelProvider,
-    renderCodyMarkdown,
-} from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -20,6 +15,7 @@ import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { MessageCell } from './cells/messageCell/MessageCell'
+import { useChatModelContext, useCurrentChatModel } from './models/chatModelContext'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
@@ -32,8 +28,6 @@ export const Transcript: React.FunctionComponent<{
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
-    chatModels?: ModelProvider[]
-    onCurrentChatModelChange: (model: ModelProvider) => void
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -48,8 +42,6 @@ export const Transcript: React.FunctionComponent<{
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     isTranscriptError,
-    chatModels,
-    onCurrentChatModelChange,
     userInfo,
     postMessage,
     guardrails,
@@ -137,7 +129,8 @@ export const Transcript: React.FunctionComponent<{
         lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
     }
 
-    const chatModel = chatModels?.find(m => m.default) ?? chatModels?.at(0)
+    const { chatModels, onCurrentChatModelChange } = useChatModelContext()
+    const chatModel = useCurrentChatModel()
 
     const messageToTranscriptItem =
         (offset: number) =>

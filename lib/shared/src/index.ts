@@ -181,6 +181,8 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
+    type ContextFiltersResult,
+    type CodyContextFilterItem,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
