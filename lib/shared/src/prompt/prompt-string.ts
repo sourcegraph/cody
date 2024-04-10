@@ -55,16 +55,19 @@ export class PromptString {
     public slice(start?: number, end?: number): PromptString {
         return internal_createPromptString(
             internal_toString(this).slice(start, end),
-            this.getReferences()
+            internal_toReferences(this)
         )
     }
 
     public trim(): PromptString {
-        return internal_createPromptString(internal_toString(this).trim(), this.getReferences())
+        return internal_createPromptString(internal_toString(this).trim(), internal_toReferences(this))
     }
 
     public trimEnd(): PromptString {
-        return internal_createPromptString(internal_toString(this).trimEnd(), this.getReferences())
+        return internal_createPromptString(
+            internal_toString(this).trimEnd(),
+            internal_toReferences(this)
+        )
     }
 
     public indexOf(searchString: string | PromptString, start?: number): number {
@@ -87,14 +90,14 @@ export class PromptString {
         const stringBoundary = internal_toString(boundary)
 
         const buffer: string[] = []
-        const references: Set<StringReference> = new Set(boundary.getReferences())
+        const references: Set<StringReference> = new Set(internal_toReferences(boundary))
         for (const promptString of promptStrings) {
             if (!isValidPromptString(promptString)) {
                 throw new Error('Invalid prompt string')
             }
 
             buffer.push(internal_toString(promptString))
-            for (const reference of promptString.getReferences()) {
+            for (const reference of internal_toReferences(promptString)) {
                 references.add(reference)
             }
         }
@@ -107,26 +110,32 @@ export class PromptString {
         const references: (readonly StringReference[])[] = []
         for (const promptString of promptStrings) {
             stringPromptString.push(internal_toString(promptString))
-            references.push(promptString.getReferences())
+            references.push(internal_toReferences(promptString))
         }
 
         return internal_createPromptString(internal_toString(this).concat(...stringPromptString), [
-            ...this.getReferences(),
+            ...internal_toReferences(this),
             ...references.flat(),
         ])
     }
 
-    public replaceAll(searchValue: string, replaceValue: PromptString): PromptString {
-        if (!isValidPromptString(replaceValue)) {
-            throw new Error('Invalid prompt string')
-        }
-
+    public replace(searchValue: string | RegExp, replaceValue: PromptString): PromptString {
         const stringReplaceValue = internal_toString(replaceValue)
-        const references = replaceValue.getReferences()
+        const references = internal_toReferences(replaceValue)
+
+        return internal_createPromptString(
+            internal_toString(this).replace(searchValue, stringReplaceValue),
+            [...internal_toReferences(this), ...references]
+        )
+    }
+
+    public replaceAll(searchValue: string | RegExp, replaceValue: PromptString): PromptString {
+        const stringReplaceValue = internal_toString(replaceValue)
+        const references = internal_toReferences(replaceValue)
 
         return internal_createPromptString(
             internal_toString(this).replaceAll(searchValue, stringReplaceValue),
-            [...this.getReferences(), ...references]
+            [...internal_toReferences(this), ...references]
         )
     }
 
@@ -313,7 +322,7 @@ export function ps(format: TemplateStringsArray, ...args: TemplateArgs): PromptS
 export function psDedent(format: TemplateStringsArray, ...args: TemplateArgs): PromptString {
     const promptString = ps(format, ...args)
     const dedented = dedent(internal_toString(promptString))
-    return internal_createPromptString(dedented, promptString.getReferences())
+    return internal_createPromptString(dedented, internal_toReferences(promptString))
 }
 
 // TODO: This is only temporarily exposed for writing tests.

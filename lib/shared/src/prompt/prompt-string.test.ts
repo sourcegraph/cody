@@ -92,6 +92,18 @@ describe('PromptString', () => {
         expect(joined.getReferences()).toEqual([uri3, uri1, uri2])
     })
 
+    it('can replace', () => {
+        const uri1 = testFileUri('/foo/bar.ts')
+        const uri2 = testFileUri('/foo/bar1.ts')
+
+        const template = unsafe_temporary_createPromptString('foo bar foo', [uri1])
+
+        const replaced = template.replace(/foo$/, unsafe_temporary_createPromptString('🇦🇹', [uri2]))
+
+        expect(replaced.toString()).toBe('foo bar 🇦🇹')
+        expect(replaced.getReferences()).toEqual([uri1, uri2])
+    })
+
     it('can replaceAll', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
@@ -137,9 +149,9 @@ describe('PromptString', () => {
         const ps = unsafe_temporary_createPromptString('foo', [uri])
 
         const arr: any = ps.getReferences()
-        expect(() => {
-            // biome-ignore lint/performance/noDelete: 🏴‍☠️
-            delete arr[0]
-        }).toThrow()
+        // biome-ignore lint/performance/noDelete: 🏴‍☠️
+        delete arr[0]
+
+        expect(ps.getReferences()).toEqual([uri])
     })
 })

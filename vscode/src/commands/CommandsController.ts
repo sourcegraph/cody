@@ -9,7 +9,7 @@ import { CommandRunner } from './services/runner'
 import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { PromptString, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -38,7 +38,10 @@ class CommandsController implements vscode.Disposable {
      *
      * Handles prompt building and context fetching for commands.
      */
-    public async execute(input: string, args: CodyCommandArgs): Promise<CommandResult | undefined> {
+    public async execute(
+        input: PromptString,
+        args: CodyCommandArgs
+    ): Promise<CommandResult | undefined> {
         return wrapInActiveSpan('command.custom', async span => {
             // Split the input by space to extract the command key and additional input (if any)
             const commandSplit = input?.trim().split(' ')
