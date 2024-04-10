@@ -261,11 +261,6 @@ export class PromptString {
     }
 }
 
-// Validate that an input is indeed a PromptString and not just typecast to it.
-export function isValidPromptString(promptString: PromptString) {
-    return pocket.has(promptString)
-}
-
 type TemplateArgs = readonly (PromptString | '' | number)[]
 
 /**
@@ -329,6 +324,12 @@ export function unsafe_temporary_createPromptString(
     return internal_createPromptString(value, references)
 }
 
+// When PromptStrings are created, their properties are stored in a side pocket
+// WeakMap. Consumers can do what they like with the PromptString, all of the
+// operations use data in the map and so are protected from the PromptString
+// constructor being disclosed, prototype pollution, property manipulation, etc.
+type StringReference = vscode.Uri
+const pocket = new WeakMap<PromptString, PromptStringPocket>()
 class PromptStringPocket {
     constructor(
         public value: string,
@@ -338,17 +339,6 @@ class PromptStringPocket {
         public references: Set<StringReference>
     ) {}
 }
-
-interface ConfigGetter<T> {
-    get<T>(section: string, defaultValue?: T): T
-}
-
-// When PromptStrings are created, their properties are stored in a side pocket
-// WeakMap. Consumers can do what they like with the PromptString, all of the
-// operations use data in the map and so are protected from the PromptString
-// constructor being disclosed, prototype pollution, property manipulation, etc.
-type StringReference = vscode.Uri
-const pocket = new WeakMap<PromptString, PromptStringPocket>()
 
 function internal_createPromptString(
     string: string,
@@ -367,6 +357,16 @@ function internal_toReferences(s: PromptString): readonly StringReference[] {
     // Return a shallow copy of the references so it can not be mutated
     // TODO: Do we need to create an array or can we expose the iterator?
     return [...pocket.get(s)!.references.values()]
+}
+
+// Validate that an input is indeed a PromptString and not just typecast to it.
+export function isValidPromptString(promptString: PromptString) {
+    return pocket.has(promptString)
+}
+
+// TODO: move this to shared
+interface ConfigGetter<T> {
+    get<T>(section: string, defaultValue?: T): T
 }
 
 // TODO: move this to shared
