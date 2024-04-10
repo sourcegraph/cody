@@ -116,13 +116,20 @@ describe('ContextFiltersProvider', () => {
     })
 
     it('uses cached results for repeated calls', async () => {
-        await initProviderWithContextFilters({
+        const contextFilters = {
             include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
             exclude: [],
-        })
+        }
+
+        const mockedApiRequest = vi
+            .spyOn(graphqlClient, 'contextFilters')
+            .mockResolvedValue(contextFilters)
+
+        await provider.init()
 
         expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
         expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+        expect(mockedApiRequest).toBeCalledTimes(1)
     })
 
     it('refetches context filters after the specified interval', async () => {
@@ -134,15 +141,18 @@ describe('ContextFiltersProvider', () => {
             include: [{ repoNamePattern: '^github\\.com\\/other\\/.*' }],
             exclude: [],
         }
-        vi.spyOn(graphqlClient, 'contextFilters')
+        const mockedApiRequest = vi
+            .spyOn(graphqlClient, 'contextFilters')
             .mockResolvedValueOnce(mockContextFilters1)
             .mockResolvedValueOnce(mockContextFilters2)
         await provider.init()
 
+        expect(mockedApiRequest).toBeCalledTimes(1)
         expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
 
         await vi.runOnlyPendingTimersAsync()
 
+        expect(mockedApiRequest).toBeCalledTimes(2)
         expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(false)
         expect(provider.isPathAllowed('github.com/other/cody', 'src/main.ts')).toBe(true)
     })
