@@ -11,7 +11,7 @@ describe('getMaxTokenByID', () => {
     })
 
     it('returns default token limit for unknown model', () => {
-        const maxToken = ModelProvider.getMaxTokenByID('unknown-model')
+        const maxTokens = ModelProvider.maxRequestTokensForModel('unknown-model')
         expect(maxToken).toEqual(CHAT_TOKEN_BUDGET)
     })
 

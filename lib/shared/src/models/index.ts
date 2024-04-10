@@ -24,7 +24,7 @@ export class ModelProvider {
         // The usage of the model, e.g. chat or edit.
         public readonly usage: ModelUsage[],
         // The maximum number of tokens that can be processed by the model in a single request.
-        public readonly maxToken: number = CHAT_TOKEN_BUDGET
+        public readonly maxRequestTokens: number = CHAT_TOKEN_BUDGET
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider

@@ -6,7 +6,7 @@ import { TokenCounter } from '../token'
  */
 export function truncateText(text: string, maxTokens: number): string {
     const encoded = TokenCounter.encode(text)
-    if (encoded.length < maxTokens) {
+    return encoded.length <= maxTokens ? text : TokenCounter.decode(encoded.slice(0, maxTokens))
         return text
     }
     return TokenCounter.decode(encoded.slice(0, maxTokens))
@@ -56,5 +56,5 @@ export function truncateTextStart(text: string, maxTokens: number): string {
     if (encoded.length < maxTokens) {
         return text
     }
-    return TokenCounter.decode(encoded.slice(-maxTokens - 1))
+    return TokenCounter.decode(encoded.slice(-maxTokens))
 }
