@@ -76,13 +76,22 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
+    // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
         title: 'Mixtral 8x7B',
         model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
-        // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
+        usage: [ModelUsage.Chat],
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+    },
+    {
+        title: 'Mixtral 8x22B',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b',
+        provider: 'Mistral',
+        default: false,
+        codyProOnly: true,
         usage: [ModelUsage.Chat],
         maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
