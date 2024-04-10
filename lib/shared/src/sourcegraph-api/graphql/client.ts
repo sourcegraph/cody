@@ -194,9 +194,14 @@ export interface CodyContextFilterItem {
     filePathPattern?: string
 }
 
-const EMPTY_CONTEXT_FILTERS: ContextFiltersResult = {
+const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
     include: [],
     exclude: [],
+}
+
+const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
+    include: [],
+    exclude: [{ repoNamePattern: '*' }],
 }
 
 interface SearchAttributionResults {
@@ -541,10 +546,15 @@ export class SourcegraphGraphQLAPIClient {
         const result = extractDataOrError(response, data => data)
 
         if (result instanceof Error) {
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
+
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return EMPTY_CONTEXT_FILTERS
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
             }
+
+            // Exclude everything in case of an unexpected error.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
 
         return result
