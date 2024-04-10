@@ -253,7 +253,9 @@ function getLanguageSpecificQueryWrappers(
             return queries.graphContextIdentifiers.compiled.captures(root, start, end)
         },
         getEnclosingFunction: (root, start, end) => {
-            const captures = queries.enclosingFunction.compiled.captures(root, start, end)
+            const captures = queries.enclosingFunction.compiled
+                .captures(root, start, end)
+                .filter(capture => capture.name.startsWith('range'))
 
             const firstEnclosingFunction = findLast(captures, ({ node }) => {
                 return (

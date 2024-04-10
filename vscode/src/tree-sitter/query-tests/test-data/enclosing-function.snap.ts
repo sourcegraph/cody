@@ -21,13 +21,14 @@
 // ------------------------------------
 
   function testFunc() {
-//         ^^^^^^^^ symbol.function[1]
+//^ start range.function[1]
 //              █
       wrapper
   }
+//^ end range.function[1]
 
 // Nodes types:
-// symbol.function[1]: identifier
+// range.function[1]: function_declaration
 
 // ------------------------------------
 
