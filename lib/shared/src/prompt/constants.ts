@@ -1,5 +1,4 @@
 export const ANSWER_TOKENS = 1000
-export const MAX_HUMAN_INPUT_TOKENS = 1000
 export const MAX_CURRENT_FILE_TOKENS = 1000
 
 export const SURROUNDING_LINES = 50

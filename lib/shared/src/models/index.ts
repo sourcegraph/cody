@@ -23,8 +23,15 @@ export class ModelProvider {
         public readonly model: string,
         // The usage of the model, e.g. chat or edit.
         public readonly usage: ModelUsage[],
-        // The maximum number of tokens that can be processed by the model in a single request.
-        public readonly maxRequestTokens: number = CHAT_TOKEN_BUDGET
+        /**
+         * The context window of the model, which is the maximum number of tokens
+         * that can be processed by the model in a single request.
+         */
+        public readonly maxRequestTokens: number = CHAT_TOKEN_BUDGET,
+        // The API key for the model
+        public readonly apiKey?: string,
+        // The API endpoint for the model
+        public readonly apiEndpoint?: string
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
@@ -60,6 +67,17 @@ export class ModelProvider {
     }
 
     /**
+     * Add new providers as primary model providers.
+     */
+    public static addProviders(providers: ModelProvider[]): void {
+        const set = new Set(ModelProvider.primaryProviders)
+        for (const provider of providers) {
+            set.add(provider)
+        }
+        ModelProvider.primaryProviders = Array.from(set)
+    }
+
+    /**
      * Get the list of the primary models providers with local models.
      * If currentModel is provided, sets it as the default model.
      */
@@ -91,6 +109,10 @@ export class ModelProvider {
      */
     public static getMaxTokenByID(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model?.maxToken || CHAT_TOKEN_BUDGET
+        return model?.maxRequestTokens || CHAT_TOKEN_BUDGET
+    }
+
+    public static getProviderByModel(modelID: string): ModelProvider | undefined {
+        return ModelProvider.providers.find(m => m.model === modelID)
     }
 }

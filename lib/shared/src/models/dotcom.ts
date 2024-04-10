@@ -3,7 +3,7 @@ import { CHAT_TOKEN_BUDGET, FAST_CHAT_TOKEN_BUDGET } from '../token/constants'
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS = [
+export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -11,7 +11,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 2.1',
@@ -20,7 +20,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude Instant',
@@ -29,7 +29,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: FAST_CHAT_TOKEN_BUDGET,
+        maxRequestTokens: FAST_CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 3 Haiku',
@@ -38,7 +38,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: FAST_CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 3 Sonnet',
@@ -47,7 +47,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +56,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,7 +65,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: FAST_CHAT_TOKEN_BUDGET,
+        maxRequestTokens: FAST_CHAT_TOKEN_BUDGET,
     },
     {
         title: 'GPT-4 Turbo Preview',
@@ -74,7 +74,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Mixtral 8x7B',
@@ -84,6 +84,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
-        maxToken: CHAT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
 ] as const satisfies ModelProvider[]

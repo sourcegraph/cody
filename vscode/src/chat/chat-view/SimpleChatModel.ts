@@ -16,8 +16,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    // The maximum number of characters available in the model's context window.
-    public readonly maxToken: number
+    public maxToken: number
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -26,6 +25,11 @@ export class SimpleChatModel {
         private selectedRepos?: Repo[]
     ) {
         this.maxToken = ModelProvider.getMaxTokenByID(this.modelID)
+    }
+
+    public updateModel(newModelID: string): void {
+        this.modelID = newModelID
+        this.maxToken = ModelProvider.getMaxTokenByID(newModelID)
     }
 
     public isEmpty(): boolean {
