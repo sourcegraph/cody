@@ -107,6 +107,7 @@ object Constants {
   const val `show-search-result` = "show-search-result"
   const val reset = "reset"
   const val `attribution-search` = "attribution-search"
+  const val debug_enable = "debug/enable"
   const val `tree-sitter` = "tree-sitter"
   const val indentation = "indentation"
   const val Automatic = "Automatic"

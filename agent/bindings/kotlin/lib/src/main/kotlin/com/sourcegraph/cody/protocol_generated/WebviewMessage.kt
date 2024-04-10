@@ -44,6 +44,7 @@ sealed class WebviewMessage {
           "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
+          "debug/enable" -> context.deserialize<Debug_enableWebviewMessage>(element, Debug_enableWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -386,6 +387,15 @@ data class `attribution-searchWebviewMessage`(
 
   enum class CommandEnum {
     @SerializedName("attribution-search") `Attribution-search`,
+  }
+}
+
+data class Debug_enableWebviewMessage(
+  val command: CommandEnum? = null, // Oneof: debug/enable
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("debug/enable") Debug_enable,
   }
 }
 
