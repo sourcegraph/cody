@@ -25,7 +25,11 @@ export class ModelProvider {
         public readonly usage: ModelUsage[],
         // The maximum number of tokens that can be processed by the model in a single request.
         // NOTE: A token is equivalent to 4 characters/bytes.
-        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT
+        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        // The API key for the model
+        public readonly apiKey?: string,
+        // The API endpoint for the model
+        public readonly apiEndpoint?: string
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
@@ -61,6 +65,17 @@ export class ModelProvider {
     }
 
     /**
+     * Add new providers as primary model providers.
+     */
+    public static addProviders(providers: ModelProvider[]): void {
+        const set = new Set(ModelProvider.primaryProviders)
+        for (const provider of providers) {
+            set.add(provider)
+        }
+        ModelProvider.primaryProviders = Array.from(set)
+    }
+
+    /**
      * Get the list of the primary models providers with local models.
      * If currentModel is provided, sets it as the default model.
      */
@@ -93,5 +108,9 @@ export class ModelProvider {
     public static getMaxCharsByModel(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
         return tokensToChars(model?.maxToken || DEFAULT_CHAT_MODEL_TOKEN_LIMIT)
+    }
+
+    public static getProviderByModel(modelID: string): ModelProvider | undefined {
+        return ModelProvider.providers.find(m => m.model === modelID)
     }
 }

@@ -152,6 +152,10 @@ const JS_DOCUMENTABLE_NODES_QUERY = dedent`
         name: (property_identifier) @symbol.function) @range.function
     (pair
         key: (property_identifier) @symbol.identifier) @range.identifier
+
+    ; Comments
+    ;--------------------------------
+    (comment) @comment
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`

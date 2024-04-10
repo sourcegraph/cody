@@ -165,6 +165,7 @@ function getLanguageSpecificQueryWrappers(
                 { ...start, column: 0 },
                 end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
             )
+
             const symbolCaptures = []
             const rangeCaptures = []
 
@@ -204,6 +205,7 @@ function getLanguageSpecificQueryWrappers(
                 const insertionCaptures = queries.documentableNodes.compiled
                     .captures(root, range.node.startPosition, range.node.endPosition)
                     .filter(({ name }) => name.startsWith('insertion'))
+
                 insertionPoint = insertionCaptures.find(
                     ({ node }) =>
                         node.startIndex >= range.node.startIndex && node.endIndex <= range.node.endIndex
@@ -211,12 +213,31 @@ function getLanguageSpecificQueryWrappers(
             }
 
             /**
+             * Modify where we look for a docstring depending on the language and syntax.
+             * For Python functions and classes, we will have a provided `insertionPoint`, use the line below this.
+             * For all other cases, docstrings should be attached above the symbol range, use this.
+             */
+            const docStringLine =
+                languageId === 'python' && insertionPoint
+                    ? insertionPoint.node.startPosition.row + 1
+                    : start.row - 1
+            const docstringCaptures = queries.documentableNodes.compiled
+                .captures(
+                    root,
+                    { row: docStringLine, column: 0 },
+                    { row: docStringLine, column: Number.MAX_SAFE_INTEGER }
+                )
+                .filter(node => node.name.startsWith('comment'))
+
+            /**
              * Heuristic to determine if we should show a prominent hint for the symbol.
              * 1. If there is only one documentable range for this position, we can be confident it makes sense to document. Show the hint.
              * 2. Otherwise, only show the hint if the symbol is a function
+             * 3. Don't show hint if there is no docstring already present.
              */
             const showHint = Boolean(
-                documentableRanges.length === 1 || symbol?.name.includes('function')
+                (documentableRanges.length === 1 || symbol?.name.includes('function')) &&
+                    docstringCaptures.length === 0
             )
 
             return [

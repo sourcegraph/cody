@@ -471,6 +471,13 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.chat.context.add",
+        "group": "Chat",
+        "title": "Cody Chat: Add context",
+        "icon": "$(new-file)",
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
+      },
+      {
         "command": "cody.search.index-update-all",
         "category": "Cody",
         "group": "Cody",
@@ -668,6 +675,10 @@
       "editor/context": [
         {
           "submenu": "cody.submenu",
+          "group": "0_cody"
+        },
+        {
+          "command": "cody.chat.context.add",
           "group": "0_cody"
         }
       ],
@@ -1034,7 +1045,10 @@
           "default": true,
           "markdownDescription": "Display commands in hover tooltips for code elements.",
           "description": "%config.experimental.hoverCommands%",
-          "tags": ["experimental", "feature-flag"]
+          "tags": [
+            "experimental",
+            "feature-flag"
+          ]
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
@@ -1225,6 +1239,7 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
+    "re2": "^1.20.10",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",

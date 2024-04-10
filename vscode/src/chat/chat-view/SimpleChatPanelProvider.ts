@@ -2,12 +2,10 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ANSWER_TOKENS,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
@@ -16,7 +14,6 @@ import {
     MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
-    ModelUsage,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -26,10 +23,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
-    recordErrorToSpan,
     reformatBotMessageForChat,
-    tokensToChars,
-    tracer,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -56,6 +50,14 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type {
+    ContextItemFile,
+    ContextItemWithContent,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -561,16 +563,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private handleAbort(): void {
         this.cancelInProgressCompletion()
-        telemetryService.log(
-            'CodyVSCodeExtension:abortButton:clicked',
-            { source: 'sidebar' },
-            { hasV2Event: true }
-        )
+        telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
     private async handleSetChatModel(modelID: string): Promise<void> {
-        this.chatModel.modelID = modelID
+        this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
     }
 
@@ -628,6 +626,23 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         } finally {
             cancellation.dispose()
         }
+    }
+
+    public async handleGetUserEditorContext(): Promise<void> {
+        const contextLimit = getContextWindowLimitInBytes(
+            [...this.chatModel.getMessages()],
+            // Minus the character limit reserved for the answer token
+            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+        )
+        const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
+        await this.postMessage({
+            type: 'chat-input-context',
+            items: selectionFiles.map(f => ({
+                ...f,
+                content: undefined,
+                isTooLarge: f.size ? f.size > contextLimit : undefined,
+            })),
+        })
     }
 
     private async handleSymfIndex(): Promise<void> {

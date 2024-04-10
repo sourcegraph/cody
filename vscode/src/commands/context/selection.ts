@@ -1,11 +1,14 @@
 import {
     type ContextItem,
-    ContextItemSource,
     MAX_CURRENT_FILE_TOKENS,
     logError,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import {
+    type ContextItemFile,
+    ContextItemSource,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
@@ -37,6 +40,7 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
             const selection = activeSelection ?? visibleRange
 
             const content = document.getText(selection)
+            const size = content.length
 
             return [
                 {
@@ -45,7 +49,8 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
                     source: ContextItemSource.Selection,
                     range: selection,
-                } satisfies ContextItem,
+                    size,
+                } satisfies ContextItemFile,
             ]
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })
