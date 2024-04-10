@@ -11,6 +11,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Fixed an issue where changing the chat model did not update the token limit for the model. [pull/3762](https://github.com/sourcegraph/cody/pull/3762)
+
 ### Changed
 
 ## [1.12.0]
