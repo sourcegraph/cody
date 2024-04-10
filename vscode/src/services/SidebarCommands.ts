@@ -24,6 +24,12 @@ export function registerSidebarCommands(): vscode.Disposable[] {
 
     return [
         vscode.commands.registerCommand('cody.sidebar.commands', (feature: string, command: string) => {
+            // For Custom Commands
+            if (command === 'cody.action.command') {
+                logSidebarClick('custom')
+                void vscode.commands.executeCommand(command, feature, { source: 'sidebar' })
+                return
+            }
             logSidebarClick(feature)
             void vscode.commands.executeCommand(command, { source: 'sidebar' })
         }),
