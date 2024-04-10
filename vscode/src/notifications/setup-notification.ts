@@ -20,13 +20,6 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
         return
     }
 
-    if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
-        // User is on first activation, so has only just installed Cody.
-        // Show Cody so that they can get started.
-        await vscode.commands.executeCommand('cody.focus')
-        return
-    }
-
     telemetryService.log('CodyVSCodeExtension:signInNotification:shown', undefined, { hasV2Event: true })
     telemetryRecorder.recordEvent('cody.signInNotification', 'shown')
 

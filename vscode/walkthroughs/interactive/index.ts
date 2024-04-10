@@ -1,4 +1,9 @@
 import * as vscode from 'vscode'
+import {
+    TextChange,
+    updateFixedRange,
+    updateRangeMultipleChanges,
+} from '../../src/non-stop/tracked-range'
 
 const INTERACTIVE_CONTENT = `
 ### Welcome to Cody!
@@ -56,22 +61,34 @@ Start a chat
 export const triggerInteractiveWalkthrough = async () => {
     const disposables: vscode.Disposable[] = []
 
-    // Open a window to display the walkthrough
-    // const tempDocUri = vscode.Uri.parse('cody.py')
-    // const interactiveDoc = await vscode.workspace.openTextDocument(tempDocUri)
-    // const edit = new vscode.WorkspaceEdit()
-    // edit.replace(tempDocUri, new vscode.Range(0, 0, 0, 0), INTERACTIVE_CONTENT)
-    // await vscode.workspace.applyEdit(edit)
     const interactiveDoc = await vscode.workspace.openTextDocument({
         language: 'python',
         content: INTERACTIVE_CONTENT,
     })
 
+    const interactiveLines = interactiveDoc.getText().split('\n')
+    const precedingAutocompleteLine = interactiveLines.findIndex(line =>
+        line.includes('Prints hello world')
+    )
+    let autocompleteRange = new vscode.Range(
+        new vscode.Position(precedingAutocompleteLine + 1, 0),
+        new vscode.Position(precedingAutocompleteLine + 1, Number.MAX_SAFE_INTEGER)
+    )
+    const updateAutocompleteRange = vscode.workspace.onDidChangeTextDocument(event => {
+        if (event.document.uri !== interactiveDoc.uri) {
+            return
+        }
+
+        const changes = new Array<TextChange>(...event.contentChanges)
+        const updatedRange = updateRangeMultipleChanges(autocompleteRange, changes, {}, updateFixedRange)
+        if (!updatedRange.isEqual(autocompleteRange)) {
+            autocompleteRange = updatedRange
+        }
+    })
     const listenForAutocomplete = vscode.window.onDidChangeTextEditorSelection(
         async ({ textEditor }) => {
             const document = textEditor.document
             if (document.uri !== interactiveDoc.uri) {
-                console.log('NOOO')
                 return
             }
 
@@ -79,17 +96,19 @@ export const triggerInteractiveWalkthrough = async () => {
                 return
             }
 
-            const cursor = textEditor.selection.active
-            const interactiveLines = interactiveDoc.getText().split('\n')
-            const precedingLine = interactiveLines.findIndex(line => line.includes('Prints hello world'))
-            const targetLine = interactiveLines[precedingLine + 1]
-            if (cursor.line === precedingLine + 1 && targetLine.trim().length === 0) {
+            if (
+                autocompleteRange.contains(textEditor.selection.active) &&
+                document.getText(autocompleteRange).trim().length === 0
+            ) {
+                // Cursor is on the intended autocomplete line, and we don't already have any content
+                // Manually trigger an autocomplete for the ease of the tutorial
                 await vscode.commands.executeCommand('cody.autocomplete.manual-trigger')
             }
         }
     )
 
     disposables.push(
+        updateAutocompleteRange,
         listenForAutocomplete,
         vscode.workspace.onDidCloseTextDocument(document => {
             if (document.uri !== interactiveDoc.uri) {
@@ -102,8 +121,4 @@ export const triggerInteractiveWalkthrough = async () => {
             }
         })
     )
-}
-
-export const registerInteractiveWalkthrough = () => {
-    vscode.commands.registerCommand('cody.triggerInteractiveWalkthrough', triggerInteractiveWalkthrough)
 }

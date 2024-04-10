@@ -621,11 +621,18 @@ const register = async (
         )
     }
 
-    // INC-267 do NOT await on this promise. This promise triggers
-    // `vscode.window.showInformationMessage()`, which only resolves after the
-    // user has clicked on "Setup". Awaiting on this promise will make the Cody
-    // extension timeout during activation.
-    void showSetupNotification(initialConfig)
+    if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
+        // User is on first activation, so has only just installed Cody.
+        // Show Cody so that they can get started.
+        void vscode.commands.executeCommand('cody.focus')
+        void triggerInteractiveWalkthrough()
+    } else {
+        // INC-267 do NOT await on this promise. This promise triggers
+        // `vscode.window.showInformationMessage()`, which only resolves after the
+        // user has clicked on "Setup". Awaiting on this promise will make the Cody
+        // extension timeout during activation.
+        void showSetupNotification(initialConfig)
+    }
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
