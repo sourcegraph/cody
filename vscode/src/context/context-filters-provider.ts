@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import RE2 from 're2'
 import type * as vscode from 'vscode'
 
-import { type CodyContextFilterItem, graphqlClient, logDebug } from '@sourcegraph/cody-shared'
+import { type CodyContextFilterItem, graphqlClient, logError } from '@sourcegraph/cody-shared'
 
 const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -31,7 +31,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         try {
             const response = await graphqlClient.contextFilters()
             if (response instanceof Error) {
-                logDebug('ContextFiltersProvider', response.toString())
+                logError('ContextFiltersProvider', 'fetchContextFilters', response)
             } else {
                 this.cache.clear()
 
@@ -44,7 +44,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         } catch (error) {
             if (error instanceof Error) {
-                logDebug('ContextFiltersProvider', error.toString())
+                logError('ContextFiltersProvider', 'fetchContextFilters', error)
                 return
             }
         }
@@ -64,7 +64,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return cached
         }
 
-        let isAllowed = true
+        // If we don't have any context filters, we exclude everything.
+        let isAllowed = Boolean(this.contextFilters)
 
         if (this.contextFilters?.include.length) {
             isAllowed = false

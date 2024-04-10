@@ -546,8 +546,6 @@ export class SourcegraphGraphQLAPIClient {
         const result = extractDataOrError(response, data => data)
 
         if (result instanceof Error) {
-            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
-
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
                 return INCLUDE_EVERYTHING_CONTEXT_FILTERS
