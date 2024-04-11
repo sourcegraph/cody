@@ -290,6 +290,11 @@ export class PromptString {
     public static unsafe_fromUserQuery(string: string): PromptString {
         return internal_createPromptString(string, [])
     }
+
+    // 🚨 Use this function only for LLM responses queries.
+    public static unsafe_fromLLMResponse(string: string): PromptString {
+        return internal_createPromptString(string, [])
+    }
 }
 
 type TemplateArgs = readonly (PromptString | '' | number)[]

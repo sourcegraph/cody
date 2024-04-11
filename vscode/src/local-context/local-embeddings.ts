@@ -10,6 +10,7 @@ import {
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
+    PromptString,
     isDotCom,
     isFileURI,
     uriBasename,
@@ -547,7 +548,7 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }

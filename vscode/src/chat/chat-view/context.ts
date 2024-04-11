@@ -7,6 +7,7 @@ import {
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
+    type PromptString,
     type Result,
     isFileURI,
     truncateTextNearestLine,
@@ -24,7 +25,7 @@ import { logDebug, logError } from '../../log'
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
-    text: string
+    text: PromptString
     providers: {
         localEmbeddings: LocalEmbeddingsController | null
         symf: SymfRunner | null
@@ -333,7 +334,7 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string,
+    text: PromptString,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async span => {

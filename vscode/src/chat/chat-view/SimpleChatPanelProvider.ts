@@ -866,14 +866,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 span.addEvent('update')
                 this.postViewTranscript({
                     speaker: 'assistant',
-                    text: content,
+                    text: PromptString.unsafe_fromLLMResponse(content),
                 })
             },
             close: content => {
                 measureFirstToken()
                 recordExposedExperimentsToSpan(span)
                 span.end()
-                this.addBotMessage(requestID, content)
+                this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
             },
             error: (partialResponse, error) => {
                 if (!isAbortError(error)) {
@@ -882,7 +882,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 try {
                     // We should still add the partial response if there was an error
                     // This'd throw an error if one has already been added
-                    this.addBotMessage(requestID, partialResponse)
+                    this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(partialResponse))
                 } catch {
                     console.error('Streaming Error', error)
                 }
@@ -966,7 +966,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     /**
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
-    private addBotMessage(requestID: string, rawResponse: string): void {
+    private addBotMessage(requestID: string, rawResponse: PromptString): void {
         const messageText = reformatBotMessageForChat(rawResponse)
         this.chatModel.addBotMessage({ text: messageText })
         void this.saveSession()
@@ -975,7 +975,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const authStatus = this.authProvider.getAuthStatus()
 
         // Count code generated from response
-        const codeCount = countGeneratedCode(messageText)
+        const codeCount = countGeneratedCode(messageText.toString())
         if (codeCount?.charCount) {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
@@ -995,7 +995,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    responseText: authStatus.isDotCom && messageText.substring(0, MAX_BYTES_PER_FILE),
+                    responseText:
+                        authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
                 },
             })
         }
