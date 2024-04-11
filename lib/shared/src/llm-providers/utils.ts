@@ -3,27 +3,27 @@ import { ModelProvider } from '../models'
 
 export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
     const provider = ModelProvider.getProviderByModel(modelID)
-    if (provider?.model.startsWith('google/') && provider?.apiKey) {
+    if (provider?.model.startsWith('google/') && provider.config?.apiKey) {
         return {
             model: provider.model.replace('google/', ''),
-            key: provider.apiKey,
-            endpoint: provider.apiEndpoint,
+            key: provider.config.apiKey,
+            endpoint: provider.config?.apiEndpoint,
         }
     }
 
     if (provider?.model.startsWith('ollama/')) {
         return {
             model: provider.model.replace('ollama/', ''),
-            key: provider.apiKey || '',
-            endpoint: provider.apiEndpoint,
+            key: provider.config?.apiKey || '',
+            endpoint: provider.config?.apiEndpoint,
         }
     }
 
-    if (provider?.model.startsWith('groq/') && provider?.apiKey) {
+    if (provider?.model.startsWith('groq/') && provider?.config?.apiKey) {
         return {
             model: provider.model.replace('groq/', ''),
-            key: provider.apiKey,
-            endpoint: provider.apiEndpoint,
+            key: provider.config.apiKey,
+            endpoint: provider.config?.apiEndpoint,
         }
     }
 

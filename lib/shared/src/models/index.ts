@@ -29,10 +29,19 @@ export class ModelProvider {
          * that can be processed by the model in a single request.
          */
         public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
-        // The API key for the model
-        public readonly apiKey?: string,
-        // The API endpoint for the model
-        public readonly apiEndpoint?: string
+        /**
+         * The configuration for the model.
+         */
+        public readonly config?: {
+            /**
+             * The API key for the model
+             */
+            apiKey?: string
+            /**
+             * The API endpoint for the model
+             */
+            apiEndpoint?: string
+        }
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
