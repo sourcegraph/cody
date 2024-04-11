@@ -12,7 +12,7 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
+import { fillInContextItemContent, filterContextItemFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -122,7 +122,7 @@ describe('getFileContextFiles', () => {
     })
 })
 
-describe('filterLargeFiles', () => {
+describe('filterContextItemFiles', () => {
     it('filters out files larger than 1MB', async () => {
         const largeFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-file.txt'),
@@ -133,7 +133,7 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeFile])
+        const filtered = await filterContextItemFiles([largeFile])
 
         expect(filtered).toEqual([])
     })
@@ -148,12 +148,12 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.SymbolicLink,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([binaryFile])
+        const filtered = await filterContextItemFiles([binaryFile])
 
         expect(filtered).toEqual([])
     })
 
-    it('sets isTooLarge for files exceeding token limit but under 1MB', async () => {
+    it('convert file size in bytes to token for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
@@ -164,12 +164,12 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeTextFile])
-
+        const filtered = await filterContextItemFiles([largeTextFile])
+        // Frontend expects the size to be in tokens units so that they can be compared with the available tokens
+        // to set the isTooLarge field.
         expect(filtered[0]).toEqual<ContextItem>({
             type: 'file',
             uri: largeTextFile.uri,
-            isTooLarge: true,
             size: fsSizeInBytes / 4,
         })
     })

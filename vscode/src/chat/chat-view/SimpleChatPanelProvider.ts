@@ -606,9 +606,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (cancellation.token.isCancellationRequested) {
                 return
             }
+            const userContextFiles = items.map(f => ({
+                ...f,
+                isTooLarge: f.size
+                    ? f.size < this.chatModel.tokenTracker.maxContextTokens.user
+                    : undefined,
+            }))
             void this.postMessage({
                 type: 'userContextFiles',
-                userContextFiles: items,
+                userContextFiles,
             })
         } catch (error) {
             if (cancellation.token.isCancellationRequested) {
@@ -623,12 +629,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     public async handleGetUserEditorContext(): Promise<void> {
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
-        await this.postMessage({
+        const contextItems = selectionFiles.map(f => ({
+            ...f,
+            content: undefined,
+            isTooLarge: f.size ? f.size < this.chatModel.tokenTracker.maxContextTokens.user : undefined,
+        }))
+        void this.postMessage({
             type: 'chat-input-context',
-            items: selectionFiles.map(f => ({
-                ...f,
-                content: undefined,
-            })),
+            items: contextItems,
         })
     }
 
