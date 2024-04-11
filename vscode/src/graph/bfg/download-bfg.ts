@@ -6,7 +6,6 @@ import axios from 'axios'
 import * as unzipper from 'unzipper'
 import * as vscode from 'vscode'
 
-import { agent } from '@sourcegraph/cody-shared/src/fetch'
 import { fileExists } from '../../local-context/download-symf'
 import { logDebug } from '../../log'
 import { getOSArch } from '../../os'
@@ -122,14 +121,11 @@ async function unzipBfg(zipFile: string, destinationDir: string): Promise<void> 
 
 async function downloadBfgBinary(url: string, destination: string): Promise<void> {
     logDebug('CodyEngine', `downloading from URL ${url}`)
-    const a = agent.current?.(new URL(url))
     const response = await axios({
         url,
         method: 'GET',
         responseType: 'stream',
         maxRedirects: 10,
-        httpAgent: a,
-        httpsAgent: a,
     })
 
     const stream = fs.createWriteStream(destination)
