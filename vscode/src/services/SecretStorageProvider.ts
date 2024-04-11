@@ -19,6 +19,10 @@ export async function getAccessToken(): Promise<string | null> {
     }
 }
 
+export async function clearAccessToken(): Promise<void> {
+    await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+}
+
 interface SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>

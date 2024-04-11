@@ -91,7 +91,14 @@ export type WebviewMessage =
           snippet: string
       }
     | {
-          command: 'debug/enable'
+          command: 'troubleshoot/reloadAuth'
+      }
+    | {
+          command: 'troubleshoot/showOutputLogs'
+      }
+    | {
+          command: 'troubleshoot/fullReset'
+          askConfirmation?: boolean
       }
 
 /**

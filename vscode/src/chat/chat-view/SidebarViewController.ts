@@ -19,6 +19,7 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import { enableDebugMode } from '../../services/utils/export-logs'
+import { fullReset } from '../../services/utils/troubleshoot'
 import { addWebviewViewHTML } from './ChatManager'
 
 export interface SidebarChatWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -118,13 +119,6 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
             }
-            case 'reload':
-                await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
-                break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
                 break
@@ -152,8 +146,63 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
                 break
-            case 'debug/enable':
+            case 'troubleshoot/reloadAuth': {
+                await this.authProvider.reloadAuthStatus()
+                const nextAuth = this.authProvider.getAuthStatus()
+                telemetryService.log(
+                    'CodyVSCodeExtension:troubleshoot:reloadAuth',
+                    {
+                        success: Boolean(nextAuth?.isLoggedIn),
+                    },
+                    {
+                        hasV2Event: true,
+                    }
+                )
+                telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
+                    metadata: {
+                        success: nextAuth.isLoggedIn ? 1 : 0,
+                    },
+                })
+                break
+            }
+            case 'troubleshoot/showOutputLogs':
+                telemetryService.log(
+                    'CodyVSCodeExtension:troubleshoot:showOutputLogs',
+                    {},
+                    {
+                        hasV2Event: true,
+                    }
+                )
+                telemetryRecorder.recordEvent('cody.troubleshoot', 'showOutputLogs', {
+                    metadata: {},
+                })
                 enableDebugMode()
+                break
+            case 'troubleshoot/fullReset':
+                // show confirmation dialog
+                // we can't do this anywhere else because we would no longer
+                // be able to send the telemetry at that point.
+                if (message.askConfirmation) {
+                    const answer = await vscode.window.showWarningMessage(
+                        'Resetting Cody will clear all your history, settings, and authentication information. Are you sure you want to continue?',
+                        'Reset Cody',
+                        'Cancel'
+                    )
+                    if (answer !== 'Reset Cody') {
+                        return
+                    }
+                }
+                telemetryService.log(
+                    'CodyVSCodeExtension:troubleshoot:fullReset',
+                    {},
+                    {
+                        hasV2Event: true,
+                    }
+                )
+                telemetryRecorder.recordEvent('cody.troubleshoot', 'fullReset', {
+                    metadata: {},
+                })
+                await fullReset(this.authProvider)
                 break
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')

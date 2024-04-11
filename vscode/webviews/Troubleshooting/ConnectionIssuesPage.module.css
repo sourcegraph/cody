@@ -45,8 +45,7 @@ ul.causes {
 
 .actions {
     display: flex;
-    flex-flow: row-reverse wrap;
-    justify-content: center;
+    flex-direction: column;
     gap: 0.5rem 1rem;
 }
 

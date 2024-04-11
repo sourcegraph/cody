@@ -12,33 +12,32 @@ export const ConnectionIssuesPage: React.FunctionComponent<
         vscodeAPI: VSCodeWrapper
         configuredEndpoint: string | undefined | null
     }>
-> = ({ telemetryService, vscodeAPI, configuredEndpoint }) => {
+> = ({ vscodeAPI, configuredEndpoint }) => {
     const [cooldown, setCooldown] = useState(false)
     const onRetry = useCallback(() => {
-        telemetryService.log('CodyVSCodeExtension:troubleshoot:authConnection:retry', {
-            hasV2Event: true,
-        })
-        vscodeAPI.postMessage({ command: 'reload' })
+        vscodeAPI.postMessage({ command: 'troubleshoot/reloadAuth' })
 
         // we just set some visual indication here that something is happening.
         setCooldown(true)
         const cooldownTimeout = setTimeout(() => {
             setCooldown(false)
-        }, 5000)
+        }, 3000)
         return () => {
             setCooldown(false)
             if (cooldownTimeout) {
                 clearTimeout(cooldownTimeout)
             }
         }
-    }, [telemetryService, vscodeAPI])
+    }, [vscodeAPI])
 
     const onDebug = useCallback(() => {
-        telemetryService.log('CodyVSCodeExtension:troubleshoot:authConnection:debug', {
-            hasV2Event: true,
-        })
-        vscodeAPI.postMessage({ command: 'debug/enable' })
-    }, [telemetryService, vscodeAPI])
+        vscodeAPI.postMessage({ command: 'troubleshoot/showOutputLogs' })
+    }, [vscodeAPI])
+
+    const onReset = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'troubleshoot/fullReset', askConfirmation: true })
+    }, [vscodeAPI])
+
     return (
         <div className={styles.container}>
             <div className={styles.content}>
@@ -79,6 +78,14 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                         onClick={onDebug}
                     >
                         Open Debug Logs
+                    </VSCodeButton>
+                    <VSCodeButton
+                        className={classNames(styles.actionButton)}
+                        appearance="secondary"
+                        type="button"
+                        onClick={onReset}
+                    >
+                        Reset Cody
                     </VSCodeButton>
                 </div>
             </div>
