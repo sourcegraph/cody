@@ -156,7 +156,7 @@ export class RemoteRepoSearcher implements vscode.Disposable {
         // repositories and merging the result with the cached results, if any.
         // Could also limit the result set and cap the maximum size of any list.
         const result = fuzzysort.go(query, this.fuzzyIndex, {
-            threshold: -10_000,
+            threshold: -1000,
         })
         // Evident that fuzzyRepoTargetMap is initialized above.
         // fuzzyRepoTargetMap contains an entry for every prepared target.
@@ -242,7 +242,10 @@ export class RemoteRepoSearcher implements vscode.Disposable {
     // Ensures that if the fetcher hasn't finished retrieving repos, that it
     // will resume.
     private ensureCompleteOrFetching(): void {
-        if (this.fetcher.state !== RepoFetcherState.Complete) {
+        if (
+            this.fetcher.state !== RepoFetcherState.Complete &&
+            this.fetcher.state !== RepoFetcherState.Fetching
+        ) {
             // TODO: There's a dependency between RemoteRepoPicker, which
             // starts and pauses the repo fetcher, and this RemoteRepoSearcher
             // which also starts the fetcher. Currently RemoteRepoSearcher is
