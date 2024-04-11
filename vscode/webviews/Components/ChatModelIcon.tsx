@@ -1,4 +1,5 @@
 import type { FunctionComponent } from 'react'
+import { CodyLogoBW } from '../icons/CodyLogo'
 import {
     AnthropicLogo,
     GeminiLogo,
@@ -19,11 +20,11 @@ export function chatModelIconComponent(
     if (model.startsWith('google/')) {
         return GeminiLogo
     }
+    if (model.startsWith('ollama/')) {
+        return OllamaLogo
+    }
     if (model.includes('mixtral')) {
         return MistralLogo
     }
-    if (model.includes('ollama')) {
-        return OllamaLogo
-    }
-    return null
+    return CodyLogoBW
 }
