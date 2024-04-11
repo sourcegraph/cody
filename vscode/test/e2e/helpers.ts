@@ -83,14 +83,19 @@ export const test = base
     })
     // By default, these events should always fire for each test
     .extend<ExpectedEvents>({
-        expectedEvents: [
-            'CodyInstalled',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-        ],
+        expectedEvents: async ({ preAuthenticate }, use) =>
+            await use(
+                preAuthenticate
+                    ? ['CodyInstalled']
+                    : [
+                          'CodyInstalled',
+                          'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+                          'CodyVSCodeExtension:login:clicked',
+                          'CodyVSCodeExtension:auth:selectSigninMenu',
+                          'CodyVSCodeExtension:auth:fromToken',
+                          'CodyVSCodeExtension:Auth:connected',
+                      ]
+            ),
     })
 
     .extend<{ server: MockServer }>({

@@ -27,8 +27,7 @@ test.extend<ExpectedEvents>({
         'CodyInstalled',
         'CodyVSCodeExtension:CodySavedLogin:executed',
         'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:troubleshoot:authConnection:retry',
-        'CodyVSCodeExtension:authReloadButton:clicked',
+        'CodyVSCodeExtension:troubleshoot:reloadAuth',
         'CodyVSCodeExtension:Auth:connected',
     ],
 })('allow retrying on connection issues', async ({ page, getCodySidebar }) => {
