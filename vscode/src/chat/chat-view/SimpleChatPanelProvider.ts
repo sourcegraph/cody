@@ -14,6 +14,7 @@ import {
     MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
+    PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -248,7 +249,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'submit': {
                 await this.handleUserMessageSubmission(
                     uuid.v4(),
-                    message.text,
+                    PromptString.unsafe_fromUserQuery(message.text),
                     message.submitType,
                     message.contextFiles ?? [],
                     message.editorState,
@@ -260,7 +261,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'edit': {
                 await this.handleEdit(
                     uuid.v4(),
-                    message.text,
+                    PromptString.unsafe_fromUserQuery(message.text),
                     message.index,
                     message.contextFiles ?? [],
                     message.editorState,
@@ -391,7 +392,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     public async handleUserMessageSubmission(
         requestID: string,
-        inputText: string,
+        inputText: PromptString,
         submitType: ChatSubmitType,
         userContextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
@@ -424,14 +425,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
-                    promptText: authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
+                    promptText:
+                        authStatus.isDotCom && inputText.toString().substring(0, MAX_BYTES_PER_FILE),
                 },
             })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 span.setAttribute('sampled', true)
 
-                if (inputText.match(/^\/reset$/)) {
+                if (inputText.toString().match(/^\/reset$/)) {
                     span.addEvent('clearAndRestartSession')
                     span.end()
                     return this.clearAndRestartSession()
@@ -498,7 +500,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
                             promptText:
-                                authStatus.isDotCom && inputText.substring(0, MAX_BYTES_PER_FILE),
+                                authStatus.isDotCom &&
+                                inputText.toString().substring(0, MAX_BYTES_PER_FILE),
                         },
                     })
                 }
@@ -531,7 +534,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     private async handleEdit(
         requestID: string,
-        text: string,
+        text: PromptString,
         index: number | undefined,
         contextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
@@ -1241,7 +1244,25 @@ function newChatModelFromSerializedChatTranscript(
     return new SimpleChatModel(
         json.chatModel || modelID,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
-            [interaction.humanMessage, interaction.assistantMessage].filter(isDefined)
+            // TODO: Should we also serialize the references?
+            [
+                interaction.humanMessage
+                    ? {
+                          ...interaction.humanMessage,
+                          text: interaction.humanMessage.text
+                              ? PromptString.unsafe_fromUserQuery(interaction.humanMessage.text)
+                              : undefined,
+                      }
+                    : undefined,
+                interaction.assistantMessage
+                    ? {
+                          ...interaction.assistantMessage,
+                          text: interaction.assistantMessage.text
+                              ? PromptString.unsafe_fromUserQuery(interaction.assistantMessage.text)
+                              : undefined,
+                      }
+                    : undefined,
+            ].filter(isDefined)
         ),
         json.id,
         json.chatTitle,

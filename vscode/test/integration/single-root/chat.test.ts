@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import type { SimpleChatPanelProvider } from '../../../src/chat/chat-view/SimpleChatPanelProvider'
 
+import { ps } from '@sourcegraph/cody-shared'
 import {
     afterIntegrationTest,
     beforeIntegrationTest,
@@ -28,16 +29,16 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            'hello from the human',
+            ps`hello from the human`,
             'user',
             [],
             undefined,
             false
         )
 
-        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 
@@ -48,7 +49,7 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            'hello from the human',
+            ps`hello from the human`,
             'user',
             [],
             undefined,
@@ -56,9 +57,9 @@ suite('Chat', function () {
         )
 
         // Display text should include file link at the end of message
-        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 })
