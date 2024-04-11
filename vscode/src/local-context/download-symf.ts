@@ -7,6 +7,7 @@ import axios from 'axios'
 import * as unzipper from 'unzipper'
 import * as vscode from 'vscode'
 
+import { agent } from '@sourcegraph/cody-shared/src/fetch'
 import { Mutex } from 'async-mutex'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
@@ -136,11 +137,14 @@ export async function fileExists(path: string): Promise<boolean> {
 
 async function downloadFile(url: string, outputPath: string): Promise<void> {
     logDebug('Symf', `downloading from URL ${url}`)
+    const a = agent.current?.(new URL(url))
     const response = await axios({
         url,
         method: 'GET',
         responseType: 'stream',
         maxRedirects: 10,
+        httpAgent:a,
+        httpsAgent:a,
     })
 
     const stream = fs.createWriteStream(outputPath)
