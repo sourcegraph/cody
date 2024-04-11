@@ -11,6 +11,7 @@ import {
     featureFlagProvider,
     graphqlClient,
     isDotCom,
+    isFileURI,
     newPromptMixin,
     setLogger,
 } from '@sourcegraph/cody-shared'
@@ -38,6 +39,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
+import { ContextFiltersProvider } from './context/context-filters-provider'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -175,6 +177,19 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform, authProvider)
+
+    // For local debugging purposes
+    const contextFiltersProvider = new ContextFiltersProvider()
+    const initialFilters = await contextFiltersProvider.init()
+    console.log('contextFiltersProvider initialFilters:', initialFilters)
+
+    disposables.push(
+        vscode.workspace.onDidChangeTextDocument(async d => {
+            if (isFileURI(d.document.uri)) {
+                await contextFiltersProvider.isUriAllowed(d.document.uri)
+            }
+        })
+    )
 
     if (symfRunner) {
         disposables.push(symfRunner)

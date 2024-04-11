@@ -1,8 +1,15 @@
 import { LRUCache } from 'lru-cache'
-import RE2 from 're2'
-import type * as vscode from 'vscode'
+import { RE2 } from 're2-wasm'
+import * as vscode from 'vscode'
 
-import { type CodyContextFilterItem, graphqlClient, logError } from '@sourcegraph/cody-shared'
+import {
+    type CodyContextFilterItem,
+    graphqlClient,
+    isFileURI,
+    logError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+import { getCodebaseFromWorkspaceUriAsync } from '../repository/repositoryHelpers'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -92,6 +99,24 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return isAllowed
     }
 
+    public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
+        if (!isFileURI(uri)) {
+            return false
+        }
+
+        const repoName = await wrapInActiveSpan('getCodebaseFromWorkspaceUriAsync', () =>
+            getCodebaseFromWorkspaceUriAsync(uri)
+        )
+
+        const relativePath = vscode.workspace.asRelativePath(uri, false)
+
+        if (repoName) {
+            return this.isPathAllowed(repoName, relativePath)
+        }
+
+        return false
+    }
+
     public dispose(): void {
         this.cache.clear()
 
@@ -120,9 +145,9 @@ function checkFilter(
 }
 
 function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilterItem {
-    const repoNamePattern = new RE2(item.repoNamePattern)
+    const repoNamePattern = new RE2(item.repoNamePattern, 'u')
     const filePathPatterns = item.filePathPatterns
-        ? item.filePathPatterns.map(pattern => new RE2(pattern))
+        ? item.filePathPatterns.map(pattern => new RE2(pattern, 'u'))
         : undefined
 
     return { repoNamePattern, filePathPatterns }

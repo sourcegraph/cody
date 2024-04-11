@@ -914,7 +914,7 @@ export class ConfigFeaturesSingleton {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (!hasOutdatedAPIErrorMessages(error)) {
+            if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
@@ -953,5 +953,5 @@ export type LogEventMode =
     | 'all' // log to both dotcom AND the connected instance
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
-    return error.message.includes('FetchError') || error.message.includes('Cannot query field')
+    return error.message.includes('Cannot query field')
 }
