@@ -5,17 +5,16 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
+    type AuthStatus,
     type ChatMessage,
     type ContextItem,
     type Guardrails,
-    type ModelProvider,
     type TelemetryService,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
-
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
+import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
 import {
@@ -37,8 +36,6 @@ interface ChatboxProps {
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
     isTranscriptError: boolean
-    setChatModels?: (models: ModelProvider[]) => void
-    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
@@ -56,8 +53,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     telemetryService,
     isTranscriptError,
-    setChatModels,
-    chatModels,
     chatEnabled,
     userInfo,
     guardrails,
@@ -122,23 +117,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
         },
         [addEnhancedContext, messageBeingEdited, vscodeAPI]
-    )
-
-    const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
-            vscodeAPI.postMessage({
-                command: 'chatModel',
-                model: selected.model,
-            })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
-        },
-        [chatModels, setChatModels, vscodeAPI]
     )
 
     const feedbackButtonsOnSubmit = useCallback(
@@ -491,8 +469,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
                     isTranscriptError={isTranscriptError}
-                    chatModels={chatModels}
-                    onCurrentChatModelChange={onCurrentChatModelChange}
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
@@ -600,6 +576,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 
 type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'

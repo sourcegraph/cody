@@ -73,8 +73,9 @@ export async function expectContextCellCounts(
     counts: { files: number; lines?: number; timeout?: number }
 ): Promise<void> {
     const summary = contextCell.locator('summary', { hasText: 'Context' })
-    await expect(summary).toHaveText(
-        `Context: ${
+    await expect(summary).toHaveAttribute(
+        'title',
+        `${
             counts.lines !== undefined
                 ? `${counts.lines} line${counts.lines === 1 ? '' : 's'} from `
                 : ''

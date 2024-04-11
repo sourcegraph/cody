@@ -563,12 +563,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private handleAbort(): void {
         this.cancelInProgressCompletion()
-        telemetryService.log('CodyVSCodeExtension:abortButton:clicked', {}, { hasV2Event: true })
+        telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
     private async handleSetChatModel(modelID: string): Promise<void> {
-        this.chatModel.modelID = modelID
+        this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
     }
 

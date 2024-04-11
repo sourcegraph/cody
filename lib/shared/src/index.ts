@@ -3,6 +3,12 @@
 export { ModelProvider } from './models'
 export { type ChatModel, type EditModel, ModelUsage } from './models/types'
 export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
+export {
+    getCompletionsModelConfig,
+    getProviderName,
+    getModelInfo,
+    fetchLocalOllamaModels,
+} from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
@@ -137,7 +143,6 @@ export {
     MAX_CURRENT_FILE_TOKENS,
     CHARS_PER_TOKEN,
     ANSWER_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
@@ -181,6 +186,8 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
+    type ContextFiltersResult,
+    type CodyContextFilterItem,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
