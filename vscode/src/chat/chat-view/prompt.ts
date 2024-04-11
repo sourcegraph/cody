@@ -5,7 +5,7 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
-    type PromptString,
+    PromptString,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -51,9 +51,11 @@ export class DefaultPrompter implements IPrompter {
             const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
             const promptBuilder = new PromptBuilder(charLimit)
             const newContextUsed: ContextItem[] = []
-            const preInstruction: string | undefined = vscode.workspace
-                .getConfiguration('cody.chat')
-                .get('preInstruction')
+            const preInstruction: PromptString | undefined = PromptString.fromConfig(
+                vscode.workspace.getConfiguration('cody.chat'),
+                'preInstruction',
+                undefined
+            )
 
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)

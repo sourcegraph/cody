@@ -51,6 +51,7 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type { SerializedChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type {
     ContextItemFile,
     ContextItemWithContent,
@@ -1245,30 +1246,27 @@ function newChatModelFromSerializedChatTranscript(
     return new SimpleChatModel(
         json.chatModel || modelID,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
-            // TODO: Should we also serialize the references?
             [
-                interaction.humanMessage
-                    ? {
-                          ...interaction.humanMessage,
-                          text: interaction.humanMessage.text
-                              ? PromptString.unsafe_fromUserQuery(interaction.humanMessage.text)
-                              : undefined,
-                      }
-                    : undefined,
+                deserializeChatMessage(interaction.humanMessage),
                 interaction.assistantMessage
-                    ? {
-                          ...interaction.assistantMessage,
-                          text: interaction.assistantMessage.text
-                              ? PromptString.unsafe_fromUserQuery(interaction.assistantMessage.text)
-                              : undefined,
-                      }
-                    : undefined,
+                    ? deserializeChatMessage(interaction.assistantMessage)
+                    : null,
             ].filter(isDefined)
         ),
         json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
+}
+
+// TODO: Should we also serialize the references?
+export function deserializeChatMessage(serializedMessage: SerializedChatMessage): ChatMessage {
+    return {
+        ...serializedMessage,
+        text: serializedMessage.text
+            ? PromptString.unsafe_fromUserQuery(serializedMessage.text)
+            : undefined,
+    }
 }
 
 function isAbortError(error: Error): boolean {

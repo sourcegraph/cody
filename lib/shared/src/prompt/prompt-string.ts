@@ -142,11 +142,11 @@ export class PromptString {
 
     // Use this function to create a user-generated PromptString from the VS Code
     // configuration object.
-    public static fromConfig(
+    public static fromConfig<D>(
         config: ConfigGetter<string>,
         path: string,
-        defaultValue: PromptString
-    ): PromptString {
+        defaultValue: D
+    ): PromptString | D {
         const raw = config.get<string | null>(path, null)
         const value = raw === null ? defaultValue : internal_createPromptString(raw, [])
         return value

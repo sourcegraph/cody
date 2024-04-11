@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser'
 
 import {
-    PromptString,
+    type PromptString,
     type SourcegraphCompletionsClient,
     getSimplePreamble,
     ps,
@@ -9,7 +9,7 @@ import {
 
 export async function symfExpandQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: string
+    query: PromptString
 ): Promise<string> {
     const preamble = getSimplePreamble(undefined, 0)
     const stream = completionsClient.stream(
@@ -18,9 +18,7 @@ export async function symfExpandQuery(
                 ...preamble,
                 {
                     speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${PromptString.unsafe_fromUserQuery(
-                        query
-                    )}</userQuery>`,
+                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
                 },
                 { speaker: 'assistant' },
             ],

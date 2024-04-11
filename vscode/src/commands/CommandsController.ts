@@ -9,7 +9,14 @@ import { CommandRunner } from './services/runner'
 import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
-import { PromptString, ps, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    DefaultChatCommands,
+    type DefaultCodyCommands,
+    DefaultEditCommands,
+    PromptString,
+    ps,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -39,12 +46,14 @@ class CommandsController implements vscode.Disposable {
      * Handles prompt building and context fetching for commands.
      */
     public async execute(
-        input: PromptString,
+        input: DefaultCodyCommands | PromptString,
         args: CodyCommandArgs
     ): Promise<CommandResult | undefined> {
+        const promptStringInput = convertDefaultCommandsToPromptString(input)
+
         return wrapInActiveSpan('command.custom', async span => {
             // Split the input by space to extract the command key and additional input (if any)
-            const commandSplit = input?.trim().split(' ')
+            const commandSplit = promptStringInput?.trim().split(' ')
             // The unique key for the command. e.g. test, smell, explain
             // Using fromSlashCommand to support backward compatibility with old slash commands
             const commandKey = fromSlashCommand(commandSplit[0]?.toString() || input?.toString())
@@ -104,3 +113,22 @@ export const setCommandController = (provider?: CommandsProvider) => controller.
  * This allows the execute method to be called without needing a reference to the controller instance.
  */
 export const executeCodyCommand = controller.execute.bind(controller)
+
+function convertDefaultCommandsToPromptString(input: DefaultCodyCommands | PromptString): PromptString {
+    switch (input) {
+        case DefaultChatCommands.Explain:
+            return ps`explain`
+        case DefaultChatCommands.Smell:
+            return ps`smell`
+        case DefaultChatCommands.Unit:
+            return ps`unit`
+        case DefaultEditCommands.Test:
+            return ps`test`
+        case DefaultEditCommands.Doc:
+            return ps`doc`
+        case DefaultEditCommands.Edit:
+            return ps`edit`
+        default:
+            return input
+    }
+}

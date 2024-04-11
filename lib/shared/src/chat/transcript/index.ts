@@ -21,7 +21,7 @@ export interface SerializedChatTranscript {
     }
 }
 
-type SerializedChatMessage = Omit<ChatMessage, 'text'> & { text?: string }
+export type SerializedChatMessage = Omit<ChatMessage, 'text'> & { text?: string }
 
 /**
  * The serialized form of a back-and-forth interaction in a chat transcript.

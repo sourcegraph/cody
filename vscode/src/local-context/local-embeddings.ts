@@ -10,7 +10,7 @@ import {
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
-    PromptString,
+    type PromptString,
     isDotCom,
     isFileURI,
     uriBasename,
@@ -560,7 +560,7 @@ export class LocalEmbeddingsController
             const service = await this.getService()
             const resp = await service.request('embeddings/query', {
                 repoName: lastRepo.repoName,
-                query,
+                query: query.toString(),
                 numResults,
             })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)

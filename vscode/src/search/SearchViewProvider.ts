@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type FileURI,
+    PromptString,
     type Result,
     type SearchPanelFile,
     type SearchPanelSnippet,
@@ -243,7 +244,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'search': {
-                await this.onDidReceiveQuery(message.query)
+                await this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(message.query))
                 break
             }
             case 'show-search-result': {
@@ -276,7 +277,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
     }
 
     // TODO(beyang): support cancellation through symf
-    private async onDidReceiveQuery(query: string): Promise<void> {
+    private async onDidReceiveQuery(query: PromptString): Promise<void> {
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
 
         if (query.trim().length === 0) {

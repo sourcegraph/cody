@@ -9,6 +9,7 @@ import {
     type ContextStatusProvider,
     type Disposable,
     type IRemoteSearch,
+    type PromptString,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -108,8 +109,10 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         return new Set([...this.reposAuto.keys(), ...this.reposManual.keys()])
     }
 
-    public async query(query: string): Promise<ContextSearchResult[]> {
-        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query)
+    public async query(query: PromptString): Promise<ContextSearchResult[]> {
+        // TODO: Validate that prompt string has only allowed references before
+        // sending it to the backend.
+        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query.toString())
         if (result instanceof Error) {
             throw result
         }
@@ -131,7 +134,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.setRepos(repos, RepoInclusion.Automatic)
     }
 
-    public async search(query: string): Promise<ContextItemFile[]> {
+    public async search(query: PromptString): Promise<ContextItemFile[]> {
         const results = await this.query(query)
         if (isError(results)) {
             throw results
