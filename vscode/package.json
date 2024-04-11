@@ -561,7 +561,12 @@
       {
         "command": "cody.chat.panel.new",
         "key": "alt+l",
-        "when": "cody.activated"
+        "when": "cody.activated && !editorHasSelection"
+      },
+      {
+        "command": "cody.chat.context.add",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.command.edit-code",
@@ -695,7 +700,8 @@
         },
         {
           "command": "cody.chat.context.add",
-          "group": "0_cody"
+          "group": "0_cody",
+          "when": "cody.activated && editorTextFocus && editorHasSelection"
         }
       ],
       "cody.submenu": [
