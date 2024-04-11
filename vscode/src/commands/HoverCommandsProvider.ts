@@ -208,7 +208,9 @@ class HoverCommandsProvider implements vscode.Disposable {
                     ? PromptString.fromDocumentSymbol(document.uri, symbol, vscode.SymbolKind)
                     : ps``
                 const helpPrompt = error
-                    ? ps`\nExplain this error:\n${PromptString.fromDiagnostic(document.uri, error)}`
+                    ? ps`\nExplain this error:\n${
+                          PromptString.fromDiagnostic(document.uri, error).message
+                      }`
                     : ps``
                 commandArgs.additionalInstruction = ps`${symbolPrompt}${helpPrompt}`
                 executeHoverChatCommand(commandArgs)

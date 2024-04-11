@@ -46,7 +46,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         ps`Explain the following error${diagnostics.length > 1 ? ps`s` : ''}:\n\n${PromptString.join(
             diagnostics
                 .map(d => PromptString.fromDiagnostic(uri, d))
-                .map(message => ps`\`\`\`${message}\`\`\``),
+                .map(({ message }) => ps`\`\`\`${message}\`\`\``),
             ps`\n\n`
         )}`
 }

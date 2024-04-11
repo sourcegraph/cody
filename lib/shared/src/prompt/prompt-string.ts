@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
-import { ContextItem } from '../codebase-context/messages'
+import type { ContextItem } from '../codebase-context/messages'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
@@ -204,7 +204,17 @@ export class PromptString {
     }
 
     public static fromDiagnostic(uri: vscode.Uri, diagnostic: vscode.Diagnostic) {
-        return internal_createPromptString(diagnostic.message, [uri])
+        return {
+            message: internal_createPromptString(diagnostic.message, [uri]),
+            source: diagnostic.source
+                ? internal_createPromptString(diagnostic.source, [uri])
+                : undefined,
+            relatedInformation: diagnostic.relatedInformation
+                ? diagnostic.relatedInformation.map(info => ({
+                      message: internal_createPromptString(info.message, [uri]),
+                  }))
+                : undefined,
+        }
     }
 
     public static fromDocumentSymbol(
