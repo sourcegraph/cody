@@ -7,12 +7,29 @@ import type { EditIntent, EditMode } from './types'
 
 export interface ExecuteEditArguments {
     configuration?: {
+        /**
+         * The document in which to apply the edit.
+         * Defaults to the active document.
+         */
         document?: vscode.TextDocument
+        /**
+         * The range in the document in which to apply the edit.
+         * Defaults to the active selection rnage.
+         */
+        range?: vscode.Range
+        /**
+         * A pre-set instruction that will be used to create the edit.
+         * This will skip prompting the user for any other instruction.
+         */
         instruction?: string
+        /**
+         * A pre-set instruction that will be used to help the user write their instruction.
+         * This will prompt the user with this text as a prefix provided in the edit input.
+         */
+        preInstruction?: string
         userContextFiles?: ContextItem[]
         contextMessages?: ContextMessage[]
         intent?: EditIntent
-        range?: vscode.Range
         mode?: EditMode
         model?: EditModel
         // The file to write the edit to. If not provided, the edit will be applied to the current file.

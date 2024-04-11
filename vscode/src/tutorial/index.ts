@@ -3,36 +3,9 @@ import path from 'node:path'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
-import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT } from './content'
-
-const EMOJI_SVG_TEMPLATE = `<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="24px">{emoji}</text>
-</svg>`
-
-type TUTORIAL_STATES = 'Intro' | 'Todo' | 'Done'
-const TUTORIAL_EMOJIS: Record<TUTORIAL_STATES, string> = {
-    Intro: '&#128075;',
-    Todo: '&#128073;',
-    Done: '&#x2705;',
-}
-const transformEmojiToSvg = (emoji: string) => {
-    const svg = EMOJI_SVG_TEMPLATE.replace('{emoji}', emoji)
-    const uri = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64')
-    return vscode.Uri.parse(uri)
-}
-
-const INTRO_DECORATION = vscode.window.createTextEditorDecorationType({
-    gutterIconPath: transformEmojiToSvg(TUTORIAL_EMOJIS.Intro),
-    gutterIconSize: 'contain',
-})
-const TODO_DECORATION = vscode.window.createTextEditorDecorationType({
-    gutterIconPath: transformEmojiToSvg(TUTORIAL_EMOJIS.Todo),
-    gutterIconSize: 'contain',
-})
-const COMPLETE_DECORATION = vscode.window.createTextEditorDecorationType({
-    gutterIconPath: transformEmojiToSvg(TUTORIAL_EMOJIS.Done),
-    gutterIconSize: 'contain',
-})
+import { COMPLETE_DECORATION, INTRO_DECORATION, TODO_DECORATION } from './constants'
+import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT, getInteractiveRanges } from './content'
+import { CodyChatLinkProvider, findRangeOfText } from './utils'
 
 const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
     if (process.platform === 'darwin') {
@@ -41,81 +14,6 @@ const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
         await fs.writeFile(uri.fsPath, TUTORIAL_CONTENT)
     }
     return vscode.window.showTextDocument(uri)
-}
-
-export const getInteractiveRanges = (document: vscode.TextDocument) => {
-    const autocompleteLine = findRangeOfText(document, '^ Place cursor above')!.start.line - 1
-    const autocompleteRange = new vscode.Range(
-        new vscode.Position(autocompleteLine, 0),
-        new vscode.Position(autocompleteLine, Number.MAX_SAFE_INTEGER)
-    )
-    const editLine = findRangeOfText(document, '^ Place cursor above and press')!.start.line - 1
-    const editRange = new vscode.Range(
-        new vscode.Position(editLine, 0),
-        new vscode.Position(editLine, Number.MAX_SAFE_INTEGER)
-    )
-
-    const fixLine = findRangeOfText(document, '^ Place cursor here and press')!.start.line - 1
-    // The fix range already has characters, so limit this to the actual text in the line
-    const fixRange = new vscode.Range(
-        new vscode.Position(fixLine, document.lineAt(fixLine).firstNonWhitespaceCharacterIndex),
-        new vscode.Position(fixLine, Number.MAX_SAFE_INTEGER)
-    )
-
-    return {
-        Autocomplete: {
-            range: autocompleteRange,
-            originalText: document.getText(autocompleteRange).trim(),
-        },
-        Edit: {
-            range: editRange,
-            originalText: document.getText(editRange).trim(),
-        },
-        Fix: {
-            range: fixRange,
-            originalText: document.getText(fixRange).trim(),
-        },
-    }
-}
-
-function findRangeOfText(document: vscode.TextDocument, searchText: string): vscode.Range | null {
-    for (let line = 0; line < document.lineCount; line++) {
-        const lineText = document.lineAt(line)
-        const indexOfText = lineText.text.indexOf(searchText)
-
-        if (indexOfText >= 0) {
-            const start = new vscode.Position(line, indexOfText)
-            const end = new vscode.Position(line, indexOfText + searchText.length)
-            return new vscode.Range(start, end)
-        }
-    }
-
-    return null
-}
-
-export class CodyChatLinkProvider implements vscode.DocumentLinkProvider {
-    constructor(public editor: vscode.TextEditor) {}
-
-    provideDocumentLinks(
-        document: vscode.TextDocument,
-        token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.DocumentLink[]> {
-        if (document.uri.fsPath !== this.editor.document.uri.fsPath) {
-            return []
-        }
-
-        const linkRange = findRangeOfText(document, 'Start a Chat')
-        if (!linkRange) {
-            return []
-        }
-
-        const decorationType = vscode.window.createTextEditorDecorationType({
-            color: new vscode.ThemeColor('textLink.activeForeground'),
-        })
-        this.editor.setDecorations(decorationType, [{ range: linkRange }])
-
-        return [new vscode.DocumentLink(linkRange, vscode.Uri.parse('command:cody.tutorial.chat'))]
-    }
 }
 
 export const registerInteractiveTutorial = async (
@@ -133,22 +31,23 @@ export const registerInteractiveTutorial = async (
     const start = async () => {
         await vscode.commands.executeCommand('setContext', 'cody.tutorialActive', true)
         const editor = await openTutorial(documentUri)
+        let chatComplete = false
         const introductionRange = findRangeOfText(editor.document, 'Welcome to Cody!')
         let chatRange = findRangeOfText(editor.document, 'Start a Chat')
-        let chatComplete = false
         const interactiveRanges = getInteractiveRanges(editor.document)
 
         // Set gutter decorations for associated lines, note: VS Code automatically keeps track of these lines
         // so we don't need to update these
         editor.setDecorations(INTRO_DECORATION, introductionRange ? [introductionRange] : [])
 
-        diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
         disposables.push(
             vscode.languages.registerDocumentLinkProvider(
                 editor.document.uri,
                 new CodyChatLinkProvider(editor)
             )
         )
+
+        diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
         const setDiagnostic = () => {
             if (!diagnosticCollection || diagnosticCollection.has(documentUri)) {
                 return
@@ -228,12 +127,18 @@ export const registerInteractiveTutorial = async (
                 }
             }
 
-            for (const interactiveRange of Object.values(interactiveRanges)) {
+            for (const [key, interactiveRange] of Object.entries(interactiveRanges)) {
                 const newInteractiveRange = updateRangeMultipleChanges(interactiveRange.range, changes, {
                     supportRangeAffix: true,
                 })
                 if (!newInteractiveRange.isEqual(interactiveRange.range)) {
                     interactiveRange.range = newInteractiveRange
+
+                    if (key === 'Fix') {
+                        // We need to update the diagnostic onto the new range
+                        diagnosticCollection?.clear()
+                        setDiagnostic()
+                    }
                 }
             }
         })
@@ -293,7 +198,7 @@ export const registerInteractiveTutorial = async (
                 return executeEdit({
                     configuration: {
                         document: editor.document,
-                        instruction: 'Add a merge sort function',
+                        preInstruction: 'Function that finds logs in a dir',
                     },
                 })
             }),

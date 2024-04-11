@@ -127,6 +127,7 @@ export class EditManager implements vscode.Disposable {
             )
         } else {
             task = await this.controller.promptUserForTask(
+                configuration.preInstruction,
                 document,
                 range,
                 expandedRange,
