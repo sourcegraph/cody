@@ -116,7 +116,7 @@ abstract class FixupSession(
   private fun workAroundUninitializedCodebase() {
     val file = FileDocumentManager.getInstance().getFile(document)
     if (file != null) {
-      CodyAgentCodebase.getInstance(project).onFileOpened(project, file)
+      CodyAgentCodebase.getInstance(project).onFileOpened(file)
     } else {
       logger.warn("No virtual file associated with $document")
     }

@@ -58,13 +58,14 @@ class CodyAgentService(project: Project) : Disposable {
       }
 
       agent.client.onTextDocumentEdit = Consumer { params ->
-        // TODO: This one is missing
+        FixupService.getInstance(project).getActiveSession()?.performInlineEdits(params.edits)
       }
 
       if (!project.isDisposed) {
         AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
-        FileEditorManager.getInstance(project).openFiles.forEach { file ->
-          CodyFileEditorListener.fileOpened(project, agent, file)
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        fileEditorManager.openFiles.forEach { file ->
+          CodyFileEditorListener.fileOpened(fileEditorManager, agent, file)
         }
       }
     }

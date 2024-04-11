@@ -3,19 +3,22 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.*
+import com.intellij.openapi.editor.event.BulkAwareDocumentListener
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.EditorFactoryEvent
+import com.intellij.openapi.editor.event.EditorFactoryListener
+import com.intellij.openapi.editor.event.SelectionEvent
+import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.editor.ex.util.EditorUtil
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.util.Disposer
-import com.sourcegraph.cody.agent.CodyAgentCodebase
+import com.sourcegraph.cody.CodyFileEditorListener
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
-import com.sourcegraph.cody.agent.protocol.Position
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
-import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
@@ -42,7 +45,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       return
     }
     val editor = event.editor
-    Util.informAgentAboutEditorChange(editor, hasFileChanged = true)
+    CodyFileEditorListener.editorChanged(editor)
     val project = editor.project
     if (project == null || project.isDisposed) {
       return
@@ -63,7 +66,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       if (commandName == VIM_EXIT_INSERT_MODE_ACTION) {
         return
       }
-      Util.informAgentAboutEditorChange(e.editor)
+      CodyFileEditorListener.editorChanged(e.editor)
       val suggestions = instance
       val editor = e.editor
       if (isEditorValidForAutocomplete(editor) && Util.isSelectedEditor(editor)) {
@@ -81,7 +84,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
         return
       }
       val editor = e.editor
-      Util.informAgentAboutEditorChange(editor)
+      CodyFileEditorListener.editorChanged(editor)
       if (isEditorValidForAutocomplete(editor) && isCodyEnabled() && Util.isSelectedEditor(editor))
           instance.clearAutocompleteSuggestions(editor)
     }
@@ -97,7 +100,7 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       if (isImplicitAutocompleteEnabledForEditor(editor) &&
           isEditorValidForAutocomplete(editor) &&
           !CommandProcessor.getInstance().isUndoTransparentActionInProgress) {
-        Util.informAgentAboutEditorChange(editor)
+        CodyFileEditorListener.editorChanged(editor)
 
         // This notification must be sent after the above, see tracker comment for more details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
@@ -149,46 +152,6 @@ class CodyEditorFactoryListener : EditorFactoryListener {
       }
       val current = editorManager.selectedEditor
       return current is TextEditor && editor == current.editor
-    }
-
-    private fun getSelection(editor: Editor): Range? {
-      val selectionModel = editor.selectionModel
-      val selectionStartPosition =
-          selectionModel.selectionStartPosition?.let { editor.visualToLogicalPosition(it) }
-      val selectionEndPosition =
-          selectionModel.selectionEndPosition?.let { editor.visualToLogicalPosition(it) }
-      if (selectionStartPosition != null && selectionEndPosition != null) {
-        return Range(
-            Position(selectionStartPosition.line, selectionStartPosition.column),
-            Position(selectionEndPosition.line, selectionEndPosition.column))
-      }
-      val caret = editor.caretModel.allCarets.firstOrNull() ?: return null
-      val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
-      // A single-offset caret is a selection where end == start.
-      return Range(position, position)
-    }
-
-    // Sends a textDocument/didChange notification to the agent server.
-    fun informAgentAboutEditorChange(
-        editor: Editor,
-        hasFileChanged: Boolean = false,
-        afterUpdate: () -> Unit = {}
-    ) {
-      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
-
-      val document =
-          ProtocolTextDocument.fromVirtualFile(file, editor.document.text, getSelection(editor))
-
-      val project = editor.project ?: return
-
-      if (hasFileChanged) {
-        CodyAgentCodebase.getInstance(project).onFileOpened(project, file)
-      }
-
-      CodyAgentService.withAgent(project) {
-        it.server.textDocumentDidOpen(document)
-        afterUpdate()
-      }
     }
   }
 }

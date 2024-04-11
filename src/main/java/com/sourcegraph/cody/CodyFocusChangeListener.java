@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx;
 import com.intellij.openapi.editor.ex.FocusChangeListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,31 +33,15 @@ public final class CodyFocusChangeListener implements FocusChangeListener, Start
 
   @Override
   public void focusGained(@NotNull Editor editor) {
-    if (!ConfigUtil.isCodyEnabled()) {
-      return;
-    }
     Project project = editor.getProject();
-    if (project == null) {
-      return;
-    }
-
     VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
-    if (file == null) {
-      return;
+
+    if (ConfigUtil.isCodyEnabled() && project != null && file != null) {
+      FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+      ProtocolTextDocument document = ProtocolTextDocument.fromVirtualFile(fileEditorManager, file);
+      CodyAgentService.withAgent(
+          project, agent -> agent.getServer().textDocumentDidFocus(document));
+      CodyAgentCodebase.getInstance(project).onFileOpened(file);
     }
-
-    CodyAgentService.withAgent(
-        project,
-        agent -> {
-          try {
-            // TODO: This is bad but needed to avoid race with file context of commands executed
-            // through context menu
-            Thread.sleep(100);
-          } catch (InterruptedException ignored) {
-          }
-          agent.getServer().textDocumentDidFocus(ProtocolTextDocument.fromVirtualFile(file));
-        });
-
-    CodyAgentCodebase.getInstance(project).onFileOpened(project, file);
   }
 }

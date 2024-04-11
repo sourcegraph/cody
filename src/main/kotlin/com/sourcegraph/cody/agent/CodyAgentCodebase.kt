@@ -18,14 +18,14 @@ class CodyAgentCodebase(val project: Project) {
   private var inferredUrl: CompletableFuture<String> = CompletableFuture()
 
   init {
-    onFileOpened(project, null)
+    onFileOpened(null)
   }
 
   fun getUrl(): CompletableFuture<String> =
       if (settings.remoteUrl != null) CompletableFuture.completedFuture(settings.remoteUrl)
       else inferredUrl
 
-  fun onFileOpened(project: Project, file: VirtualFile?) {
+  fun onFileOpened(file: VirtualFile?) {
     ApplicationManager.getApplication().executeOnPooledThread {
       val repositoryName = RepoUtil.findRepositoryName(project, file)
       if (repositoryName != null && inferredUrl.getNow(null) != repositoryName) {
