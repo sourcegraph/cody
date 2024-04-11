@@ -1,8 +1,8 @@
 import detectIndent from 'detect-indent'
 import type { TextDocument } from 'vscode'
+import * as vscode from 'vscode'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { getEditorIndentString } from '../../utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { endsWithBlockStart } from '../detect-multiline'
 import { type DocumentContext, insertIntoDocContext } from '../get-current-doc-context'
@@ -13,6 +13,7 @@ import {
     processCompletion,
 } from '../text-processing/process-inline-completions'
 
+import { getEditorIndentString } from '@sourcegraph/cody-shared'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import type {
     FetchAndProcessCompletionsParams,
@@ -37,7 +38,9 @@ export function pressEnterAndGetIndentString(
     const { languageId, uri } = document
 
     const startsNewBlock = Boolean(endsWithBlockStart(insertText, languageId))
-    const newBlockIndent = startsNewBlock ? getEditorIndentString(uri) : ''
+    const newBlockIndent = startsNewBlock
+        ? getEditorIndentString(uri, vscode.workspace, vscode.window)
+        : ''
     const currentIndentReference = insertText.includes('\n') ? getLastLine(insertText) : currentLine
 
     return '\n' + detectIndent(currentIndentReference).indent + newBlockIndent

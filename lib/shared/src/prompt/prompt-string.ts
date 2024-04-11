@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
+import { ContextItem } from '../codebase-context/messages'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
@@ -260,6 +261,17 @@ export class PromptString {
                 'symbol' in contextSnippet
                     ? internal_createPromptString(contextSnippet.symbol, [contextSnippet.uri])
                     : undefined,
+        }
+    }
+
+    public static fromContextItem(contextItem: ContextItem) {
+        return {
+            content: contextItem.content
+                ? internal_createPromptString(contextItem.content, [contextItem.uri])
+                : undefined,
+            repoName: contextItem.repoName
+                ? internal_createPromptString(contextItem.repoName, [contextItem.uri])
+                : undefined,
         }
     }
 

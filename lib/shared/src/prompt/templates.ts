@@ -1,6 +1,5 @@
 import type { URI } from 'vscode-uri'
 
-import { languageFromFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
 import { PromptString, ps } from './prompt-string'
@@ -49,29 +48,29 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `My selected {languageName} code from file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected {languageName} code from file \`{filePath}\`:
 <selected>
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = ps`My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
 <selected>
 {code}
 </selected>`
 
 export function populateCurrentSelectedCodeContextTemplate(
-    code: string,
+    code: PromptString,
     fileUri: URI,
-    repoName?: string
-): string {
+    repoName?: PromptString
+): PromptString {
     return (
         repoName
             ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
         .replace('{code}', code)
-        .replaceAll('{filePath}', displayPath(fileUri))
-        .replace('{languageName}', languageFromFilename(fileUri))
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+        .replace('{languageName}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE =
@@ -87,17 +86,19 @@ export function populateListOfFilesContextTemplate(fileList: string, fileUri?: U
 }
 
 export function populateContextTemplateFromText(
-    templateText: string,
-    content: string,
+    templateText: PromptString,
+    content: PromptString,
     fileUri: URI
-): string {
-    return templateText.replace('{fileName}', displayPath(fileUri)) + content
+): PromptString {
+    return templateText.replace('{fileName}', PromptString.fromDisplayPath(fileUri)).concat(content)
 }
 
-const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
+const FILE_IMPORTS_TEMPLATE = ps`{fileName} has imported the following: `
 
-export function populateImportListContextTemplate(importList: string, fileUri: URI): string {
-    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', displayPath(fileUri)) + importList
+export function populateImportListContextTemplate(importList: PromptString, fileUri: URI): PromptString {
+    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', PromptString.fromDisplayPath(fileUri)).concat(
+        importList
+    )
 }
 
 const CODE_GENERATION_CONTEXT_TEMPLATE = ps`Below is the code from file path {filePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:

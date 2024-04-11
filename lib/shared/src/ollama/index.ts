@@ -19,7 +19,7 @@ export const OLLAMA_DEFAULT_CONTEXT_WINDOW = 2048
 export interface OllamaGenerateParams {
     model: string
     template: string
-    prompt: string
+    prompt: PromptString
     options?: OllamaGenerateParameters
 }
 
