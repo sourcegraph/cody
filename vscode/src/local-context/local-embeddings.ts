@@ -233,8 +233,6 @@ export class LocalEmbeddingsController
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
         const indexPath = getIndexLibraryPath(this.modelConfig.indexSuffix)
 
-        // Tests may override the index library path
-
         const initResult = await service.request('embeddings/initialize', {
             codyGatewayEndpoint: this.endpoint,
             indexPath: indexPath.fsPath,
