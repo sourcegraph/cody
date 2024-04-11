@@ -233,6 +233,5 @@ export { TokenCounter } from './token/counter'
 export {
     USER_CONTEXT_TOKEN_BUDGET,
     ENHANCED_CONTEXT_ALLOCATION,
-    CHARACTERS_PER_TOKEN,
 } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'

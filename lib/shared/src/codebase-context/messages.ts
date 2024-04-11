@@ -38,7 +38,7 @@ interface ContextItemCommon {
     source?: ContextItemSource
 
     /**
-     * The token count in the content of the item.
+     * The token count of the item's content.
      */
     size?: number
 
