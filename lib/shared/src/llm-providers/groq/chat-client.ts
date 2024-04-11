@@ -11,6 +11,13 @@ import type {
 
 const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completions')
 
+/**
+ * NOTE: Behind `chat.dev.models` configuration flag for internal dev testing purpose only!
+ *
+ * Calls the Gork API for chat completions.
+ * This also works with the OpenAI API or any OpenAI compatible providers.
+ * The endpoint can be changed via the apiEndpoint field in the `chat.dev.models` configuration.
+ */
 export function groqChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
@@ -59,14 +66,14 @@ export function groqChatClient(
 
             onAbort(signal, () => reader.cancel())
 
-            // Handles the response stream to accumulate the full completion text.
-            let insertText = ''
+            let responseText = ''
             const textDecoder = new TextDecoder()
 
+            // Handles the response stream to accumulate the full completion text.
             while (true) {
                 const { done, value } = await reader.read()
                 if (done) {
-                    cb.onChange(insertText)
+                    cb.onChange(responseText)
                     cb.onComplete()
                     break
                 }
@@ -82,8 +89,8 @@ export function groqChatClient(
                             const message = parsedData.choices?.[0]?.delta?.content
 
                             if (message) {
-                                insertText += message
-                                cb.onChange(insertText)
+                                responseText += message
+                                cb.onChange(responseText)
                             }
 
                             if (parsedData.error) {
@@ -97,7 +104,7 @@ export function groqChatClient(
             }
 
             const completionResponse: CompletionResponse = {
-                completion: insertText,
+                completion: responseText,
                 stopReason: CompletionStopReason.RequestFinished,
             }
             log?.onComplete(completionResponse)

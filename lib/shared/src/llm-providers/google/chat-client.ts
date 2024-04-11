@@ -17,8 +17,9 @@ import { constructGeminiChatMessages } from './utils'
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/{model}'
 
 /**
- * Calls the Google API for chat completions with history.
+ * NOTE: Behind `chat.dev.models` configuration flag for internal dev testing purpose only!
  *
+ * Calls the Google API for chat completions with history.
  * REF: https://ai.google.dev/tutorials/rest_quickstart#multi-turn_conversations_chat
  */
 export function googleChatClient(

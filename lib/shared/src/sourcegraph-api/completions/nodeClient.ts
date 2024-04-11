@@ -48,16 +48,17 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             }
 
             // TODO - Centralize this logic in a single place
-            if (params.model?.startsWith('ollama')) {
+            const [provider] = params.model?.split('/') ?? []
+            if (provider === 'ollama') {
                 ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
-            if (params.model?.startsWith('groq')) {
-                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+            if (provider === 'google') {
+                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
-            if (params.model?.startsWith('google')) {
-                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+            if (provider === 'groq') {
+                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
 
