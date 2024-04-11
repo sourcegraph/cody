@@ -11,7 +11,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Claude 2.1',
@@ -20,7 +20,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Claude Instant',
@@ -29,7 +29,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: FAST_CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: FAST_CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Claude 3 Haiku',
@@ -38,7 +38,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Claude 3 Sonnet',
@@ -47,7 +47,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +56,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,7 +65,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: FAST_CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: FAST_CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'GPT-4 Turbo Preview',
@@ -74,7 +74,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
         title: 'Mixtral 8x7B',
@@ -84,7 +84,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
-        maxRequestTokens: CHAT_TOKEN_BUDGET,
+        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
 ]
 
@@ -97,7 +97,11 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
  * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
  */
 const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
-
+const experimentalContextWindow = {
+    chat: CHAT_TOKEN_BUDGET,
+    user: USER_CONTEXT_TOKEN_BUDGET,
+    enhanced: 0,
+}
 /**
  * Returns an array of `ModelProvider` objects representing the default models for the Dot Com product.
  *
@@ -112,7 +116,7 @@ export function getDotComDefaultModels(hasUserContextFeatureFlag = false): Model
     return hasUserContextFeatureFlag
         ? DEFAULT_DOT_COM_MODELS.map(m =>
               modelsWithHigherLimit.includes(m.model)
-                  ? { ...m, maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET }
+                  ? { ...m, contextWindow: experimentalContextWindow }
                   : m
           )
         : DEFAULT_DOT_COM_MODELS

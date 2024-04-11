@@ -6,6 +6,7 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 import { getDotComDefaultModels } from '@sourcegraph/cody-shared/src/models/dotcom'
+import { CHAT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import * as vscode from 'vscode'
 
 /**
@@ -47,7 +48,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                tokenLimit
+                { chat: tokenLimit ?? CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
             ),
         ])
     }
@@ -81,7 +82,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            m.tokens,
+            { chat: m.tokens ?? CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
             m.apiKey,
             m.apiEndpoint
         )

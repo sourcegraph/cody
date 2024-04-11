@@ -1,4 +1,4 @@
-import { CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelUsage } from './types'
 import { fetchLocalOllamaModels, getModelInfo } from './utils'
 
@@ -17,8 +17,6 @@ export class ModelProvider {
     // The title of the model, e.g. "Claude 2.0"
     public readonly title: string
 
-    public contextWindow?: { chat: number; user: number; enhanced: number }
-
     constructor(
         /**
          * The model id that includes the provider name & the model name,
@@ -30,10 +28,11 @@ export class ModelProvider {
          */
         public readonly usage: ModelUsage[],
         /**
-         * The context window of the model, which is the maximum number of tokens
-         * that can be processed by the model in a single request.
+         * The default context window of the model reserved for chat, user and enhanced context.
+         * If not budget is reserved for user or enhanced context, they will fall back to share budget with chat.
+         * {@see TokenCounter for calculating the token usage}
          */
-        public readonly maxRequestTokens = CHAT_TOKEN_BUDGET,
+        public readonly contextWindow: ModelContextWindow = defaultContextWindow,
         /**
          * The API key for the model
          */
@@ -46,14 +45,6 @@ export class ModelProvider {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
         this.title = title
-
-        if (maxRequestTokens - USER_CONTEXT_TOKEN_BUDGET >= CHAT_TOKEN_BUDGET) {
-            this.contextWindow = {
-                chat: maxRequestTokens - USER_CONTEXT_TOKEN_BUDGET,
-                user: USER_CONTEXT_TOKEN_BUDGET,
-                enhanced: 0,
-            }
-        }
     }
 
     /**
@@ -124,12 +115,20 @@ export class ModelProvider {
      * Finds the model provider with the given model ID and returns its token limit.
      * The limit is calculated based on the max number of tokens the model can process.
      */
-    public static getMaxTokenByID(modelID: string): number {
+    public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model?.maxRequestTokens ?? CHAT_TOKEN_BUDGET
+        return model ? model.contextWindow : defaultContextWindow
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
         return ModelProvider.providers.find(m => m.model === modelID)
     }
+}
+
+export const defaultContextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
+
+interface ModelContextWindow {
+    chat: number
+    user: number
+    enhanced: number
 }

@@ -30,19 +30,18 @@ export class TokenCounter {
      */
     private shareChatAndUserContextBudget = false
 
-    constructor(chatBudget: number, userContextBudget = 0) {
-        this.maxContextTokens = {
-            // If the total budget is less than the default user context token budget,
-            // use the total budget as the user context token budget.
-            user: userContextBudget,
-            // Enhanced context token budget can be up to a percentage of the chat token budget.
-            enhanced: Math.floor(chatBudget * ENHANCED_CONTEXT_ALLOCATION),
-        }
-
+    constructor(contextWindow: { chat: number; user: number; enhanced: number }) {
         // If the chat token budget is equal to the user context token budget,
         // the chat and user context tokens will share the same budget.
-        this.shareChatAndUserContextBudget = userContextBudget > 0
-        this.maxChatTokens = chatBudget + userContextBudget
+        this.shareChatAndUserContextBudget = contextWindow.user === 0
+
+        this.maxChatTokens = contextWindow.chat
+        this.maxContextTokens = {
+            // Use the chat budget if the user context budget is 0.
+            user: contextWindow.user || contextWindow.chat,
+            // Enhanced context token budget can be up to a percentage of the chat token budget.
+            enhanced: Math.floor(contextWindow.chat * ENHANCED_CONTEXT_ALLOCATION),
+        }
     }
 
     /**

@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { type ChatMessage, TokenCounter } from '@sourcegraph/cody-shared'
 import { PromptBuilder } from './index'
 
+const contextWindow = { chat: 100, user: 0, enhanced: 0 }
+
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {
         it('adds single valid transcript', () => {
-            const builder = new PromptBuilder(new TokenCounter(100))
+            const counter = new TokenCounter(contextWindow)
+            const builder = new PromptBuilder(counter)
             const transcript: ChatMessage[] = [{ speaker: 'human', text: 'Hi!' }]
             builder.tryAddMessages(transcript.reverse())
             const messages = builder.build()
@@ -15,7 +18,7 @@ describe('PromptBuilder', () => {
         })
 
         it('throw on transcript starts with assistant', () => {
-            const builder = new PromptBuilder(new TokenCounter(100))
+            const builder = new PromptBuilder(new TokenCounter(contextWindow))
             const transcript: ChatMessage[] = [{ speaker: 'assistant', text: 'Hi!' }]
             expect(() => {
                 builder.tryAddMessages(transcript)
@@ -23,7 +26,8 @@ describe('PromptBuilder', () => {
         })
 
         it('adds valid transcript in reverse order', () => {
-            const builder = new PromptBuilder(new TokenCounter(1000))
+            const counter = new TokenCounter({ ...contextWindow, chat: 1000 })
+            const builder = new PromptBuilder(counter)
             const transcript: ChatMessage[] = [
                 { speaker: 'human', text: 'Hi assistant!' },
                 { speaker: 'assistant', text: 'Hello there!' },
@@ -40,7 +44,8 @@ describe('PromptBuilder', () => {
         })
 
         it('throws on consecutive speakers order', () => {
-            const builder = new PromptBuilder(new TokenCounter(1000))
+            const counter = new TokenCounter({ ...contextWindow, chat: 1000 })
+            const builder = new PromptBuilder(counter)
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: 'Hi there!' },
                 { speaker: 'human', text: 'Hello there!' },
@@ -53,7 +58,8 @@ describe('PromptBuilder', () => {
         })
 
         it('throws on transcript with human speakers only', () => {
-            const builder = new PromptBuilder(new TokenCounter(1000))
+            const counter = new TokenCounter({ ...contextWindow, chat: 1000 })
+            const builder = new PromptBuilder(counter)
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: '1' },
                 { speaker: 'human', text: '2' },
@@ -66,7 +72,8 @@ describe('PromptBuilder', () => {
         })
 
         it('stops adding message-pairs when limit has been reached', () => {
-            const builder = new PromptBuilder(new TokenCounter(20))
+            const counter = new TokenCounter({ ...contextWindow, chat: 20 })
+            const builder = new PromptBuilder(counter)
             const longTranscript: ChatMessage[] = [
                 { speaker: 'human', text: 'Hi assistant!' },
                 { speaker: 'assistant', text: 'Hello there!' },

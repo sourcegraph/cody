@@ -11,13 +11,15 @@ import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
 
+const contextWindow = { chat: 100000, user: 0, enhanced: 0 }
+
 describe('DefaultPrompter', () => {
     afterEach(() => {
         vi.restoreAllMocks()
     })
 
     it('constructs a prompt with no context', async () => {
-        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
+        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], contextWindow)])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
@@ -51,7 +53,7 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
+        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], contextWindow)])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: 'Hello' })
 
@@ -77,8 +79,8 @@ describe('DefaultPrompter', () => {
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const overallLimit = 1
-        const promptBuilder = new PromptBuilder(new TokenCounter(overallLimit))
+        const overLimitWindow = { chat: 1, user: 0, enhanced: 0 }
+        const promptBuilder = new PromptBuilder(new TokenCounter(overLimitWindow))
         const contextItems: ContextItem[] = [
             {
                 type: 'file',

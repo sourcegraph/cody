@@ -26,12 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.tokenTracker = new TokenCounter(ModelProvider.getMaxTokenByID(this.modelID))
+        this.tokenTracker = new TokenCounter(ModelProvider.getContextWindowByID(this.modelID))
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.tokenTracker = new TokenCounter(ModelProvider.getMaxTokenByID(newModelID))
+        this.tokenTracker = new TokenCounter(ModelProvider.getContextWindowByID(newModelID))
     }
 
     public isEmpty(): boolean {

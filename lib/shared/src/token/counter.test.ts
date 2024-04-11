@@ -4,36 +4,33 @@ import type { Message } from '../sourcegraph-api'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 import { TokenCounter } from './counter'
 
-describe('TokenCounter class', () => {
-    const claude3Budget = CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET
-    const nonClaude3Budget = CHAT_TOKEN_BUDGET
+const contextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
 
-    it('should initialize with the correct token budgets for claude 3 models', () => {
-        const counter = new TokenCounter(claude3Budget)
+describe('TokenCounter class', () => {
+    it('should initialize with the correct token budgets', () => {
+        const counter = new TokenCounter(contextWindow)
+        expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
+        // Context budget will be shared with chat budget.
+        expect(counter.maxContextTokens.user).toBe(CHAT_TOKEN_BUDGET)
+        expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
+    })
+
+    it('should initialize with the correct token budgets for customized models', () => {
+        const counter = new TokenCounter({ ...contextWindow, chat: 1234 })
+        expect(counter.maxChatTokens).toBe(1234)
+        expect(counter.maxContextTokens.user).toBe(1234)
+        expect(counter.maxContextTokens.enhanced).toBe(Math.floor(1234 * ENHANCED_CONTEXT_ALLOCATION))
+    })
+
+    it('should initialize with the correct token budgets when user context is provided', () => {
+        const counter = new TokenCounter({ ...contextWindow, user: USER_CONTEXT_TOKEN_BUDGET })
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.user).toBe(USER_CONTEXT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
     })
 
-    it('should initialize with the correct token budgets for non-claude 3 models', () => {
-        const counter = new TokenCounter(nonClaude3Budget)
-        expect(counter.maxChatTokens).toBe(nonClaude3Budget)
-        expect(counter.maxContextTokens.user).toBe(nonClaude3Budget)
-        expect(counter.maxContextTokens.enhanced).toBe(nonClaude3Budget * ENHANCED_CONTEXT_ALLOCATION)
-    })
-
-    it('should initialize with the correct token budgets for customized models', () => {
-        const customizedBudget = 1234
-        const counter = new TokenCounter(customizedBudget)
-        expect(counter.maxChatTokens).toBe(customizedBudget)
-        expect(counter.maxContextTokens.user).toBe(customizedBudget)
-        expect(counter.maxContextTokens.enhanced).toBe(
-            Math.floor(customizedBudget * ENHANCED_CONTEXT_ALLOCATION)
-        )
-    })
-
     it('should update token usage and return true when within limits', () => {
-        const counter = new TokenCounter(CHAT_TOKEN_BUDGET)
+        const counter = new TokenCounter(contextWindow)
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -43,7 +40,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when token usage exceeds limits', () => {
-        const counter = new TokenCounter(5)
+        const counter = new TokenCounter({ ...contextWindow, chat: 5 })
         const messages: Message[] = [
             { speaker: 'human', text: 'This is a very long message that will exceed the token limit.' },
         ]
@@ -51,7 +48,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should allocate tokens correctly when chat and user context share the same budget', () => {
-        const counter = new TokenCounter(OLLAMA_DEFAULT_CONTEXT_WINDOW)
+        const counter = new TokenCounter({ ...contextWindow, chat: OLLAMA_DEFAULT_CONTEXT_WINDOW })
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -62,7 +59,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should allocate tokens correctly when chat and user context have separate budgets', () => {
-        const counter = new TokenCounter(claude3Budget)
+        const counter = new TokenCounter({ ...contextWindow, user: USER_CONTEXT_TOKEN_BUDGET })
         const chatMessages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },

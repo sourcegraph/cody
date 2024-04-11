@@ -6,6 +6,7 @@ import {
     type CompletionParameters,
     type EditModel,
     type Message,
+    ModelProvider,
     TokenCounter,
     getSimplePreamble,
 } from '@sourcegraph/cody-shared'
@@ -100,8 +101,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-
-    const promptBuilder = new PromptBuilder(new TokenCounter(contextWindow))
+    const promptBuilder = new PromptBuilder(new TokenCounter(ModelProvider.getContextWindowByID(model)))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
