@@ -27,9 +27,10 @@ export const registerInteractiveTutorial = async (
     const tutorialPath = path.join(context.extensionUri.fsPath, 'walkthroughs', 'cody_tutorial.py')
     const documentUri = vscode.Uri.file(tutorialPath)
     let diagnosticCollection: vscode.DiagnosticCollection | undefined
+    let hasStarted = false
 
     const start = async () => {
-        await vscode.commands.executeCommand('setContext', 'cody.tutorialActive', true)
+        hasStarted = true
         const editor = await openTutorial(documentUri)
         let chatComplete = false
         const introductionRange = findRangeOfText(editor.document, 'Welcome to Cody!')
@@ -65,7 +66,7 @@ export const registerInteractiveTutorial = async (
         }
         setDiagnostic()
 
-        const setCompletedStates = () => {
+        const setCompletedStates = (editor: vscode.TextEditor) => {
             // We don't actually care about the changes here, we just want to inspect our tracked
             // lines to see if they are still empty. If they are not, they we can report success
             const completeRanges = []
@@ -103,7 +104,7 @@ export const registerInteractiveTutorial = async (
             editor.setDecorations(TODO_DECORATION, todoRanges)
             editor.setDecorations(COMPLETE_DECORATION, completeRanges)
         }
-        setCompletedStates()
+        setCompletedStates(editor)
 
         /**
          * Listen for changes in the tutorial text document, and update the
@@ -185,13 +186,13 @@ export const registerInteractiveTutorial = async (
                 return
             }
 
-            return setCompletedStates()
+            return setCompletedStates(editor)
         })
 
         disposables.push(
             vscode.commands.registerCommand('cody.tutorial.chat', () => {
                 chatComplete = true
-                setCompletedStates()
+                setCompletedStates(editor)
                 return vscode.commands.executeCommand('cody.chat.panel.new')
             }),
             vscode.commands.registerCommand('cody.tutorial.edit', document => {
@@ -205,15 +206,22 @@ export const registerInteractiveTutorial = async (
             listenForInteractiveLineRangeUpdates,
             listenForAutocomplete,
             listenForSuccess,
-            vscode.workspace.onDidCloseTextDocument(document => {
-                if (document.uri !== editor.document.uri) {
+            vscode.window.onDidChangeVisibleTextEditors(editors => {
+                const tutorialIsActive = editors.find(
+                    editor => editor.document.uri.fsPath === documentUri.fsPath
+                )
+                if (!tutorialIsActive) {
                     return
                 }
-
-                // Clean up when document is closed
-                for (const disposable of disposables) {
-                    disposable.dispose()
-                }
+                // TODO: This is kinda weird, the editor will change when visible editors changes
+                // We need to always update `editor` to match this value, otherwise our logic might get
+                // out of date.
+                // We should try to create the document on register, and then always get a fresh editor
+                // when it becomes visible. This will mean calling start() on visible and stop() when hidden.
+                console.log('Setting compelted states...')
+                // Decorations are cleared when an editor is no longer visible, we need to ensure we always set
+                // them when the tutorial becomes visible
+                return setCompletedStates(tutorialIsActive)
             })
         )
     }
@@ -226,20 +234,30 @@ export const registerInteractiveTutorial = async (
     }
 
     disposables.push(
-        vscode.window.onDidChangeActiveTextEditor(editor => {
-            if (!editor || editor.document.uri.fsPath !== documentUri.fsPath) {
+        vscode.workspace.onDidCloseTextDocument(document => {
+            if (document.uri.fsPath !== documentUri.fsPath) {
+                // Tutorial has been closed, let's clean up
                 stop()
+            }
+        }),
+        vscode.workspace.onDidOpenTextDocument(document => {
+            if (document.uri.fsPath !== documentUri.fsPath) {
                 return
             }
-
-            // Tutorial is now visible, ensure it has started
+            // Tutorial has been opened, let's start!
             start()
+        }),
+        vscode.window.onDidChangeActiveTextEditor(async editor => {
+            const tutorialIsActive = editor && editor.document.uri.fsPath === documentUri.fsPath
+            return vscode.commands.executeCommand('setContext', 'cody.tutorialActive', tutorialIsActive)
         }),
         vscode.commands.registerCommand('cody.tutorial.start', start)
     )
 
-    const activeEditor = vscode.window.activeTextEditor
-    if (activeEditor && activeEditor.document.uri.fsPath === documentUri.fsPath) {
+    const tutorialVisible = vscode.window.visibleTextEditors.some(
+        editor => editor.document.uri.fsPath === documentUri.fsPath
+    )
+    if (!hasStarted && tutorialVisible) {
         start()
     }
 
