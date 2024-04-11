@@ -143,8 +143,8 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
         method: 'GET',
         responseType: 'stream',
         maxRedirects: 10,
-        httpAgent:a,
-        httpsAgent:a,
+        httpAgent: a,
+        httpsAgent: a,
     })
 
     const stream = fs.createWriteStream(outputPath)

@@ -33,7 +33,7 @@ export function setCustomAgent(
 }
 
 export function initializeNetworkAgent(): void {
-    proxyAgent = new ProxyAgent({ keepAlive:true, keepAliveMsecs: 60000, ...https.globalAgent.options})
+    proxyAgent = new ProxyAgent({ keepAlive: true, keepAliveMsecs: 60000, ...https.globalAgent.options })
     proxyAgent.keepAlive = true
 
     const customAgent = setCustomAgent(getConfiguration())
@@ -81,5 +81,3 @@ export function initializeNetworkAgent(): void {
         void error
     }
 }
-
-
