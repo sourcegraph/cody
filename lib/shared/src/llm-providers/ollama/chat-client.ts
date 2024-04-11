@@ -1,12 +1,12 @@
 import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
-import { onAbort } from '../common/abortController'
-import { CompletionStopReason } from '../inferenceClient/misc'
-import type { CompletionLogger } from '../sourcegraph-api/completions/client'
+import { onAbort } from '../../common/abortController'
+import { CompletionStopReason } from '../../inferenceClient/misc'
+import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
     CompletionParameters,
     CompletionResponse,
-} from '../sourcegraph-api/completions/types'
+} from '../../sourcegraph-api/completions/types'
 
 /**
  * Calls the Ollama API for chat completions with history.

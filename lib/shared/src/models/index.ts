@@ -1,6 +1,7 @@
+import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
 import type { ModelUsage } from './types'
-import { fetchLocalOllamaModels, getModelInfo } from './utils'
+import { getModelInfo } from './utils'
 
 /**
  * ModelProvider manages available chat and edit models.

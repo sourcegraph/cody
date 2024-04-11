@@ -18,3 +18,8 @@ export interface GeminiCompletionResponse {
         }[]
     }[]
 }
+
+export interface GeminiChatMessage {
+    role: string
+    parts: { text: string }[]
+}

@@ -1,13 +1,13 @@
 import type { GeminiCompletionResponse } from '.'
-import { getCompletionsModelConfig } from '..'
-import { onAbort } from '../common/abortController'
-import { CompletionStopReason } from '../inferenceClient/misc'
-import type { CompletionLogger } from '../sourcegraph-api/completions/client'
+import { getCompletionsModelConfig } from '../..'
+import { onAbort } from '../../common/abortController'
+import { CompletionStopReason } from '../../inferenceClient/misc'
+import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
     CompletionParameters,
     CompletionResponse,
-} from '../sourcegraph-api/completions/types'
+} from '../../sourcegraph-api/completions/types'
 import { constructGeminiChatMessages } from './utils'
 
 /**
