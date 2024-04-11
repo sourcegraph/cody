@@ -425,6 +425,14 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "workbench.action.moveEditorToNewWindow",
+        "category": "Cody",
+        "title": "Pop out",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(link-external)"
+      },
+      {
         "command": "cody.chat.tree.view.focus",
         "category": "Cody",
         "title": "Open Cody Sidebar",
@@ -811,9 +819,15 @@
           "visibility": "visible"
         },
         {
+          "command": "workbench.action.moveEditorToNewWindow",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@3",
+          "group": "navigation@4",
           "visibility": "visible"
         }
       ],
