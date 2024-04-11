@@ -13,7 +13,7 @@ describe('constructGeminiChatMessages', () => {
     it('should convert human messages to user role', () => {
         const messages: Message[] = [{ speaker: 'human', text: ps`Hello` }]
         const result = constructGeminiChatMessages(messages)
-        expect(result).toEqual([{ role: 'user', parts: [{ text: ps`Hello` }] }])
+        expect(result).toEqual([{ role: 'user', parts: [{ text: 'Hello' }] }])
     })
 
     it('should convert model messages to model role when last message is not from bot', () => {
@@ -24,16 +24,16 @@ describe('constructGeminiChatMessages', () => {
         ]
         const result = constructGeminiChatMessages(messages)
         expect(result).toEqual([
-            { role: 'user', parts: [{ text: ps`One` }] },
-            { role: 'model', parts: [{ text: ps`Two` }] },
-            { role: 'user', parts: [{ text: ps`Three` }] },
+            { role: 'user', parts: [{ text: 'One' }] },
+            { role: 'model', parts: [{ text: 'Two' }] },
+            { role: 'user', parts: [{ text: 'Three' }] },
         ])
     })
 
     it('should handle messages with no text', () => {
         const messages: Message[] = [{ speaker: 'human', text: undefined }]
         const result = constructGeminiChatMessages(messages)
-        expect(result).toEqual([{ role: 'user', parts: [{ text: ps`` }] }])
+        expect(result).toEqual([{ role: 'user', parts: [{ text: '' }] }])
     })
 
     it('should filter out trailing model message', () => {
@@ -42,6 +42,6 @@ describe('constructGeminiChatMessages', () => {
             { speaker: 'assistant', text: ps`Hi` },
         ]
         const result = constructGeminiChatMessages(messages)
-        expect(result).toEqual([{ role: 'user', parts: [{ text: ps`Hello` }] }])
+        expect(result).toEqual([{ role: 'user', parts: [{ text: 'Hello' }] }])
     })
 })
