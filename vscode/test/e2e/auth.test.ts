@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test'
-
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { type ExpectedEvents, signOut, test } from './helpers'
@@ -26,7 +25,7 @@ test.extend<ExpectedEvents>({
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
@@ -35,7 +34,7 @@ test.extend<ExpectedEvents>({
 
     await expect(page.getByRole('alert').getByText('Authentication failed.')).toBeVisible()
 
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')

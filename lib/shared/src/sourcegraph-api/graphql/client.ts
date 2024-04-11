@@ -853,7 +853,7 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
-        const url = 'http://localhost:49300/.api/testLogging'
+        const url = 'http://localhost:49300/.test/testLogging'
         const headers = new Headers({
             'Content-Type': 'application/json',
         })

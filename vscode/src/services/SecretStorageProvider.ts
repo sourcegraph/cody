@@ -120,12 +120,28 @@ export class VSCodeSecretStorage implements SecretStorage {
 }
 
 class InMemorySecretStorage implements SecretStorage {
-    private storage: Map<string, string>
-    private callbacks: ((key: string) => Promise<void>)[]
+    private storage: Map<string, string> = new Map<string, string>()
+    private callbacks: ((key: string) => Promise<void>)[] = []
 
-    constructor() {
-        this.storage = new Map<string, string>()
-        this.callbacks = []
+    constructor(initialState?: string | undefined, initialToken?: string | undefined) {
+        if (initialState) {
+            const parsedState = JSON.parse(initialState)
+            if (Array.isArray(parsedState)) {
+                for (const [key, value] of parsedState) {
+                    this.storage.set(key, value)
+                }
+            } else {
+                throw new Error('Initial secret storage state must be an array of (key, value) entries')
+            }
+        }
+        if (initialToken) {
+            const parsedToken = JSON.parse(initialToken)
+            if (Array.isArray(parsedToken) && parsedToken.length === 2) {
+                this.storeToken(parsedToken[0], parsedToken[1])
+            } else {
+                throw new Error('Initial token must be an array with [endpoint, value]')
+            }
+        }
     }
 
     public async get(key: string): Promise<string | undefined> {
@@ -202,5 +218,8 @@ interface ConfigJson {
  */
 export const secretStorage =
     process.env.CODY_TESTING === 'true' || process.env.CODY_PROFILE_TEMP === 'true'
-        ? new InMemorySecretStorage()
+        ? new InMemorySecretStorage(
+              process.env.CODY_TESTING === 'true' ? process.env.TESTING_SECRET_STORAGE_STATE : undefined,
+              process.env.CODY_TESTING === 'true' ? process.env.TESTING_SECRET_STORAGE_TOKEN : undefined
+          )
         : new VSCodeSecretStorage()
