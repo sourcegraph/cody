@@ -22,10 +22,14 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     }
 
     if (authStatus.isDotCom) {
-        // Remove the maxContextTokens from the default models for users not enrolled in the feature flag
+        // Set the default models for dotcom users before evaluating the feature flag
+        // as it might take some time to resolve the promise.
+        ModelProvider.setProviders(getDotComDefaultModels())
+        // Set the model providers again with the new limit if the user is enrolled in the feature.
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
-            ModelProvider.setProviders(getDotComDefaultModels(isEnrolled))
-
+            if (isEnrolled) {
+                ModelProvider.setProviders(getDotComDefaultModels(isEnrolled))
+            }
             getChatModelsFromConfiguration()
         })
     }

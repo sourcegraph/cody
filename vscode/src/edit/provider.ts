@@ -55,7 +55,7 @@ export class EditProvider {
             } = await buildInteraction({
                 model,
                 codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
-                contextWindow: contextWindow.chat + contextWindow.user,
+                contextWindow: contextWindow.chat,
                 task: this.config.task,
                 editor: this.config.editor,
             }).catch(err => {
