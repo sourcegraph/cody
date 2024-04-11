@@ -1,8 +1,6 @@
 import type { GroqCompletionOptions } from '../../configuration'
 import type { OpenAIMessage } from '../types'
 
-export const GROQ_DEFAULT_URL = 'https://api.groq.com/openai/v1/chat/completions'
-
 /**
  * Represents the parameters for a Groq chat completion request.
  *

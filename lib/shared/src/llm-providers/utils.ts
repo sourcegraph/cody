@@ -23,7 +23,7 @@ export function getCompletionsModelConfig(modelID: string): CompletionsModelConf
         return {
             model: provider.model.replace('groq/', ''),
             key: provider.apiKey,
-            endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+            endpoint: provider.apiEndpoint,
         }
     }
 

@@ -1,4 +1,4 @@
-import { GROQ_DEFAULT_URL, type GroqCompletionsStreamResponse } from '.'
+import type { GroqCompletionsStreamResponse } from '.'
 import { getCompletionsModelConfig } from '../..'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
@@ -8,6 +8,8 @@ import type {
     CompletionParameters,
     CompletionResponse,
 } from '../../sourcegraph-api/completions/types'
+
+const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completions')
 
 export function groqChatClient(
     params: CompletionParameters,
@@ -39,8 +41,7 @@ export function groqChatClient(
         stream: true,
     }
 
-    // Sends the completion parameters and callbacks to the Ollama API.
-    fetch(new URL(GROQ_DEFAULT_URL), {
+    fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
         method: 'POST',
         body: JSON.stringify(chatParams),
         headers: {
