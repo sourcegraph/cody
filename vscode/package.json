@@ -1308,7 +1308,6 @@
     "proxy-agent": "^6.4.0",
     "re2": "^1.20.10",
     "semver": "^7.5.4",
-    "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
