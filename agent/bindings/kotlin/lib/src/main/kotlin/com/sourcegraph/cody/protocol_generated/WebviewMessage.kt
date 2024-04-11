@@ -44,7 +44,9 @@ sealed class WebviewMessage {
           "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
-          "debug/enable" -> context.deserialize<Debug_enableWebviewMessage>(element, Debug_enableWebviewMessage::class.java)
+          "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
+          "troubleshoot/showOutputLogs" -> context.deserialize<Troubleshoot_showOutputLogsWebviewMessage>(element, Troubleshoot_showOutputLogsWebviewMessage::class.java)
+          "troubleshoot/fullReset" -> context.deserialize<Troubleshoot_fullResetWebviewMessage>(element, Troubleshoot_fullResetWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -390,12 +392,31 @@ data class `attribution-searchWebviewMessage`(
   }
 }
 
-data class Debug_enableWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: debug/enable
+data class Troubleshoot_reloadAuthWebviewMessage(
+  val command: CommandEnum? = null, // Oneof: troubleshoot/reloadAuth
 ) : WebviewMessage() {
 
   enum class CommandEnum {
-    @SerializedName("debug/enable") Debug_enable,
+    @SerializedName("troubleshoot/reloadAuth") Troubleshoot_reloadAuth,
+  }
+}
+
+data class Troubleshoot_showOutputLogsWebviewMessage(
+  val command: CommandEnum? = null, // Oneof: troubleshoot/showOutputLogs
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("troubleshoot/showOutputLogs") Troubleshoot_showOutputLogs,
+  }
+}
+
+data class Troubleshoot_fullResetWebviewMessage(
+  val command: CommandEnum? = null, // Oneof: troubleshoot/fullReset
+  val askConfirmation: Boolean? = null,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("troubleshoot/fullReset") Troubleshoot_fullReset,
   }
 }
 
