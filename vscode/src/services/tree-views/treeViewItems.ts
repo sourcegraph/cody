@@ -70,6 +70,11 @@ const supportItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.sidebar.documentation' },
     },
     {
+        title: 'Tutorial',
+        icon: 'question', // todo select an icon
+        command: { command: 'cody.tutorial.start' },
+    },
+    {
         title: 'Support',
         icon: 'question',
         command: { command: 'cody.sidebar.support' },

@@ -15,10 +15,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import {
-    registerInteractiveWalkthrough,
-    triggerInteractiveWalkthrough,
-} from '../walkthroughs/interactive'
 import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -71,6 +67,7 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { triggerInteractiveTutorial } from './tutorial'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -122,7 +119,6 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
-    registerInteractiveWalkthrough()
     const authProvider = new AuthProvider(initialConfig)
 
     const disposables: vscode.Disposable[] = []
@@ -169,7 +165,6 @@ const register = async (
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
-    triggerInteractiveWalkthrough()
 
     const {
         chatClient,
@@ -509,6 +504,7 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
+        vscode.commands.registerCommand('cody.tutorial.start', triggerInteractiveTutorial),
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
@@ -625,7 +621,7 @@ const register = async (
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
         void vscode.commands.executeCommand('cody.focus')
-        void triggerInteractiveWalkthrough()
+        void triggerInteractiveTutorial()
     } else {
         // INC-267 do NOT await on this promise. This promise triggers
         // `vscode.window.showInformationMessage()`, which only resolves after the
