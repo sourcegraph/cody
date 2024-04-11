@@ -46,4 +46,3 @@ def log_fruits():
 """
 Start a chat
 """
-# vscode://command:cody.command.edit-code
