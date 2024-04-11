@@ -1228,6 +1228,13 @@
           "fontCharacter": "\\0046"
         }
       },
+      "gemini-logo": {
+        "description": "Gemini logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0047"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {

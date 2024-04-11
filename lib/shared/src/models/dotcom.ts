@@ -38,7 +38,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
         title: 'Claude 3 Sonnet',
