@@ -1,4 +1,6 @@
 import type http from 'node:http'
+import https from 'node:https'
+
 import type { Configuration } from '@sourcegraph/cody-shared'
 
 import { agent } from '@sourcegraph/cody-shared/src/fetch'
@@ -36,6 +38,7 @@ export function initializeNetworkAgent(): void {
     proxyAgent.connectOpts = {
         keepAliveMsecs: 60000,
         keepAlive: true,
+        ca: https.globalAgent.options.ca
     }
 
     const customAgent = setCustomAgent(getConfiguration())
@@ -54,7 +57,7 @@ export function initializeNetworkAgent(): void {
      */
     try {
         const PacProxyAgent =
-            (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? customAgent
+            (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? undefined
         if (PacProxyAgent) {
             const originalConnect = PacProxyAgent.prototype.connect
             // Patches the implementation defined here:
