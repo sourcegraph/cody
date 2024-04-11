@@ -352,14 +352,6 @@ export function psDedent(format: TemplateStringsArray, ...args: TemplateArgs): P
     return internal_createPromptString(dedented, internal_toReferences(promptString))
 }
 
-// TODO: This is only temporarily exposed for writing tests.
-export function unsafe_temporary_createPromptString(
-    value: string,
-    references: readonly StringReference[]
-): PromptString {
-    return internal_createPromptString(value, references)
-}
-
 // When PromptStrings are created, their properties are stored in a side pocket
 // WeakMap. Consumers can do what they like with the PromptString, all of the
 // operations use data in the map and so are protected from the PromptString

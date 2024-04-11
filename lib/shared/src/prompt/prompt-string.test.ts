@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import type * as vscode from 'vscode'
 import { testFileUri } from '../test/path-helpers'
-import { PromptString, ps, unsafe_temporary_createPromptString } from './prompt-string'
+import { PromptString, ps } from './prompt-string'
+
+function createFakeDocument(uri: vscode.Uri, text: string): vscode.TextDocument {
+    return {
+        uri,
+        getText() {
+            return text
+        },
+    } as any
+}
 
 describe('PromptString', () => {
     it('can not be generated dynamically unless it consists of allowed sources', () => {
@@ -39,7 +49,8 @@ describe('PromptString', () => {
 
     it('keeps track of references', () => {
         const uri = testFileUri('/foo/bar.ts')
-        const inner = unsafe_temporary_createPromptString('i am from a file', [uri])
+        const document = createFakeDocument(uri, 'i am from a file')
+        const inner = PromptString.fromDocumentText(document)
         const outer = ps`foo${ps`bar${inner}`}`
 
         expect(outer.getReferences()).toEqual([uri])
@@ -60,7 +71,11 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
 
-        const split = unsafe_temporary_createPromptString('foo\nbar\nbaz', [uri1, uri2]).split('\n')
+        const one = createFakeDocument(uri1, 'foo\n')
+        const two = createFakeDocument(uri2, 'bar\n')
+        const split = ps`${PromptString.fromDocumentText(one)}${PromptString.fromDocumentText(
+            two
+        )}baz`.split('\n')
 
         expect(split).toHaveLength(3)
         expect(split[0]).toBeInstanceOf(PromptString)
@@ -78,14 +93,13 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
         const uri3 = testFileUri('/foo/bar2.ts')
+        const doc1 = createFakeDocument(uri1, 'foo')
+        const doc2 = createFakeDocument(uri2, 'baz')
+        const doc3 = createFakeDocument(uri3, ' ')
 
         const joined = PromptString.join(
-            [
-                unsafe_temporary_createPromptString('foo', [uri1]),
-                ps`bar`,
-                unsafe_temporary_createPromptString('baz', [uri2]),
-            ],
-            unsafe_temporary_createPromptString(' ', [uri3])
+            [PromptString.fromDocumentText(doc1), ps`bar`, PromptString.fromDocumentText(doc2)],
+            PromptString.fromDocumentText(doc3)
         )
 
         expect(joined.toString()).toBe('foo bar baz')
@@ -96,9 +110,12 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
 
-        const template = unsafe_temporary_createPromptString('foo bar foo', [uri1])
+        const doc1 = createFakeDocument(uri1, 'foo bar foo')
+        const doc2 = createFakeDocument(uri2, '🇦🇹')
 
-        const replaced = template.replace(/foo$/, unsafe_temporary_createPromptString('🇦🇹', [uri2]))
+        const template = PromptString.fromDocumentText(doc1)
+
+        const replaced = template.replace(/foo$/, PromptString.fromDocumentText(doc2))
 
         expect(replaced.toString()).toBe('foo bar 🇦🇹')
         expect(replaced.getReferences()).toEqual([uri1, uri2])
@@ -108,12 +125,12 @@ describe('PromptString', () => {
         const uri1 = testFileUri('/foo/bar.ts')
         const uri2 = testFileUri('/foo/bar1.ts')
 
-        const template = unsafe_temporary_createPromptString('foo REPLACE bar REPLACE baz', [uri1])
+        const doc1 = createFakeDocument(uri1, 'foo REPLACE bar REPLACE baz')
+        const doc2 = createFakeDocument(uri2, '🇦🇹')
 
-        const replaced = template.replaceAll(
-            'REPLACE',
-            unsafe_temporary_createPromptString('🇦🇹', [uri2])
-        )
+        const template = PromptString.fromDocumentText(doc1)
+
+        const replaced = template.replaceAll('REPLACE', PromptString.fromDocumentText(doc2))
 
         expect(replaced.toString()).toBe('foo 🇦🇹 bar 🇦🇹 baz')
         expect(replaced.getReferences()).toEqual([uri1, uri2])
@@ -124,9 +141,13 @@ describe('PromptString', () => {
         const uri2 = testFileUri('/foo/bar1.ts')
         const uri3 = testFileUri('/foo/bar2.ts')
 
-        const first = unsafe_temporary_createPromptString('foo', [uri1])
-        const second = unsafe_temporary_createPromptString('bar', [uri2])
-        const third = unsafe_temporary_createPromptString('baz', [uri3])
+        const doc1 = createFakeDocument(uri1, 'foo')
+        const doc2 = createFakeDocument(uri2, 'bar')
+        const doc3 = createFakeDocument(uri3, 'baz')
+
+        const first = PromptString.fromDocumentText(doc1)
+        const second = PromptString.fromDocumentText(doc2)
+        const third = PromptString.fromDocumentText(doc3)
 
         const concatenated = first.concat(second, third)
 
@@ -146,7 +167,8 @@ describe('PromptString', () => {
 
     it('can not mutate the references list', () => {
         const uri = testFileUri('/foo/bar.ts')
-        const ps = unsafe_temporary_createPromptString('foo', [uri])
+        const doc = createFakeDocument(uri, 'foo')
+        const ps = PromptString.fromDocumentText(doc)
 
         const arr: any = ps.getReferences()
         // biome-ignore lint/performance/noDelete: 🏴‍☠️
