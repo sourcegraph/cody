@@ -67,7 +67,7 @@ import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { triggerInteractiveTutorial } from './tutorial'
+import { registerInteractiveTutorial } from './tutorial'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -148,6 +148,9 @@ const register = async (
 
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+
+    const interactiveTutorial = registerInteractiveTutorial(context)
+    disposables.push(...interactiveTutorial.disposables)
 
     // Enable tracking for pasting chat responses into editor text
     disposables.push(
@@ -504,7 +507,6 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('cody.tutorial.start', triggerInteractiveTutorial),
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
@@ -621,7 +623,7 @@ const register = async (
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
         void vscode.commands.executeCommand('cody.focus')
-        void triggerInteractiveTutorial()
+        void interactiveTutorial.start()
     } else {
         // INC-267 do NOT await on this promise. This promise triggers
         // `vscode.window.showInformationMessage()`, which only resolves after the
