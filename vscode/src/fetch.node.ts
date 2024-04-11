@@ -33,7 +33,7 @@ export function setCustomAgent(
 }
 
 export function initializeNetworkAgent(): void {
-    proxyAgent = new ProxyAgent({ca: https.globalAgent.options.ca, keepAlive:true, keepAliveMsecs: 60000})
+    proxyAgent = new ProxyAgent({ keepAlive:true, keepAliveMsecs: 60000, ...https.globalAgent.options})
     proxyAgent.keepAlive = true
 
     const customAgent = setCustomAgent(getConfiguration())
