@@ -12,7 +12,13 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 | `D`       | ![D icon](svg-originals/D.svg) | 0044           |
 | `E`       | ![E icon](svg-originals/E.svg) | 0045           |
 | `F`       | ![F icon](svg-originals/F.svg) | 0046           |
+| `G`       | ![G icon](svg-originals/G.svg) | 0047           |
 | `H`       | ![H icon](svg-originals/H.svg) | 0048           |
+
+## Preparing the Images
+
+1. Add the .svg files to both the `svg-originals` and `svg-outlined` folders.
+2. Update the Chracter Table above accordingly
 
 ## Regenerating
 

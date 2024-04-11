@@ -87,20 +87,29 @@ export class EditProvider {
                 },
             })
 
-            // Listen to test file name suggestion from responses
-            // Allows Cody to let us know which test file we should add the new content to
             if (this.config.task.intent === 'test') {
-                let filepath = ''
-                multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
-                    onResponse: async (content: string) => {
-                        filepath += content
-                        void this.handleFileCreationResponse(filepath, true)
-                        return Promise.resolve()
-                    },
-                    onTurnComplete: async () => {
-                        return Promise.resolve()
-                    },
-                })
+                if (this.config.task.destinationFile) {
+                    // We have already provided a destination file,
+                    // Treat this as the test file to insert to
+                    await this.config.controller.didReceiveNewFileRequest(
+                        this.config.task.id,
+                        this.config.task.destinationFile
+                    )
+                } else {
+                    // Listen to test file name suggestion from responses
+                    // Allows Cody to let us know which test file we should add the new content to
+                    let filepath = ''
+                    multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
+                        onResponse: async (content: string) => {
+                            filepath += content
+                            void this.handleFileCreationResponse(filepath, true)
+                            return Promise.resolve()
+                        },
+                        onTurnComplete: async () => {
+                            return Promise.resolve()
+                        },
+                    })
+                }
             }
 
             const abortController = new AbortController()

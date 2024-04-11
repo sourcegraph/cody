@@ -45,7 +45,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
-import { syncModelProviders } from './models/utils'
+import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -102,6 +102,7 @@ export async function start(
                 if (config.chatPreInstruction) {
                     PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
                 }
+                getChatModelsFromConfiguration()
             }
         })
     )

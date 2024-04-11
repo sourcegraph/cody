@@ -1158,12 +1158,6 @@ export class FixupController
 
         task.state = state
 
-        // Creates new file if destinationFile is provided at task creation
-        if (task.state === CodyTaskState.pending && task.destinationFile) {
-            void this.didReceiveNewFileRequest(task.id, task.destinationFile)
-            return
-        }
-
         if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++
         }

@@ -17,7 +17,7 @@ import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
     // The maximum number of characters available in the model's context window.
-    public readonly maxChars: number
+    public maxChars: number
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -26,6 +26,11 @@ export class SimpleChatModel {
         private selectedRepos?: Repo[]
     ) {
         this.maxChars = ModelProvider.getMaxCharsByModel(this.modelID)
+    }
+
+    public updateModel(newModelID: string): void {
+        this.modelID = newModelID
+        this.maxChars = ModelProvider.getMaxCharsByModel(newModelID)
     }
 
     public isEmpty(): boolean {

@@ -7,6 +7,13 @@ export { createOllamaClient } from './completions-client'
 export { ollamaChatClient } from './chat-client'
 
 /**
+ * By default, Ollama uses a context window size of 2048 tokens.
+ *
+ * @see https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-specify-the-context-window-size
+ */
+export const OLLAMA_DEFAULT_CONTEXT_WINDOW = 2048
+
+/**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
  */
 export interface OllamaGenerateParams {
