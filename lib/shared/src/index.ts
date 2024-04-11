@@ -2,7 +2,7 @@
 
 export { ModelProvider } from './models'
 export { type ChatModel, type EditModel, ModelUsage } from './models/types'
-export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
+export { getDotComDefaultModels } from './models/dotcom'
 export {
     getCompletionsModelConfig,
     getProviderName,

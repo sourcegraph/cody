@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { ModelProvider } from '../models/index'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_TOKEN_BUDGET } from '../token/constants'
-import { DEFAULT_DOT_COM_MODELS } from './dotcom'
+import { getDotComDefaultModels } from './dotcom'
 import { ModelUsage } from './types'
 
 describe('getMaxTokenByID', () => {
@@ -16,8 +16,9 @@ describe('getMaxTokenByID', () => {
     })
 
     it('returns max token limit for known chat model', () => {
-        const max = ModelProvider.getMaxTokenByID(DEFAULT_DOT_COM_MODELS[0].model)
-        expect(max).toEqual(DEFAULT_DOT_COM_MODELS[0].maxRequestTokens)
+        const models = getDotComDefaultModels(false)
+        const max = ModelProvider.getMaxTokenByID(models[0].model)
+        expect(max).toEqual(models[0].maxRequestTokens)
     })
 
     it('returns default token limit for unknown model - Enterprise user', () => {

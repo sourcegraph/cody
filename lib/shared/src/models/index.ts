@@ -17,6 +17,8 @@ export class ModelProvider {
     // The title of the model, e.g. "Claude 2.0"
     public readonly title: string
 
+    public contextWindow?: { chat: number; user: number; enhanced: number }
+
     constructor(
         /**
          * The model id that includes the provider name & the model name,
@@ -44,6 +46,14 @@ export class ModelProvider {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
         this.title = title
+
+        if (maxRequestTokens - USER_CONTEXT_TOKEN_BUDGET >= CHAT_TOKEN_BUDGET) {
+            this.contextWindow = {
+                chat: maxRequestTokens - USER_CONTEXT_TOKEN_BUDGET,
+                user: USER_CONTEXT_TOKEN_BUDGET,
+                enhanced: 0,
+            }
+        }
     }
 
     /**
@@ -113,19 +123,10 @@ export class ModelProvider {
     /**
      * Finds the model provider with the given model ID and returns its token limit.
      * The limit is calculated based on the max number of tokens the model can process.
-     *
-     * NOTE: Currently, only 'claude-3' (except haiku) models have a higher token limit that includes user context tokens.
-     * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
      */
     public static getMaxTokenByID(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        const isModelWithHighBudget = ['claude-3-sonnet', 'claude-3-opus']
-        return (
-            model?.maxRequestTokens ??
-            (isModelWithHighBudget.some(m => modelID?.includes(m))
-                ? CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET
-                : CHAT_TOKEN_BUDGET)
-        )
+        return model?.maxRequestTokens ?? CHAT_TOKEN_BUDGET
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

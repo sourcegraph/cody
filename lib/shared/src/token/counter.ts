@@ -7,7 +7,7 @@ import type {
     TokenUsageType,
 } from '.'
 import type { Message } from '..'
-import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
+import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
  * A class to manage the token usage during prompt building.
@@ -30,24 +30,19 @@ export class TokenCounter {
      */
     private shareChatAndUserContextBudget = false
 
-    constructor(public readonly totalBudget: number) {
-        // Set the maximum number of tokens that can be used by chat and context.
-        // This allows the token counter to allocate the budget between chat and context tokens
-        // based on the total budget.
-        // NOTE: The totalBudget of Claude-3 models is CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET.
-        const chatTokenBudget = Math.min(totalBudget, CHAT_TOKEN_BUDGET)
+    constructor(chatBudget: number, userContextBudget = 0) {
         this.maxContextTokens = {
             // If the total budget is less than the default user context token budget,
             // use the total budget as the user context token budget.
-            user: Math.min(totalBudget, USER_CONTEXT_TOKEN_BUDGET),
+            user: userContextBudget,
             // Enhanced context token budget can be up to a percentage of the chat token budget.
-            enhanced: Math.floor(chatTokenBudget * ENHANCED_CONTEXT_ALLOCATION),
+            enhanced: Math.floor(chatBudget * ENHANCED_CONTEXT_ALLOCATION),
         }
 
         // If the chat token budget is equal to the user context token budget,
         // the chat and user context tokens will share the same budget.
-        this.shareChatAndUserContextBudget = chatTokenBudget === this.maxContextTokens.user
-        this.maxChatTokens = chatTokenBudget
+        this.shareChatAndUserContextBudget = userContextBudget > 0
+        this.maxChatTokens = chatBudget + userContextBudget
     }
 
     /**

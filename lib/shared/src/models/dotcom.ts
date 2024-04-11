@@ -3,7 +3,7 @@ import { CHAT_TOKEN_BUDGET, FAST_CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } 
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -47,7 +47,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +56,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET,
+        maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -86,4 +86,34 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat],
         maxRequestTokens: CHAT_TOKEN_BUDGET,
     },
-] as const satisfies ModelProvider[]
+]
+
+/**
+ * NOTE: Used for A/B testing only.
+ *
+ * An array of model IDs that have a higher token limit than the default configured for A/B testing.
+ * Used to increase the token limit for these models when the user context feature flag is enabled.
+ *      Currently, only 'claude-3' (except haiku) models have a higher token limit that includes user context tokens.
+ * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
+ */
+const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
+
+/**
+ * Returns an array of `ModelProvider` objects representing the default models for the Dot Com product.
+ *
+ * If the `hasUserContextFeatureFlag` parameter is true, the function will return a modified array where the
+ * models with higher token limits (as defined in the `modelsWithHigherLimit` array) will have their
+ * `maxRequestTokens` property increased by the `USER_CONTEXT_TOKEN_BUDGET` value.
+ *
+ * @param hasUserContextFeatureFlag - A boolean indicating whether the user context feature flag is enabled.
+ * @returns An array of `ModelProvider` objects representing the default models for the Dot Com product.
+ */
+export function getDotComDefaultModels(hasUserContextFeatureFlag = false): ModelProvider[] {
+    return hasUserContextFeatureFlag
+        ? DEFAULT_DOT_COM_MODELS.map(m =>
+              modelsWithHigherLimit.includes(m.model)
+                  ? { ...m, maxRequestTokens: CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET }
+                  : m
+          )
+        : DEFAULT_DOT_COM_MODELS
+}

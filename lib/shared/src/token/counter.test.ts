@@ -10,7 +10,6 @@ describe('TokenCounter class', () => {
 
     it('should initialize with the correct token budgets for claude 3 models', () => {
         const counter = new TokenCounter(claude3Budget)
-        expect(counter.totalBudget).toBe(claude3Budget)
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.user).toBe(USER_CONTEXT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
@@ -18,7 +17,6 @@ describe('TokenCounter class', () => {
 
     it('should initialize with the correct token budgets for non-claude 3 models', () => {
         const counter = new TokenCounter(nonClaude3Budget)
-        expect(counter.totalBudget).toBe(nonClaude3Budget)
         expect(counter.maxChatTokens).toBe(nonClaude3Budget)
         expect(counter.maxContextTokens.user).toBe(nonClaude3Budget)
         expect(counter.maxContextTokens.enhanced).toBe(nonClaude3Budget * ENHANCED_CONTEXT_ALLOCATION)
@@ -27,7 +25,6 @@ describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets for customized models', () => {
         const customizedBudget = 1234
         const counter = new TokenCounter(customizedBudget)
-        expect(counter.totalBudget).toBe(customizedBudget)
         expect(counter.maxChatTokens).toBe(customizedBudget)
         expect(counter.maxContextTokens.user).toBe(customizedBudget)
         expect(counter.maxContextTokens.enhanced).toBe(

@@ -1,9 +1,11 @@
 import {
     type AuthStatus,
-    DEFAULT_DOT_COM_MODELS,
+    FeatureFlag,
     ModelProvider,
     ModelUsage,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels } from '@sourcegraph/cody-shared/src/models/dotcom'
 import * as vscode from 'vscode'
 
 /**
@@ -14,12 +16,17 @@ import * as vscode from 'vscode'
  * or fallback to the limit from the authentication status if not configured.
  */
 export function syncModelProviders(authStatus: AuthStatus): void {
-    if (!authStatus.endpoint) {
+    if (!authStatus.authenticated) {
         return
     }
 
     if (authStatus.isDotCom) {
-        ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
+        // Remove the maxContextTokens from the default models for users not enrolled in the feature flag
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
+            ModelProvider.setProviders(getDotComDefaultModels(isEnrolled))
+
+            getChatModelsFromConfiguration()
+        })
     }
 
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
@@ -44,8 +51,6 @@ export function syncModelProviders(authStatus: AuthStatus): void {
             ),
         ])
     }
-
-    getChatModelsFromConfiguration()
 }
 
 interface ChatModelProviderConfig {

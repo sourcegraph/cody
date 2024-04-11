@@ -1,5 +1,5 @@
+import type { ModelProvider } from '.'
 import type { GeminiModelConfig } from '../google'
-import type { DEFAULT_DOT_COM_MODELS } from './dotcom'
 
 export enum ModelUsage {
     Chat = 'chat',
@@ -13,7 +13,7 @@ type HasUsage<T, I> = T extends { usage: readonly ModelUsage[] }
         : never
     : never
 
-type Models = typeof DEFAULT_DOT_COM_MODELS
+type Models = typeof ModelProvider
 
 /**
  * Available models for Edit.
