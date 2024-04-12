@@ -24,3 +24,55 @@ The VS Code extension has _Cody commands_, which are pre-formed prompts you can 
 Relevant context from many different sources (the open file in your editor, tree-sitter, precise code intel, and more) is included in the prompt when asking Cody a question. Different LLMs handle context in different ways, some LLMs might do better with more context, while that might simply confuse others.
 
 We can influence chat performance by altering prompting AND context amount/relevancy.
+
+## Testing a new LLM with Cody
+
+This guide demonstrates how to test LLM models from Google Gemini, Groq, or any OpenAI-compatible APIs using your API keys in Cody.
+
+This feature is intended solely for internal QA testing and development purposes and is concealed behind an unregistered configuration setting (`cody.dev.models`) that functions exclusively in Dev/Debug mode.
+
+## Getting Started
+
+1. Obtain an API key from the provider you wish to test Cody with:
+
+- Google Gemini: https://makersuite.google.com/app/apikey
+- Groq: https://console.groq.com/keys
+
+2. Update your VS Code User Settings JSON file following the format shown in the example below:
+
+```json
+{
+  "cody.dev.models": [
+    // Google Gemini 1.5 Pro
+    {
+      "provider": "google",
+      "model": "gemini-1.5-pro-latest",
+      "tokens": 1000000,
+      "apiKey": "$GEMINI_API_KEY"
+    },
+    // Groq llama2 70b
+    {
+      "provider": "groq",
+      "model": "llama2-70b-4096",
+      "tokens": 4096,
+      "apiKey": "$GROQ_API_KEY"
+    },
+    // OpenAI / OpenAI-compatible APIs
+    {
+      "provider": "groq", // keep groq as provider
+      "model": "$OPENAI_MODEL_NAME",
+      "apiKey": "$OPENAI_API_KEY",
+      "apiEndpoint": "$OPENAI_API_ENDPOINT"
+    },
+    // Ollama
+    {
+      "provider": "ollama",
+      "model": "$OLLAMA_MODEL_NAME",
+      "apiEndpoint": "$OLLAMA_API_ENDPOINT"
+    }
+  ]
+}
+```
+
+4. Build Cody from main and run it in debug mode.
+5. You should now find the new models available in your chat panel!
