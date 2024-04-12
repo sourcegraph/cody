@@ -176,7 +176,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            vi.spyOn(repoHelpers, 'getCodebaseFromWorkspaceUri').mockReturnValue(
+            vi.spyOn(repoHelpers, 'getCodebaseFromWorkspaceUriAsync').mockResolvedValue(
                 `github.com/sourcegraph/${repoName}`
             )
 
@@ -185,7 +185,7 @@ describe('ContextFiltersProvider', () => {
             return URI.file(`/${repoName}/${filePath}`)
         }
 
-        it('it works', async () => {
+        it('works', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
@@ -193,19 +193,19 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath).toBe('/cody/foo/bar.ts')
-            expect(repoHelpers.getCodebaseFromWorkspaceUri(includedURI)).toBe(
+            expect(await repoHelpers.getCodebaseFromWorkspaceUriAsync(includedURI)).toBe(
                 'github.com/sourcegraph/cody'
             )
 
-            expect(provider.isUriAllowed(includedURI)).toBe(true)
+            expect(await provider.isUriAllowed(includedURI)).toBe(true)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath).toBe('/sourcegraph/src/main.tsx')
-            expect(repoHelpers.getCodebaseFromWorkspaceUri(excludedURI)).toBe(
+            expect(await repoHelpers.getCodebaseFromWorkspaceUriAsync(excludedURI)).toBe(
                 'github.com/sourcegraph/sourcegraph'
             )
 
-            expect(provider.isUriAllowed(excludedURI)).toBe(false)
+            expect(await provider.isUriAllowed(excludedURI)).toBe(false)
         })
     })
 })
