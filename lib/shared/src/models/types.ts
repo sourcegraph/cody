@@ -1,5 +1,4 @@
 import type { ModelProvider } from '.'
-import type { GeminiModelConfig } from '../google'
 
 export enum ModelUsage {
     Chat = 'chat',
@@ -38,5 +37,3 @@ export type ChatModel =
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
       }[keyof Models]['model']
     | (string & {})
-
-export type CompletionsModelConfig = GeminiModelConfig

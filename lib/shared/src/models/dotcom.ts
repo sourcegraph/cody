@@ -68,8 +68,8 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         contextWindow: { chat: FAST_CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
     },
     {
-        title: 'GPT-4 Turbo Preview',
-        model: 'openai/gpt-4-turbo-preview',
+        title: 'GPT-4 Turbo',
+        model: 'openai/gpt-4-turbo',
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,

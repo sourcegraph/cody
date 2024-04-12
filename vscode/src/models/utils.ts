@@ -88,8 +88,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
             { chat: m.tokens ?? CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 },
-            m.apiKey,
-            m.apiEndpoint
+            { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true
         providers.push(provider)

@@ -640,6 +640,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             type: 'chat-input-context',
             items: contextItems,
         })
+        // Makes sure to reveal the webview panel in case the panel is hidden.
+        this.webviewPanel?.reveal()
     }
 
     private async handleSymfIndex(): Promise<void> {

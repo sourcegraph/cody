@@ -1,6 +1,7 @@
+import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelUsage } from './types'
-import { fetchLocalOllamaModels, getModelInfo } from './utils'
+import { getModelInfo } from './utils'
 
 /**
  * ModelProvider manages available chat and edit models.
@@ -34,13 +35,18 @@ export class ModelProvider {
          */
         public readonly contextWindow: ModelContextWindow = defaultContextWindow,
         /**
-         * The API key for the model
+         * The configuration for the model.
          */
-        public readonly apiKey?: string,
-        /**
-         * The API endpoint for the model
-         */
-        public readonly apiEndpoint?: string
+        public readonly config?: {
+            /**
+             * The API key for the model
+             */
+            apiKey?: string
+            /**
+             * The API endpoint for the model
+             */
+            apiEndpoint?: string
+        }
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
