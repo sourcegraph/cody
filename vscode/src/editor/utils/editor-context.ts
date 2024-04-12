@@ -11,7 +11,6 @@ import {
     type ContextItemWithContent,
     type Editor,
     type SymbolKind,
-    USER_CONTEXT_TOKEN_BUDGET,
     displayPath,
     fetchContentForURLContextItem,
     isCodyIgnoredFile,
@@ -109,7 +108,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return await filterLargeFiles(sortedResults)
+    return await filterContextItemFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -176,7 +175,7 @@ export async function getSymbolContextFiles(
  * Filters out large files over 1MB to avoid expensive parsing.
  */
 export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
-    return await filterLargeFiles(
+    return await filterContextItemFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
             .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
@@ -244,9 +243,10 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets {@link ContextItemFile.isTooLarge} for files contains context over the user context budget.
  */
-export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise<ContextItemFile[]> {
+export async function filterContextItemFiles(
+    contextFiles: ContextItemFile[]
+): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
         // Remove file larger than 1MB and non-text files
@@ -258,12 +258,14 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
-        // NOTE: We cannot get the exact token size without parsing the file,
-        // which is expensive. We use 4bytes as an approximation, which is different
-        // than the 3.5characters per token.
+        // We cannot get the exact token size without parsing the file, which is expensive.
+        // Instead, we divide the file size in bytes by 4 as a rough estimate of the token size,
+        // which is closer than dividing by 3.5, the number we use to convert characters into tokens.
+        // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
+        // on available tokens, so that it can prompt the user to import the file via '@file-range' or
+        // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
+        // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
         cf.size = fileStat.size / 4
-        // Set {@link ContextItemFile.isTooLarge} for webview to display file size warning.
-        cf.isTooLarge = cf.size > USER_CONTEXT_TOKEN_BUDGET
         filtered.push(cf)
     }
     return filtered
