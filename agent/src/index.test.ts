@@ -221,7 +221,7 @@ describe('Agent', () => {
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Generate simple hello world function in java!'
             )
-            const trimmedMessage = trimEndOfLine(lastMessage?.text?.toString() ?? '')
+            const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
               "Sure, here's a simple "Hello World" function in Java:
@@ -339,7 +339,7 @@ describe('Agent', () => {
                     messages: [
                         { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
-                            text: "I'm Claude, an AI assistant created by Anthropic.",
+                            text: " I'm Claude, an AI assistant created by Anthropic.",
                             speaker: 'assistant',
                         },
                     ],
@@ -473,9 +473,7 @@ describe('Agent', () => {
                     )
                     {
                         const lastMessage = await client.sendMessage(id, 'kramer')
-                        expect(
-                            lastMessage?.text?.toString().toLocaleLowerCase().includes('quone')
-                        ).toBeFalsy()
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
                     }
                     {
                         const lastMessage = await client.sendMessage(id, 'georgey')
@@ -733,9 +731,7 @@ describe('Agent', () => {
             expect(id).not.toStrictEqual(freshChatID)
 
             const lastMessage = await client.firstNonEmptyTranscript(id)
-            expect(
-                trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-            ).toMatchInlineSnapshot(
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
               "The selected TypeScript code from file \`src/animal.ts\` is defining an interface called \`Animal\`. An interface in TypeScript is a blueprint or a contract that defines the structure of an object. It specifies the properties and methods that an object implementing this interface should have.
 
@@ -767,9 +763,7 @@ describe('Agent', () => {
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(
-                    trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-                ).toMatchInlineSnapshot(
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
                   "Based on the provided code context, it appears that the test framework being used is Vitest, which is a test runner and assertion library for Vite and Vue.js projects. The \`vitest\` package is being imported and used in the \`src/example.test.ts\` file.
 
@@ -843,9 +837,7 @@ describe('Agent', () => {
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 
-            expect(
-                trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-            ).toMatchInlineSnapshot(
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
               "Based on the provided TypeScript code snippet, here are a few potential areas for improvement:
 
@@ -1049,9 +1041,7 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
-            expect(
-                trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-            ).toMatchInlineSnapshot(
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
               "Based on the file paths you shared, the file names are:
 
@@ -1079,9 +1069,7 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
-            expect(
-                trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-            ).toMatchInlineSnapshot(
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
               "Here's the equivalent Python code for the selected TypeScript code:
 
@@ -1130,9 +1118,10 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
-            expect(
-                trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
-            ).toMatchInlineSnapshot(`"No"`, explainPollyError)
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
+                `"No"`,
+                explainPollyError
+            )
         }, 30_000)
 
         // The context files are presented in an order in the CI that is different
@@ -1147,7 +1136,7 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
-            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text?.toString() ?? '')
+            const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
                 `
