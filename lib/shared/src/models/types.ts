@@ -1,4 +1,3 @@
-import type { GeminiModelConfig } from '../google'
 import type { DEFAULT_DOT_COM_MODELS } from './dotcom'
 
 export enum ModelUsage {
@@ -38,5 +37,3 @@ export type ChatModel =
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
       }[keyof Models]['model']
     | (string & {})
-
-export type CompletionsModelConfig = GeminiModelConfig

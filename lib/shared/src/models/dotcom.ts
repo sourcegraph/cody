@@ -68,8 +68,8 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         maxRequestTokens: FAST_CHAT_TOKEN_BUDGET,
     },
     {
-        title: 'GPT-4 Turbo Preview',
-        model: 'openai/gpt-4-turbo-preview',
+        title: 'GPT-4 Turbo',
+        model: 'openai/gpt-4-turbo',
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,

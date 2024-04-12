@@ -1,4 +1,5 @@
-import type { OllamaGenerateParameters } from '../configuration'
+import type { OllamaGenerateParameters } from '../..'
+import type { OpenAIMessage } from '../types'
 
 export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
 
@@ -58,11 +59,7 @@ export interface OllamaGenerateResponse {
     eval_duration?: number
     sample_count?: number
     sample_duration?: number
-    message?: {
-        role: string
-        content: string
-        images?: string[] | null
-    }
+    message?: OpenAIMessage
 }
 
 export interface OllamaGenerateErrorResponse {
