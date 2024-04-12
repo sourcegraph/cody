@@ -74,7 +74,38 @@ describe('TokenCounter class', () => {
         expect(counter.remainingTokens.context.enhanced).toBeLessThan(counter.maxContextTokens.enhanced)
     })
 
-    it('should allocate tokens correctly on shared budget when prompts are submitted out of order', () => {
+    it('should allocate tokens correctly for prompts submitted out of order with separated budget', () => {
+        const counter = new TokenCounter({ chat: 10, user: 20, enhanced: 0 })
+        counter.updateUsage('user', [
+            { speaker: 'human', text: 'Here is my selected code...' },
+            { speaker: 'assistant', text: 'ok' },
+            { speaker: 'human', text: 'Here is my selected code...' },
+            { speaker: 'assistant', text: 'ok' },
+        ])
+        expect(counter.remainingTokens.chat).toBe(10)
+        expect(counter.remainingTokens.chat).greaterThan(counter.remainingTokens.context.user)
+        expect(counter.remainingTokens.context.user).toBe(2)
+        expect(counter.remainingTokens.context.enhanced).toBe(6) // 60% of 10
+        // Add enhanced context next.
+        counter.updateUsage('enhanced', [
+            { speaker: 'human', text: 'Hi' },
+            { speaker: 'assistant', text: 'ok' },
+        ])
+        expect(counter.remainingTokens.chat).toBe(5)
+        expect(counter.remainingTokens.context.enhanced).toBe(3) // 60% of 7
+        expect(counter.remainingTokens.context.user).toBe(2)
+        // Because we are already running out of tokens, the next chat message will be excluded,
+        // so the remaining tokens will be the same.
+        counter.updateUsage('chat', [
+            { speaker: 'human', text: 'Hello' },
+            { speaker: 'assistant', text: 'Hi there!' },
+        ])
+        expect(counter.remainingTokens.chat).toBe(5)
+        expect(counter.remainingTokens.context.user).toBe(2)
+        expect(counter.remainingTokens.context.enhanced).toBe(3) // 60% of 5
+    })
+
+    it('should allocate tokens correctly for prompts submitted out of order on a shared budget', () => {
         const counter = new TokenCounter({ chat: 30, user: 0, enhanced: 0 })
         counter.updateUsage('user', [
             { speaker: 'human', text: 'Here is my selected code...' },

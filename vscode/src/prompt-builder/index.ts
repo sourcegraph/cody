@@ -74,8 +74,10 @@ export class PromptBuilder {
         return 0
     }
 
+    private processedContextType = new Set<ContextTokenUsageType>()
+
     public tryAddContext(
-        type: ContextTokenUsageType,
+        tokenType: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
     ): PromptBuilderContextResult {
         const result = {
@@ -84,6 +86,7 @@ export class PromptBuilder {
             ignored: [] as ContextItem[], // The items that were ignored
             duplicate: [] as ContextItem[], // The items that were duplicates of previously seen items
         }
+        this.processedContextType.add(tokenType)
         // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
         const reversedContextItems = contextMessages.slice().reverse()
         for (const item of reversedContextItems) {
@@ -104,9 +107,18 @@ export class PromptBuilder {
                 continue
             }
             const assistantMsg = { speaker: 'assistant', text: 'Ok.' } as Message
-            const withinLimit = this.tokenCounter.updateUsage(type, [contextMsg, assistantMsg])
-            // Marks excluded context items as too large and vice versa
-            userContextItem.isTooLarge = !withinLimit
+            const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
+
+            // Check if the type of context item has been processed before to determine if it is a new item or not.
+            // We do not want to update exisiting context items from chat history that's not related to last human message,
+            // unless isTooLarge is undefined, meaning it has not been processed before like new enhanced context.
+            if (
+                (tokenType === 'user' && !this.processedContextType.has(tokenType)) ||
+                userContextItem.isTooLarge === undefined
+            ) {
+                userContextItem.isTooLarge = !withinLimit
+            }
+
             this.seenContext.add(id)
             // Skip context items that would exceed the token budget
             if (!withinLimit) {
