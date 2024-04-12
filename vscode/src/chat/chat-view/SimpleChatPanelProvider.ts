@@ -51,10 +51,7 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import {
-    type SerializedChatMessage,
-    serializeChatMessage,
-} from '@sourcegraph/cody-shared/src/chat/transcript'
+import { serializeChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type {
     ContextItemFile,
     ContextItemWithContent,
@@ -1252,9 +1249,9 @@ function newChatModelFromSerializedChatTranscript(
         json.chatModel || modelID,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
-                deserializeChatMessage(interaction.humanMessage),
+                PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
                 interaction.assistantMessage
-                    ? deserializeChatMessage(interaction.assistantMessage)
+                    ? PromptString.unsafe_deserializeChatMessage(interaction.assistantMessage)
                     : null,
             ].filter(isDefined)
         ),
@@ -1262,16 +1259,6 @@ function newChatModelFromSerializedChatTranscript(
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
-}
-
-// TODO: Should we also serialize the references?
-export function deserializeChatMessage(serializedMessage: SerializedChatMessage): ChatMessage {
-    return {
-        ...serializedMessage,
-        text: serializedMessage.text
-            ? PromptString.unsafe_fromUserQuery(serializedMessage.text)
-            : undefined,
-    }
 }
 
 function isAbortError(error: Error): boolean {

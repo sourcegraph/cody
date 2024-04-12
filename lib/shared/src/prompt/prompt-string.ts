@@ -1,5 +1,7 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
+import type { SerializedChatMessage } from '../chat/transcript'
+import type { ChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
@@ -313,6 +315,31 @@ export class PromptString {
     // 🚨 Use this function only for LLM responses queries.
     public static unsafe_fromLLMResponse(string: string): PromptString {
         return internal_createPromptString(string, [])
+    }
+
+    // 🚨 We slam chats in and out of storage quite a bit, so it seems weird to
+    // have references on a chat transcript, but closing and opening the chat
+    // panel or restarting the IDE makes those references evaporate.
+    //
+    // On the other hand, you might pull up an old chat transcript and all the
+    // file paths are different now because you moved a folder or something. We're
+    // thinking maybe we should have a concept of "resolved" references where we
+    // keep (repo, repo relative path) pairs for the serialized representation
+    // or something.
+    //
+    // Additionally, the serialized chat message format is also used when sending
+    // chat messages back to the Agent. Right now, however, when we send new
+    // messages, this is done via the `chat/submitMessage` notification which does
+    // not deserialize from chat message. To make sure we do not introduce places
+    // where we deserialize chat messages this way, the function is marked unsafe
+    // for now.
+    public static unsafe_deserializeChatMessage(serializedMessage: SerializedChatMessage): ChatMessage {
+        return {
+            ...serializedMessage,
+            text: serializedMessage.text
+                ? internal_createPromptString(serializedMessage.text, [])
+                : undefined,
+        }
     }
 }
 

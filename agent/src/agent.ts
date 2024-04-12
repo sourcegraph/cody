@@ -13,6 +13,7 @@ import {
     FeatureFlag,
     ModelProvider,
     NoOpTelemetryRecorderProvider,
+    PromptString,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
@@ -34,7 +35,6 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
-import { deserializeChatMessage } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
@@ -842,7 +842,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
             for (const message of messages) {
-                const deserializedMessage = deserializeChatMessage(message)
+                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
                 if (deserializedMessage.error) {
                     chatModel.addErrorAsBotMessage(deserializedMessage.error)
                 } else if (deserializedMessage.speaker === 'assistant') {

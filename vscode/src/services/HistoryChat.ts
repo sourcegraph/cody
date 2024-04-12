@@ -3,10 +3,9 @@ import * as vscode from 'vscode'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
-import type { AuthStatus } from '@sourcegraph/cody-shared'
+import { type AuthStatus, PromptString } from '@sourcegraph/cody-shared'
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { prepareChatMessage } from '../chat/chat-view/SimpleChatModel'
-import { deserializeChatMessage } from '../chat/chat-view/SimpleChatPanelProvider'
 import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 interface GroupedChats {
@@ -65,7 +64,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
             lastHumanMessage = prepareChatMessage(
-                deserializeChatMessage(entry.interactions[index]?.humanMessage)
+                PromptString.unsafe_deserializeChatMessage(entry.interactions[index]?.humanMessage)
             )
             if (lastHumanMessage) {
                 break

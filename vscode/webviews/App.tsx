@@ -10,6 +10,7 @@ import {
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
+    PromptString,
     type SerializedChatTranscript,
     isMacOS,
 } from '@sourcegraph/cody-shared'
@@ -18,7 +19,6 @@ import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
-import { deserializeChatMessage } from '../src/chat/chat-view/SimpleChatPanelProvider'
 import { Chat } from './Chat'
 import {
     EnhancedContextContext,
@@ -94,7 +94,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'transcript': {
-                        const deserializedMessages = message.messages.map(deserializeChatMessage)
+                        const deserializedMessages = message.messages.map(
+                            PromptString.unsafe_deserializeChatMessage
+                        )
                         if (message.isMessageInProgress) {
                             const msgLength = deserializedMessages.length - 1
                             setTranscript(deserializedMessages.slice(0, msgLength))

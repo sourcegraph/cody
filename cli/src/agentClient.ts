@@ -159,7 +159,7 @@ export async function createAgentClient({
             }
 
             return {
-                text: reply.text?.toString() ?? '',
+                text: reply.text ?? '',
                 contextFiles:
                     sentMessage.contextFiles?.map(c =>
                         c.repoName
