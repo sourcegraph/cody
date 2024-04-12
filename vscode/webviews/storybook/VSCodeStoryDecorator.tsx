@@ -54,7 +54,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 }
 
 function useDummyChatModelContext(): ChatModelContext {
-    const [chatModels, setChatModels] = useState(getDotComDefaultModels(false))
+    const [chatModels, setChatModels] = useState(getDotComDefaultModels('default'))
     const onCurrentChatModelChange = (value: ModelProvider): void => {
         setChatModels(chatModels =>
             chatModels.map(model => ({ ...model, default: model.model === value.model }))

@@ -16,14 +16,14 @@ describe('Model Provider', () => {
     })
 
     it('returns max token limit for known chat model', () => {
-        const models = getDotComDefaultModels(false)
+        const models = getDotComDefaultModels('default')
         const cw = ModelProvider.getContextWindowByID(models[0].model)
         expect(cw.chat).toEqual(models[0].contextWindow.chat)
         expect(models[0].contextWindow.user).toEqual(0)
     })
 
     it('returns max token limit for dot com chat model with user context feature flag', () => {
-        const models = getDotComDefaultModels(true)
+        const models = getDotComDefaultModels('experimental')
         ModelProvider.setProviders(models)
         const claude3SonnetModelID = 'anthropic/claude-3-sonnet-20240229'
         const claude3SonnetModel = models.find(m => m.model === claude3SonnetModelID)

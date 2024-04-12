@@ -43,7 +43,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             workspaceFolderUris: [],
         })
-        cb({ type: 'chatModels', models: getDotComDefaultModels(false) })
+        cb({ type: 'chatModels', models: getDotComDefaultModels('default') })
         cb({
             type: 'history',
             localHistory: {

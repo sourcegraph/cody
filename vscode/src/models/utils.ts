@@ -24,11 +24,11 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     if (authStatus.isDotCom) {
         // Set the default models for dotcom users before evaluating the feature flag
         // as it might take some time to resolve the promise.
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelProvider.setProviders(getDotComDefaultModels('default'))
         // Set the model providers again with the new limit if the user is enrolled in the feature.
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
             if (isEnrolled) {
-                const experimentalModels = getDotComDefaultModels(isEnrolled)
+                const experimentalModels = getDotComDefaultModels('experimental')
                 ModelProvider.setProviders(experimentalModels)
             }
             getChatModelsFromConfiguration()

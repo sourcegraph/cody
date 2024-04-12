@@ -89,7 +89,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
 ]
 
 /**
- * NOTE: Used for A/B testing only.
+ * NOTE: Used for FeatureFlag.CodyChatContextBudget A/B testing only.
  *
  * An array of model IDs that have a higher token limit than the default configured for A/B testing.
  * Used to increase the token limit for these models when the user context feature flag is enabled.
@@ -101,16 +101,16 @@ const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/
 /**
  * Returns an array of `ModelProvider` objects representing the default models for the Dot Com product.
  *
- * If the `hasUserContextFeatureFlag` parameter is true, the function will return a modified array where the
- * models with higher token limits (as defined in the `modelsWithHigherLimit` array) will have their
- * `maxRequestTokens` property increased by the `USER_CONTEXT_TOKEN_BUDGET` value.
- *
- * @param hasUserContextFeatureFlag - A boolean indicating whether the user context feature flag is enabled.
- * @returns An array of `ModelProvider` objects representing the default models for the Dot Com product.
+ * NOTE: 'experimental' models are for DotCom users with the `FeatureFlag.CodyChatContextBudget` enabled.
+ * @see modelsWithHigherLimit
+ * @param modelType - Specifies whether to return the default or experimental models.
+ * @returns An array of `ModelProvider` objects.
  */
-export function getDotComDefaultModels(hasUserContextFeatureFlag = false): ModelProvider[] {
-    return hasUserContextFeatureFlag
-        ? DEFAULT_DOT_COM_MODELS.map(m =>
+export function getDotComDefaultModels(modelType: 'default' | 'experimental'): ModelProvider[] {
+    return modelType === 'default'
+        ? DEFAULT_DOT_COM_MODELS
+        : // NOTE: Required feature flag for A/B testing only.
+          DEFAULT_DOT_COM_MODELS.map(m =>
               modelsWithHigherLimit.includes(m.model)
                   ? {
                           ...m,
@@ -122,5 +122,4 @@ export function getDotComDefaultModels(hasUserContextFeatureFlag = false): Model
                       }
                   : m
           )
-        : DEFAULT_DOT_COM_MODELS
 }
