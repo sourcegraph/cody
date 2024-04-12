@@ -8,15 +8,10 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
-<<<<<<< HEAD
-
-import { groqChatClient } from '../../llm-providers/groq/chat-client'
-
-=======
 import { agent } from '../../fetch'
-import { googleChatClient } from '../../google/chat-client'
-import { ollamaChatClient } from '../../ollama/chat-client'
->>>>>>> b829c7267 (formatting)
+import { googleChatClient } from '../../llm-providers/google/chat-client'
+import { groqChatClient } from '../../llm-providers/groq/chat-client'
+import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
