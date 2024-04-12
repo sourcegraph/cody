@@ -10,10 +10,7 @@ import { toPartialUtf8String } from '../utils'
 
 <<<<<<< HEAD
 
-import { agent } from '../../fetch'
-import { googleChatClient } from '../../llm-providers/google/chat-client'
 import { groqChatClient } from '../../llm-providers/groq/chat-client'
-import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 
 =======
 import { agent } from '../../fetch'
