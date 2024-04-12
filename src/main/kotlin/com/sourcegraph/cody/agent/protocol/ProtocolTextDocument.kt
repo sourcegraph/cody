@@ -15,7 +15,7 @@ private constructor(
 
   companion object {
 
-    private fun getSelection(editor: Editor): Range? {
+    private fun getSelection(editor: Editor): Range {
       val selectionModel = editor.selectionModel
       val selectionStartPosition =
           selectionModel.selectionStartPosition?.let { editor.visualToLogicalPosition(it) }
@@ -26,7 +26,7 @@ private constructor(
             Position(selectionStartPosition.line, selectionStartPosition.column),
             Position(selectionEndPosition.line, selectionEndPosition.column))
       }
-      val caret = editor.caretModel.allCarets.firstOrNull() ?: return null
+      val caret = editor.caretModel.primaryCaret
       val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
       // A single-offset caret is a selection where end == start.
       return Range(position, position)

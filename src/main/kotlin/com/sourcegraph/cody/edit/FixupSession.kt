@@ -26,6 +26,7 @@ import com.sourcegraph.cody.agent.protocol.CodyTaskState
 import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
 import com.sourcegraph.cody.agent.protocol.Position
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
@@ -77,12 +78,16 @@ abstract class FixupSession(
 
   @RequiresEdt
   private fun triggerDocumentCodeAsync() {
-    // This caret lookup requires us to be on the EDT.
-    val caret = editor.caretModel.primaryCaret.offset
+    // Those lookups require us to be on the EDT.
+    val file = FileDocumentManager.getInstance().getFile(document)
+    val fileEditorManager = FileEditorManager.getInstance(project)
+    val textFile =
+        file?.let { ProtocolTextDocument.fromVirtualFile(fileEditorManager, it) } ?: return
+
     CodyAgentService.withAgent(project) { agent ->
       workAroundUninitializedCodebase()
       // Force a round-trip to get folding ranges before showing lenses.
-      ensureSelectionRange(agent, caret)
+      ensureSelectionRange(agent, textFile)
       showWorkingGroup()
       // All this because we can get the workspace/edit before the request returns!
       fixupService.addSession(this) // puts in Pending
@@ -122,41 +127,13 @@ abstract class FixupSession(
     }
   }
 
-  private fun ensureSelectionRange(agent: CodyAgent, caret: Int) {
-    val url = getDocumentUrl()
-    if (url != null) {
-      val future = CompletableFuture<Unit>()
-      agent.server.getFoldingRanges(GetFoldingRangeParams(uri = url)).handle { result, error ->
-        if (result != null && error == null) {
-          selectionRange = findRangeEnclosing(result.ranges, caret)
-        }
-        // Make sure we have SOME selection range near the caret.
-        // Otherwise, we wind up with the lenses and insertion at top of file.
-        if (selectionRange == null) {
-          logger.warn("Unable to find enclosing folding range at $caret in $url")
-          selectionRange =
-              Range(Position.fromOffset(document, caret), Position.fromOffset(document, caret))
-        }
-        future.complete(null)
-      }
-      // Block until we get the folding ranges.
-      future.get()
-    }
-  }
-
-  private fun getDocumentUrl(): String? {
-    val virtualFile = FileDocumentManager.getInstance().getFile(document)
-    if (virtualFile == null) {
-      logger.warn("No URI for document: $document")
-      return null
-    }
-    return virtualFile.url
-  }
-
-  private fun findRangeEnclosing(ranges: List<Range>, offset: Int): Range? {
-    return ranges.firstOrNull { range ->
-      range.start.toOffset(document) <= offset && range.end.toOffset(document) >= offset
-    }
+  private fun ensureSelectionRange(agent: CodyAgent, textFile: ProtocolTextDocument) {
+    val selection = textFile.selection ?: return
+    selectionRange = selection
+    agent.server
+        .getFoldingRanges(GetFoldingRangeParams(uri = textFile.uri, range = selection))
+        .thenApply { result -> selectionRange = result.range }
+        .get()
   }
 
   fun update(task: EditTask) {

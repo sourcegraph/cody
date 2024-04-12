@@ -1,3 +1,3 @@
 package com.sourcegraph.cody.agent.protocol
 
-data class GetFoldingRangeResult(val ranges: List<Range>)
+data class GetFoldingRangeResult(val range: Range)

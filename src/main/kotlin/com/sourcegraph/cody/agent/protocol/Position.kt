@@ -10,8 +10,6 @@ data class Position(val line: Int, val character: Int) {
     return lineStartOffset + character
   }
 
-  fun isZero() = this.line == 0 && this.character == 0
-
   companion object {
     fun fromOffset(document: Document, offset: Int): Position {
       val line = document.getLineNumber(offset)
