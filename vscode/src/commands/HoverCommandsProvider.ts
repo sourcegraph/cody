@@ -146,10 +146,10 @@ class HoverCommandsProvider implements vscode.Disposable {
 
         if (onError) {
             this.current.error = onError
-            commandsOnHovers.ask.enabled = true
+            commandsOnHovers.error.enabled = true
         } else if (selection?.contains(position) && !selection?.isSingleLine) {
             // CHAT & EDIT for multi-line selections
-            commandsOnHovers.chat.enabled = true
+            commandsOnHovers.ask.enabled = true
             commandsOnHovers.edit.enabled = true
         } else if (docNode.symbol?.node && docNode.meta?.showHint) {
             // EXPLAIN AND DOC for documentable nodes
@@ -292,12 +292,17 @@ const HoverCommands: () => Record<string, HoverCommand> = () => ({
         title: 'New Chat',
         enabled: false,
     },
+    ask: {
+        id: 'cody.chat.context.add',
+        title: 'Ask Cody',
+        enabled: false,
+    },
     edit: {
         id: 'cody.command.edit-code',
         title: 'Edit Code',
         enabled: false,
     },
-    ask: {
+    error: {
         id: 'cody.action.chat',
         title: 'Explain Error',
         enabled: false,
