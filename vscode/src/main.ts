@@ -622,7 +622,9 @@ const register = async (
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
         void vscode.commands.executeCommand('cody.focus')
-        ;(await interactiveTutorial).start()
+        // TODO: Do not do this for e2e tests
+        console.log(interactiveTutorial)
+        // ;(await interactiveTutorial).start()
     } else {
         // INC-267 do NOT await on this promise. This promise triggers
         // `vscode.window.showInformationMessage()`, which only resolves after the

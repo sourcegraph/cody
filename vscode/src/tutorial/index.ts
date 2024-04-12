@@ -1,10 +1,10 @@
 import * as fs from 'node:fs/promises'
-import path from 'node:path'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
 import { COMPLETE_DECORATION, INTRO_DECORATION, TODO_DECORATION } from './constants'
 import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT, getInteractiveRanges } from './content'
+import { setTutorialUri } from './helpers'
 import { CodyChatLinkProvider, findRangeOfText } from './utils'
 
 const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
@@ -24,8 +24,7 @@ export const registerInteractiveTutorial = async (
 }> => {
     const disposables: vscode.Disposable[] = []
     const activeDisposables: vscode.Disposable[] = []
-    const tutorialPath = path.join(context.extensionUri.fsPath, 'walkthroughs', 'cody_tutorial.py')
-    const documentUri = vscode.Uri.file(tutorialPath)
+    const documentUri = setTutorialUri(context)
     let diagnosticCollection: vscode.DiagnosticCollection | undefined
     let hasStarted = false
 
@@ -69,24 +68,30 @@ export const registerInteractiveTutorial = async (
         const setCompletedStates = (editor: vscode.TextEditor) => {
             // We don't actually care about the changes here, we just want to inspect our tracked
             // lines to see if they are still empty. If they are not, they we can report success
-            const completeRanges = []
-            const todoRanges = []
+            const completeDecorations: vscode.DecorationOptions[] = []
+            const todoDecorations: vscode.DecorationOptions[] = []
 
             for (const [key, interactiveRange] of Object.entries(interactiveRanges)) {
                 const activeText = editor.document.getText(interactiveRange.range).trim()
                 if (activeText.length > 0 && activeText !== interactiveRange.originalText) {
-                    completeRanges.push(
-                        new vscode.Range(interactiveRange.range.start, interactiveRange.range.start)
-                    )
+                    completeDecorations.push({
+                        range: new vscode.Range(
+                            interactiveRange.range.start,
+                            interactiveRange.range.start
+                        ),
+                    })
 
                     if (key === 'Fix') {
                         // Additionally reset the diagnostics
                         diagnosticCollection?.clear()
                     }
                 } else {
-                    todoRanges.push(
-                        new vscode.Range(interactiveRange.range.start, interactiveRange.range.start)
-                    )
+                    todoDecorations.push({
+                        range: new vscode.Range(
+                            interactiveRange.range.start,
+                            interactiveRange.range.start
+                        ),
+                    })
 
                     if (key === 'Fix') {
                         // Re-apply the diagnostic
@@ -96,13 +101,13 @@ export const registerInteractiveTutorial = async (
             }
 
             if (chatComplete && chatRange) {
-                completeRanges.push(chatRange)
+                completeDecorations.push({ range: chatRange })
             } else if (chatRange) {
-                todoRanges.push(chatRange)
+                todoDecorations.push({ range: chatRange })
             }
 
-            editor.setDecorations(TODO_DECORATION, todoRanges)
-            editor.setDecorations(COMPLETE_DECORATION, completeRanges)
+            editor.setDecorations(TODO_DECORATION, todoDecorations)
+            editor.setDecorations(COMPLETE_DECORATION, completeDecorations)
         }
         setCompletedStates(editor)
 

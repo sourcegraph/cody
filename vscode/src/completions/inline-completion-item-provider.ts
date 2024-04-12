@@ -15,6 +15,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
@@ -510,6 +511,11 @@ export class InlineCompletionItemProvider
         const key = 'completion.inline.hasAcceptedFirstCompletion'
         if (localStorage.get(key)) {
             return // Already seen notice.
+        }
+
+        if (isInTutorial(request.document)) {
+            // Do nothing, the user is already working through the tutorial
+            return
         }
 
         // Mark as seen, so we don't show again after this.
