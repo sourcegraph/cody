@@ -82,8 +82,9 @@ export function groqChatClient(
                 const lines = chunk.split('\n')
 
                 for (const line of lines) {
-                    if (line?.startsWith('data: ')) {
-                        const data = line.slice(6)
+                    const dataMarker = 'data: '
+                    if (line?.startsWith(dataMarker)) {
+                        const data = line.slice(dataMarker.length)
                         try {
                             const parsedData = JSON.parse(data) as GroqCompletionsStreamResponse
                             const message = parsedData.choices?.[0]?.delta?.content
