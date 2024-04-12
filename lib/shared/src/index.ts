@@ -23,6 +23,8 @@ export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
+    serializeChatMessage,
+    SerializedChatMessage,
 } from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
 export type {

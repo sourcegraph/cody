@@ -28,12 +28,12 @@ jobs:
       - name: Run lints
         # We might want to use parallel here to batch if we run into command lengths issues
         run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep -E "\.(ts|tsx)$"`
-      - uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
-            })
+      # - uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
+      #       })

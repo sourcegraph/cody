@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { ModelUsage, isWindows, ps } from '@sourcegraph/cody-shared'
+import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { TestClient, asTranscriptMessage } from './TestClient'
@@ -337,9 +337,9 @@ describe('Agent', () => {
                 await client.request('chat/restore', {
                     modelID: 'anthropic/claude-2.0',
                     messages: [
-                        { text: ps`What model are you?`, speaker: 'human', contextFiles: [] },
+                        { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
-                            text: ps` I'm Claude, an AI assistant created by Anthropic.`,
+                            text: "I'm Claude, an AI assistant created by Anthropic.",
                             speaker: 'assistant',
                         },
                     ],
@@ -388,7 +388,7 @@ describe('Agent', () => {
             // TODO: make this test return a TypeScript implementation of
             // `animal.ts`. It currently doesn't do this because the workspace root
             // is not a git directory and symf reports some git-related error.
-            expect(trimEndOfLine(lastMessage?.text?.toString() ?? '')).toMatchInlineSnapshot(
+            expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
               "\`\`\`typescript
               class Dog implements Animal {

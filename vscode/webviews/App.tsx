@@ -18,6 +18,7 @@ import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
+import { deserializeChatMessage } from '../src/chat/chat-view/SimpleChatPanelProvider'
 import { Chat } from './Chat'
 import {
     EnhancedContextContext,
@@ -93,13 +94,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'transcript': {
+                        const deserializedMessages = message.messages.map(deserializeChatMessage)
                         if (message.isMessageInProgress) {
-                            const msgLength = message.messages.length - 1
-                            setTranscript(message.messages.slice(0, msgLength))
-                            setMessageInProgress(message.messages[msgLength])
+                            const msgLength = deserializedMessages.length - 1
+                            setTranscript(deserializedMessages.slice(0, msgLength))
+                            setMessageInProgress(deserializedMessages[msgLength])
                             setIsTranscriptError(false)
                         } else {
-                            setTranscript(message.messages)
+                            setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
                         setChatIDHistory([...chatIDHistory, message.chatID])

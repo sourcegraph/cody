@@ -21,6 +21,8 @@ export interface SerializedChatTranscript {
     }
 }
 
+// An unsafe version of the ChatMessage that has the PromptString replaced to a
+// regular string for serialization
 export type SerializedChatMessage = Omit<ChatMessage, 'text'> & { text?: string }
 
 /**
@@ -31,4 +33,11 @@ export interface SerializedChatInteraction {
 
     /** `null` if the assistant has not yet replied to the human message. */
     assistantMessage: SerializedChatMessage | null
+}
+
+export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
+    return {
+        ...chatMessage,
+        text: chatMessage.text ? chatMessage.text.toString() : undefined,
+    }
 }

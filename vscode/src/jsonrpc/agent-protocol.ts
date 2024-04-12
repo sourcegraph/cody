@@ -2,10 +2,10 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
-    ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
     ModelUsage,
+    SerializedChatMessage,
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
@@ -51,7 +51,10 @@ export type ClientRequests = {
     // `type: 'transcript'` ExtensionMessage that is sent via
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
-    'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
+    'chat/restore': [
+        { modelID?: string | null; messages: SerializedChatMessage[]; chatID: string },
+        string,
+    ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
     'chat/export': [null, ChatExportResult[]]

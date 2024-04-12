@@ -12,6 +12,7 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import { serializeChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -187,10 +188,8 @@ function messageToSerializedChatInteraction(
     }
 
     return {
-        humanMessage: { ...humanMessage, text: humanMessage?.text?.toString() },
-        assistantMessage: assistantMessage?.text
-            ? { ...assistantMessage, text: assistantMessage.text.toString() }
-            : null,
+        humanMessage: serializeChatMessage(humanMessage),
+        assistantMessage: assistantMessage ? serializeChatMessage(assistantMessage) : null,
     }
 }
 

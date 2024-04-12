@@ -51,7 +51,10 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type { SerializedChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
+import {
+    type SerializedChatMessage,
+    serializeChatMessage,
+} from '@sourcegraph/cody-shared/src/chat/transcript'
 import type {
     ContextItemFile,
     ContextItemWithContent,
@@ -723,7 +726,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // https://github.com/microsoft/vscode/issues/159431
         void this.postMessage({
             type: 'transcript',
-            messages: messages.map(prepareChatMessage),
+            messages: messages.map(prepareChatMessage).map(serializeChatMessage),
             isMessageInProgress: !!messageInProgress,
             chatID: this.chatModel.sessionID,
         })

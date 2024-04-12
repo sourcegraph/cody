@@ -33,9 +33,12 @@ export class PromptString {
     /**
      * @deprecated Do not use the constructor directly. Instead, use ps`...` or a
      * PromptString helper to handle string data for prompts safely
+     *
+     * @param __debug The string that is wrapped by this PromptString. This is
+     * useful for debugging since it will be shown when `console.log()` is called
+     * with this prompt string.
      */
-    // biome-ignore lint/complexity/noUselessConstructor: deprecation notice
-    constructor() {}
+    constructor(private __debug: string) {}
 
     public toString(): string {
         return internal_toString(this)
@@ -386,7 +389,7 @@ function internal_createPromptString(
     string: string,
     references: readonly StringReference[]
 ): PromptString {
-    const handle = new PromptString()
+    const handle = new PromptString(string)
     // Create a shallow copy of the references list as a set, so it's both de-duped
     // and can not be mutated by the caller
     pocket.set(handle, new PromptStringPocket(string, new Set(references)))

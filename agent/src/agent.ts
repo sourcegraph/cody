@@ -34,6 +34,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import { deserializeChatMessage } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
@@ -835,12 +836,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
             for (const message of messages) {
-                if (message.error) {
-                    chatModel.addErrorAsBotMessage(message.error)
-                } else if (message.speaker === 'assistant') {
-                    chatModel.addBotMessage(message)
-                } else if (message.speaker === 'human') {
-                    chatModel.addHumanMessage(message)
+                const deserializedMessage = deserializeChatMessage(message)
+                if (deserializedMessage.error) {
+                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
+                } else if (deserializedMessage.speaker === 'assistant') {
+                    chatModel.addBotMessage(deserializedMessage)
+                } else if (deserializedMessage.speaker === 'human') {
+                    chatModel.addHumanMessage(deserializedMessage)
                 }
             }
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
