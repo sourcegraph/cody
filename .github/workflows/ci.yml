@@ -198,7 +198,7 @@ jobs:
       - run: pnpm -C vscode run build
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run
 
-  lints:
+  safe-prompts-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -220,7 +220,6 @@ jobs:
       - name: Run lints
         # We might want to use parallel here to batch if we run into command lengths issues
         run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep -E "\.(ts|tsx)$"`
-
       - uses: actions/github-script@v6
         with:
           script: |
