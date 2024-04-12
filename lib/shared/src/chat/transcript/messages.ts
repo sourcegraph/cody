@@ -17,6 +17,19 @@ export interface ChatMessage extends Message {
     editorState?: unknown
 }
 
+// An unsafe version of the {@link ChatMessage} that has the PromptString
+// replaced to a regular string for serialization @see ChatMessage
+//
+// Note: This is created as an interface so that the Kotlin type-gen does not
+// break.
+export interface SerializedChatMessage {
+    contextFiles?: ContextItem[]
+    error?: ChatError
+    editorState?: unknown
+    speaker: 'human' | 'assistant' | 'system'
+    text?: string // Changed from PromptString
+}
+
 export interface ChatError {
     kind?: string
     name: string

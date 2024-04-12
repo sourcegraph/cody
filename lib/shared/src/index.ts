@@ -22,7 +22,6 @@ export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
     serializeChatMessage,
-    SerializedChatMessage,
 } from './chat/transcript'
 export { errorToChatError } from './chat/transcript/messages'
 export type {
@@ -31,6 +30,7 @@ export type {
     ChatHistory,
     ChatMessage,
     UserLocalHistory,
+    SerializedChatMessage,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,

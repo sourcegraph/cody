@@ -1,4 +1,4 @@
-import type { ChatMessage } from './messages'
+import type { ChatMessage, SerializedChatMessage } from './messages'
 
 /**
  * The serialized form of a chat transcript (all data needed to display and recreate a chat
@@ -20,10 +20,6 @@ export interface SerializedChatTranscript {
         selectedRepos: { id: string; name: string }[]
     }
 }
-
-// An unsafe version of the ChatMessage that has the PromptString replaced to a
-// regular string for serialization
-export type SerializedChatMessage = Omit<ChatMessage, 'text'> & { text?: string }
 
 /**
  * The serialized form of a back-and-forth interaction in a chat transcript.

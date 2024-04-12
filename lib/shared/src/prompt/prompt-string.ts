@@ -1,7 +1,6 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
-import type { SerializedChatMessage } from '../chat/transcript'
-import type { ChatMessage } from '../chat/transcript/messages'
+import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'

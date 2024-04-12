@@ -8,11 +8,11 @@ import type {
     ModelProvider,
     RangeData,
     SearchPanelFile,
+    SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
-import type { SerializedChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
 
