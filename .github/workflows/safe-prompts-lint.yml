@@ -30,12 +30,11 @@ jobs:
         run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep -E "\.(ts|tsx)$"`
 
       - uses: actions/github-script@v6
-        # if: steps.check-unsafe-usage.outputs.unsafe_function_added == 'true'
         with:
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '‼️ Hey @philipp-spiess, please review this PR carefully as it introduces usage of \`unsafe_\` functions.'
+              body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
             })
