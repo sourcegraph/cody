@@ -87,8 +87,8 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
     {
-        title: 'Mixtral 8x22B',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b',
+        title: 'Mixtral 8x22B Preview',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
