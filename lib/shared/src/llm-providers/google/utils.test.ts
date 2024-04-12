@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Message } from '../sourcegraph-api'
+import type { Message } from '../../sourcegraph-api'
 import { constructGeminiChatMessages } from './utils'
 
 describe('constructGeminiChatMessages', () => {
