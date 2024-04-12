@@ -290,7 +290,7 @@ Set up steps:
 
 1. Clone two git repositories which are indexed by the enterprise.
 2. Open VSCode and add both repositories to your workspace. (File, Add Folder to Workspace)
-3. Sign in as an Enterprise user.
+3. Sign in as an Enterprise user to one Enterprise endpoint.
 
 Tests:
 
@@ -299,22 +299,13 @@ Tests:
 - [ ] In the Enhanced Context Selector, verify that you can remove repositories by clicking on the X. (The first repository cannot be removed.)
 - [ ] Chat, expand the context sources list, and verify that multiple (10+) context items appear mentioning some of the chosen repositories.
 - [ ] Verify that clicking on the context sources open the web browser; the relevant code is highlighted.
+- [ ] Repeat the tests on the second Enterprise endpoint
 
 ### LLM Selection
 
 - [ ] Sign in as a Free user, open a new chat, and verify that the default LLM is Claude 2, and there is no option to switch LLMs (without upgrading to Pro).
 - [ ] Sign in as a Pro user and verify that there is a list of LLM options and you can switch between them.
 - [ ] Sign in as an enterprise user and verify that you cannot change the LLM.
-
-### Claude 3 Testing
-#### Cody Gateway Instance
-- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Sonnet** for chatModel and **Claude 3 Haiku** for completionModel
-- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Opus** for chatModel and **Claude 3 Haiku** for completionModel
-- [ ] Generate a completion using the manual-trigger key binding on any primary languages (Javascript, Typescript, TypescriptReact, Python, Go).
-
-#### AWS Bedrock Instance
-- [ ] Ask Cody a question in a new chat window. The question should include a request for Cody to generate code with the site-admin configuration is set to **Claude 3 Sonnet** for chatModel and **Claude 3 Haiku** for completionModel
-- [ ] Generate a completion using the manual-trigger key binding on any primary languages (Javascript, Typescript, TypescriptReact, Python, Go).
 
 ## Search
 
