@@ -25,6 +25,7 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 export function googleChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
+    // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal

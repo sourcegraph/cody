@@ -16,6 +16,7 @@ import type {
 export function ollamaChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
+    // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal

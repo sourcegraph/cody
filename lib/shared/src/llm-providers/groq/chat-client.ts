@@ -21,6 +21,7 @@ const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completio
 export function groqChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
+    // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
