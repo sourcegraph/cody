@@ -97,11 +97,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
  * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
  */
 const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
-const experimentalContextWindow = {
-    chat: CHAT_TOKEN_BUDGET,
-    user: USER_CONTEXT_TOKEN_BUDGET,
-    enhanced: 0,
-}
+
 /**
  * Returns an array of `ModelProvider` objects representing the default models for the Dot Com product.
  *
@@ -116,7 +112,14 @@ export function getDotComDefaultModels(hasUserContextFeatureFlag = false): Model
     return hasUserContextFeatureFlag
         ? DEFAULT_DOT_COM_MODELS.map(m =>
               modelsWithHigherLimit.includes(m.model)
-                  ? { ...m, contextWindow: experimentalContextWindow }
+                  ? {
+                          ...m,
+                          contextWindow: {
+                              chat: CHAT_TOKEN_BUDGET,
+                              user: USER_CONTEXT_TOKEN_BUDGET,
+                              enhanced: 0,
+                          },
+                      }
                   : m
           )
         : DEFAULT_DOT_COM_MODELS

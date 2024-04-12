@@ -28,7 +28,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
         // Set the model providers again with the new limit if the user is enrolled in the feature.
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
             if (isEnrolled) {
-                ModelProvider.setProviders(getDotComDefaultModels(isEnrolled))
+                const experimentalModels = getDotComDefaultModels(isEnrolled)
+                ModelProvider.setProviders(experimentalModels)
             }
             getChatModelsFromConfiguration()
         })

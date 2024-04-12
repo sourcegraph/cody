@@ -99,12 +99,12 @@ export default function MentionsPlugin(): JSX.Element | null {
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
     const options = useMemo(() => {
         const model = useCurrentChatModel()
-        const budget = model?.contextWindow?.user || model?.contextWindow?.chat || FAST_CHAT_TOKEN_BUDGET
+        const limit = model?.contextWindow?.user || model?.contextWindow?.chat || FAST_CHAT_TOKEN_BUDGET
         return (
             results
                 ?.map(r => {
                     if (r.size) {
-                        r.isTooLarge = r.size > budget - tokenAdded
+                        r.isTooLarge = r.size > limit - tokenAdded
                     }
                     // All @-mentions should have a source of `User`.
                     r.source = ContextItemSource.User

@@ -365,6 +365,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
         })
+        // Update the chat model providers again to ensure the correct token limit is set on ready
+        this.handleSetChatModel(this.chatModel.modelID)
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
