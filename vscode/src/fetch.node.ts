@@ -1,10 +1,7 @@
 import type http from 'node:http'
 import https from 'node:https'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
-
 import { agent } from '@sourcegraph/cody-shared/src/fetch'
-import { getConfiguration } from './configuration'
 
 import { ProxyAgent } from 'proxy-agent'
 
@@ -19,24 +16,22 @@ const pacProxyAgent = 'PacProxyAgent'
  */
 let proxyAgent: ProxyAgent
 
-function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+function getCustomAgent(): () => http.Agent {
     return () => {
         return proxyAgent
     }
 }
 
-export function setCustomAgent(
-    configuration: Configuration
-): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
-    agent.current = getCustomAgent(configuration)
-    return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
+export function setCustomAgent(): () => http.Agent {
+    agent.current = getCustomAgent()
+    return agent.current as () => http.Agent
 }
 
 export function initializeNetworkAgent(): void {
     proxyAgent = new ProxyAgent({ keepAlive: true, keepAliveMsecs: 60000, ...https.globalAgent.options })
     proxyAgent.keepAlive = true
 
-    const customAgent = setCustomAgent(getConfiguration())
+    const customAgent = setCustomAgent()
 
     /**
      * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`
@@ -67,7 +62,7 @@ export function initializeNetworkAgent(): void {
                         connectionHeader === 'keep-alive' ||
                         (Array.isArray(connectionHeader) && connectionHeader.includes('keep-alive'))
                     ) {
-                        this.opts.originalAgent = customAgent(opts)
+                        this.opts.originalAgent = customAgent()
                         return originalConnect.call(this, req, opts)
                     }
                     return originalConnect.call(this, req, opts)

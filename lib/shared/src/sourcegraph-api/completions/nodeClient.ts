@@ -111,7 +111,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized:
                         process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
-                    agent: agent.current?.(url),
+                    agent: agent.current?.(),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
