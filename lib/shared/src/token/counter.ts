@@ -18,7 +18,8 @@ export class TokenCounter {
      */
     public readonly maxChatTokens: number
     /**
-     * The maximum number of tokens that can be used by the context.
+     * The maximum number of tokens that can be used by the context: user and enhanced.
+     * Enhanced tokens will always share a % of the same budget with chat.
      */
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
@@ -27,17 +28,17 @@ export class TokenCounter {
     private usedTokens: ChatMessageTokenUsage & ChatContextTokenUsage = { chat: 0, user: 0, enhanced: 0 }
     /**
      * Indicates whether the chat and user context tokens share the same budget.
+     * If false, the user context will have separate budgets.
+     * If true, the user context and enhanced token usage will also be deducted when chat usage goes down.
      */
-    private shareChatAndUserContextBudget = false
+    private shareChatAndUserBudget = false
 
     constructor(contextWindow: { chat: number; user: number; enhanced: number }) {
-        // If the chat token budget is equal to the user context token budget,
-        // the chat and user context tokens will share the same budget.
-        this.shareChatAndUserContextBudget = contextWindow.user === 0
+        // If the context window for user context is 0, context will share the same budget with chat.
+        this.shareChatAndUserBudget = contextWindow.user === 0
 
         this.maxChatTokens = contextWindow.chat
         this.maxContextTokens = {
-            // Use the chat budget if the user context budget is 0.
             user: contextWindow.user || contextWindow.chat,
             // Enhanced context token budget can be up to a percentage of the chat token budget.
             enhanced: Math.floor(contextWindow.chat * ENHANCED_CONTEXT_ALLOCATION),
@@ -48,13 +49,12 @@ export class TokenCounter {
      * Gets the current remaining token usage for the TokenCounter.
      */
     public get remainingTokens(): TokenBudget {
-        return {
-            chat: Math.max(0, this.maxChatTokens - this.usedTokens.chat),
-            context: {
-                user: Math.max(0, this.maxContextTokens.user - this.usedTokens.user),
-                enhanced: Math.max(0, this.maxContextTokens.enhanced - this.usedTokens.enhanced),
-            },
-        }
+        const chat = Math.max(0, this.maxChatTokens - this.usedTokens.chat)
+        const user = Math.max(0, this.maxContextTokens.user - this.usedTokens.user)
+        // Enhanced context tokens will always us the same % of the latest chat budget,
+        // so we don't need to keep track of the enhanced token usage separately.
+        const enhanced = Math.max(0, Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION))
+        return { chat, context: { user, enhanced } }
     }
 
     /**
@@ -76,31 +76,38 @@ export class TokenCounter {
     /**
      * Checks if the specified token usage type has enough remaining tokens to allocate the given count.
      *
+     * NOTE: In cases where shareChatAndUserContextBudget is true (context share budget with chat):
+     * When constructing the prompt, the chat prompt has the highest priority and is built first using the budget.
+     * If there are tokens remaining after building the chat prompt, the user context prompt is then built
+     * using the remaining tokens. If there are no tokens left after building the chat prompt,
+     * no user context will be added.
+     *
      * @param type - The type of token usage to check.
      * @param count - The number of tokens to allocate.
      * @returns `true` if the tokens can be allocated, `false` otherwise.
      */
     private canAllocateTokens(type: 'chat' | ContextTokenUsageType, count: number): boolean {
-        const remaining =
-            type === 'chat' ? this.remainingTokens.chat : this.remainingTokens.context[type]
-        return remaining > count
+        return (type === 'chat' ? this.remainingTokens.chat : this.remainingTokens.context[type]) > count
     }
 
     /**
      * Allocates the specified number of tokens for the given token usage type.
-     * If the token usage type is 'chat' and the chat and user context tokens share the same budget,
-     * the user context and enhanced tokens will also be updated.
+     * If the token usage type is 'chat', and chat and context are sharing the same budget,
+     * all usage will be updated to keep the budget in sync.
      *
      * @param type - The type of token usage to allocate.
      * @param count - The number of tokens to allocate.
      */
     private allocateTokens(type: 'chat' | ContextTokenUsageType, count: number): void {
-        this.usedTokens[type] += count
-        if (type === 'chat' && this.shareChatAndUserContextBudget) {
-            // If chat and user context tokens share the same budget, update both.
+        // Share the budget between chat and user context, if enabled.
+        // Exclude enhanced context as we calculate its remaining tokens with the latest chat budget,
+        // so it will always be in sync with chat as long as chat is updated in sync with user context.
+        if (this.shareChatAndUserBudget) {
+            this.usedTokens.chat += count
             this.usedTokens.user += count
-            this.usedTokens.enhanced += count // Enhanced tokens should also be deducted.
+            return
         }
+        this.usedTokens[type] += count
     }
 
     public reset(): void {
