@@ -57,14 +57,16 @@ describe('PromptString', () => {
     })
 
     it('behaves like a string', () => {
-        const s = ps`  foo${ps`bar`}baz  `
-        expect(s.toString()).toBe('  foobarbaz  ')
+        const s = ps`  Foo${ps`bar`}baz  `
+        expect(s.toString()).toBe('  Foobarbaz  ')
         expect(s.length).toBe(13)
-        expect(s.slice(1, 3).toString()).toBe(' f')
-        expect(s.trim().toString()).toBe('foobarbaz')
-        expect(s.trimEnd().toString()).toBe('  foobarbaz')
-        expect(s.indexOf('foo')).toBe(2)
-        expect(s.indexOf(ps`foo`)).toBe(2)
+        expect(s.slice(1, 3).toString()).toBe(' F')
+        expect(s.trim().toString()).toBe('Foobarbaz')
+        expect(s.trimEnd().toString()).toBe('  Foobarbaz')
+        expect(s.indexOf('Foo')).toBe(2)
+        expect(s.indexOf(ps`Foo`)).toBe(2)
+        expect(s.toLocaleLowerCase().toString()).toBe('  foobarbaz  ')
+        expect(s.includes('Foo')).toBe(true)
     })
 
     it('can split', () => {

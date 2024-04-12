@@ -87,6 +87,20 @@ export class PromptString {
         return result
     }
 
+    public toLocaleLowerCase(): PromptString {
+        return internal_createPromptString(
+            internal_toString(this).toLocaleLowerCase(),
+            internal_toReferences(this)
+        )
+    }
+
+    public includes(searchString: string | PromptString, position?: number): boolean {
+        return internal_toString(this).includes(
+            typeof searchString === 'string' ? searchString : internal_toString(searchString),
+            position
+        )
+    }
+
     public static join(promptStrings: PromptString[], boundary: PromptString): PromptString {
         const stringBoundary = internal_toString(boundary)
 

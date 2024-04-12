@@ -418,8 +418,8 @@ describe('Agent', () => {
                 await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
                     addEnhancedContext: true,
                 })
-            expect(lastMessage?.text?.toString()?.toLocaleLowerCase() ?? '').includes('code nav')
-            expect(lastMessage?.text?.toString()?.toLocaleLowerCase() ?? '').includes('sourcegraph')
+            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
+            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
@@ -431,7 +431,7 @@ describe('Agent', () => {
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
-                expect(lastMessage?.text?.toString()?.toLocaleLowerCase().includes('blue')).toBeTruthy()
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
         }, 30_000)
 
@@ -444,12 +444,12 @@ describe('Agent', () => {
             )
             {
                 const lastMessage = await client.sendMessage(id, 'kramer')
-                expect(lastMessage?.text?.toString()?.toLocaleLowerCase().includes('quone')).toBeTruthy()
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeTruthy()
             }
             await client.reset(id)
             {
                 const lastMessage = await client.sendMessage(id, 'kramer')
-                expect(lastMessage?.text?.toString()?.toLocaleLowerCase().includes('quone')).toBeFalsy()
+                expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
             }
         })
 
@@ -474,14 +474,12 @@ describe('Agent', () => {
                     {
                         const lastMessage = await client.sendMessage(id, 'kramer')
                         expect(
-                            lastMessage?.text?.toString()?.toLocaleLowerCase().includes('quone')
+                            lastMessage?.text?.toString().toLocaleLowerCase().includes('quone')
                         ).toBeFalsy()
                     }
                     {
                         const lastMessage = await client.sendMessage(id, 'georgey')
-                        expect(
-                            lastMessage?.text?.toString()?.toLocaleLowerCase().includes('festivus')
-                        ).toBeTruthy()
+                        expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
                     }
                 },
                 { timeout: mayRecord ? 10_000 : undefined }
@@ -513,7 +511,7 @@ describe('Agent', () => {
                 )
                 {
                     const lastMessage = await client.sendMessage(id, 'What pets do I have?')
-                    const answer = lastMessage?.text?.toString()?.toLocaleLowerCase()
+                    const answer = lastMessage?.text?.toLocaleLowerCase()
                     expect(answer?.includes('turtle')).toBeTruthy()
                     expect(answer?.includes('tiger')).toBeTruthy()
                     expect(answer?.includes('bird')).toBeFalsy()

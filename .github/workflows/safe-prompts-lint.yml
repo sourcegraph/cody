@@ -24,19 +24,9 @@ jobs:
           restore-keys: ${{ runner.os }}-20-pnpm-store-
       - run: pnpm install
 
-      # TODO: Use lints/safe-prompt.ts here instead
-      #
-      # - name: Check for unsafe_ function usage
-      #   id: check-unsafe-usage
-      #   run: |
-      #     # Use git diff to check for added lines containing "unsafe_" function calls
-      #     if git diff --diff-filter=A --unified=0 HEAD^ HEAD | grep -q '\+.*unsafe_'; then
-      #       echo "unsafe_function_added=true" >> $GITHUB_OUTPUT
-      #     else
-      #       echo "unsafe_function_added=false" >> $GITHUB_OUTPUT
-      #     fi
 
       - name: Run lints
+        # We might want to use parallel here to batch if we run into command lengths issues
         run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only main | grep -E "\.(ts|tsx)$"`
 
       - uses: actions/github-script@v6
