@@ -1,6 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelUsage } from './types'
+import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -132,9 +132,3 @@ export class ModelProvider {
 }
 
 export const defaultContextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
-
-interface ModelContextWindow {
-    chat: number
-    user: number
-    enhanced: number
-}

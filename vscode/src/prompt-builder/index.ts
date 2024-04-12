@@ -30,6 +30,7 @@ export class PromptBuilder {
     private seenContext = new Set<string>()
     constructor(private tokenCounter: TokenCounter) {
         // Resets the current token usage when creating a new prompt builder
+        // to make sure the token usage is not carried over from previous prompts.
         tokenCounter.reset()
     }
 

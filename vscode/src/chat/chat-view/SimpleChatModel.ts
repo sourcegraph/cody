@@ -4,10 +4,10 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    type ModelContextWindow,
     ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
-    TokenCounter,
     errorToChatError,
     isCodyIgnoredFile,
     toRangeData,
@@ -17,7 +17,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    public tokenTracker: TokenCounter
+    public contextWindow: ModelContextWindow
 
     constructor(
         public modelID: string,
@@ -26,12 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.tokenTracker = new TokenCounter(ModelProvider.getContextWindowByID(this.modelID))
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.tokenTracker = new TokenCounter(ModelProvider.getContextWindowByID(newModelID))
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {

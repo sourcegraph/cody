@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
+    TokenCounter,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -44,7 +45,8 @@ export class DefaultPrompter implements IPrompter {
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const promptBuilder = new PromptBuilder(chat.tokenTracker)
+            const tokenCounter = new TokenCounter(chat.contextWindow)
+            const promptBuilder = new PromptBuilder(tokenCounter)
             const preInstruction: string | undefined = vscode.workspace
                 .getConfiguration('cody.chat')
                 .get('preInstruction')
@@ -53,7 +55,7 @@ export class DefaultPrompter implements IPrompter {
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(
-                    `Preamble length exceeded context window size ${chat.tokenTracker.maxChatTokens}`
+                    `Preamble length exceeded context window size ${tokenCounter.maxChatTokens}`
                 )
             }
 
@@ -112,7 +114,7 @@ export class DefaultPrompter implements IPrompter {
                 }
                 const newEnhancedContext = await this.getEnhancedContext(
                     lastMessage.text,
-                    chat.tokenTracker.remainingTokens.context.enhanced
+                    tokenCounter.remainingTokens.context.enhanced
                 )
                 sortContextItems(newEnhancedContext)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(

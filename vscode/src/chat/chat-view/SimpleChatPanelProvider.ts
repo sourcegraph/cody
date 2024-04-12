@@ -610,9 +610,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             }
             const userContextFiles = items.map(f => ({
                 ...f,
-                isTooLarge: f.size
-                    ? f.size < this.chatModel.tokenTracker.maxContextTokens.user
-                    : undefined,
+                isTooLarge: f.size ? f.size < this.chatModel.contextWindow.user : undefined,
             }))
             void this.postMessage({
                 type: 'userContextFiles',
@@ -634,7 +632,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const contextItems = selectionFiles.map(f => ({
             ...f,
             content: undefined,
-            isTooLarge: f.size ? f.size < this.chatModel.tokenTracker.maxContextTokens.user : undefined,
+            isTooLarge: f.size ? f.size < this.chatModel.contextWindow.user : undefined,
         }))
         void this.postMessage({
             type: 'chat-input-context',

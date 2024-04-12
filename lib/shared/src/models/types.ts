@@ -37,3 +37,9 @@ export type ChatModel =
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
       }[keyof Models]['model']
     | (string & {})
+
+export interface ModelContextWindow {
+    chat: number
+    user: number
+    enhanced: number
+}
