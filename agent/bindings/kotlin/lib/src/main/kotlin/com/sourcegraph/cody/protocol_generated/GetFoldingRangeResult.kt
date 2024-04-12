@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class GetFoldingRangeResult(
-  val ranges: List<Range>? = null,
+  val range: Range? = null,
 )
 

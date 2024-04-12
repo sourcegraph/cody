@@ -36,7 +36,7 @@ import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import { deserializeChatMessage } from '../../vscode/src/chat/chat-view/SimpleChatPanelProvider'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
-import { getDocumentSections } from '../../vscode/src/editor/utils/document-sections'
+import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
@@ -766,6 +766,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             'editTask/getFoldingRanges',
             async (params): Promise<GetFoldingRangeResult> => {
                 const uri = vscode.Uri.parse(params.uri)
+                const vscodeRange = new vscode.Range(
+                    params.range.start.line,
+                    params.range.start.character,
+                    params.range.end.line,
+                    params.range.end.character
+                )
                 const document = this.workspace.getDocument(uri)
                 if (!document) {
                     logError(
@@ -775,10 +781,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         params.uri,
                         [...this.workspace.allUris()]
                     )
-                    return Promise.resolve({ ranges: [] })
+                    return Promise.resolve({ range: vscodeRange })
                 }
-                const ranges = await getDocumentSections(document)
-                return { ranges }
+                const range = await getEditSmartSelection(document, vscodeRange, {})
+                return { range }
             }
         )
 

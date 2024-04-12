@@ -36,7 +36,7 @@ describe('PromptString', () => {
                 return '😈'
             }
         }
-        const fake = new FakePromptString()
+        const fake = new FakePromptString('')
         expect(() => ps`${fake}`).toThrowError()
     })
 

@@ -697,8 +697,9 @@ export interface CustomEditCommandResult {
 
 export interface GetFoldingRangeParams {
     uri: string
+    range: Range
 }
 
 export interface GetFoldingRangeResult {
-    ranges: Range[]
+    range: Range
 }

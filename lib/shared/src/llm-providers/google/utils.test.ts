@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ps } from '../prompt/prompt-string'
-import type { Message } from '../sourcegraph-api'
+import { ps } from '../../prompt/prompt-string'
+import type { Message } from '../../sourcegraph-api'
 import { constructGeminiChatMessages } from './utils'
 
 describe('constructGeminiChatMessages', () => {

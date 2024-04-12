@@ -4,10 +4,8 @@ export { ModelProvider } from './models'
 export { type ChatModel, type EditModel, ModelUsage } from './models/types'
 export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
 export {
-    getCompletionsModelConfig,
     getProviderName,
     getModelInfo,
-    fetchLocalOllamaModels,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
@@ -140,7 +138,7 @@ export {
     ollamaChatClient,
     type OllamaGenerateParams,
     OLLAMA_DEFAULT_URL,
-} from './ollama'
+} from './llm-providers/ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
@@ -235,3 +233,4 @@ export {
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
 export * from './prompt/prompt-string'
+export { getCompletionsModelConfig } from './llm-providers/utils'

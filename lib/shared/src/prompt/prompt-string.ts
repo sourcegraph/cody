@@ -38,6 +38,8 @@ export class PromptString {
      * useful for debugging since it will be shown when `console.log()` is called
      * with this prompt string.
      */
+    // @ts-expect-error: We don't want anyone to read __debug. This is just a helper
+    // fir console.log debugging.
     constructor(private __debug: string) {}
 
     public toString(): string {

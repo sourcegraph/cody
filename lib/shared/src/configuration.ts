@@ -231,3 +231,37 @@ export interface FireworksOptions {
         stop?: string[]
     }
 }
+
+/**
+ * @see https://console.groq.com/docs/text-chat
+ */
+export interface GroqCompletionOptions {
+    /**
+     *An optional name to disambiguate messages from different users with the same role.
+     */
+    name?: string
+    /**
+     *Seed used for sampling. Groq attempts to return the same response to the same request with an identical seed.
+     */
+    seed?: number
+    /**
+     *The maximum number of tokens that the model can process in a single response. This limits ensures computational efficiency and resource management.
+     */
+    max_tokens?: number
+    /**
+     *A method of text generation where a model will only consider the most probable next tokens that make up the probability p. 0.5 means half of all likelihood-weighted options are considered.
+     */
+    top_p?: number
+    /**
+     *Controls randomness of responses. A lower temperature leads to more predictable outputs while a higher temperature results in more varies and sometimes more creative outputs.
+     */
+    temperature?: number
+    /**
+     *User server-side events to send the completion in small deltas rather than in a single batch after all processing has finished. This reduces the time to first token received.
+     */
+    stream?: boolean
+    /**
+     *A stop sequence is a predefined or user-specified text string that signals an AI to stop generating content, ensuring its responses remain focused and concise.
+     */
+    stop?: string[]
+}
