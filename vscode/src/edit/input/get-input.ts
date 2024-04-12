@@ -497,7 +497,13 @@ export const getInput = async (
             },
         })
 
+        const initialInput = initialValues.initialInputValue || ''
         editInput.render(activeTitle, initialValues.initialInputValue || '')
-        editInput.input.activeItems = []
+
+        if (initialInput.length === 0) {
+            // If we have no initial input, we want to ensure we don't auto-select anything
+            // This helps ensure the input does not feel like a menu.
+            editInput.input.activeItems = []
+        }
     })
 }
