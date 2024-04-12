@@ -24,6 +24,7 @@ export class TokenCounter {
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
      * The number of tokens used by messages and context.
+     * NOTE: This gets reset everytime a new prompt building process starts, aka in PromptBuilder constructor.
      */
     private usedTokens: ChatMessageTokenUsage & ChatContextTokenUsage = { chat: 0, user: 0, enhanced: 0 }
     /**
@@ -46,13 +47,19 @@ export class TokenCounter {
     }
 
     /**
-     * Gets the current remaining token usage for the TokenCounter.
+     * Gets the remaining token budget for chat, user context, and enhanced context.
+     *
+     * The remaining token budget is calculated by subtracting the used tokens from the maximum allowed tokens for each category.
+     * The enhanced context token budget is calculated as a percentage of the remaining chat token budget.
+     *
+     * @returns An object containing the remaining token budgets for chat, user context, and enhanced context.
      */
     public get remainingTokens(): TokenBudget {
         const chat = Math.max(0, this.maxChatTokens - this.usedTokens.chat)
         const user = Math.max(0, this.maxContextTokens.user - this.usedTokens.user)
-        // Enhanced context tokens will always us the same % of the latest chat budget,
-        // so we don't need to keep track of the enhanced token usage separately.
+        // Enhanced context tokens will always use the same % of the latest chat budget,
+        // so we don't need to deduct the enhanced token usage for its own budget.
+        // Instead, we calculate the enhanced token usage based on the latest chat budget.
         const enhanced = Math.max(0, Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION))
         return { chat, context: { user, enhanced } }
     }
@@ -92,24 +99,43 @@ export class TokenCounter {
 
     /**
      * Allocates the specified number of tokens for the given token usage type.
-     * If the token usage type is 'chat', and chat and context are sharing the same budget,
-     * all usage will be updated to keep the budget in sync.
+     *
+     * When `shareChatAndUserBudget` is active, the chat and user context token usage are kept in sync.
+     * Otherwise, the token usage is updated separately for each type.
+     *
+     * For 'enhanced' token usage, the tokens are always calculated based on the latest chat budget,
+     * so the enhanced token usage is not tracked separately but will count towards the chat token usage.
      *
      * @param type - The type of token usage to allocate.
      * @param count - The number of tokens to allocate.
      */
     private allocateTokens(type: 'chat' | ContextTokenUsageType, count: number): void {
-        // Share the budget between chat and user context, if enabled.
-        // Exclude enhanced context as we calculate its remaining tokens with the latest chat budget,
-        // so it will always be in sync with chat as long as chat is updated in sync with user context.
+        let { chat, user, enhanced } = this.usedTokens
+
+        // When shareChatAndUserBudget is true, we just keep the chat and user context in sync.
         if (this.shareChatAndUserBudget) {
-            this.usedTokens.chat += count
-            this.usedTokens.user += count
-            return
+            chat += count
+            user += count
+        } else {
+            // Updates the token usage for the specified type...
+            // Enhanced context tokens are always calculated based on the latest chat budget.
+            // So, we don't need to keep track of the enhanced token usage separately,
+            // but we need to update chat usage.
+            if (type === 'chat' || type === 'enhanced') {
+                chat += count
+            } else {
+                user += count
+            }
         }
-        this.usedTokens[type] += count
+
+        this.usedTokens = { chat, user, enhanced }
     }
 
+    /**
+     * Resets the token usage to 0.
+     * NOTE: This should be called everytime a new prompt is built.
+     * NOTE: Used in the PromptBuilder constructor only.
+     */
     public reset(): void {
         this.usedTokens = { chat: 0, user: 0, enhanced: 0 }
     }

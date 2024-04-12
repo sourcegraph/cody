@@ -29,6 +29,7 @@ export class PromptBuilder {
     private reverseMessages: Message[] = []
     private seenContext = new Set<string>()
     constructor(private tokenCounter: TokenCounter) {
+        // Resets the current token usage when creating a new prompt builder
         tokenCounter.reset()
     }
 

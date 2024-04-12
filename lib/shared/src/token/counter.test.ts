@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { OLLAMA_DEFAULT_CONTEXT_WINDOW } from '../ollama'
+import { OLLAMA_DEFAULT_CONTEXT_WINDOW } from '../llm-providers/ollama'
 import type { Message } from '../sourcegraph-api'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 import { TokenCounter } from './counter'
