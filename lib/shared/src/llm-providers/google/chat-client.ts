@@ -1,13 +1,13 @@
 import type { GeminiCompletionResponse } from '.'
-import { getCompletionsModelConfig } from '..'
-import { onAbort } from '../common/abortController'
-import { CompletionStopReason } from '../inferenceClient/misc'
-import type { CompletionLogger } from '../sourcegraph-api/completions/client'
+import { getCompletionsModelConfig } from '../..'
+import { onAbort } from '../../common/abortController'
+import { CompletionStopReason } from '../../inferenceClient/misc'
+import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
     CompletionParameters,
     CompletionResponse,
-} from '../sourcegraph-api/completions/types'
+} from '../../sourcegraph-api/completions/types'
 import { constructGeminiChatMessages } from './utils'
 
 /**
@@ -17,13 +17,15 @@ import { constructGeminiChatMessages } from './utils'
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/{model}'
 
 /**
- * Calls the Google API for chat completions with history.
+ * NOTE: Behind `chat.dev.models` configuration flag for internal dev testing purpose only!
  *
+ * Calls the Google API for chat completions with history.
  * REF: https://ai.google.dev/tutorials/rest_quickstart#multi-turn_conversations_chat
  */
 export function googleChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
+    // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
