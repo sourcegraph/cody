@@ -93,13 +93,6 @@ export type WebviewMessage =
     | {
           command: 'troubleshoot/reloadAuth'
       }
-    | {
-          command: 'troubleshoot/showOutputLogs'
-      }
-    | {
-          command: 'troubleshoot/fullReset'
-          askConfirmation?: boolean
-      }
 
 /**
  * A message sent from the extension host to the webview.

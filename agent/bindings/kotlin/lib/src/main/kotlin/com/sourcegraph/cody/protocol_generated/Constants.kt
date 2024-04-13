@@ -108,8 +108,6 @@ object Constants {
   const val reset = "reset"
   const val `attribution-search` = "attribution-search"
   const val troubleshoot_reloadAuth = "troubleshoot/reloadAuth"
-  const val troubleshoot_showOutputLogs = "troubleshoot/showOutputLogs"
-  const val troubleshoot_fullReset = "troubleshoot/fullReset"
   const val `tree-sitter` = "tree-sitter"
   const val indentation = "indentation"
   const val Automatic = "Automatic"

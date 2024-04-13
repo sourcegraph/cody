@@ -227,7 +227,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         return <LoadingPage />
     }
 
-    if (authStatus?.showNetworkError) {
+    if (authStatus.showNetworkError) {
         return (
             <div className="outer-container">
                 <ConnectionIssuesPage

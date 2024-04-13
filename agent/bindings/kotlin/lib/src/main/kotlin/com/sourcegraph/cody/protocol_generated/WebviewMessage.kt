@@ -45,8 +45,6 @@ sealed class WebviewMessage {
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
-          "troubleshoot/showOutputLogs" -> context.deserialize<Troubleshoot_showOutputLogsWebviewMessage>(element, Troubleshoot_showOutputLogsWebviewMessage::class.java)
-          "troubleshoot/fullReset" -> context.deserialize<Troubleshoot_fullResetWebviewMessage>(element, Troubleshoot_fullResetWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -398,25 +396,6 @@ data class Troubleshoot_reloadAuthWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("troubleshoot/reloadAuth") Troubleshoot_reloadAuth,
-  }
-}
-
-data class Troubleshoot_showOutputLogsWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: troubleshoot/showOutputLogs
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("troubleshoot/showOutputLogs") Troubleshoot_showOutputLogs,
-  }
-}
-
-data class Troubleshoot_fullResetWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: troubleshoot/fullReset
-  val askConfirmation: Boolean? = null,
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("troubleshoot/fullReset") Troubleshoot_fullReset,
   }
 }
 

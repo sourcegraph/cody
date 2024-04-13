@@ -30,12 +30,8 @@ export const ConnectionIssuesPage: React.FunctionComponent<
         }
     }, [vscodeAPI])
 
-    const onDebug = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'troubleshoot/showOutputLogs' })
-    }, [vscodeAPI])
-
-    const onReset = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'troubleshoot/fullReset', askConfirmation: true })
+    const onSignOut = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'signout' })
     }, [vscodeAPI])
 
     return (
@@ -75,17 +71,9 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                         className={classNames(styles.actionButton)}
                         appearance="secondary"
                         type="button"
-                        onClick={onDebug}
+                        onClick={onSignOut}
                     >
-                        Open Debug Logs
-                    </VSCodeButton>
-                    <VSCodeButton
-                        className={classNames(styles.actionButton)}
-                        appearance="secondary"
-                        type="button"
-                        onClick={onReset}
-                    >
-                        Reset Cody
+                        Sign Out
                     </VSCodeButton>
                 </div>
             </div>
