@@ -22,7 +22,6 @@ import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
-import { MockEditProvider } from './mock-provider'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditModelsForUser } from './utils/edit-models'
@@ -192,12 +191,8 @@ export class EditManager implements vscode.Disposable {
 
     private getProviderForTask(task: FixupTask): EditProvider {
         let provider = this.editProviders.get(task)
-
         if (!provider) {
-            provider =
-                process.env.CODY_TESTING === 'true'
-                    ? new MockEditProvider({ task, controller: this.controller, ...this.options })
-                    : new EditProvider({ task, controller: this.controller, ...this.options })
+            provider = new EditProvider({ task, controller: this.controller, ...this.options })
             this.editProviders.set(task, provider)
         }
 
