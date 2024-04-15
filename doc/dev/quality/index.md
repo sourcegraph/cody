@@ -29,7 +29,20 @@ We can influence chat performance by altering prompting AND context amount/relev
 
 This guide demonstrates how to test LLM models from Google Gemini, Groq, or any OpenAI-compatible APIs using your API keys in Cody.
 
-This feature is intended solely for internal QA testing and development purposes and is concealed behind an unregistered configuration setting (`cody.dev.models`) that functions exclusively in Dev/Debug mode.
+This feature is intended solely for internal QA testing and development purposes and is concealed behind an unregistered configuration setting (`cody.dev.models`) that functions exclusively in [Dev/Debug mode](../../../vscode/CONTRIBUTING.md).
+
+### cody.dev.models
+
+- provider: string
+  - The name of the LLM provider. E.g., "google" for Google, "groq" for Groq, etc.
+- model: string
+  - The ID of the model. E.g., "gemini-1.5-pro-latest"
+- tokens?: number
+  - The Context Window of the model. Default to 7k.
+- apiKey?: string
+  - The API Key for the API Endpoint if the endpoint required one.
+- apiEndpoint?: string
+  - The endpoint URL for the API that's different than the default URL.
 
 ## Getting Started
 
