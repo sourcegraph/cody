@@ -1,4 +1,4 @@
-export const ANSWER_TOKENS = 1000
+export const ANSWER_TOKENS = 4000
 export const MAX_CURRENT_FILE_TOKENS = 1000
 /**
  * A token is equivalent to 4 characters/bytes.

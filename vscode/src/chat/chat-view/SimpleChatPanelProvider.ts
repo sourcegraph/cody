@@ -55,7 +55,6 @@ import type {
     ContextItemWithContent,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
@@ -600,7 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            this.chatModel.maxChars
         )
 
         try {
@@ -632,7 +631,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            this.chatModel.maxChars
         )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
         await this.postMessage({
