@@ -110,8 +110,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     }
 
     public async query(query: PromptString): Promise<ContextSearchResult[]> {
-        // TODO: Validate that prompt string has only allowed references before
-        // sending it to the backend.
+        // Sending prompt strings to the Sourcegraph search backend is fine.
         const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query.toString())
         if (result instanceof Error) {
             throw result

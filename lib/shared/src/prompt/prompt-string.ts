@@ -212,10 +212,11 @@ export class PromptString {
         text: PromptString
         message: PromptString
     } {
+        const ref = [uri]
         return {
-            type: internal_createPromptString(diagnostic.type, [uri]),
-            text: internal_createPromptString(diagnostic.text, [uri]),
-            message: internal_createPromptString(diagnostic.message, [uri]),
+            type: internal_createPromptString(diagnostic.type, ref),
+            text: internal_createPromptString(diagnostic.text, ref),
+            message: internal_createPromptString(diagnostic.message, ref),
         }
     }
 
@@ -224,14 +225,13 @@ export class PromptString {
     }
 
     public static fromDiagnostic(uri: vscode.Uri, diagnostic: vscode.Diagnostic) {
+        const ref = [uri]
         return {
-            message: internal_createPromptString(diagnostic.message, [uri]),
-            source: diagnostic.source
-                ? internal_createPromptString(diagnostic.source, [uri])
-                : undefined,
+            message: internal_createPromptString(diagnostic.message, ref),
+            source: diagnostic.source ? internal_createPromptString(diagnostic.source, ref) : undefined,
             relatedInformation: diagnostic.relatedInformation
                 ? diagnostic.relatedInformation.map(info => ({
-                      message: internal_createPromptString(info.message, [uri]),
+                      message: internal_createPromptString(info.message, [uri, info.location.uri]),
                   }))
                 : undefined,
         }
@@ -268,39 +268,38 @@ export class PromptString {
         }
     }
 
-    // TODO: Should we refactor the AC doc context to use PromptString instead of string?
     public static fromAutocompleteDocContext(docContext: DocumentContext, uri: vscode.Uri) {
+        const ref = [uri]
         return {
-            prefix: internal_createPromptString(docContext.prefix, [uri]),
-            suffix: internal_createPromptString(docContext.suffix, [uri]),
+            prefix: internal_createPromptString(docContext.prefix, ref),
+            suffix: internal_createPromptString(docContext.suffix, ref),
             injectedPrefix: docContext.injectedPrefix
-                ? internal_createPromptString(docContext.injectedPrefix, [uri])
+                ? internal_createPromptString(docContext.injectedPrefix, ref)
                 : null,
         }
     }
 
-    // TODO: Should we propagate the PromptString into the context objects? It would
-    // mean a lot of refactoring but it could avoid this helper method (since I
-    // assume we use the getText API when we build these values)
     public static fromAutocompleteContextSnippet(
         contextSnippet: FileContextSnippet | SymbolContextSnippet
     ) {
+        const ref = [contextSnippet.uri]
         return {
-            content: internal_createPromptString(contextSnippet.content, [contextSnippet.uri]),
+            content: internal_createPromptString(contextSnippet.content, ref),
             symbol:
                 'symbol' in contextSnippet
-                    ? internal_createPromptString(contextSnippet.symbol, [contextSnippet.uri])
+                    ? internal_createPromptString(contextSnippet.symbol, ref)
                     : undefined,
         }
     }
 
     public static fromContextItem(contextItem: ContextItem) {
+        const ref = [contextItem.uri]
         return {
             content: contextItem.content
-                ? internal_createPromptString(contextItem.content, [contextItem.uri])
+                ? internal_createPromptString(contextItem.content, ref)
                 : undefined,
             repoName: contextItem.repoName
-                ? internal_createPromptString(contextItem.repoName, [contextItem.uri])
+                ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,
         }
     }
