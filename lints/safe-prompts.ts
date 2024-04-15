@@ -82,8 +82,15 @@ export function delint(sourceFile: ts.SourceFile) {
         }
 
         const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart())
+        const { line: endLine, character: endCharacter } = sourceFile.getLineAndCharacterOfPosition(
+            node.getEnd()
+        )
         if (process.env.GITHUB_ACTIONS !== undefined) {
-            console.log(`::${level} file=${sourceFile.fileName},line=${line + 1}::${message}`)
+            console.log(
+                `::${level} file=${sourceFile.fileName},line=${line + 1},col=${character + 1},endLine=${
+                    endLine + 1
+                },endColumn=${endCharacter + 1}::${message}`
+            )
         }
         console.log(`${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`)
     }
