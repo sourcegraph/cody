@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 
 import type { SimpleChatPanelProvider } from '../../../src/chat/chat-view/SimpleChatPanelProvider'
 
-import { ps } from '@sourcegraph/cody-shared/src/prompt/prompt-string'
 import {
     afterIntegrationTest,
     beforeIntegrationTest,
@@ -19,6 +18,10 @@ async function getChatViewProvider(): Promise<SimpleChatPanelProvider> {
     assert.ok(chatViewProvider)
     return chatViewProvider
 }
+
+// Note: The integration runner can not require from lib-shared so we have to expose
+// this instead.
+const ps = getExtensionAPI().exports.testing?.ps!
 
 suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
