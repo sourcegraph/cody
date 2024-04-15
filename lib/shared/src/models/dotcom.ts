@@ -93,7 +93,8 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
  *
  * An array of model IDs that have a higher token limit than the default configured for A/B testing.
  * Used to increase the token limit for these models when the user context feature flag is enabled.
- *      Currently, only 'claude-3' (except haiku) models have a higher token limit that includes user context tokens.
+ *
+ * Currently, only claude-3 models (except haiku) have a higher token limit that includes user context tokens.
  * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
  */
 const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
@@ -103,6 +104,7 @@ const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/
  *
  * NOTE: 'experimental' models are for DotCom users with the `FeatureFlag.CodyChatContextBudget` enabled.
  * @see modelsWithHigherLimit
+ *
  * @param modelType - Specifies whether to return the default or experimental models.
  * @returns An array of `ModelProvider` objects.
  */

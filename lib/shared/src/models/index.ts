@@ -29,8 +29,9 @@ export class ModelProvider {
          */
         public readonly usage: ModelUsage[],
         /**
-         * The default context window of the model reserved for chat, user and enhanced context.
-         * If not budget is reserved for user or enhanced context, they will fall back to share budget with chat.
+         * The default context window of the model.
+         *
+         * If no budget is reserved for 'user' (User-Context), falls back to share tokens with chat.
          * {@see TokenCounter for calculating the token usage}
          */
         public readonly contextWindow: ModelContextWindow = defaultContextWindow,
