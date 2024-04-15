@@ -112,7 +112,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         let task: FixupTask | null
-        if (configuration.instruction?.trim()) {
+        if (configuration.instruction && configuration.instruction.trim().length > 0) {
             task = await this.controller.createTask(
                 document,
                 configuration.instruction,
