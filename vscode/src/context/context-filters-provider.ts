@@ -110,11 +110,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         const relativePath = vscode.workspace.asRelativePath(uri, false)
 
-        if (repoName) {
-            return this.isPathAllowed(repoName, relativePath)
-        }
-
-        return false
+        return repoName ? this.isPathAllowed(repoName, relativePath) : false
     }
 
     public dispose(): void {

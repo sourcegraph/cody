@@ -84,7 +84,7 @@ describe('ContextFiltersProvider', () => {
                 notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
             },
             {
-                label: 'does not allow a path if it does not match the include pattern',
+                label: 'does not allow a repo if it does not match the include pattern',
                 filters: {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
@@ -92,7 +92,7 @@ describe('ContextFiltersProvider', () => {
                 notAllowed: [['github.com/other/repo', 'src/main.ts']],
             },
             {
-                label: 'does not allow a path if it matches the exclude pattern',
+                label: 'does not allow a repo if it matches the exclude pattern',
                 filters: {
                     include: [
                         { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
@@ -103,13 +103,14 @@ describe('ContextFiltersProvider', () => {
                         { repoNamePattern: '.*not-allowed.*' },
                     ],
                 },
+                allowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
                 notAllowed: [
                     ['github.com/sensitive/sensitive-repo', 'src/main.ts'],
                     ['github.com/sourcegraph/not-allowed-repo', 'src/main.ts'],
                 ],
             },
             {
-                label: 'excludes paths that match both include and exclude patterns',
+                label: 'excludes repos that match both include and exclude patterns',
                 filters: {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
@@ -117,7 +118,7 @@ describe('ContextFiltersProvider', () => {
                 notAllowed: [['github.com/sourcegraph/sensitive-repo', 'src/main.ts']],
             },
             {
-                label: 'excludes paths with anchored exclude pattern starting with the specific term',
+                label: 'excludes repos with anchored exclude pattern starting with the specific term',
                 filters: {
                     include: [{ repoNamePattern: 'github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*' }],
@@ -129,7 +130,7 @@ describe('ContextFiltersProvider', () => {
                 ],
             },
             {
-                label: 'excludes paths with anchored exclude pattern ending with the specific term',
+                label: 'excludes repos with anchored exclude pattern ending with the specific term',
                 filters: {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/sensitive$' }],
@@ -138,7 +139,7 @@ describe('ContextFiltersProvider', () => {
                 notAllowed: [['github.com/sourcegraph/sensitive', 'src/main.ts']],
             },
             {
-                label: 'excludes paths using non-capturing groups',
+                label: 'excludes repos using non-capturing groups',
                 filters: {
                     include: [{ repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/(sensitive|classified).*' }],
@@ -306,7 +307,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            expect(includedURI.fsPath).toBe('/cody/foo/bar.ts')
+            expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
             expect(await repoHelpers.getCodebaseFromWorkspaceUriAsync(includedURI)).toBe(
                 'github.com/sourcegraph/cody'
             )
