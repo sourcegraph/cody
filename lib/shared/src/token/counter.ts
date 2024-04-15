@@ -11,6 +11,8 @@ import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
  * A class to manage the token usage during prompt building.
+ *
+ * NOTE: A new TokenCounter is created everytime a new prompt building process starts (PromptBuilder constructor).
  */
 export class TokenCounter {
     /**
@@ -18,19 +20,20 @@ export class TokenCounter {
      */
     public readonly maxChatTokens: number
     /**
-     * The maximum number of tokens that can be used by the context: user and enhanced.
-     * Enhanced tokens will always share a % of the same budget with chat.
+     * The maximum number of tokens that can be used by each context type:
+     * - User context
+     * - Enhanced context
+     *     - Enhanced tokens shares ENHANCED_CONTEXT_ALLOCATION% of the Chat budget.
      */
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
-     * The number of tokens used by messages and context.
-     * NOTE: This gets reset everytime a new prompt building process starts, aka in PromptBuilder constructor.
+     * The number of tokens used by Chat messages and each Context type.
      */
     private usedTokens: ChatMessageTokenUsage & ChatContextTokenUsage = { chat: 0, user: 0, enhanced: 0 }
     /**
      * Indicates whether the chat and user context tokens share the same budget.
      * If false, the user context will have separate budgets.
-     * If true, the user context and enhanced token usage will also be deducted when chat usage goes down.
+     * If true, all types of messages (chat, enhanced context, and user @-context) share the same token budget.
      */
     private shareChatAndUserBudget = false
 
@@ -44,24 +47,6 @@ export class TokenCounter {
             // Enhanced context token budget can be up to a percentage of the chat token budget.
             enhanced: Math.floor(contextWindow.chat * ENHANCED_CONTEXT_ALLOCATION),
         }
-    }
-
-    /**
-     * Gets the remaining token budget for chat, user context, and enhanced context.
-     *
-     * The remaining token budget is calculated by subtracting the used tokens from the maximum allowed tokens for each category.
-     * The enhanced context token budget is calculated as a percentage of the remaining chat token budget.
-     *
-     * @returns An object containing the remaining token budgets for chat, user context, and enhanced context.
-     */
-    public get remainingTokens(): TokenBudget {
-        const chat = Math.max(0, this.maxChatTokens - this.usedTokens.chat)
-        const user = Math.max(0, this.maxContextTokens.user - this.usedTokens.user)
-        // Enhanced context tokens will always use the same % of the latest chat budget,
-        // so we don't need to deduct the enhanced token usage for its own budget.
-        // Instead, we calculate the enhanced token usage based on the latest chat budget.
-        const enhanced = Math.max(0, Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION))
-        return { chat, context: { user, enhanced } }
     }
 
     /**
@@ -81,30 +66,16 @@ export class TokenCounter {
     }
 
     /**
-     * Checks if the specified token usage type has enough remaining tokens to allocate the given count.
-     *
-     * NOTE: In cases where shareChatAndUserContextBudget is true (context share budget with chat):
-     * When constructing the prompt, the chat prompt has the highest priority and is built first using the budget.
-     * If there are tokens remaining after building the chat prompt, the user context prompt is then built
-     * using the remaining tokens. If there are no tokens left after building the chat prompt,
-     * no user context will be added.
-     *
-     * @param type - The type of token usage to check.
-     * @param count - The number of tokens to allocate.
-     * @returns `true` if the tokens can be allocated, `false` otherwise.
-     */
-    private canAllocateTokens(type: 'chat' | ContextTokenUsageType, count: number): boolean {
-        return (type === 'chat' ? this.remainingTokens.chat : this.remainingTokens.context[type]) > count
-    }
-
-    /**
      * Allocates the specified number of tokens for the given token usage type.
      *
-     * When `shareChatAndUserBudget` is active, the chat and user context token usage are kept in sync.
-     * Otherwise, the token usage is updated separately for each type.
+     * If `shareChatAndUserBudget` is true (separate user context budget mode):
+     *   - User context tokens are counted separately from chat and enhanced context tokens.
+     *   - Chat and enhanced context tokens share the same token budget.
      *
-     * For 'enhanced' token usage, the tokens are always calculated based on the latest chat budget,
-     * so the enhanced token usage is not tracked separately but will count towards the chat token usage.
+     * If `shareChatAndUserBudget` is false (shared budget mode):
+     *   - All types of messages (chat, enhanced context, and user @-context) share the same token budget.
+     *
+     * NOTE: In both budget modes, enhanced context's token usage is counted towards the chat token usage.
      *
      * @param type - The type of token usage to allocate.
      * @param count - The number of tokens to allocate.
@@ -112,23 +83,62 @@ export class TokenCounter {
     private allocateTokens(type: 'chat' | ContextTokenUsageType, count: number): void {
         let { chat, user, enhanced } = this.usedTokens
 
-        // When shareChatAndUserBudget is true, we just keep the chat and user context in sync.
+        // Update token usage based on the specified type and budget mode
         if (this.shareChatAndUserBudget) {
+            // In shared budget mode, update chat and user token usage together
             chat += count
             user += count
         } else {
-            // Updates the token usage for the specified type...
-            // Enhanced context tokens are always calculated based on the latest chat budget.
-            // So, we don't need to keep track of the enhanced token usage separately,
-            // but we need to update chat usage.
+            // In separate user context budget mode
             if (type === 'chat' || type === 'enhanced') {
+                // Update chat usage for chat and enhanced context tokens
                 chat += count
             } else {
+                // Update user usage for user context tokens
                 user += count
             }
         }
 
         this.usedTokens = { chat, user, enhanced }
+    }
+
+    /**
+     * Calculates the remaining token budget for each token usage type:
+     * 1. Chat:
+     *     - Calculated by subtracting the used chat tokens from the maximum allowed chat tokens.
+     * 2. User Context:
+     *     - Calculated by subtracting the used user context tokens from the maximum allowed user context tokens.
+     * 3. Enhanced Context:
+     *     - Calculated as a percentage of the remaining chat token budget in all modes
+     *
+     * @returns The remaining token budget for chat, user context, and enhanced context (if applicable).
+     */
+    public get remainingTokens(): TokenBudget {
+        const chat = Math.max(0, this.maxChatTokens - this.usedTokens.chat)
+        const user = Math.max(0, this.maxContextTokens.user - this.usedTokens.user)
+        // Enhanced Context token budget is calculated as a percentage of the remaining chat token budget.
+        // The precentage is defined by the `ENHANCED_CONTEXT_ALLOCATION` constant.
+        const enhanced = Math.max(0, Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION))
+        return { chat, context: { user, enhanced } }
+    }
+
+    /**
+     * Checks if the specified token usage type has enough remaining tokens to allocate the given count.
+     *
+     * NOTE: When constructing prompt where `shareChatAndUserBudget` is true (separate user context budget mode):
+     * - Chat prompt has the highest priority and is built first using its token budget.
+     * - If there are tokens remaining after building the Chat prompt:
+     *   - User context is built using the remaining Chat tokens.
+     * - If there are no tokens left after building the Chat prompt:
+     *   - No User context will be added.
+     * - Enhanced context is built using a percentage of the remaining Chat tokens.
+     *
+     * @param type - The type of token usage to check.
+     * @param count - The number of tokens to allocate.
+     * @returns `true` if the tokens can be allocated, `false` otherwise.
+     */
+    private canAllocateTokens(type: 'chat' | ContextTokenUsageType, count: number): boolean {
+        return (type === 'chat' ? this.remainingTokens.chat : this.remainingTokens.context[type]) > count
     }
 
     /**
@@ -160,12 +170,13 @@ export class TokenCounter {
 
     /**
      * Counts the number of tokens in the given text using the tokenizer.
+     * NOTE: Token count is the length of the encoded text + 3 extra tokens added by the Claude API.
      *
      * @param text - The input text to count tokens for.
      * @returns The number of tokens in the input text.
      */
     public static countTokens(text: string): number {
-        return TokenCounter.encode(text).length
+        return TokenCounter.encode(text).length + 3
     }
 
     /**
@@ -175,11 +186,11 @@ export class TokenCounter {
      * @returns The number of tokens in the message.
      */
     private static getTokenCountForMessage(message: Message): number {
-        if (!message) {
+        if (!message?.text) {
             return 0
         }
 
-        return TokenCounter.countTokens(message.text + message.speaker)
+        return TokenCounter.countTokens(message.text)
     }
 
     /**
