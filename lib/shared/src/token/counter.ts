@@ -170,13 +170,12 @@ export class TokenCounter {
 
     /**
      * Counts the number of tokens in the given text using the tokenizer.
-     * NOTE: Token count is the length of the encoded text + 3 extra tokens added by the Claude API.
      *
      * @param text - The input text to count tokens for.
      * @returns The number of tokens in the input text.
      */
     public static countTokens(text: string): number {
-        return TokenCounter.encode(text).length + 3
+        return TokenCounter.encode(text).length
     }
 
     /**
@@ -190,7 +189,7 @@ export class TokenCounter {
             return 0
         }
 
-        return TokenCounter.countTokens(message.text)
+        return TokenCounter.countTokens(message.text + message.speaker)
     }
 
     /**
