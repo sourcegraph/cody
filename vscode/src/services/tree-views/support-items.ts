@@ -43,7 +43,6 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         title: 'Support',
         icon: 'question',
         command: { command: 'cody.sidebar.support' },
-        requirePaid: true,
     },
     {
         title: 'Feedback',
@@ -52,7 +51,7 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Discord',
-        icon: 'organization',
+        icon: 'discord-logo',
         command: { command: 'cody.sidebar.discord' },
     },
     {

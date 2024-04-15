@@ -1268,10 +1268,17 @@
         }
       },
       "new-comment-icon": {
-        "description": "Cody logo heavy",
+        "description": "New comment icon",
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0048"
+        }
+      },
+      "discord-logo": {
+        "description": "Discord logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0049"
         }
       }
     }
