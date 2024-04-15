@@ -33,14 +33,21 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // Which means it will fallback to use the default model on the server.
     if (!authStatus.isDotCom && authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
-        const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
+        const inputTokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
+        const inputTokenLimit =
+            inputTokenLimitConfig ??
+            authStatus.configOverwrites?.chatModelMaxInputTokens ??
+            authStatus.configOverwrites?.chatModelMaxTokens
+        const outputTokenLimitConfig = codyConfig?.get<number>('provider.limit.response')
+        const outputTokenLimit =
+            outputTokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxOutputTokens
         ModelProvider.setProviders([
             new ModelProvider(
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                tokenLimit
+                inputTokenLimit,
+                outputTokenLimit
             ),
         ])
     }
@@ -78,11 +85,10 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
 
     const providers: ModelProvider[] = []
     for (const m of modelsConfig) {
-        const inputTokens = m.inputTokens ?? m.tokens
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            inputTokens,
+            m.inputTokens ?? m.tokens,
             m.outputTokens,
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )

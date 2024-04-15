@@ -33,7 +33,7 @@ export class ModelProvider {
          * that can be processed by the model in a single request.
          */
         public readonly maxInputToken: number = DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
-        public readonly maxOutputToken: number = DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
+        public readonly maxOutputToken: number = DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
         /**
          * The configuration for the model.
          */
