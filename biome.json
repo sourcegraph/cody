@@ -1,87 +1,86 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"organizeImports": {
-		"enabled": true
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"nursery": {
-				"useExportType": "error",
-				"useImportType": "error",
-				"useGroupedTypeImport": "error",
-				"noUnusedImports": "error",
-				"noUnusedPrivateClassMembers": "error",
-				"noInvalidUseBeforeDeclaration": "error",
-				"noUselessTernary": "error",
-				"noDuplicateJsonKeys": "error",
-				"useNodejsImportProtocol": "error"
-			},
-			"suspicious": {
-				"noExplicitAny": "off"
-			},
-			"style": {
-				"noNonNullAssertion": "off",
-				"noParameterAssign": "off",
-				"useTemplate": "off"
-			}
-		}
-	},
-	"formatter": {
-		"indentStyle": "space",
-		"indentWidth": 4,
-		"lineWidth": 105
-	},
-	"javascript": {
-		"formatter": {
-			"semicolons": "asNeeded",
-			"quoteStyle": "single",
-			"arrowParentheses": "asNeeded",
-			"trailingComma": "es5"
-		}
-	},
-	"files": {
-		"ignore": [
-			"node_modules/",
-			"out/",
-			"dist/",
-			"build/",
-			"test-data/",
-			".github/PULL_REQUEST_TEMPLATE.md",
-			"vscode/src/testutils/vscode/",
-			"vscode/walkthroughs",
-			"agent/bindings/",
-			"agent/src/bfg/__tests__/",
-			"agent/src/__tests__/",
-			"agent/recordings/",
-			"agent/src/cli/scip-codegen/scip.ts",
-			"/vitest.workspace.js",
-			"vitest.config.ts",
-			"vite.config.ts",
-			"__snapshots__/",
-			"__mocks__/",
-			".vscode-test/"
-		]
-	},
-	"overrides": [
-		{
-			"include": [".vscode/*.json"],
-			"json": {
-				"parser": {
-					"allowComments": true,
-					"allowTrailingCommas": true
-				}
-			}
-		},
-		{
-			"include": ["*.json"],
-			"json": {
-				"formatter": {
-					"indentWidth": 2,
-					"indentStyle": "space"
-				}
-			}
-		}
-	]
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "nursery": {
+        "useExportType": "error",
+        "useImportType": "error",
+        "useGroupedTypeImport": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noUselessTernary": "error",
+        "noDuplicateJsonKeys": "error",
+        "useNodejsImportProtocol": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "off",
+        "useTemplate": "off"
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 4,
+    "lineWidth": 105
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "single",
+      "arrowParentheses": "asNeeded",
+      "trailingComma": "es5"
+    }
+  },
+  "files": {
+    "ignore": [
+      "node_modules/",
+      "out/",
+      "dist/",
+      "build/",
+      "test-data/",
+      ".github/PULL_REQUEST_TEMPLATE.md",
+      "vscode/src/testutils/vscode/",
+      "agent/bindings/",
+      "agent/src/bfg/__tests__/",
+      "agent/src/__tests__/",
+      "agent/recordings/",
+      "agent/src/cli/scip-codegen/scip.ts",
+      "/vitest.workspace.js",
+      "vitest.config.ts",
+      "vite.config.ts",
+      "__snapshots__/",
+      "__mocks__/",
+      ".vscode-test/"
+    ]
+  },
+  "overrides": [
+    {
+      "include": [".vscode/*.json"],
+      "json": {
+        "parser": {
+          "allowComments": true,
+          "allowTrailingCommas": true
+        }
+      }
+    },
+    {
+      "include": ["*.json"],
+      "json": {
+        "formatter": {
+          "indentWidth": 2,
+          "indentStyle": "space"
+        }
+      }
+    }
+  ]
 }

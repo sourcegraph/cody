@@ -55,7 +55,7 @@ export const registerInteractiveTutorial = async (
 
             // Attach diagnostics to the fix line. This is so that, if the user doesn't already have
             // a Python language server installed, they will still see the "Ask Cody to Fix" option.
-            diagnosticCollection?.set(documentUri, [
+            diagnosticCollection.set(documentUri, [
                 {
                     range: interactiveRanges.Fix.range,
                     message: 'Implicit string concatenation not allowed',
@@ -233,6 +233,7 @@ export const registerInteractiveTutorial = async (
 
     const stop = async () => {
         await vscode.commands.executeCommand('setContext', 'cody.tutorialActive', false)
+        diagnosticCollection?.clear()
         for (const disposable of activeDisposables) {
             disposable.dispose()
         }
@@ -241,12 +242,13 @@ export const registerInteractiveTutorial = async (
     disposables.push(
         vscode.workspace.onDidCloseTextDocument(document => {
             if (document.uri.fsPath !== documentUri.fsPath) {
-                // Tutorial has been closed, let's clean up
-                stop()
+                return
             }
+            // Tutorial has been closed, let's clean up
+            stop()
         }),
         vscode.workspace.onDidOpenTextDocument(document => {
-            if (document.uri.fsPath !== documentUri.fsPath) {
+            if (document.uri.fsPath !== documentUri.fsPath || hasStarted) {
                 return
             }
             // Tutorial has been opened, let's start!

@@ -513,13 +513,13 @@ export class InlineCompletionItemProvider
             return // Already seen notice.
         }
 
+        // Mark as seen, so we don't show again after this.
+        void localStorage.set(key, 'true')
+
         if (isInTutorial(request.document)) {
             // Do nothing, the user is already working through the tutorial
             return
         }
-
-        // Mark as seen, so we don't show again after this.
-        void localStorage.set(key, 'true')
 
         if (!this.isProbablyNewInstall) {
             // Only trigger for new installs for now, to avoid existing users from

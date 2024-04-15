@@ -38,6 +38,7 @@ export const createQuickPick = ({
     const quickPick = vscode.window.createQuickPick()
     quickPick.title = title
     quickPick.placeholder = placeHolder
+    quickPick.value = value
     quickPick.onDidAccept(() => onDidAccept(quickPick.activeItems[0]))
 
     // VS Code automatically sorts quick pick items by label.
