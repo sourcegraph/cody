@@ -21,7 +21,9 @@ async function getChatViewProvider(): Promise<SimpleChatPanelProvider> {
 
 // Note: The integration runner can not require from lib-shared so we have to expose
 // this instead.
-const ps = getExtensionAPI().exports.testing?.ps!
+function getPs() {
+    return getExtensionAPI().exports.testing?.ps!
+}
 
 suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
@@ -32,7 +34,7 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            ps`hello from the human`,
+            getPs()`hello from the human`,
             'user',
             [],
             undefined,
@@ -52,7 +54,7 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            ps`hello from the human`,
+            getPs()`hello from the human`,
             'user',
             [],
             undefined,
