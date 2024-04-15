@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import packageJson from '../../package.json'
+import packageJson from '../../../package.json'
+import { version } from '../../version'
 
 export function openCodyIssueReporter() {
     void vscode.commands.executeCommand('workbench.action.openIssueReporter', {
@@ -12,7 +13,7 @@ export function openCodyIssueReporter() {
 
 const issueBody = `## Extension Information
 <!-- Do not remove the pre-filled information below -->
-- Cody Version: ${packageJson.version}
+- Cody Version: ${version}
 - VS Code Version: ${vscode.version}
 - Extension Host: ${vscode.env.appHost}
 
