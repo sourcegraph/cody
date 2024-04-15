@@ -40,7 +40,7 @@ export class PromptString {
      * with this prompt string.
      */
     // @ts-expect-error: We don't want anyone to read __debug. This is just a helper
-    // fir console.log debugging.
+    // for console.log debugging so this error is expected.
     constructor(private __debug: string) {}
 
     public toString(): string {
@@ -427,7 +427,6 @@ function internal_toString(s: PromptString): string {
 }
 function internal_toReferences(s: PromptString): readonly StringReference[] {
     // Return a shallow copy of the references so it can not be mutated
-    // TODO: Do we need to create an array or can we expose the iterator?
     return [...pocket.get(s)!.references.values()]
 }
 
@@ -488,6 +487,6 @@ interface FileContextSnippet {
 }
 
 // TODO: move this to shared
-export interface SymbolContextSnippet extends FileContextSnippet {
+interface SymbolContextSnippet extends FileContextSnippet {
     symbol: string
 }

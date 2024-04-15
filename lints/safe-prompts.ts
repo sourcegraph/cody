@@ -93,7 +93,7 @@ export function delint(sourceFile: ts.SourceFile) {
             console.log(
                 `::${level} file=${sourceFile.fileName},line=${line + 1},endLine=${
                     line + 1
-                },title={title}::${message}`
+                },title=${title}::${message}`
             )
         }
     }

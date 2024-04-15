@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import type { SimpleChatPanelProvider } from '../../../src/chat/chat-view/SimpleChatPanelProvider'
 
-import { ps } from '@sourcegraph/cody-shared'
+import { ps } from '@sourcegraph/cody-shared/src/prompt/prompt-string'
 import {
     afterIntegrationTest,
     beforeIntegrationTest,
