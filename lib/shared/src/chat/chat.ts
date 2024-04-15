@@ -25,7 +25,7 @@ export class ChatClient {
 
     public chat(
         messages: Message[],
-        params: Partial<ChatParameters> & { maxTokensToSample: number },
+        params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         const authStatus = this.getAuthStatus()

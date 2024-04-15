@@ -599,9 +599,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         // Use the number of characters left in the chat model as the limit
         // for adding user context files to the chat.
         const maxInputChars = this.authProvider.getAuthStatus().isDotCom
-            ? // Minus the character limit reserved for the answer token
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
               this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
-            : this.chatModel.maxInputChars
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             maxInputChars
@@ -634,9 +634,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     public async handleGetUserEditorContext(): Promise<void> {
         const maxInputChars = this.authProvider.getAuthStatus().isDotCom
-            ? // Minus the character limit reserved for the answer token
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
               this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
-            : this.chatModel.maxInputChars
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             maxInputChars

@@ -42,6 +42,10 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
                 tokenLimit,
+                // TODO: Currently all enterprise models have a max output limit of 1000.
+                // We need to support configuring the maximum output limit as an instance level.
+                // This will allow us to increase this limit whilst still supporting models with a
+                // lower output limit.
                 ANSWER_TOKENS
             ),
         ])

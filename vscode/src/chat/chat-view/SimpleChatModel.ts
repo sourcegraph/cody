@@ -16,7 +16,6 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    // The maximum number of input characters available in the model's context window.
     public maxInputChars: number
     public maxOutputChars: number
     constructor(
