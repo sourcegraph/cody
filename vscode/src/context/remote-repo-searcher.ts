@@ -140,8 +140,6 @@ export class RemoteRepoSearcher implements vscode.Disposable {
 
         if (!this.fuzzyIndex || !this.fuzzyTargetRepoMap) {
             // Update the fuzzy search index.
-            // TODO: When speed is necessary, improve this by only indexing
-            // new/deleting removed repositories.
             this.fuzzyIndex = []
             this.fuzzyTargetRepoMap = new Map()
             for (const repo of this.fetcher.repositories) {
@@ -152,9 +150,6 @@ export class RemoteRepoSearcher implements vscode.Disposable {
         }
 
         // Do fuzzy search.
-        // TODO: When speed is necessary, improve this by searching the changed
-        // repositories and merging the result with the cached results, if any.
-        // Could also limit the result set and cap the maximum size of any list.
         const result = fuzzysort.go(query, this.fuzzyIndex, {
             threshold: -1000,
         })
@@ -178,16 +173,11 @@ export class RemoteRepoSearcher implements vscode.Disposable {
         this.ensureCompleteOrFetching()
         let startIndex = 0
         const searchStep = (): boolean => {
-            // TODO: If performance is critical, add a binary search here.
-            // Search the next available chunk of the repository list.
             for (; startIndex < this.fetcher.repositories.length; startIndex++) {
                 if (this.fetcher.repositories[startIndex].name === repoName) {
                     return true
                 }
             }
-            // TODO: Could terminate this search early by using the sort order
-            // of the repo fetcher; searchStep would need to return tri-state
-            // true/false/continue.
             return false
         }
         if (searchStep()) {
