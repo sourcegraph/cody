@@ -599,7 +599,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars
+            this.chatModel.maxInputChars
         )
 
         try {
@@ -631,7 +631,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
             // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars
+            this.chatModel.maxInputChars
         )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
         await this.postMessage({
@@ -811,7 +811,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
+            ModelProvider.getMaxInputCharsByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
@@ -921,7 +921,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID },
+                { model: this.chatModel.modelID, maxTokensToSample: this.chatModel.maxOutputChars },
                 abortController.signal
             )
 

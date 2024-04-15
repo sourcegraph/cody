@@ -51,9 +51,14 @@ export function syncModelProviders(authStatus: AuthStatus): void {
 interface ChatModelProviderConfig {
     provider: string
     model: string
-    tokens?: number
+    inputTokens?: number
+    outputTokens?: number
     apiKey?: string
     apiEndpoint?: string
+    /**
+     * @deprecated Use `inputTokens` instead.
+     */
+    tokens?: number
 }
 
 /**
@@ -73,10 +78,12 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
 
     const providers: ModelProvider[] = []
     for (const m of modelsConfig) {
+        const inputTokens = m.inputTokens ?? m.tokens
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            m.tokens,
+            inputTokens,
+            m.outputTokens,
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true

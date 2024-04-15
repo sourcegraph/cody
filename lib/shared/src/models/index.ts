@@ -1,5 +1,9 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
+import {
+    DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
+    DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
+    tokensToChars,
+} from '../prompt/constants'
 import type { ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
@@ -28,7 +32,8 @@ export class ModelProvider {
          * The context window of the model, which is the maximum number of tokens
          * that can be processed by the model in a single request.
          */
-        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        public readonly maxInputToken: number = DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
+        public readonly maxOutputToken: number = DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
         /**
          * The configuration for the model.
          */
@@ -113,13 +118,23 @@ export class ModelProvider {
     }
 
     /**
-     * Finds the model provider with the given model ID and returns its characters limit.
-     * The limit is calculated based on the max number of tokens the model can process.
+     * Finds the model provider with the given model ID and returns its input character limit.
+     * The limit is calculated based on the max number of tokens the model can receive.
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
-    public static getMaxCharsByModel(modelID: string): number {
+    public static getMaxInputCharsByModel(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return tokensToChars(model?.maxToken || DEFAULT_CHAT_MODEL_TOKEN_LIMIT)
+        return tokensToChars(model?.maxInputToken || DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT)
+    }
+
+    /**
+     * Finds the model provider with the given model ID and returns its output character limit.
+     * The limit is calculated based on the max number of tokens the model can output.
+     * E.g. 7000 tokens * 4 characters/token = 28000 characters
+     */
+    public static getMaxOutputCharsByModel(modelID: string): number {
+        const model = ModelProvider.providers.find(m => m.model === modelID)
+        return tokensToChars(model?.maxOutputToken || DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT)
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

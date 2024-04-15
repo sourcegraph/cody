@@ -46,7 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getMaxCharsByModel(model)
+            const contextWindow = ModelProvider.getMaxInputCharsByModel(model)
             const {
                 messages,
                 stopSequences,
@@ -115,7 +115,11 @@ export class EditProvider {
             const abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: ModelProvider.getMaxOutputCharsByModel(model),
+                },
                 abortController.signal
             )
 
