@@ -24,7 +24,7 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 
-import { fetch } from '@sourcegraph/cody-shared/src/fetch'
+import { fetch } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import type { ContextSnippet } from '../types'

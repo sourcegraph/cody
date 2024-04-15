@@ -21,9 +21,9 @@ export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
-    serializeChatMessage,
 } from './chat/transcript'
-export { errorToChatError } from './chat/transcript/messages'
+export { serializeChatMessage } from './chat/transcript'
+export { errorToChatError, DEFAULT_EVENT_SOURCE } from './chat/transcript/messages'
 export type {
     ChatError,
     EventSource,
@@ -59,7 +59,12 @@ export {
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
-export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export type {
+    CodyCommand,
+    CodyCommandContext,
+    CodyCommandType,
+} from './commands/types'
+export { CustomCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
@@ -70,7 +75,7 @@ export {
     extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths } from './common/path'
+export { posixFilePaths, pathFunctionsForURI } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -155,6 +160,7 @@ export {
     truncateText,
     truncateTextNearestLine,
     truncateTextStart,
+    truncatePromptString,
 } from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
@@ -189,6 +195,7 @@ export {
     type LogEventMode,
     type ContextFiltersResult,
     type CodyContextFilterItem,
+    type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -234,3 +241,5 @@ export {
 } from './mentions/urlContextItems'
 export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'
+export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
+export * from './fetch'

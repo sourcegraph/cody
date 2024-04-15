@@ -13,7 +13,7 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'

@@ -2,7 +2,7 @@ import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
 import { commands, window } from 'vscode'
 import { CommandMenuOption, CustomCommandConfigMenuItems } from './items'
 
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
 import { telemetryService } from '../../services/telemetry'

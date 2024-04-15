@@ -12,7 +12,7 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import { serializeChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 

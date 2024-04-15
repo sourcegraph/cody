@@ -24,7 +24,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { SpanStatusCode } from '@opentelemetry/api'
-import { fetch } from '@sourcegraph/cody-shared/src/fetch'
+import { fetch } from '@sourcegraph/cody-shared'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.

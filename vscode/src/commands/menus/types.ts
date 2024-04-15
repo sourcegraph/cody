@@ -1,6 +1,6 @@
 import type { QuickPickItem } from 'vscode'
 
-import type { CodyCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import type { CodyCommandType } from '@sourcegraph/cody-shared'
 
 export enum CommandMenuAction {
     Add = 'add',

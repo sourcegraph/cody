@@ -5,7 +5,7 @@ import { SocksProxyAgent } from 'socks-proxy-agent'
 
 import type { Configuration } from '@sourcegraph/cody-shared'
 
-import { agent } from '@sourcegraph/cody-shared/src/fetch'
+import { agent } from '@sourcegraph/cody-shared'
 import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents

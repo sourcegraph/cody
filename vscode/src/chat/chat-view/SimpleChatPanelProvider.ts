@@ -2,10 +2,13 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    ANSWER_TOKENS,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type ContextItemFile,
+    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
@@ -13,6 +16,7 @@ import {
     MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
+    ModelUsage,
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -22,7 +26,11 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    recordErrorToSpan,
     reformatBotMessageForChat,
+    serializeChatMessage,
+    tokensToChars,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -49,14 +57,6 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { serializeChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript'
-import type {
-    ContextItemFile,
-    ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import { ANSWER_TOKENS, tokensToChars } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
