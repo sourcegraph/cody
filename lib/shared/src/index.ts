@@ -63,6 +63,7 @@ export type {
     CodyCommand,
     CodyCommandContext,
     CodyCommandType,
+    TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
@@ -93,6 +94,7 @@ export type {
     ConfigurationWithAccessToken,
     OllamaGenerateParameters,
     OllamaOptions,
+    ConfigGetter,
 } from './configuration'
 export { NoopEditor } from './editor'
 export type {

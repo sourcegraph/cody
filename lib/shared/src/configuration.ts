@@ -13,6 +13,10 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
     unified: 11,
 }
 
+export interface ConfigGetter<T> {
+    get<T>(section: string, defaultValue?: T): T
+}
+
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     proxy?: string | null

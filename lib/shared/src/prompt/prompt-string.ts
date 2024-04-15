@@ -2,8 +2,10 @@ import dedent from 'dedent'
 import type * as vscode from 'vscode'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
+import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { AutocompleteContextSnippet, DocumentContext } from '../completions/types'
+import type { ConfigGetter } from '../configuration'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
@@ -432,16 +434,4 @@ function internal_toReferences(s: PromptString): readonly StringReference[] {
 // Validate that an input is indeed a PromptString and not just typecast to it.
 export function isValidPromptString(promptString: PromptString) {
     return pocket.has(promptString)
-}
-
-// TODO: move this to shared
-interface ConfigGetter<T> {
-    get<T>(section: string, defaultValue?: T): T
-}
-
-// TODO: move this to shared
-interface TerminalOutputArguments {
-    name: string
-    selection?: string
-    creationOptions?: { shellPath?: string; shellArgs?: string[] }
 }
