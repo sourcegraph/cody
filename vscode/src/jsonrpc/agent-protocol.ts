@@ -176,6 +176,44 @@ export type ClientRequests = {
             limitHit: boolean
         },
     ]
+
+    // Gets whether the specific repo name is known on the remote.
+    'remoteRepo/has': [{ repoName: string }, { result: boolean }]
+
+    // Gets paginated list of repositories matching a fuzzy search query (or ''
+    // for all repositories.) Remote repositories are fetched concurrently, so
+    // subscribe to 'remoteRepo/didChange' to invalidate results.
+    //
+    // At the end of the list, returns an empty list of repositories.
+    // If `afterId` is specified, but not in the query result set,
+    // `startIndex` is -1.
+    //
+    // remoteRepo/list caches a single query result, making it efficient to page
+    // through a large list of results provided the query is the same.
+    'remoteRepo/list': [
+        {
+            // The user input to perform a fuzzy match with
+            query?: string
+            // The maximum number of results to retrieve
+            first: number
+            // The repository ID of the last result in the previous
+            // page, or `undefined` to start from the beginning.
+            afterId?: string
+        },
+        {
+            // The index of the first result in the filtered repository list.
+            startIndex: number
+            // The total number of results in the filtered repository list.
+            count: number
+            // The repositories.
+            repos: {
+                name: string // eg github.com/sourcegraph/cody
+                id: string // for use in afterId, Sourcegraph remotes
+            }[]
+            // The state of the underlying repo fetching.
+            state: RemoteRepoFetchState
+        },
+    ]
 }
 
 // ================
@@ -285,6 +323,15 @@ export type ServerNotifications = {
     'progress/report': [ProgressReportParams]
 
     'progress/end': [{ id: string }]
+
+    // The list of remote repositories changed. Results from remoteRepo/list
+    // may be stale and should be requeried.
+    // biome-ignore lint/complexity/noBannedTypes: May add details about the change later.
+    'remoteRepo/didChange': [{}]
+    // Reflects the state of fetching the repository list. After fetching is
+    // complete, or errored, the results from remoteRepo/list will not change.
+    // When configuration changes, repo fetching may re-start.
+    'remoteRepo/didChangeState': [RemoteRepoFetchState]
 }
 
 interface CancelParams {
@@ -699,4 +746,9 @@ export interface GetFoldingRangeParams {
 
 export interface GetFoldingRangeResult {
     range: Range
+}
+
+export interface RemoteRepoFetchState {
+    state: 'paused' | 'fetching' | 'errored' | 'complete'
+    error: CodyError | undefined
 }
