@@ -106,8 +106,8 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latest = ModelProvider.getContextWindowByID(model)
-        return latest.chat + latest.user + latest.enhanced
+        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        return latestContextWindow.chat + latestContextWindow.user
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
 

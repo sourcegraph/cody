@@ -16,7 +16,6 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
                         new ModelProvider(`ollama/${m.model}`, [ModelUsage.Chat, ModelUsage.Edit], {
                             chat: OLLAMA_DEFAULT_CONTEXT_WINDOW,
                             user: 0,
-                            enhanced: 0,
                         })
                 ),
             error => {

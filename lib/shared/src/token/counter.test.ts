@@ -4,7 +4,7 @@ import type { Message } from '../sourcegraph-api'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 import { TokenCounter } from './counter'
 
-const contextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
+const contextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0 }
 
 describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets', () => {
@@ -40,7 +40,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when token usage exceeds limits', () => {
-        const counter = new TokenCounter({ chat: 5, user: 0, enhanced: 0 })
+        const counter = new TokenCounter({ chat: 5, user: 0 })
         const messages: Message[] = [
             { speaker: 'human', text: 'This is a very long message that will exceed the token limit.' },
         ]
@@ -75,7 +75,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should allocate tokens correctly for prompts submitted out of order with separated budget', () => {
-        const counter = new TokenCounter({ chat: 10, user: 20, enhanced: 0 })
+        const counter = new TokenCounter({ chat: 10, user: 20 })
         counter.updateUsage('user', [
             { speaker: 'human', text: 'Here is my selected code...' },
             { speaker: 'assistant', text: 'ok' },
@@ -106,7 +106,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should allocate tokens correctly for prompts submitted out of order on a shared budget', () => {
-        const counter = new TokenCounter({ chat: 30, user: 0, enhanced: 0 })
+        const counter = new TokenCounter({ chat: 30, user: 0 })
         counter.updateUsage('user', [
             { speaker: 'human', text: 'Here is my selected code...' },
             { speaker: 'assistant', text: 'ok' },

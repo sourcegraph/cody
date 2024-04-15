@@ -41,5 +41,4 @@ export type ChatModel =
 export interface ModelContextWindow {
     chat: number
     user: number
-    enhanced: number
 }

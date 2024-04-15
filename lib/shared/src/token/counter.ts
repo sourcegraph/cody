@@ -1,6 +1,6 @@
 import { getEncoding } from 'js-tiktoken'
 import type { ChatContextTokenUsage, ContextTokenUsageType, TokenBudget, TokenUsageType } from '.'
-import type { Message } from '..'
+import type { Message, ModelContextWindow } from '..'
 import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
@@ -14,7 +14,7 @@ export class TokenCounter {
      */
     public readonly maxChatTokens: number
     /**
-     * The maximum number of tokens that can be used by each context type:
+     * The maximum number of tokens that can be used by each chat Context type:
      * - User-Context: tokens reserved for user-added context, like @-mentions.
      * - Enhanced-Context: shares ENHANCED_CONTEXT_ALLOCATION% of the Chat budget.
      */
@@ -26,13 +26,13 @@ export class TokenCounter {
     /**
      * Indicates whether the chat and user context tokens share the same budget.
      * - If true, the User-Context will have a separate budget.
-     * - If false, all types of messages (chat, enhanced context, and user @-context) share the same token budget.
+     * - If false, all types of messages (chat and any type of context) share the same token budget for Chat.
      *
      * This is used in allocateTokens to determine how to allocate tokens for different types of messages.
      */
     private shareChatAndUserBudget = false
 
-    constructor(contextWindow: { chat: number; user: number; enhanced: number }) {
+    constructor(contextWindow: ModelContextWindow) {
         // If the context window for User-Context is 0, all context share the same token budget with chat.
         this.shareChatAndUserBudget = contextWindow.user === 0
         this.maxChatTokens = contextWindow.chat
@@ -77,16 +77,16 @@ export class TokenCounter {
         let { chat, user } = this.usedTokens
         // Update token usage based on the specified type and budget mode
         if (this.shareChatAndUserBudget) {
-            // In shared budget mode, update chat and user token usage together
+            // In shared budget mode, update Chat and User-Context token usage together
             chat += count
             user += count
         } else {
-            // In separate user context budget mode
+            // In separate User-Context budget mode
             if (type === 'chat' || type === 'enhanced') {
-                // Update chat usage for chat and enhanced context tokens
+                // Update chat usage for Chat and Enhanced-Context tokens
                 chat += count
             } else {
-                // Update user usage for user context tokens
+                // Update user usage for User-Context tokens
                 user += count
             }
         }
@@ -96,10 +96,10 @@ export class TokenCounter {
     /**
      * Calculates the remaining token budget for each token usage type:
      *   1. Chat: Calculated by subtracting the used chat tokens from the maximum allowed chat tokens.
-     *   2. User Context: Calculated by subtracting the used user context tokens from the maximum allowed user context tokens.
-     *   3. Enhanced Context: Calculated as a percentage of the remaining chat token budget in all modes.
+     *   2. User-Context: Calculated by subtracting the used User-Context tokens from the maximum allowed User-Context tokens.
+     *   3. Enhanced-Context: Calculated as a percentage of the remaining chat token budget in all modes.
      *
-     * @returns The remaining token budget for chat, user context, and enhanced context (if applicable).
+     * @returns The remaining token budget for chat, User-Context, and Enhanced-Context (if applicable).
      */
     public get remainingTokens(): TokenBudget {
         const chat = Math.max(0, this.maxChatTokens - this.usedTokens.chat)

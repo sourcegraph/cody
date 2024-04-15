@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { type ChatMessage, TokenCounter } from '@sourcegraph/cody-shared'
 import { PromptBuilder } from './index'
 
-const contextWindow = { chat: 100, user: 0, enhanced: 0 }
+const contextWindow = { chat: 100, user: 0 }
 
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {

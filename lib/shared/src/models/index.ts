@@ -131,4 +131,4 @@ export class ModelProvider {
     }
 }
 
-export const defaultContextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 }
+export const defaultContextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0 }

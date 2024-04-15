@@ -12,7 +12,7 @@ describe('Model Provider', () => {
 
     it('returns default token limit for unknown model', () => {
         const max = ModelProvider.getContextWindowByID('unknown-model')
-        expect(max).toEqual({ chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 })
+        expect(max).toEqual({ chat: CHAT_TOKEN_BUDGET, user: 0 })
     })
 
     it('returns max token limit for known chat model', () => {
@@ -36,7 +36,7 @@ describe('Model Provider', () => {
     it('returns default token limit for unknown model - Enterprise user', () => {
         ModelProvider.getProviders(ModelUsage.Chat, false, 'https://example.com')
         const cw = ModelProvider.getContextWindowByID('unknown-model')
-        expect(cw).toEqual({ chat: CHAT_TOKEN_BUDGET, user: 0, enhanced: 0 })
+        expect(cw).toEqual({ chat: CHAT_TOKEN_BUDGET, user: 0 })
     })
 
     it('returns max token limit for known model - Enterprise user', () => {
@@ -44,11 +44,10 @@ describe('Model Provider', () => {
             new ModelProvider('enterprise-model', [ModelUsage.Chat], {
                 chat: 200,
                 user: 0,
-                enhanced: 0,
             }),
         ])
         ModelProvider.getProviders(ModelUsage.Chat, false, 'enterprise-model')
-        const tokens = { chat: 200, user: 0, enhanced: 0 }
+        const tokens = { chat: 200, user: 0 }
         ModelProvider.setProviders([new ModelProvider('model-with-limit', [ModelUsage.Chat], tokens)])
         const cw = ModelProvider.getContextWindowByID('model-with-limit')
         expect(cw.chat).toEqual(tokens.chat)

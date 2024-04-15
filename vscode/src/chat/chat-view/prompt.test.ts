@@ -11,7 +11,7 @@ import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
 
-const contextWindow = { chat: 100000, user: 0, enhanced: 0 }
+const contextWindow = { chat: 100000, user: 0 }
 
 describe('DefaultPrompter', () => {
     afterEach(() => {
@@ -79,7 +79,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const overLimitWindow = { chat: 1, user: 0, enhanced: 0 }
+        const overLimitWindow = { chat: 1, user: 0 }
         const promptBuilder = new PromptBuilder(new TokenCounter(overLimitWindow))
         const contextItems: ContextItem[] = [
             {
