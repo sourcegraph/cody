@@ -189,7 +189,7 @@ describe('ContextFiltersProvider', () => {
                 ],
             },
             {
-                label: 'handles invalid regular expressions gracefully',
+                label: 'invalid patterns cause all repo names to be excluded',
                 filters: {
                     include: [
                         { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
