@@ -31,9 +31,6 @@ interface GetEnhancedContextOptions {
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
-    featureFlags: {
-        fusedContext: boolean
-    }
     hints: {
         maxChars: number
     }
@@ -45,7 +42,6 @@ export async function getEnhancedContext({
     editor,
     text,
     providers,
-    featureFlags,
     hints,
     contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
@@ -55,82 +51,12 @@ export async function getEnhancedContext({
             editor,
             text,
             providers,
-            featureFlags,
-            hints,
-            contextRanking,
-        })
-    }
-    if (featureFlags.fusedContext) {
-        return getEnhancedContextFused({
-            strategy,
-            editor,
-            text,
-            providers,
-            featureFlags,
             hints,
             contextRanking,
         })
     }
 
-    return wrapInActiveSpan('chat.enhancedContext', async span => {
-        const searchContext: ContextItem[] = []
-
-        // use user attention context only if config is set to none
-        if (strategy === 'none') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
-            searchContext.push(...getVisibleEditorContext(editor))
-            return searchContext
-        }
-
-        let hasEmbeddingsContext = false
-        // Get embeddings context if useContext Config is not set to 'keyword' only
-        if (strategy !== 'keyword') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-            const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
-            try {
-                const r = await localEmbeddingsResults
-                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-                searchContext.push(...r)
-            } catch (error) {
-                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-            }
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-        }
-
-        if (strategy !== 'embeddings') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
-            if (providers.remoteSearch) {
-                try {
-                    searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
-                } catch (error) {
-                    // TODO: Error reporting
-                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
-                }
-            }
-            if (providers.symf) {
-                try {
-                    searchContext.push(...(await searchSymf(providers.symf, editor, text)))
-                } catch (error) {
-                    // TODO(beyang): handle this error better
-                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
-                }
-            }
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
-        }
-
-        const priorityContext = await getPriorityContext(text, editor, searchContext)
-        return priorityContext.concat(searchContext)
-    })
-}
-
-async function getEnhancedContextFused({
-    strategy,
-    editor,
-    text,
-    providers,
-    hints,
-}: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.enhancedContextFused', async () => {
+    return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
@@ -146,11 +72,7 @@ async function getEnhancedContextFused({
                   )
                 : []
 
-        // Get search (symf or remote search) context if config is not set to 'embeddings' only
-        const localSearchContextItemsPromise =
-            providers.symf && strategy !== 'embeddings'
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
-                : []
+        //  Get search (symf or remote search) context if config is not set to 'embeddings' only
         const remoteSearchContextItemsPromise =
             providers.remoteSearch && strategy !== 'embeddings'
                 ? await retrieveContextGracefully(
@@ -158,20 +80,20 @@ async function getEnhancedContextFused({
                       'remote-search'
                   )
                 : []
-        const keywordContextItemsPromise = (async () => [
-            ...(await localSearchContextItemsPromise),
+        const localSearchContextItemsPromise =
+            providers.symf && strategy !== 'embeddings'
+                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+                : []
+
+        // Combine all context sources
+        const searchContext = [
+            ...(await embeddingsContextItemsPromise),
             ...(await remoteSearchContextItemsPromise),
-        ])()
+            ...(await localSearchContextItemsPromise),
+        ]
 
-        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
-            embeddingsContextItemsPromise,
-            keywordContextItemsPromise,
-        ])
-
-        const fusedContext = fuseContext(keywordContextItems, embeddingsContextItems, hints.maxChars)
-
-        const priorityContext = await getPriorityContext(text, editor, fusedContext)
-        return priorityContext.concat(fusedContext)
+        const priorityContext = await getPriorityContext(text, editor, searchContext)
+        return priorityContext.concat(searchContext)
     })
 }
 
@@ -563,36 +485,4 @@ async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: str
     } finally {
         logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
     }
-}
-
-// A simple context fusion engine that picks the top most keyword results to fill up 80% of the
-// context window and picks the top ranking embeddings items for the remainder.
-export function fuseContext(
-    keywordItems: ContextItem[],
-    embeddingsItems: ContextItem[],
-    maxChars: number
-): ContextItem[] {
-    let charsUsed = 0
-    const fused = []
-    const maxKeywordChars = embeddingsItems.length > 0 ? maxChars * 0.8 : maxChars
-
-    for (const item of keywordItems) {
-        const len = item.content?.length ?? 0
-
-        if (charsUsed + len <= maxKeywordChars) {
-            charsUsed += len
-            fused.push(item)
-        }
-    }
-
-    for (const item of embeddingsItems) {
-        const len = item.content?.length ?? 0
-
-        if (charsUsed + len <= maxChars) {
-            charsUsed += len
-            fused.push(item)
-        }
-    }
-
-    return fused
 }

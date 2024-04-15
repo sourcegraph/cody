@@ -98,6 +98,10 @@ interface CodyAgentServer {
   fun extensionConfiguration_status(params: Null): CompletableFuture<AuthStatus?>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
+  @JsonRequest("remoteRepo/has")
+  fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
+  @JsonRequest("remoteRepo/list")
+  fun remoteRepo_list(params: RemoteRepo_ListParams): CompletableFuture<RemoteRepo_ListResult>
 
   // =============
   // Notifications

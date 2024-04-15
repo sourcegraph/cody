@@ -8,6 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: You can add highlighted code to the chat context by right-clicking on the code and selecting `Cody Chat: Add context`. The selected code will appear in the input box as `@-mentions`, allowing you to complete your question. [pull/3713](https://github.com/sourcegraph/cody/pull/3713)
 - Autocomplete: Add the proper infilling prompt for Codegemma when using Ollama. [pull/3754](https://github.com/sourcegraph/cody/pull/3754)
+- Chat: The new `Mixtral 8x22B Preview` chat model is available for Cody Pro users for preview. [pull/3768](https://github.com/sourcegraph/cody/pull/3768)
 - Chat: Add a "Pop out" button to the chat title bar that allows you to move Cody chat into a floating window. [pull/3773](https://github.com/sourcegraph/cody/pull/3773)
 
 ### Fixed
@@ -20,6 +21,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Command: Ghost text hint for `Document Code` ("Alt+D to Document") now only shows on documentable symbols without an existing docstring. [pull/3622](https://github.com/sourcegraph/cody/pull/3622)
 - Chat: Updates to the latest GPT 4 Turbo model. [pull/3790](https://github.com/sourcegraph/cody/pull/3790)
+- Chat: Slightly speeds up enhanced context fetching on Cody Free and Cody Pro when both embeddings and search is used. [pull/3798](https://github.com/sourcegraph/cody/pull/3798)
 
 ## [1.12.0]
 

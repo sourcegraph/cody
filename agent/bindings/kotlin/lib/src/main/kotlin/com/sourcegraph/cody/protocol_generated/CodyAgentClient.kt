@@ -42,4 +42,8 @@ interface CodyAgentClient {
   fun progress_report(params: ProgressReportParams)
   @JsonNotification("progress/end")
   fun progress_end(params: Progress_EndParams)
+  @JsonNotification("remoteRepo/didChange")
+  fun remoteRepo_didChange(params: RemoteRepo_DidChangeParams)
+  @JsonNotification("remoteRepo/didChangeState")
+  fun remoteRepo_didChangeState(params: RemoteRepoFetchState)
 }
