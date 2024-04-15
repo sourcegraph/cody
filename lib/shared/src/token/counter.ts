@@ -62,14 +62,14 @@ export class TokenCounter {
     /**
      * Allocates the specified number of tokens for the given token usage type.
      *
-     * If `shareChatAndUserBudget` is true (separate user context budget mode):
-     *   - User context tokens are counted separately from chat and enhanced context tokens.
-     *   - Chat and enhanced context tokens share the same token budget.
+     * If `shareChatAndUserBudget` is true (separate User-Context budget mode):
+     *   - User-Context tokens are counted separately from chat and enhanced context tokens.
+     *   - Chat and Enhanced-Context tokens share the same Chat token budget.
      *
      * If `shareChatAndUserBudget` is false (shared budget mode):
-     *   - All types of messages (chat, enhanced context, and user @-context) share the same token budget.
+     *   - All types of messages (Chat, Enhanced-Context, and User-Context) share the same Chat token budget.
      *
-     * NOTE: In both budget modes, enhanced context's token usage is counted towards the chat token usage.
+     * NOTE: In both budget modes, Enhanced-Context's token usage is counted towards the Chat token usage.
      *
      * @param type - The type of token usage to allocate.
      * @param count - The number of tokens to allocate.
