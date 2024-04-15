@@ -21,13 +21,13 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.CommandExecuteParams
 import com.sourcegraph.cody.agent.protocol.CodyTaskState
 import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.Range
+import com.sourcegraph.cody.agent.protocol.TaskIdParam
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
 import com.sourcegraph.cody.edit.widget.LensGroupFactory
@@ -204,14 +204,14 @@ abstract class FixupSession(
 
   fun accept() {
     CodyAgentService.withAgent(project) { agent ->
-      agent.server.commandExecute(CommandExecuteParams(COMMAND_ACCEPT, listOf(taskId!!)))
+      agent.server.acceptEditTask(TaskIdParam(taskId!!))
     }
     finish()
   }
 
   fun cancel() {
     CodyAgentService.withAgent(project) { agent ->
-      agent.server.commandExecute(CommandExecuteParams(COMMAND_CANCEL, listOf(taskId!!)))
+      agent.server.cancelEditTask(TaskIdParam(taskId!!))
     }
     if (performedEdits) {
       undo()
@@ -226,7 +226,7 @@ abstract class FixupSession(
 
   fun undo() {
     CodyAgentService.withAgent(project) { agent ->
-      agent.server.commandExecute(CommandExecuteParams(COMMAND_UNDO, listOf(taskId!!)))
+      agent.server.undoEditTask(TaskIdParam(taskId!!))
     }
     undoEdits()
     finish()

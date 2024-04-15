@@ -1,6 +1,28 @@
 package com.sourcegraph.cody.agent
 
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
+import com.sourcegraph.cody.agent.protocol.AttributionSearchResponse
+import com.sourcegraph.cody.agent.protocol.AutocompleteParams
+import com.sourcegraph.cody.agent.protocol.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
+import com.sourcegraph.cody.agent.protocol.ChatModelsParams
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
+import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
+import com.sourcegraph.cody.agent.protocol.ClientInfo
+import com.sourcegraph.cody.agent.protocol.CompletionItemParams
+import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
+import com.sourcegraph.cody.agent.protocol.EditTask
+import com.sourcegraph.cody.agent.protocol.Event
+import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
+import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
+import com.sourcegraph.cody.agent.protocol.GetFoldingRangeResult
+import com.sourcegraph.cody.agent.protocol.GetRepoIdsParam
+import com.sourcegraph.cody.agent.protocol.GetRepoIdsResponse
+import com.sourcegraph.cody.agent.protocol.InlineEditParams
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol.ServerInfo
+import com.sourcegraph.cody.agent.protocol.TaskIdParam
 import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -68,6 +90,12 @@ interface CodyAgentServer {
   @JsonRequest("webview/receiveMessage")
   fun webviewReceiveMessage(params: WebviewReceiveMessageParams): CompletableFuture<Any?>
 
+  @JsonRequest("editTask/accept") fun acceptEditTask(params: TaskIdParam): CompletableFuture<Void?>
+
+  @JsonRequest("editTask/undo") fun undoEditTask(params: TaskIdParam): CompletableFuture<Void?>
+
+  @JsonRequest("editTask/cancel") fun cancelEditTask(params: TaskIdParam): CompletableFuture<Void?>
+
   @JsonRequest("editTask/getFoldingRanges")
   fun getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
 
@@ -80,7 +108,7 @@ interface CodyAgentServer {
 
   @JsonRequest("commands/smell") fun commandsSmell(): CompletableFuture<ConnectionId>
 
-  @JsonRequest("commands/document") fun commandsDocument(): CompletableFuture<EditTask>
+  @JsonRequest("editCommands/document") fun commandsDocument(): CompletableFuture<EditTask>
 
   @JsonRequest("editCommands/code")
   fun commandsEdit(params: InlineEditParams): CompletableFuture<EditTask>
