@@ -40,10 +40,15 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.sidebar.documentation' },
     },
     {
-        title: 'Support Forum',
+        title: 'Support',
         icon: 'question',
         command: { command: 'cody.sidebar.support' },
         requirePaid: true,
+    },
+    {
+        title: 'Community Forum',
+        icon: 'organization',
+        command: { command: 'cody.sidebar.community' },
     },
     {
         title: 'Feedback',
