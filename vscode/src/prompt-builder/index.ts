@@ -28,11 +28,7 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
     private seenContext = new Set<string>()
-    constructor(private tokenCounter: TokenCounter) {
-        // Resets the current token usage when creating a new prompt builder
-        // to make sure the token usage is not carried over from previous prompts.
-        tokenCounter.reset()
-    }
+    constructor(private tokenCounter: TokenCounter) {}
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())

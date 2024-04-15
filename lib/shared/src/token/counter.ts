@@ -15,36 +15,36 @@ export class TokenCounter {
     public readonly maxChatTokens: number
     /**
      * The maximum number of tokens that can be used by each context type:
-     * - User context
-     * - Enhanced context
-     *     - Enhanced tokens shares ENHANCED_CONTEXT_ALLOCATION% of the Chat budget.
+     * - User-Context: tokens reserved for user-added context, like @-mentions.
+     * - Enhanced-Context: shares ENHANCED_CONTEXT_ALLOCATION% of the Chat budget.
      */
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
-     * The number of tokens used by Chat messages and each Context type.
+     * The number of tokens used by Chat messages and User-Context.
      */
     private usedTokens: { chat: number; user: number } = { chat: 0, user: 0 }
     /**
      * Indicates whether the chat and user context tokens share the same budget.
-     * If false, the user context will have separate budgets.
-     * If true, all types of messages (chat, enhanced context, and user @-context) share the same token budget.
+     * - If true, the User-Context will have a separate budget.
+     * - If false, all types of messages (chat, enhanced context, and user @-context) share the same token budget.
+     *
+     * This is used in allocateTokens to determine how to allocate tokens for different types of messages.
      */
     private shareChatAndUserBudget = false
 
     constructor(contextWindow: { chat: number; user: number; enhanced: number }) {
-        // If the context window for user context is 0, context will share the same budget with chat.
+        // If the context window for User-Context is 0, all context share the same token budget with chat.
         this.shareChatAndUserBudget = contextWindow.user === 0
-
         this.maxChatTokens = contextWindow.chat
         this.maxContextTokens = {
             user: contextWindow.user || contextWindow.chat,
-            // Enhanced context token budget can be up to a percentage of the chat token budget.
+            // Enhanced-Context token budget can be up to a percentage of the chat token budget.
             enhanced: Math.floor(contextWindow.chat * ENHANCED_CONTEXT_ALLOCATION),
         }
     }
 
     /**
-     * Updates the token usage for the specified token usage type and messages.
+     * Updates the token usage for the messages of a specified token usage type.
      *
      * @param type - The type of token usage to update.
      * @param messages - The messages to calculate the token count for.
@@ -63,9 +63,8 @@ export class TokenCounter {
      * Allocates the specified number of tokens for the given token usage type.
      *
      * If `shareChatAndUserBudget` is true (separate User-Context budget mode):
-     *   - User-Context tokens are counted separately from chat and enhanced context tokens.
+     *   - User-Context tokens are counted separately from Chat and Enhanced-Context tokens.
      *   - Chat and Enhanced-Context tokens share the same Chat token budget.
-     *
      * If `shareChatAndUserBudget` is false (shared budget mode):
      *   - All types of messages (Chat, Enhanced-Context, and User-Context) share the same Chat token budget.
      *
@@ -96,12 +95,9 @@ export class TokenCounter {
 
     /**
      * Calculates the remaining token budget for each token usage type:
-     * 1. Chat:
-     *     - Calculated by subtracting the used chat tokens from the maximum allowed chat tokens.
-     * 2. User Context:
-     *     - Calculated by subtracting the used user context tokens from the maximum allowed user context tokens.
-     * 3. Enhanced Context:
-     *     - Calculated as a percentage of the remaining chat token budget in all modes
+     *   1. Chat: Calculated by subtracting the used chat tokens from the maximum allowed chat tokens.
+     *   2. User Context: Calculated by subtracting the used user context tokens from the maximum allowed user context tokens.
+     *   3. Enhanced Context: Calculated as a percentage of the remaining chat token budget in all modes.
      *
      * @returns The remaining token budget for chat, user context, and enhanced context (if applicable).
      */
@@ -117,13 +113,11 @@ export class TokenCounter {
     /**
      * Checks if the specified token usage type has enough remaining tokens to allocate the given count.
      *
-     * NOTE: When constructing prompt where `shareChatAndUserBudget` is true (separate user context budget mode):
-     * - Chat prompt has the highest priority and is built first using its token budget.
-     * - If there are tokens remaining after building the Chat prompt:
-     *   - User context is built using the remaining Chat tokens.
-     * - If there are no tokens left after building the Chat prompt:
-     *   - No User context will be added.
-     * - Enhanced context is built using a percentage of the remaining Chat tokens.
+     * When constructing prompt where `shareChatAndUserBudget` is true (separate user context budget mode):
+     * 1. Chat prompt has the highest priority and is built first using its token budget.
+     * 2a. If there are tokens remaining after building the Chat prompt: User-Context is built using the remaining Chat tokens.
+     * 2b. If there are no tokens left after building the Chat prompt: No User-Context will be added.
+     * 3. Enhanced-Context is built using a percentage of the remaining Chat tokens.
      *
      * @param type - The type of token usage to check.
      * @param count - The number of tokens to allocate.
@@ -131,15 +125,6 @@ export class TokenCounter {
      */
     private canAllocateTokens(type: 'chat' | ContextTokenUsageType, count: number): boolean {
         return (type === 'chat' ? this.remainingTokens.chat : this.remainingTokens.context[type]) > count
-    }
-
-    /**
-     * Resets the token usage to 0.
-     * NOTE: This should be called everytime a new prompt is built.
-     * NOTE: Used in the PromptBuilder constructor only.
-     */
-    public reset(): void {
-        this.usedTokens = { chat: 0, user: 0 }
     }
 
     /**
