@@ -1,11 +1,5 @@
 import { getEncoding } from 'js-tiktoken'
-import type {
-    ChatContextTokenUsage,
-    ChatMessageTokenUsage,
-    ContextTokenUsageType,
-    TokenBudget,
-    TokenUsageType,
-} from '.'
+import type { ChatContextTokenUsage, ContextTokenUsageType, TokenBudget, TokenUsageType } from '.'
 import type { Message } from '..'
 import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
@@ -29,7 +23,7 @@ export class TokenCounter {
     /**
      * The number of tokens used by Chat messages and each Context type.
      */
-    private usedTokens: ChatMessageTokenUsage & ChatContextTokenUsage = { chat: 0, user: 0, enhanced: 0 }
+    private usedTokens: { chat: number; user: number } = { chat: 0, user: 0 }
     /**
      * Indicates whether the chat and user context tokens share the same budget.
      * If false, the user context will have separate budgets.
@@ -81,8 +75,7 @@ export class TokenCounter {
      * @param count - The number of tokens to allocate.
      */
     private allocateTokens(type: 'chat' | ContextTokenUsageType, count: number): void {
-        let { chat, user, enhanced } = this.usedTokens
-
+        let { chat, user } = this.usedTokens
         // Update token usage based on the specified type and budget mode
         if (this.shareChatAndUserBudget) {
             // In shared budget mode, update chat and user token usage together
@@ -98,8 +91,7 @@ export class TokenCounter {
                 user += count
             }
         }
-
-        this.usedTokens = { chat, user, enhanced }
+        this.usedTokens = { chat, user }
     }
 
     /**
@@ -147,7 +139,7 @@ export class TokenCounter {
      * NOTE: Used in the PromptBuilder constructor only.
      */
     public reset(): void {
-        this.usedTokens = { chat: 0, user: 0, enhanced: 0 }
+        this.usedTokens = { chat: 0, user: 0 }
     }
 
     /**
