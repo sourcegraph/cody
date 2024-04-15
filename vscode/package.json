@@ -540,6 +540,13 @@
         "category": "Cody Debug",
         "group": "Debug",
         "title": "Report Issue"
+      },
+      {
+        "command": "cody.copy.version",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "icon": "$(copy)",
+        "title": "Copy Cody Extension Version"
       }
     ],
     "keybindings": [
@@ -847,6 +854,11 @@
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
+        },
+        {
+          "command": "cody.copy.version",
+          "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
         }
       ],
       "terminal/context": [
