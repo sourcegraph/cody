@@ -425,6 +425,14 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "workbench.action.moveEditorToNewWindow",
+        "category": "Cody",
+        "title": "Pop out",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(link-external)"
+      },
+      {
         "command": "cody.chat.tree.view.focus",
         "category": "Cody",
         "title": "Open Cody Sidebar",
@@ -553,7 +561,12 @@
       {
         "command": "cody.chat.panel.new",
         "key": "alt+l",
-        "when": "cody.activated"
+        "when": "cody.activated && !editorHasSelection"
+      },
+      {
+        "command": "cody.chat.context.add",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.command.edit-code",
@@ -687,7 +700,8 @@
         },
         {
           "command": "cody.chat.context.add",
-          "group": "0_cody"
+          "group": "0_cody",
+          "when": "cody.activated && editorTextFocus && editorHasSelection"
         }
       ],
       "cody.submenu": [
@@ -811,9 +825,15 @@
           "visibility": "visible"
         },
         {
+          "command": "workbench.action.moveEditorToNewWindow",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@3",
+          "group": "navigation@4",
           "visibility": "visible"
         }
       ],
@@ -1228,6 +1248,13 @@
           "fontCharacter": "\\0046"
         }
       },
+      "gemini-logo": {
+        "description": "Gemini logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0047"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {
@@ -1278,6 +1305,7 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
+    "re2": "^1.20.10",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",

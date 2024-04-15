@@ -568,7 +568,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async handleSetChatModel(modelID: string): Promise<void> {
-        this.chatModel.modelID = modelID
+        this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
     }
 
@@ -643,6 +643,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 isTooLarge: f.size ? f.size > contextLimit : undefined,
             })),
         })
+        // Makes sure to reveal the webview panel in case the panel is hidden.
+        this.webviewPanel?.reveal()
     }
 
     private async handleSymfIndex(): Promise<void> {

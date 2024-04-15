@@ -1,16 +1,16 @@
 import type { OllamaGenerateErrorResponse, OllamaGenerateParams, OllamaGenerateResponse } from '.'
-import { isDefined } from '../common'
-import type { OllamaOptions } from '../configuration'
+import { isDefined } from '../../common'
+import type { OllamaOptions } from '../../configuration'
 import {
     type CodeCompletionsClient,
     type CompletionResponseGenerator,
     CompletionStopReason,
-} from '../inferenceClient/misc'
-import type { CompletionLogger } from '../sourcegraph-api/completions/client'
-import type { CompletionResponse } from '../sourcegraph-api/completions/types'
-import { isAbortError } from '../sourcegraph-api/errors'
-import { isNodeResponse } from '../sourcegraph-api/graphql/client'
-import { isError } from '../utils'
+} from '../../inferenceClient/misc'
+import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
+import type { CompletionResponse } from '../../sourcegraph-api/completions/types'
+import { isAbortError } from '../../sourcegraph-api/errors'
+import { isNodeResponse } from '../../sourcegraph-api/graphql/client'
+import { isError } from '../../utils'
 
 const RESPONSE_SEPARATOR = /\r?\n/
 

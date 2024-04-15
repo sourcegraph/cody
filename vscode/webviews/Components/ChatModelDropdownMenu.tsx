@@ -115,8 +115,10 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                     : undefined
                             }
                         >
-                            <span className={styles.title}>{option.title}</span>
-                            <span className={styles.provider}>{` by ${option.provider}`}</span>
+                            <span className={styles.title}>{capitalize(option.title)}</span>
+                            <span className={styles.provider}>{` by ${capitalize(
+                                option.provider
+                            )}`}</span>
                         </span>
                         {isModelDisabled(option.codyProOnly) && (
                             <span className={styles.badge}>Pro</span>
@@ -127,7 +129,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 <div slot="selected-value" className={styles.selectedValue}>
                     <ChatModelIcon model={currentModel.model} />
                     <span>
-                        <span className={styles.title}>{currentModel.title}</span>
+                        <span className={styles.title}>{capitalize(currentModel.title)}</span>
                     </span>
                 </div>
             </VSCodeDropdown>
@@ -139,3 +141,9 @@ const ChatModelIcon: FunctionComponent<{ model: string }> = ({ model }) => {
     const ModelIcon = chatModelIconComponent(model)
     return ModelIcon ? <ModelIcon size={16} /> : null
 }
+
+const capitalize = (s: string): string =>
+    s
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
