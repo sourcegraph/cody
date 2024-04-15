@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
-import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
+import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
@@ -20,7 +20,7 @@ const meta: Meta<typeof Chat> = {
         messageInProgress: null,
         chatIDHistory: [],
         chatEnabled: true,
-        userInfo: { isCodyProUser: true, isDotComUser: true },
+        userInfo: FIXTURE_USER_ACCOUNT_INFO,
         isWebviewActive: true,
         vscodeAPI: {
             postMessage: () => {},
@@ -29,6 +29,7 @@ const meta: Meta<typeof Chat> = {
         telemetryService: null as any,
         isTranscriptError: false,
         isNewInstall: false,
+        userContextFromSelection: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],

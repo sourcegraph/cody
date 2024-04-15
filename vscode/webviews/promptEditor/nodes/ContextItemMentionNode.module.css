@@ -1,7 +1,8 @@
 .context-item-mention-node {
-    color: var(--link-foreground);
-    background: color-mix(in srgb, currentColor 15%, transparent);
-    border-radius: 3px;
+    /** Match styles in ContextCell. */
+    color: var(--vscode-textLink-foreground);
+    background-color: var(--vscode-list-activeSelectionBackground);
+    border-radius: 2px;
 }
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {

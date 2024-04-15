@@ -3,6 +3,10 @@
 export { ModelProvider } from './models'
 export { type ChatModel, type EditModel, ModelUsage } from './models/types'
 export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
+export {
+    getProviderName,
+    getModelInfo,
+} from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
@@ -21,7 +25,7 @@ export type {
 export { errorToChatError } from './chat/transcript/messages'
 export type {
     ChatError,
-    ChatEventSource,
+    EventSource,
     ChatHistory,
     ChatMessage,
     UserLocalHistory,
@@ -131,13 +135,12 @@ export {
     ollamaChatClient,
     type OllamaGenerateParams,
     OLLAMA_DEFAULT_URL,
-} from './ollama'
+} from './llm-providers/ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
     CHARS_PER_TOKEN,
     ANSWER_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
@@ -181,6 +184,8 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
+    type ContextFiltersResult,
+    type CodyContextFilterItem,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -224,3 +229,4 @@ export {
     isURLContextItem,
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
+export { getCompletionsModelConfig } from './llm-providers/utils'

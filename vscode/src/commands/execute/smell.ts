@@ -46,7 +46,8 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Smell,
+        source: args?.source,
+        command: DefaultChatCommands.Smell,
     }
 }
 

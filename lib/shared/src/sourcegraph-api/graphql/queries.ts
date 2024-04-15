@@ -152,6 +152,20 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
+export const CONTEXT_FILTERS_QUERY = `
+query ContextFilters {
+	site {
+        codyContextFilters {
+            exclude {
+                repoNamePattern
+            }
+            include {
+                repoNamePattern
+            }
+        }
+	}
+}`
+
 export const SEARCH_ATTRIBUTION_QUERY = `
 query SnippetAttribution($snippet: String!) {
     snippetAttribution(snippet: $snippet) {

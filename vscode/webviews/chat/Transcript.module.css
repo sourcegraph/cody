@@ -15,7 +15,9 @@
     width: 100vw;
 }
 
-/* Additional padding for the stop-generating button */
-.row-in-progress {
-    padding-bottom: 1rem;
+.welcome-message-cell-content p:first-child {
+    margin-top: 0;
+}
+.welcome-message-cell-content p:last-child {
+    margin-bottom: 0;
 }

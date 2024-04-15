@@ -425,6 +425,14 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "workbench.action.moveEditorToNewWindow",
+        "category": "Cody",
+        "title": "Pop out",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(link-external)"
+      },
+      {
         "command": "cody.chat.tree.view.focus",
         "category": "Cody",
         "title": "Open Cody Sidebar",
@@ -478,6 +486,13 @@
         "title": "Update search index for current workspace folder",
         "icon": "$(refresh)",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.context.add",
+        "group": "Chat",
+        "title": "Cody Chat: Add context",
+        "icon": "$(new-file)",
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.search.index-update-all",
@@ -546,7 +561,12 @@
       {
         "command": "cody.chat.panel.new",
         "key": "alt+l",
-        "when": "cody.activated"
+        "when": "cody.activated && !editorHasSelection"
+      },
+      {
+        "command": "cody.chat.context.add",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.tutorial.chat",
@@ -687,6 +707,11 @@
         {
           "submenu": "cody.submenu",
           "group": "0_cody"
+        },
+        {
+          "command": "cody.chat.context.add",
+          "group": "0_cody",
+          "when": "cody.activated && editorTextFocus && editorHasSelection"
         }
       ],
       "cody.submenu": [
@@ -810,9 +835,15 @@
           "visibility": "visible"
         },
         {
+          "command": "workbench.action.moveEditorToNewWindow",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@3",
+          "group": "navigation@4",
           "visibility": "visible"
         }
       ],
@@ -1079,7 +1110,10 @@
           "default": true,
           "markdownDescription": "Display commands in hover tooltips for code elements.",
           "description": "%config.experimental.hoverCommands%",
-          "tags": ["experimental", "feature-flag"]
+          "tags": [
+            "experimental",
+            "feature-flag"
+          ]
         },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
@@ -1224,6 +1258,13 @@
           "fontCharacter": "\\0046"
         }
       },
+      "gemini-logo": {
+        "description": "Gemini logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0047"
+        }
+      },
       "new-comment-icon": {
         "description": "Cody logo heavy",
         "default": {
@@ -1274,8 +1315,9 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
+    "proxy-agent": "^6.4.0",
+    "re2": "^1.20.10",
     "semver": "^7.5.4",
-    "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",

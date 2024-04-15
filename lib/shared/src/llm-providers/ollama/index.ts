@@ -1,9 +1,17 @@
-import type { OllamaGenerateParameters } from '../configuration'
+import type { OllamaGenerateParameters } from '../..'
+import type { OpenAIMessage } from '../types'
 
 export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
 
 export { createOllamaClient } from './completions-client'
 export { ollamaChatClient } from './chat-client'
+
+/**
+ * By default, Ollama uses a context window size of 2048 tokens.
+ *
+ * @see https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-specify-the-context-window-size
+ */
+export const OLLAMA_DEFAULT_CONTEXT_WINDOW = 2048
 
 /**
  * @see https://sourcegraph.com/github.com/jmorganca/ollama/-/blob/api/types.go?L35
@@ -51,11 +59,7 @@ export interface OllamaGenerateResponse {
     eval_duration?: number
     sample_count?: number
     sample_duration?: number
-    message?: {
-        role: string
-        content: string
-        images?: string[] | null
-    }
+    message?: OpenAIMessage
 }
 
 export interface OllamaGenerateErrorResponse {

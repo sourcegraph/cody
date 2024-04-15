@@ -1,4 +1,5 @@
-import { DefaultChatCommands, logDebug, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { logDebug } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
@@ -27,7 +28,7 @@ export async function executeExplainOutput(
         logDebug('executeExplainOutput', 'executing', { args })
         const requestID = uuid.v4()
         const addEnhancedContext = false
-        const source = DefaultChatCommands.Terminal
+        const source = 'terminal'
         telemetryService.log('CodyVSCodeExtension:command:terminal:executed', {
             useCodebaseContex: false,
             requestID,

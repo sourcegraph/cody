@@ -1,4 +1,5 @@
-import { type ContextItem, logDebug, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextItem, DefaultChatCommands, logDebug, logError } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -45,8 +46,9 @@ async function unitTestCommand(
         text: prompt,
         contextFiles,
         addEnhancedContext: false,
-        source: 'test',
+        source: args?.source,
         submitType: 'user-newchat',
+        command: DefaultChatCommands.Unit,
     }
 }
 

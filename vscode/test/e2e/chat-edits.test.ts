@@ -51,6 +51,7 @@ test.extend<ExpectedEvents>({
     // The text area should automatically get the focuse,
     // and contains the original message text,
     // The submit button will also be replaced with "Update Message" button
+    await chatFrame.getByText('One').hover()
     await editButtons.nth(0).click()
     await expect(chatInput).toBeFocused()
     await expect(chatInput).toHaveText('One')
@@ -69,6 +70,7 @@ test.extend<ExpectedEvents>({
 
     // click on the second edit button to get into the editing mode again
     // edit the message from "Two" to "Four"
+    await chatFrame.getByText('Two').hover()
     await editButtons.nth(1).click()
     // the original message text should shows up in the text box
     await expect(chatInput).toHaveText('Two')
