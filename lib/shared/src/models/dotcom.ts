@@ -77,7 +77,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         maxInputToken: DEFAULT_FAST_MODEL_INPUT_TOKEN_LIMIT,
-        maxOutputToken: DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
+        maxOutputToken: DEFAULT_FAST_MODEL_OUTPUT_TOKEN_LIMIT,
     },
     {
         title: 'GPT-4 Turbo',

@@ -89,13 +89,10 @@ query CurrentSiteCodyLlmConfiguration {
         codyLLMConfiguration {
             chatModel
             chatModelMaxTokens
-            chatModelMaxOutputTokens
             fastChatModel
             fastChatModelMaxTokens
-            fastChatModelMaxOutputTokens
             completionModel
             completionModelMaxTokens
-            completionModelMaxOutputTokens
         }
     }
 }`

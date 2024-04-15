@@ -1,3 +1,9 @@
+/**
+ * @deprecated This is temporarily preserved for enterprise users as
+ * some users are using older OpenAI models that have a combined input/output window.
+ * See: TODO: Add comment
+ */
+export const ANSWER_TOKENS = 1000
 export const MAX_CURRENT_FILE_TOKENS = 1000
 /**
  * A token is equivalent to 4 characters/bytes.

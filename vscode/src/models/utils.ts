@@ -1,4 +1,5 @@
 import {
+    ANSWER_TOKENS,
     type AuthStatus,
     DEFAULT_DOT_COM_MODELS,
     ModelProvider,
@@ -33,21 +34,15 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // Which means it will fallback to use the default model on the server.
     if (!authStatus.isDotCom && authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
-        const inputTokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
-        const inputTokenLimit =
-            inputTokenLimitConfig ??
-            authStatus.configOverwrites?.chatModelMaxInputTokens ??
-            authStatus.configOverwrites?.chatModelMaxTokens
-        const outputTokenLimitConfig = codyConfig?.get<number>('provider.limit.response')
-        const outputTokenLimit =
-            outputTokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxOutputTokens
+        const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
+        const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
         ModelProvider.setProviders([
             new ModelProvider(
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                inputTokenLimit,
-                outputTokenLimit
+                tokenLimit,
+                ANSWER_TOKENS
             ),
         ])
     }
