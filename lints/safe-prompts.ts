@@ -35,7 +35,7 @@ export function delint(sourceFile: ts.SourceFile) {
 
     function delintNode(node: ts.Node) {
         if (node.flags & ts.NodeFlags.ThisNodeHasError) {
-            report(node, 'error', 'Error', 'The file could not be parsed')
+            report(node, 'error', 'The file could not be parsed')
             return
         }
         switch (node.kind) {
@@ -55,12 +55,7 @@ export function delint(sourceFile: ts.SourceFile) {
                             (node.parent as ts.ImportSpecifier).name === node)
                     )
                 ) {
-                    report(
-                        node,
-                        'error',
-                        'Unsafe use of `ps`',
-                        'Use `ps` only as a tagged template literal'
-                    )
+                    report(node, 'error', 'Use `ps` only as a tagged template literal')
                     break
                 }
 
@@ -71,8 +66,7 @@ export function delint(sourceFile: ts.SourceFile) {
                     report(
                         node,
                         'error',
-                        'Unsafe function usage',
-                        `New \`${text}\` invocation found. Please use one of the PromptString helpers instead.`
+                        `New \`${text}\` invocation found. This is not safe. Please use one of the PromptString helpers instead.`
                     )
                     break
                 }
@@ -82,20 +76,16 @@ export function delint(sourceFile: ts.SourceFile) {
         ts.forEachChild(node, delintNode)
     }
 
-    function report(node: ts.Node, level: 'error' | 'warning', title: string, message: string) {
+    function report(node: ts.Node, level: 'error' | 'warning', message: string) {
         if (level === 'error') {
             didEncounterAnError = true
         }
 
         const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart())
-        console.log(`${sourceFile.fileName} (${line + 1},${character + 1}): ${title}: ${message}`)
         if (process.env.GITHUB_ACTIONS !== undefined) {
-            console.log(
-                `::${level} file=${sourceFile.fileName},line=${line + 1},endLine=${
-                    line + 1
-                },title=${title}::${message}`
-            )
+            console.log(`::${level} file=${sourceFile.fileName},line=${line + 1}::${message}`)
         }
+        console.log(`${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`)
     }
 }
 
