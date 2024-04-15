@@ -43,9 +43,9 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 [ModelUsage.Chat, ModelUsage.Edit],
                 tokenLimit,
                 // TODO: Currently all enterprise models have a max output limit of 1000.
-                // We need to support configuring the maximum output limit as an instance level.
-                // This will allow us to increase this limit whilst still supporting models with a
-                // lower output limit.
+                // We need to support configuring the maximum output limit at an instance level.
+                // This will allow us to increase this limit whilst still supporting models with a lower output limit.
+                // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
                 ANSWER_TOKENS
             ),
         ])
