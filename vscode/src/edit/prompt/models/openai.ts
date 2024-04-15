@@ -32,7 +32,7 @@ export const openai: EditLLMInteraction = {
     },
     getAdd(options) {
         let assistantPreamble = ps``
-        if (options.precedingText) {
+        if (options.precedingText.length > 0) {
             assistantPreamble = ps`<${PROMPT_TOPICS.PRECEDING}>${options.precedingText}</${PROMPT_TOPICS.PRECEDING}>`
         }
         return {

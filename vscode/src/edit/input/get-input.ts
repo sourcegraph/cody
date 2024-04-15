@@ -482,7 +482,7 @@ export const getInput = async (
                 }
 
                 // Empty input flow, do nothing
-                if (!instruction) {
+                if (instruction.length === 0) {
                     return
                 }
 
