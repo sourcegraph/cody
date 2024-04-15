@@ -80,15 +80,15 @@ export type ClientRequests = {
     // Trigger commands that edit the code.
     'editCommands/code': [{ params: { instruction: string } }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/document
+    'editCommands/document': [null, EditTask]
 
     // If the task is "applied", discards the task.
-    'editTask/accept': [FixupTaskID, null]
+    'editTask/accept': [{ id: FixupTaskID }, null]
     // If the task is "applied", attempts to revert the task's edit, then
     // discards the task.
-    'editTask/undo': [FixupTaskID, null]
+    'editTask/undo': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
-    'editTask/cancel': [FixupTaskID, null]
+    'editTask/cancel': [{ id: FixupTaskID }, null]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
