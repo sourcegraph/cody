@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -18,7 +19,6 @@ import {
     getHeadAndTail,
     getSuffixAfterFirstNewline,
 } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -117,8 +117,8 @@ class OpenAICompatibleProvider extends Provider {
         this.client = client
     }
 
-    private createPrompt(snippets: ContextSnippet[]): PromptString {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )
@@ -180,7 +180,7 @@ class OpenAICompatibleProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
@@ -189,7 +189,7 @@ class OpenAICompatibleProvider extends Provider {
             lineNumberDependentCompletionParams,
         })
 
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )

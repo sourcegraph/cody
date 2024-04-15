@@ -1,10 +1,14 @@
 import type * as vscode from 'vscode'
 
-import { type OllamaGenerateParameters, type PromptString, ps } from '@sourcegraph/cody-shared'
-import type { ContextSnippet } from '../types'
+import {
+    type AutocompleteContextSnippet,
+    type OllamaGenerateParameters,
+    type PromptString,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 interface OllamaPromptContext {
-    snippets: ContextSnippet[]
+    snippets: AutocompleteContextSnippet[]
     context: PromptString
     currentFileNameComment: PromptString
     isInfill: boolean

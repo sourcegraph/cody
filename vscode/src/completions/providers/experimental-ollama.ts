@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode'
 
 import {
+    type AutocompleteContextSnippet,
     type OllamaGenerateParams,
     type OllamaOptions,
     PromptString,
@@ -10,7 +11,6 @@ import {
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { getSuffixAfterFirstNewline } from '../text-processing'
@@ -27,7 +27,7 @@ import {
 } from './provider'
 
 interface OllamaPromptContext {
-    snippets: ContextSnippet[]
+    snippets: AutocompleteContextSnippet[]
     context: PromptString
     currentFileNameComment: PromptString
     isInfill: boolean
@@ -59,14 +59,14 @@ class ExperimentalOllamaProvider extends Provider {
     }
 
     protected createPromptContext(
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         isInfill: boolean,
         modelHelpers: OllamaModel
     ): OllamaPromptContext {
         const { languageId, uri } = this.options.document
         const config = getLanguageConfig(languageId)
         const commentStart = config?.commentStart || ps`// `
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )
@@ -122,7 +122,7 @@ class ExperimentalOllamaProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         // Only use infill if the suffix is not empty

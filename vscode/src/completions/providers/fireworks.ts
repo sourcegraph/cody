@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -27,7 +28,6 @@ import {
 import { fetch } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
@@ -159,8 +159,8 @@ class FireworksProvider extends Provider {
         }
     }
 
-    private createPrompt(snippets: ContextSnippet[]): PromptString {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )
@@ -223,7 +223,7 @@ class FireworksProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({

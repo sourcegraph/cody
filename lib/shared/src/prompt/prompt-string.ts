@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
+import type { AutocompleteContextSnippet, DocumentContext } from '../completions/types'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
@@ -268,7 +269,7 @@ export class PromptString {
         }
     }
 
-    public static fromAutocompleteDocContext(docContext: DocumentContext, uri: vscode.Uri) {
+    public static fromAutocompleteDocumentContext(docContext: DocumentContext, uri: vscode.Uri) {
         const ref = [uri]
         return {
             prefix: internal_createPromptString(docContext.prefix, ref),
@@ -279,9 +280,7 @@ export class PromptString {
         }
     }
 
-    public static fromAutocompleteContextSnippet(
-        contextSnippet: FileContextSnippet | SymbolContextSnippet
-    ) {
+    public static fromAutocompleteContextSnippet(contextSnippet: AutocompleteContextSnippet) {
         const ref = [contextSnippet.uri]
         return {
             content: internal_createPromptString(contextSnippet.content, ref),
@@ -445,48 +444,4 @@ interface TerminalOutputArguments {
     name: string
     selection?: string
     creationOptions?: { shellPath?: string; shellArgs?: string[] }
-}
-
-// TODO: move this to shared
-interface DocumentContext extends DocumentDependentContext {
-    position: vscode.Position
-    multilineTrigger: string | null
-    multilineTriggerPosition: vscode.Position | null
-    /**
-     * A temporary workaround for the fact that we cannot modify `TextDocument` text.
-     * Having these fields set on a `DocumentContext` means we can still get the full
-     * document text in the `parse-completion` function with the "virtually" inserted
-     * completion text.
-     *
-     * TODO(valery): we need a better abstraction that would allow us to mutate
-     * the `TextDocument` text in memory without actually pasting it into the `TextDocument`
-     * and that would not require copy-pasting and modifying the whole document text
-     * on every completion update or new virtual completion creation.
-     */
-    injectedCompletionText?: string
-    positionWithoutInjectedCompletionText?: vscode.Position
-}
-
-// TODO: move this to shared
-interface DocumentDependentContext {
-    prefix: string
-    suffix: string
-    /**
-     * This is set when the document context is looking at the selected item in the
-     * suggestion widget and injects the item into the prefix.
-     */
-    injectedPrefix: string | null
-}
-
-// TODO: move this to shared
-interface FileContextSnippet {
-    uri: vscode.Uri
-    startLine: number
-    endLine: number
-    content: string
-}
-
-// TODO: move this to shared
-interface SymbolContextSnippet extends FileContextSnippet {
-    symbol: string
 }

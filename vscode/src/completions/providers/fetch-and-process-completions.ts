@@ -1,8 +1,11 @@
-import { type CompletionResponseGenerator, CompletionStopReason } from '@sourcegraph/cody-shared'
+import {
+    type CompletionResponseGenerator,
+    CompletionStopReason,
+    type DocumentContext,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import type { DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {

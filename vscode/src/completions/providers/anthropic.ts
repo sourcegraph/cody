@@ -1,6 +1,7 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import {
+    type AutocompleteContextSnippet,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type Message,
@@ -19,7 +20,6 @@ import {
     getHeadAndTail,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import {
     forkSignal,
     generatorWithErrorObserver,
@@ -96,7 +96,7 @@ class AnthropicProvider extends Provider {
     }
 
     private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )
@@ -144,7 +144,7 @@ class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ContextSnippet[]): {
+    protected createPrompt(snippets: AutocompleteContextSnippet[]): {
         messages: Message[]
         prefix: PrefixComponents
     } {
@@ -184,7 +184,7 @@ class AnthropicProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({

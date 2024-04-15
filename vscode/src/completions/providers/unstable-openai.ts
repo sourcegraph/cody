@@ -1,4 +1,5 @@
 import {
+    type AutocompleteContextSnippet,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     PromptString,
@@ -15,7 +16,6 @@ import {
     getHeadAndTail,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -68,7 +68,7 @@ class UnstableOpenAIProvider extends Provider {
     }
 
     private createPromptPrefix(): PromptString {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocContext(
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
             this.options.docContext,
             this.options.document.uri
         )
@@ -99,7 +99,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ContextSnippet[]): PromptString {
+    protected createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
         const prefix = this.createPromptPrefix()
 
         const referenceSnippetMessages: PromptString[] = []
@@ -132,7 +132,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
