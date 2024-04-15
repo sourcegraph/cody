@@ -400,10 +400,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
-            const useFusedContextPromise = featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyChatFusedContext
-            )
-
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -464,10 +460,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                       localEmbeddings: this.localEmbeddings,
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
                                       remoteSearch: this.remoteSearch,
-                                  },
-                                  featureFlags: {
-                                      fusedContext:
-                                          this.config.internalUnstable || (await useFusedContextPromise),
                                   },
                                   hints: { maxChars },
                                   contextRanking: this.contextRanking,
