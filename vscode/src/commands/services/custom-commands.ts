@@ -98,6 +98,16 @@ export class CustomCommandsManager implements vscode.Disposable {
     }
 
     /**
+     * Gets the map of custom commands.
+     *
+     * The custom commands map is a collection of CodyCommand objects, where the key
+     * is the command name and the value is the command object.
+     */
+    public get commands(): Map<string, CodyCommand> {
+        return this.customCommandsMap
+    }
+
+    /**
      * Get the uri of the cody.json file for the given type
      */
     private getConfigFileByType(type: CustomCommandType): vscode.Uri | undefined {
