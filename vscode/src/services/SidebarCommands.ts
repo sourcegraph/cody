@@ -4,7 +4,6 @@ import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
     ACCOUNT_USAGE_URL,
-    CODY_COMMUNITY_FORUM,
     CODY_DOC_URL,
     CODY_FEEDBACK_URL,
     CODY_SUPPORT_URL,
@@ -75,10 +74,6 @@ export function registerSidebarCommands(): vscode.Disposable[] {
         vscode.commands.registerCommand('cody.sidebar.support', () => {
             logSidebarClick('support')
             void vscode.commands.executeCommand('vscode.open', CODY_SUPPORT_URL.href)
-        }),
-        vscode.commands.registerCommand('cody.sidebar.community', () => {
-            logSidebarClick('community')
-            void vscode.commands.executeCommand('vscode.open', CODY_COMMUNITY_FORUM.href)
         }),
         vscode.commands.registerCommand('cody.sidebar.feedback', () => {
             logSidebarClick('feedback')

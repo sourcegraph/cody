@@ -6,7 +6,7 @@ import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
-import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
+import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 import { enableDebugMode } from './utils/export-logs'
@@ -105,13 +105,6 @@ export function createStatusBar(): CodyStatusBar {
                 },
                 buttons,
             }
-        }
-
-        function createFeedbackAndSupportItems(): StatusBarItem[] {
-            const isPaidUser = authStatus?.isLoggedIn && !authStatus?.userCanUpgrade
-            const paidSupportItems = isPaidUser ? PremiumSupportItems : []
-            // Display to paid users (e.g. Enterprise users or Cody Pro uers) only
-            return [...paidSupportItems, ...FeedbackOptionItems]
         }
 
         if (errors.length > 0) {
@@ -218,7 +211,8 @@ export function createStatusBar(): CodyStatusBar {
                 },
             },
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
-            ...createFeedbackAndSupportItems(),
+            ...SupportOptionItems,
+            ...FeedbackOptionItems,
         ]
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'

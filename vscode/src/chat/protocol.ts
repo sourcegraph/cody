@@ -197,8 +197,7 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
-export const CODY_SUPPORT_URL = new URL('https://help.sourcegraph.com/hc/en-us/requests/new')
-export const CODY_COMMUNITY_FORUM = new URL('https://community.sourcegraph.com/c/cody/vs-code')
+export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
