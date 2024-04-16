@@ -265,10 +265,8 @@ export class GhostHintDecorator implements vscode.Disposable {
 
                     if (enabledFeatures.Generate && editor.document.getText().length === 0) {
                         this.clearGhostText(editor)
-                        /**
-                         * Generate code flow.
-                         * Show immediately on the first line of empty files.
-                         */
+                        // Generate code flow.
+                        // Show immediately on the first line of empty files.
                         return this.setGhostText(editor, new vscode.Position(0, 0), 'Generate')
                     }
 
@@ -288,10 +286,8 @@ export class GhostHintDecorator implements vscode.Disposable {
                         : null
 
                     if (testableSymbol && documentableSymbol && !isOnTypingLine) {
-                        /**
-                         * "Test" and "Document" flow
-                         * Display ghost text above the relevant symbol.
-                         */
+                        // "Test" and "Document" flow
+                        // Display ghost text above the relevant symbol.
                         const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
                         if (
                             this.activeDecorationRange &&
@@ -317,10 +313,8 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     if (testableSymbol && !isOnTypingLine) {
-                        /**
-                         * "Test" flow
-                         * Display ghost text above the relevant symbol.
-                         */
+                        // "Test" flow
+                        // Display ghost text above the relevant symbol.
                         const precedingLine = Math.max(0, testableSymbol.startPosition.row - 1)
                         if (
                             this.activeDecorationRange &&
@@ -346,10 +340,8 @@ export class GhostHintDecorator implements vscode.Disposable {
                     }
 
                     if (documentableSymbol && !isOnTypingLine) {
-                        /**
-                         * "Document" code flow.
-                         * Display ghost text above the relevant symbol.
-                         */
+                        // "Document" code flow.
+                        // Display ghost text above the relevant symbol.
                         const precedingLine = Math.max(0, documentableSymbol.startPosition.row - 1)
                         if (
                             this.activeDecorationRange &&
@@ -397,10 +389,8 @@ export class GhostHintDecorator implements vscode.Disposable {
                             this.clearGhostText(editor)
                         }
 
-                        /**
-                         * Edit code flow.
-                         * Show alongside a users' active selection
-                         */
+                        // Edit code flow.
+                        // Show alongside a users' active selection
                         return this.setThrottledGhostText(editor, targetPosition, 'EditOrChat')
                     }
                 }
