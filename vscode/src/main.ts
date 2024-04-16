@@ -15,7 +15,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -65,8 +64,10 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { version } from './version'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -408,6 +409,9 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai chat',
             })
         ),
+        vscode.commands.registerCommand('cody.copy.version', () =>
+            vscode.env.clipboard.writeText(version)
+        ),
 
         // Account links
         ...registerSidebarCommands(),
@@ -634,7 +638,11 @@ const register = async (
         })
     }
 
-    await autocompleteSetup
+    const [_, extensionClientDispose] = await Promise.all([
+        autocompleteSetup,
+        platform.extensionClient.provide({ enterpriseContextFactory }),
+    ])
+    disposables.push(extensionClientDispose)
 
     return {
         disposable: vscode.Disposable.from(...disposables),

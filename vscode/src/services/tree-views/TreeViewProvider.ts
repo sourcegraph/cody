@@ -93,6 +93,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
                 title: item.title,
                 arguments: item.command.args,
             }
+            treeItem.contextValue = item.contextValue
 
             updatedTree.push(treeItem)
         }

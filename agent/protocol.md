@@ -498,5 +498,12 @@ exit: [null]
 
 ```ts
 'progress/end': [{ id: string; }]
+
+```ts
+'remoteRepo/*: ...'
+```
+
+Methods and notifications related to a remote list of repositories. Only for enterprise configurations. See [agent-protocol.ts].
+
 ```
 <!-- PROTOCOL END -->
