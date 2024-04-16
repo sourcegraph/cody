@@ -72,10 +72,7 @@ export class RepoNameResolver {
 
 const textDecoder = new TextDecoder('utf-8')
 
-async function gitRemoteUrlFromTreeWalk(
-    uri: vscode.Uri,
-    remoteName = 'origin'
-): Promise<string | undefined> {
+export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -87,7 +84,11 @@ async function gitRemoteUrlFromTreeWalk(
         const configContents = textDecoder.decode(raw)
         const config = ini.parse(configContents)
 
-        return config[`remote "${remoteName}"`]?.url
+        const remoteEntry = Object.entries(config).find(([key, value]) => {
+            return key.startsWith('remote ') && value?.url
+        })
+
+        return remoteEntry?.[1]?.url
     } catch (error) {
         const parentPath = vscode.Uri.joinPath(uri, '..')
         if (parentPath.fsPath === uri.fsPath) {
