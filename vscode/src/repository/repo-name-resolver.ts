@@ -74,7 +74,7 @@ export class RepoNameResolver {
 const textDecoder = new TextDecoder('utf-8')
 
 /**
- * Walk the tree from the current directory to find the `.git` folder and
+ * Walks the tree from the current directory to find the `.git` folder and
  * extracts remote URL. Prioritizes `pushurl` over `fetchurl` and `url` defined
  * in `.git/config`.
  */
