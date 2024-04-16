@@ -77,6 +77,34 @@ describe('gitRemoteUrlFromTreeWalk', () => {
         expect(remoteUrl).toBe('https://github.com/username/yourproject.git')
     })
 
+    it('prioritizes `pushUrl` over `url` and `fetchUrl`', async () => {
+        const mockGitConfig = dedent`[core]
+            repositoryformatversion = 0
+            filemode = true
+            bare = false
+            logallrefupdates = true
+            ignorecase = true
+            precomposeunicode = true
+        [remote "origin"]
+            url = https://github.com/username/yourproject.git
+            fetch = +refs/heads/*:refs/remotes/origin/*
+            pushurl = https://github.com/push/yourproject.git
+        [remote "upstream"]
+            url = https://github.com/originalauthor/yourproject.git
+            fetch = +refs/heads/*:refs/remotes/upstream/*
+            fetchUrl = https://github.com/fetch/yourproject.git
+        [remote "backup"]
+            url = git@backupserver:repositories/yourproject.git
+            fetch = +refs/heads/*:refs/remotes/backup/*
+        `
+
+        const textEncoder = new TextEncoder()
+        vi.spyOn(vscode.workspace.fs, 'readFile').mockResolvedValue(textEncoder.encode(mockGitConfig))
+
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(URI.file('path/to/file/foo.ts'))
+        expect(remoteUrl).toBe('https://github.com/push/yourproject.git')
+    })
+
     it('returns `undefined` from the .git/config file with no remotes specified', async () => {
         const mockGitConfig = dedent`[core]
             repositoryformatversion = 0
@@ -103,6 +131,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
         expect(readFileMock).toBeCalledTimes(3)
         expect(remoteUrl).toBe(undefined)
     })
+
     it('returns `undefined` if .git/config is not found', async () => {
         const readFileMock = vi
             .spyOn(vscode.workspace.fs, 'readFile')

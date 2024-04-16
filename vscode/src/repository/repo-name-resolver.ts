@@ -73,6 +73,11 @@ export class RepoNameResolver {
 
 const textDecoder = new TextDecoder('utf-8')
 
+/**
+ * Walk the tree from the current directory to find the `.git` folder and
+ * extracts remote URL. Prioritizes `pushurl` over `fetchurl` and `url` defined
+ * in `.git/config`.
+ */
 export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string | undefined> {
     if (!isFileURI(uri)) {
         return undefined
@@ -85,11 +90,24 @@ export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string 
         const configContents = textDecoder.decode(raw)
         const config = ini.parse(configContents)
 
-        const remoteEntry = Object.entries(config).find(([key, value]) => {
-            return key.startsWith('remote ') && value?.url
-        })
+        let remoteFetchUrl: string | undefined = undefined
+        let remoteUrl: string | undefined = undefined
 
-        return remoteEntry?.[1]?.url
+        for (const [key, value] of Object.entries(config)) {
+            if (key.startsWith('remote ')) {
+                if (value?.pushurl) {
+                    return value.pushurl.trim()
+                }
+
+                if (!remoteFetchUrl && value?.fetchurl) {
+                    remoteFetchUrl = value.fetchurl
+                } else if (!remoteUrl && value.url) {
+                    remoteUrl = value.url
+                }
+            }
+        }
+
+        return remoteFetchUrl || remoteUrl
     } catch (error) {
         const parentPath = vscode.Uri.joinPath(uri, '..')
         if (parentPath.fsPath === uri.fsPath) {
