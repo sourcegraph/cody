@@ -7,7 +7,7 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { logDebug, logError } from '../../log'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { URI, Utils } from 'vscode-uri'
 import { getConfiguration } from '../../configuration'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'

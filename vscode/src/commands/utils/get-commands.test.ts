@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { buildCodyCommandMap } from './get-commands'
 
 describe('buildCodyCommandMap', () => {

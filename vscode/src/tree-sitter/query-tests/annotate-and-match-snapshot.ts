@@ -27,7 +27,7 @@ function getCommentDelimiter(language: SupportedLanguage): CommentSymbolInfo {
         throw new Error(`No language config found for ${language}`)
     }
 
-    const delimiter = languageConfig.commentStart.trim()
+    const delimiter = languageConfig.commentStart.trim().toString()
     const indent = ' '.repeat(delimiter.length)
     const separator = `${delimiter} ${SNIPPET_SEPARATOR}`
 

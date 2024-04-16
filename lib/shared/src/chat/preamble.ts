@@ -1,11 +1,14 @@
+import { type PromptString, ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 
 export function getSimplePreamble(
     model: string | undefined,
     apiVersion: number,
-    preInstruction?: string | undefined
+    preInstruction?: PromptString
 ): Message[] {
-    const intro = `You are Cody, an AI coding assistant from Sourcegraph. ${preInstruction ?? ''}`.trim()
+    const intro = ps`You are Cody, an AI coding assistant from Sourcegraph. ${
+        preInstruction ?? ''
+    }`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for
     // Claude 3 models for now
@@ -25,7 +28,7 @@ export function getSimplePreamble(
         },
         {
             speaker: 'assistant',
-            text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+            text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
         },
     ]
 }

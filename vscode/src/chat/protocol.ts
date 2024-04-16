@@ -2,13 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
-    ChatMessage,
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
     SearchPanelFile,
+    SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -178,7 +178,7 @@ interface WebviewContextMessage {
 }
 
 export interface ExtensionTranscriptMessage {
-    messages: ChatMessage[]
+    messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
 }
@@ -200,7 +200,7 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
-export const CODY_SUPPORT_URL = new URL('https://help.sourcegraph.com/hc/en-us/requests/new')
+export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')

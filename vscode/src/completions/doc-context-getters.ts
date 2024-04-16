@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../tree-sitter/language'
 import { type CompletionIntent, execQueryWrapper, positionToQueryPoints } from '../tree-sitter/query-sdk'
-
-import type { DocumentContext } from './get-current-doc-context'
 
 export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
     const { currentLinePrefix, injectedPrefix } = docContext

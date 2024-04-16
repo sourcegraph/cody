@@ -1,7 +1,5 @@
-// import levenshtein from 'js-levenshtein'
+import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-
-import { createGitDiff } from './create-git-diff'
 
 interface TrackedDocument {
     content: string
@@ -26,7 +24,7 @@ export class RecentEditsRetriever implements vscode.Disposable {
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
     }
 
-    public getDiff(uri: vscode.Uri): string | null {
+    public getDiff(uri: vscode.Uri): PromptString | null {
         const trackedDocument = this.trackedDocuments.get(uri.toString())
         if (!trackedDocument) {
             return null
@@ -38,7 +36,7 @@ export class RecentEditsRetriever implements vscode.Disposable {
             trackedDocument.changes.map(c => c.change)
         )
 
-        return createGitDiff(vscode.workspace.asRelativePath(uri.path), oldContent, newContent)
+        return PromptString.fromGitDiff(uri, oldContent, newContent)
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {

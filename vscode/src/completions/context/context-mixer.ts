@@ -1,9 +1,11 @@
 import type * as vscode from 'vscode'
 
-import { isCodyIgnoredFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
-
-import type { DocumentContext } from '../get-current-doc-context'
-import type { ContextSnippet } from '../types'
+import {
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    isCodyIgnoredFile,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
@@ -47,7 +49,7 @@ export interface ContextSummary {
 }
 
 export interface GetContextResult {
-    context: ContextSnippet[]
+    context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
 }
 
@@ -124,7 +126,7 @@ export class ContextMixer implements vscode.Disposable {
         // total chars with the prefix and suffix sizes.
         let totalChars = options.docContext.prefix.length + options.docContext.suffix.length
 
-        const mixedContext: ContextSnippet[] = []
+        const mixedContext: AutocompleteContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
         let position = 0
         for (const snippet of fusedResults) {

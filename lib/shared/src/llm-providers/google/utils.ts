@@ -17,7 +17,7 @@ export function constructGeminiChatMessages(messages: Message[]): GeminiChatMess
     return messages
         .map(msg => ({
             role: msg.speaker === 'human' ? 'user' : 'model',
-            parts: [{ text: msg.text ?? '' }],
+            parts: [{ text: msg.text?.toString() ?? '' }],
         }))
         .filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')
 }

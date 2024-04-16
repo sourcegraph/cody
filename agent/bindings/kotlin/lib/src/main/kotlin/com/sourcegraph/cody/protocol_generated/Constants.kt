@@ -2,6 +2,10 @@
 package com.sourcegraph.cody.protocol_generated
 
 object Constants {
+  const val paused = "paused"
+  const val fetching = "fetching"
+  const val errored = "errored"
+  const val complete = "complete"
   const val config = "config"
   const val search_config = "search:config"
   const val history = "history"

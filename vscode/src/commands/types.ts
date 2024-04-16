@@ -1,4 +1,4 @@
-import type { CodyCommand, ContextItem, EventSource } from '@sourcegraph/cody-shared'
+import type { CodyCommand, ContextItem, EventSource, PromptString } from '@sourcegraph/cody-shared'
 
 import type { Range, Uri } from 'vscode'
 import type { ExecuteEditArguments } from '../edit/execute'
@@ -33,7 +33,7 @@ export interface CodyCommandArgs extends ExecuteEditArguments {
     runInChatMode?: boolean
     // current context to add on top of the command context
     userContextFiles?: ContextItem[]
-    additionalInstruction?: string
+    additionalInstruction?: PromptString
 
     /**
      * Editor Context
