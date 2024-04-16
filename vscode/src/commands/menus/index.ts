@@ -156,7 +156,7 @@ export async function showCommandMenu(
                 // Check if it's an ask command
                 if (selection.key === 'ask') {
                     // show input box if no value
-                    if (!value) {
+                    if (value.length === 0) {
                         void commands.executeCommand('cody.chat.panel.new')
                     } else {
                         void executeChat({
