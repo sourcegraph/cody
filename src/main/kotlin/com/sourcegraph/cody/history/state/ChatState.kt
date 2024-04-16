@@ -22,7 +22,9 @@ class ChatState : BaseState() {
 
   @get:OptionTag(tag = "llm", nameAttribute = "") var llm: LLMState? by property()
 
-  @get:OptionTag(tag = "accountId", nameAttribute = "") var accountId: String? by string()
+  @Deprecated("")
+  @get:OptionTag(tag = "accountId", nameAttribute = "")
+  var accountId: String? by string()
 
   @get:OptionTag(tag = "enhancedContext", nameAttribute = "")
   var enhancedContext: EnhancedContextState? by property()
@@ -46,9 +48,8 @@ class ChatState : BaseState() {
 
     private val DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    fun create(accountId: String?, internalId: String): ChatState {
+    fun create(internalId: String): ChatState {
       val chat = ChatState()
-      chat.accountId = accountId
       chat.internalId = internalId
       return chat
     }

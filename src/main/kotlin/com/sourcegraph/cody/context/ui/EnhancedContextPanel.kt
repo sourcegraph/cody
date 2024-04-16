@@ -80,6 +80,10 @@ constructor(protected val project: Project, protected val chatSession: ChatSessi
 
   /** Gets the chat session's enhanced context state. */
   protected fun getContextState(): EnhancedContextState? {
+    if (CodyAuthenticationManager.getInstance(project).getActiveAccount() == null) {
+      // There is no active account, so there is no enhanced context either
+      return null
+    }
     val historyService = HistoryService.getInstance(project)
     return historyService.getContextReadOnly(chatSession.getInternalId())
         ?: historyService.getDefaultContextReadOnly()

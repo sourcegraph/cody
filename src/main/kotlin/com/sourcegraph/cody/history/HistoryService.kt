@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.history.state.AccountData
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.HistoryState
@@ -55,50 +56,55 @@ class HistoryService(private val project: Project) :
     if (contextState != null) {
       val found = getOrCreateChat(internalId)
       found.enhancedContext = EnhancedContextState()
-      found.enhancedContext?.copyFrom(contextState)
+      found.enhancedContext!!.copyFrom(contextState)
     }
   }
 
   @Synchronized
   fun updateDefaultContextState(contextState: EnhancedContextState) {
-    state.defaultEnhancedContext = EnhancedContextState()
-    state.defaultEnhancedContext?.copyFrom(contextState)
+    getOrCreateActiveAccountEntry().defaultEnhancedContext = EnhancedContextState()
+    getOrCreateActiveAccountEntry().defaultEnhancedContext!!.copyFrom(contextState)
   }
 
   @Synchronized
   fun getContextReadOnly(internalId: String): EnhancedContextState? {
     return copyEnhancedContextState(
-        state.chats.find { it.internalId == internalId }?.enhancedContext)
+        getOrCreateActiveAccountEntry().chats.find { it.internalId == internalId }?.enhancedContext)
   }
 
   @Synchronized
   fun getDefaultContextReadOnly(): EnhancedContextState? {
-    return copyEnhancedContextState(state.defaultEnhancedContext)
+    return copyEnhancedContextState(getOrCreateActiveAccountEntry().defaultEnhancedContext)
   }
 
   @Synchronized
   fun getDefaultLlm(): LLMState? {
-    val defaultLlm = LLMState()
-    defaultLlm.copyFrom(state.defaultLlm ?: return null)
-    return defaultLlm
+    val account = CodyAuthenticationManager.getInstance(project).getActiveAccount()
+    val llm = account?.let { findEntry(it.id) }?.defaultLlm
+    if (llm == null) return null
+    return LLMState().also { it.copyFrom(llm) }
   }
 
   @Synchronized
   fun setDefaultLlm(defaultLlm: LLMState) {
     val newDefaultLlm = LLMState()
     newDefaultLlm.copyFrom(defaultLlm)
-    state.defaultLlm = newDefaultLlm
+    getOrCreateActiveAccountEntry().defaultLlm = newDefaultLlm
   }
 
   @Synchronized
   fun remove(internalId: String?) {
-    state.chats.removeIf { it.internalId == internalId }
+    getOrCreateActiveAccountEntry().chats.removeIf { it.internalId == internalId }
   }
 
   @Synchronized
   fun removeAll() {
-    state.chats = mutableListOf()
+    getOrCreateActiveAccountEntry().chats = mutableListOf()
   }
+
+  @Synchronized
+  fun findActiveAccountChat(internalId: String): ChatState? =
+      getActiveAccountHistory()?.chats?.find { it.internalId == internalId }
 
   private fun copyEnhancedContextState(context: EnhancedContextState?): EnhancedContextState? {
     if (context == null) return null
@@ -122,12 +128,25 @@ class HistoryService(private val project: Project) :
   }
 
   private fun getOrCreateChat(internalId: String): ChatState {
-    val found = state.chats.find { it.internalId == internalId }
-    if (found != null) return found
-    val activeAccountId = CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
-    val newChat = ChatState.create(activeAccountId, internalId)
-    state.chats += newChat
-    return newChat
+    val accountEntry = getOrCreateActiveAccountEntry()
+    val found = accountEntry.chats.find { it.internalId == internalId }
+    return found ?: ChatState.create(internalId).also { accountEntry.chats += it }
+  }
+
+  private fun findEntry(accountId: String): AccountData? =
+      state.accountData.find { it.accountId == accountId }
+
+  @Synchronized
+  fun getActiveAccountHistory(): AccountData? =
+      CodyAuthenticationManager.getInstance(project).getActiveAccount()?.let { findEntry(it.id) }
+
+  private fun getOrCreateActiveAccountEntry(): AccountData {
+    val activeAccount =
+        CodyAuthenticationManager.getInstance(project).getActiveAccount()
+            ?: throw IllegalStateException("No active account")
+
+    val existingEntry = findEntry(activeAccount.id)
+    return existingEntry ?: AccountData.create(activeAccount.id).also { state.accountData += it }
   }
 
   companion object {

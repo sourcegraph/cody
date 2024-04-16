@@ -12,20 +12,23 @@ class HistoryStateTest : TestCase() {
   fun `test history serialization`() {
     val history =
         HistoryState().apply {
-          chats +=
-              ChatState().apply {
+          accountData +=
+              AccountData().apply {
                 accountId = "VXNlkjoxEFU3NjE="
-                internalId = "0f8b7034-9fa8-488a-a13e-09c52677008a"
-                updatedAt = "2024-01-31T01:06:18.524621"
-                messages +=
-                    MessageState().apply {
-                      speaker = HUMAN
-                      text = "hi"
-                    }
-                messages +=
-                    MessageState().apply {
-                      speaker = ASSISTANT
-                      text = "hello"
+                chats +=
+                    ChatState().apply {
+                      internalId = "0f8b7034-9fa8-488a-a13e-09c52677008a"
+                      updatedAt = "2024-01-31T01:06:18.524621"
+                      messages +=
+                          MessageState().apply {
+                            speaker = HUMAN
+                            text = "hi"
+                          }
+                      messages +=
+                          MessageState().apply {
+                            speaker = ASSISTANT
+                            text = "hello"
+                          }
                     }
               }
         }
@@ -35,27 +38,33 @@ class HistoryStateTest : TestCase() {
     assertEquals(
         """
       <HistoryState>
-        <chats>
+        <accountData>
           <list>
-            <chat>
+            <AccountData>
               <accountId value="VXNlkjoxEFU3NjE=" />
-              <internalId value="0f8b7034-9fa8-488a-a13e-09c52677008a" />
-              <messages>
+              <chats>
                 <list>
-                  <message>
-                    <speaker value="HUMAN" />
-                    <text value="hi" />
-                  </message>
-                  <message>
-                    <speaker value="ASSISTANT" />
-                    <text value="hello" />
-                  </message>
+                  <chat>
+                    <internalId value="0f8b7034-9fa8-488a-a13e-09c52677008a" />
+                    <messages>
+                      <list>
+                        <message>
+                          <speaker value="HUMAN" />
+                          <text value="hi" />
+                        </message>
+                        <message>
+                          <speaker value="ASSISTANT" />
+                          <text value="hello" />
+                        </message>
+                      </list>
+                    </messages>
+                    <updatedAt value="2024-01-31T01:06:18.524621" />
+                  </chat>
                 </list>
-              </messages>
-              <updatedAt value="2024-01-31T01:06:18.524621" />
-            </chat>
+              </chats>
+            </AccountData>
           </list>
-        </chats>
+        </accountData>
       </HistoryState>
     """
             .trimIndent(),

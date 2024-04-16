@@ -37,12 +37,9 @@ class AgentChatSessionService(private val project: Project) {
 
   fun restoreAllSessions(agent: CodyAgent) {
     chatSessions.forEach { agentChatSession ->
-      val chatState =
-          HistoryService.getInstance(project).state.chats.find {
-            it.internalId == agentChatSession.getInternalId()
-          } ?: return
-
-      agentChatSession.updateFromState(agent, chatState)
+      HistoryService.getInstance(project)
+          .findActiveAccountChat(agentChatSession.getInternalId())
+          ?.let { agentChatSession.updateFromState(agent, it) }
     }
   }
 

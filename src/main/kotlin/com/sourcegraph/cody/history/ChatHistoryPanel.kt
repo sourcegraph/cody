@@ -19,7 +19,6 @@ import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.chat.actions.ExportChatsAction
 import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.INTERNAL_ID_DATA_KEY
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.node.LeafNode
 import com.sourcegraph.cody.history.node.PeriodNode
 import com.sourcegraph.cody.history.node.RootNode
@@ -235,16 +234,14 @@ class ChatHistoryPanel(
     return root
   }
 
-  private fun getChatsGroupedByPeriod(): Map<String, List<ChatState>> =
-      HistoryService.getInstance(project)
-          .state
-          .chats
-          .filter {
-            it.accountId == CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
-          }
-          .filter { it.messages.isNotEmpty() }
-          .sortedByDescending { chat -> chat.getUpdatedTimeAt() }
-          .groupBy { chat -> DurationGroupFormatter.format(chat.getUpdatedTimeAt()) }
+  private fun getChatsGroupedByPeriod(): Map<String, List<ChatState>> {
+    val chats =
+        HistoryService.getInstance(project).getActiveAccountHistory()?.chats ?: mutableListOf()
+    return chats
+        .filter { it.messages.isNotEmpty() }
+        .sortedByDescending { chat -> chat.getUpdatedTimeAt() }
+        .groupBy { chat -> DurationGroupFormatter.format(chat.getUpdatedTimeAt()) }
+  }
 
   private class LeafPopupAction(
       text: String,

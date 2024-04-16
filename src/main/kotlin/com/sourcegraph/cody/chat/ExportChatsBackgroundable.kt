@@ -10,7 +10,6 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.AgentChatSession.Companion.restoreChatSession
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.initialization.EndOfTrialNotificationScheduler
@@ -31,15 +30,14 @@ class ExportChatsBackgroundable(
   override fun run(indicator: ProgressIndicator) {
     indicator.isIndeterminate = false
 
-    val accountId = CodyAuthenticationManager.getInstance(project).getActiveAccount()?.id
     val chats =
-        HistoryService.getInstance(project)
-            .state
-            .chats
-            .filter { it.accountId == accountId }
+        (HistoryService.getInstance(project).let { historyService ->
+              if (internalId != null)
+                  historyService.findActiveAccountChat(internalId)?.let { mutableListOf(it) }
+              else historyService.getActiveAccountHistory()?.chats
+            } ?: mutableListOf())
             .filter { it.messages.isNotEmpty() }
             .filter { it.internalId != null }
-            .filter { chat -> if (internalId != null) chat.internalId == internalId else true }
 
     var dummyInternalId = UUID.randomUUID().toString()
     chats.forEachIndexed { index, chatState ->
