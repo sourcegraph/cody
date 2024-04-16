@@ -105,7 +105,6 @@ object Constants {
   const val gitlab = "gitlab"
   const val google = "google"
   const val abort = "abort"
-  const val reload = "reload"
   const val `web-sign-in-token` = "web-sign-in-token"
   const val getUserContext = "getUserContext"
   const val `show-search-result` = "show-search-result"

@@ -37,7 +37,6 @@ sealed class WebviewMessage {
           "copy" -> context.deserialize<CopyWebviewMessage>(element, CopyWebviewMessage::class.java)
           "auth" -> context.deserialize<AuthWebviewMessage>(element, AuthWebviewMessage::class.java)
           "abort" -> context.deserialize<AbortWebviewMessage>(element, AbortWebviewMessage::class.java)
-          "reload" -> context.deserialize<ReloadWebviewMessage>(element, ReloadWebviewMessage::class.java)
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
           "getUserContext" -> context.deserialize<GetUserContextWebviewMessage>(element, GetUserContextWebviewMessage::class.java)
           "search" -> context.deserialize<SearchWebviewMessage>(element, SearchWebviewMessage::class.java)
@@ -314,15 +313,6 @@ data class AbortWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("abort") Abort,
-  }
-}
-
-data class ReloadWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: reload
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("reload") Reload,
   }
 }
 

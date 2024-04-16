@@ -71,7 +71,6 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
