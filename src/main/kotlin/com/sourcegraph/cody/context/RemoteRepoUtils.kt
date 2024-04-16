@@ -8,11 +8,19 @@ import com.sourcegraph.vcs.CodebaseName
 import java.util.concurrent.CompletableFuture
 
 object RemoteRepoUtils {
+  /**
+   * Gets any repository IDs which match `codebaseNames`. If `codebaseNames` is empty, completes
+   * with an empty list.
+   */
   fun getRepositories(
       project: Project,
       codebaseNames: List<CodebaseName>
   ): CompletableFuture<List<Repo>> {
     val result = CompletableFuture<List<Repo>>()
+    if (codebaseNames.isEmpty()) {
+      result.complete(emptyList())
+      return result
+    }
     CodyAgentService.withAgent(project) { agent ->
       try {
         val param = GetRepoIdsParam(codebaseNames.map { it.value }, codebaseNames.size)

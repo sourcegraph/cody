@@ -56,8 +56,8 @@ Few tips and tricks regarding versioning of the tooling:
 - Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
 - If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
   Otherwise you won't see effects of your changes.
-- Running `:runIde PplatformRuntimeVersion=X.Y` for the first time might fail due to missing IntelliJ installation. You
-  can fix it by running `:runIde PplatformVersion=X.Y` once - even if compilation fails it fixes your caches.
+- Running `./gradlew -PplatformRuntimeVersion=X.Y :runIde` for the first time might fail due to missing IntelliJ installation. You
+  can fix it by running `./gradlew -PplatformVersion=X.Y :runIde` once - even if compilation fails it fixes your caches.
 
 ## Using Nightly channel releases
 

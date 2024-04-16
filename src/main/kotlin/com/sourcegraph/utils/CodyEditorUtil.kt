@@ -39,6 +39,12 @@ object CodyEditorUtil {
   @JvmStatic private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
   /**
+   * Hints whether the editor wants autocomplete. Setting this value to false provides a hint to
+   * disable autocomplete. If absent, assumes editors want autocomplete.
+   */
+  @JvmStatic val KEY_EDITOR_WANTS_AUTOCOMPLETE = Key.create<Boolean>("cody.editorWantsAutocomplete")
+
+  /**
    * Returns a new String, using the given indentation settings to determine the tab size.
    *
    * @param inputText text with tabs to convert to spaces
@@ -115,7 +121,8 @@ object CodyEditorUtil {
         !editor.isOneLineMode &&
         editor !is EditorWindow &&
         editor !is ImaginaryEditor &&
-        (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper)
+        (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper) &&
+        KEY_EDITOR_WANTS_AUTOCOMPLETE[editor] != false
   }
 
   @JvmStatic

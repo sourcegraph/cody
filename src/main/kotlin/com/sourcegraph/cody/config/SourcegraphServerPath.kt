@@ -4,6 +4,7 @@ import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.auth.ServerPath
 import com.sourcegraph.config.ConfigUtil
+import java.net.URI
 import java.util.regex.Pattern
 
 @Tag("server")
@@ -21,6 +22,9 @@ data class SourcegraphServerPath(
   fun toGraphQLUrl(): String {
     return url + GRAPHQL_API_SUFFIX
   }
+
+  val displayName: String
+    get() = URI.create(url).host
 
   companion object {
     const val DEFAULT_HOST = ConfigUtil.DOTCOM_URL

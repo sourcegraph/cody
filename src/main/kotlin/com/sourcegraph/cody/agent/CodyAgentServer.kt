@@ -1,28 +1,6 @@
 package com.sourcegraph.cody.agent
 
-import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
-import com.sourcegraph.cody.agent.protocol.AttributionSearchResponse
-import com.sourcegraph.cody.agent.protocol.AutocompleteParams
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
-import com.sourcegraph.cody.agent.protocol.ChatModelsParams
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
-import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
-import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
-import com.sourcegraph.cody.agent.protocol.ClientInfo
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
-import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
-import com.sourcegraph.cody.agent.protocol.EditTask
-import com.sourcegraph.cody.agent.protocol.Event
-import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
-import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
-import com.sourcegraph.cody.agent.protocol.GetFoldingRangeResult
-import com.sourcegraph.cody.agent.protocol.GetRepoIdsParam
-import com.sourcegraph.cody.agent.protocol.GetRepoIdsResponse
-import com.sourcegraph.cody.agent.protocol.InlineEditParams
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
-import com.sourcegraph.cody.agent.protocol.ServerInfo
-import com.sourcegraph.cody.agent.protocol.TaskIdParam
+import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -87,6 +65,11 @@ interface CodyAgentServer {
   @JsonNotification("autocomplete/completionAccepted")
   fun completionAccepted(logID: CompletionItemParams)
 
+  @JsonNotification("remoteRepo/didChange") fun remoteRepoDidChange()
+
+  @JsonNotification("remoteRepo/didChangeState")
+  fun remoteRepoDidChangeState(state: RemoteRepoFetchState)
+
   @JsonRequest("webview/receiveMessage")
   fun webviewReceiveMessage(params: WebviewReceiveMessageParams): CompletableFuture<Any?>
 
@@ -130,4 +113,10 @@ interface CodyAgentServer {
   fun attributionSearch(
       params: AttributionSearchParams
   ): CompletableFuture<AttributionSearchResponse>
+
+  @JsonRequest("remoteRepo/has")
+  fun remoteRepoHas(params: RemoteRepoHasParams): CompletableFuture<RemoteRepoHasResponse>
+
+  @JsonRequest("remoteRepo/list")
+  fun remoteRepoList(params: RemoteRepoListParams): CompletableFuture<RemoteRepoListResponse>
 }

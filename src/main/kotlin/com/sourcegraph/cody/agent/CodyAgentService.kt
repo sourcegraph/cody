@@ -6,10 +6,12 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyFileEditorListener
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.context.RemoteRepoSearcher
 import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import java.util.concurrent.CompletableFuture
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
+import kotlinx.coroutines.runBlocking
 
 @Service(Service.Level.PROJECT)
 class CodyAgentService(project: Project) : Disposable {
@@ -59,6 +62,14 @@ class CodyAgentService(project: Project) : Disposable {
 
       agent.client.onTextDocumentEdit = Consumer { params ->
         FixupService.getInstance(project).getActiveSession()?.performInlineEdits(params.edits)
+      }
+
+      agent.client.onRemoteRepoDidChange = Consumer {
+        RemoteRepoSearcher.getInstance(project).remoteRepoDidChange()
+      }
+
+      agent.client.onRemoteRepoDidChangeState = Consumer { state ->
+        RemoteRepoSearcher.getInstance(project).remoteRepoDidChangeState(state)
       }
 
       if (!project.isDisposed) {
@@ -156,19 +167,15 @@ class CodyAgentService(project: Project) : Disposable {
     ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         ApplicationManager.getApplication().executeOnPooledThread {
-          try {
-            val instance = getInstance(project)
-            val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
-            val agent =
-                if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
-                else instance.codyAgent
-
-            callback.accept(agent.get())
-            setAgentError(project, null)
-          } catch (e: Exception) {
-            logger.warn("Failed to execute call to agent", e)
-            onFailure.accept(e)
-            if (restartIfNeeded) getInstance(project).restartAgent(project)
+          runBlocking {
+            val task: suspend (CodyAgent) -> Unit = { agent ->
+              try {
+                callback.accept(agent)
+              } catch (e: Exception) {
+                onFailure.accept(e)
+              }
+            }
+            coWithAgent(project, restartIfNeeded, task)
           }
         }
       }
@@ -199,6 +206,35 @@ class CodyAgentService(project: Project) : Disposable {
         getInstance(project).codyAgent.getNow(null)?.isConnected() == true
       } catch (e: Exception) {
         false
+      }
+    }
+
+    suspend fun <T> coWithAgent(project: Project, callback: suspend (CodyAgent) -> T) =
+        coWithAgent(project, false, callback)
+
+    suspend fun <T> coWithAgent(
+        project: Project,
+        restartIfNeeded: Boolean,
+        callback: suspend (CodyAgent) -> T
+    ): T {
+      if (!CodyApplicationSettings.instance.isCodyEnabled) {
+        throw Exception("Cody is not enabled")
+      }
+      try {
+        val instance = CodyAgentService.getInstance(project)
+        val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
+        val agent =
+            if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
+            else instance.codyAgent
+        val result = callback(agent.get())
+        setAgentError(project, null)
+        return result
+      } catch (e: Exception) {
+        logger.warn("Failed to execute call to agent", e)
+        if (restartIfNeeded && e !is ProcessCanceledException) {
+          getInstance(project).restartAgent(project)
+        }
+        throw e
       }
     }
   }
