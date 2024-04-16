@@ -930,7 +930,7 @@ describe('Agent', () => {
         }, 30_000)
 
         describe('Document code', () => {
-            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(`
                   "/**
                    * Adds two numbers together and returns the result.
@@ -948,7 +948,7 @@ describe('Agent', () => {
 
             checkDocumentCommand(
                 client,
-                'commands/document (Method as part of a class)',
+                'editCommands/document (Method as part of a class)',
                 'TestClass.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
@@ -972,7 +972,7 @@ describe('Agent', () => {
 
             checkDocumentCommand(
                 client,
-                'commands/document (Function within a property)',
+                'editCommands/document (Function within a property)',
                 'TestLogger.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
@@ -997,7 +997,7 @@ describe('Agent', () => {
 
             checkDocumentCommand(
                 client,
-                'commands/document (nested test case)',
+                'editCommands/document (nested test case)',
                 'example.test.ts',
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(`
