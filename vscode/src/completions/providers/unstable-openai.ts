@@ -1,9 +1,9 @@
-import * as vscode from 'vscode'
-
 import {
+    type AutocompleteContextSnippet,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    displayPath,
+    PromptString,
+    ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -16,7 +16,6 @@ import {
     getHeadAndTail,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -37,8 +36,8 @@ import {
 } from './provider'
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
-    multilineStopSequences: [CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE],
+    singlelineStopSequences: [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE],
+    multilineStopSequences: [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE],
 })
 
 interface UnstableOpenAIOptions {
@@ -52,7 +51,7 @@ class UnstableOpenAIProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
     private promptChars: number
     private instructions =
-        `You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
+        ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 
     constructor(
         options: ProviderOptions,
@@ -68,43 +67,56 @@ class UnstableOpenAIProvider extends Provider {
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
-    private createPromptPrefix(): string {
-        const prefixLines = this.options.docContext.prefix.split('\n')
+    private createPromptPrefix(): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
+
+        const prefixLines = prefix.toString().split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
+        const { head, tail } = getHeadAndTail(prefix)
 
         // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+        const infillBlock = tail.trimmed.toString().endsWith('{\n')
+            ? tail.trimmed.trimEnd()
+            : tail.trimmed
         // code before the cursor, without the code extracted for the infillBlock
         const infillPrefix = head.raw
         // code after the cursor
-        const infillSuffix = this.options.docContext.suffix
-        const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
+        const infillSuffix = suffix
+        const relativeFilePath = PromptString.fromDisplayPath(this.options.document.uri)
 
-        return `Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
+        return ps`Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${
+            infillPrefix ? infillPrefix : ''
+        }${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
 
 ${OPENING_CODE_TAG}${infillBlock}`
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: ContextSnippet[]): string {
+    protected createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
         const prefix = this.createPromptPrefix()
 
-        const referenceSnippetMessages: string[] = []
+        const referenceSnippetMessages: PromptString[] = []
 
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of snippets) {
-            const snippetMessages: string[] = [
-                'symbol' in snippet && snippet.symbol !== ''
-                    ? `Additional documentation for \`${snippet.symbol}\`: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`
-                    : `Codebase context from file path '${displayPath(
+            const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
+            const snippetMessages: PromptString[] = [
+                contextPrompts.symbol?.toString() !== ''
+                    ? ps`Additional documentation for \`${
+                          contextPrompts.symbol ?? ps``
+                      }\`: ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`
+                    : ps`Codebase context from file path '${PromptString.fromDisplayPath(
                           snippet.uri
-                      )}': ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
+                      )}': ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`,
             ]
             const numSnippetChars = snippetMessages.join('\n\n').length + 1
             if (numSnippetChars > remainingChars) {
@@ -115,12 +127,12 @@ ${OPENING_CODE_TAG}${infillBlock}`
         }
 
         const messages = [this.instructions, ...referenceSnippetMessages, prefix]
-        return messages.join('\n\n')
+        return PromptString.join(messages, ps`\n\n`)
     }
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({

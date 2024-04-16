@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     type Guardrails,
     type ModelProvider,
+    ps,
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -163,7 +164,7 @@ const EditButton: React.FunctionComponent<
  */
 function useDisplayMarkdown(message: ChatMessage): string {
     if (message.speaker === 'assistant') {
-        return reformatBotMessageForChat(message.text ?? '')
+        return reformatBotMessageForChat(message.text ?? ps``).toString()
     }
     return serializedPromptEditorStateFromChatMessage(message).html
 }

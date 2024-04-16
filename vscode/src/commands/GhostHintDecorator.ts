@@ -1,4 +1,11 @@
-import { type AuthStatus, FeatureFlag, featureFlagProvider, isMacOS } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    FeatureFlag,
+    featureFlagProvider,
+    getEditorInsertSpaces,
+    getEditorTabSize,
+    isMacOS,
+} from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
@@ -6,7 +13,6 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
-import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
 const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
@@ -61,7 +67,7 @@ function getSymbolDecorationPadding(
     insertionLine: vscode.TextLine,
     symbolRange: vscode.Range
 ): number {
-    const insertSpaces = getEditorInsertSpaces(document.uri)
+    const insertSpaces = getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window)
 
     if (insertSpaces) {
         const insertionEndCharacter = insertionLine.range.end.character
@@ -76,7 +82,7 @@ function getSymbolDecorationPadding(
     // This file is used tab-based indentation
     // We cannot rely on vscode.Range to provide the correct number of spaces required to align the symbol with the text.
     // We must first convert any tabs to spaces and then calculate the number of spaces required to align the symbol with the text.
-    const tabSize = getEditorTabSize(document.uri)
+    const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
     const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
     const insertionEndCharacter = insertionLine.text
         .slice(0, insertionLine.range.end.character)

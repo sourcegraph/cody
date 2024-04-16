@@ -1,29 +1,34 @@
 import type * as vscode from 'vscode'
 
-import type { OllamaGenerateParameters } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type OllamaGenerateParameters,
+    type PromptString,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 interface OllamaPromptContext {
-    snippets: { uri: vscode.Uri; content: string }[]
-    context: string
-    currentFileNameComment: string
+    snippets: AutocompleteContextSnippet[]
+    context: PromptString
+    currentFileNameComment: PromptString
     isInfill: boolean
 
     uri: vscode.Uri
-    prefix: string
-    suffix: string
+    prefix: PromptString
+    suffix: PromptString
 
     languageId: string
 }
 
 export interface OllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters
 }
 
 class DefaultOllamaModel implements OllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix } = ollamaPrompt
-        return context + currentFileNameComment + prefix
+        return context.concat(currentFileNameComment, prefix)
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
@@ -46,12 +51,12 @@ class DefaultOllamaModel implements OllamaModel {
 }
 
 class DeepseekCoder extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
 
-        const infillPrefix = context + currentFileNameComment + prefix
+        const infillPrefix = context.concat(currentFileNameComment, prefix)
 
-        return `<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
+        return ps`<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
@@ -76,11 +81,11 @@ class DeepseekCoder extends DefaultOllamaModel {
 }
 
 class CodeLlama extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix, suffix, isInfill } = ollamaPrompt
 
         if (isInfill) {
-            const infillPrefix = context + currentFileNameComment + prefix
+            const infillPrefix = context.concat(currentFileNameComment, prefix)
 
             /**
              * The infill prompt for Code Llama.
@@ -92,22 +97,22 @@ class CodeLlama extends DefaultOllamaModel {
              *
              * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
              */
-            return `<PRE> ${infillPrefix} <SUF>${suffix} <MID>`
+            return ps`<PRE> ${infillPrefix} <SUF>${suffix} <MID>`
         }
 
-        return context + currentFileNameComment + prefix
+        return context.concat(currentFileNameComment, prefix)
     }
 }
 
 class StarCoder2 extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, prefix, suffix } = ollamaPrompt
 
         // `currentFileNameComment` is not included because it causes StarCoder2 to output
         // invalid suggestions.
-        const infillPrefix = context + prefix
+        const infillPrefix = context.concat(prefix)
 
-        return `<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+        return ps`<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
@@ -130,12 +135,12 @@ class StarCoder2 extends DefaultOllamaModel {
 }
 
 class CodeGemma extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
         // c.f. https://huggingface.co/blog/codegemma
         // c.f. https://huggingface.co/google/codegemma-7b/blob/main/tokenizer.json
         // c.f. https://storage.googleapis.com/deepmind-media/gemma/codegemma_report.pdf
-        return `${currentFileNameComment}<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+        return ps`${currentFileNameComment}<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {

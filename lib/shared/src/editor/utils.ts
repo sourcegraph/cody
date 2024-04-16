@@ -1,14 +1,18 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
-    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
+export function getEditorInsertSpaces(
+    uri: vscode.Uri,
+    workspace: Pick<typeof vscode.workspace, 'getConfiguration'>,
+    window: Pick<typeof vscode.window, 'visibleTextEditors'>
+): boolean {
+    const editor = window.visibleTextEditors.find(editor => editor.document.uri === uri)
     if (!editor) {
         // Default to the same as VS Code default
         return true
     }
 
     const { languageId } = editor.document
-    const languageConfig = vscode.workspace.getConfiguration(`[${languageId}]`, uri)
+    const languageConfig = workspace.getConfiguration(`[${languageId}]`, uri)
     const languageSetting = languageConfig.get('editor.insertSpaces') as boolean | undefined
     // Prefer language specific setting.
     const insertSpaces = languageSetting || editor.options.insertSpaces
@@ -22,15 +26,19 @@ export function getEditorInsertSpaces(uri: vscode.Uri): boolean {
     return insertSpaces
 }
 
-export function getEditorTabSize(uri: vscode.Uri): number {
-    const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === uri)
+export function getEditorTabSize(
+    uri: vscode.Uri,
+    workspace: Pick<typeof vscode.workspace, 'getConfiguration'>,
+    window: Pick<typeof vscode.window, 'visibleTextEditors'>
+): number {
+    const editor = window.visibleTextEditors.find(editor => editor.document.uri === uri)
     if (!editor) {
         // Default to the same as VS Code default
         return 4
     }
 
     const { languageId } = editor.document
-    const languageConfig = vscode.workspace.getConfiguration(`[${languageId}]`, uri)
+    const languageConfig = workspace.getConfiguration(`[${languageId}]`, uri)
     const languageSetting = languageConfig.get<number>('editor.tabSize')
     // Prefer language specific setting.
     const tabSize = languageSetting || editor.options.tabSize
@@ -44,9 +52,14 @@ export function getEditorTabSize(uri: vscode.Uri): number {
     return tabSize
 }
 
-export function getEditorIndentString(uri: vscode.Uri): string {
-    const insertSpaces = getEditorInsertSpaces(uri)
-    const tabSize = getEditorTabSize(uri)
+export function getEditorIndentString(
+    uri: vscode.Uri,
+
+    workspace: Pick<typeof vscode.workspace, 'getConfiguration'>,
+    window: Pick<typeof vscode.window, 'visibleTextEditors'>
+): string {
+    const insertSpaces = getEditorInsertSpaces(uri, workspace, window)
+    const tabSize = getEditorTabSize(uri, workspace, window)
 
     return insertSpaces ? ' '.repeat(tabSize) : '\t'
 }

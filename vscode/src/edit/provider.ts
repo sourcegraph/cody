@@ -99,7 +99,7 @@ export class EditProvider {
                     // Listen to test file name suggestion from responses
                     // Allows Cody to let us know which test file we should add the new content to
                     let filepath = ''
-                    multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                    multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
                         onResponse: async (content: string) => {
                             filepath += content
                             void this.handleFileCreationResponse(filepath, true)

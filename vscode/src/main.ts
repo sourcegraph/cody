@@ -8,6 +8,7 @@ import {
     type EventSource,
     ModelProvider,
     PromptMixin,
+    PromptString,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -100,7 +101,7 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                if (config.chatPreInstruction) {
+                if (config.chatPreInstruction.length > 0) {
                     PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
                 }
                 getChatModelsFromConfiguration()
@@ -141,7 +142,7 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    if (config.chatPreInstruction) {
+    if (config.chatPreInstruction.length > 0) {
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
@@ -331,7 +332,7 @@ const register = async (
         commandKey: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        return executeCommandUnsafe(commandKey, args).catch(error => {
+        return executeCommandUnsafe(PromptString.unsafe_fromUserQuery(commandKey), args).catch(error => {
             if (error instanceof Error) {
                 console.log(error.stack)
             }
@@ -341,7 +342,7 @@ const register = async (
     }
 
     const executeCommandUnsafe = async (
-        id: DefaultCodyCommands | string,
+        id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
         const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()

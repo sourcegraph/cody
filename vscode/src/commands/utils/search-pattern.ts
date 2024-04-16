@@ -1,5 +1,5 @@
 import { uriDirname, uriParseNameAndExtension } from '@sourcegraph/cody-shared'
-import { pathFunctionsForURI } from '@sourcegraph/cody-shared/src/common/path'
+import { pathFunctionsForURI } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 

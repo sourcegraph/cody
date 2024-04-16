@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import type { CodyCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import type { CodyCommandType } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '../execute'
 import type { CodyCommandArgs } from '../types'
 
