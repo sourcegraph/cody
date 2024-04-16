@@ -7,7 +7,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import type { ComponentProps, FunctionComponent } from 'react'
+import { type ComponentProps, type FunctionComponent, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../Chat'
 import { serializedPromptEditorStateFromChatMessage } from '../../../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
@@ -62,7 +62,7 @@ export const MessageCell: FunctionComponent<{
     /** A boolean indicating whether the current transcript item is the one being edited. */
     const isItemBeingEdited = beingEdited === messageIndexInTranscript
 
-    const displayMarkdown = useDisplayMarkdown(message)
+    const displayMarkdown = useMemo(() => useDisplayMarkdown(message), [message])
 
     return (
         <Cell
@@ -71,10 +71,14 @@ export const MessageCell: FunctionComponent<{
                 <SpeakerIcon message={message} userInfo={userInfo} chatModel={chatModel} size={24} />
             }
             disabled={disabled}
-            containerClassName={classNames(styles.cellContainer, {
-                [styles.focused]: isItemBeingEdited,
-                [styles.disabled]: disabled,
-            })}
+            containerClassName={classNames(
+                styles.cellContainer,
+                message.speaker === 'human' && styles.humanContent,
+                {
+                    [styles.focused]: isItemBeingEdited,
+                    [styles.disabled]: disabled,
+                }
+            )}
             data-testid="message"
         >
             <div className={styles.messageContentContainer}>
