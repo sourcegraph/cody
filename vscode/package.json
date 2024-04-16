@@ -540,6 +540,13 @@
         "category": "Cody Debug",
         "group": "Debug",
         "title": "Report Issue"
+      },
+      {
+        "command": "cody.copy.version",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "icon": "$(copy)",
+        "title": "Copy Cody Extension Version"
       }
     ],
     "keybindings": [
@@ -847,6 +854,11 @@
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
+        },
+        {
+          "command": "cody.copy.version",
+          "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
         }
       ],
       "terminal/context": [
@@ -1256,10 +1268,17 @@
         }
       },
       "new-comment-icon": {
-        "description": "Cody logo heavy",
+        "description": "New comment icon",
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0048"
+        }
+      },
+      "discord-logo": {
+        "description": "Discord logo",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\0049"
         }
       }
     }
@@ -1305,9 +1324,9 @@
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
+    "proxy-agent": "^6.4.0",
     "re2": "^1.20.10",
     "semver": "^7.5.4",
-    "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",

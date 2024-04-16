@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ContextItemSource } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
 import { ContextCell } from './ContextCell'

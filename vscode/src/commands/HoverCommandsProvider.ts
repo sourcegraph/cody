@@ -1,9 +1,11 @@
 import {
     type AuthStatus,
     FeatureFlag,
+    PromptString,
     featureFlagProvider,
     isCodyIgnoredFile,
     logDebug,
+    ps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
@@ -43,7 +45,7 @@ class HoverCommandsProvider implements vscode.Disposable {
         // Selection range if the cursor is on a multi-line highlight
         selection?: vscode.Selection
         // Diagnostics error message if the cursor is on an error
-        error?: string
+        error?: vscode.Diagnostic
     } = {}
 
     private register(): void {
@@ -139,7 +141,7 @@ class HoverCommandsProvider implements vscode.Disposable {
             s.range.contains(position)
         )
         const diagnostics = vscode.languages.getDiagnostics(document.uri)
-        const onError = diagnostics.find(d => d.range.contains(position))?.message
+        const onError = diagnostics.find(d => d.range.contains(position))
 
         this.current.selection = selection
         this.current.symbol = activeSymbol
@@ -202,10 +204,15 @@ class HoverCommandsProvider implements vscode.Disposable {
                 break
             // New Chat Commands
             case 'cody.action.chat': {
-                const symbolKind = symbol?.kind ? vscode.SymbolKind[symbol.kind].toLowerCase() : ''
-                const symbolPrompt = symbol?.name ? `#${symbol.name} (${symbolKind})` : ''
-                const helpPrompt = error ? '\nExplain this error:\n' + error : ''
-                commandArgs.additionalInstruction = symbolPrompt + helpPrompt
+                const symbolPrompt = symbol
+                    ? PromptString.fromDocumentSymbol(document.uri, symbol, vscode.SymbolKind)
+                    : ps``
+                const helpPrompt = error
+                    ? ps`\nExplain this error:\n${
+                          PromptString.fromDiagnostic(document.uri, error).message
+                      }`
+                    : ps``
+                commandArgs.additionalInstruction = ps`${symbolPrompt}${helpPrompt}`
                 executeHoverChatCommand(commandArgs)
                 break
             }

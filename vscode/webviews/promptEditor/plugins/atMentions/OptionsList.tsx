@@ -157,5 +157,5 @@ function getLineRangeInMention(query: string, range?: RangeData): string {
         return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
     }
     // Passed in range string if no line number match.
-    return range ? displayLineRange(range) : ''
+    return range ? displayLineRange(range).toString() : ''
 }

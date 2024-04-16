@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
     describe('tryAddMessages', () => {
         it('adds single valid transcript', () => {
             const builder = new PromptBuilder(100)
-            const transcript: ChatMessage[] = [{ speaker: 'human', text: 'Hi!' }]
+            const transcript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
             builder.tryAddMessages(transcript.reverse())
             const messages = builder.build()
             expect(messages.length).toBe(1)
@@ -16,7 +16,7 @@ describe('PromptBuilder', () => {
 
         it('throw on transcript starts with assistant', () => {
             const builder = new PromptBuilder(100)
-            const transcript: ChatMessage[] = [{ speaker: 'assistant', text: 'Hi!' }]
+            const transcript: ChatMessage[] = [{ speaker: 'assistant', text: ps`Hi!` }]
             expect(() => {
                 builder.tryAddMessages(transcript)
             }).toThrowError()
@@ -25,10 +25,10 @@ describe('PromptBuilder', () => {
         it('adds valid transcript in reverse order', () => {
             const builder = new PromptBuilder(1000)
             const transcript: ChatMessage[] = [
-                { speaker: 'human', text: 'Hi assistant!' },
-                { speaker: 'assistant', text: 'Hello there!' },
-                { speaker: 'human', text: 'Hi again!' },
-                { speaker: 'assistant', text: 'Hello there again!' },
+                { speaker: 'human', text: ps`Hi assistant!` },
+                { speaker: 'assistant', text: ps`Hello there!` },
+                { speaker: 'human', text: ps`Hi again!` },
+                { speaker: 'assistant', text: ps`Hello there again!` },
             ]
             builder.tryAddMessages(transcript.reverse())
             const messages = builder.build()
@@ -42,10 +42,10 @@ describe('PromptBuilder', () => {
         it('throws on consecutive speakers order', () => {
             const builder = new PromptBuilder(1000)
             const invalidTranscript: ChatMessage[] = [
-                { speaker: 'human', text: 'Hi there!' },
-                { speaker: 'human', text: 'Hello there!' },
-                { speaker: 'assistant', text: 'How are you?' },
-                { speaker: 'assistant', text: 'Hello there!' },
+                { speaker: 'human', text: ps`Hi there!` },
+                { speaker: 'human', text: ps`Hello there!` },
+                { speaker: 'assistant', text: ps`How are you?` },
+                { speaker: 'assistant', text: ps`Hello there!` },
             ]
             expect(() => {
                 builder.tryAddMessages(invalidTranscript)
@@ -55,10 +55,10 @@ describe('PromptBuilder', () => {
         it('throws on transcript with human speakers only', () => {
             const builder = new PromptBuilder(1000)
             const invalidTranscript: ChatMessage[] = [
-                { speaker: 'human', text: '1' },
-                { speaker: 'human', text: '2' },
-                { speaker: 'human', text: '3' },
-                { speaker: 'human', text: '4' },
+                { speaker: 'human', text: ps`1` },
+                { speaker: 'human', text: ps`2` },
+                { speaker: 'human', text: ps`3` },
+                { speaker: 'human', text: ps`4` },
             ]
             expect(() => {
                 builder.tryAddMessages(invalidTranscript)
@@ -68,15 +68,15 @@ describe('PromptBuilder', () => {
         it('stops adding message-pairs when limit has been reached', () => {
             const builder = new PromptBuilder(30)
             const longTranscript: ChatMessage[] = [
-                { speaker: 'human', text: 'Hi assistant!' },
-                { speaker: 'assistant', text: 'Hello there!' },
-                { speaker: 'human', text: 'Hi again!' },
+                { speaker: 'human', text: ps`Hi assistant!` },
+                { speaker: 'assistant', text: ps`Hello there!` },
+                { speaker: 'human', text: ps`Hi again!` },
                 {
                     speaker: 'assistant',
-                    text: 'This is a very long message that should exceed the character limit',
+                    text: ps`This is a very long message that should exceed the character limit`,
                 },
                 // Only this message should be added
-                { speaker: 'human', text: 'This should be added.' },
+                { speaker: 'human', text: ps`This should be added.` },
             ]
             const numberOfMessagesIgnored = builder.tryAddMessages(longTranscript.reverse())
             expect(numberOfMessagesIgnored).toBe(4)

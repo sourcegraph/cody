@@ -6,6 +6,8 @@ import {
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
+    PromptString,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import {
@@ -98,8 +100,8 @@ export function getConfiguration(
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
-        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
-        editPreInstruction: config.get(CONFIG_KEY.editPreInstruction, ''),
+        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
+        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         autocompleteAdvancedProvider,
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),

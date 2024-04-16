@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, CODY_SUPPORT_URL, DISCORD_URL } from '../chat/protocol'
 
-// Support items for paid users (e.g Enterprise Users and Cody Pro Users)
-export const PremiumSupportItems = [
+// Support items
+export const SupportOptionItems = [
     {
         label: '$(question) Cody Support',
         async onSelect(): Promise<void> {

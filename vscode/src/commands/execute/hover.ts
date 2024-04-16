@@ -1,4 +1,4 @@
-import { displayPath } from '@sourcegraph/cody-shared'
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -19,9 +19,9 @@ async function hoverChatCommand(args: Partial<CodyCommandArgs>): Promise<Execute
     contextFiles.push(...(await getContextFileFromCursor(range?.start)))
 
     const startLine = range?.start?.line ?? 0
-    const prompt = `Summarize @${displayPath(uri)}${startLine ? ':' + startLine : ''}${
-        additionalInstruction ? `${additionalInstruction}` : ''
-    }`
+    const prompt = ps`Summarize @${PromptString.fromDisplayPath(uri)}${
+        startLine ? ps`:${startLine}` : ''
+    }${additionalInstruction ? additionalInstruction : ''}`
 
     return {
         text: prompt,
