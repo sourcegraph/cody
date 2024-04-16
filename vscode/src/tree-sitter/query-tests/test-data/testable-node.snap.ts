@@ -9,44 +9,36 @@
       console.log('wrapper')
       function test() {
 //    ^ start range.function[1]
-          console.log('test')
+//             ^^^^ symbol.function[1]
 //               █
+          console.log('test')
       }
 //    ^ end range.function[1]
   }
 
 // Nodes types:
+// symbol.function[1]: identifier
 // range.function[1]: function_declaration
 
 // ------------------------------------
 
   function testFunc() {
 //^ start range.function[1]
+//         ^^^^^^^^ symbol.function[1]
 //              █
       wrapper
   }
 //^ end range.function[1]
 
 // Nodes types:
-// range.function[1]: function_declaration
-
-// ------------------------------------
-
-  function testParameter(val) {
-//^ start range.function[1]
-//                       █
-      wrapper
-  }
-//^ end range.function[1]
-
-// Nodes types:
+// symbol.function[1]: identifier
 // range.function[1]: function_declaration
 
 // ------------------------------------
 
   function testKeyword(val) {
 //^ start range.function[1]
-//    █
+//       █
       wrapper
   }
 //^ end range.function[1]
@@ -56,48 +48,18 @@
 
 // ------------------------------------
 
-  function arrowWrapper() {
-      const arrow = (value: string) => {
-//                  ^ start range.function[1]
-          console.log('hello')
-//            █
-      }
-//    ^ end range.function[1]
-  }
-
-// Nodes types:
-// range.function[1]: arrow_function
-
-// ------------------------------------
-
-  const arrowFunc = (value: string) => {
-//                  ^ start range.function[1]
-      console.log('hello')
-//        █
-  }
-//^ end range.function[1]
-
-// Nodes types:
-// range.function[1]: arrow_function
-
-// ------------------------------------
-
-class Agent {
-    //   |
-}
-
-// ------------------------------------
-
   class AgentConstructor {
       constructor() {
+//    ^^^^^^^^^^^ symbol.function[1]
 //    ^ start range.function[1]
-          console.log('hello')
 //             █
+          console.log('hello')
       }
 //    ^ end range.function[1]
   }
 
 // Nodes types:
+// symbol.function[1]: property_identifier
 // range.function[1]: method_definition
 
 // ------------------------------------
@@ -107,12 +69,14 @@ class Agent {
 
       public sayHello() {
 //    ^ start range.function[1]
-          console.log('hello')
+//           ^^^^^^^^ symbol.function[1]
 //             █
+          console.log('hello')
       }
 //    ^ end range.function[1]
   }
 
 // Nodes types:
+// symbol.function[1]: property_identifier
 // range.function[1]: method_definition
 

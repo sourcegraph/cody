@@ -71,7 +71,7 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`
-    (function_definition) @range.function
+    (function_definition (identifier) @symbol.function) @range.function
 `
 
 export const pythonQueries = {

@@ -223,8 +223,8 @@ const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
 const JS_ENCLOSING_FUNCTION_QUERY = dedent`
     (function_declaration name: (identifier) @symbol.function) @range.function
     (generator_function_declaration (identifier) @symbol.function) @range.function
-    (function_expression (identifier) @symbol.function) @range.function
-    (arrow_function (identifier) @symbol.function) @range.function
+    (function_expression) @range.function
+    (arrow_function) @range.function
     (method_definition (property_identifier) @symbol.function) @range.function
 `
 
