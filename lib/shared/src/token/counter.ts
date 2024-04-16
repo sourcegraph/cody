@@ -97,7 +97,7 @@ export class TokenCounter {
      * Calculates the remaining token budget for each token usage type:
      *   1. Chat: Calculated by subtracting the used chat tokens from the maximum allowed chat tokens.
      *   2. User-Context: Calculated by subtracting the used User-Context tokens from the maximum allowed User-Context tokens.
-     *   3. Enhanced-Context: Calculated as a percentage of the remaining chat token budget in all modes.
+     *   3. Enhanced-Context: Calculated as a percentage of the remaining chat token budget.
      *
      * @returns The remaining token budget for chat, User-Context, and Enhanced-Context (if applicable).
      */
@@ -112,12 +112,6 @@ export class TokenCounter {
 
     /**
      * Checks if the specified token usage type has enough remaining tokens to allocate the given count.
-     *
-     * When constructing prompt where `shareChatAndUserBudget` is true (separate user context budget mode):
-     * 1. Chat prompt has the highest priority and is built first using its token budget.
-     * 2a. If there are tokens remaining after building the Chat prompt: User-Context is built using the remaining Chat tokens.
-     * 2b. If there are no tokens left after building the Chat prompt: No User-Context will be added.
-     * 3. Enhanced-Context is built using a percentage of the remaining Chat tokens.
      *
      * @param type - The type of token usage to check.
      * @param count - The number of tokens to allocate.
