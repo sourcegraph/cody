@@ -8,15 +8,17 @@ import { logDebug } from '../log'
 import { LRUCache } from 'lru-cache'
 import { gitRemoteUrlFromGitExtension } from './git-extension-api'
 
+export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
 type FsPath = string
 type RepoName = string
-const fsPathToRepoNameCache = new LRUCache<FsPath, RepoName>({ max: 1000 })
-
-export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
 
 export class RepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
+    private fsPathToRepoNameCache = new LRUCache<FsPath, RepoName>({ max: 1000 })
 
+    /**
+     * Currently is used to set node specific remote url getters on the extension init.
+     */
     public init(platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []) {
         this.platformSpecificGitRemoteGetters = platformSpecificGitRemoteGetters
     }
@@ -25,19 +27,18 @@ export class RepoNameResolver {
      * Gets the codebase name from a workspace / file URI.
      *
      * Checks if the Git API is initialized, initializes it if not.
-     * Gets the Git repository for the given URI.
      * If found, gets the codebase name from the repository.
      * If not found, attempts to use Git CLI to get the codebase name (in node.js environment only).
-     * if not found, walks the file system upwards until it finds a.git folder.
-     * If not found, returns undefined.
+     * if not found, walks the file system upwards until it finds a `.git` folder.
+     * If not found, returns `undefined`.
      */
     public async getRepoNameFromWorkspaceUri(uri: vscode.Uri): Promise<string | undefined> {
         if (!isFileURI(uri)) {
             return undefined
         }
 
-        if (fsPathToRepoNameCache.has(uri.fsPath)) {
-            return fsPathToRepoNameCache.get(uri.fsPath)
+        if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
+            return this.fsPathToRepoNameCache.get(uri.fsPath)
         }
 
         try {
@@ -59,7 +60,7 @@ export class RepoNameResolver {
 
             if (remoteOriginUrl) {
                 const repoName = convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
-                fsPathToRepoNameCache.set(uri.fsPath, repoName)
+                this.fsPathToRepoNameCache.set(uri.fsPath, repoName)
 
                 return repoName
             }
