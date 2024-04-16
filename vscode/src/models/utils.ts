@@ -53,7 +53,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                { chat: tokenLimit ?? CHAT_TOKEN_BUDGET, user: 0 }
+                { input: tokenLimit ?? CHAT_TOKEN_BUDGET }
             ),
         ])
     }
@@ -87,7 +87,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            { chat: m.tokens ?? CHAT_TOKEN_BUDGET, user: 0 },
+            { input: m.tokens ?? CHAT_TOKEN_BUDGET },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true

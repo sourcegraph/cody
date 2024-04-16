@@ -24,7 +24,7 @@ export class TokenCounter {
      */
     private usedTokens: { chat: number; user: number } = { chat: 0, user: 0 }
     /**
-     * Indicates whether the Chat and User context share the same token budget.
+     * Indicates whether the Chat and User-Context share the same token budget.
      * - If true, the User-Context will use a separate budget.
      * - If false, all types of messages (chat and any type of context) share the same token budget with Chat.
      *
@@ -33,14 +33,13 @@ export class TokenCounter {
     private shareChatAndUserBudget = false
 
     constructor(contextWindow: ModelContextWindow) {
-        // If the context window for User-Context is 0, all context share the same token budget with chat.
-        this.shareChatAndUserBudget = contextWindow.user === 0
-
-        this.maxChatTokens = contextWindow.chat
+        // If there is no context window reserved for context.user,
+        // context will share the same token budget with chat.
+        this.shareChatAndUserBudget = !contextWindow.context?.user
+        this.maxChatTokens = contextWindow.input
         this.maxContextTokens = {
-            user: contextWindow.user || contextWindow.chat,
-            // Enhanced-Context token budget can be up to a percentage of the latest chat token budget.
-            enhanced: Math.floor(contextWindow.chat * ENHANCED_CONTEXT_ALLOCATION),
+            user: contextWindow.context?.user ?? contextWindow.input,
+            enhanced: Math.floor(contextWindow.input * ENHANCED_CONTEXT_ALLOCATION),
         }
     }
 

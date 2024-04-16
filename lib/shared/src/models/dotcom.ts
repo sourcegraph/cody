@@ -11,7 +11,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 2.1',
@@ -20,7 +20,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Claude Instant',
@@ -29,7 +29,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: FAST_CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: FAST_CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Haiku',
@@ -38,7 +38,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Sonnet',
@@ -47,7 +47,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +56,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,7 +65,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: FAST_CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: FAST_CHAT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-4 Turbo',
@@ -74,7 +74,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -84,7 +84,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        contextWindow: { input: CHAT_TOKEN_BUDGET },
     },
     {
         title: 'Mixtral 8x22B Preview',
@@ -94,7 +94,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat],
         // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
-        contextWindow: { chat: 1800, user: 0 },
+        contextWindow: { input: 1800 },
     },
 ]
 
@@ -104,7 +104,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
  * An array of model IDs that are used for the FeatureFlag.CodyChatContextBudget A/B testing.
  * Users with the feature flag enabled will have a seperated token limit for user-context.
  *
- * For other models, the context window remains the same and is shared between chat and context.
+ * For other models, the context window remains the same and is shared between input and context.
  */
 const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
 
@@ -125,8 +125,8 @@ export function getDotComDefaultModels(modelType: 'default' | 'experimental'): M
                   ? {
                           ...m,
                           contextWindow: {
-                              chat: CHAT_TOKEN_BUDGET,
-                              user: USER_CONTEXT_TOKEN_BUDGET,
+                              input: CHAT_TOKEN_BUDGET,
+                              context: { user: USER_CONTEXT_TOKEN_BUDGET },
                           },
                       }
                   : m

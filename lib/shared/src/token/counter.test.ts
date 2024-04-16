@@ -6,7 +6,7 @@ import { TokenCounter } from './counter'
 
 describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets', () => {
-        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: 0 })
+        const counter = new TokenCounter({ input: CHAT_TOKEN_BUDGET })
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         // Context budget will be shared with chat budget.
         expect(counter.maxContextTokens.user).toBe(CHAT_TOKEN_BUDGET)
@@ -14,21 +14,24 @@ describe('TokenCounter class', () => {
     })
 
     it('should initialize with the correct token budgets for a customized context window without user context budget', () => {
-        const counter = new TokenCounter({ chat: 1234, user: 0 })
+        const counter = new TokenCounter({ input: 1234 })
         expect(counter.maxChatTokens).toBe(1234)
         expect(counter.maxContextTokens.user).toBe(1234)
         expect(counter.maxContextTokens.enhanced).toBe(Math.floor(1234 * ENHANCED_CONTEXT_ALLOCATION))
     })
 
     it('should initialize with the correct token budgets when user context is provided', () => {
-        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: USER_CONTEXT_TOKEN_BUDGET })
+        const counter = new TokenCounter({
+            input: CHAT_TOKEN_BUDGET,
+            context: { user: USER_CONTEXT_TOKEN_BUDGET },
+        })
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.user).toBe(USER_CONTEXT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
     })
 
     it('should update token usage and return true when within limits', () => {
-        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: 0 })
+        const counter = new TokenCounter({ input: CHAT_TOKEN_BUDGET })
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -37,7 +40,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when token usage exceeds limits', () => {
-        const counter = new TokenCounter({ chat: 5, user: 0 })
+        const counter = new TokenCounter({ input: 5 })
         const messages: Message[] = [
             { speaker: 'human', text: 'This is a very long message that will exceed the token limit.' },
         ]
@@ -45,7 +48,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should update token usage and return true when within limits - chat and user context share the same budget', () => {
-        const counter = new TokenCounter({ chat: OLLAMA_DEFAULT_CONTEXT_WINDOW, user: 0 })
+        const counter = new TokenCounter({ input: OLLAMA_DEFAULT_CONTEXT_WINDOW })
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -54,7 +57,10 @@ describe('TokenCounter class', () => {
     })
 
     it('should update token usage and return true when within limits - chat and user context have separate budgets', () => {
-        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: USER_CONTEXT_TOKEN_BUDGET })
+        const counter = new TokenCounter({
+            input: CHAT_TOKEN_BUDGET,
+            context: { user: USER_CONTEXT_TOKEN_BUDGET },
+        })
         const chatMessages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -67,7 +73,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when exceeds limits - chat and user context have separate budgets', () => {
-        const counter = new TokenCounter({ chat: 10, user: 20 })
+        const counter = new TokenCounter({ input: 10, context: { user: 20 } })
         expect(
             counter.updateUsage('user', [
                 { speaker: 'human', text: 'Here is my selected code...' },
@@ -92,7 +98,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when exceeds limits - chat and user context share the same budget', () => {
-        const counter = new TokenCounter({ chat: 30, user: 0 })
+        const counter = new TokenCounter({ input: 30 })
         expect(
             counter.updateUsage('user', [
                 { speaker: 'human', text: 'Here is my selected code...' },

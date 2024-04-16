@@ -53,7 +53,7 @@ export class DefaultPrompter implements IPrompter {
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(
-                    `Preamble length exceeded context window size ${chat.contextWindow.chat}`
+                    `Preamble length exceeded context window size ${chat.contextWindow.input}`
                 )
             }
 

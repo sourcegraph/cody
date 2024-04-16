@@ -39,6 +39,19 @@ export type ChatModel =
     | (string & {})
 
 export interface ModelContextWindow {
-    chat: number
-    user: number
+    /**
+     * The token limit reserved for chat input.
+     */
+    input: number
+    /**
+     * The additional tokens reserved for context.
+     * When not defined, context shares the same token limit as input.
+     */
+    context?: {
+        /**
+         * The token limit reserved for user-added context.
+         * Example: @-mentions.
+         */
+        user?: number
+    }
 }

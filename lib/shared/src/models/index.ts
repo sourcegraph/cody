@@ -29,12 +29,10 @@ export class ModelProvider {
          */
         public readonly usage: ModelUsage[],
         /**
-         * The default context window of the model reserved for Chat and User-Context.
-         *
-         * If no budget is reserved for 'user' (User-Context), it falls back to share tokens with chat.
+         * The default context window of the model reserved for Chat and Context.
          * {@see TokenCounter on how the token usage is calculated.}
          */
-        public readonly contextWindow: ModelContextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0 },
+        public readonly contextWindow: ModelContextWindow = { input: CHAT_TOKEN_BUDGET },
         /**
          * The configuration for the model.
          */
@@ -123,7 +121,7 @@ export class ModelProvider {
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model ? model.contextWindow : { chat: CHAT_TOKEN_BUDGET, user: 0 }
+        return model ? model.contextWindow : { input: CHAT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
