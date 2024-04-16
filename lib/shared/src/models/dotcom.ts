@@ -1,5 +1,10 @@
 import type { ModelProvider } from '.'
-import { CHAT_TOKEN_BUDGET, FAST_CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } from '../token/constants'
+import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
+} from '../token/constants'
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
@@ -11,7 +16,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 2.1',
@@ -20,7 +25,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude Instant',
@@ -29,7 +34,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: FAST_CHAT_TOKEN_BUDGET },
+        contextWindow: { input: FAST_CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Haiku',
@@ -38,7 +43,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Sonnet',
@@ -47,7 +52,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +61,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,7 +70,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: FAST_CHAT_TOKEN_BUDGET },
+        contextWindow: { input: FAST_CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-4 Turbo',
@@ -74,7 +79,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -84,7 +89,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        contextWindow: { input: CHAT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
     },
     {
         title: 'Mixtral 8x22B Preview',
@@ -99,7 +104,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
 ]
 
 /**
- * NOTE: Used for FeatureFlag.CodyChatContextBudget A/B testing only.
+ * NOTE: DotCom users with FeatureFlag.CodyChatContextBudget for A/B testing only.
  *
  * An array of model IDs that are used for the FeatureFlag.CodyChatContextBudget A/B testing.
  * Users with the feature flag enabled will have a seperated token limit for user-context.
@@ -111,7 +116,7 @@ const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/
 /**
  * Returns an array of ModelProviders representing the default models for DotCom.
  *
- * NOTE: 'experimental' models are for DotCom users with the `FeatureFlag.CodyChatContextBudget` enabled.
+ * NOTE: 'experimental' is only for DotCom users with FeatureFlag.CodyChatContextBudget enabled
  *
  * @param modelType - Specifies whether to return the default or experimental models.
  * @returns An array of `ModelProvider` objects.
@@ -119,14 +124,14 @@ const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/
 export function getDotComDefaultModels(modelType: 'default' | 'experimental'): ModelProvider[] {
     return modelType === 'default'
         ? DEFAULT_DOT_COM_MODELS
-        : // NOTE: Required FeatureFlag.CodyChatContextBudget for A/B testing only.
+        : // NOTE: Required FeatureFlag.CodyChatContextBudget for A/B testing.
           DEFAULT_DOT_COM_MODELS.map(m =>
               modelsWithHigherLimit.includes(m.model)
                   ? {
                           ...m,
                           contextWindow: {
-                              input: CHAT_TOKEN_BUDGET,
-                              context: { user: USER_CONTEXT_TOKEN_BUDGET },
+                              input: EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
+                              context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
                           },
                       }
                   : m

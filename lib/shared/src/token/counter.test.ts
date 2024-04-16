@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
-import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
+import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    ENHANCED_CONTEXT_ALLOCATION,
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
+} from './constants'
 import { TokenCounter } from './counter'
 
 const preamble: Message[] = [
@@ -11,11 +15,13 @@ const preamble: Message[] = [
 
 describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets', () => {
-        const counter = new TokenCounter({ input: CHAT_TOKEN_BUDGET })
-        expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
+        expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
         // Context budget will be shared with chat budget.
-        expect(counter.maxContextTokens.user).toBe(CHAT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
+        expect(counter.maxContextTokens.user).toBe(CHAT_INPUT_TOKEN_BUDGET)
+        expect(counter.maxContextTokens.enhanced).toBe(
+            CHAT_INPUT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION
+        )
     })
 
     it('should initialize with the correct token budgets for a customized context window', () => {
@@ -27,31 +33,33 @@ describe('TokenCounter class', () => {
 
     it('should initialize with the correct token budgets when user context is provided', () => {
         const counter = new TokenCounter({
-            input: CHAT_TOKEN_BUDGET,
-            context: { user: USER_CONTEXT_TOKEN_BUDGET },
+            input: CHAT_INPUT_TOKEN_BUDGET,
+            context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
         })
-        expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.user).toBe(USER_CONTEXT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
+        expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
+        expect(counter.maxContextTokens.user).toBe(EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET)
+        expect(counter.maxContextTokens.enhanced).toBe(
+            CHAT_INPUT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION
+        )
     })
 
     it('should throw error when adding input without preamble', () => {
-        const counter = new TokenCounter({ input: CHAT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
         expect(() => counter.updateUsage('input', [{ speaker: 'human', text: ps`Hello` }])).toThrowError(
             'Preamble must be updated before Chat input.'
         )
     })
 
     it('should update token usage and return true when within limits', () => {
-        const counter = new TokenCounter({ input: CHAT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens needed
         const messages: Message[] = [
             // 4 chat tokens needed
             { speaker: 'human', text: ps`Hello` },
             { speaker: 'assistant', text: ps`Hi there!` },
         ]
-        expect(CHAT_TOKEN_BUDGET).toBeGreaterThan(3 + 4)
-        // 3 + 4 chat tokens needed = within limit of CHAT_TOKEN_BUDGET
+        expect(CHAT_INPUT_TOKEN_BUDGET).toBeGreaterThan(3 + 4)
+        // 3 + 4 chat tokens needed = within limit of CHAT_INPUT_TOKEN_BUDGET
         expect(counter.updateUsage('input', messages)).toBe(true)
     })
 
@@ -81,8 +89,8 @@ describe('TokenCounter class', () => {
 
     it('should update token usage and return true when within limits - chat and user context have separate budgets', () => {
         const counter = new TokenCounter({
-            input: CHAT_TOKEN_BUDGET,
-            context: { user: USER_CONTEXT_TOKEN_BUDGET },
+            input: CHAT_INPUT_TOKEN_BUDGET,
+            context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
         })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
         expect(

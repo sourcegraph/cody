@@ -18,7 +18,7 @@ import {
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import { FAST_CHAT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
@@ -100,7 +100,9 @@ export default function MentionsPlugin(): JSX.Element | null {
     const options = useMemo(() => {
         const model = useCurrentChatModel()
         const limit =
-            model?.contextWindow?.context?.user || model?.contextWindow?.input || FAST_CHAT_TOKEN_BUDGET
+            model?.contextWindow?.context?.user ||
+            model?.contextWindow?.input ||
+            FAST_CHAT_INPUT_TOKEN_BUDGET
         return (
             results
                 ?.map(r => {

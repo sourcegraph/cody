@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ModelProvider } from '../models/index'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import { CHAT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
 import { ModelUsage } from './types'
 
@@ -12,7 +12,7 @@ describe('Model Provider', () => {
 
     it('returns default token limit for unknown model', () => {
         const max = ModelProvider.getContextWindowByID('unknown-model')
-        expect(max).toEqual({ input: CHAT_TOKEN_BUDGET })
+        expect(max).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET })
     })
 
     it('returns max token limit for known chat model', () => {
@@ -36,7 +36,7 @@ describe('Model Provider', () => {
     it('returns default token limit for unknown model - Enterprise user', () => {
         ModelProvider.getProviders(ModelUsage.Chat, false, 'https://example.com')
         const cw = ModelProvider.getContextWindowByID('unknown-model')
-        expect(cw).toEqual({ input: CHAT_TOKEN_BUDGET })
+        expect(cw).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET })
     })
 
     it('returns max token limit for known model - Enterprise user', () => {

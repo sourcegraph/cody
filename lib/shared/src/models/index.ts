@@ -1,5 +1,5 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { CHAT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
@@ -32,7 +32,7 @@ export class ModelProvider {
          * The default context window of the model reserved for Chat and Context.
          * {@see TokenCounter on how the token usage is calculated.}
          */
-        public readonly contextWindow: ModelContextWindow = { input: CHAT_TOKEN_BUDGET },
+        public readonly contextWindow: ModelContextWindow = { input: CHAT_INPUT_TOKEN_BUDGET },
         /**
          * The configuration for the model.
          */
@@ -121,7 +121,7 @@ export class ModelProvider {
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model ? model.contextWindow : { input: CHAT_TOKEN_BUDGET }
+        return model ? model.contextWindow : { input: CHAT_INPUT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

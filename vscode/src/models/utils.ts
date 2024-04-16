@@ -6,8 +6,9 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 import { getDotComDefaultModels } from '@sourcegraph/cody-shared/src/models/dotcom'
-import { CHAT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import * as vscode from 'vscode'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 
 /**
  * Sets the model providers based on the authentication status.
@@ -32,6 +33,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 ModelProvider.setProviders(experimentalModels)
             }
             getChatModelsFromConfiguration()
+            logFirstEnrollmentEvent(FeatureFlag.CodyChatContextBudget, isEnrolled)
         })
     }
 
@@ -53,7 +55,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                { input: tokenLimit ?? CHAT_TOKEN_BUDGET }
+                { input: tokenLimit ?? CHAT_INPUT_TOKEN_BUDGET }
             ),
         ])
     }
@@ -87,7 +89,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            { input: m.tokens ?? CHAT_TOKEN_BUDGET },
+            { input: m.tokens ?? CHAT_INPUT_TOKEN_BUDGET },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true
