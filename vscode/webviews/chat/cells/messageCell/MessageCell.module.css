@@ -6,6 +6,9 @@
 .message-content {
     flex: 1 0;
 }
+.human-content {
+    white-space: pre-wrap;
+}
 .edit-button {
     flex: 0 0 auto;
 }
