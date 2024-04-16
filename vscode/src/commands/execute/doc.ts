@@ -86,7 +86,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
 ): Promise<EditCommandResult | undefined> {
-    // In the Agent, this is called when we receive a 'commands/document', with no args.
+    // In the Agent, this is called when we receive 'editCommands/document', with no args.
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { args })

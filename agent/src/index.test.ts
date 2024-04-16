@@ -1351,7 +1351,7 @@ describe('Agent', () => {
 
         checkDocumentCommand(
             enterpriseClient,
-            'commands/document (enterprise client)',
+            'editCommands/document (enterprise client)',
             'example.test.ts',
             obtained =>
                 expect(obtained).toMatchInlineSnapshot(`

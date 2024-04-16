@@ -9,7 +9,7 @@ export class CodyNodeHttpAdapter extends NodeHttpAdapter {
                     .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
                     .replaceAll(/(\\\\)(\w)/g, '/$2')
             } catch (e) {
-                console.error(e)
+                console.error('CodyNodeHttpAdapter.onRequest', e)
             }
         }
 

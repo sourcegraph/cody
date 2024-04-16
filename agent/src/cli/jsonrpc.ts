@@ -146,9 +146,12 @@ export const jsonrpcCommand = new Command('jsonrpc')
 
             // TODO: I'm not yet sure why this is required, but Polly refuses to record
             // for the jetbrains integration tests unless I call persist() manually.
-            // The CODY_TESTING flag disambiguates Agent-side integration tests from client-side
-            // integration tests -- it is only used for the Agent-side tests.
-            if (options.recordingMode === 'record' && process.env.CODY_TESTING !== 'true') {
+            if (
+                options.recordingMode === 'record' &&
+                // The CODY_TESTING flag disambiguates Agent-side integration tests from client-side
+                // integration tests -- it is only used for the Agent-side tests.
+                process.env.CODY_TESTING !== 'true'
+            ) {
                 polly.server.any().on('response', () => polly?.persister.persist())
             }
         } else if (options.recordingMode) {
