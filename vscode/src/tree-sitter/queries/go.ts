@@ -45,8 +45,8 @@ const DOCUMENTABLE_NODES = dedent`
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`
-    (function_declaration) @range.function
-    (method_declaration) @range.function
+    (function_declaration (identifier) @symbol.function) @range.function
+    (method_declaration (field_identifier) @symbol.function) @range.function
     (func_literal) @range.function
 `
 
