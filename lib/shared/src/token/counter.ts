@@ -153,7 +153,7 @@ export class TokenCounter {
      * @returns The number of tokens in the message.
      */
     private static getTokenCountForMessage(message: Message): number {
-        if (!message?.text) {
+        if (message?.text && message?.text.length > 0) {
             return 0
         }
 
