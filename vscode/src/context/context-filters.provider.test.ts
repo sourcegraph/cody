@@ -315,7 +315,7 @@ describe('ContextFiltersProvider', () => {
             expect(await provider.isUriAllowed(includedURI)).toBe(true)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
-            expect(excludedURI.fsPath).toBe('/sourcegraph/src/main.tsx')
+            expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
             expect(await repoNameResolver.getRepoNameFromWorkspaceUri(excludedURI)).toBe(
                 'github.com/sourcegraph/sourcegraph'
             )
