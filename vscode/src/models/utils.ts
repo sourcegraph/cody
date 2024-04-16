@@ -61,10 +61,6 @@ interface ChatModelProviderConfig {
     outputTokens?: number
     apiKey?: string
     apiEndpoint?: string
-    /**
-     * @deprecated Use `inputTokens` instead.
-     */
-    tokens?: number
 }
 
 /**
@@ -87,7 +83,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            m.inputTokens ?? m.tokens,
+            m.inputTokens,
             m.outputTokens,
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
