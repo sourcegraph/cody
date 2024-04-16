@@ -3,6 +3,7 @@ import {
     type EditModel,
     type EventSource,
     ModelProvider,
+    PromptString,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -42,7 +43,7 @@ import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from 
 
 interface QuickPickInput {
     /** The user provided instruction */
-    instruction: string
+    instruction: PromptString
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextItem[]
     /** The LLM that the user has selected */
@@ -62,7 +63,7 @@ export interface EditInputInitialValues {
     initialExpandedRange?: vscode.Range
     initialModel: EditModel
     initialIntent: EditIntent
-    initialInputValue?: string
+    initialInputValue?: PromptString
     initialSelectedContextItems?: ContextItem[]
 }
 
@@ -294,7 +295,7 @@ export const getInput = async (
                 return executeEdit({
                     configuration: {
                         document,
-                        instruction: defaultCommands.doc.prompt,
+                        instruction: PromptString.fromDefaultCommands(defaultCommands, 'doc'),
                         range: activeRange,
                         intent: 'doc',
                         mode: 'insert',
@@ -367,7 +368,7 @@ export const getInput = async (
                 const input = editInput.input
                 if (
                     initialValues.initialInputValue !== undefined &&
-                    value === initialValues.initialInputValue
+                    value.toString() === initialValues.initialInputValue.toString()
                 ) {
                     // Noop, this event is fired when an initial value is set
                     return
@@ -454,7 +455,7 @@ export const getInput = async (
             },
             onDidAccept: () => {
                 const input = editInput.input
-                const instruction = input.value.trim()
+                const instruction = PromptString.unsafe_fromUserQuery(input.value.trim())
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = input.selectedItems[0]
@@ -482,7 +483,7 @@ export const getInput = async (
                 }
 
                 // Empty input flow, do nothing
-                if (!instruction) {
+                if (instruction.length === 0) {
                     return
                 }
 
@@ -492,7 +493,7 @@ export const getInput = async (
                     const contextItem = contextItems.get(key)
                     if (contextItem) {
                         // Replace fuzzy value with actual context in input
-                        input.value = `${removeAfterLastAt(instruction)}@${key} `
+                        input.value = `${removeAfterLastAt(instruction.toString())}@${key} `
                         selectedContextItems.set(key, contextItem)
                         return
                     }
@@ -504,7 +505,7 @@ export const getInput = async (
                 return resolve({
                     instruction: instruction.trim(),
                     userContextFiles: Array.from(selectedContextItems)
-                        .filter(([key]) => instruction.includes(`@${key}`))
+                        .filter(([key]) => instruction.toString().includes(`@${key}`))
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
@@ -513,7 +514,7 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, initialValues.initialInputValue || '')
+        editInput.render(activeTitle, initialValues.initialInputValue?.toString() || '')
         editInput.input.activeItems = []
     })
 }

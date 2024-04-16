@@ -1,10 +1,5 @@
-import {
-    type ContextItem,
-    type Message,
-    ModelProvider,
-    ModelUsage,
-    TokenCounter,
-} from '@sourcegraph/cody-shared'
+import { ModelProvider, ModelUsage, TokenCounter } from '@sourcegraph/cody-shared'
+import { type ContextItem, type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -19,7 +14,7 @@ describe('DefaultPrompter', () => {
     it('constructs a prompt with no context', async () => {
         ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
@@ -28,15 +23,15 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual<Message[]>([
             {
                 speaker: 'human',
-                text: 'You are Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'human',
-                text: 'Hello',
+                text: ps`Hello`,
             },
         ])
         expect(newContextUsed).toEqual([])
@@ -53,7 +48,7 @@ describe('DefaultPrompter', () => {
 
         ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
@@ -62,15 +57,15 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual<Message[]>([
             {
                 speaker: 'human',
-                text: 'You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'human',
-                text: 'Hello',
+                text: ps`Hello`,
             },
         ])
         expect(newContextUsed).toEqual([])

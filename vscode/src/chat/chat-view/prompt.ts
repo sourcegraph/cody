@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
+    PromptString,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -28,7 +29,7 @@ export interface IPrompter {
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: PromptString, charLimit: number) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -45,9 +46,11 @@ export class DefaultPrompter implements IPrompter {
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.tokenTracker)
-            const preInstruction: string | undefined = vscode.workspace
-                .getConfiguration('cody.chat')
-                .get('preInstruction')
+            const preInstruction: PromptString | undefined = PromptString.fromConfig(
+                vscode.workspace.getConfiguration('cody.chat'),
+                'preInstruction',
+                undefined
+            )
 
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)

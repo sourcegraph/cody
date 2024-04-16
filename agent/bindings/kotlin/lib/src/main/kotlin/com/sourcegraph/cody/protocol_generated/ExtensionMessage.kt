@@ -72,7 +72,7 @@ data class HistoryExtensionMessage(
 
 data class TranscriptExtensionMessage(
   val type: TypeEnum? = null, // Oneof: transcript
-  val messages: List<ChatMessage>? = null,
+  val messages: List<SerializedChatMessage>? = null,
   val isMessageInProgress: Boolean? = null,
   val chatID: String? = null,
 ) : ExtensionMessage() {

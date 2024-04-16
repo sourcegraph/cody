@@ -7,6 +7,7 @@ import {
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
+    type PromptString,
     type Result,
     isFileURI,
     truncateTextNearestLine,
@@ -24,7 +25,7 @@ import { logDebug, logError } from '../../log'
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
-    text: string
+    text: PromptString
     providers: {
         localEmbeddings: LocalEmbeddingsController | null
         symf: SymfRunner | null
@@ -163,7 +164,7 @@ async function getEnhancedContextFromRanker({
 
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
-    userText: string
+    userText: PromptString
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
@@ -190,7 +191,7 @@ async function searchRemote(
 async function searchSymf(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
-    userText: string,
+    userText: PromptString,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {
@@ -255,7 +256,7 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string,
+    text: PromptString,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async span => {
@@ -341,7 +342,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
 }
 
 async function getPriorityContext(
-    text: string,
+    text: PromptString,
     editor: VSCodeEditor,
     retrievedContext: ContextItem[]
 ): Promise<ContextItem[]> {
@@ -374,8 +375,8 @@ async function getPriorityContext(
     })
 }
 
-function needsUserAttentionContext(input: string): boolean {
-    const inputLowerCase = input.toLowerCase()
+function needsUserAttentionContext(input: PromptString): boolean {
+    const inputLowerCase = input.toString().toLowerCase()
     // If the input matches any of the `editorRegexps` we assume that we have to include
     // the editor context (e.g., currently open file) to the overall message context.
     for (const regexp of userAttentionRegexps) {
@@ -386,15 +387,15 @@ function needsUserAttentionContext(input: string): boolean {
     return false
 }
 
-function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
-    input = input.toLowerCase()
-    const question = extractQuestion(input)
+function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean {
+    const stringInput = input.toString().toLowerCase()
+    const question = extractQuestion(stringInput)
     if (!question) {
         return false
     }
 
     // split input into words, discarding spaces and punctuation
-    const words = input.split(/\W+/).filter(w => w.length > 0)
+    const words = stringInput.split(/\W+/).filter(w => w.length > 0)
     const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
 
     const projectSignifiers = [

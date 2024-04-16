@@ -5,6 +5,7 @@ import {
     type Message,
     type TokenCounter,
     isCodyIgnoredFile,
+    ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
@@ -102,7 +103,7 @@ export class PromptBuilder {
             if (!contextMsg) {
                 continue
             }
-            const assistantMsg = { speaker: 'assistant', text: 'Ok.' } as Message
+            const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
             const withinLimit = this.tokenCounter.updateUsage(type, [contextMsg, assistantMsg])
             // Marks excluded context items as too large and vice versa
             userContextItem.isTooLarge = !withinLimit

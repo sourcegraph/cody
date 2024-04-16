@@ -230,6 +230,12 @@ importers:
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
+      dedent:
+        specifier: ^0.7.0
+        version: 0.7.0
+      diff:
+        specifier: ^5.2.0
+        version: 5.2.0
       dompurify:
         specifier: ^3.0.4
         version: 3.0.4
@@ -255,6 +261,12 @@ importers:
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
+      '@types/dedent':
+        specifier: ^0.7.0
+        version: 0.7.0
+      '@types/diff':
+        specifier: ^5.0.9
+        version: 5.0.9
       '@types/dompurify':
         specifier: ^3.0.2
         version: 3.0.2

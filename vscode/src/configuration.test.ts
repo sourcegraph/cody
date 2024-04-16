@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
+import { type Configuration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -117,8 +117,8 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
-            chatPreInstruction: 'My name is Jeff.',
-            editPreInstruction: 'My name is not Jeff.',
+            chatPreInstruction: ps`My name is Jeff.`,
+            editPreInstruction: ps`My name is not Jeff.`,
             autocomplete: false,
             autocompleteLanguages: {
                 '*': true,

@@ -6,7 +6,7 @@ import type {
     TokenBudget,
     TokenUsageType,
 } from '.'
-import type { Message } from '..'
+import type { Message, PromptString } from '..'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 
 /**
@@ -141,6 +141,10 @@ export class TokenCounter {
         return TokenCounter.encode(text).length
     }
 
+    public static countPromptString(text: PromptString): number {
+        return TokenCounter.encode(text.toString()).length
+    }
+
     /**
      * Counts the number of tokens in the given message using the tokenizer.
      *
@@ -148,11 +152,10 @@ export class TokenCounter {
      * @returns The number of tokens in the message.
      */
     private static getTokenCountForMessage(message: Message): number {
-        if (!message) {
-            return 0
+        if (message?.text && message?.text.length > 0) {
+            return TokenCounter.countPromptString(message.text)
         }
-
-        return TokenCounter.countTokens(message.text + message.speaker)
+        return 0
     }
 
     /**
