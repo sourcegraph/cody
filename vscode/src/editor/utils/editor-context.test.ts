@@ -171,6 +171,7 @@ describe('filterLargeFiles', () => {
             type: 'file',
             uri: largeTextFile.uri,
             isTooLarge: true,
+            size: oneByteOverTokenLimit,
         })
     })
 })

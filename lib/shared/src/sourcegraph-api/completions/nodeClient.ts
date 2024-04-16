@@ -8,7 +8,10 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
-import { ollamaChatClient } from '../../ollama/chat-client'
+import { agent } from '../../fetch'
+import { googleChatClient } from '../../llm-providers/google/chat-client'
+import { groqChatClient } from '../../llm-providers/groq/chat-client'
+import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
@@ -45,8 +48,18 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             }
 
-            if (params.model?.startsWith('ollama')) {
+            // TODO - Centralize this logic in a single place
+            const [provider] = params.model?.split('/') ?? []
+            if (provider === 'ollama') {
                 ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
+            }
+            if (provider === 'google') {
+                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
+            }
+            if (provider === 'groq') {
+                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
 
@@ -71,7 +84,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             // Text which has not been decoded as a server-sent event (SSE)
             let bufferText = ''
-
             const request = requestFn(
                 url,
                 {
@@ -91,6 +103,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized:
                         process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                    agent: agent.current?.(),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers

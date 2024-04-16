@@ -2,6 +2,10 @@
 package com.sourcegraph.cody.protocol_generated
 
 object Constants {
+  const val paused = "paused"
+  const val fetching = "fetching"
+  const val errored = "errored"
+  const val complete = "complete"
   const val config = "config"
   const val search_config = "search:config"
   const val history = "history"
@@ -13,6 +17,7 @@ object Constants {
   const val notice = "notice"
   const val `transcript-errors` = "transcript-errors"
   const val userContextFiles = "userContextFiles"
+  const val `chat-input-context` = "chat-input-context"
   const val chatModels = "chatModels"
   const val `update-search-results` = "update-search-results"
   const val `index-updated` = "index-updated"

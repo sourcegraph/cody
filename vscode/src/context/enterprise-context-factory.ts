@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import { RemoteRepoSearcher } from './remote-repo-searcher'
 import { RemoteSearch } from './remote-search'
 import { type Repo, RepoFetcher } from './repo-fetcher'
 import { RemoteRepoPicker } from './repo-picker'
@@ -8,6 +9,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     // Only one RemoteRepoPicker can be displayed at once, so we share one
     // instance.
     public readonly repoPicker: RemoteRepoPicker
+    public readonly repoSearcher: RemoteRepoSearcher
     private readonly fetcher: RepoFetcher
     private readonly workspaceRepoMapper: WorkspaceRepoMapper
 
@@ -15,11 +17,13 @@ export class EnterpriseContextFactory implements vscode.Disposable {
         this.fetcher = new RepoFetcher()
         this.workspaceRepoMapper = new WorkspaceRepoMapper()
         this.repoPicker = new RemoteRepoPicker(this.fetcher, this.workspaceRepoMapper)
+        this.repoSearcher = new RemoteRepoSearcher(this.fetcher)
     }
 
     public dispose(): void {
         this.fetcher.dispose()
         this.repoPicker.dispose()
+        this.repoSearcher.dispose()
         this.workspaceRepoMapper.dispose()
     }
 

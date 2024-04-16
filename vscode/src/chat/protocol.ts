@@ -111,10 +111,17 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    /**
+     * Context files returned from a @-mention search
+     */
     | {
           type: 'userContextFiles'
           userContextFiles: ContextItem[] | null
       }
+    /**
+     * Send Context Files to chat view as input context (@-mentions)
+     */
+    | { type: 'chat-input-context'; items: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
@@ -190,7 +197,7 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
-export const CODY_SUPPORT_URL = new URL('https://help.sourcegraph.com/hc/en-us/requests/new')
+export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')

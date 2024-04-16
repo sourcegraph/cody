@@ -65,7 +65,7 @@ describe('CharactersLogger', () => {
         vi.advanceTimersByTime(LOG_INTERVAL - 1)
         expect(recordSpy).not.toHaveBeenCalled()
         vi.advanceTimersByTime(1)
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 0,
                 deletedCharacters: 0,
@@ -79,7 +79,7 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 6,
                 deletedCharacters: 0,
@@ -93,7 +93,7 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 0,
                 deletedCharacters: 6,
@@ -106,7 +106,7 @@ describe('CharactersLogger', () => {
         onDidChangeTextDocument(createInsertion('fob', range(0, 0, 0, 3)))
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 1,
                 deletedCharacters: 1,
@@ -121,7 +121,7 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 6,
                 deletedCharacters: 3,
@@ -132,7 +132,7 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody', 'characters', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
                 insertedCharacters: 3,
                 deletedCharacters: 0,

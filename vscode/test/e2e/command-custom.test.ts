@@ -90,6 +90,7 @@ test.extend<ExpectedEvents>({
 
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
+    await page.getByText('index.html').first().click()
     await page.getByLabel('.vscode', { exact: true }).hover()
     await page.getByLabel('.vscode', { exact: true }).click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
@@ -179,12 +180,9 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
 
     /* Test: context.filePath with filePath command */
-
-    await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
-    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
-    await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('filePath')
-    await page.keyboard.press('Enter')
+    // Locate the filePath command in the tree view and execute it from there to verify
+    // custom commands are working in the sidebar
+    await page.getByRole('treeitem', { name: 'filePath' }).locator('a').click()
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
     await expectContextCellCounts(contextCell, { files: 2, lines: 12 })

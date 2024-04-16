@@ -1,5 +1,12 @@
 import type { FunctionComponent } from 'react'
-import { AnthropicLogo, MistralLogo, OllamaLogo, OpenAILogo } from '../icons/LLMProviderIcons'
+import { CodyLogoBW } from '../icons/CodyLogo'
+import {
+    AnthropicLogo,
+    GeminiLogo,
+    MistralLogo,
+    OllamaLogo,
+    OpenAILogo,
+} from '../icons/LLMProviderIcons'
 
 export function chatModelIconComponent(
     model: string
@@ -10,11 +17,14 @@ export function chatModelIconComponent(
     if (model.startsWith('anthropic/')) {
         return AnthropicLogo
     }
+    if (model.startsWith('google/')) {
+        return GeminiLogo
+    }
+    if (model.startsWith('ollama/')) {
+        return OllamaLogo
+    }
     if (model.includes('mixtral')) {
         return MistralLogo
     }
-    if (model.includes('ollama')) {
-        return OllamaLogo
-    }
-    return null
+    return CodyLogoBW
 }
