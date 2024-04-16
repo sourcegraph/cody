@@ -300,7 +300,7 @@ describe('ContextFiltersProvider', () => {
             return URI.file(`/${repoName}/${filePath}`)
         }
 
-        it('works', async () => {
+        it('applies context filters correctly', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
@@ -321,6 +321,17 @@ describe('ContextFiltersProvider', () => {
             )
 
             expect(await provider.isUriAllowed(excludedURI)).toBe(false)
+        })
+
+        it('returns `false` if repo name is not found', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+            })
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            vi.spyOn(repoNameResolver, 'getRepoNameFromWorkspaceUri').mockResolvedValue(undefined)
+            expect(await provider.isUriAllowed(uri)).toBe(false)
         })
     })
 })
