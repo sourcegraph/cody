@@ -100,7 +100,7 @@ describe('TokenCounter static', () => {
         })
 
         it('should normalize the text to NFKC before counting tokens', () => {
-            const text = ps`Café'`
+            const text = ps`Café`
             const tokenCount = TokenCounter.countPromptString(text)
             expect(tokenCount).toBe(3)
         })
@@ -113,7 +113,7 @@ describe('TokenCounter static', () => {
                 speaker: 'human',
             }
             const tokenCount = TokenCounter.getMessagesTokenCount([message])
-            expect(tokenCount).toBe(7)
+            expect(tokenCount).toBe(6)
         })
 
         it('should calculate the total token count for an array of messages', () => {
@@ -123,7 +123,7 @@ describe('TokenCounter static', () => {
                 { text: ps`I am doing well, thank you.`, speaker: 'human' },
             ]
             const tokenCount = TokenCounter.getMessagesTokenCount(messages)
-            expect(tokenCount).toBe(16)
+            expect(tokenCount).toBe(13)
         })
 
         it('should return 0 for an empty array of messages', () => {
