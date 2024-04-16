@@ -45,6 +45,10 @@ export class RepoNameResolver {
             let remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
 
             if (!remoteOriginUrl) {
+                remoteOriginUrl = await gitRemoteUrlFromTreeWalk(uri)
+            }
+
+            if (!remoteOriginUrl) {
                 for (const getter of this.platformSpecificGitRemoteGetters) {
                     remoteOriginUrl = await getter(uri)
 
@@ -52,10 +56,6 @@ export class RepoNameResolver {
                         break
                     }
                 }
-            }
-
-            if (!remoteOriginUrl) {
-                remoteOriginUrl = await gitRemoteUrlFromTreeWalk(uri)
             }
 
             if (remoteOriginUrl) {

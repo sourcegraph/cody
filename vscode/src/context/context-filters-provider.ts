@@ -148,3 +148,9 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
     return { repoNamePattern, filePathPatterns }
 }
+
+/**
+ * A a singleton instance of the `ContextFiltersProvider` class.
+ * `contextFiltersProvider.init` should be called on extension activation.
+ */
+export const contextFiltersProvider = new ContextFiltersProvider()
