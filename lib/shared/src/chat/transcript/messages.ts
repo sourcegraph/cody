@@ -75,6 +75,7 @@ export type EventSource =
     | 'code-action:edit'
     | 'code-action:fix'
     | 'code-action:generate'
+    | 'code-action:test'
     | 'custom-commands'
     | 'code-lens'
     | 'hover'
