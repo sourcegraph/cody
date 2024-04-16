@@ -17,18 +17,13 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
     ],
-})('shows no support link for free users', async ({ page, sidebar }) => {
+})('shows support link for free users', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     const supportLocator = page.getByRole('treeitem', { name: 'Support' }).locator('a')
-    expect(supportLocator).not.toBeVisible()
+    expect(supportLocator).toBeVisible()
 
-    // Check it's not in treeview
-
-    const supportButton = page.getByLabel('Cody Support, feedback & support').locator('div')
-    expect(supportButton).not.toBeVisible()
-
-    // Check it's not in settings quickpick
+    // Check it's in settings quickpick
 
     const statusBarButton = page.getByRole('button', { name: 'cody-logo-heavy, Cody Settings' })
     await statusBarButton.click()
@@ -37,7 +32,7 @@ test.extend<ExpectedEvents>({
     await input.fill('support')
 
     const supportItem = page.getByLabel('question  Cody Support')
-    expect(supportItem).not.toBeVisible()
+    expect(supportItem).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({

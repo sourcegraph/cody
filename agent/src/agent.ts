@@ -36,7 +36,7 @@ import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
-import type { ExtensionClient } from '../../vscode/src/extension-client'
+import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
 import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
@@ -743,22 +743,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        // TODO: JetBrains is buggy and serializes 'string' as ['string'].
-        // The params[0] unpacking here only works because of the type punning
-        // params: string means params[0]: string too. Fix JetBrains client to
-        // send string values as strings; or encode these parameter values as
-        // an object holding a string.
-        this.registerAuthenticatedRequest('editTask/accept', params => {
-            this.fixups?.accept(params[0])
-            return Promise.resolve(null)
+        this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
+            this.fixups?.accept(id)
+            return null
         })
-        this.registerAuthenticatedRequest('editTask/undo', params => {
-            this.fixups?.undo(params[0])
-            return Promise.resolve(null)
+
+        this.registerAuthenticatedRequest('editTask/undo', async ({ id }) => {
+            this.fixups?.undo(id)
+            return null
         })
-        this.registerAuthenticatedRequest('editTask/cancel', params => {
-            this.fixups?.cancel(params[0])
-            return Promise.resolve(null)
+
+        this.registerAuthenticatedRequest('editTask/cancel', async ({ id }) => {
+            this.fixups?.cancel(id)
+            return null
         })
 
         this.registerAuthenticatedRequest(
@@ -796,6 +793,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('editCommands/document', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
@@ -809,12 +812,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     key,
                     commandArgs
                 )
-            )
-        })
-
-        this.registerAuthenticatedRequest('commands/document', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
             )
         })
 
@@ -961,6 +958,32 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 limitHit: result?.attribution?.limitHit || false,
             }
         })
+
+        this.registerAuthenticatedRequest('remoteRepo/has', async ({ repoName }, cancelToken) => {
+            return {
+                result: await this.extension.enterpriseContextFactory.repoSearcher.has(repoName),
+            }
+        })
+
+        this.registerAuthenticatedRequest(
+            'remoteRepo/list',
+            async ({ query, first, afterId }, cancelToken) => {
+                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                    query,
+                    first,
+                    afterId
+                )
+                return {
+                    repos: result.repos,
+                    startIndex: result.startIndex,
+                    count: result.count,
+                    state: {
+                        state: result.state,
+                        error: errorToCodyError(result.lastError),
+                    },
+                }
+            }
+        )
     }
 
     // ExtensionClient callbacks.
@@ -972,6 +995,45 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): FixupControlApplicator {
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
+    }
+
+    private maybeExtension: ExtensionObjects | undefined
+
+    public async provide(extension: ExtensionObjects): Promise<vscode.Disposable> {
+        this.maybeExtension = extension
+
+        const disposables: vscode.Disposable[] = []
+
+        const repoSearcher = this.extension.enterpriseContextFactory.repoSearcher
+        disposables.push(
+            repoSearcher.onFetchStateChanged(({ state, error }) => {
+                this.notify('remoteRepo/didChangeState', {
+                    state,
+                    error: errorToCodyError(error),
+                })
+            }),
+            repoSearcher.onRepoListChanged(() => {
+                this.notify('remoteRepo/didChange', {})
+            }),
+            {
+                dispose: () => {
+                    this.maybeExtension = undefined
+                },
+            }
+        )
+
+        return vscode.Disposable.from(...disposables)
+    }
+
+    /**
+     * Gets provided extension objects. This may only be called after
+     * registration is complete.
+     */
+    private get extension(): ExtensionObjects {
+        if (!this.maybeExtension) {
+            throw new Error('Extension registration not yet complete')
+        }
+        return this.maybeExtension
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()

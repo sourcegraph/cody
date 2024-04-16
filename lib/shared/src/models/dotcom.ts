@@ -76,15 +76,25 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
     },
+    // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
         title: 'Mixtral 8x7B',
         model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
-        // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
         contextWindow: { chat: CHAT_TOKEN_BUDGET, user: 0 },
+    },
+    {
+        title: 'Mixtral 8x22B Preview',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview',
+        provider: 'Mistral',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat],
+        // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
+        contextWindow: { chat: 1800, user: 0 },
     },
 ]
 
