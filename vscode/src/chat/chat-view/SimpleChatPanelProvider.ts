@@ -1255,3 +1255,6 @@ function newChatModelFromSerializedChatTranscript(
 function isAbortError(error: Error): boolean {
     return error.message === 'aborted' || error.message === 'socket hang up'
 }
+
+// Only this unsafe usage should be report
+PromptString.unsafe_fromUserQuery('EVIL!')
