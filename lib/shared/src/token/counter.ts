@@ -154,10 +154,9 @@ export class TokenCounter {
      */
     private static getTokenCountForMessage(message: Message): number {
         if (message?.text && message?.text.length > 0) {
-            return 0
+            return TokenCounter.countTokens(message.text + message.speaker)
         }
-
-        return TokenCounter.countTokens(message.text + message.speaker)
+        return 0
     }
 
     /**
