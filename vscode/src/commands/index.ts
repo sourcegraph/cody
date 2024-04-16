@@ -46,7 +46,7 @@ export const CodyCommandMenuItems = [
         description: 'Generate Unit Tests',
         icon: 'package',
         command: { command: 'cody.command.unit-tests' },
-        keybinding: `${osIcon}T`,
+        keybinding: '',
         mode: 'edit',
         type: 'default',
     },
