@@ -33,8 +33,7 @@ jobs:
           restore-keys: ${{ runner.os }}-20-pnpm-store-
       - run: pnpm install
       - name: Run lints
-        # We might want to use parallel here to batch if we run into command lengths issues
-        run: pnpm ts-node lints/safe-prompts.ts `git diff --name-only origin/main | grep -E "\.(ts|tsx)$"`
+        run: pnpm ts-node lints/safe-prompts.ts `pnpm ts-node lints/git-diff-ts-ranges.ts`
       - uses: actions/github-script@v6
         if: ${{ failure() }}
         with:
