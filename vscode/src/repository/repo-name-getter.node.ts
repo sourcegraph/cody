@@ -28,6 +28,7 @@ export async function gitRemoteUrlFromGitCli(uri: vscode.Uri): Promise<string | 
 
         let fetchRemote = undefined
         for (const line of remotes.trim().split('\n')) {
+            // Splits "origin  https://github.com/sourcegraph/cody (fetch)"
             const parts = line.split(/\s+/)
             if (parts[2] === '(push)') {
                 return parts[1].trim()
