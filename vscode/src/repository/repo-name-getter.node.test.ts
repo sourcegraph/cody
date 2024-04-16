@@ -20,6 +20,8 @@ describe('gitRemoteUrlFromGitCli', () => {
                 `,
                 stderr: '',
             })
+            // TODO: find the right way to type this that is compatible with the `promisify` wrapper function.
+            // skipping this for now to address to continue with higher priority work.
         }) as any)
 
         const uri = URI.file('path/to/file/foo.ts')
