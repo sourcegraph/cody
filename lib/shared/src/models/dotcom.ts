@@ -101,19 +101,17 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
 /**
  * NOTE: Used for FeatureFlag.CodyChatContextBudget A/B testing only.
  *
- * An array of model IDs that have a higher token limit than the default configured for A/B testing.
- * Used to increase the token limit for these models when the user context feature flag is enabled.
+ * An array of model IDs that are used for the FeatureFlag.CodyChatContextBudget A/B testing.
+ * Users with the feature flag enabled will have a seperated token limit for user-context.
  *
- * Currently, only claude-3 models (except haiku) have a higher token limit that includes user context tokens.
- * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
+ * For other models, the context window remains the same and is shared between chat and context.
  */
 const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
 
 /**
- * Returns an array of `ModelProvider` objects representing the default models for the Dot Com product.
+ * Returns an array of ModelProviders representing the default models for DotCom.
  *
  * NOTE: 'experimental' models are for DotCom users with the `FeatureFlag.CodyChatContextBudget` enabled.
- * @see modelsWithHigherLimit
  *
  * @param modelType - Specifies whether to return the default or experimental models.
  * @returns An array of `ModelProvider` objects.
@@ -121,7 +119,7 @@ const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/
 export function getDotComDefaultModels(modelType: 'default' | 'experimental'): ModelProvider[] {
     return modelType === 'default'
         ? DEFAULT_DOT_COM_MODELS
-        : // NOTE: Required feature flag for A/B testing only.
+        : // NOTE: Required FeatureFlag.CodyChatContextBudget for A/B testing only.
           DEFAULT_DOT_COM_MODELS.map(m =>
               modelsWithHigherLimit.includes(m.model)
                   ? {

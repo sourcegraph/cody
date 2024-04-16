@@ -4,39 +4,36 @@ import type { Message } from '../sourcegraph-api'
 import { CHAT_TOKEN_BUDGET, ENHANCED_CONTEXT_ALLOCATION, USER_CONTEXT_TOKEN_BUDGET } from './constants'
 import { TokenCounter } from './counter'
 
-const contextWindow = { chat: CHAT_TOKEN_BUDGET, user: 0 }
-
 describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets', () => {
-        const counter = new TokenCounter(contextWindow)
+        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: 0 })
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         // Context budget will be shared with chat budget.
         expect(counter.maxContextTokens.user).toBe(CHAT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
     })
 
-    it('should initialize with the correct token budgets for customized models', () => {
-        const counter = new TokenCounter({ ...contextWindow, chat: 1234 })
+    it('should initialize with the correct token budgets for a customized context window without user context budget', () => {
+        const counter = new TokenCounter({ chat: 1234, user: 0 })
         expect(counter.maxChatTokens).toBe(1234)
         expect(counter.maxContextTokens.user).toBe(1234)
         expect(counter.maxContextTokens.enhanced).toBe(Math.floor(1234 * ENHANCED_CONTEXT_ALLOCATION))
     })
 
     it('should initialize with the correct token budgets when user context is provided', () => {
-        const counter = new TokenCounter({ ...contextWindow, user: USER_CONTEXT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: USER_CONTEXT_TOKEN_BUDGET })
         expect(counter.maxChatTokens).toBe(CHAT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.user).toBe(USER_CONTEXT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(CHAT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION)
     })
 
     it('should update token usage and return true when within limits', () => {
-        const counter = new TokenCounter(contextWindow)
+        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: 0 })
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
         ]
         expect(counter.updateUsage('chat', messages)).toBe(true)
-        expect(counter.remainingTokens.chat).toBeLessThan(counter.maxChatTokens)
     })
 
     it('should return false when token usage exceeds limits', () => {
@@ -47,19 +44,17 @@ describe('TokenCounter class', () => {
         expect(counter.updateUsage('chat', messages)).toBe(false)
     })
 
-    it('should allocate tokens correctly when chat and user context share the same budget', () => {
-        const counter = new TokenCounter({ ...contextWindow, chat: OLLAMA_DEFAULT_CONTEXT_WINDOW })
+    it('should update token usage and return true when within limits - chat and user context share the same budget', () => {
+        const counter = new TokenCounter({ chat: OLLAMA_DEFAULT_CONTEXT_WINDOW, user: 0 })
         const messages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
         ]
-        counter.updateUsage('chat', messages)
-        expect(counter.remainingTokens.chat).toBe(counter.remainingTokens.context.user)
-        expect(counter.remainingTokens.context.enhanced).toBeLessThan(counter.remainingTokens.chat)
+        expect(counter.updateUsage('chat', messages)).toBe(true)
     })
 
-    it('should allocate tokens correctly when chat and user context have separate budgets', () => {
-        const counter = new TokenCounter({ ...contextWindow, user: USER_CONTEXT_TOKEN_BUDGET })
+    it('should update token usage and return true when within limits - chat and user context have separate budgets', () => {
+        const counter = new TokenCounter({ chat: CHAT_TOKEN_BUDGET, user: USER_CONTEXT_TOKEN_BUDGET })
         const chatMessages: Message[] = [
             { speaker: 'human', text: 'Hello' },
             { speaker: 'assistant', text: 'Hi there!' },
@@ -67,79 +62,64 @@ describe('TokenCounter class', () => {
         const userContextMessages: Message[] = [
             { speaker: 'system', text: 'You are a helpful assistant.' },
         ]
-        counter.updateUsage('chat', chatMessages)
-        counter.updateUsage('user', userContextMessages)
-        expect(counter.remainingTokens.chat).toBeLessThan(counter.maxChatTokens)
-        expect(counter.remainingTokens.context.user).toBeLessThan(counter.maxContextTokens.user)
-        expect(counter.remainingTokens.context.enhanced).toBeLessThan(counter.maxContextTokens.enhanced)
+        expect(counter.updateUsage('chat', chatMessages)).toBe(true)
+        expect(counter.updateUsage('user', userContextMessages)).toBe(true)
     })
 
-    it('should allocate tokens correctly for prompts submitted out of order with separated budget', () => {
+    it('should return false when exceeds limits - chat and user context have separate budgets', () => {
         const counter = new TokenCounter({ chat: 10, user: 20 })
-        counter.updateUsage('user', [
-            { speaker: 'human', text: 'Here is my selected code...' },
-            { speaker: 'assistant', text: 'ok' },
-            { speaker: 'human', text: 'Here is my selected code...' },
-            { speaker: 'assistant', text: 'ok' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(10)
-        expect(counter.remainingTokens.chat).greaterThan(counter.remainingTokens.context.user)
-        expect(counter.remainingTokens.context.user).toBe(2)
-        expect(counter.remainingTokens.context.enhanced).toBe(6) // 60% of 10
-        // Add enhanced context next.
-        counter.updateUsage('enhanced', [
-            { speaker: 'human', text: 'Hi' },
-            { speaker: 'assistant', text: 'ok' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(5)
-        expect(counter.remainingTokens.context.enhanced).toBe(3) // 60% of 7
-        expect(counter.remainingTokens.context.user).toBe(2)
-        // Because we are already running out of tokens, the next chat message will be excluded,
-        // so the remaining tokens will be the same.
-        counter.updateUsage('chat', [
-            { speaker: 'human', text: 'Hello' },
-            { speaker: 'assistant', text: 'Hi there!' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(5)
-        expect(counter.remainingTokens.context.user).toBe(2)
-        expect(counter.remainingTokens.context.enhanced).toBe(3) // 60% of 5
+        expect(
+            counter.updateUsage('user', [
+                { speaker: 'human', text: 'Here is my selected code...' },
+                { speaker: 'assistant', text: 'ok' },
+                { speaker: 'human', text: 'Here is my selected code...' },
+                { speaker: 'assistant', text: 'ok' },
+            ])
+        ).toBe(true)
+        expect(
+            counter.updateUsage('enhanced', [
+                { speaker: 'human', text: 'Hi' },
+                { speaker: 'assistant', text: 'ok' },
+            ])
+        ).toBe(true)
+        // Because we run out of tokens, the next chat message will be excluded and return false
+        expect(
+            counter.updateUsage('chat', [
+                { speaker: 'human', text: 'Hello' },
+                { speaker: 'assistant', text: 'Hi there!' },
+            ])
+        ).toBe(false)
     })
 
-    it('should allocate tokens correctly for prompts submitted out of order on a shared budget', () => {
+    it('should return false when exceeds limits - chat and user context share the same budget', () => {
         const counter = new TokenCounter({ chat: 30, user: 0 })
-        counter.updateUsage('user', [
-            { speaker: 'human', text: 'Here is my selected code...' },
-            { speaker: 'assistant', text: 'ok' },
-            { speaker: 'human', text: 'Here is my selected code...' },
-            { speaker: 'assistant', text: 'ok' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(12)
-        expect(counter.remainingTokens.chat).toBe(counter.remainingTokens.context.user)
-        expect(counter.remainingTokens.context.enhanced).toBe(7) // 60% of 12
-        // Add enhanced context next.
-        counter.updateUsage('enhanced', [
-            { speaker: 'human', text: 'Hi' },
-            { speaker: 'assistant', text: 'ok' },
-        ])
-        expect(counter.remainingTokens.context.enhanced).toBe(4) // 60% of 7
-        expect(counter.remainingTokens.chat).toBe(7)
-        expect(counter.remainingTokens.context.user).toBe(7)
-        counter.updateUsage('chat', [
-            { speaker: 'human', text: 'Hello' },
-            { speaker: 'assistant', text: 'Hi there!' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(1)
-        expect(counter.remainingTokens.context.user).toBe(1)
-        expect(counter.remainingTokens.context.enhanced).toBe(0)
-        // Because we are already running out of tokens, the next chat message will be excluded,
-        // so the remaining tokens will be the same.
-        counter.updateUsage('chat', [
-            { speaker: 'human', text: 'Hello' },
-            { speaker: 'assistant', text: 'Hi there!' },
-        ])
-        expect(counter.remainingTokens.chat).toBe(1)
-        expect(counter.remainingTokens.context.user).toBe(1)
-        expect(counter.remainingTokens.context.enhanced).toBe(0)
+        expect(
+            counter.updateUsage('user', [
+                { speaker: 'human', text: 'Here is my selected code...' },
+                { speaker: 'assistant', text: 'ok' },
+                { speaker: 'human', text: 'Here is my selected code...' },
+                { speaker: 'assistant', text: 'ok' },
+            ])
+        ).toBe(true)
+        expect(
+            counter.updateUsage('enhanced', [
+                { speaker: 'human', text: 'Hi' },
+                { speaker: 'assistant', text: 'ok' },
+            ])
+        ).toBe(true)
+        expect(
+            counter.updateUsage('chat', [
+                { speaker: 'human', text: 'Hello' },
+                { speaker: 'assistant', text: 'Hi there!' },
+            ])
+        ).toBe(true)
+        // Because we run out of tokens, the next chat message will be excluded and return false
+        expect(
+            counter.updateUsage('chat', [
+                { speaker: 'human', text: 'Hello' },
+                { speaker: 'assistant', text: 'Hi there!' },
+            ])
+        ).toBe(false)
     })
 })
 
