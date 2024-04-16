@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
+    type AutocompleteContextSnippet,
     CODY_IGNORE_URI_PATH,
     ignores,
     isCodyIgnoredFile,
@@ -10,13 +11,13 @@ import {
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import type { ContextRetriever, ContextSnippet } from '../types'
+import type { ContextRetriever } from '../types'
 
 import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
-function createMockStrategy(resultSets: ContextSnippet[][]): ContextStrategyFactory {
+function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []
     for (const [index, set] of resultSets.entries()) {
         retrievers.push({
@@ -289,6 +290,8 @@ describe('ContextMixer', () => {
     })
 })
 
-function normalize(context: ContextSnippet[]): (Omit<ContextSnippet, 'uri'> & { fileName: string })[] {
+function normalize(
+    context: AutocompleteContextSnippet[]
+): (Omit<AutocompleteContextSnippet, 'uri'> & { fileName: string })[] {
     return context.map(({ uri, ...rest }) => ({ ...rest, fileName: uriBasename(uri) }))
 }

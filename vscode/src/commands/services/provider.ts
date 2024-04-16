@@ -36,7 +36,9 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.commands', a => this?.menu('default', a)),
             vscode.commands.registerCommand('cody.menu.custom-commands', a => this?.menu('custom', a)),
             vscode.commands.registerCommand('cody.menu.commands-settings', a => this?.menu('config', a)),
-            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
+            // Update the custom commands when the tree view is refreshed
+            this.treeViewProvider.onDidChangeTreeData(() => this.getCustomCommands())
         )
 
         this.customCommandsStore.init()
@@ -61,7 +63,7 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
-        const { commands } = await this.customCommandsStore.refresh()
+        const commands = this.customCommandsStore.commands
         this.groupCommands(commands)
         return commands
     }

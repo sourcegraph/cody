@@ -2,13 +2,18 @@ import { partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { FeatureFlag, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    FeatureFlag,
+    isDefined,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import { logDebug } from '../log'
 import { completionProviderConfig } from './completion-provider-config'
-import type { DocumentContext } from './get-current-doc-context'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
@@ -23,7 +28,6 @@ import {
     type InlineCompletionItemWithAnalytics,
     processInlineCompletions,
 } from './text-processing/process-inline-completions'
-import type { ContextSnippet } from './types'
 import { forkSignal } from './utils'
 
 export interface RequestParams {
@@ -51,7 +55,7 @@ export interface RequestManagerResult {
 interface RequestsManagerParams {
     requestParams: RequestParams
     provider: Provider
-    context: ContextSnippet[]
+    context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
     tracer?: CompletionProviderTracer
 }

@@ -97,7 +97,7 @@ describe('RecentEditsRetriever', () => {
         addNumberLog()
 
         expect(
-            retriever.getDiff(testDocument.uri)!.split('\n').slice(2).join('\n')
+            retriever.getDiff(testDocument.uri)!.toString().split('\n').slice(2).join('\n')
         ).toMatchInlineSnapshot(`
           "@@ -1,7 +1,7 @@
            function foo() {
@@ -124,12 +124,12 @@ describe('RecentEditsRetriever', () => {
         addNumberLog()
 
         expect(
-            retriever.getDiff(testDocument.uri)!.split('\n').slice(2).join('\n')
+            retriever.getDiff(testDocument.uri)!.toString().split('\n').slice(2).join('\n')
         ).toMatchInlineSnapshot(`
           "@@ -2,6 +2,6 @@
                console.log(1337)
            }
-           
+
            function bar() {
           -    console.log('bar')
           +    console.log(1338)
@@ -159,11 +159,13 @@ describe('RecentEditsRetriever', () => {
         vi.advanceTimersByTime(3 * 60 * 1000)
         addNumberLog(renamedDoc)
 
-        expect(retriever.getDiff(newUri)!.split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+        expect(
+            retriever.getDiff(newUri)!.toString().split('\n').slice(2).join('\n')
+        ).toMatchInlineSnapshot(`
           "@@ -2,6 +2,6 @@
                console.log(1337)
            }
-           
+
            function bar() {
           -    console.log('bar')
           +    console.log(1338)

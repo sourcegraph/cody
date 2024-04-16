@@ -3,7 +3,7 @@ import { Position } from 'vscode'
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 import { getLanguageConfig } from '../tree-sitter/language'
 
-import type { DocumentDependentContext, LinesContext } from './get-current-doc-context'
+import type { DocumentDependentContext, LinesContext } from '@sourcegraph/cody-shared'
 import {
     FUNCTION_KEYWORDS,
     FUNCTION_OR_METHOD_INVOCATION_REGEX,

@@ -78,3 +78,9 @@ export enum CustomCommandType {
 }
 
 type DefaultCommandType = 'default' | 'experimental'
+
+export interface TerminalOutputArguments {
+    name: string
+    selection?: string
+    creationOptions?: { shellPath?: string; shellArgs?: string[] }
+}

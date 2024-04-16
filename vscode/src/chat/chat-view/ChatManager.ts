@@ -18,7 +18,7 @@ import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'

@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ContextItem, ContextMessage, EditModel, EventSource } from '@sourcegraph/cody-shared'
+import type {
+    ContextItem,
+    ContextMessage,
+    EditModel,
+    EventSource,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 
 import type { FixupTask, FixupTelemetryMetadata } from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
@@ -8,7 +14,7 @@ import type { EditIntent, EditMode } from './types'
 export interface ExecuteEditArguments {
     configuration?: {
         document?: vscode.TextDocument
-        instruction?: string
+        instruction?: PromptString
         userContextFiles?: ContextItem[]
         contextMessages?: ContextMessage[]
         intent?: EditIntent

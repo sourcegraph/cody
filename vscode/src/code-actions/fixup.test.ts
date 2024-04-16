@@ -1,14 +1,14 @@
-import dedent from 'dedent'
 import { describe, expect, test } from 'vitest'
 import * as vscode from 'vscode'
 
-import { testFileUri } from '@sourcegraph/cody-shared'
+import { ps, psDedent, testFileUri } from '@sourcegraph/cody-shared'
 
 import { FixupCodeAction } from './fixup'
 
 describe('fixup code action', () => {
     test('produces correct prompt for code with a single diagnostic', async () => {
-        const text = dedent`
+        const testDocUri = testFileUri('document1.ts')
+        const text = psDedent`
         export function getRerankWithLog(
             chatClient: ChatClient
         ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
@@ -38,12 +38,13 @@ describe('fixup code action', () => {
         ]
 
         const codeAction = new FixupCodeAction()
-        const prompt = await codeAction.getCodeActionInstruction(text, diagnostic)
+        const prompt = await codeAction.getCodeActionInstruction(testDocUri, text, diagnostic)
         expect(prompt).toMatchSnapshot()
     })
 
     test('produces correct prompt for a limited diagnostic', async () => {
-        const text = dedent`
+        const testDocUri = testFileUri('document1.ts')
+        const text = psDedent`
         export function getRerankWithLog(
             chatClient: ChatClient
         ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
@@ -71,12 +72,13 @@ describe('fixup code action', () => {
         ]
 
         const codeAction = new FixupCodeAction()
-        const prompt = await codeAction.getCodeActionInstruction(text, diagnostic)
+        const prompt = await codeAction.getCodeActionInstruction(testDocUri, text, diagnostic)
         expect(prompt).toMatchSnapshot()
     })
 
     test('produces correct prompt for code with multiple diagnostics and overlapping ranges', async () => {
-        const text = dedent`
+        const testDocUri = testFileUri('document1.ts')
+        const text = psDedent`
         export function getRerankWithLog(
             chatClient: ChatClient
         ): (query: string, results: ContextResult[]) => Promise<ContextResult[]> {
@@ -120,7 +122,7 @@ describe('fixup code action', () => {
         ]
 
         const codeAction = new FixupCodeAction()
-        const prompt = await codeAction.getCodeActionInstruction(text, diagnostics)
+        const prompt = await codeAction.getCodeActionInstruction(testDocUri, text, diagnostics)
         expect(prompt).toMatchSnapshot()
     })
 
@@ -145,7 +147,11 @@ describe('fixup code action', () => {
         ]
 
         const codeAction = new FixupCodeAction()
-        const prompt = await codeAction.getCodeActionInstruction('         .taur', diagnostics)
+        const prompt = await codeAction.getCodeActionInstruction(
+            testDocUri,
+            ps`         .taur`,
+            diagnostics
+        )
         expect(prompt).toMatchSnapshot()
     })
 })

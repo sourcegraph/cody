@@ -1,8 +1,10 @@
+import { type PromptString, ps } from '@sourcegraph/cody-shared'
+
 interface LanguageConfig {
     blockStart: string
     blockElseTest: RegExp
     blockEnd: string | null
-    commentStart: string
+    commentStart: PromptString
 }
 
 export function getLanguageConfig(languageId: string): LanguageConfig | null {
@@ -27,14 +29,14 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
                 blockStart: '{',
                 blockElseTest: /^[\t ]*} else/,
                 blockEnd: '}',
-                commentStart: '// ',
+                commentStart: ps`// `,
             }
         case 'python': {
             return {
                 blockStart: ':',
                 blockElseTest: /^[\t ]*(elif |else:)/,
                 blockEnd: null,
-                commentStart: '# ',
+                commentStart: ps`# `,
             }
         }
         case 'elixir': {
@@ -42,7 +44,7 @@ export function getLanguageConfig(languageId: string): LanguageConfig | null {
                 blockStart: 'do',
                 blockElseTest: /^[\t ]*(else|else do)/,
                 blockEnd: 'end',
-                commentStart: '#',
+                commentStart: ps`# `,
             }
         }
         default:

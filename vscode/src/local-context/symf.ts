@@ -10,6 +10,7 @@ import * as vscode from 'vscode'
 import {
     type FileURI,
     type IndexedKeywordContextFetcher,
+    type PromptString,
     type Result,
     type SourcegraphCompletionsClient,
     assertFileURI,
@@ -108,7 +109,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return { accessToken, serverEndpoint, symfPath }
     }
 
-    public getResults(userQuery: string, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
+    public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
         const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
         return Promise.resolve(
             scopeDirs

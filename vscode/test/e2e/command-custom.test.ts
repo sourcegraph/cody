@@ -88,9 +88,18 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
+    // The new command shows up in the sidebar and works on clicks
+    await expect(page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')).toBeVisible()
+    await page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a').click()
+    // Confirm the command prompt is displayed in the chat panel on execution
+    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    await expect(chatPanel.getByText(prompt)).toBeVisible()
+    // Close the index.html file
+    await page.getByRole('tab', { name: 'index.html' }).hover()
+    await page.getByLabel('index.html', { exact: true }).getByLabel(/Close/).click()
+
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
-    await page.getByText('index.html').first().click()
     await page.getByLabel('.vscode', { exact: true }).hover()
     await page.getByLabel('.vscode', { exact: true }).click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
@@ -100,7 +109,6 @@ test.extend<ExpectedEvents>({
     await page.locator('canvas').nth(2).click()
     await page.getByText(commandName).hover()
     await expect(page.getByText(commandName)).toBeVisible()
-    await page.getByText('index.html').first().click()
 
     // Show the new command in the menu and execute it
     await page.click('.badge[aria-label="Cody"]')
@@ -109,16 +117,8 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
     await page.getByPlaceholder('Search command to run...').fill(commandName)
-
     // The new command should show up in sidebar and on the menu
     expect((await page.getByText(commandName).all()).length).toBeGreaterThan(1)
-    // The new command shows up in the sidebar
-    await expect(page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')).toBeVisible()
-    // Click the new command on the menu to execute it
-    await page.getByLabel('tools  ATestCommand, The test command has been created').click()
-    // Confirm the command prompt is displayed in the chat panel on execution
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    await expect(chatPanel.getByText(prompt)).toBeVisible()
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might

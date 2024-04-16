@@ -1,4 +1,5 @@
-import { type ContextItem, type Message, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
+import { ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
+import { type ContextItem, type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -15,7 +16,7 @@ describe('DefaultPrompter', () => {
             new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
@@ -24,15 +25,15 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual<Message[]>([
             {
                 speaker: 'human',
-                text: 'You are Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'human',
-                text: 'Hello',
+                text: ps`Hello`,
             },
         ])
         expect(newContextUsed).toEqual([])
@@ -51,7 +52,7 @@ describe('DefaultPrompter', () => {
             new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
             Promise.resolve([])
@@ -60,15 +61,15 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual<Message[]>([
             {
                 speaker: 'human',
-                text: 'You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis`,
             },
             {
                 speaker: 'assistant',
-                text: 'I am Cody, an AI coding assistant from Sourcegraph.',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
                 speaker: 'human',
-                text: 'Hello',
+                text: ps`Hello`,
             },
         ])
         expect(newContextUsed).toEqual([])
@@ -76,11 +77,11 @@ describe('DefaultPrompter', () => {
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
         const promptBuilder = new PromptBuilder({ input: 10 })
-        const preamble: Message[] = [{ speaker: 'system', text: 'Hi!' }]
+        const preamble: Message[] = [{ speaker: 'system', text: ps`Hi!` }]
         promptBuilder.tryAddToPrefix(preamble)
         const transcript: Message[] = [
-            { speaker: 'human', text: 'Hi!' },
-            { speaker: 'assistant', text: 'Hi!' },
+            { speaker: 'human', text: ps`Hi!` },
+            { speaker: 'assistant', text: ps`Hi!` },
         ]
         promptBuilder.tryAddMessages([...transcript].reverse())
 

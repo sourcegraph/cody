@@ -1,6 +1,8 @@
 import { getEncoding } from 'js-tiktoken'
-import type { ChatContextTokenUsage, TokenUsage, TokenUsageType } from '.'
-import type { Message, ModelContextWindow } from '..'
+import type { TokenUsage } from '.'
+import type { ChatContextTokenUsage, TokenUsageType } from '.'
+import type { ModelContextWindow } from '..'
+import type { Message, PromptString } from '..'
 import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
@@ -154,6 +156,10 @@ export class TokenCounter {
         return TokenCounter.encode(text).length
     }
 
+    public static countPromptString(text: PromptString): number {
+        return TokenCounter.encode(text.toString()).length
+    }
+
     /**
      * Counts the number of tokens in the given message using the tokenizer.
      *
@@ -162,7 +168,7 @@ export class TokenCounter {
      */
     private static getTokenCountForMessage(message: Message): number {
         if (message?.text && message?.text.length > 0) {
-            return TokenCounter.countTokens(message.text + message.speaker)
+            return TokenCounter.countPromptString(message.text)
         }
         return 0
     }

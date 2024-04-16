@@ -6,7 +6,7 @@ import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { type ChatMessage, type ContextItem, logError } from '@sourcegraph/cody-shared'
+import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -482,7 +482,7 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
                 id,
@@ -502,7 +502,7 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
             ?.lastMessage
     }
@@ -510,14 +510,18 @@ export class TestClient extends MessageHandler {
     public async sendSingleMessageToNewChat(
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
-    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
+    ): Promise<{
+        lastMessage?: SerializedChatMessage
+        panelID: string
+        transcript: ExtensionTranscriptMessage
+    }> {
         const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {

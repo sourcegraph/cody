@@ -6,6 +6,7 @@ import {
     type ModelContextWindow,
     TokenCounter,
     isCodyIgnoredFile,
+    ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
@@ -109,7 +110,7 @@ export class PromptBuilder {
             if (!contextMsg) {
                 continue
             }
-            const assistantMsg = { speaker: 'assistant', text: 'Ok.' } as Message
+            const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
             const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
 
             // Check if the type of context item has been processed before to determine if it is a new item or not.
