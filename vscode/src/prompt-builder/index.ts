@@ -5,6 +5,7 @@ import {
     type ContextMessage,
     type Message,
     isCodyIgnoredFile,
+    ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 import { SHA256 } from 'crypto-js'
@@ -145,7 +146,7 @@ export class PromptBuilder {
             }
             this.seenContext.add(id)
             if (contextMessage) {
-                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
+                this.reverseMessages.push({ speaker: 'assistant', text: ps`Ok.` })
                 this.reverseMessages.push(contextMessage)
             }
             this.charsUsed += contextLen

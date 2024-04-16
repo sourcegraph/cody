@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
 import type {
+    CompletionLogger,
+    CompletionsClientConfig,
     Configuration,
     ConfigurationWithAccessToken,
-    SourcegraphBrowserCompletionsClient,
+    SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
-import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import type { startTokenReceiver } from './auth/token-receiver'
 
 import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
@@ -38,9 +39,10 @@ export interface PlatformContext {
     createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
-    createCompletionsClient:
-        | Constructor<typeof SourcegraphBrowserCompletionsClient>
-        | Constructor<typeof SourcegraphNodeCompletionsClient>
+    createCompletionsClient: (
+        config: CompletionsClientConfig,
+        logger?: CompletionLogger
+    ) => SourcegraphCompletionsClient
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver

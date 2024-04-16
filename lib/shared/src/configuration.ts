@@ -1,3 +1,5 @@
+import type { PromptString } from './prompt/prompt-string'
+
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 /**
@@ -11,6 +13,10 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
     unified: 11,
 }
 
+export interface ConfigGetter<T> {
+    get<T>(section: string, defaultValue?: T): T
+}
+
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     proxy?: string | null
@@ -21,8 +27,8 @@ export interface Configuration {
     telemetryLevel: 'all' | 'off' | 'agent'
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
-    chatPreInstruction: string
-    editPreInstruction: string
+    chatPreInstruction: PromptString
+    editPreInstruction: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean

@@ -5,10 +5,7 @@ import {
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import {
-    type ContextItemFile,
-    ContextItemSource,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type ContextItemFile, ContextItemSource } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 

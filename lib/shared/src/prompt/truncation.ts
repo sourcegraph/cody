@@ -1,6 +1,7 @@
 import type { RangeData } from '../common/range'
 
 import { CHARS_PER_TOKEN } from './constants'
+import type { PromptString } from './prompt-string'
 
 /**
  * Truncates text to the given number of tokens, keeping the start of the text.
@@ -9,7 +10,10 @@ export function truncateText(text: string, maxTokens: number): string {
     const maxLength = maxTokens * CHARS_PER_TOKEN
     return text.length <= maxLength ? text : text.slice(0, maxLength)
 }
-
+export function truncatePromptString(text: PromptString, maxTokens: number): PromptString {
+    const maxLength = maxTokens * CHARS_PER_TOKEN
+    return text.length <= maxLength ? text : text.slice(0, maxLength)
+}
 /**
  * If text was truncated, return the truncated text and range to which it was truncated.
  * If the text is shorter than maxBytes, then return the text as-is with an undefined
@@ -49,7 +53,7 @@ export function truncateTextNearestLine(
 /**
  * Truncates text to the given number of tokens, keeping the end of the text.
  */
-export function truncateTextStart(text: string, maxTokens: number): string {
+export function truncateTextStart(text: PromptString, maxTokens: number): PromptString {
     const maxLength = maxTokens * CHARS_PER_TOKEN
     return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 }

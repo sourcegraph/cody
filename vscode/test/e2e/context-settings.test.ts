@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarSignin } from './common'
 import { type ExpectedEvents, newChat, test } from './helpers'
 
-import type { RepoListResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { RepoListResponse } from '@sourcegraph/cody-shared'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed

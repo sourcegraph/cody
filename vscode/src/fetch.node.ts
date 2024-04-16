@@ -1,7 +1,7 @@
 import type http from 'node:http'
 import https from 'node:https'
 
-import { agent } from '@sourcegraph/cody-shared/src/fetch'
+import { agent } from '@sourcegraph/cody-shared'
 
 import { ProxyAgent } from 'proxy-agent'
 
@@ -28,7 +28,11 @@ export function setCustomAgent(): () => http.Agent {
 }
 
 export function initializeNetworkAgent(): void {
-    proxyAgent = new ProxyAgent({ keepAlive: true, keepAliveMsecs: 60000, ...https.globalAgent.options })
+    proxyAgent = new ProxyAgent({
+        keepAlive: true,
+        keepAliveMsecs: 60000,
+        ...https.globalAgent.options,
+    })
     proxyAgent.keepAlive = true
 
     const customAgent = setCustomAgent()
