@@ -87,10 +87,7 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     return undefined
 }
 
-export function gitRemoteUrlFromGitExtension(
-    uri: vscode.Uri,
-    remoteName = 'origin'
-): string | undefined {
+export function gitRemoteUrlFromGitExtension(uri: vscode.Uri): string | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
     return repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
 }
