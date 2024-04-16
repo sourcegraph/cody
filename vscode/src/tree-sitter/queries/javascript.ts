@@ -221,11 +221,11 @@ const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
 `
 
 const JS_ENCLOSING_FUNCTION_QUERY = dedent`
-    (function_declaration) @range.function
-    (generator_function_declaration) @range.function
+    (function_declaration (identifier) @symbol.function) @range.function
+    (generator_function_declaration (identifier) @symbol.function) @range.function
     (function_expression) @range.function
     (arrow_function) @range.function
-    (method_definition) @range.function
+    (method_definition (property_identifier) @symbol.function) @range.function
 `
 
 export const javascriptQueries = {

@@ -28,9 +28,14 @@
 import { readFileSync } from 'node:fs'
 import * as ts from 'typescript'
 
+interface Range {
+    start: number
+    end: number
+}
+
 let didEncounterAnError = false
 
-export function delint(sourceFile: ts.SourceFile) {
+export function delint(sourceFile: ts.SourceFile, ranges: Range[] | null) {
     delintNode(sourceFile)
 
     function delintNode(node: ts.Node) {
@@ -77,14 +82,24 @@ export function delint(sourceFile: ts.SourceFile) {
     }
 
     function report(node: ts.Node, level: 'error' | 'warning', message: string) {
-        if (level === 'error') {
-            didEncounterAnError = true
-        }
-
         const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart())
         const { line: endLine, character: endCharacter } = sourceFile.getLineAndCharacterOfPosition(
             node.getEnd()
         )
+
+        // When ranges are set, only error if the reported violation is within one
+        // of the changed ranges.
+        if (ranges !== null) {
+            const overlappingRange = ranges.find(range => range.start <= line && range.end >= endLine)
+            if (overlappingRange === undefined) {
+                return
+            }
+        }
+
+        if (level === 'error') {
+            didEncounterAnError = true
+        }
+
         if (process.env.GITHUB_ACTIONS !== undefined) {
             console.log(
                 `::${level} file=${sourceFile.fileName},line=${line + 1},col=${character + 1},endLine=${
@@ -97,7 +112,19 @@ export function delint(sourceFile: ts.SourceFile) {
 }
 
 const fileNames = process.argv.slice(2)
-for (const fileName of fileNames) {
+for (const row of fileNames) {
+    const [fileName, rawRanges] = row.split(':')
+
+    const rangeStrings = rawRanges.split(',')
+    let ranges: Range[] | null = null
+    for (const rangeString of rangeStrings) {
+        const [start, end] = rangeString.split('-')
+        if (ranges === null) {
+            ranges = []
+        }
+        ranges.push({ start: parseInt(start), end: parseInt(end) })
+    }
+
     // Parse a file
     const sourceFile = ts.createSourceFile(
         fileName,
@@ -107,7 +134,7 @@ for (const fileName of fileNames) {
     )
 
     // delint it
-    delint(sourceFile)
+    delint(sourceFile, ranges)
 }
 
 if (didEncounterAnError) {
