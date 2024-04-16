@@ -5,7 +5,6 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
-    TokenCounter,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -29,7 +28,7 @@ export interface IPrompter {
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: string) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -45,8 +44,7 @@ export class DefaultPrompter implements IPrompter {
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const tokenCounter = new TokenCounter(chat.contextWindow)
-            const promptBuilder = new PromptBuilder(tokenCounter)
+            const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: string | undefined = vscode.workspace
                 .getConfiguration('cody.chat')
                 .get('preInstruction')
@@ -55,7 +53,7 @@ export class DefaultPrompter implements IPrompter {
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(
-                    `Preamble length exceeded context window size ${tokenCounter.maxChatTokens}`
+                    `Preamble length exceeded context window size ${chat.contextWindow.chat}`
                 )
             }
 
@@ -112,10 +110,7 @@ export class DefaultPrompter implements IPrompter {
                 if (lastMessage.speaker === 'assistant') {
                     throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
                 }
-                const newEnhancedContext = await this.getEnhancedContext(
-                    lastMessage.text,
-                    tokenCounter.remainingTokens.context.enhanced
-                )
+                const newEnhancedContext = await this.getEnhancedContext(lastMessage.text)
                 sortContextItems(newEnhancedContext)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(
                     'enhanced',

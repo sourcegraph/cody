@@ -452,7 +452,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext
-                        ? async (text, maxChars) =>
+                        ? async text =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
@@ -462,7 +462,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
                                       remoteSearch: this.remoteSearch,
                                   },
-                                  hints: { maxChars },
                                   contextRanking: this.contextRanking,
                               })
                         : undefined

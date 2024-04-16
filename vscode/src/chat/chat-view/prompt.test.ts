@@ -1,10 +1,4 @@
-import {
-    type ContextItem,
-    type Message,
-    ModelProvider,
-    ModelUsage,
-    TokenCounter,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, type Message, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
@@ -80,7 +74,7 @@ describe('DefaultPrompter', () => {
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
         const overLimitWindow = { chat: 1, user: 0 }
-        const promptBuilder = new PromptBuilder(new TokenCounter(overLimitWindow))
+        const promptBuilder = new PromptBuilder(overLimitWindow)
         const contextItems: ContextItem[] = [
             {
                 type: 'file',

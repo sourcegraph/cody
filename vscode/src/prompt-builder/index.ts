@@ -3,7 +3,8 @@ import {
     type ContextItem,
     type ContextMessage,
     type Message,
-    type TokenCounter,
+    type ModelContextWindow,
+    TokenCounter,
     isCodyIgnoredFile,
     toRangeData,
 } from '@sourcegraph/cody-shared'
@@ -28,7 +29,12 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
     private seenContext = new Set<string>()
-    constructor(private tokenCounter: TokenCounter) {}
+
+    private tokenCounter: TokenCounter
+
+    constructor(contextWindow: ModelContextWindow) {
+        this.tokenCounter = new TokenCounter(contextWindow)
+    }
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
