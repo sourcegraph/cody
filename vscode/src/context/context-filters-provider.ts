@@ -9,7 +9,7 @@ import {
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { getCodebaseFromWorkspaceUriAsync } from '../repository/repositoryHelpers'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -104,8 +104,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return false
         }
 
-        const repoName = await wrapInActiveSpan('getCodebaseFromWorkspaceUriAsync', () =>
-            getCodebaseFromWorkspaceUriAsync(uri)
+        const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
+            repoNameResolver.getRepoNameFromWorkspaceUri(uri)
         )
 
         const relativePath = vscode.workspace.asRelativePath(uri, false)

@@ -2,7 +2,7 @@ import { type ContextFiltersResult, graphqlClient } from '@sourcegraph/cody-shar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import * as repoHelpers from '../repository/repositoryHelpers'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 import { ContextFiltersProvider } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
@@ -291,7 +291,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            vi.spyOn(repoHelpers, 'getCodebaseFromWorkspaceUriAsync').mockResolvedValue(
+            vi.spyOn(repoNameResolver, 'getRepoNameFromWorkspaceUri').mockResolvedValue(
                 `github.com/sourcegraph/${repoName}`
             )
 
@@ -308,7 +308,7 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await repoHelpers.getCodebaseFromWorkspaceUriAsync(includedURI)).toBe(
+            expect(await repoNameResolver.getRepoNameFromWorkspaceUri(includedURI)).toBe(
                 'github.com/sourcegraph/cody'
             )
 
@@ -316,7 +316,7 @@ describe('ContextFiltersProvider', () => {
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath).toBe('/sourcegraph/src/main.tsx')
-            expect(await repoHelpers.getCodebaseFromWorkspaceUriAsync(excludedURI)).toBe(
+            expect(await repoNameResolver.getRepoNameFromWorkspaceUri(excludedURI)).toBe(
                 'github.com/sourcegraph/sourcegraph'
             )
 
