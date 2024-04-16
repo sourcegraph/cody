@@ -1,9 +1,5 @@
-import type { Message } from '../sourcegraph-api'
-
-interface GeminiChatMessage {
-    role: string
-    parts: { text: string }[]
-}
+import type { GeminiChatMessage } from '.'
+import type { Message } from '../../sourcegraph-api'
 
 /**
  * Constructs an array of `GeminiChatMessage` objects from an array of `Message` objects.

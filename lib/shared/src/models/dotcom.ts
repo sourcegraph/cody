@@ -68,22 +68,32 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
     },
     {
-        title: 'GPT-4 Turbo Preview',
-        model: 'openai/gpt-4-turbo-preview',
+        title: 'GPT-4 Turbo',
+        model: 'openai/gpt-4-turbo',
         provider: 'OpenAI',
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
     },
+    // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
         title: 'Mixtral 8x7B',
         model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
-        // TODO: Improve prompt for Mixtral + Edit to see if we can use it there too.
         usage: [ModelUsage.Chat],
         maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+    },
+    {
+        title: 'Mixtral 8x22B Preview',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview',
+        provider: 'Mistral',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat],
+        // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
+        maxToken: 1800,
     },
 ] as const satisfies ModelProvider[]
