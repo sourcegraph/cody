@@ -743,22 +743,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        // TODO: JetBrains is buggy and serializes 'string' as ['string'].
-        // The params[0] unpacking here only works because of the type punning
-        // params: string means params[0]: string too. Fix JetBrains client to
-        // send string values as strings; or encode these parameter values as
-        // an object holding a string.
-        this.registerAuthenticatedRequest('editTask/accept', params => {
-            this.fixups?.accept(params[0])
-            return Promise.resolve(null)
+        this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
+            this.fixups?.accept(id)
+            return null
         })
-        this.registerAuthenticatedRequest('editTask/undo', params => {
-            this.fixups?.undo(params[0])
-            return Promise.resolve(null)
+
+        this.registerAuthenticatedRequest('editTask/undo', async ({ id }) => {
+            this.fixups?.undo(id)
+            return null
         })
-        this.registerAuthenticatedRequest('editTask/cancel', params => {
-            this.fixups?.cancel(params[0])
-            return Promise.resolve(null)
+
+        this.registerAuthenticatedRequest('editTask/cancel', async ({ id }) => {
+            this.fixups?.cancel(id)
+            return null
         })
 
         this.registerAuthenticatedRequest(
@@ -796,6 +793,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('editCommands/document', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
@@ -809,12 +812,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     key,
                     commandArgs
                 )
-            )
-        })
-
-        this.registerAuthenticatedRequest('commands/document', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
             )
         })
 

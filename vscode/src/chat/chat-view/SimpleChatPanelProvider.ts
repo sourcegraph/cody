@@ -405,6 +405,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 source,
                 command,
                 traceId: span.spanContext().traceId,
+                sessionID: this.chatModel.sessionID,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {

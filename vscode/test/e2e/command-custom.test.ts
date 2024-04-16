@@ -90,6 +90,7 @@ test.extend<ExpectedEvents>({
 
     // Check if cody.json in the workspace has the new command added
     await sidebarExplorer(page).click()
+    await page.getByText('index.html').first().click()
     await page.getByLabel('.vscode', { exact: true }).hover()
     await page.getByLabel('.vscode', { exact: true }).click()
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
