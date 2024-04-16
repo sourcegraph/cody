@@ -67,22 +67,39 @@
       "request": "attach",
       "name": "Attach to Agent",
       "port": 9229,
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Launch Agent port 3113",
       "program": "${workspaceFolder}/agent/dist/index.js",
-      "runtimeArgs": ["--enable-source-maps"],
+      "runtimeArgs": ["--enable-source-maps", "--preserve-symlinks"],
+      "preLaunchTask": "Build Agent",
+      "env": {
+        "CODY_AGENT_DEBUG_REMOTE": "true",
+        "CODY_AGENT_DEBUG_PORT": "3113"
+      },
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Recording Agent port 3113",
+      "program": "${workspaceFolder}/agent/dist/index.js",
+      "runtimeArgs": ["--enable-source-maps", "--preserve-symlinks"],
       "preLaunchTask": "Build Agent",
       "env": {
         "CODY_AGENT_DEBUG_REMOTE": "true",
         "CODY_AGENT_DEBUG_PORT": "3113",
-        "CODY_TESTING": "true",
+        "CODY_RECORDING_MODE": "record",
+        "CODY_RECORDING_NAME": "integration-tests",
+        "CODY_RECORDING_DIRECTORY": "recordings",
+        "CODY_RECORD_IF_MISSING": "true"
       },
       "sourceMaps": true,
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",

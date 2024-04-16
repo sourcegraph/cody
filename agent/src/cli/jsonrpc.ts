@@ -143,6 +143,14 @@ export const jsonrpcCommand = new Command('jsonrpc')
             //     res.sendStatus(400)
             // })
             polly.server.get('https://objects.githubusercontent.com/*path').passthrough()
+
+            // TODO: I'm not yet sure why this is required, but Polly refuses to record
+            // for the jetbrains integration tests unless I call persist() manually.
+            // CODY_TESTING disambiguates Agent-side integration tests from client-side
+            // integration tests.
+            if (options.recordingMode === 'record' && process.env.CODY_TESTING !== 'true') {
+                polly.server.any().on('response', () => polly?.persister.persist())
+            }
         } else if (options.recordingMode) {
             console.error('CODY_RECORDING_DIRECTORY is required when CODY_RECORDING_MODE is set.')
             process.exit(1)

@@ -4,9 +4,13 @@ import type { Request } from '@pollyjs/core'
 export class CodyNodeHttpAdapter extends NodeHttpAdapter {
     public async onRequest(request: Request): Promise<void> {
         if (request.body) {
-            request.body = request.body
-                .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
-                .replaceAll(/(\\\\)(\w)/g, '/$2')
+            try {
+                request.body = request.body
+                    .replaceAll(/`([^`]*)(cody-vscode-shim-test[^`]*)`/g, '`$2`')
+                    .replaceAll(/(\\\\)(\w)/g, '/$2')
+            } catch (e) {
+                console.error(e)
+            }
         }
 
         return super.onRequest(request)
