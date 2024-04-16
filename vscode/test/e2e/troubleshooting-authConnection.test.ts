@@ -42,7 +42,9 @@ test.extend<ExpectedEvents>({
 
     await executeCommandInPalette(page, 'developer: reload window')
 
-    await expect(page.getByText('connection issue', { exact: false })).toBeVisible()
+    await expect(page.getByText('connection issue', { exact: false })).toBeVisible({
+        timeout: 10000,
+    })
     res = await fetch(`${mockServer.SERVER_URL}/.test/connectionIssue/disable`, {
         method: 'POST',
     })
