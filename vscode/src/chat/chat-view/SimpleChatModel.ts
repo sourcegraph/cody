@@ -18,7 +18,7 @@ import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
     public maxInputChars: number
-    public maxOutputChars: number
+    public maxOutputTokens: number
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -27,13 +27,13 @@ export class SimpleChatModel {
         private selectedRepos?: Repo[]
     ) {
         this.maxInputChars = ModelProvider.getMaxInputCharsByModel(this.modelID)
-        this.maxOutputChars = ModelProvider.getMaxOutputCharsByModel(this.modelID)
+        this.maxOutputTokens = ModelProvider.getMaxOutputTokensByModel(this.modelID)
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
         this.maxInputChars = ModelProvider.getMaxInputCharsByModel(newModelID)
-        this.maxOutputChars = ModelProvider.getMaxOutputCharsByModel(newModelID)
+        this.maxOutputTokens = ModelProvider.getMaxOutputTokensByModel(newModelID)
     }
 
     public isEmpty(): boolean {

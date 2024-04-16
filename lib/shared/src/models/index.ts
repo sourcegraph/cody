@@ -121,13 +121,29 @@ export class ModelProvider {
     }
 
     /**
+     * Finds the model provider with the given model ID and returns its input token limit.
+     */
+    public static getMaxInputTokensByModel(modelID: string): number {
+        const model = ModelProvider.providers.find(m => m.model === modelID)
+        return model?.maxInputToken || DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT
+    }
+
+    /**
      * Finds the model provider with the given model ID and returns its input character limit.
      * The limit is calculated based on the max number of tokens the model can receive.
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
     public static getMaxInputCharsByModel(modelID: string): number {
+        const maxTokens = ModelProvider.getMaxInputTokensByModel(modelID)
+        return tokensToChars(maxTokens)
+    }
+
+    /**
+     * Finds the model provider with the given model ID and returns its output token limit.
+     */
+    public static getMaxOutputTokensByModel(modelID: string): number {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return tokensToChars(model?.maxInputToken || DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT)
+        return model?.maxOutputToken || DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT
     }
 
     /**
@@ -136,8 +152,8 @@ export class ModelProvider {
      * E.g. 7000 tokens * 4 characters/token = 28000 characters
      */
     public static getMaxOutputCharsByModel(modelID: string): number {
-        const model = ModelProvider.providers.find(m => m.model === modelID)
-        return tokensToChars(model?.maxOutputToken || DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT)
+        const maxTokens = ModelProvider.getMaxOutputTokensByModel(modelID)
+        return tokensToChars(maxTokens)
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

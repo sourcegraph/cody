@@ -119,7 +119,7 @@ export class EditProvider {
                 {
                     model,
                     stopSequences,
-                    maxTokensToSample: ModelProvider.getMaxOutputCharsByModel(model),
+                    maxTokensToSample: ModelProvider.getMaxOutputTokensByModel(model),
                 },
                 abortController.signal
             )

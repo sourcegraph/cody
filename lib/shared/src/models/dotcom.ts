@@ -107,8 +107,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
-        maxInputToken: 1800,
+        maxInputToken: DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
         maxOutputToken: DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
     },
 ] as const satisfies ModelProvider[]

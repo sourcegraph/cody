@@ -923,7 +923,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID, maxTokensToSample: this.chatModel.maxOutputChars },
+                {
+                    model: this.chatModel.modelID,
+                    maxTokensToSample: this.chatModel.maxOutputTokens,
+                },
                 abortController.signal
             )
 
