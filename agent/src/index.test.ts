@@ -11,7 +11,7 @@ import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
-import { TestClient, asTranscriptMessage } from './TestClient'
+import { TestClient, asTranscriptMessage, getAgentDir } from './TestClient'
 import { decodeURIs } from './decodeURIs'
 import { isNode16 } from './isNode16'
 import type {
@@ -64,7 +64,18 @@ describe('Agent', () => {
         return
     }
 
-    const client = new TestClient({
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    //
+    // ⚠️ If this line fails when running unit tests, chances are that the error is being swallowed.
+    // To see the full error, run this file in isolation:
+    //
+    //   pnpm test agent/src/index.test.ts
+    execSync('pnpm run build:agent', {
+        cwd: getAgentDir(),
+        stdio: 'inherit',
+    })
+
+    const client = TestClient.create({
         name: 'defaultClient',
         // The redacted ID below is copy-pasted from the recording file and
         // needs to be updated whenever we change the underlying access token.
@@ -73,17 +84,6 @@ describe('Agent', () => {
         accessToken:
             process.env.SRC_ACCESS_TOKEN ??
             'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
-    })
-
-    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    //
-    // ⚠️ If this line fails when running unit tests, chances are that the error is being swallowed.
-    // To see the full error, run this file in isolation:
-    //
-    //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', {
-        cwd: client.getAgentDir(),
-        stdio: 'inherit',
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1363,7 +1363,7 @@ describe('Agent', () => {
     })
 
     describe('RateLimitedAgent', () => {
-        const rateLimitedClient = new TestClient({
+        const rateLimitedClient = TestClient.create({
             name: 'rateLimitedClient',
             accessToken:
                 process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
@@ -1392,7 +1392,7 @@ describe('Agent', () => {
     })
 
     describe('Enterprise', () => {
-        const enterpriseClient = new TestClient({
+        const enterpriseClient = TestClient.create({
             name: 'enterpriseClient',
             accessToken:
                 process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
@@ -1559,7 +1559,7 @@ describe('Agent', () => {
     // Enterprise tests are run at demo instance, which is at a recent release version.
     // Use this section if you need to run against S2 which is released continuously.
     describe('Enterprise - close main branch', () => {
-        const enterpriseClient = new TestClient({
+        const enterpriseClient = TestClient.create({
             name: 'enterpriseMainBranchClient',
             accessToken:
                 process.env.SRC_S2_ACCESS_TOKEN ??
