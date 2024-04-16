@@ -41,7 +41,7 @@ export class PromptBuilder {
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        const withinLimit = this.tokenCounter.updateUsage('chat', messages)
+        const withinLimit = this.tokenCounter.updateUsage('preamble', messages)
         if (withinLimit) {
             this.prefixMessages.push(...messages)
         }
@@ -65,7 +65,7 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            const withinLimit = this.tokenCounter.updateUsage('chat', [humanMsg, assistantMsg])
+            const withinLimit = this.tokenCounter.updateUsage('input', [humanMsg, assistantMsg])
             if (!withinLimit) {
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }

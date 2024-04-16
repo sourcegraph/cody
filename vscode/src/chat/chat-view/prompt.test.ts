@@ -75,12 +75,20 @@ describe('DefaultPrompter', () => {
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const promptBuilder = new PromptBuilder({ input: 1 })
+        const promptBuilder = new PromptBuilder({ input: 10 })
+        const preamble: Message[] = [{ speaker: 'system', text: 'Hi!' }]
+        promptBuilder.tryAddToPrefix(preamble)
+        const transcript: Message[] = [
+            { speaker: 'human', text: 'Hi!' },
+            { speaker: 'assistant', text: 'Hi!' },
+        ]
+        promptBuilder.tryAddMessages([...transcript].reverse())
+
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
                 uri: vscode.Uri.file('/foo/bar'),
-                content: 'foobar',
+                content: 'This is a file that exceeds the token limit',
                 isTooLarge: true,
             },
         ]
@@ -95,6 +103,6 @@ describe('DefaultPrompter', () => {
         expect(used).toEqual([])
 
         const prompt = promptBuilder.build()
-        expect(prompt).toEqual([])
+        expect(prompt).toEqual([...preamble, ...transcript])
     })
 })
