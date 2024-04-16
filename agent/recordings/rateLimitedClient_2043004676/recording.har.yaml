@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: f78cd39b5c98a85c78ff98325af0558e
+    - _id: 1dfb41922fe5dd97eb41ccb518d056d5
       _order: 0
       cache: {}
       request:
@@ -30,7 +30,7 @@ log:
           mimeType: application/json
           params: []
           textJSON:
-            maxTokensToSample: 1000
+            maxTokensToSample: 4000
             messages:
               - speaker: human
                 text: You are Cody, an AI coding assistant from Sourcegraph.
@@ -48,14 +48,12 @@ log:
       response:
         bodySize: 0
         content:
-          mimeType: text/plain; charset=utf-8
+          mimeType: text/plain
           size: 0
         cookies: []
         headers:
           - name: date
-            value: Wed, 06 Mar 2024 08:51:29 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
+            value: Tue, 16 Apr 2024 16:03:05 GMT
           - name: content-length
             value: "0"
           - name: connection
@@ -66,33 +64,23 @@ log:
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: retry-after
-            value: Thu, 07 Mar 2024 01:08:09 UTC
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
-          - name: x-cloud-trace-context
-            value: c692966157f243e3caaaa34cdef6e8cf
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
             value: DENY
-          - name: x-is-cody-pro-user
-            value: "true"
-          - name: x-ratelimit-limit
-            value: "1"
-          - name: x-ratelimit-remaining
-            value: "0"
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1631
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1268
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 429
+        status: 200
         statusText: OK
-      startedDateTime: 2024-03-06T08:51:28.997Z
+      startedDateTime: 2024-04-16T16:03:04.512Z
       time: 0
       timings:
         blocked: -1
