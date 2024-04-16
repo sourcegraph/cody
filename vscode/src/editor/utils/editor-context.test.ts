@@ -170,7 +170,7 @@ describe('filterContextItemFiles', () => {
         expect(filtered[0]).toEqual<ContextItem>({
             type: 'file',
             uri: largeTextFile.uri,
-            size: fsSizeInBytes / 4,
+            size: Math.floor(fsSizeInBytes / 4.5),
         })
     })
 })
@@ -197,7 +197,7 @@ describe('fillInContextItemContent', () => {
             },
         ])
         expect(contextItems).toEqual<ContextItem[]>([
-            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a', size: 1 },
         ])
     })
 })

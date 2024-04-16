@@ -11,6 +11,7 @@ import {
     type ContextItemWithContent,
     type Editor,
     type SymbolKind,
+    TokenCounter,
     displayPath,
     fetchContentForURLContextItem,
     isCodyIgnoredFile,
@@ -258,14 +259,16 @@ export async function filterContextItemFiles(
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
+        // TODO (bee) consider a better way to estimate the token size of a file
         // We cannot get the exact token size without parsing the file, which is expensive.
-        // Instead, we divide the file size in bytes by 4 as a rough estimate of the token size,
-        // which is closer than dividing by 3.5, the number we use to convert characters into tokens.
+        // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
+        // For markdown files, we divide by 3.5 because they tend to have more text and fewer code blocks and whitespaces.
+        //
         // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
         // on available tokens, so that it can prompt the user to import the file via '@file-range' or
         // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
         // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
-        cf.size = fileStat.size / 4
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
         filtered.push(cf)
     }
     return filtered
@@ -279,6 +282,7 @@ export async function fillInContextItemContent(
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
                 let content = item.content
+                let size = item.size
                 if (!item.content) {
                     try {
                         if (isURLContextItem(item)) {
@@ -292,6 +296,7 @@ export async function fillInContextItemContent(
                                 toVSCodeRange(item.range)
                             )
                         }
+                        size = !item.size && content ? TokenCounter.countTokens(content) : item.size
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -299,7 +304,7 @@ export async function fillInContextItemContent(
                         return null
                     }
                 }
-                return { ...item, content: content! }
+                return { ...item, content: content!, size }
             })
         )
     ).filter(isDefined)
