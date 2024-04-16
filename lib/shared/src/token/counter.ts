@@ -28,10 +28,10 @@ export class TokenCounter {
     /**
      * Indicates whether the Chat and User-Context share the same token budget.
      * - If true, all types of messages share the same token budget with Chat.
-     * - If false, the User-Context will has a separated budget.
-     * NOTE: Used in remainingTokens to determine the remaining token budget for each budget type.
+     * - If false (Feature Flag required), the User-Context will has a separated budget.
+     * NOTE: Used in remainingTokens for calculating the remaining token budget for each budget type.
      */
-    private shareChatAndUserBudget = false
+    private shareChatAndUserBudget = true
 
     constructor(contextWindow: ModelContextWindow) {
         // If there is no context window reserved for context.user,
@@ -55,46 +55,39 @@ export class TokenCounter {
         const count = TokenCounter.getMessagesTokenCount(messages)
         const isWithinLimit = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
-            this.allocateTokens(type, count)
+            this.usedTokens[type] = this.usedTokens[type] + count
         }
         return isWithinLimit
     }
 
     /**
-     * Allocates the specified number of tokens to the given token usage type.
-     *
-     * @param type - The type of token usage to allocate.
-     * @param count - The number of tokens to allocate.
-     */
-    private allocateTokens(type: TokenUsageType, count: number): void {
-        this.usedTokens[type] = this.usedTokens[type] + count
-    }
-
-    /**
-     * NOTE: Should only be used by @canAllocateTokens to determine if the token usage can be allocated in linear order.
+     * NOTE: Should only be used by @canAllocateTokens to determine if the token usage can be allocated in correct order.
      *
      * Calculates the remaining token budget for each token usage type.
      *
      * @returns The remaining token budget for chat, User-Context, and Enhanced-Context (if applicable).
      */
-    private get remainingTokens(): { chat: number; context: { user: number; enhanced: number } } {
-        const { preamble, input, user, enhanced } = this.usedTokens
-        const chat = this.maxChatTokens - preamble - input
-        // When sharing the Chat token budget, the remaining budget for User-Context is the same as Chat.
+    private get remainingTokens() {
+        const usedChat = this.usedTokens.preamble + this.usedTokens.input
+        const usedUser = this.usedTokens.user
+        const usedEnhanced = this.usedTokens.enhanced
+
+        let chat = this.maxChatTokens - usedChat
+        let user = this.maxContextTokens.user - usedUser
+
+        // When the context shares the same token budget with Chat...
         if (this.shareChatAndUserBudget) {
-            const sharedChatBudget = chat - user - enhanced
-            return {
-                chat: sharedChatBudget,
-                context: {
-                    user: sharedChatBudget,
-                    enhanced: Math.floor(sharedChatBudget * ENHANCED_CONTEXT_ALLOCATION),
-                },
-            }
+            // ...subtracts the tokens used by context from Chat.
+            chat -= usedUser + usedEnhanced
+            // ...the remaining token budget for User-Context is the same as Chat.
+            user = chat
         }
 
-        const userContext = this.maxContextTokens.user - user
-        const enhancedContext = Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION)
-        return { chat, context: { user: userContext, enhanced: enhancedContext } }
+        return {
+            chat,
+            user,
+            enhanced: Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION),
+        }
     }
 
     /**
@@ -117,12 +110,12 @@ export class TokenCounter {
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.context.user >= count
+                return this.remainingTokens.user >= count
             case 'enhanced':
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.context.enhanced >= count
+                return this.remainingTokens.enhanced >= count
             default:
                 return false
         }
