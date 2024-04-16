@@ -1,5 +1,7 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
-typealias FixupTaskID = String // One of: 
+data class EditTask_UndoParams(
+  val id: FixupTaskID? = null,
+)
 

@@ -616,7 +616,7 @@ describe('Agent', () => {
                 command: 'cody.search.index-update',
             })
             await client.openFile(ignoredUri, { removeCursor: false })
-            await client.request('commands/document', null).catch(err => {
+            await client.request('editCommands/document', null).catch(err => {
                 expect(err).toBeDefined()
             })
         })
@@ -708,12 +708,12 @@ describe('Agent', () => {
                 })
                 const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                 await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request('commands/document', null)
+                const task = await documentClient.request('editCommands/document', null)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
                 expect(lenses).toHaveLength(0) // Code lenses are now handled client side
 
-                await documentClient.request('editTask/accept', task.id)
+                await documentClient.request('editTask/accept', { id: task.id })
                 const newContent = documentClient.workspace.getDocument(uri)?.content
                 assertion(trimEndOfLine(newContent))
             },
