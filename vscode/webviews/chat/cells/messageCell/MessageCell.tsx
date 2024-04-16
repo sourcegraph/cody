@@ -71,10 +71,14 @@ export const MessageCell: FunctionComponent<{
                 <SpeakerIcon message={message} userInfo={userInfo} chatModel={chatModel} size={24} />
             }
             disabled={disabled}
-            containerClassName={classNames(styles.cellContainer, {
-                [styles.focused]: isItemBeingEdited,
-                [styles.disabled]: disabled,
-            })}
+            containerClassName={classNames(
+                styles.cellContainer,
+                message.speaker === 'human' && styles.humanContent,
+                {
+                    [styles.focused]: isItemBeingEdited,
+                    [styles.disabled]: disabled,
+                }
+            )}
             data-testid="message"
         >
             <div className={styles.messageContentContainer}>
