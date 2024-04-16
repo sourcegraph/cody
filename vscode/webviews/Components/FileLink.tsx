@@ -52,7 +52,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         const pathToDisplay = `${repoShortName} ${title}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
-        href = uri.toString()
+        href = uri.toString(true) // Set to `true` to skip encoding the URI
         target = '_blank'
     } else {
         const pathToDisplay = `${displayPath(uri)}`
