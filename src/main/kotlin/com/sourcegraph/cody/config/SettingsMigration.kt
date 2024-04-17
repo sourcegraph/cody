@@ -219,7 +219,7 @@ class SettingsMigration : Activity {
       progressIndicator: EmptyProgressIndicator,
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(project, CodyAccount.create(it.name, it.displayName, server, it.id), accessToken)
+      addAccount(project, CodyAccount(it.name, it.displayName, server, it.id), accessToken)
     }
   }
 
@@ -231,7 +231,7 @@ class SettingsMigration : Activity {
       progressIndicator: EmptyProgressIndicator,
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount.create(it.name, it.displayName, server, it.id)
+      val codyAccount = CodyAccount(it.name, it.displayName, server, it.id)
       addAccount(project, codyAccount, accessToken)
       if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount())
           CodyAuthenticationManager.getInstance(project).setActiveAccount(codyAccount)
@@ -448,7 +448,7 @@ class SettingsMigration : Activity {
         if (accountId == null) return@forEach
         val newState =
             historyState.accountData.find { it.accountId == accountId }
-                ?: (AccountData.create(accountId).also { historyState.accountData += it })
+                ?: (AccountData(accountId).also { historyState.accountData += it })
         newState.defaultLlm = historyState.defaultLlm
         newState.defaultEnhancedContext = historyState.defaultEnhancedContext
         if (newState.chats.find { it.internalId == oldState.internalId } == null) {

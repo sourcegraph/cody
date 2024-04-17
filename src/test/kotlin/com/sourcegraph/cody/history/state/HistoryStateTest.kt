@@ -16,8 +16,7 @@ class HistoryStateTest : TestCase() {
               AccountData().apply {
                 accountId = "VXNlkjoxEFU3NjE="
                 chats +=
-                    ChatState().apply {
-                      internalId = "0f8b7034-9fa8-488a-a13e-09c52677008a"
+                    ChatState("0f8b7034-9fa8-488a-a13e-09c52677008a").apply {
                       updatedAt = "2024-01-31T01:06:18.524621"
                       messages +=
                           MessageState().apply {

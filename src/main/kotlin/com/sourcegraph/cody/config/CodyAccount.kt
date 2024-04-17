@@ -10,7 +10,7 @@ import com.sourcegraph.config.ConfigUtil
 @Tag("account")
 data class CodyAccount(
     @NlsSafe @Attribute("name") override var name: String = "",
-    @Attribute("displayName") var displayName: String? = null,
+    @Attribute("displayName") var displayName: String? = name,
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
     override val server: SourcegraphServerPath =
         SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
@@ -22,17 +22,6 @@ data class CodyAccount(
   fun isEnterpriseAccount(): Boolean = isDotcomAccount().not()
 
   override fun toString(): String = "$server/$name"
-
-  companion object {
-    fun create(
-        username: String,
-        displayName: String?,
-        server: SourcegraphServerPath,
-        id: String = generateId(),
-    ): CodyAccount {
-      return CodyAccount(username, displayName ?: username, server, id)
-    }
-  }
 }
 
 fun Collection<CodyAccount>.getFirstAccountOrNull() =

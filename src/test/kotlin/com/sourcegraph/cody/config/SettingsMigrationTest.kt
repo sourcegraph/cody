@@ -109,7 +109,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
               }
           it.chats =
               mutableListOf(
-                  ChatState.create("chat1").also {
+                  ChatState("chat1").also {
                     it.accountId = "sarah"
                     it.messages =
                         mutableListOf(
@@ -122,7 +122,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                               it.speaker = SpeakerState.HUMAN
                             })
                   },
-                  ChatState.create("chat2").also {
+                  ChatState("chat2").also {
                     it.accountId = "sarah"
                     it.messages =
                         mutableListOf(
@@ -135,7 +135,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                               it.speaker = SpeakerState.ASSISTANT
                             })
                   },
-                  ChatState.create("chat3").also {
+                  ChatState("chat3").also {
                     it.accountId = "dave"
                     it.llm =
                         LLMState.fromChatModel(
@@ -152,7 +152,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                               it.speaker = SpeakerState.ASSISTANT
                             })
                   },
-                  ChatState.create("chat4"))
+                  ChatState("chat4"))
         }
     val project = myFixture.project
     project.registerServiceInstance(

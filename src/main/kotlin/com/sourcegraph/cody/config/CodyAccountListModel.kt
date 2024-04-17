@@ -62,7 +62,7 @@ class CodyAccountListModel(private val project: Project) :
       token: String,
       id: String
   ) {
-    val account = CodyAccount.create(login, displayName, server, id)
+    val account = CodyAccount(login, displayName, server, id)
     if (accountsListModel.isEmpty) {
       activeAccount = account
     }

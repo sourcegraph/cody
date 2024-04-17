@@ -130,7 +130,7 @@ class HistoryService(private val project: Project) :
   private fun getOrCreateChat(internalId: String): ChatState {
     val accountEntry = getOrCreateActiveAccountEntry()
     val found = accountEntry.chats.find { it.internalId == internalId }
-    return found ?: ChatState.create(internalId).also { accountEntry.chats += it }
+    return found ?: ChatState(internalId).also { accountEntry.chats += it }
   }
 
   private fun findEntry(accountId: String): AccountData? =
@@ -146,7 +146,7 @@ class HistoryService(private val project: Project) :
             ?: throw IllegalStateException("No active account")
 
     val existingEntry = findEntry(activeAccount.id)
-    return existingEntry ?: AccountData.create(activeAccount.id).also { state.accountData += it }
+    return existingEntry ?: AccountData(activeAccount.id).also { state.accountData += it }
   }
 
   companion object {
