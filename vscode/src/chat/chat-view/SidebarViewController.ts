@@ -72,7 +72,7 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                         endpoint,
                         async (token, endpoint) => {
                             closeAuthProgressIndicator()
-                            const authStatus = await this.authProvider.auth(endpoint, token)
+                            const authStatus = await this.authProvider.auth({ endpoint, token })
                             telemetryService.log(
                                 'CodyVSCodeExtension:auth:fromTokenReceiver',
                                 {
@@ -138,7 +138,10 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                             if (!token) {
                                 return
                             }
-                            const authStatus = await this.authProvider.auth(DOTCOM_URL.href, token)
+                            const authStatus = await this.authProvider.auth({
+                                endpoint: DOTCOM_URL.href,
+                                token,
+                            })
                             if (!authStatus?.isLoggedIn) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
