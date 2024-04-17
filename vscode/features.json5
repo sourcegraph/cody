@@ -1,0 +1,113 @@
+{
+    "editors": ["vscode", "jetbrains"],
+    "features": {
+      "chat": [      
+        {
+        "name": "notebookBasedChatUI",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "new chat UI that resembles a notebook instead of a chat session",
+            "version": "v1.14.0"
+          }
+        }
+      },
+      {
+        "name": "mixtral8x22BPreview",
+        "productLine": "consumer",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "Mixtral 8x22B Preview chat model available for Cody Pro Users",
+            "version": "v1.14.0"
+          }
+        }
+      },
+      {
+        "name": "toggleEnhancedContextButtons",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "Added buttons in the chat input box for enabling/disabling Enhanced Context.",
+            "version": "v1.12.0"
+          }
+        }
+      }
+    ],
+    "commands": [{
+        "name": "generateUnitTestCodeAction",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "Generate unit test now shows on any function symbol in code actions",
+            "version": "v1.14.0"
+          }
+        }
+      },
+      {
+        "name": "editPreInstructions",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "New cody.edit.preInstruction configuration option for adding custom instruction at the end of all your requests.",
+            "version": "v1.12.0"
+          }
+        }
+      },
+      {
+        "name": "editShowWarningsOnLargeFiles",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "Display warnings for large @-mentioned files during selection",
+            "version": "v1.12.0"
+          }
+        }
+      }],
+      "autocomplete": [{}],
+      "context": [{
+        "name": "rightClickAddContext",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "right click to add add highlighted code to the chat context",
+            "version": "v1.14.0"
+          }
+        }
+      },
+      {
+        "name": "contextTokenCounter",
+        "productLine": "both",
+        "telemetry": [],
+        "documentation": ["https://docs.google.com/document/d/1_rg8j4yfz1Ot-lQle8v_K_y8V3JDzpKYxO134X7MItc/edit"],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "introduces token counting during prompt and context building",
+            "version": "v1.14.0"
+          }
+        }
+      },]
+    }
+  }
+  
