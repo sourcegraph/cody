@@ -32,6 +32,7 @@ import { type ChatModelContext, ChatModelContextProvider } from './chat/models/c
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
+import { telemetryRecorder } from '../src/services/telemetry-v2'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
@@ -269,6 +270,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                             transcript={transcript}
                                             vscodeAPI={vscodeAPI}
                                             telemetryService={telemetryService}
+                                            telemetryRecorder={telemetryRecorder}
                                             isTranscriptError={isTranscriptError}
                                             welcomeMessage={welcomeMessageMarkdown}
                                             guardrails={attributionEnabled ? guardrails : undefined}
