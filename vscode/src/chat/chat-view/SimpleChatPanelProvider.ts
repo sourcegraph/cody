@@ -400,6 +400,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            span.setAttribute('sampled', true)
+
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -427,8 +429,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-                span.setAttribute('sampled', true)
-
                 if (inputText.toString().match(/^\/reset$/)) {
                     span.addEvent('clearAndRestartSession')
                     span.end()
@@ -475,6 +475,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         traceId: span.spanContext().traceId,
                     }
                     span.setAttributes(properties)
+                    firstTokenSpan.setAttributes(properties)
 
                     telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
                         hasV2Event: true,
@@ -592,10 +593,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         // Use the number of characters left in the chat model as the limit
         // for adding user context files to the chat.
+        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
+              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            maxInputChars
         )
 
         try {
@@ -624,10 +628,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(): Promise<void> {
+        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
+              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            maxInputChars
         )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
         await this.postMessage({
@@ -807,7 +814,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
+            ModelProvider.getMaxInputCharsByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
@@ -917,7 +924,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID },
+                {
+                    model: this.chatModel.modelID,
+                    maxTokensToSample: this.chatModel.maxOutputTokens,
+                },
                 abortController.signal
             )
 
@@ -974,7 +984,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
                 'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID },
+                { ...codeCount, requestID, chatModel: this.chatModel.modelID },
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
@@ -991,6 +1001,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an aditional safegaurd measure
                     responseText:
                         authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
+                    chatModel: this.chatModel.modelID,
                 },
             })
         }

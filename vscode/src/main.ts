@@ -49,7 +49,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit } from './repository/repositoryHelpers'
+import { gitAPIinit } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -326,6 +327,7 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (

@@ -21,6 +21,7 @@ import {
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
+import { gitRemoteUrlFromGitCli } from './repository/repo-name-getter.node'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
 /**
@@ -57,6 +58,7 @@ export function activate(
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        getRemoteUrlGetters: () => [gitRemoteUrlFromGitCli],
         startTokenReceiver: (...args) => startTokenReceiver(...args),
 
         onConfigurationChange: setCustomAgent,
