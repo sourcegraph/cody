@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: bfcd9eeb36c5533edbebaf660d36eed3
+    - _id: 1dfb41922fe5dd97eb41ccb518d056d5
       _order: 0
       cache: {}
       request:
@@ -18,7 +18,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - name: user-agent
             value: rateLimitedClient / v1
           - name: host
@@ -53,7 +53,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:39 GMT
+            value: Wed, 17 Apr 2024 09:12:26 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -67,14 +67,14 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: retry-after
-            value: Thu, 18 Apr 2024 08:23:13 UTC
+            value: Thu, 18 Apr 2024 09:10:39 UTC
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 1f129804d665a34c4b8d8c4518166699
+            value: 39ba1bf7b12eb7eb16be2c2297a2c436
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -92,7 +92,7 @@ log:
         redirectURL: ""
         status: 429
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:39.107Z
+      startedDateTime: 2024-04-17T09:12:26.244Z
       time: 0
       timings:
         blocked: -1
@@ -102,7 +102,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a14fbcad29eca33b97810092a6c28402
+    - _id: 773c737be712329a948b8eeb8f9f7025
       _order: 0
       cache: {}
       request:
@@ -112,7 +112,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -166,7 +166,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:21 GMT
+            value: Wed, 17 Apr 2024 09:12:26 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -197,7 +197,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:21.007Z
+      startedDateTime: 2024-04-17T09:12:26.095Z
       time: 0
       timings:
         blocked: -1
@@ -207,7 +207,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ee3c7a53661c762c3f1ee1c2fde9132d
+    - _id: 388ee55f76c29fcdfbb552e0009f5b72
       _order: 0
       cache: {}
       request:
@@ -217,7 +217,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -284,7 +284,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:20 GMT
+            value: Wed, 17 Apr 2024 09:12:25 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -315,7 +315,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:20.422Z
+      startedDateTime: 2024-04-17T09:12:25.365Z
       time: 0
       timings:
         blocked: -1
@@ -325,7 +325,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2b06893df7454725b17b535d65a4651e
+    - _id: 1df1e12a7907b6128255a034f018f09b
       _order: 0
       cache: {}
       request:
@@ -335,7 +335,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -375,18 +375,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 134
+        bodySize: 131
         content:
           encoding: base64
           mimeType: application/json
-          size: 134
+          size: 131
           text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDx\
-            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"\
-            ]"
+            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:20 GMT
+            value: Wed, 17 Apr 2024 09:12:25 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -417,7 +416,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:20.444Z
+      startedDateTime: 2024-04-17T09:12:25.388Z
       time: 0
       timings:
         blocked: -1
@@ -427,7 +426,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 142c174bd39c0c883b5adcb629bad40b
+    - _id: 97c5e1657cd7c19aabcb8b5db4068329
       _order: 0
       cache: {}
       request:
@@ -437,7 +436,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -482,31 +481,32 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 364
+        bodySize: 392
         content:
           encoding: base64
           mimeType: application/json
-          size: 364
-          text: "[\"H4sIAAAAAAAAA2xPTU+DQBT8K+SdoUQbm3aTJhKtnxWTVlr09so+Ye3CkrdbbCH8d4P16\
-            G0mM5OZ6UCiQxAdZAdmqlxiiQeqJAjYpLHOvszx9S25fLmN5uBDgXZDrD4VyUWJSoNw\
-            fCAfpLK1xlOMJYEARkeeVqVyHjEbFt6vy6s1VsK7Wy0W4MPBEldnf0O2JW0a2+7VSGK\
-            jJPiADTrkZLUEAYVztRVhqIvxKDcm1zSkM1M5qtwoM2WIYXSTT022fHx/asf7bz46PQ\
-            2qgNJtvlvvNpOHOL3/0KaMnq9mu628KOZ2Ngky8KFmVSKf/v50QGfwz6rrfJCGPuj7v\
-            v8BAAD//wMA+0w3OD4BAAA=\"]"
+          size: 392
+          text: "[\"H4sIAAAAAAAAA2yPUWvCQBCE/8qxz4mh1Io9EBqKBUG0VSPtk6x32+TsJRf3LqFG8t9La\
+            h/7NsMy3+xcQWNAkFdQDTNVIfPEgzUaJOzfV1ad3Pd6l92tOjWDCAr0e2LzaUjPSzQW\
+            ZOCGItDG1xYvKywJJDSeYu+V2G2yeSQCG7QxVZq0eEmX23kkGAMJa0oTBDE7luIXI2q\
+            LlRSvmzVEA4SrG09ja/SoJd+Rda3vvgxEgC0G5GyzBAlFCLWXSWKL+1HuXG5pSCtXBa\
+            rCSLkywSR9zqdOLdJx7A52Wp/jJj6lxdYu3MN4x2/7MN1P6OPYteeyiYvDceYfJ7GCC\
+            Go2JfLlb+8V6Cb++eopH05DH/R93/8AAAD//wMASDatBl4BAAA=\"]"
           textDecoded:
             data:
               currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocLIYJz3kwrxtl8-n-eXWgbSbV6HNXGZlomAK59bWd1h=s96-c
-                displayName: "rate limit error: true, plan: FREE"
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocIA4-o_l8pq-u-jAhSlIo54TrQVt8V6eYbzvqmu-h_b=s96-c
+                displayName: "use-ssc TRUE, trial-ended FALSE, rate limit error: true, plan:
+                  PRO"
                 hasVerifiedEmail: true
-                id: VXNlcjoxOTU2MDA=
+                id: VXNlcjoxOTU1Nzc=
                 primaryEmail:
-                  email: veszelovszki.david@gmail.com
-                username: veszelovszki.david
+                  email: david.veszelovszki@gmail.com
+                username: david.veszelovszki
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:20 GMT
+            value: Wed, 17 Apr 2024 09:12:25 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -537,7 +537,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:20.668Z
+      startedDateTime: 2024-04-17T09:12:25.597Z
       time: 0
       timings:
         blocked: -1
@@ -547,7 +547,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7b09d40045910ee8f9e0489bda72bfad
+    - _id: 9f46eb98120189f0b3face0b705225fd
       _order: 0
       cache: {}
       request:
@@ -557,7 +557,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -622,7 +622,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:21 GMT
+            value: Wed, 17 Apr 2024 09:12:25 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -653,7 +653,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:20.853Z
+      startedDateTime: 2024-04-17T09:12:25.744Z
       time: 0
       timings:
         blocked: -1
@@ -663,7 +663,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 18848cad390d6d68b185b1881a4fe81d
+    - _id: 87b6127050d8b203a462976d2aaf3143
       _order: 0
       cache: {}
       request:
@@ -673,7 +673,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -735,7 +735,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:21 GMT
+            value: Wed, 17 Apr 2024 09:12:26 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -764,7 +764,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:21.009Z
+      startedDateTime: 2024-04-17T09:12:26.096Z
       time: 0
       timings:
         blocked: -1
@@ -978,7 +978,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7990d400ae834f57a5a5c427db89cdc3
+    - _id: 41e73683dc5ef324244a6ed01cee30c7
       _order: 0
       cache: {}
       request:
@@ -988,7 +988,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -1050,7 +1050,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:21 GMT
+            value: Wed, 17 Apr 2024 09:12:26 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1081,7 +1081,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:21.006Z
+      startedDateTime: 2024-04-17T09:12:26.094Z
       time: 0
       timings:
         blocked: -1
@@ -1091,7 +1091,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e6a4462ffd77e65ef6bbc01202e981d1
+    - _id: 44be6ab6445e52353688f61c3c91495a
       _order: 0
       cache: {}
       request:
@@ -1101,7 +1101,7 @@ log:
           - _fromType: array
             name: authorization
             value: token
-              REDACTED_4b07897b9cc872214da8d5c9428d842732bebad77ff80f2fe9233274dd2ec829
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -1139,21 +1139,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 136
+        bodySize: 142
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkZmliYWJvFGB\
-            kYmugYmuobm8aZ6xrrmFgaJpoaGJmmpaYlKtbW1AAAAAP//AwD8gcP+SQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                productVersion: 269484_2024-04-17_5.3-780a5114fefa
+          size: 142
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkZmliYW\
+            JvFGBkYmugYmuobm8aZ6xrrmFgaJpoaGJmmpaYlKtbW1AAAAAP//\",\"AwD8gcP+SQ\
+            AAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:02:20 GMT
+            value: Wed, 17 Apr 2024 09:12:25 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1184,7 +1181,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-17T09:02:20.378Z
+      startedDateTime: 2024-04-17T09:12:25.321Z
       time: 0
       timings:
         blocked: -1
