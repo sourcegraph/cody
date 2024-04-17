@@ -3453,6 +3453,111 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 4541b3f392b28275270ba61bb2a43aa5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 349
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: x-sourcegraph-actor-anonymous-uid
+            value: enterpriseClientabcde1234
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "349"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 318
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
+              	telemetry {
+              		recordEvents(events: $events) {
+              			alwaysNil
+              		}
+              	}
+              }
+            variables:
+              events:
+                - action: firstEver
+                  feature: cody.auth.login
+                  parameters:
+                    privateMetadata: {}
+                    version: 0
+                  source:
+                    client: VSCode.Cody
+                    clientVersion: 1.12.0
+        queryString:
+          - name: RecordTelemetryEvents
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 17 Apr 2024 15:29:03 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1217
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-04-17T15:29:03.132Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: b38540ce2256c839f6ea9b4ee26f34fd
       _order: 0
       cache: {}
