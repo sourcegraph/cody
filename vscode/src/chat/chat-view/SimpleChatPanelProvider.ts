@@ -500,7 +500,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // the condition below is an additional safeguard measure
                             promptText:
                                 authStatus.isDotCom &&
-                                inputText.toString().substring(0, CHAT_INPUT_TOKEN_BUDGET),
+                                truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                         },
                     })
                 }
