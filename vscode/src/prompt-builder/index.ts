@@ -1,12 +1,13 @@
 import {
     type ChatMessage,
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     type Message,
     isCodyIgnoredFile,
+    ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
@@ -119,14 +120,15 @@ export class PromptBuilder {
             }
         }
         for (const v of contextItemsAndMessages) {
+            const item = contextItem(v)
             const uri = contextItem(v).uri
             if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
-                ignored.push(contextItem(v))
+                ignored.push(item)
                 continue
             }
             const id = contextItemId(v)
             if (this.seenContext.has(id)) {
-                duplicate.push(contextItem(v))
+                duplicate.push(item)
                 continue
             }
             const contextMessage = isContextItem(v) ? renderContextItem(v) : v
@@ -134,23 +136,30 @@ export class PromptBuilder {
                 ? contextMessage.speaker.length + contextMessage.text.length + 3
                 : 0
             if (this.charsUsed + contextLen > effectiveCharLimit) {
-                ignored.push(contextItem(v))
+                // Marks excluded context items as too large to be displayed in UI
+                if (item.type === 'file') {
+                    item.isTooLarge = true
+                }
+                ignored.push(item)
                 limitReached = true
                 continue
             }
             this.seenContext.add(id)
             if (contextMessage) {
-                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
+                this.reverseMessages.push({ speaker: 'assistant', text: ps`Ok.` })
                 this.reverseMessages.push(contextMessage)
             }
             this.charsUsed += contextLen
-            used.push(contextItem(v))
+            // Marks added file items as not too large
+            if (item.type === 'file') {
+                item.isTooLarge = false
+            }
+            used.push(item)
         }
         return {
             limitReached,
             used,
-            // Marks excluded context items as too large to be displayed in UI
-            ignored: ignored.map(c => ({ ...c, isTooLarge: true })),
+            ignored,
             duplicate,
         }
     }

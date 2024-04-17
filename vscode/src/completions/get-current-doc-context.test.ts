@@ -7,12 +7,9 @@ import { range } from '../testutils/textDocument'
 import { asPoint } from '../tree-sitter/parse-tree-cache'
 import { type WrappedParser, resetParsersCache } from '../tree-sitter/parser'
 
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { getContextRange } from './doc-context-getters'
-import {
-    type DocumentContext,
-    getCurrentDocContext,
-    insertIntoDocContext,
-} from './get-current-doc-context'
+import { getCurrentDocContext, insertIntoDocContext } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(code: string, context?: vscode.InlineCompletionContext) {

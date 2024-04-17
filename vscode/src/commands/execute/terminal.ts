@@ -1,18 +1,11 @@
-import { DefaultChatCommands, logDebug } from '@sourcegraph/cody-shared'
+import { PromptString, type TerminalOutputArguments, logDebug, ps } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeChat } from './ask'
 
 import * as uuid from 'uuid'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
-
-interface TerminalOutputArguments {
-    name: string
-    selection?: string
-    creationOptions?: { shellPath?: string; shellArgs?: string[] }
-}
 
 /**
  * Executes a chat command to explain the given terminal output.
@@ -29,7 +22,7 @@ export async function executeExplainOutput(
         logDebug('executeExplainOutput', 'executing', { args })
         const requestID = uuid.v4()
         const addEnhancedContext = false
-        const source = DefaultChatCommands.Terminal
+        const source = 'terminal'
         telemetryService.log('CodyVSCodeExtension:command:terminal:executed', {
             useCodebaseContex: false,
             requestID,
@@ -48,16 +41,18 @@ export async function executeExplainOutput(
             },
         })
 
-        const output = args.selection?.trim()
+        const promptArgs = PromptString.fromTerminalOutputArguments(args)
+
+        const output = promptArgs.selection?.trim()
         if (!output) {
             return undefined
         }
 
-        let prompt = template.replace('{{PROCESS}}', args.name).replace('{{OUTPUT}}', output)
-        const options = JSON.stringify(args.creationOptions ?? {})
+        let prompt = template.replaceAll('{{PROCESS}}', promptArgs.name).replaceAll('{{OUTPUT}}', output)
+        const options = promptArgs.creationOptions
         if (options) {
             span.addEvent('hasCreationOptions')
-            prompt += `\nProcess options: ${options}`
+            prompt = prompt.concat(ps`\nProcess options: ${options}`)
         }
 
         return {
@@ -73,7 +68,7 @@ export async function executeExplainOutput(
     })
 }
 
-const template = `
+const template = ps`
 Review and analyze this terminal output from the \`{{PROCESS}}\` process and summarize the key information. If this indicates an error, provide step-by-step instructions on how I can resolve this:
 \n\`\`\`
 \n{{OUTPUT}}

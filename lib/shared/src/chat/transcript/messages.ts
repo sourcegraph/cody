@@ -2,7 +2,6 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
-import type { DefaultCodyCommands } from '../../commands/types'
 
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
@@ -16,6 +15,19 @@ export interface ChatMessage extends Message {
      * back to editing the text for invalid values.
      */
     editorState?: unknown
+}
+
+// An unsafe version of the {@link ChatMessage} that has the PromptString
+// replaced to a regular string for serialization @see ChatMessage
+//
+// Note: This is created as an interface so that the Kotlin type-gen does not
+// break.
+export interface SerializedChatMessage {
+    contextFiles?: ContextItem[]
+    error?: ChatError
+    editorState?: unknown
+    speaker: 'human' | 'assistant' | 'system'
+    text?: string // Changed from PromptString
 }
 
 export interface ChatError {
@@ -46,9 +58,16 @@ export interface ChatHistory {
     [chatID: string]: SerializedChatTranscript
 }
 
-export type ChatEventSource =
+/**
+ * We need to specific a default event source as some commands can be
+ * executed directly through VS Code where we cannot provide a custom source.
+ * For example: Commands executed through the command palette, right-click menu or through keyboard shortcuts.
+ */
+export const DEFAULT_EVENT_SOURCE = 'editor'
+
+export type EventSource =
+    | typeof DEFAULT_EVENT_SOURCE
     | 'chat'
-    | 'editor' // e.g. shortcut, right-click menu or VS Code command palette
     | 'menu' // Cody command palette
     | 'sidebar'
     | 'code-action:explain'
@@ -56,10 +75,11 @@ export type ChatEventSource =
     | 'code-action:edit'
     | 'code-action:fix'
     | 'code-action:generate'
+    | 'code-action:test'
     | 'custom-commands'
-    | 'test'
     | 'code-lens'
-    | DefaultCodyCommands
+    | 'hover'
+    | 'terminal'
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

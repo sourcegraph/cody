@@ -2,7 +2,8 @@ import {
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
-} from '@sourcegraph/cody-shared/src/commands/types'
+    type PromptString,
+} from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../main'
 import { executeDocCommand } from './doc'
 import { executeExplainCommand } from './explain'
@@ -19,6 +20,7 @@ export { executeDocCommand } from './doc'
 export { executeTestEditCommand } from './test-edit'
 export { executeTestCaseEditCommand } from './test-case'
 export { executeExplainOutput } from './terminal'
+export { executeHoverChatCommand } from './hover'
 
 export function isDefaultChatCommand(id: string): DefaultChatCommands | undefined {
     // Remove leading slash if any
@@ -45,7 +47,7 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
  */
 export async function executeDefaultCommand(
     id: DefaultCodyCommands | string,
-    additionalInstruction?: string
+    additionalInstruction?: PromptString
 ): Promise<CommandResult | undefined> {
     const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
     switch (key) {

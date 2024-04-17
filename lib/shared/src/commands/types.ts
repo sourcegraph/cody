@@ -6,7 +6,6 @@ export enum DefaultChatCommands {
     Explain = 'explain', // Explain code
     Unit = 'unit', // Generate unit tests in Chat
     Smell = 'smell', // Generate code smell report in Chat
-    Terminal = 'terminal', // Explain terminal output
 }
 
 // Default Cody Commands that runs as an Inline Edit command
@@ -79,3 +78,9 @@ export enum CustomCommandType {
 }
 
 type DefaultCommandType = 'default' | 'experimental'
+
+export interface TerminalOutputArguments {
+    name: string
+    selection?: string
+    creationOptions?: { shellPath?: string; shellArgs?: string[] }
+}

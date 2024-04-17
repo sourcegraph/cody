@@ -2,10 +2,11 @@ import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import {
-    type ChatEventSource,
     type CodyCommand,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type EventSource,
+    PromptString,
 } from '@sourcegraph/cody-shared'
 
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
@@ -116,7 +117,7 @@ export class CommandRunner implements vscode.Disposable {
         this.span.setAttribute('mode', 'chat')
         logDebug('CommandRunner:handleChatRequest', 'chat request detecte')
 
-        const prompt = this.command.prompt
+        const prompt = PromptString.unsafe_fromUserQuery(this.command.prompt)
 
         // Fetch context for the command
         const contextFiles = await this.getContextFiles()
@@ -149,12 +150,12 @@ export class CommandRunner implements vscode.Disposable {
             type: 'edit',
             task: await executeEdit({
                 configuration: {
-                    instruction: this.command.prompt,
+                    instruction: PromptString.unsafe_fromUserQuery(this.command.prompt),
                     intent: 'edit',
                     mode: this.command.mode as EditMode,
                     userContextFiles,
                 },
-                source: 'custom-commands' as ChatEventSource,
+                source: 'custom-commands' as EventSource,
             } satisfies ExecuteEditArguments),
         }
     }

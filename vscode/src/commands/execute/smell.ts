@@ -1,5 +1,12 @@
-import { type ContextItem, displayLineRange, displayPath, logDebug } from '@sourcegraph/cody-shared'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import {
+    type ContextItem,
+    DefaultChatCommands,
+    PromptString,
+    displayLineRange,
+    logDebug,
+    ps,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -9,7 +16,6 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
@@ -18,11 +24,11 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
  */
 async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
     const addEnhancedContext = false
-    let prompt = defaultCommands.smell.prompt
+    let prompt = PromptString.fromDefaultCommands(defaultCommands, 'smell')
 
     if (args?.additionalInstruction) {
         span.addEvent('additionalInstruction')
-        prompt = `${prompt} ${args.additionalInstruction}`
+        prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
     const contextFiles: ContextItem[] = []
@@ -32,8 +38,11 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
 
     const cs = currentSelection[0]
     if (cs) {
-        const range = cs.range && `:${displayLineRange(cs.range)}`
-        prompt = prompt.replace('the selected code', `@${displayPath(cs.uri)}${range ?? ''} `)
+        const range = cs.range && ps`:${displayLineRange(cs.range)}`
+        prompt = prompt.replaceAll(
+            'the selected code',
+            ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
+        )
     }
 
     return {
@@ -41,7 +50,8 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Smell,
+        source: args?.source,
+        command: DefaultChatCommands.Smell,
     }
 }
 

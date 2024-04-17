@@ -38,11 +38,15 @@ const DOCUMENTABLE_NODES = dedent`
     (interface_type
         (_
             name: (field_identifier) @symbol.identifier)  @range.identifier)
+
+    ; Comments
+    ;--------------------------------
+    (comment) @comment
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`
-    (function_declaration) @range.function
-    (method_declaration) @range.function
+    (function_declaration (identifier) @symbol.function) @range.function
+    (method_declaration (field_identifier) @symbol.function) @range.function
     (func_literal) @range.function
 `
 

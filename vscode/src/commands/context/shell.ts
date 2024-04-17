@@ -9,11 +9,11 @@ import { logError } from '../../log'
 import path from 'node:path/posix'
 import {
     type ContextItem,
+    ContextItemSource,
     MAX_CURRENT_FILE_TOKENS,
     truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 const _exec = promisify(exec)
 

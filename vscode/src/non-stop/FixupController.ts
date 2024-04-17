@@ -1,10 +1,12 @@
 import * as vscode from 'vscode'
 
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
+    type PromptString,
     displayPathBasename,
+    getEditorInsertSpaces,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
@@ -13,7 +15,6 @@ import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
-import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
@@ -25,7 +26,7 @@ import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask, type FixupTaskID } from './FixupTask'
+import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { type Diff, computeDiff } from './diff'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
@@ -51,12 +52,17 @@ export class FixupController
         },
         onRemoved: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:removed', safeMetadata, {
+            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent('cody.fixup.persistence', 'removed', safeMetadata)
+            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
     })
+    /**
+     * The event that fires when the user clicks the undo button on a code lens.
+     * Used to help track the Edit rejection rate.
+     */
+    private readonly undoCommandEvent = new vscode.EventEmitter<FixupTaskID>()
 
     private _disposables: vscode.Disposable[] = []
 
@@ -132,6 +138,8 @@ export class FixupController
             return
         }
 
+        this.undoCommandEvent.fire(task.id)
+
         let editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri === task.fixupFile.uri
         )
@@ -153,7 +161,8 @@ export class FixupController
             intent: task.intent,
             mode: task.mode,
             source: task.source,
-            ...countCode(replacementText),
+            ...this.countEditInsertions(task),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -186,7 +195,7 @@ export class FixupController
 
     // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
-    public async retry(task: FixupTask, source: ChatEventSource): Promise<FixupTask | undefined> {
+    public async retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
         const input = await getInput(
@@ -270,7 +279,8 @@ export class FixupController
         mode: EditMode,
         model: EditModel,
         intent: EditIntent,
-        source: ChatEventSource
+        source: EventSource,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -295,7 +305,10 @@ export class FixupController
             input.intent,
             mode,
             input.model,
-            source
+            source,
+            undefined,
+            undefined,
+            telemetryMetadata
         )
 
         // Return focus to the editor
@@ -306,15 +319,16 @@ export class FixupController
 
     public async createTask(
         document: vscode.TextDocument,
-        instruction: string,
+        instruction: PromptString,
         userContextFiles: ContextItem[],
         selectionRange: vscode.Range,
         intent: EditIntent,
         mode: EditMode,
         model: EditModel,
-        source?: ChatEventSource,
+        source?: EventSource,
         destinationFile?: vscode.Uri,
-        insertionPoint?: vscode.Position
+        insertionPoint?: vscode.Position,
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -327,7 +341,8 @@ export class FixupController
             model,
             source,
             destinationFile,
-            insertionPoint
+            insertionPoint,
+            telemetryMetadata
         )
         this.tasks.set(task.id, task)
         return task
@@ -408,12 +423,39 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.working)
     }
 
+    private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {
+        if (!task.replacement) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        if (task.mode === 'insert') {
+            return countCode(task.replacement)
+        }
+
+        if (!task.diff) {
+            return { lineCount: 0, charCount: 0 }
+        }
+
+        const countedLines = new Set<number>()
+        let charCount = 0
+        for (const edit of task.diff.edits) {
+            charCount += edit.text.length
+            for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
+                countedLines.add(line)
+            }
+        }
+
+        return { lineCount: countedLines.size, charCount }
+    }
+
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
-            ...countCode(task.replacement || ''),
+            model: task.model,
+            ...this.countEditInsertions(task),
+            ...task.telemetryMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -422,10 +464,7 @@ export class FixupController
             })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
                 metadata,
-                privateMetadata: {
-                    ...privateMetadata,
-                    model: task.model,
-                },
+                privateMetadata,
             })
 
             // TODO: Try to recover, for example by respinning
@@ -440,10 +479,7 @@ export class FixupController
         telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
-            privateMetadata: {
-                ...privateMetadata,
-                model: task.model,
-            },
+            privateMetadata,
         })
 
         /**
@@ -474,11 +510,72 @@ export class FixupController
             insertText: task.replacement,
             insertRange: trackedRange,
             document,
-            metadata: {
-                model: task.model,
-                mode: task.mode,
-                intent: task.intent,
-            },
+            metadata,
+        })
+
+        const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
+            telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
+                metadata,
+                privateMetadata,
+            })
+        }
+
+        /**
+         * Tracks when a user clicks "Undo" in the Edit codelens.
+         * This is important as VS Code doesn't let us easily differentiate between
+         * document changes made by specific commands.
+         *
+         * This logic ensures we can still mark as task as rejected if a user clicks "Undo".
+         */
+        const commandUndoListener = this.undoCommandEvent.event(id => {
+            if (id !== task.id) {
+                return
+            }
+
+            // Immediately dispose of the rejectionListener, otherwise this will also run
+            // and mark the "Undo" change here as an "acccepted" change made by the user.
+            rejectionListener.dispose()
+            commandUndoListener.dispose()
+
+            // If a user manually clicked "Undo", we can be confident that they reject the fixup.
+            logAcceptance('rejected')
+        })
+        let undoCount = 0
+        /**
+         * Tracks the rejection of a Fixup task via the users' next action.
+         * As in, if the user immediately undos the change via the system undo command,
+         * or if they persist to make new edits to the file.
+         *
+         * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
+         * When a change is made, it logs telemetry about whether the change was rejected or accepted.
+         */
+        const rejectionListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
+                // Irrelevant change, ignore
+                return
+            }
+
+            if (event.reason === vscode.TextDocumentChangeReason.Undo) {
+                // Set state, but don't fire telemetry yet as the user could still "Redo".
+                undoCount += 1
+                return
+            }
+
+            if (event.reason === vscode.TextDocumentChangeReason.Redo) {
+                // User re-did the change, so reset state
+                undoCount = Math.max(0, undoCount - 1)
+                return
+            }
+
+            // User has made a change, we can now fire our stored state as to if the change was undone or not
+            logAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
+
+            // We no longer need to track this change, so dispose of our listeners
+            rejectionListener.dispose()
+            commandUndoListener.dispose()
         })
     }
 
@@ -525,8 +622,6 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            this.logTaskCompletion(task, document, editOk)
-
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = {
@@ -552,6 +647,7 @@ export class FixupController
 
             // TODO: See if we can discard a FixupFile now.
             this.setTaskState(task, CodyTaskState.applied)
+            this.logTaskCompletion(task, document, editOk)
 
             // Inform the user about the change if it happened in the background
             // TODO: This will show a new notification for each unique file name.
@@ -637,8 +733,6 @@ export class FixupController
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        this.logTaskCompletion(task, document, editOk)
-
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
         const formatEditOptions = {
@@ -663,6 +757,7 @@ export class FixupController
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.applied)
+        this.logTaskCompletion(task, document, editOk)
 
         // Inform the user about the change if it happened in the background
         // TODO: This will show a new notification for each unique file name.
@@ -765,8 +860,8 @@ export class FixupController
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
                 {
-                    tabSize: getEditorTabSize(document.uri),
-                    insertSpaces: getEditorInsertSpaces(document.uri),
+                    tabSize: document.uri,
+                    insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
                 }
             )) || []
 
@@ -1062,12 +1157,6 @@ export class FixupController
         }
 
         task.state = state
-
-        // Creates new file if destinationFile is provided at task creation
-        if (task.state === CodyTaskState.pending && task.destinationFile) {
-            void this.didReceiveNewFileRequest(task.id, task.destinationFile)
-            return
-        }
 
         if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
             task.spinCount++

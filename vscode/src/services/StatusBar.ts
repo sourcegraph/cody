@@ -5,7 +5,8 @@ import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourceg
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { FeedbackOptionItems, PremiumSupportItems } from './FeedbackOptions'
+import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
+import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
 import { enableDebugMode } from './utils/export-logs'
@@ -106,13 +107,6 @@ export function createStatusBar(): CodyStatusBar {
             }
         }
 
-        function createFeedbackAndSupportItems(): StatusBarItem[] {
-            const isPaidUser = authStatus?.isLoggedIn && !authStatus?.userCanUpgrade
-            const paidSupportItems = isPaidUser ? PremiumSupportItems : []
-            // Display to paid users (e.g. Enterprise users or Cody Pro uers) only
-            return [...paidSupportItems, ...FeedbackOptionItems]
-        }
-
         if (errors.length > 0) {
             errors.map(error => error.error.onShow?.())
         }
@@ -166,29 +160,35 @@ export function createStatusBar(): CodyStatusBar {
                 c => c.codeActions
             ),
             await createFeatureToggle(
-                'Editor Title Icon',
-                undefined,
-                'Enable Cody to appear in editor title menu for quick access to Cody commands',
-                'cody.editorTitleCommandIcon',
-                c => c.editorTitleCommandIcon
-            ),
-            await createFeatureToggle(
                 'Code Lenses',
                 undefined,
                 'Enable Code Lenses in documents for quick access to Cody commands',
                 'cody.commandCodeLenses',
                 c => c.commandCodeLenses
             ),
-            await createFeatureToggle(
-                'Command Hints',
-                undefined,
-                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
-                'cody.commandHints.enabled',
-                async () => {
-                    const enablement = await getGhostHintEnablement()
-                    return enablement.Document || enablement.EditOrChat || enablement.Generate
-                }
-            ),
+            ...(hoverCommandsProvider.getEnablement()
+                ? [
+                      await createFeatureToggle(
+                          'Commands on Hover',
+                          'Experimental',
+                          'Enable Cody commands to appear on hover',
+                          'cody.experimental.hoverCommands',
+                          () => isHoverCommandsEnabled()
+                      ),
+                  ]
+                : [
+                      await createFeatureToggle(
+                          'Command Hints',
+                          undefined,
+                          'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
+                          'cody.commandHints.enabled',
+                          async () => {
+                              const enablement = await getGhostHintEnablement()
+                              return enablement.Document || enablement.EditOrChat || enablement.Generate
+                          }
+                      ),
+                  ]),
+
             await createFeatureToggle(
                 'Search Context',
                 'Beta',
@@ -211,7 +211,8 @@ export function createStatusBar(): CodyStatusBar {
                 },
             },
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
-            ...createFeedbackAndSupportItems(),
+            ...SupportOptionItems,
+            ...FeedbackOptionItems,
         ]
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'
@@ -263,7 +264,7 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus && !authStatus.isLoggedIn) {
-            statusBarItem.text = 'Sign In'
+            statusBarItem.text = '$(cody-logo-heavy) Sign In'
             statusBarItem.tooltip = 'Sign in to get started with Cody'
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
             return

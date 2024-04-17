@@ -20,6 +20,7 @@ class LocalStorage {
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
+    protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -135,6 +136,26 @@ class LocalStorage {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    /**
+     * Gets the enrollment history for a feature from the storage.
+     *
+     * Checks if the given feature name exists in the stored enrollment
+     * history array.
+     *
+     * If not, add the feature to the memory, but return false after adding the feature
+     * so that the caller can log the first enrollment event.
+     */
+    public getEnrollmentHistory(featureName: string): boolean {
+        const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])
+        const hasEnrolled = history.includes(featureName)
+        // Log the first enrollment event
+        if (!hasEnrolled) {
+            history.push(featureName)
+            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+        }
+        return hasEnrolled
     }
 
     /**

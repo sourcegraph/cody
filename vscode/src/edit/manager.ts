@@ -13,6 +13,7 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -44,7 +45,6 @@ export class EditManager implements vscode.Disposable {
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
         this.controller = new FixupController(options.authProvider, options.extensionClient)
         this.disposables.push(
             this.controller,
@@ -66,7 +66,7 @@ export class EditManager implements vscode.Disposable {
              * editor actions that cannot provide executeEdit `args`.
              * E.g. triggering this command via the command palette, right-click menus
              **/
-            source = 'editor',
+            source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
         } = args
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
@@ -112,7 +112,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         let task: FixupTask | null
-        if (configuration.instruction?.trim()) {
+        if (configuration.instruction && configuration.instruction.trim().length > 0) {
             task = await this.controller.createTask(
                 document,
                 configuration.instruction,
@@ -123,7 +123,8 @@ export class EditManager implements vscode.Disposable {
                 model,
                 source,
                 configuration.destinationFile,
-                configuration.insertionPoint
+                configuration.insertionPoint,
+                telemetryMetadata
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -133,7 +134,8 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 intent,
-                source
+                source,
+                telemetryMetadata
             )
         }
 

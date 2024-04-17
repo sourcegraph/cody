@@ -3,9 +3,9 @@ import type { Point, Tree, default as Parser } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import type { DocumentContext } from '../get-current-doc-context'
 import type { InlineCompletionItem } from '../types'
 
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import type { WrappedParser } from '../../tree-sitter/parser'
 import {
     type InlineCompletionItemWithAnalytics,

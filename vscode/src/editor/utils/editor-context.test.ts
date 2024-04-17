@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    CHARS_PER_TOKEN,
     type ContextItem,
     type ContextItemFile,
     type Editor,
@@ -12,7 +13,6 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
@@ -171,6 +171,7 @@ describe('filterLargeFiles', () => {
             type: 'file',
             uri: largeTextFile.uri,
             isTooLarge: true,
+            size: oneByteOverTokenLimit,
         })
     })
 })

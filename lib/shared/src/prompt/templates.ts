@@ -1,43 +1,45 @@
 import type { URI } from 'vscode-uri'
 
-import { languageFromFilename, markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
+import { PromptString, ps } from './prompt-string'
 
 export function populateCodeContextTemplate(
-    code: string,
+    code: PromptString,
     fileUri: URI,
-    repoName?: string,
+    repoName?: PromptString,
     type: 'chat' | 'edit' = 'chat'
-): string {
+): PromptString {
     const template =
         type === 'edit'
-            ? 'Codebase context from file {filePath}{inRepo}:\n{text}'
-            : 'Codebase context from file {filePath}{inRepo}:\n```{languageID}\n{text}```'
+            ? ps`Codebase context from file {filePath}{inRepo}:\n{text}`
+            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}\n{text}\`\`\``
 
     return template
-        .replace('{inRepo}', ` in repository ${repoName}`)
-        .replace('{filePath}', displayPath(fileUri))
-        .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
-        .replace('{text}', code)
+        .replaceAll('{inRepo}', repoName ? ps` in repository ${repoName}` : ps``)
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+        .replaceAll('{languageID}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
+        .replaceAll('{text}', code)
 }
 
-const DIAGNOSTICS_CONTEXT_TEMPLATE = `Use the following {type} from the code snippet in the file: {filePath}:
+const DIAGNOSTICS_CONTEXT_TEMPLATE = ps`Use the following {type} from the code snippet in the file: {filePath}:
 {prefix}: {message}
 Code snippet:
 {code}
 `
 
 export function populateCurrentEditorDiagnosticsTemplate(
-    { message, type, text }: ActiveTextEditorDiagnostic,
-    fileUri: URI
-): string {
-    return DIAGNOSTICS_CONTEXT_TEMPLATE.replace('{type}', type)
-        .replace('{filePath}', displayPath(fileUri))
-        .replace('{prefix}', type)
-        .replace('{message}', message)
-        .replace('{languageID}', markdownCodeBlockLanguageIDForFilename(fileUri))
-        .replace('{code}', text)
+    diagnostic: ActiveTextEditorDiagnostic,
+    uri: URI
+): PromptString {
+    const { type, message, text } = PromptString.fromTextEditorDiagnostic(diagnostic, uri)
+
+    return DIAGNOSTICS_CONTEXT_TEMPLATE.replaceAll('{type}', type)
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(uri))
+        .replaceAll('{prefix}', type)
+        .replaceAll('{message}', message)
+        .replaceAll('{languageID}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri))
+        .replaceAll('{code}', text)
 }
 
 const COMMAND_OUTPUT_TEMPLATE = 'Here is the output returned from the terminal.\n'
@@ -46,29 +48,29 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = `"My selected {languageName} code from file \`{filePath}\`:
+const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected {languageName} code from file \`{filePath}\`:
 <selected>
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = `"My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
+const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = ps`My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
 <selected>
 {code}
 </selected>`
 
 export function populateCurrentSelectedCodeContextTemplate(
-    code: string,
+    code: PromptString,
     fileUri: URI,
-    repoName?: string
-): string {
+    repoName?: PromptString
+): PromptString {
     return (
         repoName
             ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
             : SELECTED_CODE_CONTEXT_TEMPLATE
     )
         .replace('{code}', code)
-        .replaceAll('{filePath}', displayPath(fileUri))
-        .replace('{languageName}', languageFromFilename(fileUri))
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+        .replace('{languageName}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE =
@@ -84,31 +86,33 @@ export function populateListOfFilesContextTemplate(fileList: string, fileUri?: U
 }
 
 export function populateContextTemplateFromText(
-    templateText: string,
-    content: string,
+    templateText: PromptString,
+    content: PromptString,
     fileUri: URI
-): string {
-    return templateText.replace('{fileName}', displayPath(fileUri)) + content
+): PromptString {
+    return templateText.replace('{fileName}', PromptString.fromDisplayPath(fileUri)).concat(content)
 }
 
-const FILE_IMPORTS_TEMPLATE = '{fileName} has imported the folowing: '
+const FILE_IMPORTS_TEMPLATE = ps`{fileName} has imported the following: `
 
-export function populateImportListContextTemplate(importList: string, fileUri: URI): string {
-    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', displayPath(fileUri)) + importList
+export function populateImportListContextTemplate(importList: PromptString, fileUri: URI): PromptString {
+    return FILE_IMPORTS_TEMPLATE.replace('{fileName}', PromptString.fromDisplayPath(fileUri)).concat(
+        importList
+    )
 }
 
-const CODE_GENERATION_CONTEXT_TEMPLATE = `Below is the code from file path {filePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+const CODE_GENERATION_CONTEXT_TEMPLATE = ps`Below is the code from file path {filePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
 {precedingText}<{outputTag}></{outputTag}>{followingText}
 `
 
 export function populateCodeGenerationContextTemplate(
-    precedingText: string,
-    followingText: string,
+    precedingText: PromptString,
+    followingText: PromptString,
     fileUri: URI,
-    tag: string
-): string {
-    return CODE_GENERATION_CONTEXT_TEMPLATE.replace('{precedingText}', precedingText)
-        .replace('{followingText}', followingText)
-        .replace('{filePath}', displayPath(fileUri))
-        .replace('{outputTag}', tag)
+    tag: PromptString
+): PromptString {
+    return CODE_GENERATION_CONTEXT_TEMPLATE.replaceAll('{precedingText}', precedingText)
+        .replaceAll('{followingText}', followingText)
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+        .replaceAll('{outputTag}', tag)
 }

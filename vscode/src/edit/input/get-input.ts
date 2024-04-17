@@ -1,7 +1,9 @@
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
+    ModelProvider,
+    PromptString,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -10,8 +12,8 @@ import * as vscode from 'vscode'
 
 import {
     FILE_HELP_LABEL,
-    FILE_TOO_LARGE_LABEL,
     GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
     SYMBOL_HELP_LABEL,
@@ -22,6 +24,7 @@ import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
@@ -40,7 +43,7 @@ import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from 
 
 interface QuickPickInput {
     /** The user provided instruction */
-    instruction: string
+    instruction: PromptString
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextItem[]
     /** The LLM that the user has selected */
@@ -60,7 +63,7 @@ export interface EditInputInitialValues {
     initialExpandedRange?: vscode.Range
     initialModel: EditModel
     initialIntent: EditIntent
-    initialInputValue?: string
+    initialInputValue?: PromptString
     initialSelectedContextItems?: ContextItem[]
 }
 
@@ -75,12 +78,15 @@ export const getInput = async (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
-    source: ChatEventSource
+    source: EventSource
 ): Promise<QuickPickInput | null> => {
     const editor = getEditor().active
     if (!editor) {
         return null
     }
+
+    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
+    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -287,7 +293,7 @@ export const getInput = async (
                 return executeEdit({
                     configuration: {
                         document,
-                        instruction: defaultCommands.doc.prompt,
+                        instruction: PromptString.fromDefaultCommands(defaultCommands, 'doc'),
                         range: activeRange,
                         intent: 'doc',
                         mode: 'insert',
@@ -360,7 +366,7 @@ export const getInput = async (
                 const input = editInput.input
                 if (
                     initialValues.initialInputValue !== undefined &&
-                    value === initialValues.initialInputValue
+                    value.toString() === initialValues.initialInputValue.toString()
                 ) {
                     // Noop, this event is fired when an initial value is set
                     return
@@ -406,14 +412,30 @@ export const getInput = async (
                     contextItems.set(key, item)
                 }
 
+                /**
+                 * Checks if the total size of the selected context items exceeds the context budget.
+                 */
+                const isOverLimit = (size?: number): boolean => {
+                    const currentInput = input.value
+                    const max = ModelProvider.getMaxCharsByModel(activeModel)
+                    let used = currentInput.length
+                    for (const [k, v] of selectedContextItems) {
+                        if (currentInput.includes(`@${k}`)) {
+                            used += v.size ?? 0
+                        } else {
+                            selectedContextItems.delete(k)
+                        }
+                    }
+                    return size ? max - used < size : false
+                }
+
                 // Add human-friendly labels to the quick pick so the user can select them
                 input.items = [
                     ...matchingContext.map(({ key, shortLabel, item }) => ({
                         alwaysShow: true,
                         label: shortLabel || key,
                         description: shortLabel ? key : undefined,
-                        detail:
-                            'isTooLarge' in item && item.isTooLarge ? FILE_TOO_LARGE_LABEL : undefined,
+                        detail: isOverLimit(item.size) ? LARGE_FILE_WARNING_LABEL : undefined,
                     })),
                     {
                         kind: vscode.QuickPickItemKind.Separator,
@@ -432,7 +454,7 @@ export const getInput = async (
             },
             onDidAccept: () => {
                 const input = editInput.input
-                const instruction = input.value.trim()
+                const instruction = PromptString.unsafe_fromUserQuery(input.value.trim())
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = input.selectedItems[0]
@@ -450,7 +472,7 @@ export const getInput = async (
                         unitTestInput.render(activeTitle, '')
                         return
                     case FILE_HELP_LABEL:
-                    case FILE_TOO_LARGE_LABEL:
+                    case LARGE_FILE_WARNING_LABEL:
                     case SYMBOL_HELP_LABEL:
                     case NO_FILE_MATCHES_LABEL:
                     case NO_SYMBOL_MATCHES_LABEL:
@@ -460,7 +482,7 @@ export const getInput = async (
                 }
 
                 // Empty input flow, do nothing
-                if (!instruction) {
+                if (instruction.length === 0) {
                     return
                 }
 
@@ -470,7 +492,7 @@ export const getInput = async (
                     const contextItem = contextItems.get(key)
                     if (contextItem) {
                         // Replace fuzzy value with actual context in input
-                        input.value = `${removeAfterLastAt(instruction)}@${key} `
+                        input.value = `${removeAfterLastAt(instruction.toString())}@${key} `
                         selectedContextItems.set(key, contextItem)
                         return
                     }
@@ -482,7 +504,7 @@ export const getInput = async (
                 return resolve({
                     instruction: instruction.trim(),
                     userContextFiles: Array.from(selectedContextItems)
-                        .filter(([key]) => instruction.includes(`@${key}`))
+                        .filter(([key]) => instruction.toString().includes(`@${key}`))
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
@@ -491,7 +513,7 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, initialValues.initialInputValue || '')
+        editInput.render(activeTitle, initialValues.initialInputValue?.toString() || '')
         editInput.input.activeItems = []
     })
 }

@@ -1,23 +1,21 @@
 import type React from 'react'
-import { useEffect, useMemo, useRef } from 'react'
+import { type FunctionComponent, useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import {
-    type ChatMessage,
-    type Guardrails,
-    type ModelProvider,
-    isDefined,
-} from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { TranscriptItem } from './TranscriptItem'
-
 import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
+import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
+import { Cell } from './cells/Cell'
+import { ContextCell } from './cells/contextCell/ContextCell'
+import { MessageCell } from './cells/messageCell/MessageCell'
+import { useChatModelContext, useCurrentChatModel } from './models/chatModelContext'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
@@ -26,12 +24,10 @@ export const Transcript: React.FunctionComponent<{
     messageBeingEdited: number | undefined
     setMessageBeingEdited: (index?: number) => void
     className?: string
-    feedbackButtonsOnSubmit?: (text: string) => void
-    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    feedbackButtonsOnSubmit: (text: string) => void
+    copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
+    insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
-    chatModels?: ModelProvider[]
-    onCurrentChatModelChange: (model: ModelProvider) => void
     userInfo: UserAccountInfo
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -46,8 +42,6 @@ export const Transcript: React.FunctionComponent<{
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     isTranscriptError,
-    chatModels,
-    onCurrentChatModelChange,
     userInfo,
     postMessage,
     guardrails,
@@ -135,6 +129,9 @@ export const Transcript: React.FunctionComponent<{
         lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
     }
 
+    const { chatModels, onCurrentChatModelChange } = useChatModelContext()
+    const chatModel = useCurrentChatModel()
+
     const messageToTranscriptItem =
         (offset: number) =>
         (message: ChatMessage, index: number): JSX.Element | null => {
@@ -144,40 +141,47 @@ export const Transcript: React.FunctionComponent<{
             const offsetIndex = index + offset === earlierMessages.length
             const keyIndex = index + offset
 
+            const isLoading = Boolean(
+                offsetIndex &&
+                    messageInProgress &&
+                    messageInProgress.speaker === 'assistant' &&
+                    !messageInProgress.text
+            )
+            const isLastMessage = keyIndex === transcript.length - 1
+
             const isItemBeingEdited = messageBeingEdited === keyIndex
 
             return (
                 <div key={index}>
                     {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
-                    <TranscriptItem
-                        index={keyIndex}
+                    <MessageCell
                         key={keyIndex}
                         message={message}
-                        inProgress={Boolean(
-                            offsetIndex &&
-                                messageInProgress &&
-                                messageInProgress.speaker === 'assistant' &&
-                                !messageInProgress.text
-                        )}
+                        messageIndexInTranscript={keyIndex}
+                        chatModel={chatModel}
+                        isLoading={isLoading}
+                        disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
                         showEditButton={message.speaker === 'human'}
                         beingEdited={messageBeingEdited}
                         setBeingEdited={setMessageBeingEdited}
+                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        userInfo={userInfo}
                         postMessage={postMessage}
+                        userInfo={userInfo}
                         guardrails={guardrails}
                     />
+                    {message.speaker === 'human' &&
+                        ((message.contextFiles && message.contextFiles.length > 0) || isLastMessage) && (
+                            <ContextCell
+                                contextFiles={message.contextFiles}
+                                disabled={messageBeingEdited !== undefined}
+                            />
+                        )}
                 </div>
             )
         }
-
-    const welcomeTranscriptMessage = useMemo(
-        (): ChatMessage => ({ speaker: 'assistant', text: welcomeText({ welcomeMessage }) }),
-        [welcomeMessage]
-    )
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
@@ -193,40 +197,28 @@ export const Transcript: React.FunctionComponent<{
                             userInfo={userInfo}
                         />
                     )}
-                {transcript.length === 0 && (
-                    // Show welcome message only when the chat is empty.
-                    <TranscriptItem
-                        index={0}
-                        message={welcomeTranscriptMessage}
-                        beingEdited={undefined}
-                        inProgress={false}
-                        setBeingEdited={() => {}}
-                        showEditButton={false}
-                        showFeedbackButtons={false}
-                        userInfo={userInfo}
-                    />
-                )}
+                {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
                 {earlierMessages.map(messageToTranscriptItem(0))}
                 <div ref={lastHumanMessageTopRef} />
                 {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
-                {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                    <TranscriptItem
-                        index={transcript.length}
-                        message={messageInProgress}
-                        inProgress={!!transcript[earlierMessages.length].contextFiles}
-                        beingEdited={messageBeingEdited}
-                        setBeingEdited={setMessageBeingEdited}
-                        showEditButton={false}
-                        showFeedbackButtons={false}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        postMessage={postMessage}
-                        userInfo={userInfo}
-                    />
-                )}
-                {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                    <div className={styles.rowInProgress} />
-                )}
+                {messageInProgress &&
+                    messageInProgress.speaker === 'assistant' &&
+                    Boolean(transcript[earlierMessages.length].contextFiles) && (
+                        <MessageCell
+                            message={messageInProgress}
+                            messageIndexInTranscript={transcript.length}
+                            chatModel={chatModel}
+                            isLoading={true}
+                            beingEdited={messageBeingEdited}
+                            setBeingEdited={setMessageBeingEdited}
+                            showEditButton={false}
+                            showFeedbackButtons={false}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            postMessage={postMessage}
+                            userInfo={userInfo}
+                        />
+                    )}
             </div>
             <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
         </div>
@@ -242,16 +234,17 @@ function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number 
     return -1
 }
 
-interface WelcomeTextOptions {
-    /** Provide users with a way to quickly access Cody docs/help.*/
-    helpMarkdown?: string
-    /** Provide additional content to supplement the original message. Example: tips, privacy policy. */
-    welcomeMessage?: string
-}
-
-function welcomeText({
-    helpMarkdown = 'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.',
-    welcomeMessage,
-}: WelcomeTextOptions): string {
-    return [helpMarkdown, welcomeMessage].filter(isDefined).join('\n\n')
-}
+const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: string }> = ({ welcomeMessage }) => (
+    <Cell gutterIcon={<CodyLogo size={20} />} data-testid="message">
+        <div
+            className={styles.welcomeMessageCellContent}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: not from user input (and is sanitized)
+            dangerouslySetInnerHTML={{
+                __html: renderCodyMarkdown(
+                    welcomeMessage ??
+                        'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.'
+                ),
+            }}
+        />
+    </Cell>
+)

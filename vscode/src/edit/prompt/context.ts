@@ -2,27 +2,29 @@ import type * as vscode from 'vscode'
 
 import {
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
+    type PromptString,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-    truncateText,
+    ps,
     truncateTextStart,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { truncatePromptString } from '@sourcegraph/cody-shared'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
-    selectedText: string
-    precedingText: string
-    followingText: string
+    selectedText: PromptString
+    precedingText: PromptString
+    followingText: PromptString
     uri: vscode.Uri
     selectionRange: vscode.Range
     editor: VSCodeEditor
@@ -37,7 +39,7 @@ const getContextFromIntent = async ({
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
     const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
-    const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = truncatePromptString(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
@@ -58,8 +60,8 @@ const getContextFromIntent = async ({
                 {
                     speaker: 'human',
                     text: populateCodeGenerationContextTemplate(
-                        `<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
-                        `<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
+                        ps`<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
+                        ps`<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),

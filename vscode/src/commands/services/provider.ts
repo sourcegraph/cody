@@ -5,6 +5,7 @@ import { CodyCommandMenuItems } from '..'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import { getContextFileFromShell } from '../context/shell'
 import { showCommandMenu } from '../menus'
+import type { CodyCommandArgs } from '../types'
 import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
@@ -32,24 +33,26 @@ export class CommandsProvider implements vscode.Disposable {
 
         // Cody Command Menus
         this.disposables.push(
-            vscode.commands.registerCommand('cody.menu.commands', () => this?.menu('default')),
-            vscode.commands.registerCommand('cody.menu.custom-commands', () => this?.menu('custom')),
-            vscode.commands.registerCommand('cody.menu.commands-settings', () => this?.menu('config')),
-            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
+            vscode.commands.registerCommand('cody.menu.commands', a => this?.menu('default', a)),
+            vscode.commands.registerCommand('cody.menu.custom-commands', a => this?.menu('custom', a)),
+            vscode.commands.registerCommand('cody.menu.commands-settings', a => this?.menu('config', a)),
+            vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
+            // Update the custom commands when the tree view is refreshed
+            this.treeViewProvider.onDidChangeTreeData(() => this.getCustomCommands())
         )
 
         this.customCommandsStore.init()
         this.refresh()
     }
 
-    private async menu(type: 'custom' | 'config' | 'default'): Promise<void> {
+    private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
         const customCommands = await this.getCustomCommands()
         const commandArray = [...customCommands].map(command => command[1])
         if (type === 'custom' && !commandArray.length) {
-            return showCommandMenu('config', commandArray)
+            return showCommandMenu('config', commandArray, args)
         }
 
-        await showCommandMenu(type, commandArray)
+        await showCommandMenu(type, commandArray, args)
     }
 
     /**
@@ -60,7 +63,7 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
-        const { commands } = await this.customCommandsStore.refresh()
+        const commands = this.customCommandsStore.commands
         this.groupCommands(commands)
         return commands
     }

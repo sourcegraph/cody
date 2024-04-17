@@ -552,7 +552,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e2d2cb6bfb34ea0f9a209071e9bf6b8a
+    - _id: 8c52a6a76e7603a3f60be03fb18626d5
       _order: 0
       cache: {}
       request:
@@ -604,7 +604,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.1
+                    clientVersion: 1.12.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -619,7 +619,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 28 Mar 2024 12:09:31 GMT
+            value: Wed, 03 Apr 2024 19:24:54 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -647,7 +647,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-28T12:09:30.998Z
+      startedDateTime: 2024-04-03T19:24:54.164Z
       time: 0
       timings:
         blocked: -1
@@ -657,7 +657,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fbbaad4a9285d868933c9fa4bb7951e8
+    - _id: bc15313fe3ea6b6b6b2299aabb8bfed1
       _order: 0
       cache: {}
       request:
@@ -709,7 +709,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.1
+                    clientVersion: 1.12.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -724,7 +724,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 28 Mar 2024 12:09:31 GMT
+            value: Wed, 03 Apr 2024 19:24:54 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -752,7 +752,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-03-28T12:09:31.049Z
+      startedDateTime: 2024-04-03T19:24:54.224Z
       time: 0
       timings:
         blocked: -1
@@ -762,7 +762,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c51e2a6ccd3f79f922908ccb404688b0
+    - _id: 8a830714dde530a585414235cf2f886d
       _order: 0
       cache: {}
       request:
@@ -818,7 +818,7 @@ log:
                     version: 0
                   source:
                     client: VSCode.Cody
-                    clientVersion: 1.10.1
+                    clientVersion: 1.12.0
         queryString:
           - name: RecordTelemetryEvents
             value: null
@@ -839,7 +839,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 28 Mar 2024 12:09:31 GMT
+            value: Wed, 03 Apr 2024 19:24:54 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -870,7 +870,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-03-28T12:09:31.092Z
+      startedDateTime: 2024-04-03T19:24:54.244Z
       time: 0
       timings:
         blocked: -1

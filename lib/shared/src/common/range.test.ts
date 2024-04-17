@@ -31,40 +31,55 @@ describe('toRangeData', () => {
 describe('displayRangeLines', () => {
     test('multi-line range', () =>
         expect(
-            displayLineRange({ start: { line: 1, character: 2 }, end: { line: 4, character: 5 } })
+            displayLineRange({
+                start: { line: 1, character: 2 },
+                end: { line: 4, character: 5 },
+            }).toString()
         ).toBe('2-5'))
 
     test('range ending at character 0', () =>
         expect(
-            displayLineRange({ start: { line: 1, character: 2 }, end: { line: 4, character: 0 } })
+            displayLineRange({
+                start: { line: 1, character: 2 },
+                end: { line: 4, character: 0 },
+            }).toString()
         ).toBe('2-4'))
 
     test('single line only', () => {
         expect(
-            displayLineRange({ start: { line: 1, character: 0 }, end: { line: 1, character: 0 } })
+            displayLineRange({
+                start: { line: 1, character: 0 },
+                end: { line: 1, character: 0 },
+            }).toString()
         ).toBe('2')
         expect(
-            displayLineRange({ start: { line: 1, character: 0 }, end: { line: 1, character: 17 } })
+            displayLineRange({
+                start: { line: 1, character: 0 },
+                end: { line: 1, character: 17 },
+            }).toString()
         ).toBe('2')
         expect(
-            displayLineRange({ start: { line: 1, character: 2 }, end: { line: 2, character: 0 } })
+            displayLineRange({
+                start: { line: 1, character: 2 },
+                end: { line: 2, character: 0 },
+            }).toString()
         ).toBe('2')
     })
 })
 
 describe('displayRange', () => {
     test('same line', () =>
-        expect(displayRange({ start: { line: 1, character: 2 }, end: { line: 1, character: 5 } })).toBe(
-            '2:3-6'
-        ))
+        expect(
+            displayRange({ start: { line: 1, character: 2 }, end: { line: 1, character: 5 } }).toString()
+        ).toBe('2:3-6'))
 
     test('empty', () =>
-        expect(displayRange({ start: { line: 1, character: 2 }, end: { line: 1, character: 2 } })).toBe(
-            '2:3'
-        ))
+        expect(
+            displayRange({ start: { line: 1, character: 2 }, end: { line: 1, character: 2 } }).toString()
+        ).toBe('2:3'))
 
     test('multi-line range', () =>
-        expect(displayRange({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } })).toBe(
-            '2:3-4:5'
-        ))
+        expect(
+            displayRange({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }).toString()
+        ).toBe('2:3-4:5'))
 })

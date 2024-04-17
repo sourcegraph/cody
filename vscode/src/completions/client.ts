@@ -18,15 +18,13 @@ import {
     isAbortError,
     isNodeResponse,
     isRateLimitError,
-} from '@sourcegraph/cody-shared'
-
-import { SpanStatusCode } from '@opentelemetry/api'
-import { fetch } from '@sourcegraph/cody-shared/src/fetch'
-import {
     logResponseHeadersToSpan,
     recordErrorToSpan,
     tracer,
-} from '@sourcegraph/cody-shared/src/tracing'
+} from '@sourcegraph/cody-shared'
+
+import { SpanStatusCode } from '@opentelemetry/api'
+import { fetch } from '@sourcegraph/cody-shared'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.

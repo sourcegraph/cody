@@ -1,5 +1,6 @@
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { type DocumentContext, insertIntoDocContext } from '../get-current-doc-context'
+import { insertIntoDocContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 
 interface GetUpdatedDocumentContextParams {

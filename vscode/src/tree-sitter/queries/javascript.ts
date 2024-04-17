@@ -152,6 +152,10 @@ const JS_DOCUMENTABLE_NODES_QUERY = dedent`
         name: (property_identifier) @symbol.function) @range.function
     (pair
         key: (property_identifier) @symbol.identifier) @range.identifier
+
+    ; Comments
+    ;--------------------------------
+    (comment) @comment
 `
 
 const TS_DOCUMENTABLE_NODES_QUERY = dedent`
@@ -217,11 +221,11 @@ const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
 `
 
 const JS_ENCLOSING_FUNCTION_QUERY = dedent`
-    (function_declaration) @range.function
-    (generator_function_declaration) @range.function
+    (function_declaration (identifier) @symbol.function) @range.function
+    (generator_function_declaration (identifier) @symbol.function) @range.function
     (function_expression) @range.function
     (arrow_function) @range.function
-    (method_definition) @range.function
+    (method_definition (property_identifier) @symbol.function) @range.function
 `
 
 export const javascriptQueries = {

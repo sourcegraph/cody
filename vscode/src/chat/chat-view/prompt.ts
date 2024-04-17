@@ -3,14 +3,15 @@ import * as vscode from 'vscode'
 import {
     type ChatMessage,
     type ContextItem,
+    type ContextItemWithContent,
     type Message,
+    PromptString,
     getSimplePreamble,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../../log'
 
-import type { ContextItemWithContent } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 import { sortContextItems } from './agentContextSorting'
@@ -30,7 +31,7 @@ const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% o
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: string, charLimit: number) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: PromptString, charLimit: number) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -50,9 +51,11 @@ export class DefaultPrompter implements IPrompter {
             const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
             const promptBuilder = new PromptBuilder(charLimit)
             const newContextUsed: ContextItem[] = []
-            const preInstruction: string | undefined = vscode.workspace
-                .getConfiguration('cody.chat')
-                .get('preInstruction')
+            const preInstruction: PromptString | undefined = PromptString.fromConfig(
+                vscode.workspace.getConfiguration('cody.chat'),
+                'preInstruction',
+                undefined
+            )
 
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)

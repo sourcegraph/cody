@@ -5,16 +5,16 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import {
+    type AuthStatus,
     type ChatMessage,
+    type ContextItem,
     type Guardrails,
-    type ModelProvider,
     type TelemetryService,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { useEnhancedContextEnabled } from './chat/components/EnhancedContext'
-
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
+import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
 import {
@@ -37,13 +37,12 @@ interface ChatboxProps {
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
     isTranscriptError: boolean
-    setChatModels?: (models: ModelProvider[]) => void
-    chatModels?: ModelProvider[]
     userInfo: UserAccountInfo
     guardrails?: Guardrails
     chatIDHistory: string[]
     isWebviewActive: boolean
-    isNewInstall: boolean | undefined
+    isNewInstall: boolean
+    userContextFromSelection: ContextItem[]
 }
 
 const isMac = isMacOS()
@@ -55,19 +54,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     telemetryService,
     isTranscriptError,
-    setChatModels,
-    chatModels,
     chatEnabled,
     userInfo,
     guardrails,
     chatIDHistory,
     isWebviewActive,
     isNewInstall,
+    userContextFromSelection,
 }) => {
     const [messageBeingEdited, setMessageBeingEdited] = useState<number | undefined>(undefined)
 
     // Display the enhanced context settings on first chats
-    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(false)
+    const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(isNewInstall)
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
@@ -120,23 +118,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             }
         },
         [addEnhancedContext, messageBeingEdited, vscodeAPI]
-    )
-
-    const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
-            vscodeAPI.postMessage({
-                command: 'chatModel',
-                model: selected.model,
-            })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
-        },
-        [chatModels, setChatModels, vscodeAPI]
     )
 
     const feedbackButtonsOnSubmit = useCallback(
@@ -423,10 +404,22 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ]
     )
 
+    // Set up the message listener for adding new context from user's editor to chat.
+    // Turns the new context into @-mentions token in chat.
+    useEffect(() => {
+        if (!userContextFromSelection.length) {
+            return
+        }
+        editorRef.current?.addContextItemAsToken(userContextFromSelection)
+    }, [userContextFromSelection])
+
     // Focus the textarea when the webview (re)gains focus (unless there is text selected or a modal
     // is open). This makes it so that the user can immediately start typing to Cody after invoking
     // `Cody: Focus on Chat View` with the keyboard.
     useEffect(() => {
+        // Focus the input when the enhanced context settings modal is closed
+        setInputFocus(!isEnhancedContextOpen)
+        // Add window focus event listener to focus the input when the window is focused
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed && !isEnhancedContextOpen) {
                 setInputFocus(true)
@@ -490,8 +483,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
                     isTranscriptError={isTranscriptError}
-                    chatModels={chatModels}
-                    onCurrentChatModelChange={onCurrentChatModelChange}
                     userInfo={userInfo}
                     postMessage={postMessage}
                     guardrails={guardrails}
@@ -517,7 +508,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <div className={styles.textAreaContainer}>
                     <div className={styles.editorOuterContainer}>
                         <PromptEditor
-                            containerClassName={styles.editorInnerContainer}
                             placeholder={placeholder}
                             onChange={onEditorChange}
                             onFocusChange={setIsEditorFocused}
@@ -600,6 +590,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 
 type WebviewChatSubmitType = 'user' | 'user-newchat' | 'edit'
