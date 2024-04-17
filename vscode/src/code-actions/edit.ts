@@ -33,7 +33,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
         document: vscode.TextDocument,
         selection: vscode.Selection
     ): vscode.CodeAction {
-        const displayText = 'Ask Cody to Generate'
+        const displayText = 'Cody: Generate Code'
         const source = 'code-action:generate'
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
         action.command = {
@@ -58,7 +58,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
         document: vscode.TextDocument,
         selection: vscode.Selection
     ): vscode.CodeAction {
-        const displayText = 'Ask Cody to Edit'
+        const displayText = 'Cody: Edit Code'
         const source = 'code-action:edit'
         const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
         action.command = {
