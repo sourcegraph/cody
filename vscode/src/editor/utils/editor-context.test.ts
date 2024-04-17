@@ -197,7 +197,22 @@ describe('fillInContextItemContent', () => {
             },
         ])
         expect(contextItems).toEqual<ContextItem[]>([
-            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a', size: 1 },
+            {
+                type: 'file',
+                uri: URI.parse('file:///a.txt'),
+                content: 'a',
+                size: 1,
+                range: {
+                    end: {
+                        character: 0,
+                        line: 1,
+                    },
+                    start: {
+                        character: 0,
+                        line: 0,
+                    },
+                },
+            },
         ])
     })
 })

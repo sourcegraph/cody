@@ -281,22 +281,18 @@ export async function fillInContextItemContent(
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let content = item.content
-                let size = item.size
-                if (!item.content) {
+                let { content, size, range, uri } = item
+                if (!content) {
                     try {
-                        if (isURLContextItem(item)) {
-                            if (await isURLContextFeatureFlagEnabled()) {
-                                content =
-                                    (await fetchContentForURLContextItem(item.uri.toString())) ?? ''
-                            }
+                        if (isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())) {
+                            content = (await fetchContentForURLContextItem(uri.toString())) ?? ''
                         } else {
-                            content = await editor.getTextEditorContentForFile(
-                                item.uri,
-                                toVSCodeRange(item.range)
-                            )
+                            content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
                         }
-                        size = !item.size && content ? TokenCounter.countTokens(content) : item.size
+                        if (content) {
+                            size = size ?? TokenCounter.countTokens(content)
+                            range = range ?? getRangeByContentLineCount(content)
+                        }
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -304,8 +300,21 @@ export async function fillInContextItemContent(
                         return null
                     }
                 }
-                return { ...item, content: content!, size }
+                return { ...item, content: content!, size, range }
             })
         )
     ).filter(isDefined)
+}
+
+/**
+ * Gets a `vscode.Range` representing the full content of the given string.
+ *
+ * @param content The string content to get the range for.
+ * @returns A `vscode.Range` representing the full content of the given string, or `undefined` if the input is empty.
+ */
+function getRangeByContentLineCount(content: string): vscode.Range | undefined {
+    if (!content.trim()) {
+        return undefined
+    }
+    return new vscode.Range(0, 0, content?.split('\n')?.length, 0)
 }
