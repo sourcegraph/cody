@@ -33,7 +33,7 @@ export class TestCodeAction implements vscode.CodeActionProvider {
             this.createCommandCodeAction(
                 document,
                 editorRange,
-                `Ask Cody to Test: ${testableSymbol.node.text}`
+                `Cody: Generate Tests for ${testableSymbol.node.text}`
             ),
         ]
     }

@@ -10,7 +10,7 @@ import {
 
 export function chatModelIconComponent(
     model: string
-): FunctionComponent<{ size: number; className?: string }> | null {
+): FunctionComponent<{ size: number; className?: string }> {
     if (model.startsWith('openai/')) {
         return OpenAILogo
     }
