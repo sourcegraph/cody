@@ -117,13 +117,6 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
             }
-            case 'reload':
-                await this.authProvider.reloadAuthStatus()
-                telemetryService.log('CodyVSCodeExtension:authReloadButton:clicked', undefined, {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.authReloadButton', 'clicked')
-                break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
                 break
@@ -154,6 +147,25 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
             case 'show-page':
                 await vscode.commands.executeCommand('show-page', message.page)
                 break
+            case 'troubleshoot/reloadAuth': {
+                await this.authProvider.reloadAuthStatus()
+                const nextAuth = this.authProvider.getAuthStatus()
+                telemetryService.log(
+                    'CodyVSCodeExtension:troubleshoot:reloadAuth',
+                    {
+                        success: Boolean(nextAuth?.isLoggedIn),
+                    },
+                    {
+                        hasV2Event: true,
+                    }
+                )
+                telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
+                    metadata: {
+                        success: nextAuth.isLoggedIn ? 1 : 0,
+                    },
+                })
+                break
+            }
             default:
                 this.handleError(new Error('Invalid request type from Webview'), 'system')
         }

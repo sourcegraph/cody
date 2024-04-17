@@ -18,6 +18,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Generate Unit Tests: Fixed an issue where Cody would generate tests for the wrong code in the file. [pull/3759](https://github.com/sourcegraph/cody/pull/3759)
 - Chat: Fixed an issue where changing the chat model did not update the token limit for the model. [pull/3762](https://github.com/sourcegraph/cody/pull/3762)
+- Troubleshoot: Don't show SignIn page if the authentication error is because of network connectivity issues [pull/3750](https://github.com/sourcegraph/cody/pull/3750)
+  
 - Edit: Large file warnings for @-mentions are now updated dynamically as you add or remove them. [pull/3767](https://github.com/sourcegraph/cody/pull/3767)
 - Generate Unit Tests: Improved quality for creating file names. [pull/3763](https://github.com/sourcegraph/cody/pull/3763)
 - Custom Commands: Fixed an issue where newly added custom commands were not working when clicked in the sidebar tree view. [pull/3804](https://github.com/sourcegraph/cody/pull/3804)
