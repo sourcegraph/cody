@@ -268,7 +268,7 @@ export async function filterContextItemFiles(
         // on available tokens, so that it can prompt the user to import the file via '@file-range' or
         // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
         // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
-        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 4.5 : 3.5))
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
         filtered.push(cf)
     }
     return filtered

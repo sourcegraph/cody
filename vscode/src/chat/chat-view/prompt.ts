@@ -81,14 +81,13 @@ export class DefaultPrompter implements IPrompter {
                 used,
                 ignored,
             } = promptBuilder.tryAddContext('user', this.explicitContext)
-            newContextUsed.push(...used)
-            newContextIgnored.push(...ignored)
+            newContextUsed.push(...used.map(c => ({ ...c, isTooLarge: false })))
+            newContextIgnored.push(...ignored.map(c => ({ ...c, isTooLarge: true })))
             if (userLimitReached) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
                     'Ignored current user-specified context items due to context limit'
                 )
-                return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
 
             // Add user and enhanced context from previous messages seperately as they have different budgets
