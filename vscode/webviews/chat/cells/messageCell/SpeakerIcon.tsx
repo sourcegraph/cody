@@ -17,7 +17,13 @@ export const SpeakerIcon: FunctionComponent<{
     if (message.speaker === 'human') {
         return <UserAvatar user={user} size={size} />
     }
-
-    const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
-    return ModelIcon ? <ModelIcon size={size * 0.75} /> : null
+    if (!chatModel) {
+        return null
+    }
+    const ModelIcon = chatModelIconComponent(chatModel.model)
+    return ModelIcon ? (
+        <span title={`${chatModel.title} by ${chatModel.provider}`}>
+            <ModelIcon size={size * 0.75} />
+        </span>
+    ) : null
 }
