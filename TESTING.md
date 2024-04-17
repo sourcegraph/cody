@@ -128,7 +128,7 @@
 
 - [ ] Deliberately break a line or section of code to trigger the IDE’s red squiggly error warning.
 - [ ] Click the Code Action (in VSC) lightbulb icon in the project file
-- [ ] Select `Ask Cody to fix`.
+- [ ] Select `Ask Cody to Fix`.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied.
 - [ ] Verify that Cody automatically applies a code fix to the selected code.
 - [ ] Verify that you can see a diff view of the fix in a new tab by clicking `Show diff`.
@@ -140,7 +140,7 @@
 
 - [ ] Deliberately break a line or section of code to trigger the IDE’s red squiggly error warning.
 - [ ] Click the Code Action lightbulb icon in the project file
-- [ ] Select `Ask Cody to explain`.
+- [ ] Select `Ask Cody to Explain`.
 - [ ] Verify that Cody provides an explanation of the error in a new chat window.
 - [ ] Verify that the chat executed by running the command appears in the chat list in the left hand panel.
 
@@ -148,7 +148,7 @@
 
 - [ ] Highlight a section of code.
 - [ ] Click the Code Action lightbulb icon in the project file
-- [ ] Select `Ask Cody to Edit`.
+- [ ] Select `Cody: Edit Code`.
 - [ ] Provide instructions for how Cody should edit the selected code.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied.
 - [ ] Verify that Cody automatically applies edits to the selected code, per the user’s instructions
@@ -161,7 +161,7 @@
 
 - [ ] Move the cursor to an empty line, do not highlight any selection.
 - [ ] Click the Code Action lightbulb icon in the project file.
-- [ ] Select `Ask Cody to Generate`.
+- [ ] Select `Cody: Generate Code`.
 - [ ] Provide instructions for what Cody should generate.
 - [ ] Verify that there is a notification that "Cody is working..." while code is being generated.
 - [ ] Verify that, per the user’s instructions, Cody automatically streams the generated code into the document, line-by-line.
