@@ -6,9 +6,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: You can add highlighted code to the chat context by right-clicking on the code and selecting `Cody Chat: Add context`. The selected code will appear in the input box as `@-mentions`, allowing you to complete your question. [pull/3713](https://github.com/sourcegraph/cody/pull/3713)
+### Fixed
+
+### Changed
+
+## [1.14.0]
+
+### Added
+
+- Chat: Add highlighted code to Cody Chat as `@-mentions` context by right-clicking on the code and selecting `Cody Chat: Add context`. [pull/3713](https://github.com/sourcegraph/cody/pull/3713)
 - Autocomplete: Add the proper infilling prompt for Codegemma when using Ollama. [pull/3754](https://github.com/sourcegraph/cody/pull/3754)
-- Chat: The new `Mixtral 8x22B Preview` chat model is available for Cody Pro users for preview. [pull/3768](https://github.com/sourcegraph/cody/pull/3768)
+- Chat: The new `Mixtral 8x22B` chat model is available for Cody Pro users. [pull/3768](https://github.com/sourcegraph/cody/pull/3768)
 - Chat: Add a "Pop out" button to the chat title bar that allows you to move Cody chat into a floating window. [pull/3773](https://github.com/sourcegraph/cody/pull/3773)
 - Sidebar: A new button to copy the current Cody extension version to the clipboard shows up next to the Release Notes item in the SETTINGS & SUPPORT sidebar on hover. This is useful for reporting issues or getting information about the installed version. [pull/3802](https://github.com/sourcegraph/cody/pull/3802)
 - Generate Unit Tests: Added a new code action "Ask Cody to Test" currently shows against functions in JS, TS, Go and Python. [pull/3763](https://github.com/sourcegraph/cody/pull/3763)
@@ -36,14 +44,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Support Sidebar: Update the icon for Discord to use the official Discord logo. [pull/3803](https://github.com/sourcegraph/cody/pull/3803)
 - Commands/Chat: Increased the maximum output limit of LLM responses. [pull/3797](https://github.com/sourcegraph/cody/pull/3797)
 - Commands: Updated the naming of various code actions to be more descriptive. [pull/3831](https://github.com/sourcegraph/cody/pull/3831)
-- Chat: Add chat model to more telemetry events. [pull/3829](https://github.com/sourcegraph/cody/pull/3829)
-- Adds a new telemetry event when users sign-in the first time. [pull/3836](https://github.com/sourcegraph/cody/pull/3836)
+- Chat: Adds chat model to more telemetry events. [pull/3829](https://github.com/sourcegraph/cody/pull/3829)
+- Telemetry: Adds a new telemetry event when users sign-in the first time. [pull/3836](https://github.com/sourcegraph/cody/pull/3836)
 
 ### Feature Flags
 
-> This section covers experiments that run behind feature flags.
+> This section covers experiments that run behind feature flags for non-Enterprise users.
 
-- CodyChatContextBudget: Expanded context window for user-added context in Cody chat. [pull/3742](https://github.com/sourcegraph/cody/pull/3742)
+- Chat: Increased context window size when using the `Claude 3 Sonnet` and `Claude 3 Opus` models. [pull/3742](https://github.com/sourcegraph/cody/pull/3742)
 
 ## [1.12.0]
 
@@ -81,7 +89,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Feature Flags
 
-> This section covers experiments that run behind feature flags.
+> This section covers experiments that run behind feature flags for non-Enterprise users.
 
 - Hover Commands: Cody commands are now integrated with the native hover provider, allowing you to seamlessly access essential commands on mouse hover. [pull/3585](https://github.com/sourcegraph/cody/pull/3585)
 
