@@ -15,15 +15,21 @@ interface MockFsCallsParams {
     }
 }
 
+function deWindowsifyPath(path: string): string {
+    return path.replaceAll('\\', '/')
+}
+
 function mockFsCalls(params: MockFsCallsParams) {
     const { gitConfig, gitRepoPath, filePath, gitSubmodule } = params
 
     const statMock = vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation(async uri => {
-        if (uri.fsPath === filePath || (gitSubmodule && uri.fsPath === gitSubmodule.path)) {
+        const fsPath = deWindowsifyPath(uri.fsPath)
+
+        if (fsPath === filePath || (gitSubmodule && fsPath === gitSubmodule.path)) {
             return { type: vscode.FileType.File } as vscode.FileStat
         }
 
-        if (uri.fsPath === `${gitRepoPath}/.git`) {
+        if (fsPath === `${gitRepoPath}/.git`) {
             return { type: vscode.FileType.Directory } as vscode.FileStat
         }
 
@@ -31,11 +37,13 @@ function mockFsCalls(params: MockFsCallsParams) {
     })
 
     const readFileMock = vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(async uri => {
-        if (uri.fsPath === `${gitRepoPath}/.git/config`) {
+        const fsPath = deWindowsifyPath(uri.fsPath)
+
+        if (fsPath === `${gitRepoPath}/.git/config`) {
             return new TextEncoder().encode(dedent(gitConfig))
         }
 
-        if (gitSubmodule && uri.fsPath === `${gitSubmodule.path}/.git`) {
+        if (gitSubmodule && fsPath === `${gitSubmodule.path}/.git`) {
             return new TextEncoder().encode(dedent(gitSubmodule.gitFile))
         }
 
