@@ -32,6 +32,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Commands/Chat: Increased the maximum output limit of LLM responses. [pull/3797](https://github.com/sourcegraph/cody/pull/3797)
 - Commands: Updated the naming of various code actions to be more descriptive. [pull/3831](https://github.com/sourcegraph/cody/pull/3831)
 - Chat: Add chat model to more telemetry events. [pull/3829](https://github.com/sourcegraph/cody/pull/3829)
+- Adds a new telemetry event when users sign-in the first time. [pull/3836](https://github.com/sourcegraph/cody/pull/3836)
 
 ## [1.12.0]
 
