@@ -137,7 +137,7 @@ for (const row of fileNames) {
         // delint it
         delint(sourceFile, ranges)
     } catch (error) {
-        if ('code' in error && error.code === 'ENOENT') {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
             continue
         }
 
