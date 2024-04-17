@@ -129,7 +129,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
     // both main.java and var.go should be used
     const contextCell = getContextCell(chatFrame)
-    await expectContextCellCounts(contextCell, { files: 2 })
+    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
     await contextCell.click()
     const chatContext = chatFrame.locator('details').last()
     await expect(chatContext.getByRole('link', { name: 'Main.java' })).toBeVisible()
