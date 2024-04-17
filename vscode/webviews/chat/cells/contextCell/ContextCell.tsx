@@ -22,7 +22,7 @@ export const ContextCell: React.FunctionComponent<{
     const excludedAtContext = []
     if (contextFiles) {
         for (const f of contextFiles) {
-            if (f.type === 'file' && f.source === 'user' && f.isTooLarge) {
+            if (f.isTooLarge) {
                 excludedAtContext.push(f)
             } else {
                 usedContext.push(f)

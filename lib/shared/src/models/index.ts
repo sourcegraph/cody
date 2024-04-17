@@ -1,9 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import {
-    DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
-    DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
-    tokensToChars,
-} from '../prompt/constants'
+import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import type { ModelContextWindow } from './types'
 import type { ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
@@ -23,20 +20,23 @@ export class ModelProvider {
     public readonly title: string
 
     constructor(
-        // The model id that includes the provider name & the model name,
-        // e.g. "anthropic/claude-2.0"
+        /**
+         * The model id that includes the provider name & the model name,
+         * e.g. "anthropic/claude-2.0"
+         */
         public readonly model: string,
-        // The usage of the model, e.g. chat or edit.
+        /**
+         * The usage of the model, e.g. chat or edit.
+         */
         public readonly usage: ModelUsage[],
         /**
-         * The context window of the model, which is the maximum number of tokens
-         * that can be processed by the model in a single request.
+         * The default context window of the model reserved for Chat and Context.
+         * {@see TokenCounter on how the token usage is calculated.}
          */
-        public readonly maxInputToken: number = DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT,
-        /**
-         * The maximum number of tokens that the model can respond with in a single request.
-         */
-        public readonly maxOutputToken: number = DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT,
+        public readonly contextWindow: ModelContextWindow = {
+            input: CHAT_INPUT_TOKEN_BUDGET,
+            output: CHAT_OUTPUT_TOKEN_BUDGET,
+        },
         /**
          * The configuration for the model.
          */
@@ -121,39 +121,13 @@ export class ModelProvider {
     }
 
     /**
-     * Finds the model provider with the given model ID and returns its input token limit.
+     * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public static getMaxInputTokensByModel(modelID: string): number {
+    public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model?.maxInputToken || DEFAULT_CHAT_MODEL_INPUT_TOKEN_LIMIT
-    }
-
-    /**
-     * Finds the model provider with the given model ID and returns its input character limit.
-     * The limit is calculated based on the max number of tokens the model can receive.
-     * E.g. 7000 tokens * 4 characters/token = 28000 characters
-     */
-    public static getMaxInputCharsByModel(modelID: string): number {
-        const maxTokens = ModelProvider.getMaxInputTokensByModel(modelID)
-        return tokensToChars(maxTokens)
-    }
-
-    /**
-     * Finds the model provider with the given model ID and returns its output token limit.
-     */
-    public static getMaxOutputTokensByModel(modelID: string): number {
-        const model = ModelProvider.providers.find(m => m.model === modelID)
-        return model?.maxOutputToken || DEFAULT_CHAT_MODEL_OUTPUT_TOKEN_LIMIT
-    }
-
-    /**
-     * Finds the model provider with the given model ID and returns its output character limit.
-     * The limit is calculated based on the max number of tokens the model can output.
-     * E.g. 7000 tokens * 4 characters/token = 28000 characters
-     */
-    public static getMaxOutputCharsByModel(modelID: string): number {
-        const maxTokens = ModelProvider.getMaxOutputTokensByModel(modelID)
-        return tokensToChars(maxTokens)
+        return model
+            ? model.contextWindow
+            : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

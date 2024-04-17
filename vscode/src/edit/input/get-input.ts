@@ -106,6 +106,12 @@ export const getInput = async (
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
+    const getContextWindowOnModelChange = (model: EditModel) => {
+        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
+    }
+    let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
+
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextItem>()
     const selectedContextItems = new Map<string, ContextItem>()
@@ -213,6 +219,7 @@ export const getInput = async (
                 editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
+                activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
 
                 editInput.render(activeTitle, editInput.input.value)
             },
@@ -417,7 +424,6 @@ export const getInput = async (
                  */
                 const isOverLimit = (size?: number): boolean => {
                     const currentInput = input.value
-                    const max = ModelProvider.getMaxInputCharsByModel(activeModel)
                     let used = currentInput.length
                     for (const [k, v] of selectedContextItems) {
                         if (currentInput.includes(`@${k}`)) {
@@ -426,7 +432,8 @@ export const getInput = async (
                             selectedContextItems.delete(k)
                         }
                     }
-                    return size ? max - used < size : false
+                    const totalBudget = activeModelContextWindow
+                    return size ? totalBudget - used < size : false
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them

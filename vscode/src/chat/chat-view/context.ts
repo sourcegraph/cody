@@ -31,9 +31,6 @@ interface GetEnhancedContextOptions {
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
-    hints: {
-        maxChars: number
-    }
     contextRanking: ContextRankingController | null
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
@@ -42,7 +39,6 @@ export async function getEnhancedContext({
     editor,
     text,
     providers,
-    hints,
     contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     if (contextRanking) {
@@ -51,7 +47,6 @@ export async function getEnhancedContext({
             editor,
             text,
             providers,
-            hints,
             contextRanking,
         })
     }

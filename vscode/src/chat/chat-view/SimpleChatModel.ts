@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    type ModelContextWindow,
     ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -17,8 +18,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    public maxInputChars: number
-    public maxOutputTokens: number
+    public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -26,14 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.maxInputChars = ModelProvider.getMaxInputCharsByModel(this.modelID)
-        this.maxOutputTokens = ModelProvider.getMaxOutputTokensByModel(this.modelID)
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.maxInputChars = ModelProvider.getMaxInputCharsByModel(newModelID)
-        this.maxOutputTokens = ModelProvider.getMaxOutputTokensByModel(newModelID)
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {

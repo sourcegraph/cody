@@ -2,13 +2,11 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ANSWER_TOKENS,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextItemFile,
-    type ContextItemWithContent,
+    ContextItemSource,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
@@ -16,8 +14,8 @@ import {
     MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
-    ModelUsage,
     PromptString,
+    type RangeData,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -26,11 +24,8 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
-    recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
-    tokensToChars,
-    tracer,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -53,10 +48,16 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
+import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type {
+    ContextItemFile,
+    ContextItemWithContent,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -278,7 +279,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query)
+                await this.handleGetUserContextFilesCandidates(message.query, message.range)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -365,6 +366,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
         })
+        // Update the chat model providers again to ensure the correct token limit is set on ready
+        this.handleSetChatModel(this.chatModel.modelID)
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
@@ -453,7 +456,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext
-                        ? async (text, maxChars) =>
+                        ? async text =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
@@ -463,7 +466,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
                                       remoteSearch: this.remoteSearch,
                                   },
-                                  hints: { maxChars },
                                   contextRanking: this.contextRanking,
                               })
                         : undefined
@@ -568,7 +570,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -591,30 +593,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             },
         }
-        // Use the number of characters left in the chat model as the limit
-        // for adding user context files to the chat.
-        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
-            ? this.chatModel.maxInputChars
-            : // Minus the character limit reserved for the answer token
-              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
-        const contextLimit = getContextWindowLimitInBytes(
-            [...this.chatModel.getMessages()],
-            maxInputChars
-        )
 
         try {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
                 scopedTelemetryRecorder,
-                contextLimit
+                range
             )
             if (cancellation.token.isCancellationRequested) {
                 return
             }
+            const { input, context } = this.chatModel.contextWindow
+            const userContextFiles = items.map(f => ({
+                ...f,
+                isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
+            }))
             void this.postMessage({
                 type: 'userContextFiles',
-                userContextFiles: items,
+                userContextFiles,
             })
         } catch (error) {
             if (cancellation.token.isCancellationRequested) {
@@ -628,22 +625,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(): Promise<void> {
-        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
-            ? this.chatModel.maxInputChars
-            : // Minus the character limit reserved for the answer token
-              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
-        const contextLimit = getContextWindowLimitInBytes(
-            [...this.chatModel.getMessages()],
-            maxInputChars
-        )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
-        await this.postMessage({
+        const { input, context } = this.chatModel.contextWindow
+        const contextItems = selectionFiles.map(f => ({
+            ...f,
+            content: undefined,
+            isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
+            source: ContextItemSource.User,
+        }))
+        void this.postMessage({
             type: 'chat-input-context',
-            items: selectionFiles.map(f => ({
-                ...f,
-                content: undefined,
-                isTooLarge: f.size ? f.size > contextLimit : undefined,
-            })),
+            items: contextItems,
         })
         // Makes sure to reveal the webview panel in case the panel is hidden.
         this.webviewPanel?.reveal()
@@ -813,8 +805,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<Message[]> {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxInputCharsByModel(this.chatModel.modelID)
+            this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction
@@ -926,7 +917,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 prompt,
                 {
                     model: this.chatModel.modelID,
-                    maxTokensToSample: this.chatModel.maxOutputTokens,
+                    maxTokensToSample: this.chatModel.contextWindow.output,
                 },
                 abortController.signal
             )

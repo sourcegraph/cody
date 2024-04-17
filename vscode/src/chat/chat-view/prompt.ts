@@ -23,34 +23,29 @@ interface PromptInfo {
 }
 
 export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, codyApiVersion: number, charLimit: number): Promise<PromptInfo>
+    makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo>
 }
-
-const ENHANCED_CONTEXT_ALLOCATION = 0.6 // Enhanced context should take up 60% of the context window
 
 export class DefaultPrompter implements IPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: PromptString, charLimit: number) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
     //
-    // Returns the reverse prompt and the new context that was used in the
-    // prompt for the current message.
+    // Returns the reverse prompt and the new context that was used in the prompt for the current message.
+    // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
     public async makePrompt(
         chat: SimpleChatModel,
-        codyApiVersion: number,
-        charLimit: number
+        codyApiVersion: number
     ): Promise<{
         prompt: Message[]
         newContextUsed: ContextItem[]
         newContextIgnored?: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const enhancedContextCharLimit = Math.floor(charLimit * ENHANCED_CONTEXT_ALLOCATION)
-            const promptBuilder = new PromptBuilder(charLimit)
-            const newContextUsed: ContextItem[] = []
+            const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
                 vscode.workspace.getConfiguration('cody.chat'),
                 'preInstruction',
@@ -60,84 +55,80 @@ export class DefaultPrompter implements IPrompter {
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
-                throw new Error(`Preamble length exceeded context window size ${charLimit}`)
+                throw new Error(
+                    `Preamble length exceeded context window size ${chat.contextWindow.input}`
+                )
             }
 
-            // Add existing transcript messages
+            // Add existing chat transcript messages
             const reverseTranscript: ChatMessage[] = [...chat.getMessages()].reverse()
-            const contextLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
-            if (contextLimitReached) {
+            const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
+            if (transcriptLimitReached) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
-                    `Ignored ${contextLimitReached} transcript messages due to context limit`
+                    `Ignored ${transcriptLimitReached} transcript messages due to context limit`
                 )
-                return {
-                    prompt: promptBuilder.build(),
-                    newContextUsed,
-                }
             }
 
-            {
-                // Add context from new user-specified context items, e.g. @-mentions, @-uri
-                const { limitReached, used, ignored } = promptBuilder.tryAddContext(this.explicitContext)
-                newContextUsed.push(...used)
-                if (limitReached) {
-                    logDebug(
-                        'DefaultPrompter.makePrompt',
-                        'Ignored current user-specified context items due to context limit'
-                    )
-                    // Only display excluded context from user-specifed context items
-                    return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored: ignored }
-                }
-            }
+            // NOTE: Only display excluded context from user-specifed context items
+            const newContextIgnored: ContextItem[] = []
+            const newContextUsed: ContextItem[] = []
 
-            // TODO(beyang): Decide whether context from previous messages is less
-            // important than user added context, and if so, reorder this.
-            {
-                // Add context from previous messages
-                const { limitReached } = promptBuilder.tryAddContext(
-                    reverseTranscript.flatMap(message => message.contextFiles || [])
+            // Add context from new user-specified context items, e.g. @-mentions, @-uri
+            sortContextItems(this.explicitContext)
+            const {
+                limitReached: userLimitReached,
+                used,
+                ignored,
+            } = promptBuilder.tryAddContext('user', this.explicitContext)
+            newContextUsed.push(...used)
+            newContextIgnored.push(...ignored)
+            if (userLimitReached) {
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    'Ignored current user-specified context items due to context limit'
                 )
-                if (limitReached) {
-                    logDebug(
-                        'DefaultPrompter.makePrompt',
-                        'Ignored prior context items due to context limit'
-                    )
-                    return { prompt: promptBuilder.build(), newContextUsed }
-                }
+                return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
 
-            const lastMessage = reverseTranscript[0]
-            if (!lastMessage?.text) {
-                throw new Error('No last message or last message text was empty')
+            // Add user and enhanced context from previous messages seperately as they have different budgets
+            const prevContext = reverseTranscript.flatMap(m => m?.contextFiles || [])
+            const userContext = prevContext.filter(c => c.source === 'user')
+            if (promptBuilder.tryAddContext('user', userContext).limitReached) {
+                logDebug('DefaultPrompter.makePrompt', 'Ignored prior user context due to limit')
+                return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
-            if (lastMessage.speaker === 'assistant') {
-                throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
+            const enhancedContext = prevContext.filter(c => c.source !== 'user')
+            if (promptBuilder.tryAddContext('enhanced', enhancedContext).limitReached) {
+                logDebug('DefaultPrompter.makePrompt', 'Ignored prior enhanced context due to limit')
+                return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
+
+            // Add additional context from current editor or broader search when enhanced context is enabled
             if (this.getEnhancedContext) {
-                // Add additional context from current editor or broader search
-                const additionalContextItems = await this.getEnhancedContext(
-                    lastMessage.text,
-                    enhancedContextCharLimit
-                )
-                sortContextItems(additionalContextItems)
+                const lastMessage = reverseTranscript[0]
+                if (!lastMessage?.text) {
+                    throw new Error('No last message or last message text was empty')
+                }
+                if (lastMessage.speaker === 'assistant') {
+                    throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
+                }
+                const newEnhancedContext = await this.getEnhancedContext(lastMessage.text)
+                sortContextItems(newEnhancedContext)
                 const { limitReached, used, ignored } = promptBuilder.tryAddContext(
-                    additionalContextItems,
-                    enhancedContextCharLimit
+                    'enhanced',
+                    newEnhancedContext
                 )
                 newContextUsed.push(...used)
                 if (limitReached) {
                     logDebug(
                         'DefaultPrompter.makePrompt',
-                        `Ignored ${ignored.length} additional context items due to limit reached`
+                        `Ignored ${ignored.length} additional enhanced context due to limit reached`
                     )
                 }
             }
 
-            return {
-                prompt: promptBuilder.build(),
-                newContextUsed,
-            }
+            return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
         })
     }
 }

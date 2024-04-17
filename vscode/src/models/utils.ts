@@ -1,11 +1,15 @@
 import {
     ANSWER_TOKENS,
     type AuthStatus,
-    DEFAULT_DOT_COM_MODELS,
+    FeatureFlag,
     ModelProvider,
     ModelUsage,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels } from '@sourcegraph/cody-shared/src/models/dotcom'
+import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import * as vscode from 'vscode'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 
 /**
  * Sets the model providers based on the authentication status.
@@ -15,12 +19,23 @@ import * as vscode from 'vscode'
  * or fallback to the limit from the authentication status if not configured.
  */
 export function syncModelProviders(authStatus: AuthStatus): void {
-    if (!authStatus.endpoint) {
+    if (!authStatus.authenticated) {
         return
     }
 
     if (authStatus.isDotCom) {
-        ModelProvider.setProviders(DEFAULT_DOT_COM_MODELS)
+        // Set the default models for dotcom users before evaluating the feature flag
+        // as it might take some time to resolve the promise.
+        ModelProvider.setProviders(getDotComDefaultModels('default'))
+        // Set the model providers again with the new limit if the user is enrolled in the feature.
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
+            if (isEnrolled) {
+                const experimentalModels = getDotComDefaultModels('experimental')
+                ModelProvider.setProviders(experimentalModels)
+            }
+            getChatModelsFromConfiguration()
+            logFirstEnrollmentEvent(FeatureFlag.CodyChatContextBudget, isEnrolled)
+        })
     }
 
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
@@ -41,17 +56,14 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                tokenLimit,
                 // TODO: Currently all enterprise models have a max output limit of 1000.
                 // We need to support configuring the maximum output limit at an instance level.
                 // This will allow us to increase this limit whilst still supporting models with a lower output limit.
                 // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
-                ANSWER_TOKENS
+                { input: tokenLimit ?? CHAT_INPUT_TOKEN_BUDGET, output: ANSWER_TOKENS }
             ),
         ])
     }
-
-    getChatModelsFromConfiguration()
 }
 
 interface ChatModelProviderConfig {
@@ -83,8 +95,7 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            m.inputTokens,
-            m.outputTokens,
+            { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true

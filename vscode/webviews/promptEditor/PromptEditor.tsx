@@ -149,7 +149,7 @@ export interface SerializedPromptEditorValue {
     editorState: SerializedPromptEditorState
 }
 
-function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptEditorValue {
+export function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptEditorValue {
     const editorState = toPromptEditorState(editor)
     return {
         text: editorStateToText(editor.getEditorState()),

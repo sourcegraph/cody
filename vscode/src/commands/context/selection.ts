@@ -1,10 +1,4 @@
-import {
-    type ContextItem,
-    MAX_CURRENT_FILE_TOKENS,
-    logError,
-    truncateText,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, TokenCounter, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { type ContextItemFile, ContextItemSource } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
@@ -37,13 +31,13 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
             const selection = activeSelection ?? visibleRange
 
             const content = document.getText(selection)
-            const size = content.length
+            const size = TokenCounter.countTokens(content)
 
             return [
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
+                    content,
                     source: ContextItemSource.Selection,
                     range: selection,
                     size,
