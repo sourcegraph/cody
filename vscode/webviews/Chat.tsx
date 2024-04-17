@@ -36,7 +36,7 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
-    telemetryRecorder?: TelemetryRecorder
+    telemetryRecorder: TelemetryRecorder
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
