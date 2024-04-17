@@ -83,7 +83,22 @@ export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string 
         return undefined
     }
 
-    const gitConfigUri = vscode.Uri.joinPath(uri, '.git', 'config')
+    const isFile = (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File
+    const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
+
+    return gitRemoteUrlFromTreeWalkRecursive(dirUri)
+}
+
+async function gitRemoteUrlFromTreeWalkRecursive(uri: vscode.Uri): Promise<string | undefined> {
+    const gitConfigUri = await resolveGitConfigUri(uri)
+    if (!gitConfigUri) {
+        const parentUri = vscode.Uri.joinPath(uri, '..')
+        if (parentUri.fsPath === uri.fsPath) {
+            return undefined
+        }
+
+        return gitRemoteUrlFromTreeWalkRecursive(parentUri)
+    }
 
     try {
         const raw = await vscode.workspace.fs.readFile(gitConfigUri)
@@ -109,12 +124,41 @@ export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string 
 
         return remoteFetchUrl || remoteUrl
     } catch (error) {
-        const parentPath = vscode.Uri.joinPath(uri, '..')
-        if (parentPath.fsPath === uri.fsPath) {
+        if (error instanceof vscode.FileSystemError) {
             return undefined
         }
 
-        return gitRemoteUrlFromTreeWalk(parentPath)
+        throw error
+    }
+}
+
+/**
+ * Reads the .git directory or file to determine the path to the git config.
+ */
+async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
+    const gitPathUri = vscode.Uri.joinPath(uri, '.git')
+
+    try {
+        const gitPathStat = await vscode.workspace.fs.stat(gitPathUri)
+
+        if (gitPathStat.type === vscode.FileType.Directory) {
+            return vscode.Uri.joinPath(gitPathUri, 'config')
+        }
+
+        if (gitPathStat.type === vscode.FileType.File) {
+            const rawGitPath = await vscode.workspace.fs.readFile(gitPathUri)
+            const submoduleGitDir = textDecoder.decode(rawGitPath).trim().replace('gitdir: ', '')
+
+            return vscode.Uri.joinPath(uri, submoduleGitDir, 'config')
+        }
+
+        return undefined
+    } catch (error) {
+        if (error instanceof vscode.FileSystemError) {
+            return undefined
+        }
+
+        throw error
     }
 }
 

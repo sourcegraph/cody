@@ -5,146 +5,233 @@ import { URI } from 'vscode-uri'
 import dedent from 'dedent'
 import { gitRemoteUrlFromTreeWalk } from './repo-name-resolver'
 
+interface MockFsCallsParams {
+    filePath: string
+    gitConfig: string
+    gitRepoPath: string
+    gitSubmodule?: {
+        path: string
+        gitFile: string
+    }
+}
+
+function mockFsCalls(params: MockFsCallsParams) {
+    const { gitConfig, gitRepoPath, filePath, gitSubmodule } = params
+
+    const statMock = vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation(async uri => {
+        if (uri.fsPath === filePath || (gitSubmodule && uri.fsPath === gitSubmodule.path)) {
+            return { type: vscode.FileType.File } as vscode.FileStat
+        }
+
+        if (uri.fsPath === `${gitRepoPath}/.git`) {
+            return { type: vscode.FileType.Directory } as vscode.FileStat
+        }
+
+        throw new vscode.FileSystemError(uri)
+    })
+
+    const readFileMock = vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(async uri => {
+        if (uri.fsPath === `${gitRepoPath}/.git/config`) {
+            return new TextEncoder().encode(dedent(gitConfig))
+        }
+
+        if (gitSubmodule && uri.fsPath === `${gitSubmodule.path}/.git`) {
+            return new TextEncoder().encode(dedent(gitSubmodule.gitFile))
+        }
+
+        throw new vscode.FileSystemError(uri)
+    })
+
+    return { statMock, readFileMock, fileUri: URI.file(filePath) }
+}
+
 describe('gitRemoteUrlFromTreeWalk', () => {
-    it('finds the remote url in the .git/config file with one remote', async () => {
-        const mockGitConfig = dedent`
-            [core]
-                repositoryformatversion = 0
-                filemode = true
-                bare = false
-                logallrefupdates = true
-                ignorecase = true
-            [remote "origin"]
-                url = https://github.com/sourcegraph/cody
-                fetch = +refs/heads/*:refs/remotes/origin/*
-            [branch "main"]
-                remote = origin
-                merge = refs/heads/main
-        `
+    it('finds the remote url in the `.git/config` file with one remote', async () => {
+        const { fileUri, statMock, readFileMock } = mockFsCalls({
+            filePath: '/repo/src/dir/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                    bare = false
+                    logallrefupdates = true
+                    ignorecase = true
+                [remote "origin"]
+                    url = https://github.com/sourcegraph/cody
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+                [branch "main"]
+                    remote = origin
+                    merge = refs/heads/main
+            `,
+        })
 
-        const textEncoder = new TextEncoder()
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
 
-        const readFileMock = vi
-            .spyOn(vscode.workspace.fs, 'readFile')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockResolvedValueOnce(textEncoder.encode(mockGitConfig))
-
-        const uri = URI.file('path/to/file/foo.ts')
-        const remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
-
-        expect(readFileMock).toBeCalledTimes(3)
+        expect(statMock).toBeCalledTimes(4)
+        expect(readFileMock).toBeCalledTimes(1)
         expect(remoteUrl).toBe('https://github.com/sourcegraph/cody')
     })
 
     it('finds the remote url in the .git/config file with multiple remotes', async () => {
-        const mockGitConfig = dedent`
-            [core]
-                repositoryformatversion = 0
-                filemode = true
-                bare = false
-                logallrefupdates = true
-                ignorecase = true
-                precomposeunicode = true
-            [remote "origin"]
-                url = https://github.com/username/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/origin/*
-                pushurl = https://github.com/username/yourproject.git
-            [remote "upstream"]
-                url = https://github.com/originalauthor/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/upstream/*
-            [remote "backup"]
-                url = git@backupserver:repositories/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/backup/*
-            [branch "main"]
-                remote = origin
-                merge = refs/heads/main
-            [branch "develop"]
-                remote = origin
-                merge = refs/heads/develop
-        `
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/src/dir/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                    bare = false
+                    logallrefupdates = true
+                    ignorecase = true
+                    precomposeunicode = true
+                [remote "origin"]
+                    url = https://github.com/username/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+                    pushurl = https://github.com/username/yourproject.git
+                [remote "upstream"]
+                    url = https://github.com/originalauthor/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/upstream/*
+                [remote "backup"]
+                    url = git@backupserver:repositories/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/backup/*
+                [branch "main"]
+                    remote = origin
+                    merge = refs/heads/main
+                [branch "develop"]
+                    remote = origin
+                    merge = refs/heads/develop
+            `,
+        })
 
-        const textEncoder = new TextEncoder()
-
-        const readFileMock = vi
-            .spyOn(vscode.workspace.fs, 'readFile')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockResolvedValueOnce(textEncoder.encode(mockGitConfig))
-
-        const uri = URI.file('path/to/file/foo.ts')
-        const remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
-
-        expect(readFileMock).toBeCalledTimes(3)
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
         expect(remoteUrl).toBe('https://github.com/username/yourproject.git')
     })
 
     it('prioritizes `pushUrl` over `url` and `fetchUrl`', async () => {
-        const mockGitConfig = dedent`
-            [core]
-                repositoryformatversion = 0
-                filemode = true
-                bare = false
-                logallrefupdates = true
-                ignorecase = true
-                precomposeunicode = true
-            [remote "origin"]
-                url = https://github.com/username/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/origin/*
-                pushurl = https://github.com/push/yourproject.git
-            [remote "upstream"]
-                url = https://github.com/originalauthor/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/upstream/*
-                fetchUrl = https://github.com/fetch/yourproject.git
-            [remote "backup"]
-                url = git@backupserver:repositories/yourproject.git
-                fetch = +refs/heads/*:refs/remotes/backup/*
-        `
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/src/dir/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                    bare = false
+                    logallrefupdates = true
+                    ignorecase = true
+                    precomposeunicode = true
+                [remote "origin"]
+                    url = https://github.com/username/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+                    pushurl = https://github.com/push/yourproject.git
+                [remote "upstream"]
+                    url = https://github.com/originalauthor/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/upstream/*
+                    fetchUrl = https://github.com/fetch/yourproject.git
+                [remote "backup"]
+                    url = git@backupserver:repositories/yourproject.git
+                    fetch = +refs/heads/*:refs/remotes/backup/*
+            `,
+        })
 
-        const textEncoder = new TextEncoder()
-        vi.spyOn(vscode.workspace.fs, 'readFile').mockResolvedValue(textEncoder.encode(mockGitConfig))
-
-        const remoteUrl = await gitRemoteUrlFromTreeWalk(URI.file('path/to/file/foo.ts'))
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
         expect(remoteUrl).toBe('https://github.com/push/yourproject.git')
     })
 
     it('returns `undefined` from the .git/config file with no remotes specified', async () => {
-        const mockGitConfig = dedent`
-            [core]
-                repositoryformatversion = 0
-                filemode = true
-                bare = false
-                logallrefupdates = true
-                ignorecase = true
-                precomposeunicode = true
-            [branch "main"]
-                merge = refs/heads/main
-        `
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/src/dir/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                    bare = false
+                    logallrefupdates = true
+                    ignorecase = true
+                    precomposeunicode = true
+                [branch "main"]
+                    merge = refs/heads/main
+            `,
+        })
 
-        const textEncoder = new TextEncoder()
-
-        const readFileMock = vi
-            .spyOn(vscode.workspace.fs, 'readFile')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockRejectedValueOnce('git config does not exist in this directory')
-            .mockResolvedValueOnce(textEncoder.encode(mockGitConfig))
-
-        const uri = URI.file('path/to/file/foo.ts')
-        const remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
-
-        expect(readFileMock).toBeCalledTimes(3)
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
         expect(remoteUrl).toBe(undefined)
     })
 
     it('returns `undefined` if .git/config is not found', async () => {
-        const readFileMock = vi
-            .spyOn(vscode.workspace.fs, 'readFile')
-            .mockRejectedValue('git config does not exist in this directory')
+        const statMock = vi
+            .spyOn(vscode.workspace.fs, 'stat')
+            .mockResolvedValueOnce({ type: vscode.FileType.File } as vscode.FileStat)
+            .mockRejectedValue(new vscode.FileSystemError('file does not exist'))
 
-        const uri = URI.file('path/to/file/foo.ts')
+        const uri = URI.file('repo/src/dir/foo.ts')
         const remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
 
-        expect(readFileMock).toBeCalledTimes(5)
+        expect(statMock).toBeCalledTimes(uri.fsPath.split('/').length)
+        expect(remoteUrl).toBe(undefined)
+    })
+
+    it('finds the remote url in a submodule', async () => {
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/foo.ts',
+            gitRepoPath: '/repo',
+            gitSubmodule: {
+                path: '/repo/submodule',
+                gitFile: 'gitdir: ../.git/modules/submodule',
+            },
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                [remote "origin"]
+                    url = https://github.com/example/submodule.git
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+            `,
+        })
+
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
+        expect(remoteUrl).toBe('https://github.com/example/submodule.git')
+    })
+
+    it('finds the remote url in nested submodules', async () => {
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/nested/foo.ts',
+            gitRepoPath: '/repo',
+            gitSubmodule: {
+                path: '/repo/submodule/nested',
+                gitFile: 'gitdir: ../../.git/modules/submodule/modules/nested',
+            },
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                [remote "origin"]
+                    url = https://github.com/example/nested.git
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+            `,
+        })
+
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
+        expect(remoteUrl).toBe('https://github.com/example/nested.git')
+    })
+
+    it('returns `undefined` for a submodule without a remote url', async () => {
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/foo.ts',
+            gitRepoPath: '/repo',
+            gitSubmodule: {
+                path: '/repo/submodule',
+                gitFile: 'gitdir: ../.git/modules/submodule',
+            },
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+            `,
+        })
+
+        const remoteUrl = await gitRemoteUrlFromTreeWalk(fileUri)
         expect(remoteUrl).toBe(undefined)
     })
 })
