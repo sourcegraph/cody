@@ -1,4 +1,4 @@
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'

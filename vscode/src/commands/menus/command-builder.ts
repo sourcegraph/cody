@@ -2,7 +2,7 @@ import { type QuickPickItem, window } from 'vscode'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { fromSlashCommand } from '../utils/common'
@@ -51,7 +51,7 @@ export class CustomCommandsBuilderMenu {
                     return 'Command name cannot contain spaces. Use dashes, underscores, or camelCase.'
                 }
                 // Remove leading slash before checking if command already exists
-                if (commandSet.has(fromSlashCommand(input))) {
+                if (commandSet.has(fromSlashCommand(input).toString())) {
                     return 'A command with the same name already exists.'
                 }
                 return

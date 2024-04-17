@@ -2,13 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
-    ChatMessage,
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
     SearchPanelFile,
+    SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -175,7 +175,7 @@ interface WebviewContextMessage {
 }
 
 export interface ExtensionTranscriptMessage {
-    messages: ChatMessage[]
+    messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
 }

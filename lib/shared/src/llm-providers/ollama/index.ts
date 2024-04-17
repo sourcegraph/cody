@@ -1,4 +1,4 @@
-import type { OllamaGenerateParameters } from '../..'
+import type { OllamaGenerateParameters, PromptString } from '../..'
 import type { OpenAIMessage } from '../types'
 
 export const OLLAMA_DEFAULT_URL = 'http://localhost:11434'
@@ -19,7 +19,7 @@ export const OLLAMA_DEFAULT_CONTEXT_WINDOW = 2048
 export interface OllamaGenerateParams {
     model: string
     template: string
-    prompt: string
+    prompt: PromptString
     options?: OllamaGenerateParameters
 }
 
@@ -39,7 +39,7 @@ export interface OllamaChatParams {
 
 interface OllamaChatMessage {
     role: string
-    content: string
+    content: PromptString
     images?: string[]
 }
 

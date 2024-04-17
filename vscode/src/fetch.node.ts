@@ -1,9 +1,12 @@
-import type http from 'node:http'
+import http from 'node:http'
 import https from 'node:https'
 
-import { agent } from '@sourcegraph/cody-shared/src/fetch'
+import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import { ProxyAgent } from 'proxy-agent'
+import type { Configuration } from '@sourcegraph/cody-shared'
+
+import { agent } from '@sourcegraph/cody-shared/src/fetch'
+import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -14,24 +17,41 @@ const pacProxyAgent = 'PacProxyAgent'
 /**
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
-let proxyAgent: ProxyAgent
+let httpAgent: http.Agent
+let httpsAgent: https.Agent
+let socksProxyAgent: SocksProxyAgent
 
-function getCustomAgent(): () => http.Agent {
-    return () => {
-        return proxyAgent
+function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    return ({ protocol }) => {
+        if (proxy?.startsWith('socks') && !socksProxyAgent) {
+            socksProxyAgent = new SocksProxyAgent(proxy, {
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+            })
+            return socksProxyAgent
+        }
+        if (protocol === 'http:') {
+            return httpAgent
+        }
+        return httpsAgent
     }
 }
 
-export function setCustomAgent(): () => http.Agent {
-    agent.current = getCustomAgent()
-    return agent.current as () => http.Agent
+export function setCustomAgent(
+    configuration: Configuration
+): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+    agent.current = getCustomAgent(configuration)
+    return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
 }
 
 export function initializeNetworkAgent(): void {
-    proxyAgent = new ProxyAgent({ keepAlive: true, keepAliveMsecs: 60000, ...https.globalAgent.options })
-    proxyAgent.keepAlive = true
-
-    const customAgent = setCustomAgent()
+    httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
+    httpsAgent = new https.Agent({
+        ...https.globalAgent.options,
+        keepAlive: true,
+        keepAliveMsecs: 60000,
+    })
+    const customAgent = setCustomAgent(getConfiguration())
 
     /**
      * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`
@@ -62,7 +82,7 @@ export function initializeNetworkAgent(): void {
                         connectionHeader === 'keep-alive' ||
                         (Array.isArray(connectionHeader) && connectionHeader.includes('keep-alive'))
                     ) {
-                        this.opts.originalAgent = customAgent()
+                        this.opts.originalAgent = customAgent(opts)
                         return originalConnect.call(this, req, opts)
                     }
                     return originalConnect.call(this, req, opts)

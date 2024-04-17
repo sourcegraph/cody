@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import type { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
 const FIX_PROMPT_TOPICS = {
-    SOURCE: 'PROBLEMCODE4179',
-    RELATED: 'RELATEDCODE50', // Note: We append additional digits to this topic as a single problem code can have multiple related code.
+    SOURCE: ps`PROBLEMCODE4179`,
+    RELATED: ps`RELATEDCODE50`, // Note: We append additional digits to this topic as a single problem code can have multiple related code.
 }
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
@@ -50,7 +51,11 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         range: vscode.Range
     ): Promise<vscode.CodeAction> {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
-        const instruction = await this.getCodeActionInstruction(document.getText(range), diagnostics)
+        const instruction = await this.getCodeActionInstruction(
+            document.uri,
+            PromptString.fromDocumentText(document, range),
+            diagnostics
+        )
         const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
@@ -74,47 +79,62 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
 
     // Public for testing
     public async getCodeActionInstruction(
-        code: string,
+        uri: vscode.Uri,
+        code: PromptString,
         diagnostics: vscode.Diagnostic[]
-    ): Promise<string> {
-        const prompt: string[] = [`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`]
+    ): Promise<PromptString> {
+        const prompt: PromptString[] = [
+            ps`<${FIX_PROMPT_TOPICS.SOURCE}>${code}</${FIX_PROMPT_TOPICS.SOURCE}>\n`,
+        ]
 
         for (let i = 0; i < diagnostics.length; i++) {
-            const { message, source, severity, relatedInformation } = diagnostics[i]
+            const { severity, relatedInformation } = diagnostics[i]
+            const diagnosticPrompt = PromptString.fromDiagnostic(uri, diagnostics[i])
 
-            const diagnosticType = severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
+            const diagnosticType =
+                severity === vscode.DiagnosticSeverity.Warning ? ps`warning` : ps`error`
             prompt.push(
-                `Fix the following ${source ? `${source} ` : ''}${diagnosticType} from within <${
+                ps`Fix the following ${
+                    diagnosticPrompt.source ? ps`${diagnosticPrompt.source} ` : ''
+                }${diagnosticType} from within <${FIX_PROMPT_TOPICS.SOURCE}></${
                     FIX_PROMPT_TOPICS.SOURCE
-                }></${FIX_PROMPT_TOPICS.SOURCE}>: ${message}`
+                }>: ${diagnosticPrompt.message}`
             )
 
-            if (relatedInformation?.length) {
-                prompt.push('Code related to this diagnostic:')
-                const relatedInfo = await this.getRelatedInformationContext(relatedInformation)
+            if (relatedInformation?.length && diagnosticPrompt.relatedInformation?.length) {
+                prompt.push(ps`Code related to this diagnostic:`)
+                const relatedInfo = await this.getRelatedInformationContext(
+                    relatedInformation,
+                    diagnosticPrompt.relatedInformation
+                )
                 prompt.push(...relatedInfo)
             }
 
             if (i < diagnostics.length - 1) {
-                prompt.push('\n')
+                prompt.push(ps`\n`)
             }
         }
 
-        return prompt.join('\n')
+        return PromptString.join(prompt, ps`\n`)
     }
 
     private async getRelatedInformationContext(
-        relatedInformation: vscode.DiagnosticRelatedInformation[]
-    ): Promise<string[]> {
-        const prompt: string[] = []
+        relatedInformation: vscode.DiagnosticRelatedInformation[],
+        relatedInformationPrompt: {
+            message: PromptString
+        }[]
+    ): Promise<PromptString[]> {
+        const prompt: PromptString[] = []
         for (let i = 0; i < relatedInformation.length; i++) {
-            const { location, message } = relatedInformation[i]
+            const { location } = relatedInformation[i]
+            const { message } = relatedInformationPrompt[i]
             prompt.push(message)
             const document = await vscode.workspace.openTextDocument(location.uri)
             prompt.push(
-                `<${FIX_PROMPT_TOPICS.RELATED}${i}>${document.getText(location.range)}</${
-                    FIX_PROMPT_TOPICS.RELATED
-                }${i}>\n`
+                ps`<${FIX_PROMPT_TOPICS.RELATED}${i}>${PromptString.fromDocumentText(
+                    document,
+                    location.range
+                )}</${FIX_PROMPT_TOPICS.RELATED}${i}>\n`
             )
         }
         return prompt

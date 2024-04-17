@@ -6,6 +6,7 @@ import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
 import { FixupCodeAction } from './fixup'
+import { TestCodeAction } from './test'
 
 interface CodeActionProviderOptions {
     contextProvider: ContextProvider
@@ -30,8 +31,9 @@ export class CodeActionProvider implements vscode.Disposable {
             return
         }
 
-        this.addActionProvider(EditCodeAction)
+        this.addActionProvider(TestCodeAction)
         this.addActionProvider(DocumentCodeAction)
+        this.addActionProvider(EditCodeAction)
         this.addActionProvider(ExplainCodeAction)
         this.addActionProvider(FixupCodeAction)
     }

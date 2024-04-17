@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     type Guardrails,
     type ModelProvider,
+    ps,
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -70,10 +71,14 @@ export const MessageCell: FunctionComponent<{
                 <SpeakerIcon message={message} userInfo={userInfo} chatModel={chatModel} size={24} />
             }
             disabled={disabled}
-            containerClassName={classNames(styles.cellContainer, {
-                [styles.focused]: isItemBeingEdited,
-                [styles.disabled]: disabled,
-            })}
+            containerClassName={classNames(
+                styles.cellContainer,
+                message.speaker === 'human' && styles.humanContent,
+                {
+                    [styles.focused]: isItemBeingEdited,
+                    [styles.disabled]: disabled,
+                }
+            )}
             data-testid="message"
         >
             <div className={styles.messageContentContainer}>
@@ -163,7 +168,7 @@ const EditButton: React.FunctionComponent<
  */
 function useDisplayMarkdown(message: ChatMessage): string {
     if (message.speaker === 'assistant') {
-        return reformatBotMessageForChat(message.text ?? '')
+        return reformatBotMessageForChat(message.text ?? ps``).toString()
     }
     return serializedPromptEditorStateFromChatMessage(message).html
 }
