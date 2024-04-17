@@ -400,6 +400,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            span.setAttribute('sampled', true)
+
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -427,8 +429,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-                span.setAttribute('sampled', true)
-
                 if (inputText.toString().match(/^\/reset$/)) {
                     span.addEvent('clearAndRestartSession')
                     span.end()
@@ -475,6 +475,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         traceId: span.spanContext().traceId,
                     }
                     span.setAttributes(properties)
+                    firstTokenSpan.setAttributes(properties)
 
                     telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
                         hasV2Event: true,
@@ -983,7 +984,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
                 'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID },
+                { ...codeCount, requestID, chatModel: this.chatModel.modelID },
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
@@ -1000,6 +1001,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an aditional safegaurd measure
                     responseText:
                         authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
+                    chatModel: this.chatModel.modelID,
                 },
             })
         }

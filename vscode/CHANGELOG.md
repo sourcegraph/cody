@@ -31,6 +31,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Support Sidebar: Update the icon for Discord to use the official Discord logo. [pull/3803](https://github.com/sourcegraph/cody/pull/3803)
 - Commands/Chat: Increased the maximum output limit of LLM responses. [pull/3797](https://github.com/sourcegraph/cody/pull/3797)
 - Commands: Updated the naming of various code actions to be more descriptive. [pull/3831](https://github.com/sourcegraph/cody/pull/3831)
+- Chat: Add chat model to more telemetry events. [pull/3829](https://github.com/sourcegraph/cody/pull/3829)
 
 ## [1.12.0]
 
