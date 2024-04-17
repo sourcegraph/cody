@@ -170,6 +170,29 @@
 - [ ] Verify that you can undo the edit by clicking `Undo`.
 - [ ] Verify that the ghost text disappears by clicking `Accept`.
 
+#### Documenting code
+
+- [ ] Move the cursor to an active symbol that could be documented (e.g. a function name), do not highlight any selection.
+- [ ] Click the Code Action lightbulb icon in the project file.
+- [ ] Select `Cody: Generate Documentation for symbolName`.
+- [ ] Verify that there is a notification that "Cody is working..." while code is being generated.
+- [ ] Verify that Cody automatically applies documentation to the selected symbol, per the user’s instructions
+- [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
+- [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
+- [ ] Verify that you can undo the edit by clicking `Undo`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
+
+#### Testing code
+
+- [ ] Move the cursor to an active symbol that could be documented (e.g. a function name), do not highlight any selection.
+- [ ] Click the Code Action lightbulb icon in the project file.
+- [ ] Select `Cody: Generate Tests for symbolName`.
+- [ ] Verify that there is a notification: "Cody is working..." while command is being processed.
+- [ ] Verify that Cody opens a new file, and automatically streams the generated tests into said file, line-by-line.
+- [ ] Verify that there is a notification: "Generating Tests..." while the output is beign produced
+- [ ] Verify that you can undo the edit by clicking `Undo`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
+
 ### Custom Commands
 
 #### Create a custom command from the command palette
