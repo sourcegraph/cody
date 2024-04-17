@@ -21,9 +21,9 @@ export const SpeakerIcon: FunctionComponent<{
         return null
     }
     const ModelIcon = chatModelIconComponent(chatModel.model)
-    return ModelIcon ? (
+    return (
         <span title={`${chatModel.title} by ${chatModel.provider}`}>
             <ModelIcon size={size * 0.75} />
         </span>
-    ) : null
+    )
 }
