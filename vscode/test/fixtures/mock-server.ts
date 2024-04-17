@@ -153,18 +153,53 @@ export class MockServer {
     public static async run<T>(around: (server: MockServer) => Promise<T>): Promise<T> {
         const app = express()
         const controller = new MockServer(app)
-
         app.use(express.json())
 
+        // Add connection issue middleware to simulate things going wrong. Right now it's very basic but we could extend this with specific
+        // network issue, latencies or errors we see in broken deployments to ensure we robustly handle them in the client.
+        const VALID_CONNECTION_ISSUES = ['ECONNREFUSED', 'ENOTFOUND'] as const
+        // this gets set by calling /.test/connectionIssues/enable\disable
+        let connectionIssue: (typeof VALID_CONNECTION_ISSUES)[number] | undefined = undefined
+        app.use((req, res, next) => {
+            if (connectionIssue && !req.url.startsWith('/.test')) {
+                switch (connectionIssue) {
+                    default: {
+                        //sending response like this prevents logging
+                        res.statusMessage = connectionIssue
+                        res.status(500)
+                        res.send(connectionIssue)
+                    }
+                }
+            } else {
+                next()
+            }
+        })
+        app.post('/.test/connectionIssue/enable', (req, res) => {
+            // get the 'issue' field from the request body and check that it's one of the valid connectionIssues
+            const issue = req.query?.issue as unknown
+            if (issue && VALID_CONNECTION_ISSUES.includes(issue as any)) {
+                connectionIssue = issue as (typeof VALID_CONNECTION_ISSUES)[number]
+                res.sendStatus(200)
+            } else {
+                res.status(400).send(
+                    `The issue <${issue}> must be one of [${VALID_CONNECTION_ISSUES.join(', ')}]`
+                )
+            }
+        })
+        app.post('/.test/connectionIssue/disable', (req, res) => {
+            connectionIssue = undefined
+            res.sendStatus(200)
+        })
+
         // endpoint which will accept the data that you want to send in that you will add your pubsub code
-        app.post('/.api/testLogging', (req, res) => {
+        app.post('/.test/testLogging', (req, res) => {
             void logTestingData('legacy', req.body)
             storeLoggedEvents(req.body)
             res.status(200)
         })
 
         // matches @sourcegraph/cody-shared't work, so hardcode it here.
-        app.post('/.api/mockEventRecording', (req, res) => {
+        app.post('/.test/mockEventRecording', (req, res) => {
             const events = req.body as TelemetryEventInput[]
             for (const event of events) {
                 void logTestingData('new', JSON.stringify(event))
@@ -253,7 +288,6 @@ export class MockServer {
             chatRateLimitPro = undefined
             res.sendStatus(200)
         })
-
         app.post('/.api/completions/code', (req, res) => {
             const OPENING_CODE_TAG = '<CODE5711>'
             const request = req as MockRequest

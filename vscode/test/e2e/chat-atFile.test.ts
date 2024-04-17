@@ -392,7 +392,7 @@ test.extend<ExpectedEvents>({
     // The chat input should have the new code selections appended as @-mention items
     // instead of replacing the existing one or adding to a new chat.
     await page.getByRole('tab', { name: 'buzz.ts' }).click()
-    await page.getByText('4', { exact: true }).click()
+    await page.locator('div[class*="line-numbers"]').getByText('4', { exact: true }).click()
     await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
     await page.keyboard.press(`${metaKey}+Shift+P`)
     await expect(commandPaletteInputBox).toBeVisible()

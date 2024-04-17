@@ -49,7 +49,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit } from './repository/repositoryHelpers'
+import { gitAPIinit } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -326,6 +327,7 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
@@ -372,8 +374,8 @@ const register = async (
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (url, token) =>
-            authProvider.auth(url, token)
+        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
+            authProvider.auth({ endpoint, token })
         ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
@@ -390,7 +392,13 @@ const register = async (
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (await authProvider.auth(serverEndpoint, accessToken, customHeaders)).authStatus
+                return (
+                    await authProvider.auth({
+                        endpoint: serverEndpoint,
+                        token: accessToken,
+                        customHeaders,
+                    })
+                ).authStatus
             }
         ),
         // Chat

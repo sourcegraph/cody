@@ -1,5 +1,6 @@
 import { OLLAMA_DEFAULT_CONTEXT_WINDOW } from '.'
 import { ModelProvider, ModelUsage, OLLAMA_DEFAULT_URL, logError } from '../..'
+import { CHAT_OUTPUT_TOKEN_BUDGET } from '../../token/constants'
 
 /**
  * Fetches available Ollama models from the Ollama server.
@@ -13,11 +14,10 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
             data =>
                 data?.models?.map(
                     (m: { model: string }) =>
-                        new ModelProvider(
-                            `ollama/${m.model}`,
-                            [ModelUsage.Chat, ModelUsage.Edit],
-                            OLLAMA_DEFAULT_CONTEXT_WINDOW
-                        )
+                        new ModelProvider(`ollama/${m.model}`, [ModelUsage.Chat, ModelUsage.Edit], {
+                            input: OLLAMA_DEFAULT_CONTEXT_WINDOW,
+                            output: CHAT_OUTPUT_TOKEN_BUDGET,
+                        })
                 ),
             error => {
                 const fetchFailedErrors = ['Failed to fetch', 'fetch failed']

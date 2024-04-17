@@ -4,7 +4,7 @@ import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import type { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
-import { gitAPI } from '../../../../repository/repositoryHelpers'
+import { gitAPI } from '../../../../repository/git-extension-api'
 import { captureException } from '../../../../services/sentry/sentry'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 

@@ -1,9 +1,8 @@
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_CURRENT_FILE_TOKENS,
+    TokenCounter,
     logError,
-    truncateText,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -16,22 +15,23 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
             const doc = await vscode.workspace.openTextDocument(file)
-            const decoded = doc?.getText(range)
-            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS).trim()
-            if (!decoded || !truncatedContent) {
+            const content = doc?.getText(range).trim()
+            if (!content) {
                 throw new Error('No file content')
             }
 
             const startLine = range?.start?.line ?? 0
-            range = new vscode.Range(startLine, 0, startLine + truncatedContent.split('\n').length, 0)
+            range = new vscode.Range(startLine, 0, startLine + content.split('\n').length, 0)
+            const size = TokenCounter.countTokens(content)
 
             return [
                 {
                     type: 'file',
-                    content: decoded,
+                    content,
                     uri: file,
                     source: ContextItemSource.Editor,
                     range,
+                    size,
                 },
             ] satisfies ContextItem[]
         } catch (error) {

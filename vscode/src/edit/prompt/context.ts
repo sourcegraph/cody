@@ -10,13 +10,12 @@ import {
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
     ps,
-    truncateTextStart,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import { truncatePromptString } from '@sourcegraph/cody-shared'
+import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
@@ -38,7 +37,7 @@ const getContextFromIntent = async ({
     selectionRange,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
-    const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedPrecedingText = truncatePromptStringStart(precedingText, MAX_CURRENT_FILE_TOKENS)
     const truncatedFollowingText = truncatePromptString(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case

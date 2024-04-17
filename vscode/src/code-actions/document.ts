@@ -32,7 +32,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
             this.createCommandCodeAction(
                 document,
                 editorRange,
-                `Ask Cody to Document: ${documentableSymbol.node.text}`
+                `Cody: Generate Documentation for ${documentableSymbol.node.text}`
             ),
         ]
     }

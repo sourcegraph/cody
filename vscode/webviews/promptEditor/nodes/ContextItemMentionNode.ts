@@ -193,7 +193,6 @@ export function $createContextItemMentionNode(
     node.setMode('token').toggleDirectionless()
     contextItem.type === 'file' &&
         contextItem.isTooLarge &&
-        !contextItem.range &&
         node.setStyle('color: var(--vscode-list-errorForeground)')
     return $applyNodeReplacement(node)
 }

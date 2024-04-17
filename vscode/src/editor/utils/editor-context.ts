@@ -3,7 +3,6 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    CHARS_PER_TOKEN,
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
@@ -11,8 +10,8 @@ import {
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
+    TokenCounter,
     displayPath,
     fetchContentForURLContextItem,
     isCodyIgnoredFile,
@@ -50,8 +49,7 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number,
-    charsLimit?: number
+    maxResults: number
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
@@ -111,7 +109,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return await filterLargeFiles(sortedResults, charsLimit)
+    return await filterContextItemFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -177,12 +175,11 @@ export async function getSymbolContextFiles(
  * Gets context files for each open editor tab in VS Code.
  * Filters out large files over 1MB to avoid expensive parsing.
  */
-export async function getOpenTabsContextFile(charsLimit?: number): Promise<ContextItemFile[]> {
-    return await filterLargeFiles(
+export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
+    return await filterContextItemFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
-            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file')),
-        charsLimit
+            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
     )
 }
 
@@ -247,11 +244,9 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets {@link ContextItemFile.isTooLarge} for files contains more characters than the token limit.
  */
-export async function filterLargeFiles(
-    contextFiles: ContextItemFile[],
-    charsLimit = CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS
+export async function filterContextItemFiles(
+    contextFiles: ContextItemFile[]
 ): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
@@ -264,13 +259,16 @@ export async function filterLargeFiles(
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
-        // Check if file contains more characters than the token limit based on fileStat.size
-        // and set {@link ContextItemFile.isTooLarge} for webview to display file size
-        // warning.
-        cf.size = fileStat.size
-        if (fileStat.size > charsLimit) {
-            cf.isTooLarge = true
-        }
+        // TODO (bee) consider a better way to estimate the token size of a file
+        // We cannot get the exact token size without parsing the file, which is expensive.
+        // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
+        // For markdown files, we divide by 3.5 because they tend to have more text and fewer code blocks and whitespaces.
+        //
+        // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
+        // on available tokens, so that it can prompt the user to import the file via '@file-range' or
+        // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
+        // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
         filtered.push(cf)
     }
     return filtered
@@ -284,6 +282,7 @@ export async function fillInContextItemContent(
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
                 let content = item.content
+                let size = item.size
                 if (!item.content) {
                     try {
                         if (isURLContextItem(item)) {
@@ -297,6 +296,7 @@ export async function fillInContextItemContent(
                                 toVSCodeRange(item.range)
                             )
                         }
+                        size = !item.size && content ? TokenCounter.countTokens(content) : item.size
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -304,7 +304,7 @@ export async function fillInContextItemContent(
                         return null
                     }
                 }
-                return { ...item, content: content! }
+                return { ...item, content: content!, size }
             })
         )
     ).filter(isDefined)

@@ -6,7 +6,9 @@ import {
     type CompletionParameters,
     type EditModel,
     type Message,
+    ModelProvider,
     PromptString,
+    TokenCounter,
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -85,7 +87,8 @@ export const buildInteraction = async ({
         )
     )
     const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
-    if (selectedText.length > contextWindow) {
+    const tokenCount = TokenCounter.countPromptString(selectedText)
+    if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText.toString()
@@ -102,8 +105,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-
-    const promptBuilder = new PromptBuilder(contextWindow)
+    const promptBuilder = new PromptBuilder(ModelProvider.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
@@ -135,7 +137,7 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext(contextItemsAndMessages)
+    promptBuilder.tryAddContext('user', contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),

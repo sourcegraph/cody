@@ -71,12 +71,11 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
       }
-    | { command: 'getUserContext'; query: string }
+    | { command: 'getUserContext'; query: string; range?: RangeData }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
@@ -89,6 +88,9 @@ export type WebviewMessage =
     | {
           command: 'attribution-search'
           snippet: string
+      }
+    | {
+          command: 'troubleshoot/reloadAuth'
       }
 
 /**
