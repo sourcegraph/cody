@@ -344,6 +344,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         range.end.character === 0)
                 )
             }
+
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             // If the caller elided the content, reconstruct it here.
             const cachedDocument = this.workspace.getDocumentFromUriString(
@@ -361,6 +362,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
             )
+
+            const start = document.selection?.start
+            const end = document.selection?.end
+            if (
+                start !== undefined &&
+                start?.line === end?.line &&
+                start?.character === end?.character
+            ) {
+                vscode.commands
+                    .executeCommand('cursorMove', {
+                        to: 'down',
+                        by: 'line',
+                        value: start.line,
+                    })
+                    .then(() =>
+                        vscode.commands.executeCommand('cursorMove', {
+                            to: 'right',
+                            by: 'character',
+                            value: start.character,
+                        })
+                    )
+            }
         })
 
         this.registerNotification('textDocument/didOpen', document => {
