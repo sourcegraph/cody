@@ -7,18 +7,19 @@ import { gitRemoteUrlFromTreeWalk } from './repo-name-resolver'
 
 describe('gitRemoteUrlFromTreeWalk', () => {
     it('finds the remote url in the .git/config file with one remote', async () => {
-        const mockGitConfig = dedent`[core]
-            repositoryformatversion = 0
-            filemode = true
-            bare = false
-            logallrefupdates = true
-            ignorecase = true
-        [remote "origin"]
-            url = https://github.com/sourcegraph/cody
-            fetch = +refs/heads/*:refs/remotes/origin/*
-        [branch "main"]
-            remote = origin
-            merge = refs/heads/main
+        const mockGitConfig = dedent`
+            [core]
+                repositoryformatversion = 0
+                filemode = true
+                bare = false
+                logallrefupdates = true
+                ignorecase = true
+            [remote "origin"]
+                url = https://github.com/sourcegraph/cody
+                fetch = +refs/heads/*:refs/remotes/origin/*
+            [branch "main"]
+                remote = origin
+                merge = refs/heads/main
         `
 
         const textEncoder = new TextEncoder()
@@ -37,29 +38,30 @@ describe('gitRemoteUrlFromTreeWalk', () => {
     })
 
     it('finds the remote url in the .git/config file with multiple remotes', async () => {
-        const mockGitConfig = dedent`[core]
-            repositoryformatversion = 0
-            filemode = true
-            bare = false
-            logallrefupdates = true
-            ignorecase = true
-            precomposeunicode = true
-        [remote "origin"]
-            url = https://github.com/username/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/origin/*
-            pushurl = https://github.com/username/yourproject.git
-        [remote "upstream"]
-            url = https://github.com/originalauthor/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/upstream/*
-        [remote "backup"]
-            url = git@backupserver:repositories/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/backup/*
-        [branch "main"]
-            remote = origin
-            merge = refs/heads/main
-        [branch "develop"]
-            remote = origin
-            merge = refs/heads/develop
+        const mockGitConfig = dedent`
+            [core]
+                repositoryformatversion = 0
+                filemode = true
+                bare = false
+                logallrefupdates = true
+                ignorecase = true
+                precomposeunicode = true
+            [remote "origin"]
+                url = https://github.com/username/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/origin/*
+                pushurl = https://github.com/username/yourproject.git
+            [remote "upstream"]
+                url = https://github.com/originalauthor/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/upstream/*
+            [remote "backup"]
+                url = git@backupserver:repositories/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/backup/*
+            [branch "main"]
+                remote = origin
+                merge = refs/heads/main
+            [branch "develop"]
+                remote = origin
+                merge = refs/heads/develop
         `
 
         const textEncoder = new TextEncoder()
@@ -78,24 +80,25 @@ describe('gitRemoteUrlFromTreeWalk', () => {
     })
 
     it('prioritizes `pushUrl` over `url` and `fetchUrl`', async () => {
-        const mockGitConfig = dedent`[core]
-            repositoryformatversion = 0
-            filemode = true
-            bare = false
-            logallrefupdates = true
-            ignorecase = true
-            precomposeunicode = true
-        [remote "origin"]
-            url = https://github.com/username/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/origin/*
-            pushurl = https://github.com/push/yourproject.git
-        [remote "upstream"]
-            url = https://github.com/originalauthor/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/upstream/*
-            fetchUrl = https://github.com/fetch/yourproject.git
-        [remote "backup"]
-            url = git@backupserver:repositories/yourproject.git
-            fetch = +refs/heads/*:refs/remotes/backup/*
+        const mockGitConfig = dedent`
+            [core]
+                repositoryformatversion = 0
+                filemode = true
+                bare = false
+                logallrefupdates = true
+                ignorecase = true
+                precomposeunicode = true
+            [remote "origin"]
+                url = https://github.com/username/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/origin/*
+                pushurl = https://github.com/push/yourproject.git
+            [remote "upstream"]
+                url = https://github.com/originalauthor/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/upstream/*
+                fetchUrl = https://github.com/fetch/yourproject.git
+            [remote "backup"]
+                url = git@backupserver:repositories/yourproject.git
+                fetch = +refs/heads/*:refs/remotes/backup/*
         `
 
         const textEncoder = new TextEncoder()
@@ -106,15 +109,16 @@ describe('gitRemoteUrlFromTreeWalk', () => {
     })
 
     it('returns `undefined` from the .git/config file with no remotes specified', async () => {
-        const mockGitConfig = dedent`[core]
-            repositoryformatversion = 0
-            filemode = true
-            bare = false
-            logallrefupdates = true
-            ignorecase = true
-            precomposeunicode = true
-        [branch "main"]
-            merge = refs/heads/main
+        const mockGitConfig = dedent`
+            [core]
+                repositoryformatversion = 0
+                filemode = true
+                bare = false
+                logallrefupdates = true
+                ignorecase = true
+                precomposeunicode = true
+            [branch "main"]
+                merge = refs/heads/main
         `
 
         const textEncoder = new TextEncoder()
