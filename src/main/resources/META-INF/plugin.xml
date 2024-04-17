@@ -84,10 +84,6 @@
                 secondary="false"
                 factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
 
-        <!-- autocomplete -->
-        <editorFactoryListener
-                implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
-
         <errorHandler
                 implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
 
@@ -113,12 +109,8 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="com.sourcegraph.cody.CodyFileEditorListener"
+        <listener class="com.sourcegraph.cody.listeners.CodyFileEditorListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
-        <!-- CodyFocusChangeListener is commented out since it doesn't seem possible to register a listener via plugin.xml.
-             We programmatically register a listener from CodyAgent instead. -->
-        <!--        <listener class="com.sourcegraph.cody.CodyFocusChangeListener"-->
-        <!--                  topic="com.intellij.openapi.editor.ex.FocusChangeListener"/>-->
     </applicationListeners>
 
     <actions>
@@ -244,12 +236,12 @@
         <!-- Inline editor actions -->
         <action id="cody.editCodeAction"
                 class="com.sourcegraph.cody.edit.EditCodeAction">
-                        <add-to-group group-id="CodyEditorActions" anchor="first"/>
+            <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 
         <action id="cody.documentCodeAction"
                 class="com.sourcegraph.cody.edit.DocumentCodeAction">
-                        <add-to-group group-id="CodyEditorActions" anchor="first"/>
+            <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 
         <action id="cody.enableInlineEditsActions"

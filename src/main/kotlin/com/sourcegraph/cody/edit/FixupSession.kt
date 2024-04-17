@@ -80,9 +80,7 @@ abstract class FixupSession(
   private fun triggerDocumentCodeAsync() {
     // Those lookups require us to be on the EDT.
     val file = FileDocumentManager.getInstance().getFile(document)
-    val fileEditorManager = FileEditorManager.getInstance(project)
-    val textFile =
-        file?.let { ProtocolTextDocument.fromVirtualFile(fileEditorManager, it) } ?: return
+    val textFile = file?.let { ProtocolTextDocument.fromVirtualFile(editor, it) } ?: return
 
     CodyAgentService.withAgent(project) { agent ->
       workAroundUninitializedCodebase()

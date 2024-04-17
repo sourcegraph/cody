@@ -2,7 +2,6 @@ package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.protocol.util.Rfc3986UriEncoder
 
@@ -33,14 +32,19 @@ private constructor(
     }
 
     @JvmStatic
-    @JvmOverloads
+    fun fromEditor(editor: Editor): ProtocolTextDocument? {
+      val file = FileDocumentManager.getInstance().getFile(editor.document)
+      return if (file != null) fromVirtualFile(editor, file) else null
+    }
+
+    @JvmStatic
     fun fromVirtualFile(
-        fileEditorManager: FileEditorManager,
+        editor: Editor,
         file: VirtualFile,
     ): ProtocolTextDocument {
       val rfc3986Uri = Rfc3986UriEncoder.encode(file.url)
       val text = FileDocumentManager.getInstance().getDocument(file)?.text
-      val selection = fileEditorManager.selectedTextEditor?.let { getSelection(it) }
+      val selection = getSelection(editor)
       return ProtocolTextDocument(rfc3986Uri, text, selection)
     }
   }

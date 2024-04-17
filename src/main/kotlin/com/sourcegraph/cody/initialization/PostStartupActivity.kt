@@ -1,12 +1,17 @@
 package com.sourcegraph.cody.initialization
 
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.sourcegraph.cody.CodyFocusChangeListener
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
 import com.sourcegraph.cody.config.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
+import com.sourcegraph.cody.listeners.CodyCaretListener
+import com.sourcegraph.cody.listeners.CodyDocumentListener
+import com.sourcegraph.cody.listeners.CodyFocusChangeListener
+import com.sourcegraph.cody.listeners.CodySelectionListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
@@ -27,7 +32,13 @@ class PostStartupActivity : StartupActivity.DumbAware {
     CheckUpdatesTask(project).queue()
     if (ConfigUtil.isCodyEnabled()) CodyAgentService.getInstance(project).startAgent(project)
     CodyStatusService.resetApplication(project)
-    CodyFocusChangeListener().runActivity(project)
     EndOfTrialNotificationScheduler.createAndStart(project)
+
+    val multicaster = EditorFactory.getInstance().eventMulticaster as EditorEventMulticasterEx
+    val disposable = CodyAgentService.getInstance(project)
+    multicaster.addFocusChangeListener(CodyFocusChangeListener(project), disposable)
+    multicaster.addCaretListener(CodyCaretListener(project), disposable)
+    multicaster.addSelectionListener(CodySelectionListener(project), disposable)
+    multicaster.addDocumentListener(CodyDocumentListener(project), disposable)
   }
 }

@@ -5,14 +5,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.CodyFileEditorListener
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
 import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -74,10 +73,7 @@ class CodyAgentService(project: Project) : Disposable {
 
       if (!project.isDisposed) {
         AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        fileEditorManager.openFiles.forEach { file ->
-          CodyFileEditorListener.fileOpened(fileEditorManager, agent, file)
-        }
+        CodyFileEditorListener.registerAllOpenedFiles(project, agent)
       }
     }
   }
