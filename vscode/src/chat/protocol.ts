@@ -216,7 +216,6 @@ export const defaultAuthStatus = {
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
-    showLoading: true,
     siteVersion: '',
     userCanUpgrade: false,
     username: '',

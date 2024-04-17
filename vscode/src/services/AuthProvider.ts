@@ -39,7 +39,7 @@ export class AuthProvider {
 
     private client: SourcegraphGraphQLAPIClient | null = null
 
-    private authStatus: AuthStatus = defaultAuthStatus
+    private authStatus: AuthStatus = { ...defaultAuthStatus, showLoading: true }
     private listeners: Set<Listener> = new Set()
 
     constructor(
