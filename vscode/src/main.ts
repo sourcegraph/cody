@@ -374,8 +374,8 @@ const register = async (
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (url, token) =>
-            authProvider.auth(url, token)
+        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
+            authProvider.auth({ endpoint, token })
         ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
@@ -392,7 +392,13 @@ const register = async (
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (await authProvider.auth(serverEndpoint, accessToken, customHeaders)).authStatus
+                return (
+                    await authProvider.auth({
+                        endpoint: serverEndpoint,
+                        token: accessToken,
+                        customHeaders,
+                    })
+                ).authStatus
             }
         ),
         // Chat
