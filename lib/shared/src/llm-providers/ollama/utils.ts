@@ -13,11 +13,9 @@ export async function fetchLocalOllamaModels(): Promise<ModelProvider[]> {
             data =>
                 data?.models?.map(
                     (m: { model: string }) =>
-                        new ModelProvider(
-                            `ollama/${m.model}`,
-                            [ModelUsage.Chat, ModelUsage.Edit],
-                            OLLAMA_DEFAULT_CONTEXT_WINDOW
-                        )
+                        new ModelProvider(`ollama/${m.model}`, [ModelUsage.Chat, ModelUsage.Edit], {
+                            input: OLLAMA_DEFAULT_CONTEXT_WINDOW,
+                        })
                 ),
             error => {
                 const fetchFailedErrors = ['Failed to fetch', 'fetch failed']

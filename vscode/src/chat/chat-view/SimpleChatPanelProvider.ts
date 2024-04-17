@@ -365,6 +365,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
         })
+        // Update the chat model providers again to ensure the correct token limit is set on ready
+        this.handleSetChatModel(this.chatModel.modelID)
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
@@ -453,7 +455,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext
-                        ? async (text, maxChars) =>
+                        ? async text =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
@@ -463,7 +465,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
                                       remoteSearch: this.remoteSearch,
                                   },
-                                  hints: { maxChars },
                                   contextRanking: this.contextRanking,
                               })
                         : undefined
@@ -601,11 +602,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (cancellation.token.isCancellationRequested) {
                 return
             }
+            const { input, context } = this.chatModel.contextWindow
             const userContextFiles = items.map(f => ({
                 ...f,
-                isTooLarge: f.size
-                    ? f.size < this.chatModel.tokenTracker.maxContextTokens.user
-                    : undefined,
+                isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
             }))
             void this.postMessage({
                 type: 'userContextFiles',
@@ -624,10 +624,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     public async handleGetUserEditorContext(): Promise<void> {
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
+        const { input, context } = this.chatModel.contextWindow
         const contextItems = selectionFiles.map(f => ({
             ...f,
             content: undefined,
-            isTooLarge: f.size ? f.size < this.chatModel.tokenTracker.maxContextTokens.user : undefined,
+            isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
         }))
         void this.postMessage({
             type: 'chat-input-context',

@@ -1,4 +1,4 @@
-import { ModelProvider, ModelUsage, TokenCounter } from '@sourcegraph/cody-shared'
+import { ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
 import { type ContextItem, type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
@@ -12,7 +12,9 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
-        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
+        ModelProvider.setProviders([
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
+        ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
@@ -46,7 +48,9 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        ModelProvider.setProviders([new ModelProvider('a-model-id', [ModelUsage.Chat], 100000)])
+        ModelProvider.setProviders([
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
+        ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
@@ -72,13 +76,20 @@ describe('DefaultPrompter', () => {
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const overallLimit = 1
-        const promptBuilder = new PromptBuilder(new TokenCounter(overallLimit))
+        const promptBuilder = new PromptBuilder({ input: 10 })
+        const preamble: Message[] = [{ speaker: 'system', text: ps`Hi!` }]
+        promptBuilder.tryAddToPrefix(preamble)
+        const transcript: Message[] = [
+            { speaker: 'human', text: ps`Hi!` },
+            { speaker: 'assistant', text: ps`Hi!` },
+        ]
+        promptBuilder.tryAddMessages([...transcript].reverse())
+
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
                 uri: vscode.Uri.file('/foo/bar'),
-                content: 'foobar',
+                content: 'This is a file that exceeds the token limit',
                 isTooLarge: true,
             },
         ]
@@ -93,6 +104,6 @@ describe('DefaultPrompter', () => {
         expect(used).toEqual([])
 
         const prompt = promptBuilder.build()
-        expect(prompt).toEqual([])
+        expect(prompt).toEqual([...preamble, ...transcript])
     })
 })

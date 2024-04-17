@@ -105,7 +105,12 @@ export const getInput = async (
 
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
-    let activeModelContextWindow = ModelProvider.getMaxTokenByID(activeModel)
+
+    const getContextWindowOnModelChange = (model: EditModel) => {
+        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
+    }
+    let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextItem>()
@@ -214,7 +219,7 @@ export const getInput = async (
                 editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
-                activeModelContextWindow = ModelProvider.getMaxTokenByID(activeModel)
+                activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
 
                 editInput.render(activeTitle, editInput.input.value)
             },
@@ -427,7 +432,8 @@ export const getInput = async (
                             selectedContextItems.delete(k)
                         }
                     }
-                    return size ? activeModelContextWindow - used < size : false
+                    const totalBudget = activeModelContextWindow
+                    return size ? totalBudget - used < size : false
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them

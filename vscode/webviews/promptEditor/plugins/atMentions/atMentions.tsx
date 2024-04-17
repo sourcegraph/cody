@@ -15,11 +15,10 @@ import {
     type ContextItem,
     ContextItemSource,
     type RangeData,
-    USER_CONTEXT_TOKEN_BUDGET,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import { FAST_CHAT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
@@ -99,13 +98,16 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
     const options = useMemo(() => {
-        const maxToken = useCurrentChatModel()?.maxRequestTokens ?? FAST_CHAT_TOKEN_BUDGET
-        const contextBudget = Math.min(maxToken, USER_CONTEXT_TOKEN_BUDGET)
+        const model = useCurrentChatModel()
+        const limit =
+            model?.contextWindow?.context?.user ||
+            model?.contextWindow?.input ||
+            FAST_CHAT_INPUT_TOKEN_BUDGET
         return (
             results
                 ?.map(r => {
                     if (r.size) {
-                        r.isTooLarge = r.size > contextBudget - tokenAdded
+                        r.isTooLarge = r.size > limit - tokenAdded
                     }
                     // All @-mentions should have a source of `User`.
                     r.source = ContextItemSource.User

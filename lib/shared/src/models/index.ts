@@ -1,6 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { CHAT_TOKEN_BUDGET, USER_CONTEXT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelUsage } from './types'
+import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
+import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -29,10 +29,10 @@ export class ModelProvider {
          */
         public readonly usage: ModelUsage[],
         /**
-         * The context window of the model, which is the maximum number of tokens
-         * that can be processed by the model in a single request.
+         * The default context window of the model reserved for Chat and Context.
+         * {@see TokenCounter on how the token usage is calculated.}
          */
-        public readonly maxRequestTokens = CHAT_TOKEN_BUDGET,
+        public readonly contextWindow: ModelContextWindow = { input: CHAT_INPUT_TOKEN_BUDGET },
         /**
          * The configuration for the model.
          */
@@ -117,21 +117,11 @@ export class ModelProvider {
     }
 
     /**
-     * Finds the model provider with the given model ID and returns its token limit.
-     * The limit is calculated based on the max number of tokens the model can process.
-     *
-     * NOTE: Currently, only 'claude-3' (except haiku) models have a higher token limit that includes user context tokens.
-     * For other models, the token limit is the same as the chat token budget, and is shared between chat and context.
+     * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public static getMaxTokenByID(modelID: string): number {
+    public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        const isModelWithHighBudget = ['claude-3-sonnet', 'claude-3-opus']
-        return (
-            model?.maxRequestTokens ??
-            (isModelWithHighBudget.some(m => modelID?.includes(m))
-                ? CHAT_TOKEN_BUDGET + USER_CONTEXT_TOKEN_BUDGET
-                : CHAT_TOKEN_BUDGET)
-        )
+        return model ? model.contextWindow : { input: CHAT_INPUT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

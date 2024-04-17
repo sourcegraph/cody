@@ -1,4 +1,4 @@
-import type { DEFAULT_DOT_COM_MODELS } from './dotcom'
+import type { ModelProvider } from '.'
 
 export enum ModelUsage {
     Chat = 'chat',
@@ -12,7 +12,7 @@ type HasUsage<T, I> = T extends { usage: readonly ModelUsage[] }
         : never
     : never
 
-type Models = typeof DEFAULT_DOT_COM_MODELS
+type Models = typeof ModelProvider
 
 /**
  * Available models for Edit.
@@ -37,3 +37,21 @@ export type ChatModel =
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
       }[keyof Models]['model']
     | (string & {})
+
+export interface ModelContextWindow {
+    /**
+     * The token limit reserved for chat input.
+     */
+    input: number
+    /**
+     * The additional tokens reserved for context.
+     * When not defined, context shares the same token limit as input.
+     */
+    context?: {
+        /**
+         * The token limit reserved for user-added context.
+         * Example: @-mentions.
+         */
+        user?: number
+    }
+}
