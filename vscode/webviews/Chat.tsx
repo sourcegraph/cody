@@ -9,6 +9,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Guardrails,
+    type TelemetryRecorder,
     type TelemetryService,
     isMacOS,
 } from '@sourcegraph/cody-shared'
@@ -36,6 +37,7 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
