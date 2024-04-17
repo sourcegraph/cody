@@ -27,7 +27,6 @@ import {
 } from './promptEditor/PromptEditor'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import { telemetryRecorder } from '../src/services/telemetry-v2'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
@@ -55,6 +54,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     telemetryService,
+    telemetryRecorder,
     isTranscriptError,
     chatEnabled,
     userInfo,
@@ -151,7 +151,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 },
             })
         },
-        [telemetryService, transcript, userInfo]
+        [telemetryService, transcript, userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
