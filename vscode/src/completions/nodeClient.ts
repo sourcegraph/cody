@@ -37,6 +37,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         signal?: AbortSignal
     ): Promise<void> {
         const url = new URL(this.completionsEndpoint)
+
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }

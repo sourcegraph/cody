@@ -2,15 +2,14 @@ import assert from 'node:assert'
 
 import { createPatch } from 'diff'
 
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
 import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import { Uri } from 'vscode'
+import type { Uri } from 'vscode'
 import {
     type MessageConnection,
     StreamMessageReader,
@@ -25,6 +24,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
+    AutocompleteResult,
     ClientInfo,
     CreateFileOperation,
     DebugMessage,
@@ -42,6 +42,7 @@ import type {
     WebviewPostMessageParams,
     WorkspaceEditParams,
 } from './protocol-alias'
+import type { TestingToken } from './testing-tokens'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -66,18 +67,38 @@ export function getAgentDir(): string {
 }
 
 interface TestClientParams {
+    readonly workspaceRootUri: vscode.Uri
     readonly name: string
-    readonly accessToken?: string
+    readonly token: TestingToken
     bin?: string
-    serverEndpoint?: string
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
     areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
     logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
+    extraConfiguration?: Record<string, any>
+}
+
+let isBuilt = false
+function buildAgentBinary(): void {
+    if (isBuilt) {
+        return
+    }
+    isBuilt = true
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    //
+    // ! If this line fails when running unit tests, chances are that the error is being swallowed.
+    // To see the full error, run this file in isolation:
+    //
+    //   pnpm test agent/src/index.test.ts
+    execSync('pnpm run build:agent', {
+        cwd: getAgentDir(),
+        stdio: 'inherit',
+    })
 }
 
 export class TestClient extends MessageHandler {
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
+        buildAgentBinary()
         const agentDir = getAgentDir()
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
@@ -90,10 +111,12 @@ export class TestClient extends MessageHandler {
             env: {
                 CODY_SHIM_TESTING: 'true',
                 CODY_TEMPERATURE_ZERO: 'true',
+                CODY_DISABLE_FASTPATH: 'true', // Fastpass has custom bearer tokens that are difficult to record with Polly
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: params.name,
-                SRC_ACCESS_TOKEN: params.accessToken,
+                SRC_ACCESS_TOKEN: params.token.production,
+                REDACTED_SRC_ACCESS_TOKEN: params.token.redacted,
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
@@ -123,23 +146,26 @@ export class TestClient extends MessageHandler {
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
     public readonly name: string
-    public readonly serverEndpoint: string
-    public readonly accessToken?: string
     public workspace = new AgentWorkspaceDocuments()
     public workspaceEditParams: WorkspaceEditParams[] = []
 
+    get serverEndpoint(): string {
+        return this.params.token.serverEndpoint
+    }
+    get completionProvider(): string {
+        return this.params?.extraConfiguration?.['cody.autocomplete.advanced.provider'] ?? ''
+    }
+    get completionModel(): string {
+        return this.params?.extraConfiguration?.['cody.autocomplete.advanced.model'] ?? ''
+    }
+
     private constructor(
         conn: MessageConnection,
-        public readonly params: Pick<
-            TestClientParams,
-            'name' | 'serverEndpoint' | 'accessToken' | 'onWindowRequest'
-        >
+        public readonly params: TestClientParams
     ) {
         super(conn)
-        this.serverEndpoint = params.serverEndpoint ?? 'https://sourcegraph.com'
 
         this.name = params.name
-        this.accessToken = params.accessToken
         this.info = this.getClientInfo()
 
         this.registerNotification('progress/start', message => {
@@ -329,9 +355,10 @@ export class TestClient extends MessageHandler {
     ): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
+
     public changeFile(
         uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
+        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
     ): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didChange', params)
     }
@@ -339,12 +366,14 @@ export class TestClient extends MessageHandler {
     public async textDocumentEvent(
         uri: Uri,
         method: NotificationMethodName,
-        params?: { selectionName?: string; removeCursor?: boolean }
+        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
     ): Promise<void> {
         const selectionName = params?.selectionName ?? 'SELECTION'
-        let content: string = (await doesFileExist(uri))
-            ? await fspromises.readFile(uri.fsPath, 'utf8')
-            : ''
+        let content: string = params?.text
+            ? params.text
+            : (await doesFileExist(uri))
+              ? await fspromises.readFile(uri.fsPath, 'utf8')
+              : ''
         const selectionStartMarker = `/* ${selectionName}_START */`
         const selectionStart = content.indexOf(selectionStartMarker)
         const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
@@ -371,7 +400,28 @@ export class TestClient extends MessageHandler {
             selection: start && end ? { start, end } : undefined,
         }
         this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
+    }
+
+    public async autocompleteText(): Promise<string[]> {
+        const result = await this.autocomplete()
+        return result.items.map(item => item.insertText)
+    }
+    public autocomplete(): Promise<AutocompleteResult> {
+        if (!this.workspace.activeDocumentFilePath) {
+            throw new Error('No active document')
+        }
+        const document = this.workspace.getDocument(this.workspace.activeDocumentFilePath)
+        const position = document?.protocolDocument?.selection?.start
+        if (position === undefined) {
+            throw new Error('No cursor position')
+        }
+        return this.request('autocomplete/execute', {
+            uri: this.workspace.activeDocumentFilePath.toString(),
+            position,
+            triggerKind: 'Invoke',
+        })
     }
 
     private progressID(id: string): string {
@@ -495,6 +545,9 @@ export class TestClient extends MessageHandler {
         this.registerNotification('webview/postMessage', params => {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
+        })
+        this.registerNotification('remoteRepo/didChange', () => {
+            // Do nothing
         })
 
         this.conn.listen()
@@ -707,13 +760,11 @@ ${patch}`
     }
 
     private getClientInfo(): ClientInfo {
-        const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
-
         return {
             name: this.name,
             version: 'v1',
-            workspaceRootUri: workspaceRootUri.toString(),
-            workspaceRootPath: workspaceRootUri.fsPath,
+            workspaceRootUri: this.params.workspaceRootUri.toString(),
+            workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
                 progressBars: 'enabled',
                 edit: 'enabled',
@@ -726,14 +777,13 @@ ${patch}`
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
-                accessToken: this.accessToken ?? 'sgp_RRRRRRRREEEEEEEDDDDDDAAACCCCCTEEEEEEEDDD',
-                serverEndpoint: this.serverEndpoint,
+                accessToken: this.params.token.production ?? this.params.token.redacted,
+                serverEndpoint: this.params.token.serverEndpoint,
                 customHeaders: {},
-                autocompleteAdvancedProvider: 'anthropic',
                 customConfiguration: {
-                    'cody.autocomplete.experimental.graphContext': null,
                     // For testing .cody/ignore
                     'cody.internal.unstable': true,
+                    ...this.params.extraConfiguration,
                 },
                 debug: false,
                 verboseDebug: false,

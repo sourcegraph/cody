@@ -97,15 +97,22 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             },
         ]
 
-        while (vscode_shim.visibleTextEditors.length > 0) {
-            vscode_shim.visibleTextEditors.pop()
-        }
+        this.popAll(vscode_shim.visibleTextEditors)
+        this.popAll(vscode_shim.workspaceTextDocuments)
+
         for (const document of this.allDocuments()) {
+            vscode_shim.workspaceTextDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
         return agentDocument
+    }
+
+    private popAll(array: unknown[]): void {
+        while (array.length > 0) {
+            array.pop()
+        }
     }
 
     public deleteDocument(uri: vscode.Uri): void {

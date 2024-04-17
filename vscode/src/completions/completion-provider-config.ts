@@ -62,19 +62,24 @@ class CompletionProviderConfig {
         const bfgMixedContextFlag = this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
 
         const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'bfg'
-                ? 'bfg'
-                : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                  ? 'bfg-mixed'
-                  : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                      ? 'local-mixed'
-                      : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                          ? 'jaccard-similarity'
-                          : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
-                              ? 'new-jaccard-similarity'
-                              : bfgMixedContextFlag
-                                  ? 'bfg-mixed'
-                                  : 'jaccard-similarity'
+            config.autocompleteExperimentalGraphContext === 'tsc-mixed'
+                ? 'tsc-mixed'
+                : config.autocompleteExperimentalGraphContext === 'tsc'
+                  ? 'tsc'
+                  : config.autocompleteExperimentalGraphContext === 'bfg'
+                      ? 'bfg'
+                      : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
+                          ? 'bfg-mixed'
+                          : config.autocompleteExperimentalGraphContext === 'local-mixed'
+                              ? 'local-mixed'
+                              : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
+                                  ? 'jaccard-similarity'
+                                  : config.autocompleteExperimentalGraphContext ===
+                                          'new-jaccard-similarity'
+                                      ? 'new-jaccard-similarity'
+                                      : bfgMixedContextFlag
+                                          ? 'bfg-mixed'
+                                          : 'jaccard-similarity'
 
         return contextStrategy
     }

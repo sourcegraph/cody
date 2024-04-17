@@ -1,17 +1,16 @@
 import assert from 'node:assert'
-import { execSync, spawnSync } from 'node:child_process'
-import fspromises from 'node:fs/promises'
-import os from 'node:os'
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
+import { DOTCOM_URL, ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
-import { TestClient, asTranscriptMessage, getAgentDir } from './TestClient'
+import { TestClient, asTranscriptMessage } from './TestClient'
+import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import type {
     CustomChatCommandResult,
@@ -19,8 +18,11 @@ import type {
     EditTask,
     Requests,
 } from './protocol-alias'
+import { TESTING_TOKENS } from './testing-tokens'
+import { trimEndOfLine } from './trimEndOfLine'
 
 const explainPollyError = `
+                console.error(error)
 
     ===================================================[ NOTICE ]=======================================================
     If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
@@ -40,62 +42,26 @@ const explainPollyError = `
 
     `
 
-const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
-const workspaceRootPath = workspaceRootUri.fsPath
+const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
-    const dotcom = 'https://sourcegraph.com'
-    if (mayRecord) {
-        execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(
-            process.env.SRC_ENDPOINT,
-            dotcom,
-            'SRC_ENDPOINT must be https://sourcegraph.com'
-        )
-    }
-
-    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
-        it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
-        return
-    }
-
-    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    //
-    // ⚠️ If this line fails when running unit tests, chances are that the error is being swallowed.
-    // To see the full error, run this file in isolation:
-    //
-    //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', {
-        cwd: getAgentDir(),
-        stdio: 'inherit',
-    })
-
     const client = TestClient.create({
+        workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        // The redacted ID below is copy-pasted from the recording file and
-        // needs to be updated whenever we change the underlying access token.
-        // We can't return a random string here because then Polly won't be able
-        // to associate the HTTP requests between record mode and replay mode.
-        accessToken:
-            process.env.SRC_ACCESS_TOKEN ??
-            'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
+        token: TESTING_TOKENS.dotcom,
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, {
-            recursive: true,
-        })
+        await workspace.beforeAll()
 
         // Init a repo in the workspace to make the tree-walk repo-name resolver work for Cody Ignore tests.
-        spawnSync('git', ['init'], { cwd: workspaceRootPath, stdio: 'inherit' })
+        spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
         spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
-            cwd: workspaceRootPath,
+            cwd: workspace.rootPath,
             stdio: 'inherit',
         })
 
@@ -113,14 +79,14 @@ describe('Agent', () => {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
-            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Confirm .cody/ignore is active at start up
         const ignore = await client.request('ignore/test', {
-            uri: URI.file(ignoredPath).toString(),
+            uri: URI.file(ignoredUri.fsPath).toString(),
         })
         // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
         expect(ignore.policy).toBe('use')
@@ -130,18 +96,13 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
-    const sumUri = vscode.Uri.file(sumPath)
-    const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const animalUri = vscode.Uri.file(animalPath)
-    const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
-    const squirrelUri = vscode.Uri.file(squirrelPath)
-    const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
-    const multipleSelectionsUri = vscode.Uri.file(multipleSelections)
+    const sumUri = workspace.file('src', 'sum.ts')
+    const animalUri = workspace.file('src', 'animal.ts')
+    const squirrelUri = workspace.file('src', 'squirrel.ts')
+    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-    const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
-    const ignoredUri = vscode.Uri.file(ignoredPath)
+    const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -162,7 +123,7 @@ describe('Agent', () => {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
-            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
@@ -191,10 +152,10 @@ describe('Agent', () => {
             expect(completions.items.length).toBeGreaterThan(0)
             expect(texts).toMatchInlineSnapshot(
                 `
-          [
-            "   return a + b;",
-          ]
-        `
+              [
+                "   return a + b;",
+              ]
+            `
             )
             client.notify('autocomplete/completionAccepted', {
                 completionID: completions.items[0].id,
@@ -550,7 +511,7 @@ describe('Agent', () => {
     describe.skip('Cody Ignore', () => {
         beforeAll(async () => {
             // Make sure Cody ignore config exists and works
-            const codyIgnoreConfig = vscode.Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            const codyIgnoreConfig = workspace.file('.cody', 'ignore')
             await client.openFile(codyIgnoreConfig)
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
@@ -651,9 +612,9 @@ describe('Agent', () => {
         })
 
         it('ignore rule is not case sensitive', async () => {
-            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
+            const alsoIgnored = workspace.file('src', 'is_ignored.ts')
             const result = await client.request('ignore/test', {
-                uri: URI.file(alsoIgnoredPath).toString(),
+                uri: URI.file(alsoIgnored.fsPath).toString(),
             })
             expect(result.policy).toBe('ignore')
         })
@@ -737,7 +698,7 @@ describe('Agent', () => {
                 await documentClient.request('command/execute', {
                     command: 'cody.search.index-update',
                 })
-                const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
+                const uri = workspace.file('src', filename)
                 await documentClient.openFile(uri, { removeCursor: false })
                 const task = await documentClient.request(command, param)
                 await documentClient.taskHasReachedAppliedPhase(task)
@@ -940,8 +901,7 @@ describe('Agent', () => {
         }, 30_000)
 
         it('editCommand/test', async () => {
-            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
-            const uri = vscode.Uri.file(trickyLogicPath)
+            const uri = workspace.file('src', 'trickyLogic.ts')
 
             await client.openFile(uri)
             const id = await client.request('editCommands/test', null)
@@ -1149,8 +1109,7 @@ describe('Agent', () => {
             // Note: The test editor has all the files opened from previous tests as open tabs,
             // so we will need to open a new file that has not been opened before,
             // to make sure this context type is working.
-            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
-            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            const trickyLogicUri = workspace.file('src', 'trickyLogic.ts')
             await client.openFile(trickyLogicUri)
 
             const result = (await client.request('commands/custom', {
@@ -1409,11 +1368,9 @@ describe('Agent', () => {
 
     describe('RateLimitedAgent', () => {
         const rateLimitedClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
-            accessToken:
-                process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5',
+            token: TESTING_TOKENS.dotcomProUserRateLimited,
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
@@ -1438,12 +1395,10 @@ describe('Agent', () => {
 
     describe('Enterprise', () => {
         const demoEnterpriseClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'enterpriseClient',
-            accessToken:
-                process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
-            serverEndpoint: 'https://demo.sourcegraph.com',
+            token: TESTING_TOKENS.enterprise,
+            telemetryExporter: 'graphql',
             logEventMode: 'connected-instance-only',
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1606,12 +1561,10 @@ describe('Agent', () => {
     // Use this section if you need to run against S2 which is released continuously.
     describe('Enterprise - close main branch', () => {
         const s2EnterpriseClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'enterpriseMainBranchClient',
-            accessToken:
-                process.env.SRC_S2_ACCESS_TOKEN ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
-            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
+            token: TESTING_TOKENS.s2,
+            telemetryExporter: 'graphql',
             logEventMode: 'connected-instance-only',
         })
 
@@ -1731,21 +1684,8 @@ describe('Agent', () => {
     })
 
     afterAll(async () => {
-        await fspromises.rm(workspaceRootPath, {
-            recursive: true,
-            force: true,
-        })
+        await workspace.afterAll()
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 30_000)
 })
-
-function trimEndOfLine(text: string | undefined): string {
-    if (text === undefined) {
-        return ''
-    }
-    return text
-        .split('\n')
-        .map(line => line.trimEnd())
-        .join('\n')
-}

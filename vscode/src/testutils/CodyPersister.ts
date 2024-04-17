@@ -11,11 +11,25 @@ import { PollyYamlWriter } from './pollyapi'
  * remains uniquely identifyable. The token needs to be uniquely identifiable so
  * that we can correctly replay HTTP responses based on the access token.
  */
-export function redactAccessToken(token: string): string {
-    if (token.startsWith('token REDACTED_')) {
-        return token
+export function redactAuthorizationHeader(header: string): string {
+    if (header.startsWith('Bearer REDACTED_')) {
+        return header
     }
-    return `token REDACTED_${sha256(`prefix${token}`)}`
+    if (header.startsWith('token REDACTED_')) {
+        return header
+    }
+
+    if (header.startsWith('Bearer ')) {
+        console.log({ token: header })
+        // Return the same redacted token as non-bearer tokens.
+        return `Bearer REDACTED_${process.env.REDACTED_SRC_ACCESS_TOKEN}`
+    }
+
+    if (!header.startsWith('token')) {
+        throw new Error(`Unexpected access token format: ${header}`)
+    }
+
+    return `token REDACTED_${sha256(`prefix${header}`)}`
 }
 
 function sha256(input: string): string {
@@ -87,7 +101,7 @@ export class CodyPersister extends FSPersister {
             for (const header of headers) {
                 switch (header.name) {
                     case 'authorization':
-                        header.value = redactAccessToken(header.value)
+                        header.value = redactAuthorizationHeader(header.value)
                         break
                     // We should not harcode the dates to minimize diffs because
                     // that breaks the expiration feature in Polly.

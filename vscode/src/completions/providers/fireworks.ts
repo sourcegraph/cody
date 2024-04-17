@@ -146,6 +146,7 @@ class FireworksProvider extends Provider {
             config.accessToken &&
             // Require the upstream to be dotcom
             (this.authStatus.isDotCom || this.isLocalInstance) &&
+            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
