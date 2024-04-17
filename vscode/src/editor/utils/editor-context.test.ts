@@ -170,7 +170,7 @@ describe('filterContextItemFiles', () => {
         expect(filtered[0]).toEqual<ContextItem>({
             type: 'file',
             uri: largeTextFile.uri,
-            size: Math.floor(fsSizeInBytes / 4.5),
+            size: Math.floor(fsSizeInBytes / 3.5),
         })
     })
 })

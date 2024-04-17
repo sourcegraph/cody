@@ -19,7 +19,7 @@ import { sortContextItems } from './agentContextSorting'
 interface PromptInfo {
     prompt: Message[]
     newContextUsed: ContextItem[]
-    newContextIgnored?: ContextItem[]
+    newContextIgnored: ContextItem[]
 }
 
 export interface IPrompter {
@@ -42,7 +42,7 @@ export class DefaultPrompter implements IPrompter {
     ): Promise<{
         prompt: Message[]
         newContextUsed: ContextItem[]
-        newContextIgnored?: ContextItem[]
+        newContextIgnored: ContextItem[]
     }> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.contextWindow)

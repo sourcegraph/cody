@@ -810,7 +810,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...newContextUsed, ...(newContextIgnored ?? [])])
+        this.chatModel.setLastMessageContext([...newContextUsed, ...newContextIgnored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -826,7 +826,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     contextSummary[source] = 1
                 }
             }
-            sendTelemetry(contextSummary)
+
+            // Log the size of all user context items (e.g., @-mentions)
+            // Includes the count of files and the size of each file
+            const getContextStats = (files: ContextItem[]) =>
+                files.length && {
+                    countFiles: files.length,
+                    fileSizes: files.map(f => f.size).filter(isDefined),
+                }
+            const userContextSummary = {
+                included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
+                excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
+            }
+
+            sendTelemetry({ ...contextSummary, userContextSummary })
         }
 
         return prompt
