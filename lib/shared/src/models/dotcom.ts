@@ -93,8 +93,8 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
-        title: 'Mixtral 8x22B Preview',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview',
+        title: 'Mixtral 8x22B',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
