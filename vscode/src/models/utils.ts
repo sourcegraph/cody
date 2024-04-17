@@ -1,4 +1,5 @@
 import {
+    ANSWER_TOKENS,
     type AuthStatus,
     DEFAULT_DOT_COM_MODELS,
     ModelProvider,
@@ -40,7 +41,12 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                tokenLimit
+                tokenLimit,
+                // TODO: Currently all enterprise models have a max output limit of 1000.
+                // We need to support configuring the maximum output limit at an instance level.
+                // This will allow us to increase this limit whilst still supporting models with a lower output limit.
+                // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
+                ANSWER_TOKENS
             ),
         ])
     }
@@ -51,7 +57,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
 interface ChatModelProviderConfig {
     provider: string
     model: string
-    tokens?: number
+    inputTokens?: number
+    outputTokens?: number
     apiKey?: string
     apiEndpoint?: string
 }
@@ -76,7 +83,8 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
         const provider = new ModelProvider(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
-            m.tokens,
+            m.inputTokens,
+            m.outputTokens,
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
         provider.codyProOnly = true

@@ -1455,7 +1455,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ef5234522e454c575531f6d781c32dfc
+    - _id: 44822af7cb818817f4ec0b3d178a9464
       _order: 0
       cache: {}
       request:
@@ -1480,7 +1480,7 @@ log:
           mimeType: application/json
           params: []
           textJSON:
-            maxTokensToSample: 1000
+            maxTokensToSample: 4000
             messages:
               - speaker: human
                 text: >-
@@ -1560,10 +1560,10 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 8364
+        bodySize: 5803
         content:
           mimeType: text/event-stream
-          size: 8364
+          size: 5803
           text: >+
             event: completion
 
@@ -1572,227 +1572,192 @@ log:
 
             event: completion
 
-            data: {"completion":"\n/**\n *","stopReason":""}
+            data: {"completion":"\n/**\n*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test","stopReason":""}
+            data: {"completion":"\n/**\n* Test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block","stopReason":""}
+            data: {"completion":"\n/**\n* Test block","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n *","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * -","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something an","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true ===","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n *","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * -","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n*","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* -","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else an","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true ===","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true ","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n *","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * -","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance.now","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance.now\n*/","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that","stopReason":""}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance.now\n*/\n","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure performance incorrectly","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure performance incorrectly\n*/","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure performance incorrectly\n*/\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n/**\n * Test block that contains three tests:\n * - Test that does something and expects true === true\n * - Another test that does something else and expects true === true \n * - Test that attempts to measure performance incorrectly\n*/\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n* Test block that runs 3 test cases:\n* - Case 1 tests something passes\n* - Case 2 tests something else passes \n* - Case 3 tests usage of performance.now\n*/\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -1802,7 +1767,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 12 Apr 2024 15:45:47 GMT
+            value: Tue, 16 Apr 2024 16:03:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1831,7 +1796,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-12T15:45:45.032Z
+      startedDateTime: 2024-04-16T16:03:35.589Z
       time: 0
       timings:
         blocked: -1

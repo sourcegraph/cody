@@ -46,7 +46,8 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getMaxCharsByModel(model)
+            const authStatus = this.config.authProvider.getAuthStatus()
+            const contextWindow = ModelProvider.getMaxInputCharsByModel(model)
             const {
                 messages,
                 stopSequences,
@@ -54,7 +55,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
+                codyApiVersion: authStatus.codyApiVersion,
                 contextWindow,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -115,7 +116,11 @@ export class EditProvider {
             const abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: ModelProvider.getMaxOutputTokensByModel(model),
+                },
                 abortController.signal
             )
 

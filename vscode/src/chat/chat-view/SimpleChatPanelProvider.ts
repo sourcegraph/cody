@@ -592,10 +592,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         // Use the number of characters left in the chat model as the limit
         // for adding user context files to the chat.
+        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
+              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            maxInputChars
         )
 
         try {
@@ -624,10 +627,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(): Promise<void> {
+        const maxInputChars = this.authProvider.getAuthStatus().isDotCom
+            ? this.chatModel.maxInputChars
+            : // Minus the character limit reserved for the answer token
+              this.chatModel.maxInputChars - tokensToChars(ANSWER_TOKENS)
         const contextLimit = getContextWindowLimitInBytes(
             [...this.chatModel.getMessages()],
-            // Minus the character limit reserved for the answer token
-            this.chatModel.maxChars - tokensToChars(ANSWER_TOKENS)
+            maxInputChars
         )
         const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
         await this.postMessage({
@@ -807,7 +813,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion,
-            ModelProvider.getMaxCharsByModel(this.chatModel.modelID)
+            ModelProvider.getMaxInputCharsByModel(this.chatModel.modelID)
         )
 
         // Update UI based on prompt construction
@@ -917,7 +923,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID },
+                {
+                    model: this.chatModel.modelID,
+                    maxTokensToSample: this.chatModel.maxOutputTokens,
+                },
                 abortController.signal
             )
 
