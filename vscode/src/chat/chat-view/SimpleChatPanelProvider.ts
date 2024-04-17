@@ -983,7 +983,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
                 'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID },
+                { ...codeCount, requestID, chatModel: this.chatModel.modelID },
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
@@ -1000,6 +1000,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an aditional safegaurd measure
                     responseText:
                         authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
+                    chatModel: this.chatModel.modelID,
                 },
             })
         }
