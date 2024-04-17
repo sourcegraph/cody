@@ -113,28 +113,36 @@ export function delint(sourceFile: ts.SourceFile, ranges: Range[] | null) {
 
 const fileNames = process.argv.slice(2)
 for (const row of fileNames) {
-    const [fileName, rawRanges] = row.split(':')
+    try {
+        const [fileName, rawRanges] = row.split(':')
 
-    const rangeStrings = rawRanges.split(',')
-    let ranges: Range[] | null = null
-    for (const rangeString of rangeStrings) {
-        const [start, end] = rangeString.split('-')
-        if (ranges === null) {
-            ranges = []
+        const rangeStrings = rawRanges.split(',')
+        let ranges: Range[] | null = null
+        for (const rangeString of rangeStrings) {
+            const [start, end] = rangeString.split('-')
+            if (ranges === null) {
+                ranges = []
+            }
+            ranges.push({ start: parseInt(start), end: parseInt(end) })
         }
-        ranges.push({ start: parseInt(start), end: parseInt(end) })
+
+        // Parse a file
+        const sourceFile = ts.createSourceFile(
+            fileName,
+            readFileSync(fileName).toString(),
+            ts.ScriptTarget.ES2015, // TODO: is this the right script target?
+            /*setParentNodes */ true
+        )
+
+        // delint it
+        delint(sourceFile, ranges)
+    } catch (error) {
+        if ('code' in error && error.code === 'ENOENT') {
+            continue
+        }
+
+        throw error
     }
-
-    // Parse a file
-    const sourceFile = ts.createSourceFile(
-        fileName,
-        readFileSync(fileName).toString(),
-        ts.ScriptTarget.ES2015, // TODO: is this the right script target?
-        /*setParentNodes */ true
-    )
-
-    // delint it
-    delint(sourceFile, ranges)
 }
 
 if (didEncounterAnError) {
