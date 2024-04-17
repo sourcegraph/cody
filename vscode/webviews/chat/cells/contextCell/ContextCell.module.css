@@ -52,6 +52,4 @@
 
 .file-link {
     padding: 2px 4px 2px 2px;
-    background-color: var(--vscode-list-activeSelectionBackground);
-    border-radius: 2px;
 }

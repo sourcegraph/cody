@@ -1,7 +1,9 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
+import classNames from 'classnames'
 import type React from 'react'
 import { FileLink } from '../../../Components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
+import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMentionNode'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
@@ -100,7 +102,7 @@ export const ContextCell: React.FunctionComponent<{
                                     isTooLarge={
                                         item.type === 'file' && item.isTooLarge && item.source === 'user'
                                     }
-                                    className={styles.fileLink}
+                                    className={classNames(styles.fileLink, MENTION_CLASS_NAME)}
                                 />
                             </li>
                         ))}

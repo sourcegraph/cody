@@ -22,6 +22,8 @@ import {
 } from 'lexical'
 import { URI } from 'vscode-uri'
 
+export const MENTION_CLASS_NAME = styles.contextItemMentionNode
+
 /**
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
