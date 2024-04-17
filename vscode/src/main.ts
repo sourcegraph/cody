@@ -164,10 +164,7 @@ const register = async (
         })
     )
 
-    // Don't wait for this promise to resolve as it's not critical to extension startup.
-    // Doing so will prevent the loading screen from showing. We're just firing of this
-    // event so that at some point the auth status will resolve.
-    void authProvider.init()
+    await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()

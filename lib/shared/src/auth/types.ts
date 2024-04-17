@@ -18,7 +18,6 @@ export interface AuthStatus {
     codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
-    showLoading?: boolean
     primaryEmail: string
     displayName?: string
     avatarURL: string

@@ -264,11 +264,6 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus) {
-            if (authStatus?.showLoading) {
-                statusBarItem.text = '$(loading~spin)'
-                statusBarItem.tooltip = 'Cody is loading'
-                return
-            }
             if (authStatus.showNetworkError) {
                 statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
                 statusBarItem.tooltip = 'Resolve network issues for Cody to work again'

@@ -227,7 +227,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     // Wait for all the data to be loaded before rendering Chat View
-    if (!view || !authStatus || !config || authStatus.showLoading) {
+    if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
 
