@@ -11,7 +11,6 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
-    MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
     PromptString,
@@ -26,6 +25,7 @@ import {
     isRateLimitError,
     reformatBotMessageForChat,
     serializeChatMessage,
+    truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -431,8 +431,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
                     promptText:
-                        authStatus.isDotCom &&
-                        inputText.toString().substring(0, CHAT_INPUT_TOKEN_BUDGET),
+                        authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 },
             })
 
@@ -501,7 +500,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                             // the condition below is an additional safeguard measure
                             promptText:
                                 authStatus.isDotCom &&
-                                inputText.toString().substring(0, MAX_BYTES_PER_FILE),
+                                inputText.toString().substring(0, CHAT_INPUT_TOKEN_BUDGET),
                         },
                     })
                 }
@@ -1011,7 +1010,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an aditional safegaurd measure
                     responseText:
                         authStatus.isDotCom &&
-                        messageText.toString().substring(0, CHAT_OUTPUT_TOKEN_BUDGET),
+                        truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
                     chatModel: this.chatModel.modelID,
                 },
             })
