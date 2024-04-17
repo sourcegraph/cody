@@ -115,7 +115,11 @@ export class EditProvider {
             const abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: contextWindow.output,
+                },
                 abortController.signal
             )
 

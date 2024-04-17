@@ -19,7 +19,6 @@ import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
     public contextWindow: ModelContextWindow
-
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],

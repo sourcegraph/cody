@@ -9,13 +9,13 @@ describe('PromptBuilder', () => {
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
     describe('tryAddMessages', () => {
         it('throws error when tryAddMessages before tryAddPrefix', () => {
-            const builder = new PromptBuilder({ input: 100 })
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
             expect(() => builder.tryAddMessages(transcript.reverse())).toThrowError()
         })
 
         it('adds single valid transcript', () => {
-            const builder = new PromptBuilder({ input: 100 })
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages(transcript.reverse())
@@ -26,7 +26,7 @@ describe('PromptBuilder', () => {
         })
 
         it('throw on transcript starts with assistant', () => {
-            const builder = new PromptBuilder({ input: 100 })
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'assistant', text: ps`Hi!` }]
             builder.tryAddToPrefix(preamble)
             expect(() => {
@@ -35,7 +35,7 @@ describe('PromptBuilder', () => {
         })
 
         it('adds valid transcript in reverse order', () => {
-            const builder = new PromptBuilder({ input: 1000 })
+            const builder = new PromptBuilder({ input: 1000, output: 100 })
             const transcript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi assistant!` },
                 { speaker: 'assistant', text: ps`Hello there!` },
@@ -54,7 +54,7 @@ describe('PromptBuilder', () => {
         })
 
         it('throws on consecutive speakers order', () => {
-            const builder = new PromptBuilder({ input: 1000 })
+            const builder = new PromptBuilder({ input: 1000, output: 100 })
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi there!` },
                 { speaker: 'human', text: ps`Hello there!` },
@@ -68,7 +68,7 @@ describe('PromptBuilder', () => {
         })
 
         it('throws on transcript with human speakers only', () => {
-            const builder = new PromptBuilder({ input: 1000 })
+            const builder = new PromptBuilder({ input: 1000, output: 100 })
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`1` },
                 { speaker: 'human', text: ps`2` },
@@ -82,7 +82,7 @@ describe('PromptBuilder', () => {
         })
 
         it('stops adding message-pairs when limit has been reached', () => {
-            const builder = new PromptBuilder({ input: 20 })
+            const builder = new PromptBuilder({ input: 20, output: 100 })
             builder.tryAddToPrefix(preamble)
             const longTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi assistant!` },
@@ -104,7 +104,7 @@ describe('PromptBuilder', () => {
 
     describe('tryAddMessages', () => {
         it('throws error when trying to add Enhanced Context before chat input', () => {
-            const builder = new PromptBuilder({ input: 100 })
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             const file: ContextItem = {
                 type: 'file',
@@ -117,7 +117,7 @@ describe('PromptBuilder', () => {
         })
 
         it('throws error when trying to add User Context before chat input', () => {
-            const builder = new PromptBuilder({ input: 100 })
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             const file: ContextItem = {
                 type: 'file',

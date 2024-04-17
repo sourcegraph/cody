@@ -6,6 +6,7 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    ContextItemSource,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
@@ -402,6 +403,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         command?: DefaultChatCommands
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            span.setAttribute('sampled', true)
+
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -429,8 +432,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-                span.setAttribute('sampled', true)
-
                 if (inputText.toString().match(/^\/reset$/)) {
                     span.addEvent('clearAndRestartSession')
                     span.end()
@@ -476,6 +477,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         traceId: span.spanContext().traceId,
                     }
                     span.setAttributes(properties)
+                    firstTokenSpan.setAttributes(properties)
 
                     telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
                         hasV2Event: true,
@@ -629,6 +631,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             ...f,
             content: undefined,
             isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
+            source: ContextItemSource.User,
         }))
         void this.postMessage({
             type: 'chat-input-context',
@@ -912,7 +915,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         try {
             const stream = this.chatClient.chat(
                 prompt,
-                { model: this.chatModel.modelID },
+                {
+                    model: this.chatModel.modelID,
+                    maxTokensToSample: this.chatModel.contextWindow.output,
+                },
                 abortController.signal
             )
 
@@ -969,7 +975,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // const metadata = lastInteraction?.getHumanMessage().metadata
             telemetryService.log(
                 'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID },
+                { ...codeCount, requestID, chatModel: this.chatModel.modelID },
                 { hasV2Event: true }
             )
             telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
@@ -986,6 +992,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an aditional safegaurd measure
                     responseText:
                         authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
+                    chatModel: this.chatModel.modelID,
                 },
             })
         }

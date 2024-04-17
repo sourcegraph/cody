@@ -13,7 +13,7 @@ describe('DefaultPrompter', () => {
 
     it('constructs a prompt with no context', async () => {
         ModelProvider.setProviders([
-            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
@@ -49,7 +49,7 @@ describe('DefaultPrompter', () => {
         }))
 
         ModelProvider.setProviders([
-            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000 }),
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
@@ -76,7 +76,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const promptBuilder = new PromptBuilder({ input: 10 })
+        const promptBuilder = new PromptBuilder({ input: 10, output: 100 })
         const preamble: Message[] = [{ speaker: 'system', text: ps`Hi!` }]
         promptBuilder.tryAddToPrefix(preamble)
         const transcript: Message[] = [

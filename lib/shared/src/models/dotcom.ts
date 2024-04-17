@@ -1,10 +1,11 @@
 import type { ModelProvider } from '.'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
     EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
-    FAST_CHAT_INPUT_TOKEN_BUDGET,
 } from '../token/constants'
+
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
@@ -16,7 +17,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 2.1',
@@ -25,7 +26,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude Instant',
@@ -34,7 +35,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: FAST_CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Haiku',
@@ -43,7 +44,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Sonnet',
@@ -52,7 +53,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Opus',
@@ -61,7 +62,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -70,7 +71,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: FAST_CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-4 Turbo',
@@ -79,7 +80,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -89,7 +90,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Mixtral 8x22B Preview',
@@ -98,8 +99,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
-        contextWindow: { input: 1800 },
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
 ]
 
@@ -132,6 +132,7 @@ export function getDotComDefaultModels(modelType: 'default' | 'experimental'): M
                           contextWindow: {
                               input: EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
                               context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
+                              output: CHAT_OUTPUT_TOKEN_BUDGET,
                           },
                       }
                   : m

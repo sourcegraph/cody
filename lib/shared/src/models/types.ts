@@ -44,6 +44,10 @@ export interface ModelContextWindow {
      */
     input: number
     /**
+     * The maximum number of tokens that the model can respond with in a single request.
+     */
+    output: number
+    /**
      * The additional tokens reserved for context.
      * When not defined, context shares the same token limit as input.
      */

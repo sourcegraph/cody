@@ -15,7 +15,7 @@ const preamble: Message[] = [
 
 describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets', () => {
-        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET, output: 0 })
         expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
         // Context budget will be shared with chat budget.
         expect(counter.maxContextTokens.user).toBe(CHAT_INPUT_TOKEN_BUDGET)
@@ -25,7 +25,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should initialize with the correct token budgets for a customized context window', () => {
-        const counter = new TokenCounter({ input: 1234 })
+        const counter = new TokenCounter({ input: 1234, output: 0 })
         expect(counter.maxChatTokens).toBe(1234)
         expect(counter.maxContextTokens.user).toBe(1234)
         expect(counter.maxContextTokens.enhanced).toBe(Math.floor(1234 * ENHANCED_CONTEXT_ALLOCATION))
@@ -34,6 +34,7 @@ describe('TokenCounter class', () => {
     it('should initialize with the correct token budgets when user context is provided', () => {
         const counter = new TokenCounter({
             input: CHAT_INPUT_TOKEN_BUDGET,
+            output: 0,
             context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
         })
         expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
@@ -44,14 +45,14 @@ describe('TokenCounter class', () => {
     })
 
     it('should throw error when adding input without preamble', () => {
-        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET, output: 0 })
         expect(() => counter.updateUsage('input', [{ speaker: 'human', text: ps`Hello` }])).toThrowError(
             'Preamble must be updated before Chat input.'
         )
     })
 
     it('should return true when update usage within limits (sharing budget)', () => {
-        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET })
+        const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET, output: 0 })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens needed
         const messages: Message[] = [
             // 4 chat tokens needed
@@ -66,6 +67,7 @@ describe('TokenCounter class', () => {
     it('should return true when update usage within limits (separated chat & user budgets)', () => {
         const counter = new TokenCounter({
             input: CHAT_INPUT_TOKEN_BUDGET,
+            output: 0,
             context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
         })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
@@ -82,7 +84,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when token usage exceeds limits', () => {
-        const counter = new TokenCounter({ input: 5 })
+        const counter = new TokenCounter({ input: 5, output: 0 })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens needed
         const messages: Message[] = [
             // 4 chat tokens needed
@@ -94,7 +96,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return true when update usage on the limit', () => {
-        const counter = new TokenCounter({ input: 7 })
+        const counter = new TokenCounter({ input: 7, output: 0 })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
         const messages: Message[] = [
             // 4 chat tokens needed
@@ -106,7 +108,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should throw error when trying to update context token usage before chat input', () => {
-        const counter = new TokenCounter({ input: 10, context: { user: 20 } })
+        const counter = new TokenCounter({ input: 10, context: { user: 20 }, output: 0 })
         expect(counter.updateUsage('preamble', preamble)).toBe(true)
         expect(() => {
             counter.updateUsage('enhanced', [
@@ -124,7 +126,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when exceeds limits (sharing budget)', () => {
-        const counter = new TokenCounter({ input: 30 })
+        const counter = new TokenCounter({ input: 30, output: 0 })
         expect(TokenCounter.getMessagesTokenCount(preamble)).toBe(3)
         expect(counter.updateUsage('preamble', preamble)).toBe(true)
         // Remaining tokens: 30 - 3 = 27
@@ -167,7 +169,7 @@ describe('TokenCounter class', () => {
     })
 
     it('should be able to add messages for message types that have tokens left', () => {
-        const counter = new TokenCounter({ input: 20, context: { user: 20 } })
+        const counter = new TokenCounter({ input: 20, context: { user: 20 }, output: 0 })
         expect(counter.updateUsage('preamble', preamble)).toBe(true)
         // ADDED: Remaining input tokens: 20 - 3 = 17 & Remaining user tokens: 20
 
