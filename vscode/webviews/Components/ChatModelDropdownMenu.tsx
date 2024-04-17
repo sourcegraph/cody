@@ -66,7 +66,13 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     if (!models.length || models.length < 1) {
         return null
     }
-
+    // puts default model/s on the top in the dropdown
+    models?.sort((a,b)=>{
+        if(a.default){
+            return -1
+        }
+            return 0
+    })
     const enabledDropdownProps: Pick<DropdownProps, 'title' | 'onClickCapture'> = {
         title: `This chat is using ${currentModel.title}. Start a new chat to choose a different model.`,
         onClickCapture: () => {
