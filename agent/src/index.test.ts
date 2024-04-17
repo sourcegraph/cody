@@ -1296,7 +1296,7 @@ describe('Agent', () => {
         const rateLimitedClient = new TestClient({
             name: 'rateLimitedClient',
             accessToken:
-                process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
+                process.env.SRC_ACCESS_TOKEN_FREE_USER_WITH_RATE_LIMIT ??
                 // See comment above `const client =` about how this value is derived.
                 'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5',
         })
@@ -1305,7 +1305,7 @@ describe('Agent', () => {
             const serverInfo = await rateLimitedClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('david.veszelovszki')
+            expect(serverInfo.authStatus?.username).toStrictEqual('veszelovszki.david')
         }, 10_000)
 
         it('chat/submitMessage (RateLimitError)', async () => {
