@@ -7,7 +7,6 @@
 }
 
 .message {
-    max-width: 40ch;
     margin: 0;
 }
 
@@ -30,12 +29,11 @@ ul.causes {
     display: flex;
     flex-direction: column;
     padding: 1.25rem;
-    max-width: 400px;
     gap: 2rem;
 }
 
 .icon {
-    margin: 0 auto;
+    display: flex;
 
     & > :global(i.codicon) { /* we need this specificity because codicons hardcodes the fontsize */
         display: block;
@@ -47,6 +45,18 @@ ul.causes {
     display: flex;
     flex-direction: column;
     gap: 0.5rem 1rem;
+    max-width: 300px;
+    width: 100%;
+}
+
+@media (width < 650px) {
+    .icon {
+        margin: 0 auto;
+    }
+
+    .actions {
+        margin: 0 auto;
+    }
 }
 
 .action-button {
