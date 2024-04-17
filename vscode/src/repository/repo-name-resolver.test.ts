@@ -176,7 +176,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
         const uri = URI.file('repo/src/dir/foo.ts')
         const remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
 
-        expect(statMock).toBeCalledTimes(uri.fsPath.split('/').length)
+        expect(statMock).toBeCalledTimes(5)
         expect(remoteUrl).toBe(undefined)
     })
 
