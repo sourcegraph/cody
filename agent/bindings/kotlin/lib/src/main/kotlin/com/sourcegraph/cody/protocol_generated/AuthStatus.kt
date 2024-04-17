@@ -15,6 +15,7 @@ data class AuthStatus(
   val codyApiVersion: Int? = null,
   val configOverwrites: CodyLLMSiteConfiguration? = null,
   val showNetworkError: Boolean? = null,
+  val showLoading: Boolean? = null,
   val primaryEmail: String? = null,
   val displayName: String? = null,
   val avatarURL: String? = null,
