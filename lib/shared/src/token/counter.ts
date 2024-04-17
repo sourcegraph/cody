@@ -7,8 +7,6 @@ import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
  * A class to manage the token allocation during prompt building.
- *
- * NOTE: A new TokenCounter is created everytime a new PromptBuilder is created.
  */
 export class TokenCounter {
     /**
