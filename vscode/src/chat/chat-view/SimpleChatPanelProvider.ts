@@ -11,7 +11,6 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
-    MAX_BYTES_PER_FILE,
     type Message,
     ModelProvider,
     PromptString,
@@ -26,6 +25,7 @@ import {
     isRateLimitError,
     reformatBotMessageForChat,
     serializeChatMessage,
+    truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -57,6 +57,10 @@ import type {
     ContextItemWithContent,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
+} from '@sourcegraph/cody-shared/src/token/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
@@ -427,7 +431,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an additional safeguard measure
                     promptText:
-                        authStatus.isDotCom && inputText.toString().substring(0, MAX_BYTES_PER_FILE),
+                        authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 },
             })
 
@@ -470,10 +474,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                               })
                         : undefined
                 )
-                const sendTelemetry = (contextSummary: any): void => {
+                const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
                     const properties = {
                         ...sharedProperties,
-                        contextSummary,
                         traceId: span.spanContext().traceId,
                     }
                     span.setAttributes(properties)
@@ -491,12 +494,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         },
                         privateMetadata: {
                             properties,
+                            privateContextStats,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
                             promptText:
                                 authStatus.isDotCom &&
-                                inputText.toString().substring(0, MAX_BYTES_PER_FILE),
+                                truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                         },
                     })
                 }
@@ -801,7 +805,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     private async buildPrompt(
         prompter: IPrompter,
-        sendTelemetry?: (contextSummary: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
         const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
             this.chatModel,
@@ -810,7 +814,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...newContextUsed, ...(newContextIgnored ?? [])])
+        this.chatModel.setLastMessageContext([...newContextUsed, ...newContextIgnored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -826,7 +830,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     contextSummary[source] = 1
                 }
             }
-            sendTelemetry(contextSummary)
+
+            // Log the size of all user context items (e.g., @-mentions)
+            // Includes the count of files and the size of each file
+            const getContextStats = (files: ContextItem[]) =>
+                files.length && {
+                    countFiles: files.length,
+                    fileSizes: files.map(f => f.size).filter(isDefined),
+                }
+            // NOTE: The private context stats are only logged for DotCom users
+            const privateContextStats = {
+                included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
+                excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
+            }
+
+            sendTelemetry(contextSummary, privateContextStats)
         }
 
         return prompt
@@ -991,7 +1009,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText:
-                        authStatus.isDotCom && messageText.toString().substring(0, MAX_BYTES_PER_FILE),
+                        authStatus.isDotCom &&
+                        truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
                     chatModel: this.chatModel.modelID,
                 },
             })
