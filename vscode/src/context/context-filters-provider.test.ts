@@ -30,7 +30,7 @@ describe('ContextFiltersProvider', () => {
         notAllowed?: [string, string][]
     }
 
-    describe('isPathAllowed', () => {
+    describe('isRepoNameAllowed', () => {
         it.each<AssertFilters>([
             {
                 label: 'allows everything if both include and exclude are empty',
@@ -199,29 +199,15 @@ describe('ContextFiltersProvider', () => {
                 },
                 notAllowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
             },
-            {
-                label: 'matches file path patterns correctly',
-                filters: {
-                    include: [
-                        {
-                            repoNamePattern: '^github\\.com\\/sourcegraph\\/.*',
-                            filePathPatterns: ['.*\\.ts$'],
-                        },
-                    ],
-                    exclude: [],
-                },
-                allowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
-                notAllowed: [['github.com/sourcegraph/cody', 'src/main.js']],
-            },
         ])('$label', async ({ filters, allowed = [], notAllowed = [] }) => {
             await initProviderWithContextFilters(filters)
 
-            for (const allowedItem of allowed) {
-                expect(provider.isPathAllowed(...allowedItem)).toBe(true)
+            for (const [repoName] of allowed) {
+                expect(provider.isRepoNameAllowed(repoName)).toBe(true)
             }
 
-            for (const notAllowedItem of notAllowed) {
-                expect(provider.isPathAllowed(...notAllowedItem)).toBe(false)
+            for (const [repoName] of notAllowed) {
+                expect(provider.isRepoNameAllowed(repoName)).toBe(false)
             }
         })
 
@@ -229,14 +215,14 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(new Error('API error message'))
             await provider.init()
 
-            expect(provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')).toBe(false)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
         })
 
         it('exclude everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'contextFilters').mockRejectedValue(new Error('network error'))
             await provider.init()
 
-            expect(provider.isPathAllowed('github.com/sourcegraph/whatever', 'src/main.ts')).toBe(false)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
         })
 
         it('uses cached results for repeated calls', async () => {
@@ -251,8 +237,8 @@ describe('ContextFiltersProvider', () => {
 
             await provider.init()
 
-            expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
-            expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
             expect(mockedApiRequest).toBeCalledTimes(1)
         })
 
@@ -272,13 +258,13 @@ describe('ContextFiltersProvider', () => {
             await provider.init()
 
             expect(mockedApiRequest).toBeCalledTimes(1)
-            expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(true)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
 
             await vi.runOnlyPendingTimersAsync()
 
             expect(mockedApiRequest).toBeCalledTimes(2)
-            expect(provider.isPathAllowed('github.com/sourcegraph/cody', 'src/main.ts')).toBe(false)
-            expect(provider.isPathAllowed('github.com/other/cody', 'src/main.ts')).toBe(true)
+            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(false)
+            expect(provider.isRepoNameAllowed('github.com/other/cody')).toBe(true)
         })
     })
 
