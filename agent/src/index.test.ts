@@ -299,7 +299,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You told me your name is Lars Monsen."`,
+                `"You said your name is Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
