@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Commands: Fixed an issue where Code Lenses were displaying on incorrect lines in the file. [pull/3861](https://github.com/sourcegraph/cody/pull/3861)
+
 ### Changed
 
 ## [1.14.0]
