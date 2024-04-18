@@ -34,7 +34,10 @@ import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import type { Har } from '@pollyjs/persister'
-import { setTestingIgnorePolicyOverride } from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
+import {
+    setIgnorePolicyChangeListener,
+    setTestingIgnorePolicyOverride,
+} from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
 import levenshtein from 'js-levenshtein'
 import {
     AbstractMessageReader,
@@ -1038,6 +1041,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return {
                 policy,
             }
+        })
+
+        setIgnorePolicyChangeListener(() => {
+            // Forward policy change notifications to the client.
+            this.notify('ignore/didChange', {})
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async ([options]) => {

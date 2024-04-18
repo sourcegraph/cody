@@ -4,6 +4,20 @@ import { IgnoreHelper } from './ignore-helper'
 
 export const ignores = new IgnoreHelper()
 
+// TODO: It would be better to use a vscode.EventEmitter and support multiple
+// listeners, etc. but lib/shared prevents doing that easily.
+let ignorePolicyChangeListener = () => {}
+
+/**
+ * Sets an event listener that will be notified when the Cody Ignore policy
+ * may have changed. There can only be one listener registered at a time.
+ *
+ * @param listener the callback to invoke when the policy changes.
+ */
+export function setIgnorePolicyChangeListener(listener: () => void): void {
+    ignorePolicyChangeListener = listener
+}
+
 interface IgnorePolicyOverride {
     repoRe: RegExp
     uriRe: RegExp
@@ -17,6 +31,7 @@ let testingIgnorePolicyOverride: IgnorePolicyOverride | undefined = undefined
 export function setTestingIgnorePolicyOverride(policy: IgnorePolicyOverride | undefined): void {
     console.warn('overriding Cody Ignore policy for testing')
     testingIgnorePolicyOverride = policy
+    ignorePolicyChangeListener()
 }
 
 /**
