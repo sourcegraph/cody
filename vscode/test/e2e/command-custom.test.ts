@@ -267,7 +267,9 @@ test.extend<ExpectedEvents>({
     // Check button click to open the cody.json file in the editor
     // const label = 'gear  Configure Custom Commands..., Manage your custom reusable commands, settings'
     // const configMenuItem = page.getByLabel(label).locator('a')
-    const customCommandSidebar = page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a')
+    const customCommandSidebar = page
+        .getByRole('treeitem', { name: 'Custom Commands', exact: true })
+        .locator('a')
 
     // Able to open the cody.json file in the editor from the command menu
     await customCommandSidebar.click()
