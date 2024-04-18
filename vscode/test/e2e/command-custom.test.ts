@@ -55,7 +55,7 @@ test.extend<ExpectedEvents>({
     // Bring the cody sidebar to the foreground
     await page.click('.badge[aria-label="Cody"]')
     // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
-    await page.getByText('Custom Commands').click()
+    await page.getByText('Custom Commands', { exact: true }).click()
 
     const commandName = 'ATestCommand'
     const prompt = 'The test command has been created'
@@ -122,7 +122,7 @@ test.extend<ExpectedEvents>({
 
     // Show the new command in the menu and execute it
     await page.click('.badge[aria-label="Cody"]')
-    await page.getByLabel('Custom Commands').locator('a').click()
+    await page.getByLabel('Custom Commands', { exact: true }).locator('a').click()
     await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
