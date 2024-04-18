@@ -91,8 +91,9 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('>Goodbye Cody</')).toBeVisible()
 
     // Retry: show the command palette with the previous instruction
+    await expect(acceptLens).toBeVisible()
     await expect(retryLens).toBeVisible()
-    await retryLens.click()
+    await retryLens.click({ delay: 1000 })
     await expect(page.getByText(inputTitle)).toBeVisible()
     await expect(inputBox).toHaveValue(instruction)
     await inputBox.press('Escape')
