@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
+import { fetchDocumentSymbols } from '../../edit/input/utils'
 import { getEditor } from '../../editor/active-editor'
-import { getDocumentSections } from '../../editor/utils/document-sections'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
+import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { isValidTestFile } from '../utils/test-commands'
 
 interface EditorCodeLens {
@@ -85,68 +86,46 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
             return []
         }
 
-        // For test files, adds code lenses for each symbol
+        let lens = commandLenses.cody
+
+        // TODO (bee) For test files, adds code lenses for each symbol
         if (this.addTestEnabled && isValidTestFile(document.uri)) {
-            return await this.provideCodeLensesForSymbols(document.uri)
+            lens = commandLenses.test
         }
-
-        const codeLenses = []
-        const linesWithLenses = new Set()
-
-        const smartRanges = await getDocumentSections(document)
-        for (const range of smartRanges) {
-            if (linesWithLenses.has(range.start)) {
-                continue
-            }
-            const selection = new vscode.Selection(range.start, range.end)
-            codeLenses.push(
-                new vscode.CodeLens(range, {
-                    ...commandLenses.cody,
-                    arguments: [{ name: 'cody.menu.commands', selection }],
-                })
-            )
-
-            linesWithLenses.add(range.start.line)
-        }
-
-        return codeLenses
-    }
-
-    private async provideCodeLensesForSymbols(doc: vscode.Uri): Promise<vscode.CodeLens[]> {
-        const codeLenses = []
-        const linesWithLenses = new Set()
 
         // Get a list of symbols from the document, filter out symbols that are not functions / classes / methods
-        const allSymbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
-            'vscode.executeDocumentSymbolProvider',
-            doc
-        )
-        const symbols =
-            allSymbols?.filter(
-                symbol =>
-                    symbol.kind === vscode.SymbolKind.Function ||
-                    symbol.kind === vscode.SymbolKind.Class ||
-                    symbol.kind === vscode.SymbolKind.Method ||
-                    symbol.kind === vscode.SymbolKind.Constructor
-            ) ?? []
+        const allSymbols = await fetchDocumentSymbols(document)
+        const topLevels = [vscode.SymbolKind.Function, vscode.SymbolKind.Class, vscode.SymbolKind.Method]
+        const symbols = allSymbols?.filter(s => topLevels.includes(s.kind))
 
-        for (const symbol of symbols) {
-            const range = symbol.location.range
-            const startLine = range.start.line
-            if (linesWithLenses.has(startLine)) {
+        const codeLenses = []
+        const linesWithLenses = new Set()
+
+        for (const { range } of symbols) {
+            if (linesWithLenses.has(range.start.line)) {
                 continue
             }
 
-            const selection = new vscode.Selection(startLine, 0, range.end.line + 1, 0)
+            const [documentableNode] = execQueryWrapper({
+                document,
+                position: range.start,
+                queryWrapper: 'getDocumentableNode',
+            })
+
+            if (documentableNode.range?.node?.startPosition?.row !== range.start.line) {
+                continue
+            }
 
             codeLenses.push(
                 new vscode.CodeLens(range, {
-                    ...commandLenses.test,
-                    arguments: [{ name: 'cody.command.tests-cases', selection }],
+                    ...lens,
+                    command: 'cody.editor.codelens.click',
+                    arguments: [
+                        { name: lens.command, selection: new vscode.Selection(range.start, range.end) },
+                    ],
                 })
             )
-
-            linesWithLenses.add(startLine)
+            linesWithLenses.add(range.start.line)
         }
 
         return codeLenses
@@ -192,12 +171,12 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
 const commandLenses = {
     cody: {
         title: '$(cody-logo) Cody',
-        command: 'cody.editor.codelens.click',
+        command: 'cody.menu.commands',
         tooltip: 'Open command menu',
     },
     test: {
         title: '$(cody-logo) Add More Tests',
-        command: 'cody.editor.codelens.click',
+        command: 'cody.command.tests-cases',
         tooltip: 'Generate new test cases',
     },
 }
