@@ -36,12 +36,11 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
-import { ExecuteEditArguments } from '../../vscode/src/edit/execute'
+import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
-import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -810,13 +809,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         )
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
-            const instruction = PromptString.unsafe_fromUserQuery(params.params.instruction)
-            const args: ExecuteEditArguments = { configuration: { instruction } }
-            return this.createEditTask(
-                vscode.commands
-                    .executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
-                    .then(task => task && { type: 'edit', task })
-            )
+            const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
+            const args: ExecuteEditArguments = { configuration: { instruction, model: params.model } }
+            return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
 
         this.registerAuthenticatedRequest('editCommands/document', () => {
