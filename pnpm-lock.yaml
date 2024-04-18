@@ -239,9 +239,6 @@ importers:
       highlight.js:
         specifier: ^10.7.3
         version: 10.7.3
-      ini:
-        specifier: ^4.1.2
-        version: 4.1.2
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -279,9 +276,6 @@ importers:
       '@types/highlight.js':
         specifier: ^9.12.4
         version: 9.12.4
-      '@types/ini':
-        specifier: ^4.1.0
-        version: 4.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -396,6 +390,9 @@ importers:
       glob:
         specifier: ^7.2.3
         version: 7.2.3
+      ini:
+        specifier: ^4.1.2
+        version: 4.1.2
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -493,6 +490,9 @@ importers:
       '@types/glob':
         specifier: ^8.0.0
         version: 8.1.0
+      '@types/ini':
+        specifier: ^4.1.0
+        version: 4.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39

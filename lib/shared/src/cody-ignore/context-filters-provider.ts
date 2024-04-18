@@ -6,7 +6,6 @@ import { logError } from '../logger'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import type { CodyContextFilterItem } from '../sourcegraph-api/graphql/client'
 import { wrapInActiveSpan } from '../tracing'
-import { repoNameResolver } from './repo-name-resolver'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -20,12 +19,18 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
+export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
+
 export class ContextFiltersProvider implements vscode.Disposable {
     private contextFilters: ParsedContextFilters | null = null
     private fetchIntervalId: NodeJS.Timer | undefined
     private cache = new LRUCache<string, boolean>({ max: 128 })
+    private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
+    private isEnabled = true
 
-    async init() {
+    async init(isEnabled: boolean, getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
+        this.isEnabled = isEnabled
+        this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
         await this.fetchContextFilters()
         this.startRefetchTimer()
     }
@@ -62,6 +67,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public isRepoNameAllowed(repoName: string): boolean {
+        if (!this.isEnabled) {
+            return true
+        }
+
         const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
@@ -96,12 +105,16 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
+        if (!this.isEnabled) {
+            return true
+        }
+
         if (!isFileURI(uri)) {
             return false
         }
 
         const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
-            repoNameResolver.getRepoNameFromWorkspaceUri(uri)
+            this.getRepoNameFromWorkspaceUri?.(uri)
         )
 
         return repoName ? this.isRepoNameAllowed(repoName) : false

@@ -1,30 +1,25 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
+import { convertGitCloneURLToCodebaseName, isFileURI } from '@sourcegraph/cody-shared'
+
+import { logDebug } from '../log'
+
 import { LRUCache } from 'lru-cache'
-import { isFileURI } from '../common/uri'
-import { logDebug } from '../logger'
-import { convertGitCloneURLToCodebaseName } from '../utils'
+import { gitRemoteUrlFromGitExtension } from './git-extension-api'
 
 export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
 type FsPath = string
 type RepoName = string
 
-type GitRemoteUrlFromGitExtension = (uri: vscode.Uri) => string | undefined
-
 export class RepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
     private fsPathToRepoNameCache = new LRUCache<FsPath, RepoName>({ max: 1000 })
-    private gitRemoteUrlFromGitExtension: GitRemoteUrlFromGitExtension | undefined = undefined
 
     /**
      * Currently is used to set node specific remote url getters on the extension init.
      */
-    public init(
-        gitRemoteUrlFromGitExtension: GitRemoteUrlFromGitExtension,
-        platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    ) {
-        this.gitRemoteUrlFromGitExtension = gitRemoteUrlFromGitExtension
+    public init(platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []) {
         this.platformSpecificGitRemoteGetters = platformSpecificGitRemoteGetters
     }
 
@@ -47,7 +42,7 @@ export class RepoNameResolver {
         }
 
         try {
-            let remoteOriginUrl = this.gitRemoteUrlFromGitExtension?.(uri)
+            let remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
 
             if (!remoteOriginUrl) {
                 remoteOriginUrl = await gitRemoteUrlFromTreeWalk(uri)

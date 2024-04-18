@@ -9,6 +9,7 @@ import {
     ModelProvider,
     PromptMixin,
     PromptString,
+    contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -16,7 +17,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import { repoNameResolver } from '@sourcegraph/cody-shared/src/cody-ignore/repo-name-resolver'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -50,7 +50,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit, gitRemoteUrlFromGitExtension } from './repository/git-extension-api'
+import { gitAPIinit } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -327,7 +328,11 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
-    repoNameResolver.init(gitRemoteUrlFromGitExtension, platform.getRemoteUrlGetters?.())
+    repoNameResolver.init(platform.getRemoteUrlGetters?.())
+    contextFiltersProvider.init(
+        false,
+        repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    )
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
