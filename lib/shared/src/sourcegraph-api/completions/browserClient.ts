@@ -3,6 +3,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 
@@ -13,6 +14,14 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void {
+        // Validate that no messages contain ignored context
+        const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
+        for (const uri of references) {
+            if (!contextFiltersProvider.isUriAllowed(uri)) {
+                throw new Error(`Message contains ignored context item from URI: ${uri}`)
+            }
+        }
+
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)

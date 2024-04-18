@@ -46,14 +46,6 @@ export class ChatClient {
             speaker,
         }))
 
-        // Validate that no messages contain ignored context
-        // const references = messagesToSend.flatMap(m => m.text?.getReferences() ?? [])
-        // for (const uri of references) {
-        //     if (contextFiltersProvider (uri)) {
-        //         throw new Error(`Message contains ignored context: ${uri}`)
-        //     }
-        // }
-
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,

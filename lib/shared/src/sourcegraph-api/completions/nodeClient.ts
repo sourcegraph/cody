@@ -8,6 +8,7 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { googleChatClient } from '../../llm-providers/google/chat-client'
 import { groqChatClient } from '../../llm-providers/groq/chat-client'
 import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
@@ -60,6 +61,18 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             if (provider === 'groq') {
                 groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
+            }
+
+            // Validate that no messages contain ignored context
+            //
+            // Note: This happens after we branch of to alternative providers to
+            // avoid doing the work twice yet still have the validation close to the
+            // network call.
+            const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
+            for (const uri of references) {
+                if (!contextFiltersProvider.isUriAllowed(uri)) {
+                    throw new Error(`Message contains ignored context item from URI: ${uri}`)
+                }
             }
 
             const log = this.logger?.startCompletion(params, url.toString())

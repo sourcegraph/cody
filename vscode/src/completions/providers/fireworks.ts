@@ -12,6 +12,7 @@ import {
     PromptString,
     TracedError,
     addTraceparent,
+    contextFiltersProvider,
     createSSEIterator,
     dotcomTokenToGatewayToken,
     getActiveTraceAndSpanId,
@@ -344,6 +345,14 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
+        // Validate that no messages contain ignored context
+        const references = requestParams.messages.flatMap(m => m.text?.getReferences() ?? [])
+        for (const uri of references) {
+            if (!contextFiltersProvider.isUriAllowed(uri)) {
+                throw new Error(`Message contains ignored context item from URI: ${uri}`)
+            }
+        }
+
         const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'

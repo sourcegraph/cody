@@ -24,7 +24,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { SpanStatusCode } from '@opentelemetry/api'
-import { fetch } from '@sourcegraph/cody-shared'
+import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -37,6 +37,14 @@ export function createClient(
         params: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
+        // Validate that no messages contain ignored context
+        const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
+        for (const uri of references) {
+            if (!contextFiltersProvider.isUriAllowed(uri)) {
+                throw new Error(`Message contains ignored context item from URI: ${uri}`)
+            }
+        }
+
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController

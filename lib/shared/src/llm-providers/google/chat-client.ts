@@ -1,5 +1,6 @@
 import type { GeminiCompletionResponse } from '.'
 import { getCompletionsModelConfig } from '../..'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
@@ -30,6 +31,14 @@ export function googleChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
+    // Validate that no messages contain ignored context
+    const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
+    for (const uri of references) {
+        if (!contextFiltersProvider.isUriAllowed(uri)) {
+            throw new Error(`Message contains ignored context item from URI: ${uri}`)
+        }
+    }
+
     if (!params.model) {
         return
     }

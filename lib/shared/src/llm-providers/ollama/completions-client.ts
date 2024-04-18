@@ -1,4 +1,5 @@
 import type { OllamaGenerateErrorResponse, OllamaGenerateParams, OllamaGenerateResponse } from '.'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { isDefined } from '../../common'
 import type { OllamaOptions } from '../../configuration'
 import {
@@ -27,6 +28,14 @@ export function createOllamaClient(
         params: OllamaGenerateParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
+        // Validate that no messages contain ignored context
+        const references = params.prompt.getReferences()
+        for (const uri of references) {
+            if (!contextFiltersProvider.isUriAllowed(uri)) {
+                throw new Error(`Message contains ignored context item from URI: ${uri}`)
+            }
+        }
+
         const url = new URL('/api/generate', ollamaOptions.url).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
