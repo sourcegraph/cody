@@ -10,6 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
+import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
 import { isNode16 } from './isNode16'
@@ -703,10 +704,12 @@ describe('Agent', () => {
         }, 20_000)
     })
 
-    function checkDocumentCommand(
+    function checkEditCommand(
         documentClient: TestClient,
+        command: RequestMethodName,
         name: string,
         filename: string,
+        param: any,
         assertion: (obtained: string) => void
     ): void {
         it(
@@ -717,7 +720,7 @@ describe('Agent', () => {
                 })
                 const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                 await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request('editCommands/document', null)
+                const task = await documentClient.request(command, param)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
                 expect(lenses).toHaveLength(0) // Code lenses are now handled client side
@@ -728,6 +731,32 @@ describe('Agent', () => {
             },
             20_000
         )
+    }
+
+    function checkEditCodeCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        instruction: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(
+            documentClient,
+            'editCommands/code',
+            name,
+            filename,
+            { instruction: instruction },
+            assertion
+        )
+    }
+
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(documentClient, 'editCommands/document', name, filename, null, assertion)
     }
 
     describe('Commands', () => {
@@ -882,10 +911,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        // Skipped because it's timing out for some reason and the functionality
-        // is still not working 100% correctly. Keeping the test so we can fix
-        // the test later.
-        it.skip('editCommand/test', async () => {
+        it('editCommand/test', async () => {
             const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
             const uri = vscode.Uri.file(trickyLogicPath)
 
@@ -893,7 +919,8 @@ describe('Agent', () => {
             const id = await client.request('editCommands/test', null)
             await client.taskHasReachedAppliedPhase(id)
             const originalDocument = client.workspace.getDocument(uri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
               "export function trickyLogic(a: number, b: number): number {
                   if (a === 0) {
                       return 1
@@ -907,31 +934,42 @@ describe('Agent', () => {
 
 
               "
-            `)
+            `,
+                explainPollyError
+            )
 
             const untitledDocuments = client.workspace
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(1)
             const [untitledDocument] = untitledDocuments
-            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
-            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
-              "import { trickyLogic } from './trickyLogic';
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
+              import { trickyLogic } from './trickyLogic'
 
               describe('trickyLogic', () => {
-                it('should return 1 if a is 0', () => {
-                  expect(trickyLogic(0, 1)).toBe(1);
-                });
+                  it('should return 1 when a is 0', () => {
+                      expect(trickyLogic(0, 10)).toBe(1)
+                  })
 
-                it('should return 1 if b is 2', () => {
-                  expect(trickyLogic(1, 2)).toBe(1);
-                });
+                  it('should return 1 when b is 2', () => {
+                      expect(trickyLogic(10, 2)).toBe(1)
+                  })
 
-                it('should return a - b if neither a is 0 nor b is 2', () => {
-                  expect(trickyLogic(3, 1)).toBe(2);
-                });
-              });
+                  it('should return a - b when a is not 0 and b is not 2', () => {
+                      expect(trickyLogic(5, 3)).toBe(2)
+                      expect(trickyLogic(10, 5)).toBe(5)
+                  })
+
+                  it('should handle negative numbers', () => {
+                      expect(trickyLogic(-5, 3)).toBe(-8)
+                      expect(trickyLogic(5, -3)).toBe(8)
+                  })
+              })
               "
             `,
                 explainPollyError
@@ -942,8 +980,27 @@ describe('Agent', () => {
             expect(client.workspaceEditParams).toHaveLength(1)
         }, 30_000)
 
+        describe('Edit code', () => {
+            checkEditCodeCommand(
+                client,
+                'editCommands/code (basic function)',
+                'sum.ts',
+                'Rename `a` parameter to `c`',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
+                  "export function sum(c: number, b: number): number {
+                      /* CURSOR */
+                  }
+                  "
+                `,
+                        explainPollyError
+                    )
+            )
+        })
+
         describe('Document code', () => {
-            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(
                     `
                   "/**

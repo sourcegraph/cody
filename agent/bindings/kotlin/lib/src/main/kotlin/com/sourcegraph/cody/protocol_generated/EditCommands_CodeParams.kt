@@ -2,6 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class EditCommands_CodeParams(
-  val params: ParamsParams? = null,
+  val instruction: String? = null,
+  val model: String? = null,
 )
 
