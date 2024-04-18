@@ -36,6 +36,7 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import { ExecuteEditArguments } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
@@ -809,7 +810,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         )
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
-            const args = { configuration: { ...params } }
+            const instruction = PromptString.unsafe_fromUserQuery(params.params.instruction)
+            const args: ExecuteEditArguments = { configuration: { instruction } }
             return this.createEditTask(
                 vscode.commands
                     .executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
