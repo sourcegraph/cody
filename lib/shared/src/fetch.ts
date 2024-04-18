@@ -21,7 +21,7 @@ import {
  *
  * Agent is a mutable ref so that we can override it from `fetch.node.ts`
  */
-export const agent: { current: (() => Agent) | undefined } = { current: undefined }
+export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
     if (customUserAgent) {

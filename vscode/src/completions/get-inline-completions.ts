@@ -1,7 +1,12 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type DocumentContext,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
@@ -9,7 +14,7 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
-import { type DocumentContext, insertIntoDocContext } from './get-current-doc-context'
+import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
 import type {

@@ -15,7 +15,7 @@ import { getConfiguration } from '../../configuration'
 import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
 import type { SymfRunner } from '../../local-context/symf'
-import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../../repository/git-extension-api'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri

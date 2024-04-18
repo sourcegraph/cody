@@ -10,8 +10,7 @@ import path from 'node:path/posix'
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    TokenCounter,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -38,20 +37,21 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         try {
             const { stdout, stderr } = await _exec(filteredCommand, { cwd, encoding: 'utf8' })
-            const output = stdout ?? stderr
-            const outputString = JSON.stringify(output.trim())
-            if (!outputString) {
+            const output = JSON.stringify(stdout ?? stderr).trim()
+            if (!output) {
                 throw new Error('Empty output')
             }
 
-            const context = outputWrapper.replace('{command}', command).replace('{output}', outputString)
+            const content = outputWrapper.replace('{command}', command).replace('{output}', output)
+            const size = TokenCounter.countTokens(content)
 
             const file = {
                 type: 'file',
-                content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
+                content,
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
                 source: ContextItemSource.Terminal,
+                size,
             } satisfies ContextItem
 
             return [file]

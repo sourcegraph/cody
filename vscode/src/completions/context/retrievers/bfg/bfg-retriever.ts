@@ -4,10 +4,11 @@ import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import type { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
-import { gitAPI } from '../../../../repository/repositoryHelpers'
+import { gitAPI } from '../../../../repository/git-extension-api'
 import { captureException } from '../../../../services/sentry/sentry'
-import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 
+import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import {
     getLastNGraphContextIdentifiersFromDocument,
     getLastNGraphContextIdentifiersFromString,
@@ -173,7 +174,7 @@ export class BfgRetriever implements ContextRetriever {
         docContext,
         hints,
         lastCandidate,
-    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+    }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         try {
             if (this.didFailLoading) {
                 return []
@@ -230,7 +231,7 @@ export class BfgRetriever implements ContextRetriever {
             const symbols = (response.symbols || []).map(contextSnippet => ({
                 ...contextSnippet,
                 uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
-            })) satisfies Omit<ContextSnippet, 'startLine' | 'endLine'>[]
+            })) satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>[]
 
             logDebug('CodyEngine', 'bfg/contextForIdentifiers', {
                 verbose: {

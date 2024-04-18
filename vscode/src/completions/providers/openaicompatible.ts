@@ -1,21 +1,25 @@
-import * as vscode from 'vscode'
-
 import {
+    type AuthStatus,
+    type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     type ConfigurationWithAccessToken,
-    displayPath,
+    PromptString,
+    ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import type * as vscode from 'vscode'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CLOSING_CODE_TAG, OPENING_CODE_TAG, getHeadAndTail } from '../text-processing'
-import type { ContextSnippet } from '../types'
+import {
+    CLOSING_CODE_TAG,
+    OPENING_CODE_TAG,
+    getHeadAndTail,
+    getSuffixAfterFirstNewline,
+} from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-
-import type { AuthStatus } from '@sourcegraph/cody-shared'
 
 import {
     type FetchCompletionResult,
@@ -113,45 +117,52 @@ class OpenAICompatibleProvider extends Provider {
         this.client = client
     }
 
-    private createPrompt(snippets: ContextSnippet[]): string {
-        const { prefix, suffix } = this.options.docContext
+    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
 
-        const intro: string[] = []
-        let prompt = ''
+        const intro: PromptString[] = []
+        let prompt = ps``
 
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
         if (!isStarCoderFamily(this.model)) {
-            intro.push(`Path: ${this.options.document.fileName}`)
+            intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                if ('symbol' in snippet && snippet.symbol !== '') {
+                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
+                if (contextPrompts.symbol) {
                     intro.push(
-                        `Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`
+                        ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
                     )
                 } else {
                     intro.push(
-                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${
-                            snippet.content
-                        }`
+                        ps`Here is a reference snippet of code from ${PromptString.fromDisplayPath(
+                            snippet.uri
+                        )}:\n\n${contextPrompts.content}`
                     )
                 }
             }
 
-            const introString = `${intro
-                .join('\n\n')
-                .split('\n')
-                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                .join('\n')}\n`
+            const joined = PromptString.join(intro, ps`\n\n`)
+            const introString = ps`${PromptString.join(
+                joined
+                    .split('\n')
+                    .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
+                ps`\n`
+            )}\n`
 
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
-                vscode.workspace.asRelativePath(this.options.document.fileName),
+                PromptString.fromDisplayPath(this.options.document.uri),
                 introString,
                 prefix,
                 suffixAfterFirstNewline
@@ -169,7 +180,7 @@ class OpenAICompatibleProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
@@ -178,13 +189,18 @@ class OpenAICompatibleProvider extends Provider {
             lineNumberDependentCompletionParams,
         })
 
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
+
         // starchat: Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
         const promptProps: Prompt = {
             snippets: [],
             uri: this.options.document.uri,
-            prefix: this.options.docContext.prefix,
-            suffix: this.options.docContext.suffix,
+            prefix,
+            suffix,
             languageId: this.options.document.languageId,
         }
 
@@ -244,36 +260,38 @@ class OpenAICompatibleProvider extends Provider {
     }
 
     private createInfillingPrompt(
-        filename: string,
-        intro: string,
-        prefix: string,
-        suffix: string
-    ): string {
+        filename: PromptString,
+        intro: PromptString,
+        prefix: PromptString,
+        suffix: PromptString
+    ): PromptString {
         if (isStarCoderFamily(this.model) || isStarChatFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
-            return `<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+            return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-            return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
         if (this.model === 'mistral-7b-instruct-4k') {
             // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
-            const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
-            const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
-            const infillSuffix = this.options.docContext.suffix
-            const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
+            const { head, tail } = getHeadAndTail(prefix)
+            const infillBlock = tail.trimmed.toString().endsWith('{\n')
+                ? tail.trimmed.trimEnd()
+                : tail.trimmed
             const infillPrefix = head.raw
-            return `<s>[INST] Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+            return ps`<s>[INST] Below is the code from file path ${PromptString.fromDisplayPath(
+                this.options.document.uri
+            )}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
 \`\`\`
-${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
+${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}
 \`\`\`[/INST]
  ${OPENING_CODE_TAG}${infillBlock}`
         }
 
         console.error('Could not generate infilling prompt for', this.model)
-        return `${intro}${prefix}`
+        return ps`${intro}${prefix}`
     }
 
     private postProcess = (content: string): string => {
@@ -340,19 +358,6 @@ export function createProviderConfig({
     }
 }
 
-// We want to remove the same line suffix from a completion request since both StarCoder and Llama
-// code can't handle this correctly.
-function getSuffixAfterFirstNewline(suffix: string): string {
-    const firstNlInSuffix = suffix.indexOf('\n')
-
-    // When there is no next line, the suffix should be empty
-    if (firstNlInSuffix === -1) {
-        return ''
-    }
-
-    return suffix.slice(suffix.indexOf('\n'))
-}
-
 function isStarChatFamily(model: string): boolean {
     return model.startsWith('starchat')
 }
@@ -366,38 +371,38 @@ function isLlamaCode(model: string): boolean {
 }
 
 interface Prompt {
-    snippets: { uri: vscode.Uri; content: string }[]
+    snippets: { uri: vscode.Uri; content: PromptString }[]
 
     uri: vscode.Uri
-    prefix: string
-    suffix: string
+    prefix: PromptString
+    suffix: PromptString
 
     languageId: string
 }
 
-function fileNameLine(uri: vscode.Uri, commentStart: string): string {
-    return `${commentStart} Path: ${displayPath(uri)}\n`
+function fileNameLine(uri: vscode.Uri, commentStart: PromptString): PromptString {
+    return ps`${commentStart} Path: ${PromptString.fromDisplayPath(uri)}\n`
 }
 
-function promptString(prompt: Prompt, infill: boolean, model: string): string {
+function promptString(prompt: Prompt, infill: boolean, model: string): PromptString {
     const config = getLanguageConfig(prompt.languageId)
-    const commentStart = config?.commentStart || '//'
+    const commentStart = config?.commentStart || ps`// `
 
-    const context = prompt.snippets
-        .map(
+    const context = PromptString.join(
+        prompt.snippets.map(
             ({ uri, content }) =>
-                fileNameLine(uri, commentStart) +
-                content
-                    .split('\n')
-                    .map(line => `${commentStart} ${line}`)
-                    .join('\n')
-        )
-        .join('\n\n')
+                ps`${fileNameLine(uri, commentStart)}${PromptString.join(
+                    content.split('\n').map(line => ps`${commentStart} ${line}`),
+                    ps`\n`
+                )}`
+        ),
+        ps`\n\n`
+    )
 
     const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
 
     if (model.startsWith('codellama:') && infill) {
-        const infillPrefix = context + currentFileNameComment + prompt.prefix
+        const infillPrefix = context.concat(currentFileNameComment, prompt.prefix)
 
         /**
          * The infilll prompt for Code Llama.
@@ -409,8 +414,8 @@ function promptString(prompt: Prompt, infill: boolean, model: string): string {
          *
          * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
          */
-        return `<PRE> ${infillPrefix} <SUF>${prompt.suffix} <MID>`
+        return ps`<PRE> ${infillPrefix} <SUF>${prompt.suffix} <MID>`
     }
 
-    return context + currentFileNameComment + prompt.prefix
+    return context.concat(currentFileNameComment, prompt.prefix)
 }

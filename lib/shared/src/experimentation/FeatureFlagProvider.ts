@@ -48,6 +48,9 @@ export enum FeatureFlag {
 
     /** Display Cody commands in a pop-up window on hover. */
     CodyHoverCommands = 'cody-hover-commands',
+
+    /** Apply a higher context window for user context items (e.g., @-mentions). */
+    CodyChatContextBudget = 'cody-chat-context-budget',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

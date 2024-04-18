@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getEditorInsertSpaces, getEditorTabSize } from '../utils'
-
+import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import { logCompletionFormatEvent, logError } from './logger'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import { lines } from './text-processing'
@@ -28,8 +27,8 @@ export async function formatCompletion(autocompleteItem: AutocompleteItem): Prom
             'vscode.executeFormatDocumentProvider',
             document.uri,
             {
-                tabSize: getEditorTabSize(document.uri),
-                insertSpaces: getEditorInsertSpaces(document.uri),
+                tabSize: getEditorTabSize(document.uri, vscode.workspace, vscode.window),
+                insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
             }
         )
 

@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ContextItem, ContextMessage, EditModel, EventSource } from '@sourcegraph/cody-shared'
+import type {
+    ContextItem,
+    ContextMessage,
+    EditModel,
+    EventSource,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 
 import type { FixupTask, FixupTelemetryMetadata } from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
@@ -21,12 +27,12 @@ export interface ExecuteEditArguments {
          * A pre-set instruction that will be used to create the edit.
          * This will skip prompting the user for any other instruction.
          */
-        instruction?: string
+        instruction?: PromptString
         /**
          * A pre-set instruction that will be used to help the user write their instruction.
          * This will prompt the user with this text as a prefix provided in the edit input.
          */
-        preInstruction?: string
+        preInstruction?: PromptString
         userContextFiles?: ContextItem[]
         contextMessages?: ContextMessage[]
         intent?: EditIntent

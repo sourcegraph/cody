@@ -3,12 +3,12 @@ package com.sourcegraph.cody.protocol_generated
 
 import com.google.gson.annotations.SerializedName
 
-data class ChatMessage(
-  val speaker: SpeakerEnum? = null, // Oneof: human, assistant, system
-  val text: String? = null,
+data class SerializedChatMessage(
   val contextFiles: List<ContextItem>? = null,
   val error: ChatError? = null,
   val editorState: Any? = null,
+  val speaker: SpeakerEnum? = null, // Oneof: human, assistant, system
+  val text: String? = null,
 ) {
 
   enum class SpeakerEnum {

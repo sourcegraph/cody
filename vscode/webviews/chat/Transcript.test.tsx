@@ -1,4 +1,4 @@
-import { errorToChatError } from '@sourcegraph/cody-shared'
+import { errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { describe, expect, test } from 'vitest'
@@ -28,8 +28,8 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: 'Hello' },
-                    { speaker: 'assistant', text: 'Hi' },
+                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
         )
@@ -43,10 +43,10 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
                     },
-                    { speaker: 'assistant', text: 'Bar' },
+                    { speaker: 'assistant', text: ps`Bar` },
                 ]}
             />
         )
@@ -58,10 +58,10 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: 'Foo' },
-                    { speaker: 'assistant', text: 'Bar' },
-                    { speaker: 'human', text: 'Baz' },
-                    { speaker: 'assistant', text: 'Qux' },
+                    { speaker: 'human', text: ps`Foo` },
+                    { speaker: 'assistant', text: ps`Bar` },
+                    { speaker: 'human', text: ps`Baz` },
+                    { speaker: 'assistant', text: ps`Qux` },
                 ]}
             />
         )
@@ -75,7 +75,7 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: undefined,
                     },
                 ]}
@@ -92,7 +92,7 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
                     },
                 ]}
@@ -109,7 +109,7 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: [],
                     },
                 ]}
@@ -126,11 +126,11 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
                     },
                 ]}
-                messageInProgress={{ speaker: 'assistant', text: 'Bar' }}
+                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
         expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: 'Bar' }])
@@ -143,11 +143,11 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: 'Foo',
+                        text: ps`Foo`,
                         contextFiles: [],
                     },
                 ]}
-                messageInProgress={{ speaker: 'assistant', text: 'Bar' }}
+                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
         expectCells([{ message: 'Foo' }, { message: 'Bar' }])
@@ -158,7 +158,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: 'Foo' },
+                    { speaker: 'human', text: ps`Foo` },
                     { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
                 ]}
             />

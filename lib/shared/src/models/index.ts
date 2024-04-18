@@ -1,5 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, tokensToChars } from '../prompt/constants'
+import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import type { ModelContextWindow } from './types'
 import type { ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
@@ -19,16 +20,23 @@ export class ModelProvider {
     public readonly title: string
 
     constructor(
-        // The model id that includes the provider name & the model name,
-        // e.g. "anthropic/claude-2.0"
+        /**
+         * The model id that includes the provider name & the model name,
+         * e.g. "anthropic/claude-2.0"
+         */
         public readonly model: string,
-        // The usage of the model, e.g. chat or edit.
+        /**
+         * The usage of the model, e.g. chat or edit.
+         */
         public readonly usage: ModelUsage[],
         /**
-         * The context window of the model, which is the maximum number of tokens
-         * that can be processed by the model in a single request.
+         * The default context window of the model reserved for Chat and Context.
+         * {@see TokenCounter on how the token usage is calculated.}
          */
-        public readonly maxToken: number = DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        public readonly contextWindow: ModelContextWindow = {
+            input: CHAT_INPUT_TOKEN_BUDGET,
+            output: CHAT_OUTPUT_TOKEN_BUDGET,
+        },
         /**
          * The configuration for the model.
          */
@@ -113,13 +121,13 @@ export class ModelProvider {
     }
 
     /**
-     * Finds the model provider with the given model ID and returns its characters limit.
-     * The limit is calculated based on the max number of tokens the model can process.
-     * E.g. 7000 tokens * 4 characters/token = 28000 characters
+     * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public static getMaxCharsByModel(modelID: string): number {
+    public static getContextWindowByID(modelID: string): ModelContextWindow {
         const model = ModelProvider.providers.find(m => m.model === modelID)
-        return tokensToChars(model?.maxToken || DEFAULT_CHAT_MODEL_TOKEN_LIMIT)
+        return model
+            ? model.contextWindow
+            : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {

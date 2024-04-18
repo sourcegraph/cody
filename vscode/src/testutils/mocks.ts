@@ -14,6 +14,7 @@ import {
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -685,7 +686,10 @@ export enum UIKind {
     Web = 2,
 }
 
+export class FileSystemError extends Error {}
+
 export const vsCodeMocks = {
+    FileSystemError,
     FileType,
     Range,
     Position,
@@ -805,8 +809,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,
     codebase: '',
     customHeaders: {},
-    chatPreInstruction: '',
-    editPreInstruction: '',
+    chatPreInstruction: ps``,
+    editPreInstruction: ps``,
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {

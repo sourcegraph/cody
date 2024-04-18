@@ -38,9 +38,14 @@ interface ContextItemCommon {
     source?: ContextItemSource
 
     /**
-     * The size of the file in bytes.
+     * The token count of the item's content.
      */
     size?: number
+
+    /**
+     * Whether the content of the item is too large to be included as context.
+     */
+    isTooLarge?: boolean
 }
 
 /**
@@ -87,11 +92,6 @@ export type ContextItem = ContextItemFile | ContextItemSymbol
  */
 export interface ContextItemFile extends ContextItemCommon {
     type: 'file'
-
-    /**
-     * Whether the file is too large to be included as context.
-     */
-    isTooLarge?: boolean
 }
 
 /**

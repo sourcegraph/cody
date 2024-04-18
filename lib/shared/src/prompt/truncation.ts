@@ -1,13 +1,21 @@
 import type { RangeData } from '../common/range'
+import { TokenCounter } from '../token/counter'
 
-import { CHARS_PER_TOKEN } from './constants'
+import type { PromptString } from './prompt-string'
 
 /**
  * Truncates text to the given number of tokens, keeping the start of the text.
  */
 export function truncateText(text: string, maxTokens: number): string {
-    const maxLength = maxTokens * CHARS_PER_TOKEN
-    return text.length <= maxLength ? text : text.slice(0, maxLength)
+    const encoded = TokenCounter.encode(text)
+    return encoded.length <= maxTokens ? text : TokenCounter.decode(encoded.slice(0, maxTokens)).trim()
+}
+
+export function truncatePromptString(text: PromptString, maxTokens: number): PromptString {
+    const encoded = TokenCounter.encode(text.toString())
+    return encoded.length <= maxTokens
+        ? text
+        : text.slice(0, TokenCounter.decode(encoded.slice(0, maxTokens))?.length).trim()
 }
 
 /**
@@ -50,6 +58,21 @@ export function truncateTextNearestLine(
  * Truncates text to the given number of tokens, keeping the end of the text.
  */
 export function truncateTextStart(text: string, maxTokens: number): string {
-    const maxLength = maxTokens * CHARS_PER_TOKEN
-    return text.length <= maxLength ? text : text.slice(-maxLength - 1)
+    const encoded = TokenCounter.encode(text)
+    return encoded.length <= maxTokens ? text : TokenCounter.decode(encoded.slice(-maxTokens)).trim()
+}
+
+export function truncatePromptStringStart(text: PromptString, maxTokens: number): PromptString {
+    const encoded = TokenCounter.encode(text.toString())
+
+    if (encoded.length <= maxTokens) {
+        return text
+    }
+
+    // We can not create a PromptString from the tokens directly as this would be
+    // considered unsafe. Instead, we use the string representation to get the updated
+    // character count
+
+    const decoded = TokenCounter.decode(encoded.slice(-maxTokens))
+    return text.slice(-decoded.length - 1).trim()
 }

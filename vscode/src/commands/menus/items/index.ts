@@ -1,4 +1,4 @@
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import {
     CommandMenuAction,
     type CommandMenuItem,

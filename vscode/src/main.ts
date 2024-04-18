@@ -8,6 +8,7 @@ import {
     type EventSource,
     ModelProvider,
     PromptMixin,
+    PromptString,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -15,7 +16,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import { openCodyIssueReporter } from '../webviews/utils/reportIssue'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -49,7 +49,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit } from './repository/repositoryHelpers'
+import { gitAPIinit } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -65,9 +66,11 @@ import { createOrUpdateEventLogger, telemetryService } from './services/telemetr
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { registerInteractiveTutorial } from './tutorial'
+import { version } from './version'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -100,7 +103,7 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                if (config.chatPreInstruction) {
+                if (config.chatPreInstruction.length > 0) {
                     PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
                 }
                 getChatModelsFromConfiguration()
@@ -141,7 +144,7 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    if (config.chatPreInstruction) {
+    if (config.chatPreInstruction.length > 0) {
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
@@ -327,13 +330,14 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        return executeCommandUnsafe(commandKey, args).catch(error => {
+        return executeCommandUnsafe(PromptString.unsafe_fromUserQuery(commandKey), args).catch(error => {
             if (error instanceof Error) {
                 console.log(error.stack)
             }
@@ -343,7 +347,7 @@ const register = async (
     }
 
     const executeCommandUnsafe = async (
-        id: DefaultCodyCommands | string,
+        id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
         const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
@@ -373,8 +377,8 @@ const register = async (
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (url, token) =>
-            authProvider.auth(url, token)
+        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
+            authProvider.auth({ endpoint, token })
         ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
@@ -391,7 +395,13 @@ const register = async (
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (await authProvider.auth(serverEndpoint, accessToken, customHeaders)).authStatus
+                return (
+                    await authProvider.auth({
+                        endpoint: serverEndpoint,
+                        token: accessToken,
+                        customHeaders,
+                    })
+                ).authStatus
             }
         ),
         // Chat
@@ -410,6 +420,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: '@ext:sourcegraph.cody-ai chat',
             })
+        ),
+        vscode.commands.registerCommand('cody.copy.version', () =>
+            vscode.env.clipboard.writeText(version)
         ),
 
         // Account links

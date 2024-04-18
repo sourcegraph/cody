@@ -13,14 +13,19 @@ import styles from './atMentions.module.css'
 
 import {
     type ContextItem,
+    ContextItemSource,
     type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
+import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
+import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
+import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
+    ContextItemMentionNode,
 } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
@@ -82,23 +87,51 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const [query, setQuery] = useState<string | null>(null)
 
+    const [tokenAdded, setTokenAdded] = useState<number>(0)
+
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
         middleware: [offset(6), flip(), shift()],
     })
 
     const results = useChatContextItems(query)
-    const options = useMemo(
-        () =>
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
+    const options = useMemo(() => {
+        const model = useCurrentChatModel()
+        const limit =
+            model?.contextWindow?.context?.user ||
+            model?.contextWindow?.input ||
+            FAST_CHAT_INPUT_TOKEN_BUDGET
+        return (
             results
-                ?.map(result => new MentionTypeaheadOption(result))
-                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? [],
-        [results]
-    )
+                ?.map(r => {
+                    if (r.size) {
+                        r.isTooLarge = r.size > limit - tokenAdded
+                    }
+                    // All @-mentions should have a source of `User`.
+                    r.source = ContextItemSource.User
+                    return new MentionTypeaheadOption(r)
+                })
+                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
+        )
+    }, [results])
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
         update()
     }, [options, update])
+
+    // Listen for changes to ContextItemMentionNode to update the token count.
+    // This updates the token count when a mention is added or removed.
+    editor.registerMutationListener(ContextItemMentionNode, node => {
+        const items = toSerializedPromptEditorValue(editor)?.contextItems
+        if (!items?.length) {
+            setTokenAdded(0)
+            return
+        }
+        setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
+    })
 
     const onSelectOption = useCallback(
         (
@@ -113,7 +146,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                 }
 
                 const selectedItem = selectedOption.item
-                const isLargeFile = selectedItem.type === 'file' && selectedItem.isTooLarge
+                const isLargeFile = selectedItem.isTooLarge
                 // When selecting a large file without range, add the selected option as text node with : at the end.
                 // This allows users to autocomplete the file path, and provide them with the options to add range.
                 if (isLargeFile && !selectedItem.range) {

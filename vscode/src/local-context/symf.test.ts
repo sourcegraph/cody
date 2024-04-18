@@ -10,6 +10,7 @@ import { symfExpandQuery } from './symfExpandQuery'
 import { mkdtemp, open, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
@@ -31,37 +32,37 @@ describe('symf', () => {
             polly = startPollyRecording({ recordingName: 'symf' })
         })
 
-        function check(query: string, expectedHandler: (expandedTerm: string) => void): void {
-            it(query, async () => {
+        function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
+            it(query.toString(), async () => {
                 expectedHandler(await symfExpandQuery(client, query))
             })
         }
 
-        check('ocean', expanded =>
+        check(ps`ocean`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"circulation current ebb flow ocean ppt psu salinity salt sea stream surf tidal tide water wave waves"`
             )
         )
 
-        check('How do I write a file to disk in Go', expanded =>
+        check(ps`How do I write a file to disk in Go`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"disk drive file files go golang storage write writefile writetofile"`
             )
         )
 
-        check('Where is authentication router defined?', expanded =>
+        check(ps`Where is authentication router defined?`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 '"auth authenticate authentication define defined definition route router routing"'
             )
         )
 
-        check('parse file with tree-sitter', expanded =>
+        check(ps`parse file with tree-sitter`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"file parse parser parsing read reading reads tree tree-sitter treesitter"`
             )
         )
 
-        check('scan tokens in C++', expanded =>
+        check(ps`scan tokens in C++`, expanded =>
             expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
         )
         afterAll(async () => {

@@ -2,10 +2,10 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
-    ChatMessage,
     CurrentUserCodySubscription,
     ModelProvider,
     ModelUsage,
+    SerializedChatMessage,
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
@@ -51,7 +51,10 @@ export type ClientRequests = {
     // `type: 'transcript'` ExtensionMessage that is sent via
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
-    'chat/restore': [{ modelID?: string | null; messages: ChatMessage[]; chatID: string }, string]
+    'chat/restore': [
+        { modelID?: string | null; messages: SerializedChatMessage[]; chatID: string },
+        string,
+    ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
     'chat/export': [null, ChatExportResult[]]
@@ -78,17 +81,17 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
-    'editCommands/code': [{ params: { instruction: string } }, EditTask]
+    'editCommands/code': [{ instruction: string; model: string }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/document
+    'editCommands/document': [null, EditTask]
 
     // If the task is "applied", discards the task.
-    'editTask/accept': [FixupTaskID, null]
+    'editTask/accept': [{ id: FixupTaskID }, null]
     // If the task is "applied", attempts to revert the task's edit, then
     // discards the task.
-    'editTask/undo': [FixupTaskID, null]
+    'editTask/undo': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
-    'editTask/cancel': [FixupTaskID, null]
+    'editTask/cancel': [{ id: FixupTaskID }, null]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
