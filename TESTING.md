@@ -20,8 +20,8 @@
     - [ ] [Organize multiple chats](#organize-multiple-chats)
     - [ ] [Isolate multiple chats](#isolate-multiple-chats)
 - Multi-repo context
-    - [] [Free/pro accounts:](#freepro-accounts)
-    - [] [Enterprise accounts:](#enterprise-accounts)
+    - [ ] [Free/pro accounts:](#freepro-accounts)
+    - [ ] [Enterprise accounts:](#enterprise-accounts)
 - Sourcegraph Code Search
     - [ ] [Find with Sourcegraph...](#find-with-sourcegraph)
     - [ ] [Search Selection on Sourcegraph Web](#search-selection-on-sourcegraph-web)
@@ -321,9 +321,10 @@ Note: It's important to test performance on large repos here.
 
 1. Open `sourcegraph/cody` project with enterprise account.
 2. Re-do all check from `Testing free/pro accounts` section but now with enterprise account.
-3. Click [+] button in the context panel and type sourcegraph repo url (`github.com/sourcegraph/sourcegraph`)
+3. Click [✏️] button in the context panel and type sourcegraph repo url (`github.com/sourcegraph/sourcegraph`)
     - Validator should block accepting incomplete or invalid URL.
-    - Add the `sourcegraph/sourcegraph` repo by hitting Add button.
+    - Validator should highlight any repos added past a list of 10.
+    - Add the `sourcegraph/sourcegraph` repo by hitting [CMD + Enter] (mac) [CTRL + ENTER] (windows) .
 4. Open new chat and ask question about squirrel - assistant should describe you an HTTP server, **NOT** animal.
 5. Open new chat and disable `sourcegraph/sourcegraph` remote repo context.
 7. Ask question about squirrel. It should again describe you an animal or have no context.
@@ -331,8 +332,7 @@ Note: It's important to test performance on large repos here.
     - Go to Chat History tab and open previous chats one by one. Check if both history and context settings are properly
       preserved.
     - Open new chat and check if it properly inherits all setting from previously opened historical chat
-    - If `sourcegraph/sourcegraph` repo was previously added please remove it by selecting it, and then clicking [-]
-      button.
+    - If `sourcegraph/sourcegraph` repo was previously added please remove it clicking the [✏️] (pencil) icon and removing the 'sourcegraph/sourcegraph' line
     - Ask question about squirrel. It should again describe you an animal or have no context.
 
 ## Code Search
