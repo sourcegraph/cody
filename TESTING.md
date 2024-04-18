@@ -19,6 +19,7 @@
     - [ ] [Read chat history without interruptions](#read-chat-history-without-interruptions)
     - [ ] [Organize multiple chats](#organize-multiple-chats)
     - [ ] [Isolate multiple chats](#isolate-multiple-chats)
+    - [ ] [Up Down Arrow Keys](#up-down-arrow-keys)
 - Multi-repo context
     - [ ] [Free/pro accounts:](#freepro-accounts)
     - [ ] [Enterprise accounts:](#enterprise-accounts)
@@ -303,6 +304,14 @@ You should also be able to switch between accounts while tokens are still being 
 
 Note: It's important to test performance on large repos here.
 
+#### Up Down arrow keys
+
+1. Start new chat
+2. Submit message "Hello". Confirm you get a reply and that the chat input is empty.
+3. Press `Up` arrow. Confirm that the chat input is populated with the message "Hello".
+4. Empty chat input and type multiline message "A\n\nB"
+5. Press `Up` arrow. Confirm that the caret is positioned in the empty line between A and B.
+
 ## Multi-repo context
 
 ### Free/pro accounts:
@@ -444,7 +453,7 @@ To open the context menu:
 1. Login to Cody Pro account
 2. Create new chat
 3. Default model for new Pro users is Claude 3 Sonnet
-   - Default model for existing Pro users is their previously selected model
+    - Default model for existing Pro users is their previously selected model
 4. User is able to change default LLM
 5. Change model to ChatGPT 4
 6. Send message
@@ -453,7 +462,7 @@ To open the context menu:
 8. Change account to different one and then back to your pro account
 9. Open `What model are you?` chat from the history
 10. Send again message
-   > What model are you?
+> What model are you?
 11. User should again get the response that model is ChatGPT
 
 #### Commands
