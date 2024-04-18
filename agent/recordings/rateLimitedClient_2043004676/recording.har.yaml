@@ -207,6 +207,111 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 3eb44d33a639810fd0b27d522ff4f693
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 252
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "252"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 240
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query ContextFilters {
+              	site {
+                      codyContextFilters {
+                          exclude {
+                              repoNamePattern
+                          }
+                          include {
+                              repoNamePattern
+                          }
+                      }
+              	}
+              }
+            variables: {}
+        queryString:
+          - name: ContextFilters
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ContextFilters
+      response:
+        bodySize: 287
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 287
+          text: "[\"H4sIAAAAAAAAA6TOwWoC\",\"QQzG8VdJv/NSKFVo97rgI/TieNjuRAnMJpqZERfZdy9i\
+            QWkRCr3ny+9/BrubZ7TrM0bOud8xWqyEU6SAweLUmRY+lZWkwp4DqPddHVkLBRzZs5g\
+            GkG2pTHumgO7X5uN69RRAksn5UMU50mctpFZo73aUyPEZDZINfRHTa1ASZbSLBoOlOi\
+            ra93kzN/ehXa+XF4fKPtH2u5pPQ6qRL1X6uCrgEbi8gS+vfxJF/ye+/RA38xcAAAD//\
+            wMAZFdkMZkBAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Apr 2024 14:37:01 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-18T14:37:00.870Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 388ee55f76c29fcdfbb552e0009f5b72
       _order: 0
       cache: {}

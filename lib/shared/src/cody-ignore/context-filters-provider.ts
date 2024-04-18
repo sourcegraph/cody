@@ -26,10 +26,15 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private fetchIntervalId: NodeJS.Timer | undefined
     private cache = new LRUCache<string, boolean>({ max: 128 })
     private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
-    private isEnabled = true
+    // TODO: This is only a temporary off-switch until we can properly detect a
+    // valid context filter config in the upstream repository.
+    private temporary_isEnabled = true
 
-    async init(isEnabled: boolean, getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
-        this.isEnabled = isEnabled
+    async init(temporary_isEnabled: boolean, getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
+        this.temporary_isEnabled = temporary_isEnabled
+        if (!temporary_isEnabled) {
+            return
+        }
         this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
         await this.fetchContextFilters()
         this.startRefetchTimer()
@@ -67,7 +72,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public isRepoNameAllowed(repoName: string): boolean {
-        if (!this.isEnabled) {
+        if (!this.temporary_isEnabled) {
             return true
         }
 
@@ -105,7 +110,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
-        if (!this.isEnabled) {
+        if (!this.temporary_isEnabled) {
             return true
         }
 
