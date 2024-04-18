@@ -14,7 +14,7 @@ import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvide
 import { getCommandTreeItems } from '../../services/tree-views/commands'
 import { showNewCustomCommandMenu } from '../menus'
 import { type CodyCommandsFile, ConfigFiles } from '../types'
-import { createCodyJSON, createFileWatchers, writeToCodyJSON } from '../utils/config-file'
+import { createFileWatchers, tryCreateCodyJSON, writeToCodyJSON } from '../utils/config-file'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { getDocText } from '../utils/workspace-files'
 
@@ -51,6 +51,11 @@ export class CustomCommandsManager implements vscode.Disposable {
         const config = getConfiguration(workspaceConfig)
         this.configFileName = config.isRunningInsideAgent ? ConfigFiles.COMMAND : ConfigFiles.VSCODE
         this.userConfigFile = Utils.joinPath(URI.file(userHomePath), this.configFileName)
+
+        // Generate a cody.json for vs code users if there is not one already.
+        if (!config.isRunningInsideAgent) {
+            tryCreateCodyJSON(this.userConfigFile)
+        }
 
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.custom.build', () =>
@@ -95,8 +100,6 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (this.fileWatcherDisposables.length) {
             logDebug('CommandsController:init', 'watchers created')
         }
-
-        createCodyJSON(this.userConfigFile)
     }
 
     /**
@@ -264,7 +267,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 break
             }
             case 'create':
-                await createCodyJSON(uri)
+                await tryCreateCodyJSON(uri)
                     .then(() => {
                         vscode.window
                             .showInformationMessage(

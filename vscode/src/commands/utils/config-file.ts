@@ -23,11 +23,12 @@ export function createFileWatchers(configFile?: vscode.Uri): vscode.FileSystemWa
  * @param uri The URI of the Cody JSON file to create.
  * @returns A Promise that resolves when the file has been created.
  */
-export async function createCodyJSON(uri: vscode.Uri): Promise<void> {
+export async function tryCreateCodyJSON(uri: vscode.Uri): Promise<void> {
     await doesFileExist(uri).then(async exists => {
         if (exists) {
             return
         }
+        // TODO (bee) provide example commands
         await writeToCodyJSON(uri, {})
     })
 }
