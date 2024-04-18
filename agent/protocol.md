@@ -498,12 +498,8 @@ exit: [null]
 
 ```ts
 'progress/end': [{ id: string; }]
-
-```ts
-'remoteRepo/*: ...'
 ```
 
-Methods and notifications related to a remote list of repositories. Only for enterprise configurations. See [agent-protocol.ts].
+## Remote Repositories
 
-```
-<!-- PROTOCOL END -->
+See `remoteRepo/*` in [agent-protocol.ts](../vscode/src/jsonrpc/agent-protocol.ts)
