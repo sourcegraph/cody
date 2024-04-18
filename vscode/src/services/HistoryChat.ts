@@ -75,7 +75,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
 
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
-            let groupLabel = 'Older'
+            let groupLabel = 'Before last month'
 
             if (dateEqual(today, lastInteractionTimestamp)) {
                 groupLabel = 'Today'
