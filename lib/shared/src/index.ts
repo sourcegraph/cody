@@ -63,6 +63,7 @@ export type {
     CodyCommand,
     CodyCommandContext,
     CodyCommandType,
+    CodyCommandMode,
     TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'

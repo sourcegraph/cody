@@ -102,3 +102,27 @@ export const customPromptsContextOptions: ContextOption[] = [
         picked: false,
     },
 ]
+
+export const CommandModeMenuOptions: ContextOption[] = [
+    {
+        id: 'ask',
+        label: 'Ask',
+        description: 'Submit your question as a prompt.',
+        detail: 'Cody will respond to your question in Chat.',
+        picked: true,
+    },
+    {
+        id: 'edit',
+        label: 'Edit',
+        description: 'Execute your prompt as an edit command.',
+        detail: 'Cody will replace your selected code with its response.',
+        picked: false,
+    },
+    {
+        id: 'insert',
+        label: 'Insert',
+        description: "Execute your prompt as an edit command to insert Cody's response.",
+        detail: 'Cody will insert its response above your selected code.',
+        picked: false,
+    },
+]

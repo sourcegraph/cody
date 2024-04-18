@@ -66,23 +66,33 @@ test.extend<ExpectedEvents>({
         .locator('a')
         .filter({ hasText: /New Custom Command.../ })
         .click()
+
     // Enter command name
     const commandInputTitle = page.getByText('New Custom Cody Command: Command Name')
     await expect(commandInputTitle).toBeVisible()
-    const commandInputBox = page.getByPlaceholder('e.g. hello')
+    const commandInputBox = page.getByPlaceholder('e.g. spellchecker')
     await commandInputBox.fill(commandName)
     await commandInputBox.press('Enter')
+
+    // Select mode
+    const commandModeTitle = page.getByText('New Custom Cody Command: Command Mode')
+    await expect(commandModeTitle).toBeVisible()
+    // Hit enter to select the first option on the list: 'ask'
+    await page.keyboard.press('Enter')
+
     // Enter prompt
     const promptInputTitle = page.getByText('New Custom Cody Command: Prompt')
     await expect(promptInputTitle).toBeVisible()
     const promptInputBox = page.getByPlaceholder(
         'e.g. Create five different test cases for the selected code'
     )
+
     await promptInputBox.fill(prompt)
     await promptInputBox.press('Enter')
     // Use default context
     await expect(page.getByText('New Custom Cody Command: Context Options')).toBeVisible()
     await page.keyboard.press('Enter')
+
     // Save it to workspace settings
     await expect(page.getByText('New Custom Cody Command: Save To…')).toBeVisible()
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
