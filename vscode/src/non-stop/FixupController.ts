@@ -273,7 +273,7 @@ export class FixupController
     }
 
     public async promptUserForTask(
-        preInstruction: string | undefined,
+        preInstruction: PromptString | undefined,
         document: vscode.TextDocument,
         range: vscode.Range,
         expandedRange: vscode.Range | undefined,

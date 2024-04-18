@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises'
+import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
@@ -6,6 +7,7 @@ import { COMPLETE_DECORATION, INTRO_DECORATION, TODO_DECORATION } from './consta
 import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT, getInteractiveRanges } from './content'
 import { setTutorialUri } from './helpers'
 import { CodyChatLinkProvider, findRangeOfText } from './utils'
+;('./utils')
 
 const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
     if (process.platform === 'darwin') {
@@ -13,7 +15,7 @@ const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
     } else {
         await fs.writeFile(uri.fsPath, TUTORIAL_CONTENT)
     }
-    return vscode.window.showTextDocument(uri)
+    return vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.Beside })
 }
 
 export const registerInteractiveTutorial = async (
@@ -29,6 +31,9 @@ export const registerInteractiveTutorial = async (
     let hasStarted = false
 
     const start = async () => {
+        if (hasStarted) {
+            stop()
+        }
         hasStarted = true
         const editor = await openTutorial(documentUri)
         let chatComplete = false
@@ -36,8 +41,8 @@ export const registerInteractiveTutorial = async (
         let chatRange = findRangeOfText(editor.document, 'Start a Chat')
         const interactiveRanges = getInteractiveRanges(editor.document)
 
-        // Set gutter decorations for associated lines, note: VS Code automatically keeps track of these lines
-        // so we don't need to update these
+        // Set gutter decorations for associated lines, note: VS Code automatically keeps track of
+        // these lines so we don't need to update these
         editor.setDecorations(INTRO_DECORATION, introductionRange ? [introductionRange] : [])
 
         disposables.push(
@@ -204,7 +209,9 @@ export const registerInteractiveTutorial = async (
                 return executeEdit({
                     configuration: {
                         document: editor.document,
-                        preInstruction: 'Function that finds logs in a dir',
+                        preInstruction: PromptString.unsafe_fromUserQuery(
+                            'Function that finds logs in a dir'
+                        ),
                     },
                 })
             }),
@@ -213,7 +220,7 @@ export const registerInteractiveTutorial = async (
             listenForSuccess,
             vscode.window.onDidChangeVisibleTextEditors(editors => {
                 const tutorialIsActive = editors.find(
-                    editor => editor.document.uri.fsPath === documentUri.fsPath
+                    editor => editor.document.uri.toString() === documentUri.toString()
                 )
                 if (!tutorialIsActive) {
                     return
@@ -241,28 +248,28 @@ export const registerInteractiveTutorial = async (
 
     disposables.push(
         vscode.workspace.onDidCloseTextDocument(document => {
-            if (document.uri.fsPath !== documentUri.fsPath) {
+            if (document.uri.toString() !== documentUri.toString()) {
                 return
             }
             // Tutorial has been closed, let's clean up
             stop()
         }),
         vscode.workspace.onDidOpenTextDocument(document => {
-            if (document.uri.fsPath !== documentUri.fsPath || hasStarted) {
+            if (document.uri.toString() !== documentUri.toString() || hasStarted) {
                 return
             }
             // Tutorial has been opened, let's start!
             start()
         }),
         vscode.window.onDidChangeActiveTextEditor(async editor => {
-            const tutorialIsActive = editor && editor.document.uri.fsPath === documentUri.fsPath
+            const tutorialIsActive = editor && editor.document.uri.toString() === documentUri.toString()
             return vscode.commands.executeCommand('setContext', 'cody.tutorialActive', tutorialIsActive)
         }),
         vscode.commands.registerCommand('cody.tutorial.start', start)
     )
 
     const tutorialVisible = vscode.window.visibleTextEditors.some(
-        editor => editor.document.uri.fsPath === documentUri.fsPath
+        editor => editor.document.uri.toString() === documentUri.toString()
     )
     if (!hasStarted && tutorialVisible) {
         start()
