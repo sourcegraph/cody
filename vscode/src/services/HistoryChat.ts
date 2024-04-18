@@ -34,7 +34,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
     const yesterdayChats: CodySidebarTreeItem[] = []
     const thisMonthChats: CodySidebarTreeItem[] = []
     const lastMonthChats: CodySidebarTreeItem[] = []
-    const nMonthsChats: CodySidebarTreeItem[] = []
+    const beforeLastMonthChats: CodySidebarTreeItem[] = []
 
     const today = new Date()
     const yesterday = new Date()
@@ -47,7 +47,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         Yesterday: yesterdayChats,
         'This month': thisMonthChats,
         'Last month': lastMonthChats,
-        'N months ago': nMonthsChats,
+        'Before last month': beforeLastMonthChats,
     }
 
     if (!authStatus) {
@@ -75,7 +75,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
 
             const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
-            let groupLabel = 'N months ago'
+            let groupLabel = 'Older'
 
             if (dateEqual(today, lastInteractionTimestamp)) {
                 groupLabel = 'Today'
@@ -105,7 +105,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         Yesterday: yesterdayChats.reverse(),
         'This month': thisMonthChats.reverse(),
         'Last month': lastMonthChats.reverse(),
-        'N months ago': nMonthsChats.reverse(),
+        'Before last month': beforeLastMonthChats.reverse(),
     }
 }
 
