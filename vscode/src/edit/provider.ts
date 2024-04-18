@@ -45,7 +45,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getMaxCharsByModel(model)
+            const contextWindow = ModelProvider.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
@@ -54,7 +54,7 @@ export class EditProvider {
             } = await buildInteraction({
                 model,
                 codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
-                contextWindow,
+                contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
             }).catch(err => {
@@ -98,7 +98,7 @@ export class EditProvider {
                     // Listen to test file name suggestion from responses
                     // Allows Cody to let us know which test file we should add the new content to
                     let filepath = ''
-                    multiplexer.sub(PROMPT_TOPICS.FILENAME, {
+                    multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
                         onResponse: async (content: string) => {
                             filepath += content
                             void this.handleFileCreationResponse(filepath, true)
@@ -114,7 +114,11 @@ export class EditProvider {
             const abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: contextWindow.output,
+                },
                 abortController.signal
             )
 

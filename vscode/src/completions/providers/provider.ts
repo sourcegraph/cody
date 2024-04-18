@@ -1,10 +1,13 @@
 import type { Position, TextDocument } from 'vscode'
 
-import { type CompletionParameters, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type CompletionParameters,
+    type DocumentContext,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 
-import type { DocumentContext } from '../get-current-doc-context'
 import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
-import type { ContextSnippet } from '../types'
 
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 
@@ -81,7 +84,7 @@ export abstract class Provider {
 
     public abstract generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]>
 }

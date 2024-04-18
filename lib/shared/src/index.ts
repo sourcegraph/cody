@@ -1,8 +1,8 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage } from './models/types'
-export { DEFAULT_DOT_COM_MODELS } from './models/dotcom'
+export { type ChatModel, type EditModel, ModelUsage, ModelContextWindow } from './models/types'
+export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
     getModelInfo,
@@ -22,13 +22,15 @@ export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
 } from './chat/transcript'
-export { errorToChatError } from './chat/transcript/messages'
+export { serializeChatMessage } from './chat/transcript'
+export { errorToChatError, DEFAULT_EVENT_SOURCE } from './chat/transcript/messages'
 export type {
     ChatError,
     EventSource,
     ChatHistory,
     ChatMessage,
     UserLocalHistory,
+    SerializedChatMessage,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -57,7 +59,13 @@ export {
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
-export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
+export type {
+    CodyCommand,
+    CodyCommandContext,
+    CodyCommandType,
+    TerminalOutputArguments,
+} from './commands/types'
+export { CustomCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
@@ -68,7 +76,7 @@ export {
     extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths } from './common/path'
+export { posixFilePaths, pathFunctionsForURI } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -86,6 +94,7 @@ export type {
     ConfigurationWithAccessToken,
     OllamaGenerateParameters,
     OllamaOptions,
+    ConfigGetter,
 } from './configuration'
 export { NoopEditor } from './editor'
 export type {
@@ -105,6 +114,7 @@ export {
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export * from './editor/utils'
 export {
     FeatureFlag,
     FeatureFlagProvider,
@@ -139,19 +149,18 @@ export {
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
-    CHARS_PER_TOKEN,
     ANSWER_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
-    tokensToChars,
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
 export {
     truncateText,
     truncateTextNearestLine,
-    truncateTextStart,
+    truncatePromptStringStart,
+    truncatePromptString,
 } from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
@@ -186,6 +195,7 @@ export {
     type LogEventMode,
     type ContextFiltersResult,
     type CodyContextFilterItem,
+    type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -229,4 +239,14 @@ export {
     isURLContextItem,
     fetchContentForURLContextItem,
 } from './mentions/urlContextItems'
+export { TokenCounter } from './token/counter'
+export {
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
+    ENHANCED_CONTEXT_ALLOCATION,
+} from './token/constants'
+export { tokensToChars, charsToTokens } from './token/utils'
+export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'
+export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
+export * from './fetch'
+export * from './completions/types'

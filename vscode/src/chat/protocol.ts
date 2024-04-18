@@ -2,13 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
-    ChatMessage,
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
     SearchPanelFile,
+    SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -71,12 +71,11 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
       }
-    | { command: 'getUserContext'; query: string }
+    | { command: 'getUserContext'; query: string; range?: RangeData }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
@@ -89,6 +88,9 @@ export type WebviewMessage =
     | {
           command: 'attribution-search'
           snippet: string
+      }
+    | {
+          command: 'troubleshoot/reloadAuth'
       }
 
 /**
@@ -175,7 +177,7 @@ interface WebviewContextMessage {
 }
 
 export interface ExtensionTranscriptMessage {
-    messages: ChatMessage[]
+    messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
 }

@@ -37,13 +37,13 @@ sealed class WebviewMessage {
           "copy" -> context.deserialize<CopyWebviewMessage>(element, CopyWebviewMessage::class.java)
           "auth" -> context.deserialize<AuthWebviewMessage>(element, AuthWebviewMessage::class.java)
           "abort" -> context.deserialize<AbortWebviewMessage>(element, AbortWebviewMessage::class.java)
-          "reload" -> context.deserialize<ReloadWebviewMessage>(element, ReloadWebviewMessage::class.java)
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
           "getUserContext" -> context.deserialize<GetUserContextWebviewMessage>(element, GetUserContextWebviewMessage::class.java)
           "search" -> context.deserialize<SearchWebviewMessage>(element, SearchWebviewMessage::class.java)
           "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
+          "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -316,15 +316,6 @@ data class AbortWebviewMessage(
   }
 }
 
-data class ReloadWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: reload
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("reload") Reload,
-  }
-}
-
 data class `simplified-onboardingWebviewMessage`(
   val command: CommandEnum? = null, // Oneof: simplified-onboarding
   val onboardingKind: OnboardingKindEnum? = null, // Oneof: web-sign-in-token
@@ -342,6 +333,7 @@ data class `simplified-onboardingWebviewMessage`(
 data class GetUserContextWebviewMessage(
   val command: CommandEnum? = null, // Oneof: getUserContext
   val query: String? = null,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -386,6 +378,15 @@ data class `attribution-searchWebviewMessage`(
 
   enum class CommandEnum {
     @SerializedName("attribution-search") `Attribution-search`,
+  }
+}
+
+data class Troubleshoot_reloadAuthWebviewMessage(
+  val command: CommandEnum? = null, // Oneof: troubleshoot/reloadAuth
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("troubleshoot/reloadAuth") Troubleshoot_reloadAuth,
   }
 }
 

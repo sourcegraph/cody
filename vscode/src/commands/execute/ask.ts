@@ -2,15 +2,17 @@ import {
     ConfigFeaturesSingleton,
     type DefaultChatCommands,
     type EventSource,
+    type PromptString,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments extends WebviewSubmitMessage {
+export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'> {
     source?: EventSource
     command?: DefaultChatCommands
+    text: PromptString
 }
 
 /**

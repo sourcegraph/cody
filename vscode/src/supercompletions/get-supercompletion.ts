@@ -1,6 +1,7 @@
 import {
     type ChatClient,
     type Message,
+    PromptString,
     getSimplePreamble,
     isAbortError,
     logDebug,
@@ -8,7 +9,6 @@ import {
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
-import { getEditorIndentString } from '../utils'
 import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
 import type { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 import { fixIndentation } from './utils/fix-indentation'
@@ -193,14 +193,18 @@ function parseRawChange(
     return removeContextRows(document, fullSupercompletion)
 }
 
-function buildInteraction(document: vscode.TextDocument, diff: string): Message[] {
-    const indentation = getEditorIndentString(document.uri)
+function buildInteraction(document: vscode.TextDocument, diff: PromptString): Message[] {
+    const indentation = PromptString.fromEditorIndentString(
+        document.uri,
+        vscode.workspace,
+        vscode.window
+    )
 
     const preamble = getSimplePreamble(MODEL, 1, SYSTEM.replaceAll('____', indentation))
 
-    const prompt = PROMPT.replace('{filename}', vscode.workspace.asRelativePath(document.uri.path))
-        .replace('{source}', document.getText())
-        .replace('{git-diff}', diff)
+    const prompt = PROMPT.replaceAll('{filename}', PromptString.fromDisplayPath(document.uri))
+        .replaceAll('{source}', PromptString.fromDocumentText(document))
+        .replaceAll('{git-diff}', diff)
         .replaceAll('____', indentation)
 
     return [

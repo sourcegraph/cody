@@ -1,5 +1,4 @@
 import type { AuthStatus } from '../auth/types'
-import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -9,9 +8,8 @@ import type {
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
+const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSample'> = {
     temperature: 0.2,
-    maxTokensToSample: ANSWER_TOKENS,
     topK: -1,
     topP: -1,
 }
@@ -27,7 +25,7 @@ export class ChatClient {
 
     public chat(
         messages: Message[],
-        params: Partial<ChatParameters>,
+        params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         const authStatus = this.getAuthStatus()
@@ -68,7 +66,7 @@ export function sanitizeMessages(messages: Message[]): Message[] {
     // 1. If the last message is from an `assistant` with no or empty `text`, omit it
     let lastMessage = messages.at(-1)
     const truncateLastMessage =
-        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.text
+        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.text?.length
     sanitizedMessages = truncateLastMessage ? messages.slice(0, -1) : messages
 
     // 2. If there is any assistant message in the middle of the messages without a `text`, omit
@@ -83,8 +81,8 @@ export function sanitizeMessages(messages: Message[]): Message[] {
         // the next one
         const nextMessage = sanitizedMessages[index + 1]
         if (
-            (nextMessage.speaker === 'assistant' && !nextMessage.text) ||
-            (message.speaker === 'assistant' && !message.text)
+            (nextMessage.speaker === 'assistant' && !nextMessage.text?.length) ||
+            (message.speaker === 'assistant' && !message.text?.length)
         ) {
             return false
         }
@@ -93,7 +91,7 @@ export function sanitizeMessages(messages: Message[]): Message[] {
 
     // 3. Final assistant content cannot end with trailing whitespace
     lastMessage = sanitizedMessages.at(-1)
-    if (lastMessage?.speaker === 'assistant' && lastMessage.text) {
+    if (lastMessage?.speaker === 'assistant' && lastMessage.text?.length) {
         const lastMessageText = lastMessage.text.trimEnd()
         lastMessage.text = lastMessageText
     }

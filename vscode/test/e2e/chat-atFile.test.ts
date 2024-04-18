@@ -215,13 +215,13 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1 })
+    await expectContextCellCounts(contextCell, { files: 1, lines: 10 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
     await chatInput.press('ArrowUp')
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    await expectContextCellCounts(contextCell, { files: 1 })
+    await expectContextCellCounts(contextCell, { files: 1, lines: 10 })
 
     // Edit it again, add a new @-mention, and resend.
     await chatInput.press('ArrowUp')
@@ -233,7 +233,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java and @index.html')).toBeVisible()
-    await expectContextCellCounts(contextCell, { files: 2 })
+    await expectContextCellCounts(contextCell, { files: 2, lines: 22 })
 })
 
 test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
@@ -392,7 +392,7 @@ test.extend<ExpectedEvents>({
     // The chat input should have the new code selections appended as @-mention items
     // instead of replacing the existing one or adding to a new chat.
     await page.getByRole('tab', { name: 'buzz.ts' }).click()
-    await page.getByText('4', { exact: true }).click()
+    await page.locator('div[class*="line-numbers"]').getByText('4', { exact: true }).click()
     await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
     await page.keyboard.press(`${metaKey}+Shift+P`)
     await expect(commandPaletteInputBox).toBeVisible()

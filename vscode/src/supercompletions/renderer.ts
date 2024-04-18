@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
-import { createGitDiff } from './recent-edits/create-git-diff'
 
+import { PromptString } from '@sourcegraph/cody-shared'
 import { updateRangeMultipleChanges } from '../non-stop/tracked-range'
 import type { Supercompletion } from './get-supercompletion'
 
@@ -186,8 +186,8 @@ export class SupercompletionRenderer
             return
         }
 
-        const renderableDiff = createGitDiff(
-            vscode.workspace.asRelativePath(supercompletion.location.uri.path),
+        const renderableDiff = PromptString.fromGitDiff(
+            supercompletion.location.uri,
             supercompletion.current,
             supercompletion.updated
         )

@@ -5,7 +5,7 @@ import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-sha
 import { logDebug } from '../log'
 
 import { TestSupport } from '../test-support'
-import type { API, GitExtension, Repository } from './builtinGitExtension'
+import type { API, GitExtension } from './builtinGitExtension'
 
 export function gitAPI(): API | undefined {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
@@ -77,9 +77,9 @@ export async function gitAPIinit(): Promise<vscode.Disposable> {
  */
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     try {
-        const repository = vscodeGitAPI?.getRepository(uri)
-        if (repository) {
-            return getCodebaseNameFromGitRepo(repository)
+        const remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
+        if (remoteOriginUrl) {
+            return convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
         }
     } catch (error) {
         logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
@@ -87,11 +87,7 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     return undefined
 }
 
-// HELPER FUNCTIONS
-function getCodebaseNameFromGitRepo(repository: Repository): string | undefined {
-    const remoteUrl = repository.state.remotes[0]?.pushUrl || repository.state.remotes[0]?.fetchUrl
-    if (!remoteUrl) {
-        return undefined
-    }
-    return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+export function gitRemoteUrlFromGitExtension(uri: vscode.Uri): string | undefined {
+    const repository = vscodeGitAPI?.getRepository(uri)
+    return repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
 }

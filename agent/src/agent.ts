@@ -13,6 +13,7 @@ import {
     FeatureFlag,
     ModelProvider,
     NoOpTelemetryRecorderProvider,
+    PromptString,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
@@ -35,11 +36,11 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { CommandResult } from '../../vscode/src/main'
-import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -343,6 +344,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         range.end.character === 0)
                 )
             }
+
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             // If the caller elided the content, reconstruct it here.
             const cachedDocument = this.workspace.getDocumentFromUriString(
@@ -360,6 +362,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
             )
+
+            const start = document.selection?.start
+            const end = document.selection?.end
+            if (
+                start !== undefined &&
+                start?.line === end?.line &&
+                start?.character === end?.character
+            ) {
+                vscode.commands
+                    .executeCommand('cursorMove', {
+                        to: 'down',
+                        by: 'line',
+                        value: start.line,
+                    })
+                    .then(() =>
+                        vscode.commands.executeCommand('cursorMove', {
+                            to: 'right',
+                            by: 'character',
+                            value: start.character,
+                        })
+                    )
+            }
         })
 
         this.registerNotification('textDocument/didOpen', document => {
@@ -785,12 +809,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         )
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
-            const args = { configuration: { ...params } }
-            return this.createEditTask(
-                vscode.commands
-                    .executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
-                    .then(task => task && { type: 'edit', task })
-            )
+            const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
+            const args: ExecuteEditArguments = { configuration: { instruction, model: params.model } }
+            return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
 
         this.registerAuthenticatedRequest('editCommands/document', () => {
@@ -838,12 +859,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
             for (const message of messages) {
-                if (message.error) {
-                    chatModel.addErrorAsBotMessage(message.error)
-                } else if (message.speaker === 'assistant') {
-                    chatModel.addBotMessage(message)
-                } else if (message.speaker === 'human') {
-                    chatModel.addHumanMessage(message)
+                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
+                if (deserializedMessage.error) {
+                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
+                } else if (deserializedMessage.speaker === 'assistant') {
+                    chatModel.addBotMessage(deserializedMessage)
+                } else if (deserializedMessage.speaker === 'human') {
+                    chatModel.addHumanMessage(deserializedMessage)
                 }
             }
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())

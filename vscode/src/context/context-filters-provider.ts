@@ -1,8 +1,15 @@
 import { LRUCache } from 'lru-cache'
-import RE2 from 're2'
+import { RE2 } from 're2-wasm'
 import type * as vscode from 'vscode'
 
-import { type CodyContextFilterItem, graphqlClient, logError } from '@sourcegraph/cody-shared'
+import {
+    type CodyContextFilterItem,
+    graphqlClient,
+    isFileURI,
+    logError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -57,9 +64,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }, REFETCH_INTERVAL)
     }
 
-    public isPathAllowed(repoName: string, relativePath: string): boolean {
-        const cacheKey = `${repoName}:${relativePath}`
-        const cached = this.cache.get(cacheKey)
+    public isRepoNameAllowed(repoName: string): boolean {
+        const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
         }
@@ -69,7 +75,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         if (this.contextFilters?.include.length) {
             for (const parsedFilter of this.contextFilters.include) {
-                isAllowed = checkFilter(parsedFilter, repoName, relativePath)
+                isAllowed = checkContextFilter(parsedFilter, repoName)
 
                 if (isAllowed) {
                     break
@@ -79,7 +85,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         if (isAllowed && this.contextFilters?.exclude.length) {
             for (const parsedFilter of this.contextFilters.exclude) {
-                const matchesFilter = checkFilter(parsedFilter, repoName, relativePath)
+                const matchesFilter = checkContextFilter(parsedFilter, repoName)
 
                 if (matchesFilter) {
                     isAllowed = false
@@ -88,8 +94,20 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         }
 
-        this.cache.set(cacheKey, isAllowed)
+        this.cache.set(repoName, isAllowed)
         return isAllowed
+    }
+
+    public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
+        if (!isFileURI(uri)) {
+            return false
+        }
+
+        const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
+            repoNameResolver.getRepoNameFromWorkspaceUri(uri)
+        )
+
+        return repoName ? this.isRepoNameAllowed(repoName) : false
     }
 
     public dispose(): void {
@@ -101,29 +119,21 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 }
 
-function checkFilter(
-    parsedFilter: ParsedContextFilterItem,
-    repoName: string,
-    relativePath: string
-): boolean {
-    const matchesRepo = Boolean(parsedFilter.repoNamePattern.match(repoName))
-
-    if (!parsedFilter.filePathPatterns) {
-        return matchesRepo
-    }
-
-    const matchesPath = parsedFilter.filePathPatterns.some(pattern =>
-        Boolean(pattern.match(relativePath))
-    )
-
-    return matchesRepo && matchesPath
+function checkContextFilter(parsedFilter: ParsedContextFilterItem, repoName: string): boolean {
+    return Boolean(parsedFilter.repoNamePattern.match(repoName))
 }
 
 function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilterItem {
-    const repoNamePattern = new RE2(item.repoNamePattern)
+    const repoNamePattern = new RE2(item.repoNamePattern, 'u')
     const filePathPatterns = item.filePathPatterns
-        ? item.filePathPatterns.map(pattern => new RE2(pattern))
+        ? item.filePathPatterns.map(pattern => new RE2(pattern, 'u'))
         : undefined
 
     return { repoNamePattern, filePathPatterns }
 }
+
+/**
+ * A singleton instance of the `ContextFiltersProvider` class.
+ * `contextFiltersProvider.init` should be called and awaited on extension activation.
+ */
+export const contextFiltersProvider = new ContextFiltersProvider()

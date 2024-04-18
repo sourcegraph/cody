@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { logDebug } from '@sourcegraph/cody-shared'
+import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
@@ -91,10 +91,10 @@ export async function executeDocCommand(
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { args })
 
-        let prompt = defaultCommands.doc.prompt
+        let prompt = PromptString.fromDefaultCommands(defaultCommands, 'doc')
         if (args?.additionalInstruction) {
             span.addEvent('additionalInstruction')
-            prompt = `${prompt} ${args.additionalInstruction}`
+            prompt = ps`${prompt} ${args.additionalInstruction}`
         }
 
         const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active

@@ -3,17 +3,16 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    CHARS_PER_TOKEN,
     type ContextItem,
     type ContextItemFile,
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
+import { fillInContextItemContent, filterContextItemFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -123,7 +122,7 @@ describe('getFileContextFiles', () => {
     })
 })
 
-describe('filterLargeFiles', () => {
+describe('filterContextItemFiles', () => {
     it('filters out files larger than 1MB', async () => {
         const largeFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-file.txt'),
@@ -134,7 +133,7 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeFile])
+        const filtered = await filterContextItemFiles([largeFile])
 
         expect(filtered).toEqual([])
     })
@@ -149,29 +148,29 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.SymbolicLink,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([binaryFile])
+        const filtered = await filterContextItemFiles([binaryFile])
 
         expect(filtered).toEqual([])
     })
 
-    it('sets isTooLarge for files exceeding token limit but under 1MB', async () => {
+    it('convert file size in bytes to token for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const oneByteOverTokenLimit = MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1
+        const fsSizeInBytes = EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
-            size: oneByteOverTokenLimit,
+            size: fsSizeInBytes,
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeTextFile])
-
+        const filtered = await filterContextItemFiles([largeTextFile])
+        // Frontend expects the size to be in tokens units so that they can be compared with the available tokens
+        // to set the isTooLarge field.
         expect(filtered[0]).toEqual<ContextItem>({
             type: 'file',
             uri: largeTextFile.uri,
-            isTooLarge: true,
-            size: oneByteOverTokenLimit,
+            size: Math.floor(fsSizeInBytes / 4.5),
         })
     })
 })
@@ -198,7 +197,22 @@ describe('fillInContextItemContent', () => {
             },
         ])
         expect(contextItems).toEqual<ContextItem[]>([
-            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+            {
+                type: 'file',
+                uri: URI.parse('file:///a.txt'),
+                content: 'a',
+                size: 1,
+                range: {
+                    end: {
+                        character: 0,
+                        line: 1,
+                    },
+                    start: {
+                        character: 0,
+                        line: 0,
+                    },
+                },
+            },
         ])
     })
 })

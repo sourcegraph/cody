@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    type ModelContextWindow,
     ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -12,12 +13,12 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
-    // The maximum number of characters available in the model's context window.
-    public maxChars: number
+    public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
@@ -25,12 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.maxChars = ModelProvider.getMaxCharsByModel(this.modelID)
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.maxChars = ModelProvider.getMaxCharsByModel(newModelID)
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {
@@ -124,7 +125,7 @@ export class SimpleChatModel {
             return this.customChatTitle
         }
         const lastHumanMessage = this.getLastHumanMessage()
-        return getChatPanelTitle(lastHumanMessage?.text ?? '')
+        return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
     public getCustomChatTitle(): string | undefined {
@@ -186,7 +187,10 @@ function messageToSerializedChatInteraction(
         )
     }
 
-    return { humanMessage, assistantMessage: assistantMessage ?? null }
+    return {
+        humanMessage: serializeChatMessage(humanMessage),
+        assistantMessage: assistantMessage ? serializeChatMessage(assistantMessage) : null,
+    }
 }
 
 export function prepareChatMessage(message: ChatMessage): ChatMessage {

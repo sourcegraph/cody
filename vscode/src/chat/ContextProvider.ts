@@ -164,7 +164,12 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
+        const eventValue = isLoggedOut
+            ? 'disconnected'
+            : authStatus.isLoggedIn && !isAuthError
+              ? 'connected'
+              : 'failed'
         switch (ContextEvent.Auth) {
             case 'auth':
                 telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {

@@ -1,9 +1,15 @@
 import type { ModelProvider } from '.'
-import { DEFAULT_CHAT_MODEL_TOKEN_LIMIT, DEFAULT_FAST_MODEL_TOKEN_LIMIT } from '../prompt/constants'
+import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
+    EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
+} from '../token/constants'
+
 import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -11,7 +17,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 2.1',
@@ -20,7 +26,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude Instant',
@@ -29,7 +35,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Haiku',
@@ -38,7 +44,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Sonnet',
@@ -47,7 +53,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'Claude 3 Opus',
@@ -56,7 +62,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,7 +71,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_FAST_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
         title: 'GPT-4 Turbo',
@@ -74,7 +80,7 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -84,16 +90,51 @@ export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        maxToken: DEFAULT_CHAT_MODEL_TOKEN_LIMIT,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
     {
-        title: 'Mixtral 8x22B Preview',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct-preview',
+        title: 'Mixtral 8x22B',
+        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
         provider: 'Mistral',
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        // Context window is 2k, but lower to 1.8k to leave some rooms for token counting errors.
-        maxToken: 1800,
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
-] as const satisfies ModelProvider[]
+]
+
+/**
+ * NOTE: DotCom users with FeatureFlag.CodyChatContextBudget for A/B testing only.
+ *
+ * An array of model IDs that are used for the FeatureFlag.CodyChatContextBudget A/B testing.
+ * Users with the feature flag enabled will have a seperated token limit for user-context.
+ *
+ * For other models, the context window remains the same and is shared between input and context.
+ */
+const modelsWithHigherLimit = ['anthropic/claude-3-sonnet-20240229', 'anthropic/claude-3-opus-20240229']
+
+/**
+ * Returns an array of ModelProviders representing the default models for DotCom.
+ *
+ * NOTE: 'experimental' is only for DotCom users with FeatureFlag.CodyChatContextBudget enabled
+ *
+ * @param modelType - Specifies whether to return the default or experimental models.
+ * @returns An array of `ModelProvider` objects.
+ */
+export function getDotComDefaultModels(modelType: 'default' | 'experimental'): ModelProvider[] {
+    return modelType === 'default'
+        ? DEFAULT_DOT_COM_MODELS
+        : // NOTE: Required FeatureFlag.CodyChatContextBudget for A/B testing.
+          DEFAULT_DOT_COM_MODELS.map(m =>
+              modelsWithHigherLimit.includes(m.model)
+                  ? {
+                          ...m,
+                          contextWindow: {
+                              input: EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET,
+                              context: { user: EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET },
+                              output: CHAT_OUTPUT_TOKEN_BUDGET,
+                          },
+                      }
+                  : m
+          )
+}
