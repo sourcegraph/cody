@@ -81,7 +81,7 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
-    'editCommands/code': [{ params: { instruction: string } }, EditTask]
+    'editCommands/code': [{ instruction: string; model: string }, EditTask]
     'editCommands/test': [null, EditTask]
     'editCommands/document': [null, EditTask]
 
