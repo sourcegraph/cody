@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Fixed an issue where Cody's responses were not visible in small windows. [pull/3859](https://github.com/sourcegraph/cody/pull/3859)
+
 ### Changed
 
 ## [1.14.0]
