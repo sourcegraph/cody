@@ -849,11 +849,6 @@
         },
         {
           "command": "cody.menu.commands-settings",
-          "when": "view == cody.commands.tree.view && viewItem == cody.customCommands",
-          "group": "inline@1"
-        },
-        {
-          "command": "cody.menu.commands-settings",
           "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
           "group": "inline@1"
         }
