@@ -51,6 +51,7 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { gitAPIinit } from './repository/git-extension-api'
 import { repoNameResolver } from './repository/repo-name-resolver'
+import { CommitMessageGenerator } from './scm/commit-message-generator'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -195,6 +196,12 @@ const register = async (
     )
     disposables.push(contextProvider)
     await contextProvider.init()
+
+    // const scmUsage = gitAPI()
+    // console.log(scmUsage)
+    const commitMessageGenerator = new CommitMessageGenerator({ chatClient, editor })
+    console.log(commitMessageGenerator)
+    // disposables.push(commitMessageGenerator)
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {

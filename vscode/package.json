@@ -538,6 +538,20 @@
         "group": "Debug",
         "icon": "$(copy)",
         "title": "Copy Cody Extension Version"
+      },
+      {
+        "command": "cody.command.generate-commit-message",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(cody-logo)",
+        "title": "Generate a Commit Message"
+      },
+      {
+        "command": "cody.command.generate-commit-message.stop",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(debug-stop)",
+        "title": "Stop Generating"
       }
     ],
     "keybindings": [
@@ -853,6 +867,18 @@
           "command": "cody.command.explain-output",
           "group": "0_cody",
           "when": "cody.activated"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "cody.command.generate-commit-message",
+          "when": "scmProvider == git && cody.activated && !cody.generating-commit-message",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.command.generate-commit-message.stop",
+          "when": "scmProvider == git && cody.activated && cody.generating-commit-message",
+          "group": "navigation@2"
         }
       ]
     },
@@ -1277,6 +1303,7 @@
     "lru-cache": "^10.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
+    "parse-diff": "^0.11.1",
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
     "re2-wasm": "^1.0.2",

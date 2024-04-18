@@ -408,6 +408,9 @@ importers:
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
+      parse-diff:
+        specifier: ^0.11.1
+        version: 0.11.1
       parse-git-diff:
         specifier: ^0.0.14
         version: 0.0.14
@@ -11214,6 +11217,10 @@ packages:
     dependencies:
       callsites: 3.1.0
     dev: true
+
+  /parse-diff@0.11.1:
+    resolution: {integrity: sha512-Oq4j8LAOPOcssanQkIjxosjATBIEJhCxMCxPhMu+Ci4wdNmAEdx0O+a7gzbR2PyKXgKPvRLIN5g224+dJAsKHA==}
+    dev: false
 
   /parse-git-diff@0.0.14:
     resolution: {integrity: sha512-UHNB4IWZ0dae4Z9aKgQTAm1gTBqBpmqKwoLx2/iEaVY9hQlqstDnvdWsq5fJjF2iC6368OvAB6LWUJab5wk9VQ==}
