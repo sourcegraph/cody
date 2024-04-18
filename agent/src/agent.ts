@@ -34,6 +34,7 @@ import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import type { Har } from '@pollyjs/persister'
+import { setTestingIgnorePolicyOverride } from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
 import levenshtein from 'js-levenshtein'
 import {
     AbstractMessageReader,
@@ -756,11 +757,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
-        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
-            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
-            return Promise.resolve(result.length > 0)
-        })
-
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
@@ -1020,25 +1016,41 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest(
-            'remoteRepo/list',
-            async ({ query, first, afterId }, cancelToken) => {
-                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                    query,
-                    first,
-                    afterId
-                )
-                return {
-                    repos: result.repos,
-                    startIndex: result.startIndex,
-                    count: result.count,
-                    state: {
-                        state: result.state,
-                        error: errorToCodyError(result.lastError),
-                    },
-                }
+        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
+            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                query,
+                first,
+                afterId
+            )
+            return {
+                repos: result.repos,
+                startIndex: result.startIndex,
+                count: result.count,
+                state: {
+                    state: result.state,
+                    error: errorToCodyError(result.lastError),
+                },
             }
-        )
+        })
+
+        this.registerAuthenticatedRequest('ignore/forUri', async ({ uri }) => {
+            const policy: 'ignore' | 'use' = isCodyIgnoredFile(vscode.Uri.parse(uri)) ? 'ignore' : 'use'
+            return {
+                policy,
+            }
+        })
+
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async ([options]) => {
+            setTestingIgnorePolicyOverride(
+                options
+                    ? {
+                          repoRe: RegExp(options.repoRe),
+                          uriRe: RegExp(options.uriRe),
+                      }
+                    : undefined
+            )
+            return undefined
+        })
     }
 
     // ExtensionClient callbacks.

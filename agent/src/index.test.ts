@@ -112,10 +112,10 @@ describe('Agent', () => {
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Confirm .cody/ignore is active at start up
-        const codyIgnore = await client.request('check/isCodyIgnoredFile', {
-            urls: [ignoredPath],
+        const ignore = await client.request('ignore/forUri', {
+            uri: URI.file(ignoredPath).toString(),
         })
-        expect(codyIgnore).toBeTruthy()
+        expect(ignore.policy).toBe('use')
     }, 10_000)
 
     beforeEach(async () => {
@@ -542,10 +542,10 @@ describe('Agent', () => {
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
 
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [ignoredPath],
+            const result = await client.request('ignore/forUri', {
+                uri: URI.file(ignoredPath).toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
         }, 10_000)
 
         it('autocomplete/execute on ignored file', async () => {
@@ -578,11 +578,13 @@ describe('Agent', () => {
             // Current file which is ignored, should not be included in context files
             expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
             // Ignored file should not be included in context files
-            const contextFilesUrls = contextFiles.map(f => f.uri?.path)
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: contextFilesUrls,
-            })
-            expect(result).toBeFalsy()
+            const contextFilesUrls = contextFiles.map(f => f.uri).filter(uri => uri)
+            const result = await Promise.all(
+                contextFilesUrls.map(uri => client.request('ignore/forUri', { uri: uri.toString() }))
+            )
+            for (const r of result) {
+                expect(r.policy).toBe('use')
+            }
             // Files that are not ignored should be used as context files
             expect(contextFiles.length).toBeGreaterThan(0)
         }, 30_000)
@@ -604,10 +606,14 @@ describe('Agent', () => {
             // Since no enhanced context is requested, no context files should be included
             expect(contextFiles.length).toBe(0)
             // Ignored file should not be included in context files
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: contextUrls,
-            })
-            expect(result).toBeFalsy()
+            const result = await Promise.all(
+                contextUrls.map(uri =>
+                    client.request('ignore/forUri', {
+                        uri,
+                    })
+                )
+            )
+            expect(result.every(entry => entry.policy === 'use')).toBe(true)
         }, 30_000)
 
         it('chat command on an ignored file', async () => {
@@ -633,19 +639,19 @@ describe('Agent', () => {
 
         it('ignore rule is not case sensitive', async () => {
             const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [alsoIgnoredPath],
+            const result = await client.request('ignore/forUri', {
+                uri: URI.file(alsoIgnoredPath).toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
         })
 
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
             // as it should stay active for each workspace session.
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [ignoredPath],
+            const result = await client.request('ignore/forUri', {
+                uri: URI.file(ignoredPath).toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
 
             // Check the network requests to ensure no requests include context from ignored files
             const { requests } = await client.request('testing/networkRequests', null)
@@ -1543,6 +1549,48 @@ describe('Agent', () => {
                 repoName: 'github.com/sourcegraph/cody-edlin',
             })
             expect(codyForDos.result).toBe(false)
+        })
+
+        it('testing/ignore/overridePolicy', async () => {
+            // To test that testing/ignore/overridePolicy generates an
+            // ignore/didChange notification, 'stop' sets up a Promise, 'go'
+            // unblocks it.
+            let go = () => {}
+            function stop() {
+                return new Promise(resolve => {
+                    go = () => resolve(undefined)
+                })
+            }
+            enterpriseClient.registerNotification('ignore/didChange', () => {
+                go()
+            })
+            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
+                { policy: 'use' }
+            )
+            await Promise.all([
+                stop(),
+                enterpriseClient.request('testing/ignore/overridePolicy', [
+                    {
+                        repoRe: '$^',
+                        uriRe: '.*bar.*',
+                    },
+                ]),
+            ])
+            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
+                { policy: 'ignore' }
+            )
+            expect(
+                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/quux.txt' })
+            ).toBe({ policy: 'use' })
+            await Promise.all([
+                stop(),
+                enterpriseClient.request('testing/ignore/overridePolicy', [undefined]),
+            ])
+            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
+                { policy: 'use' }
+            )
+            // Stop listening to 'ignore/didChange'
+            enterpriseClient.registerNotification('ignore/didChange', () => {})
         })
 
         afterAll(async () => {

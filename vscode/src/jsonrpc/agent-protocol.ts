@@ -123,10 +123,6 @@ export type ClientRequests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
-    /**
-     * Checks if a given set of URLs includes a Cody ignored file.
-     */
-    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -179,6 +175,15 @@ export type ClientRequests = {
             limitHit: boolean
         },
     ]
+
+    // Gets whether the specified URI is sensitive and should not be sent to
+    // LLM providers.
+    'ignore/forUri': [{ uri: string }, IgnoreForUriResult]
+
+    // For testing. Overrides any ignore policy to ignore repositories and URIs
+    // which match the specified regular expressions. Pass `undefined` to remove
+    // the override.
+    'testing/ignore/overridePolicy': [[{ repoRe: string; uriRe: string } | undefined]]
 
     // Gets whether the specific repo name is known on the remote.
     'remoteRepo/has': [{ repoName: string }, { result: boolean }]
@@ -312,6 +317,11 @@ export type ServerNotifications = {
     'editTask/didDelete': [EditTask]
 
     'codeLenses/display': [DisplayCodeLensParams]
+
+    // The set of ignored files/repositories has changed. The client should
+    // re-query using ignore/forUri.
+    // biome-ignore lint/complexity/noBannedTypes: May add details about the change later.
+    'ignore/didChange': [{}]
 
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
@@ -754,4 +764,8 @@ export interface GetFoldingRangeResult {
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
     error: CodyError | undefined
+}
+
+export interface IgnoreForUriResult {
+    policy: 'ignore' | 'use'
 }
