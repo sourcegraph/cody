@@ -17,7 +17,7 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import type { EmbeddingsProvider } from '@sourcegraph/cody-shared/src/codebase-context/context-status'
+import type { EmbeddingsModelConfig } from '@sourcegraph/cody-shared/src/configuration'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
@@ -28,34 +28,39 @@ export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
     config: LocalEmbeddingsConfig
 ): Promise<LocalEmbeddingsController> {
-    const useSourcegraphEmbeddings = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyUseSourcegraphEmbeddings
-    )
-    return new LocalEmbeddingsController(
-        context,
-        config,
-        useSourcegraphEmbeddings ? sourcegraphModelConfig : openaiModelConfig
-    )
+    const modelConfig =
+        config.testingModelConfig ||
+        ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
+            ? sourcegraphModelConfig
+            : openaiModelConfig)
+    return new LocalEmbeddingsController(context, config, modelConfig)
 }
 
-export type LocalEmbeddingsConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'>
+export type LocalEmbeddingsConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken'
+> & {
+    testingModelConfig: EmbeddingsModelConfig | undefined
+}
+
+const CODY_GATEWAY_PROD_ENDPOINT = 'https://cody-gateway.sourcegraph.com/v1/embeddings'
 
 function getIndexLibraryPath(modelSuffix: string): FileURI {
     switch (process.platform) {
         case 'darwin':
             return URI.file(
                 `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings` +
-                    (modelSuffix !== '' ? '/' + modelSuffix : '')
+                    (modelSuffix === '' ? '' : '/' + modelSuffix)
             )
         case 'linux':
             return URI.file(
                 `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings` +
-                    (modelSuffix !== '' ? '/' + modelSuffix : '')
+                    (modelSuffix === '' ? '' : '/' + modelSuffix)
             )
         case 'win32':
             return URI.file(
                 `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings` +
-                    (modelSuffix !== '' ? '\\' + modelSuffix : '')
+                    (modelSuffix === '' ? '' : '\\' + modelSuffix)
             )
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
@@ -68,34 +73,27 @@ interface RepoState {
     errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
-interface ModelConfig {
-    model: string
-    dimension: number
-    provider: EmbeddingsProvider
-    // used to keep model-specific index files separate
-    indexSuffix: string
-}
-
-const sourcegraphModelConfig: ModelConfig = {
+const sourcegraphModelConfig: EmbeddingsModelConfig = {
     model: 'sourcegraph/st-multi-qa-mpnet-base-dot-v1',
     dimension: 768,
     provider: 'sourcegraph',
-    indexSuffix: 'st-v1',
+    endpoint: CODY_GATEWAY_PROD_ENDPOINT,
+    indexPath: getIndexLibraryPath('st-v1'),
 }
 
-const openaiModelConfig: ModelConfig = {
+const openaiModelConfig: EmbeddingsModelConfig = {
     model: 'openai/text-embedding-ada-002',
     dimension: 1536,
     provider: 'openai',
-    indexSuffix: '', // empty prefix to keep backwards compatibility
+    endpoint: CODY_GATEWAY_PROD_ENDPOINT,
+    // empty prefix to keep backwards compatibility
+    indexPath: getIndexLibraryPath(''),
 }
 
 export class LocalEmbeddingsController
     implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
 {
     private disposables: vscode.Disposable[] = []
-
-    private readonly endpoint: string
 
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
@@ -128,7 +126,7 @@ export class LocalEmbeddingsController
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
-        private readonly modelConfig: ModelConfig
+        private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -141,7 +139,6 @@ export class LocalEmbeddingsController
         // Pick up the initial access token, and whether the account is dotcom.
         this.accessToken = config.accessToken || undefined
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
-        this.endpoint = 'https://cody-gateway.sourcegraph.com/v1/embeddings'
     }
 
     public dispose(): void {
@@ -231,11 +228,10 @@ export class LocalEmbeddingsController
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        const indexPath = getIndexLibraryPath(this.modelConfig.indexSuffix)
 
         const initResult = await service.request('embeddings/initialize', {
-            codyGatewayEndpoint: this.endpoint,
-            indexPath: indexPath.fsPath,
+            codyGatewayEndpoint: this.modelConfig.endpoint,
+            indexPath: this.modelConfig.indexPath.fsPath,
         })
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
             verbose: {
