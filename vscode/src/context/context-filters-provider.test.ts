@@ -1,11 +1,90 @@
-import { type ContextFiltersResult, graphqlClient } from '@sourcegraph/cody-shared'
+import { type ContextFiltersResult, fetch, graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { repoNameResolver } from '../repository/repo-name-resolver'
 import { ContextFiltersProvider } from './context-filters-provider'
 
-describe('ContextFiltersProvider', () => {
+const CODY_IGNORE_DATASET_QUERY = `
+query CodyIgnoreDataset($org: String!, $repo: String!, $expression: String!) {
+    repository(owner: $org, name: $repo) {
+        object(expression: $expression) {
+            ... on Blob {
+                text
+            }
+        }
+    }
+}`
+
+interface Repo {
+    name: string
+    id: number
+}
+
+interface FileChunk {
+    repo: Repo
+    path: string
+}
+
+interface TestCase {
+    name: string
+    description: string
+    includeByDefault: boolean
+    includeUnknown: boolean
+    'cody.contextFilters': ContextFiltersResult
+    repos: Repo[]
+    includedRepos: Repo[]
+    fileChunks: FileChunk[]
+    includedFileChunks: FileChunk[]
+}
+
+interface TestDataset {
+    testCases: TestCase[]
+}
+
+interface TestDatasetResponse {
+    data?: {
+        repository: {
+            object: {
+                text: string | null
+            } | null
+        } | null
+    }
+    errors?: { message: string; path?: string[] }[]
+}
+
+async function fetchTestDataset(revOrTag = 'HEAD'): Promise<TestDataset | null | Error> {
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        body: JSON.stringify({
+            query: CODY_IGNORE_DATASET_QUERY,
+            variables: {
+                org: 'sourcegraph',
+                repo: 'sourcegraph',
+                expression: `${revOrTag}:cmd/frontend/internal/codycontext/enterprise_test_data.json`,
+            },
+        }),
+        headers: {
+            Authorization: `bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
+        },
+    }).then(res => res.json() as TestDatasetResponse)
+    if (isError(response)) {
+        return response
+    }
+    if (response.errors && response.errors.length > 0) {
+        return new Error(response.errors.map(({ message }) => message).join(', '))
+    }
+    if (!response.data) {
+        return new Error('response is missing data')
+    }
+    const fileContent = response.data.repository?.object?.text
+    if (!fileContent) {
+        return null
+    }
+    return JSON.parse(fileContent)
+}
+
+describe('ContextFiltersProvider', async () => {
     let provider: ContextFiltersProvider
 
     beforeEach(() => {
@@ -17,6 +96,13 @@ describe('ContextFiltersProvider', () => {
         provider.dispose()
         vi.restoreAllMocks()
     })
+
+    const testDataset = await fetchTestDataset(
+        // Ideally we'll omit this arg and use "HEAD" by default or specify a git tag associated with Sourcegraph release.
+        // Test dataset JSON is not yet merged on sourcegraph/sourcegraph, thus I specify commit SHA here.
+        'c71baf9b0af2872c2ee5bba0a1de7805ae52fae8'
+    )
+    console.log(testDataset)
 
     async function initProviderWithContextFilters(contextFilters: ContextFiltersResult): Promise<void> {
         vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(contextFilters)
@@ -121,7 +207,11 @@ describe('ContextFiltersProvider', () => {
                 label: 'excludes repos with anchored exclude pattern starting with the specific term',
                 filters: {
                     include: [{ repoNamePattern: 'github\\.com\\/sourcegraph\\/.*' }],
-                    exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*' }],
+                    exclude: [
+                        {
+                            repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*',
+                        },
+                    ],
                 },
                 notAllowed: [['github.com/sourcegraph/sensitive-data', 'src/main.ts']],
                 allowed: [
@@ -141,7 +231,11 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'excludes repos using non-capturing groups',
                 filters: {
-                    include: [{ repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*' }],
+                    include: [
+                        {
+                            repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*',
+                        },
+                    ],
                     exclude: [{ repoNamePattern: '.*\\/(sensitive|classified).*' }],
                 },
                 notAllowed: [['github.com/sourcegraph/sensitive-project', 'src/main.ts']],
@@ -152,7 +246,9 @@ describe('ContextFiltersProvider', () => {
                 filters: {
                     include: [
                         { repoNamePattern: '^github\\.com\\/sourcegraph\\/.+' },
-                        { repoNamePattern: '^github\\.com\\/docker\\/compose$' },
+                        {
+                            repoNamePattern: '^github\\.com\\/docker\\/compose$',
+                        },
                         { repoNamePattern: '^github\\.com\\/.+\\/react' },
                     ],
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.+\\/docker\\/.+' }],
@@ -173,7 +269,9 @@ describe('ContextFiltersProvider', () => {
                 filters: {
                     include: [
                         { repoNamePattern: '^github\\.com\\/sourcegraph\\/.+' },
-                        { repoNamePattern: '^github\\.com\\/docker\\/compose$' },
+                        {
+                            repoNamePattern: '^github\\.com\\/docker\\/compose$',
+                        },
                         { repoNamePattern: '^github\\.com\\/.+\\/react' },
                     ],
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.*' }],
@@ -289,10 +387,17 @@ describe('ContextFiltersProvider', () => {
         it('applies context filters correctly', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
-                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+                exclude: [
+                    {
+                        repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph',
+                    },
+                ],
             })
 
-            const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            const includedURI = getTestURI({
+                repoName: 'cody',
+                filePath: 'foo/bar.ts',
+            })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
             expect(await repoNameResolver.getRepoNameFromWorkspaceUri(includedURI)).toBe(
                 'github.com/sourcegraph/cody'
@@ -300,7 +405,10 @@ describe('ContextFiltersProvider', () => {
 
             expect(await provider.isUriAllowed(includedURI)).toBe(true)
 
-            const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
+            const excludedURI = getTestURI({
+                repoName: 'sourcegraph',
+                filePath: 'src/main.tsx',
+            })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
             expect(await repoNameResolver.getRepoNameFromWorkspaceUri(excludedURI)).toBe(
                 'github.com/sourcegraph/sourcegraph'
@@ -312,10 +420,17 @@ describe('ContextFiltersProvider', () => {
         it('returns `false` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
-                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+                exclude: [
+                    {
+                        repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph',
+                    },
+                ],
             })
 
-            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            const uri = getTestURI({
+                repoName: 'cody',
+                filePath: 'foo/bar.ts',
+            })
             vi.spyOn(repoNameResolver, 'getRepoNameFromWorkspaceUri').mockResolvedValue(undefined)
             expect(await provider.isUriAllowed(uri)).toBe(false)
         })
