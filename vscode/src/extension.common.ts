@@ -14,6 +14,7 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
 
+import type { RemoteUrlGetter } from '@sourcegraph/cody-shared/src/cody-ignore/repo-name-resolver'
 import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
@@ -21,7 +22,6 @@ import type { ContextRankerConfig, ContextRankingController } from './local-cont
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { RemoteUrlGetter } from './repository/repo-name-resolver'
 import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,

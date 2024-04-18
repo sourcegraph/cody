@@ -239,6 +239,9 @@ importers:
       highlight.js:
         specifier: ^10.7.3
         version: 10.7.3
+      ini:
+        specifier: ^4.1.2
+        version: 4.1.2
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -248,9 +251,15 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lru-cache:
+        specifier: ^10.0.0
+        version: 10.2.0
       marked:
         specifier: ^4.0.16
         version: 4.0.16
+      re2-wasm:
+        specifier: ^1.0.2
+        version: 1.0.2
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -270,6 +279,9 @@ importers:
       '@types/highlight.js':
         specifier: ^9.12.4
         version: 9.12.4
+      '@types/ini':
+        specifier: ^4.1.0
+        version: 4.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -384,9 +396,6 @@ importers:
       glob:
         specifier: ^7.2.3
         version: 7.2.3
-      ini:
-        specifier: ^4.1.2
-        version: 4.1.2
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -484,9 +493,6 @@ importers:
       '@types/glob':
         specifier: ^8.0.0
         version: 8.1.0
-      '@types/ini':
-        specifier: ^4.1.0
-        version: 4.1.0
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -10096,7 +10102,6 @@ packages:
   /lru-cache@10.2.0:
     resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
     engines: {node: 14 || >=16.14}
-    dev: true
 
   /lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}

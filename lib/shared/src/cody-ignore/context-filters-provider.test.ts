@@ -1,9 +1,9 @@
-import { type ContextFiltersResult, graphqlClient } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { repoNameResolver } from '../repository/repo-name-resolver'
+import { type ContextFiltersResult, graphqlClient } from '../sourcegraph-api/graphql/client'
 import { ContextFiltersProvider } from './context-filters-provider'
+import { repoNameResolver } from './repo-name-resolver'
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider

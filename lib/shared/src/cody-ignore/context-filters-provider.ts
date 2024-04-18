@@ -1,15 +1,12 @@
 import { LRUCache } from 'lru-cache'
 import { RE2 } from 're2-wasm'
 import type * as vscode from 'vscode'
-
-import {
-    type CodyContextFilterItem,
-    graphqlClient,
-    isFileURI,
-    logError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
-import { repoNameResolver } from '../repository/repo-name-resolver'
+import { isFileURI } from '../common/uri'
+import { logError } from '../logger'
+import { graphqlClient } from '../sourcegraph-api/graphql'
+import type { CodyContextFilterItem } from '../sourcegraph-api/graphql/client'
+import { wrapInActiveSpan } from '../tracing'
+import { repoNameResolver } from './repo-name-resolver'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
