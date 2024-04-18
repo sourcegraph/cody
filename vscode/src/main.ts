@@ -330,7 +330,7 @@ const register = async (
     setCommandController(commandsManager)
     repoNameResolver.init(platform.getRemoteUrlGetters?.())
     contextFiltersProvider.init(
-        false,
+        false, // Disable the context filter provider
         repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
     )
 
