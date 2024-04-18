@@ -16,8 +16,12 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.Gray
 import com.sourcegraph.cody.agent.protocol.Range
-import com.sourcegraph.cody.edit.FixupSession
-import java.awt.*
+import com.sourcegraph.cody.edit.sessions.FixupSession
+import java.awt.Cursor
+import java.awt.Font
+import java.awt.FontMetrics
+import java.awt.Graphics2D
+import java.awt.Point
 import java.awt.geom.Rectangle2D
 import java.util.concurrent.atomic.AtomicBoolean
 

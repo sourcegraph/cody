@@ -2,7 +2,7 @@ package com.sourcegraph.cody.edit.widget
 
 import com.intellij.openapi.diagnostic.Logger
 import com.sourcegraph.cody.Icons
-import com.sourcegraph.cody.edit.FixupSession
+import com.sourcegraph.cody.edit.sessions.FixupSession
 
 /** Handles assembling standard groups of lenses. */
 class LensGroupFactory(val session: FixupSession) {

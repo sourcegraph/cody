@@ -103,9 +103,11 @@
         <lang.parserDefinition
                 language="SourcegraphRemoteRepoList"
                 implementationClass="com.sourcegraph.cody.context.RemoteRepoListParserDefinition"/>
-        <completion.contributor language="SourcegraphRemoteRepoList" implementationClass="com.sourcegraph.cody.context.RemoteRepoCompletionContributor"
+        <completion.contributor language="SourcegraphRemoteRepoList"
+                                implementationClass="com.sourcegraph.cody.context.RemoteRepoCompletionContributor"
                                 order="first, before commitCompletion"/>
-        <annotator language="SourcegraphRemoteRepoList" implementationClass="com.sourcegraph.cody.context.RemoteRepoAnnotator" />
+        <annotator language="SourcegraphRemoteRepoList"
+                   implementationClass="com.sourcegraph.cody.context.RemoteRepoAnnotator"/>
     </extensions>
 
     <applicationListeners>
@@ -235,12 +237,12 @@
 
         <!-- Inline editor actions -->
         <action id="cody.editCodeAction"
-                class="com.sourcegraph.cody.edit.EditCodeAction">
+                class="com.sourcegraph.cody.edit.actions.EditCodeAction">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 
         <action id="cody.documentCodeAction"
-                class="com.sourcegraph.cody.edit.DocumentCodeAction">
+                class="com.sourcegraph.cody.edit.actions.DocumentCodeAction">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 

@@ -12,6 +12,7 @@ import com.intellij.ui.components.fields.ExpandableTextField
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.chat.ui.LlmDropdown
+import com.sourcegraph.cody.edit.sessions.EditCodeSession
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Graphics
@@ -191,7 +192,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
           return
         }
         controller.addSession(
-            EditSession(controller, editor, project, editor.document, text, llmDropdown.item))
+            EditCodeSession(controller, editor, project, editor.document, text, llmDropdown.item))
       }
     }
 

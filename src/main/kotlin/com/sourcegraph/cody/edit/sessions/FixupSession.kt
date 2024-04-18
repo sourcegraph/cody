@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.edit
+package com.sourcegraph.cody.edit.sessions
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -30,6 +30,10 @@ import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.TaskIdParam
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
+import com.sourcegraph.cody.edit.EditCommandPrompt
+import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.edit.InsertUndoableAction
+import com.sourcegraph.cody.edit.ReplaceUndoableAction
 import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import java.util.concurrent.CancellationException
@@ -218,9 +222,19 @@ abstract class FixupSession(
     }
   }
 
-  abstract fun retry()
+  fun retry() {
+    // TODO: The actual prompt we sent is displayed as ghost text in the text input field, in VS
+    // Code.
+    // E.g. "Write a brief documentation comment for the selected code <etc.>"
+    // We need to send the prompt along with the lenses, so that the client can display it.
+    EditCommandPrompt(controller, editor, "Edit instructions and Retry").displayPromptUI()
+  }
 
-  abstract fun diff()
+  fun diff() {
+    // TODO: Use DiffManager and bring up a diff of the changed region.
+    // You can see it in action now by clicking the green gutter to the left of Cody changes.
+    logger.warn("Code Lenses: Show Diff")
+  }
 
   fun undo() {
     CodyAgentService.withAgent(project) { agent ->
@@ -333,6 +347,8 @@ abstract class FixupSession(
   private fun getCurrentFileEditor(file: VirtualFile): FileEditor? {
     return FileEditorManager.getInstance(project).getEditors(file).firstOrNull()
   }
+
+  override fun dispose() {}
 
   companion object {
     // Lens actions the user can take; we notify the Agent when they are taken.
