@@ -69,6 +69,10 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
         this.fire()
     }
 
+    private isTestFile(uri: vscode.Uri): boolean {
+        return this.addTestEnabled && isValidTestFile(uri)
+    }
+
     /**
      * Gets the code lenses for the specified document.
      */
@@ -86,12 +90,8 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
             return []
         }
 
-        let lens = commandLenses.cody
-
         // TODO (bee) For test files, adds code lenses for each symbol
-        if (this.addTestEnabled && isValidTestFile(document.uri)) {
-            lens = commandLenses.test
-        }
+        const lens = commandLenses[this.isTestFile(document.uri) ? 'test' : 'cody']
 
         // Get a list of symbols from the document, filter out symbols that are not functions / classes / methods
         const allSymbols = await fetchDocumentSymbols(document)
