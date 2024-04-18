@@ -1016,7 +1016,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.notify('ignore/didChange', {})
         })
 
-        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async ([options]) => {
+        // Note the double array destructuring here.
+        // TODO: Work out how to represent an argument list so that both sides
+        // (JetBrains and VSCode) are happy to deserialize the same thing.
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async ([[options]]) => {
             setTestingIgnorePolicyOverride(
                 options
                     ? {
