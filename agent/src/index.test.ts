@@ -10,6 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
+import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
 import { isNode16 } from './isNode16'
@@ -703,10 +704,12 @@ describe('Agent', () => {
         }, 20_000)
     })
 
-    function checkDocumentCommand(
+    function checkEditCommand(
         documentClient: TestClient,
+        command: RequestMethodName,
         name: string,
         filename: string,
+        param: any,
         assertion: (obtained: string) => void
     ): void {
         it(
@@ -717,7 +720,7 @@ describe('Agent', () => {
                 })
                 const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                 await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request('editCommands/document', null)
+                const task = await documentClient.request(command, param)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
                 expect(lenses).toHaveLength(0) // Code lenses are now handled client side
@@ -728,6 +731,32 @@ describe('Agent', () => {
             },
             20_000
         )
+    }
+
+    function checkEditCodeCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        instruction: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(
+            documentClient,
+            'editCommands/code',
+            name,
+            filename,
+            { instruction: instruction },
+            assertion
+        )
+    }
+
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(documentClient, 'editCommands/document', name, filename, null, assertion)
     }
 
     describe('Commands', () => {
@@ -942,8 +971,24 @@ describe('Agent', () => {
             expect(client.workspaceEditParams).toHaveLength(1)
         }, 30_000)
 
+        describe('Edit code', () => {
+            checkEditCodeCommand(
+                client,
+                'editCommands/code (basic function)',
+                'sum.ts',
+                'Rename `a` parameter to `c`',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(`
+                  "export function sum(c: number, b: number): number {
+                      /* CURSOR */
+                  }
+                  "
+                `)
+            )
+        })
+
         describe('Document code', () => {
-            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(
                     `
                   "/**
