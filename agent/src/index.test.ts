@@ -115,7 +115,7 @@ describe('Agent', () => {
         const ignore = await client.request('ignore/forUri', {
             uri: URI.file(ignoredPath).toString(),
         })
-        expect(ignore.policy).toBe('use')
+        expect(ignore.policy).toBe('ignore')
     }, 10_000)
 
     beforeEach(async () => {
@@ -1564,9 +1564,9 @@ describe('Agent', () => {
             enterpriseClient.registerNotification('ignore/didChange', () => {
                 go()
             })
-            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
-                { policy: 'use' }
-            )
+            expect(
+                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+            ).toStrictEqual({ policy: 'use' })
             await Promise.all([
                 stop(),
                 enterpriseClient.request('testing/ignore/overridePolicy', [
@@ -1576,19 +1576,19 @@ describe('Agent', () => {
                     },
                 ]),
             ])
-            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
-                { policy: 'ignore' }
-            )
+            expect(
+                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+            ).toStrictEqual({ policy: 'ignore' })
             expect(
                 await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/quux.txt' })
-            ).toBe({ policy: 'use' })
+            ).toStrictEqual({ policy: 'use' })
             await Promise.all([
                 stop(),
                 enterpriseClient.request('testing/ignore/overridePolicy', [undefined]),
             ])
-            expect(await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })).toBe(
-                { policy: 'use' }
-            )
+            expect(
+                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+            ).toStrictEqual({ policy: 'use' })
             // Stop listening to 'ignore/didChange'
             enterpriseClient.registerNotification('ignore/didChange', () => {})
         })
