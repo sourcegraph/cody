@@ -169,7 +169,7 @@ test.extend<ExpectedEvents>({
     // Search for the command defined in cody.json and execute it
 
     /* Test: context.currentDir with currentDir command */
-    await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'Custom Commands', exact: true }).locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').fill('currentDir')
     await page.keyboard.press('Enter')
@@ -199,7 +199,7 @@ test.extend<ExpectedEvents>({
 
     /* Test: context.directory with directory command */
 
-    await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'Custom Commands', exact: true }).locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
     await page.getByPlaceholder('Search command to run...').fill('directory')
@@ -219,7 +219,7 @@ test.extend<ExpectedEvents>({
 
     /* Test: context.openTabs with openTabs command */
 
-    await page.getByRole('treeitem', { name: 'Custom Commands' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'Custom Commands', exact: true }).locator('a').click()
     await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
     await page.getByPlaceholder('Search command to run...').click()
     await page.getByPlaceholder('Search command to run...').fill('openTabs')
