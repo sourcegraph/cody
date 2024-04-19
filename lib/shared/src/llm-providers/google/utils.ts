@@ -1,4 +1,5 @@
 import type { GeminiChatMessage } from '.'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import type { Message } from '../../sourcegraph-api'
 
 /**
@@ -17,7 +18,7 @@ export function constructGeminiChatMessages(messages: Message[]): GeminiChatMess
     return messages
         .map(msg => ({
             role: msg.speaker === 'human' ? 'user' : 'model',
-            parts: [{ text: msg.text?.toString() ?? '' }],
+            parts: [{ text: msg.text?.toFilteredString(contextFiltersProvider) ?? '' }],
         }))
         .filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')
 }

@@ -27,14 +27,6 @@ export function groqChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    // Validate that no messages contain ignored context
-    const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-    for (const uri of references) {
-        if (!contextFiltersProvider.isUriAllowed(uri)) {
-            throw new Error(`Message contains ignored context item from URI: ${uri}`)
-        }
-    }
-
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         log?.onError('No model or messages')
@@ -52,7 +44,7 @@ export function groqChatClient(
         messages: params.messages.map(msg => {
             return {
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text ?? '',
+                content: msg.text?.toFilteredString(contextFiltersProvider) ?? '',
             }
         }),
         stream: true,

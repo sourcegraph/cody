@@ -345,14 +345,6 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        // Validate that no messages contain ignored context
-        const references = requestParams.messages.flatMap(m => m.text?.getReferences() ?? [])
-        for (const uri of references) {
-            if (!contextFiltersProvider.isUriAllowed(uri)) {
-                throw new Error(`Message contains ignored context item from URI: ${uri}`)
-            }
-        }
-
         const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
@@ -369,7 +361,7 @@ class FireworksProvider extends Provider {
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
                 // Convert the SG instance messages array back to the original prompt
-                const prompt = requestParams.messages[0]!.text!
+                const prompt = requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {

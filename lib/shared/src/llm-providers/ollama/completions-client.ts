@@ -28,14 +28,6 @@ export function createOllamaClient(
         params: OllamaGenerateParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        // Validate that no messages contain ignored context
-        const references = params.prompt.getReferences()
-        for (const uri of references) {
-            if (!contextFiltersProvider.isUriAllowed(uri)) {
-                throw new Error(`Message contains ignored context item from URI: ${uri}`)
-            }
-        }
-
         const url = new URL('/api/generate', ollamaOptions.url).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
@@ -43,7 +35,10 @@ export function createOllamaClient(
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                body: JSON.stringify(params),
+                body: JSON.stringify({
+                    ...params,
+                    prompt: params.prompt.toFilteredString(contextFiltersProvider),
+                }),
                 headers: {
                     'Content-Type': 'application/json',
                 },

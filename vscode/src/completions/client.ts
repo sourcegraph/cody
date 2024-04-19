@@ -10,6 +10,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
+    SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
     createSSEIterator,
@@ -37,14 +38,6 @@ export function createClient(
         params: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        // Validate that no messages contain ignored context
-        const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-        for (const uri of references) {
-            if (!contextFiltersProvider.isUriAllowed(uri)) {
-                throw new Error(`Message contains ignored context item from URI: ${uri}`)
-            }
-        }
-
         const url = new URL('/.api/completions/code', config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
@@ -85,12 +78,18 @@ export function createClient(
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
 
+                const serializedParams: SerializedCodeCompletionsParams & { stream: boolean } = {
+                    ...params,
+                    stream: enableStreaming,
+                    messages: params.messages.map(m => ({
+                        ...m,
+                        text: m.text?.toFilteredString(contextFiltersProvider),
+                    })),
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        ...params,
-                        stream: enableStreaming,
-                    }),
+                    body: JSON.stringify(serializedParams),
                     headers,
                     signal,
                 })

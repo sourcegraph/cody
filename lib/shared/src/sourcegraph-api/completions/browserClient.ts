@@ -5,7 +5,12 @@ import { addCustomUserAgent } from '../graphql/client'
 
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { SourcegraphCompletionsClient } from './client'
-import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import type {
+    CompletionCallbacks,
+    CompletionParameters,
+    Event,
+    SerializedCompletionParameters,
+} from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
@@ -14,12 +19,12 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): void {
-        // Validate that no messages contain ignored context
-        const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-        for (const uri of references) {
-            if (!contextFiltersProvider.isUriAllowed(uri)) {
-                throw new Error(`Message contains ignored context item from URI: ${uri}`)
-            }
+        const serializedParams: SerializedCompletionParameters = {
+            ...params,
+            messages: params.messages.map(m => ({
+                ...m,
+                text: m.text?.toFilteredString(contextFiltersProvider) ?? '',
+            })),
         }
 
         const url = new URL(this.completionsEndpoint)
@@ -45,7 +50,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         fetchEventSource(url.toString(), {
             method: 'POST',
             headers: Object.fromEntries(headersInstance.entries()),
-            body: JSON.stringify(params),
+            body: JSON.stringify(serializedParams),
             signal: abort.signal,
             openWhenHidden: isRunningInWebWorker, // otherwise tries to call document.addEventListener
             async onopen(response) {

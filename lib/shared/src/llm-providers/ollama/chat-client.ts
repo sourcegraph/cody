@@ -2,7 +2,6 @@ import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse 
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
-import { ps } from '../../prompt/prompt-string'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type {
     CompletionCallbacks,
@@ -23,14 +22,6 @@ export function ollamaChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    // Validate that no messages contain ignored context
-    const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-    for (const uri of references) {
-        if (!contextFiltersProvider.isUriAllowed(uri)) {
-            throw new Error(`Message contains ignored context item from URI: ${uri}`)
-        }
-    }
-
     const log = logger?.startCompletion(params, completionsEndpoint)
     const model = params.model?.replace('ollama/', '')
     if (!model || !params.messages) {
@@ -43,7 +34,7 @@ export function ollamaChatClient(
         messages: params.messages.map(msg => {
             return {
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text ?? ps``,
+                content: msg.text?.toFilteredString(contextFiltersProvider) ?? '',
             }
         }),
         options: {

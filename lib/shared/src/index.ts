@@ -127,6 +127,7 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
 export type {

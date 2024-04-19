@@ -2,6 +2,7 @@ import dedent from 'dedent'
 import type * as vscode from 'vscode'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
+import { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { AutocompleteContextSnippet, DocumentContext } from '../completions/types'
@@ -47,6 +48,21 @@ export class PromptString {
     constructor(private __debug: string) {}
 
     public toString(): string {
+        return internal_toString(this)
+    }
+
+    /**
+     * Returns a string that is safe to use in a prompt that is sent to an LLM.
+     */
+    public toFilteredString(contextFilter: ContextFiltersProvider): string {
+        const references = internal_toReferences(this)
+        for (const reference of references) {
+            if (!contextFilter.isUriAllowed(reference)) {
+                throw new Error(
+                    `The prompt string contains a reference to a file that is not allowed by the context filters: ${reference}`
+                )
+            }
+        }
         return internal_toString(this)
     }
 

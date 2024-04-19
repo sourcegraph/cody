@@ -31,14 +31,6 @@ export function googleChatClient(
     logger?: CompletionLogger,
     signal?: AbortSignal
 ): void {
-    // Validate that no messages contain ignored context
-    const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-    for (const uri of references) {
-        if (!contextFiltersProvider.isUriAllowed(uri)) {
-            throw new Error(`Message contains ignored context item from URI: ${uri}`)
-        }
-    }
-
     if (!params.model) {
         return
     }

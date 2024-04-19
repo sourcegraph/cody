@@ -15,7 +15,7 @@ import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters, SerializedCompletionParameters } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -63,16 +63,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 return
             }
 
-            // Validate that no messages contain ignored context
-            //
-            // Note: This happens after we branch of to alternative providers to
-            // avoid doing the work twice yet still have the validation close to the
-            // network call.
-            const references = params.messages.flatMap(m => m.text?.getReferences() ?? [])
-            for (const uri of references) {
-                if (!contextFiltersProvider.isUriAllowed(uri)) {
-                    throw new Error(`Message contains ignored context item from URI: ${uri}`)
-                }
+            const serializedParams: SerializedCompletionParameters = {
+                ...params,
+                messages: params.messages.map(m => ({
+                    ...m,
+                    text: m.text?.toFilteredString(contextFiltersProvider) ?? '',
+                })),
             }
 
             const log = this.logger?.startCompletion(params, url.toString())
@@ -248,7 +244,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             })
 
-            request.write(JSON.stringify(params))
+            request.write(JSON.stringify(serializedParams))
             request.end()
 
             onAbort(signal, () => request.destroy())

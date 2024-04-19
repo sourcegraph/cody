@@ -39,7 +39,7 @@ export interface OllamaChatParams {
 
 interface OllamaChatMessage {
     role: string
-    content: PromptString
+    content: string
     images?: string[]
 }
 
