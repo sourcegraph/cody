@@ -193,7 +193,7 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
-    type ContextFiltersResult,
+    type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
 } from './sourcegraph-api/graphql/client'

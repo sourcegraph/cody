@@ -195,7 +195,9 @@ const register = async (
         enterpriseContextFactory.createRemoteSearch()
     )
     disposables.push(contextProvider)
-    await contextProvider.init()
+    disposables.push(contextFiltersProvider)
+    const bindedRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    await Promise.all([contextProvider.init(), contextFiltersProvider.init(bindedRepoNameResolver)])
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -245,6 +247,7 @@ const register = async (
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
         promises.push(contextProvider.onConfigurationChange(newConfig))
+        promises.push(contextFiltersProvider.init(bindedRepoNameResolver))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
@@ -329,10 +332,6 @@ const register = async (
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
     repoNameResolver.init(platform.getRemoteUrlGetters?.())
-    contextFiltersProvider.init(
-        false, // Disable the context filter provider
-        repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
-    )
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (

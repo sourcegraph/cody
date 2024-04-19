@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import { RE2 } from 're2-wasm'
 import type * as vscode from 'vscode'
 import { isFileURI } from '../common/uri'
-import { logError } from '../logger'
+import { logDebug, logError } from '../logger'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import type { CodyContextFilterItem } from '../sourcegraph-api/graphql/client'
 import { wrapInActiveSpan } from '../tracing'
@@ -26,16 +26,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private fetchIntervalId: NodeJS.Timer | undefined
     private cache = new LRUCache<string, boolean>({ max: 128 })
     private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
-    // TODO: This is only a temporary off-switch until we can properly detect a
-    // valid context filter config in the upstream repository.
-    private temporary_isEnabled = true
 
-    async init(temporary_isEnabled: boolean, getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
-        this.temporary_isEnabled = temporary_isEnabled
-        if (!temporary_isEnabled) {
-            return
-        }
+    async init(getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
         this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
+        this.dispose()
         await this.fetchContextFilters()
         this.startRefetchTimer()
     }
@@ -43,17 +37,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private async fetchContextFilters(): Promise<void> {
         try {
             const response = await graphqlClient.contextFilters()
-            if (response instanceof Error) {
-                logError('ContextFiltersProvider', 'fetchContextFilters', response)
-            } else {
-                this.cache.clear()
-                this.contextFilters = null
+            this.cache.clear()
+            this.contextFilters = null
 
-                if (response) {
-                    this.contextFilters = {
-                        include: response.include.map(parseContextFilterItem),
-                        exclude: response.exclude.map(parseContextFilterItem),
-                    }
+            if (response) {
+                logDebug('ContextFiltersProvider', 'fetchContextFilters', { verbose: response })
+                this.contextFilters = {
+                    include: (response.include || []).map(parseContextFilterItem),
+                    exclude: (response.exclude || []).map(parseContextFilterItem),
                 }
             }
         } catch (error) {
@@ -72,10 +63,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public isRepoNameAllowed(repoName: string): boolean {
-        if (!this.temporary_isEnabled) {
-            return true
-        }
-
         const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
@@ -110,8 +97,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
-        if (!this.temporary_isEnabled) {
+        if (this.hasIncludeEverythingFilters()) {
             return true
+        }
+
+        if (this.hasExcludeEverythingFilters()) {
+            return false
         }
 
         if (!isFileURI(uri)) {
@@ -131,6 +122,18 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (this.fetchIntervalId) {
             clearTimeout(this.fetchIntervalId)
         }
+    }
+
+    private hasIncludeEverythingFilters() {
+        return this.contextFilters?.include.length === 0 && this.contextFilters?.exclude.length === 0
+    }
+
+    private hasExcludeEverythingFilters() {
+        return (
+            this.contextFilters?.include.length === 0 &&
+            this.contextFilters?.exclude.length === 1 &&
+            this.contextFilters.exclude[0].repoNamePattern.toString() === '.*'
+        )
     }
 }
 

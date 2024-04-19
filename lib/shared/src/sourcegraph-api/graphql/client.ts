@@ -183,9 +183,17 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResult {
-    include: CodyContextFilterItem[]
-    exclude: CodyContextFilterItem[]
+export interface ContextFiltersResponse {
+    site: {
+        codyContextFilters: {
+            raw: ContextFilters | null
+        } | null
+    } | null
+}
+
+export interface ContextFilters {
+    include?: CodyContextFilterItem[]
+    exclude?: CodyContextFilterItem[]
 }
 
 export interface CodyContextFilterItem {
@@ -194,12 +202,12 @@ export interface CodyContextFilterItem {
     filePathPatterns?: string[]
 }
 
-const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
+const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
     include: [],
     exclude: [],
 }
 
-const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
+const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
     include: [],
     exclude: [{ repoNamePattern: '.*' }],
 }
@@ -537,13 +545,24 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<ContextFiltersResult | null | Error> {
+    public async contextFilters(): Promise<ContextFilters> {
         const response =
-            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResult | null>>(
+            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
                 CONTEXT_FILTERS_QUERY
             )
 
-        const result = extractDataOrError(response, data => data)
+        const result = extractDataOrError(response, data => {
+            if (data?.site?.codyContextFilters?.raw === null) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            if (data?.site?.codyContextFilters?.raw) {
+                return data.site.codyContextFilters.raw
+            }
+
+            // Exclude everything in case of an unexpected response structure.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
@@ -551,6 +570,7 @@ export class SourcegraphGraphQLAPIClient {
                 return INCLUDE_EVERYTHING_CONTEXT_FILTERS
             }
 
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
             return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
@@ -794,7 +814,7 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    private fetchSourcegraphAPI<T>(
+    public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {}
     ): Promise<T | Error> {
