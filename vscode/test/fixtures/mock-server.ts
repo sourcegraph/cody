@@ -14,6 +14,7 @@ interface MockRequest {
     body: {
         messages: {
             text: string
+            speaker?: string
         }[]
     }
 }
@@ -249,7 +250,12 @@ export class MockServer {
             // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
             // or have a method on the server to send a set response the next time it sees a trigger word in the request.
             const request = req as MockRequest
-            const lastHumanMessageIndex = request.body.messages.length - 2
+            let lastHumanMessageIndex = request.body.messages.findLastIndex(
+                msg => msg?.speaker === 'human'
+            )
+            if (lastHumanMessageIndex < 0) {
+                lastHumanMessageIndex = request.body.messages.length - 2
+            }
             let response = responses.chat
             // Long chat response
             if (request.body.messages[lastHumanMessageIndex].text.startsWith('Lorem ipsum')) {
