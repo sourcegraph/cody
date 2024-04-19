@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class EnhancedContextParams(
-  val selectedRepos: List<SelectedReposParams>? = null,
+  val selectedRepos: List<SelectedReposParams>,
 )
 

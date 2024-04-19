@@ -24,10 +24,10 @@ sealed class WorkspaceEditOperation {
 }
 
 data class CreateFileOperation(
-  val type: TypeEnum? = null, // Oneof: create-file
-  val uri: String? = null,
+  val type: TypeEnum, // Oneof: create-file
+  val uri: String,
   val options: WriteFileOptions? = null,
-  val textContents: String? = null,
+  val textContents: String,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : WorkspaceEditOperation() {
 
@@ -37,9 +37,9 @@ data class CreateFileOperation(
 }
 
 data class RenameFileOperation(
-  val type: TypeEnum? = null, // Oneof: rename-file
-  val oldUri: String? = null,
-  val newUri: String? = null,
+  val type: TypeEnum, // Oneof: rename-file
+  val oldUri: String,
+  val newUri: String,
   val options: WriteFileOptions? = null,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : WorkspaceEditOperation() {
@@ -50,8 +50,8 @@ data class RenameFileOperation(
 }
 
 data class DeleteFileOperation(
-  val type: TypeEnum? = null, // Oneof: delete-file
-  val uri: String? = null,
+  val type: TypeEnum, // Oneof: delete-file
+  val uri: String,
   val deleteOptions: DeleteOptionsParams? = null,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : WorkspaceEditOperation() {
@@ -62,9 +62,9 @@ data class DeleteFileOperation(
 }
 
 data class EditFileOperation(
-  val type: TypeEnum? = null, // Oneof: edit-file
-  val uri: String? = null,
-  val edits: List<TextEdit>? = null,
+  val type: TypeEnum, // Oneof: edit-file
+  val uri: String,
+  val edits: List<TextEdit>,
 ) : WorkspaceEditOperation() {
 
   enum class TypeEnum {

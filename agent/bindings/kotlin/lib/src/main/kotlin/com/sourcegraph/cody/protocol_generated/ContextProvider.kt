@@ -23,8 +23,8 @@ sealed class ContextProvider {
 }
 
 data class LocalEmbeddingsProvider(
-  val kind: KindEnum? = null, // Oneof: embeddings
-  val state: StateEnum? = null, // Oneof: indeterminate, no-match, unconsented, indexing, ready
+  val kind: KindEnum, // Oneof: embeddings
+  val state: StateEnum, // Oneof: indeterminate, no-match, unconsented, indexing, ready
   val errorReason: ErrorReasonEnum? = null, // Oneof: not-a-git-repo, git-repo-has-no-remote
 ) : ContextProvider() {
 
@@ -47,9 +47,9 @@ data class LocalEmbeddingsProvider(
 }
 
 data class LocalSearchProvider(
-  val kind: KindEnum? = null, // Oneof: search
-  val type: TypeEnum? = null, // Oneof: local
-  val state: StateEnum? = null, // Oneof: unindexed, indexing, ready, failed
+  val kind: KindEnum, // Oneof: search
+  val type: TypeEnum, // Oneof: local
+  val state: StateEnum, // Oneof: unindexed, indexing, ready, failed
 ) : ContextProvider() {
 
   enum class KindEnum {
@@ -69,11 +69,11 @@ data class LocalSearchProvider(
 }
 
 data class RemoteSearchProvider(
-  val kind: KindEnum? = null, // Oneof: search
-  val type: TypeEnum? = null, // Oneof: remote
-  val state: StateEnum? = null, // Oneof: ready, no-match
-  val id: String? = null,
-  val inclusion: InclusionEnum? = null, // Oneof: auto, manual
+  val kind: KindEnum, // Oneof: search
+  val type: TypeEnum, // Oneof: remote
+  val state: StateEnum, // Oneof: ready, no-match
+  val id: String,
+  val inclusion: InclusionEnum, // Oneof: auto, manual
 ) : ContextProvider() {
 
   enum class KindEnum {

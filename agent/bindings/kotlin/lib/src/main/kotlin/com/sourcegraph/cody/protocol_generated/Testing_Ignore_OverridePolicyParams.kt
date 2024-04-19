@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Testing_Ignore_OverridePolicyParams(
-  val repoRe: String? = null,
-  val uriRe: String? = null,
+  val repoRe: String,
+  val uriRe: String,
 )
 

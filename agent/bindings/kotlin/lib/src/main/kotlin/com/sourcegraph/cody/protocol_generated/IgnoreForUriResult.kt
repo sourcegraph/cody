@@ -4,7 +4,7 @@ package com.sourcegraph.cody.protocol_generated
 import com.google.gson.annotations.SerializedName
 
 data class IgnoreForUriResult(
-  val policy: PolicyEnum? = null, // Oneof: ignore, use
+  val policy: PolicyEnum, // Oneof: ignore, use
 ) {
 
   enum class PolicyEnum {
