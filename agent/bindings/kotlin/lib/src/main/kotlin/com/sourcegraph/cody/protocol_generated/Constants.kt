@@ -70,6 +70,8 @@ object Constants {
   const val warning = "warning"
   const val information = "information"
   const val IDEEXTENSION = "IDEEXTENSION"
+  const val ignore = "ignore"
+  const val use = "use"
   const val initialized = "initialized"
   const val event = "event"
   const val submit = "submit"

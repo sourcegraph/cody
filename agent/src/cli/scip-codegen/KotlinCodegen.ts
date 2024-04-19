@@ -342,7 +342,11 @@ export class KotlinCodegen extends BaseCodegen {
             for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
                 // Process a JSON-RPC request signature. For example:
                 // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
-                let resultType = request.signature.value_signature.tpe.type_ref.type_arguments[1]
+                let resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
+                if (resultType === undefined) {
+                    this.reporter.error(request.symbol, `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`)
+                    continue
+                }
 
                 // TODO: make nullable handling generic for any type, not just request parameters
                 let nullableSyntax = ''
