@@ -25,7 +25,7 @@ interface ParsedContextFilterItem {
 
 export class ContextFiltersProvider implements vscode.Disposable {
     private contextFilters: ParsedContextFilters | null = null
-    private fetchIntervalId: NodeJS.Timer | undefined
+    private fetchIntervalId: NodeJS.Timeout | undefined | number
     private cache = new LRUCache<string, boolean>({ max: 128 })
 
     async init() {
