@@ -1,4 +1,4 @@
-import { SerializedChatMessage } from '../../chat/transcript/messages'
+import type { SerializedChatMessage } from '../../chat/transcript/messages'
 import type { PromptString } from '../../prompt/prompt-string'
 
 interface DoneEvent {
