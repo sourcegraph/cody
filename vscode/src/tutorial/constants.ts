@@ -4,7 +4,7 @@ import { transformEmojiToSvg } from './utils'
 const TUTORIAL_EMOJIS = {
     Intro: '&#128075;', // 👋
     Todo: '&#128073;', // 👉
-    Done: '&#x2705;', // ✅
+    Done: '&#x1F389;', // 🎉
 }
 
 export const INTRO_DECORATION = vscode.window.createTextEditorDecorationType({
