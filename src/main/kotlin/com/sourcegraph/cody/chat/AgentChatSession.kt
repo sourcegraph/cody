@@ -34,7 +34,6 @@ import com.sourcegraph.telemetry.GraphQlLogger
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
 import org.slf4j.LoggerFactory
 
 class AgentChatSession
@@ -332,8 +331,8 @@ private constructor(
       return agent.server.chatRestore(restoreParams)
     }
 
+    @RequiresEdt
     fun createFromState(project: Project, state: ChatState): AgentChatSession {
-      val agentChatSession = CompletableFuture<AgentChatSession>()
 
       val chatModelProvider =
           state.llm?.let {
@@ -345,17 +344,16 @@ private constructor(
                 model = it.model ?: "")
           }
 
-      createNewPanel(project) { codyAgent ->
-        val dummyConnectionId = codyAgent.server.chatNew()
-        val chatSession =
-            AgentChatSession(project, dummyConnectionId, state.internalId!!, chatModelProvider)
+      val connectionId = createNewPanel(project) { it.server.chatNew() }
+      val chatSession =
+          AgentChatSession(project, connectionId, state.internalId!!, chatModelProvider)
 
-        chatSession.updateFromState(codyAgent, state)
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+        chatSession.updateFromState(agent, state)
         AgentChatSessionService.getInstance(project).addSession(chatSession)
-        agentChatSession.complete(chatSession)
-        dummyConnectionId
       }
-      return agentChatSession.completeOnTimeout(null, 15, TimeUnit.SECONDS).get()
+
+      return chatSession
     }
 
     private fun createNewPanel(
