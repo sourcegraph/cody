@@ -9,7 +9,7 @@ import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/Hover
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
-import { enableDebugMode } from './utils/export-logs'
+import { enableVerboseDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
@@ -234,8 +234,8 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: config.debugEnable ? 'Check Debug Logs' : 'Turn on Debug Mode',
-                onClick: () => enableDebugMode(),
+                tooltip: config.debugVerbose ? 'Check Debug Logs' : 'Turn on Debug Mode',
+                onClick: () => enableVerboseDebugMode(),
             } as vscode.QuickInputButton,
         ]
         quickPick.onDidTriggerButton(async item => {

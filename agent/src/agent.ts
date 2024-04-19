@@ -466,7 +466,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 // @ts-ignore
                 const persister = polly.persister._cache as Map<string, Har>
                 for (const [, har] of persister) {
-                    for (const entry of har.log.entries) {
+                    for (const entry of har?.log?.entries ?? []) {
                         if (entry.request.url !== url) {
                             continue
                         }
