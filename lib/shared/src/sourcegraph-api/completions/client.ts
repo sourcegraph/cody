@@ -27,7 +27,7 @@ export interface CompletionLogger {
 
 export type CompletionsClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
 >
 
 /**

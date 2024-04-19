@@ -48,6 +48,21 @@ const responses = {
      * Mocked doc string
      */
     `,
+    lorem: `\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n
+    \`\`\`
+    // Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean blandit erat egestas, malesuada urna id, congue sem.
+    export interface Animal {
+            name: string
+            makeAnimalSound(): string
+            isMammal: boolean
+            printName(): void {
+                console.log(this.name);
+            }
+        }
+    }
+    \`\`\`
+    \n\n
+    `,
 }
 
 const FIXUP_PROMPT_TAG = '<SELECTEDCODE7662>'
@@ -236,6 +251,10 @@ export class MockServer {
             const request = req as MockRequest
             const lastHumanMessageIndex = request.body.messages.length - 2
             let response = responses.chat
+            // Long chat response
+            if (request.body.messages[lastHumanMessageIndex].text.startsWith('Lorem ipsum')) {
+                response = responses.lorem
+            }
             // Doc command
             if (request.body.messages[lastHumanMessageIndex].text.includes('documentation comment')) {
                 response = responses.document
