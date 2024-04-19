@@ -399,7 +399,7 @@
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
-        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
+        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
@@ -510,8 +510,7 @@
         "command": "cody.debug.export.logs",
         "category": "Cody Debug",
         "group": "Debug",
-        "title": "Export Logs…",
-        "when": "config.cody.debug.enable"
+        "title": "Export Logs…"
       },
       {
         "command": "cody.debug.outputChannel",
@@ -990,12 +989,6 @@
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
-        },
-        "cody.debug.enable": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")",
-          "default": true
         },
         "cody.debug.verbose": {
           "order": 99,
