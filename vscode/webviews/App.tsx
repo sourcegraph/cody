@@ -5,7 +5,6 @@ import './App.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type Configuration,
     type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
