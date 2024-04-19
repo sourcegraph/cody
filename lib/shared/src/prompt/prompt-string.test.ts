@@ -56,6 +56,24 @@ describe('PromptString', () => {
         expect(outer.getReferences()).toEqual([uri])
     })
 
+    it('implements toFilteredString()', async () => {
+        const uri = testFileUri('/foo/bar.ts')
+        const document = createFakeDocument(uri, 'i am from a file')
+        const promptString = PromptString.fromDocumentText(document)
+
+        const allowPolicy = {
+            isUriAllowed: () => Promise.resolve(true),
+        }
+        const denyPolicy = {
+            isUriAllowed: () => Promise.resolve(false),
+        }
+
+        expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')
+        expect(async () => await promptString.toFilteredString(denyPolicy)).rejects.toThrowError(
+            'The prompt string contains a reference to a file that is not allowed by the context filters.'
+        )
+    })
+
     it('behaves like a string', () => {
         const s = ps`  Foo${ps`bar`}baz  `
         expect(s.toString()).toBe('  Foobarbaz  ')
