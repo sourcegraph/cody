@@ -1569,14 +1569,12 @@ describe('Agent', () => {
             ).toStrictEqual({ policy: 'use' })
             await Promise.all([
                 stop(),
-                enterpriseClient.request('testing/ignore/overridePolicy', [
-                    [
+                enterpriseClient.request('testing/ignore/overridePolicy',
                         {
                             repoRe: '$^',
                             uriRe: '.*bar.*',
                         },
-                    ],
-                ]),
+                ),
             ])
             expect(
                 await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
@@ -1586,7 +1584,7 @@ describe('Agent', () => {
             ).toStrictEqual({ policy: 'use' })
             await Promise.all([
                 stop(),
-                enterpriseClient.request('testing/ignore/overridePolicy', [[null]]),
+                enterpriseClient.request('testing/ignore/overridePolicy', null),
             ])
             expect(
                 await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })

@@ -98,6 +98,8 @@ interface CodyAgentServer {
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
   @JsonRequest("ignore/forUri")
   fun ignore_forUri(params: Ignore_ForUriParams): CompletableFuture<IgnoreForUriResult>
+  @JsonRequest("testing/ignore/overridePolicy")
+  fun testing_ignore_overridePolicy(params: Testing_Ignore_OverridePolicyParams): CompletableFuture<Null>
   @JsonRequest("remoteRepo/has")
   fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
   @JsonRequest("remoteRepo/list")
