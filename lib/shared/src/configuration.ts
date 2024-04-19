@@ -21,7 +21,6 @@ export interface ConfigGetter<T> {
 export interface Configuration {
     proxy?: string | null
     codebase?: string
-    debugEnable: boolean
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'

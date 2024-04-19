@@ -186,10 +186,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ConfigurationWithAccessToken,
-        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
-    > {}
+    extends Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
