@@ -12,6 +12,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Sidebar (Settings & Support): For Pro & Enterprise, moved 'Account' up to the top. For Pro only, removed 'Usage' as it can be accessed via 'Account' → 'Manage Account'. [pull/3868](https://github.com/sourcegraph/cody/pull/3868)
+
 ## [1.14.0]
 
 ### Added
