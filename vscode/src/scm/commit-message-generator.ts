@@ -315,14 +315,7 @@ const PROMPT_SUFFIX = (template: string): string =>
     `
 </staged-changes>
 
-A commit message consists of a short subject line and a body with additional details about and reasons for the change. Commit messages are concise, technical, and specific to the change.
-Here is a template that describes in detail how to construct a commit message:
-
-<template>
-${template}
-</template>
-
-Write a commit message for the staged changes using the template as a guide where applicable.
+Write a short, single sentence, commit message for the staged changes
 `.trim()
 
 const DEFAULT_TEMPLATE_CONTENT = `
