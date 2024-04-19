@@ -46,12 +46,31 @@ export class EditManager implements vscode.Disposable {
 
     constructor(public options: EditManagerOptions) {
         this.controller = new FixupController(options.authProvider, options.extensionClient)
-        this.disposables.push(
-            this.controller,
-            vscode.commands.registerCommand('cody.command.edit-code', (args: ExecuteEditArguments) =>
-                this.executeEdit(args)
-            )
+        /**
+         * Entry point to triggering a new Edit.
+         * Given a set or arguments, this will create a new LLM interaction
+         * and start a `FixupTask`.
+         */
+        const editCommand = vscode.commands.registerCommand(
+            'cody.command.edit-code',
+            (args: ExecuteEditArguments) => this.executeEdit(args)
         )
+        /**
+         * Entry point to start an existing Edit.
+         * This generally should only be required if a `FixupTask` needs
+         * to be manually re-triggered in some way. For example, if we need
+         * to restart a task due to a conflict.
+         *
+         * Note: This differs to a "retry", as it preserves the original `FixupTask`.
+         */
+        const startCommand = vscode.commands.registerCommand(
+            'cody.command.start-edit',
+            (task: FixupTask) => {
+                const provider = this.getProviderForTask(task)
+                provider.startEdit()
+            }
+        )
+        this.disposables.push(this.controller, editCommand, startCommand)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
