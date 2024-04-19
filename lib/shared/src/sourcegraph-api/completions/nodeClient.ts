@@ -67,7 +67,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 ...params,
                 messages: params.messages.map(m => ({
                     ...m,
-                    text: m.text?.toFilteredString(contextFiltersProvider) ?? '',
+                    text: m.text?.toFilteredString(contextFiltersProvider),
                 })),
             }
 
