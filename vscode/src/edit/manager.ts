@@ -67,6 +67,7 @@ export class EditManager implements vscode.Disposable {
             'cody.command.start-edit',
             (task: FixupTask) => {
                 const provider = this.getProviderForTask(task)
+                provider.abortEdit()
                 provider.startEdit()
             }
         )
