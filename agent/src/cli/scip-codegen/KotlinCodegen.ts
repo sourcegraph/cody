@@ -8,11 +8,10 @@ import { type Diagnostic, Severity } from './Diagnostic'
 import { KotlinFormatter } from './KotlinFormatter'
 import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
-import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import { resetOutputPath } from './resetOutputPath'
 import { scip } from './scip'
 import { stringLiteralType } from './stringLiteralType'
-import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
+import { capitalize, isTypescriptKeyword, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
 interface DocumentContext {
     f: KotlinFormatter
@@ -28,7 +27,7 @@ export class KotlinCodegen extends BaseCodegen {
 
     constructor(options: CodegenOptions, symtab: SymbolTable, reporter: ConsoleReporter) {
         super(options, symtab, reporter)
-        this.f = new KotlinFormatter(this.symtab)
+        this.f = new KotlinFormatter(this.symtab, this)
     }
 
     public async run(): Promise<void> {
@@ -239,7 +238,6 @@ export class KotlinCodegen extends BaseCodegen {
                     // FIXME
                     continue
                 }
-                this.queueClassLikeType(memberType, member, 'parameter')
                 let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
                 const constants = this.stringConstantsFromInfo(member)
                 for (const constant of constants) {
@@ -247,12 +245,18 @@ export class KotlinCodegen extends BaseCodegen {
                     this.stringLiteralConstants.add(constant)
                 }
 
-                if (constants.length > 0 && memberTypeSyntax === 'String') {
-                    memberTypeSyntax = this.f.formatEnumType(member.display_name)
-                    enums.push({ name: memberTypeSyntax, members: constants })
+                if (constants.length > 0 && memberTypeSyntax.startsWith('String')) {
+                    const enumTypeName = this.f.formatEnumType(member.display_name)
+                    memberTypeSyntax = enumTypeName + this.f.nullableSyntax(memberType)
+                    enums.push({ name: enumTypeName, members: constants })
+                } else {
+                    this.queueClassLikeType(memberType, member, 'parameter')
                 }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
-                p.line(`val ${member.display_name}: ${memberTypeSyntax}? = null,${oneofSyntax}`)
+                const defaultValueSyntax = this.f.isNullable(memberType) ? ' = null' : ''
+                p.line(
+                    `val ${member.display_name}: ${memberTypeSyntax}${defaultValueSyntax},${oneofSyntax}`
+                )
             }
         })
         if (enums.length === 0) {
@@ -342,21 +346,13 @@ export class KotlinCodegen extends BaseCodegen {
             for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
                 // Process a JSON-RPC request signature. For example:
                 // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
-                let resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
+                const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
                 if (resultType === undefined) {
-                    this.reporter.error(request.symbol, `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`)
+                    this.reporter.error(
+                        request.symbol,
+                        `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`
+                    )
                     continue
-                }
-
-                // TODO: make nullable handling generic for any type, not just request parameters
-                let nullableSyntax = ''
-                if (
-                    resultType.has_union_type &&
-                    resultType.union_type.types.length === 2 &&
-                    resultType.union_type.types[1].type_ref.symbol === typescriptKeyword('null')
-                ) {
-                    nullableSyntax = '?'
-                    resultType = resultType.union_type.types[0]
                 }
 
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(request)
@@ -367,7 +363,7 @@ export class KotlinCodegen extends BaseCodegen {
                 p.line(`@JsonRequest("${request.display_name}")`)
                 p.line(
                     `fun ${f.functionName(request)}(${parameterSyntax}): ` +
-                        `CompletableFuture<${resultTypeSyntax}${nullableSyntax}>`
+                        `CompletableFuture<${resultTypeSyntax}>`
                 )
             }
 
@@ -442,14 +438,20 @@ export class KotlinCodegen extends BaseCodegen {
         }
 
         if (type.has_union_type) {
-            const nonNullTypes = type.union_type.types.filter(
-                type => !isNullOrUndefinedOrUnknownType(type)
-            )
-            if (nonNullTypes.length === 1) {
+            const nonNullableTypes = type.union_type.types.filter(type => !this.f.isNullable(type))
+            if (
+                nonNullableTypes.every(
+                    tpe => tpe.has_type_ref && isTypescriptKeyword(tpe.type_ref.symbol)
+                )
+            ) {
+                // Nothing to queue
+                return
+            }
+            if (nonNullableTypes.length === 1) {
                 // Ignore `| null` union types and just queue the non-null type.
                 // All properties in the generated bindings are nullable by
                 // defaults anyways, even if the original type is not nullable.
-                this.queueClassLikeType(nonNullTypes[0], jsonrpcMethod, kind)
+                this.queueClassLikeType(nonNullableTypes[0], jsonrpcMethod, kind)
             } else {
                 // Used hardcoded list of exceptions for how to resolve union
                 // types. In some cases, we are exposing VS Code  APIs that have
@@ -465,7 +467,7 @@ export class KotlinCodegen extends BaseCodegen {
                             jsonrpcMethod
                         )}`
                     )
-                    this.queueClassLikeType(nonNullTypes[exceptionIndex], jsonrpcMethod, kind)
+                    this.queueClassLikeType(nonNullableTypes[exceptionIndex], jsonrpcMethod, kind)
                 } else {
                     throw new Error(
                         `unsupported union type: ${JSON.stringify(jsonrpcMethod.toObject(), null, 2)}`

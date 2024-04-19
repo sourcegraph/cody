@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Commands_CustomParams(
-  val key: String? = null,
+  val key: String,
 )
 

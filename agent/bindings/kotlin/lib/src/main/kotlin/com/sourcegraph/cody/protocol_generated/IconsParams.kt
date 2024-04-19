@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class IconsParams(
-  val value: String? = null,
-  val position: Int? = null,
+  val value: String,
+  val position: Int,
 )
 

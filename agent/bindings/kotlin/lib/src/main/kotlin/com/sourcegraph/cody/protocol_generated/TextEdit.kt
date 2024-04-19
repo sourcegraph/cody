@@ -23,9 +23,9 @@ sealed class TextEdit {
 }
 
 data class ReplaceTextEdit(
-  val type: TypeEnum? = null, // Oneof: replace
-  val range: Range? = null,
-  val value: String? = null,
+  val type: TypeEnum, // Oneof: replace
+  val range: Range,
+  val value: String,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : TextEdit() {
 
@@ -35,9 +35,9 @@ data class ReplaceTextEdit(
 }
 
 data class InsertTextEdit(
-  val type: TypeEnum? = null, // Oneof: insert
-  val position: Position? = null,
-  val value: String? = null,
+  val type: TypeEnum, // Oneof: insert
+  val position: Position,
+  val value: String,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : TextEdit() {
 
@@ -47,8 +47,8 @@ data class InsertTextEdit(
 }
 
 data class DeleteTextEdit(
-  val type: TypeEnum? = null, // Oneof: delete
-  val range: Range? = null,
+  val type: TypeEnum, // Oneof: delete
+  val range: Range,
   val metadata: WorkspaceEditEntryMetadata? = null,
 ) : TextEdit() {
 

@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class TitleParams(
-  val text: String? = null,
-  val icons: List<IconsParams>? = null,
+  val text: String,
+  val icons: List<IconsParams>,
 )
 

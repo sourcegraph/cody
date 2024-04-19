@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class AutocompleteResult(
-  val items: List<AutocompleteItem>? = null,
+  val items: List<AutocompleteItem>,
   val completionEvent: CompletionBookkeepingEvent? = null,
 )
 

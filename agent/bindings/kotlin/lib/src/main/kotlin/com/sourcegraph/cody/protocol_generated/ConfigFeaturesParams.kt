@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ConfigFeaturesParams(
-  val chat: Boolean? = null,
-  val attribution: Boolean? = null,
+  val chat: Boolean,
+  val attribution: Boolean,
 )
 

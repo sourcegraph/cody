@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Ignore_ForUriParams(
-  val uri: String? = null,
+  val uri: String,
 )
 

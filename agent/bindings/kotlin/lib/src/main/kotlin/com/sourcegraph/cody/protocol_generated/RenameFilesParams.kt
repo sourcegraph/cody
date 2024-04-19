@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class RenameFilesParams(
-  val files: List<RenameFile>? = null,
+  val files: List<RenameFile>,
 )
 

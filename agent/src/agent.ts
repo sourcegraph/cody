@@ -1045,13 +1045,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         setIgnorePolicyChangeListener(() => {
             // Forward policy change notifications to the client.
-            this.notify('ignore/didChange', {})
+            this.notify('ignore/didChange', null)
         })
 
         // Note the double array destructuring here.
         // TODO: Work out how to represent an argument list so that both sides
         // (JetBrains and VSCode) are happy to deserialize the same thing.
-        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async (options) => {
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async options => {
             setTestingIgnorePolicyOverride(
                 options
                     ? {
@@ -1091,7 +1091,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             }),
             repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', {})
+                this.notify('remoteRepo/didChange', null)
             }),
             {
                 dispose: () => {

@@ -2,9 +2,9 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class EditTask(
-  val id: String? = null,
-  val state: CodyTaskState? = null,
+  val id: String,
+  val state: CodyTaskState,
   val error: CodyError? = null,
-  val selectionRange: Range? = null,
+  val selectionRange: Range,
 )
 

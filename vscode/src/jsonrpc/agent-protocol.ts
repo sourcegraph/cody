@@ -320,8 +320,7 @@ export type ServerNotifications = {
 
     // The set of ignored files/repositories has changed. The client should
     // re-query using ignore/forUri.
-    // biome-ignore lint/complexity/noBannedTypes: May add details about the change later.
-    'ignore/didChange': [{}]
+    'ignore/didChange': [null]
 
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
@@ -339,8 +338,7 @@ export type ServerNotifications = {
 
     // The list of remote repositories changed. Results from remoteRepo/list
     // may be stale and should be requeried.
-    // biome-ignore lint/complexity/noBannedTypes: May add details about the change later.
-    'remoteRepo/didChange': [{}]
+    'remoteRepo/didChange': [null]
     // Reflects the state of fetching the repository list. After fetching is
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.

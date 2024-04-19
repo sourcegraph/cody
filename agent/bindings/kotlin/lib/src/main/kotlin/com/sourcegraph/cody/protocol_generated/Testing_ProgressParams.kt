@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Testing_ProgressParams(
-  val title: String? = null,
+  val title: String,
 )
 
