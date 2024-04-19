@@ -37,7 +37,7 @@ class FixupService(val project: Project) : Disposable {
   /** Entry point for the document code command, called by the action handler. */
   fun startDocumentCode(editor: Editor) {
     if (!isEligibleForInlineEdit(editor)) return
-    DocumentCodeSession(this, editor, editor.project ?: return, editor.document)
+    DocumentCodeSession(this, editor, editor.project ?: return)
   }
 
   fun isEligibleForInlineEdit(editor: Editor): Boolean {

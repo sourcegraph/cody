@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.edit.sessions
 
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
@@ -12,8 +11,7 @@ class DocumentCodeSession(
     controller: FixupService,
     editor: Editor,
     project: Project,
-    document: Document
-) : FixupSession(controller, editor, project, document) {
+) : FixupSession(controller, project, editor) {
   override fun makeEditingRequest(agent: CodyAgent): CompletableFuture<EditTask> {
     return agent.server.commandsDocument()
   }

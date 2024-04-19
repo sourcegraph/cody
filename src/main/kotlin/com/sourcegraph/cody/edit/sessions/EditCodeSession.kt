@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.edit.sessions
 
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
@@ -19,10 +18,10 @@ class EditCodeSession(
     controller: FixupService,
     editor: Editor,
     project: Project,
-    document: Document,
     val instructions: String,
     private val chatModelProvider: ChatModelsResponse.ChatModelProvider,
-) : FixupSession(controller, editor, project, document) {
+) : FixupSession(controller, project, editor) {
+
   override fun makeEditingRequest(agent: CodyAgent): CompletableFuture<EditTask> {
     val params = InlineEditParams(instructions, chatModelProvider.model)
     return agent.server.commandsEdit(params)

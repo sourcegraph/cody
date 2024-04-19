@@ -1,7 +1,6 @@
 <idea-plugin require-restart="true">
     <resource-bundle>CodyBundle</resource-bundle>
 
-
     <id>com.sourcegraph.jetbrains</id>
     <name>Cody: AI Coding Assistant with Autocomplete &amp; Chat</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">
@@ -248,6 +247,11 @@
 
         <action id="cody.enableInlineEditsActions"
                 class="com.sourcegraph.cody.edit.EnableInlineEditsAction"/>
+
+
+        <action id="cody.editShowDiffAction"
+                class="com.sourcegraph.cody.edit.EditShowDiffAction">
+        </action>
 
         <group id="SourcegraphEditor" popup="true" searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>

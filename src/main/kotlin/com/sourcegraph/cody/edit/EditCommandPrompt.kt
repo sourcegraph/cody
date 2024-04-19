@@ -191,8 +191,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, val di
           logger.warn("Project was null when trying to add an edit session")
           return
         }
-        controller.addSession(
-            EditCodeSession(controller, editor, project, editor.document, text, llmDropdown.item))
+        controller.addSession(EditCodeSession(controller, editor, project, text, llmDropdown.item))
       }
     }
 

@@ -43,6 +43,8 @@
     - [ ] [Free Account](#free-account)
     - [ ] [Pro Account after trial](#pro-account-after-trial)
     - [ ] [Enterprise account](#enterprise-account)
+- Inline Edit
+    - [ ] [Show Diff](#show-diff)
 
 ## Onboarding
 
@@ -540,3 +542,59 @@ Repeat the above starting from different themes.
 #### Expected behaviour
 
 Changing theme should lead to full repaint of the colours according to the current theme.
+
+## Inline Edit
+
+Select some code and right-click on it. Got to `Cody > Edit Code`.
+Write a prompt and click "OK".
+
+### Show Diff
+
+The "Show Diff" feature should present two sides:
+- Right-Hand Side: This should display the current state of the editor, including all changes made by Cody and any user edits.
+- Left-Hand Side: This should display the state of the editor including all user changes made at various stages:
+  - Before triggering Cody's inline edit.
+  - After triggering Cody's inline edit but before Cody started writing.
+  - While Cody is writing (before Cody finished).
+  - After Cody has finished writing.
+
+In other words, the left-hand side should show the right hand side WITHOUT Cody Inline Edit changes. 
+
+#### Scenario 1: User Adds/Removes a Line Above the Selected Area Before Triggering the Inline Edit
+
+**Steps**:
+1. Above the area that you want to apply the inline edit, add or remove one or more lines.
+2. Trigger the `Cody Inline Edit`.
+3. Trigger the `Show Diff`.
+
+#### Scenario 2: User Adds/Removes a Line Above the Selected Area After Triggering the Inline Edit But Before Cody Starts Writing
+
+**Steps**:
+1. Trigger the `Cody Inline Edit`.
+2. Before Cody starts writing, add or remove lines above the selected area.
+3. Allow Cody to complete its edits.
+4. Activate the `Show Diff`.
+
+#### Scenario 3: User Adds/Removes a Line Above the Selected Area After Cody Starts Writing But Before It Finishes
+
+**Steps**:
+1. Trigger the `Cody Inline Edit`.
+2. While Cody is writing, add or remove lines above the targeted edit area.
+3. Allow Cody to complete its edits.
+4. Trigger the `Show Diff`.
+
+#### Scenario 4: User Adds/Removes a Line Above the Selected Area After Cody Finishes Writing
+
+**Steps**:
+1. Trigger the `Cody Inline Edit`.
+2. After Cody's edits are done, add or remove lines above the edited area.
+3. Trigger the `Show Diff`.
+
+#### Scenario 5: Scenarios 1, 2, 3, 4 But With Lines Addition/Removal Between the Inline Edit Changed lines
+
+`Inline Edit` can modify some particular line in the selected "target" area but leave the other lines unchanged (in that area). 
+The changes to the lines unmodified by Cody should not be reflected in the `Show Diff`.
+
+#### Scenario 6: Scenarios 1, 2, 3, 4 But With Lines Addition/Removal After the Inline Edit Changed lines
+
+Similarly, the changes after the selected "target" area should not be reflected in the `Show Diff`.
