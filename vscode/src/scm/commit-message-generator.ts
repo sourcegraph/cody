@@ -315,7 +315,7 @@ const PROMPT_SUFFIX = (template: string): string =>
     `
 </staged-changes>
 
-Write a short, single sentence, commit message for the staged changes
+Write a short, single sentence, commit message header for the staged changes
 `.trim()
 
 const DEFAULT_TEMPLATE_CONTENT = `
