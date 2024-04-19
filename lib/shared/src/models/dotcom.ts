@@ -10,6 +10,16 @@ import { ModelUsage } from './types'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+    // The order listed here is the order shown to users. Put the default LLM first.
+    {
+        title: 'Claude 3 Sonnet',
+        model: 'anthropic/claude-3-sonnet-20240229',
+        provider: 'Anthropic',
+        default: true,
+        codyProOnly: false,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+    },
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -43,15 +53,6 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
-    },
-    {
-        title: 'Claude 3 Sonnet',
-        model: 'anthropic/claude-3-sonnet-20240229',
-        provider: 'Anthropic',
-        default: true,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
     },
