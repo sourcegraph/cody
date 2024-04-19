@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
-import { type AuthStatus, PromptString } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type ChatMessage, PromptString } from '@sourcegraph/cody-shared'
 import { prepareChatMessage } from '../chat/chat-view/SimpleChatModel'
 import { getRelativeChatPeriod } from '../common/time-date'
 import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
@@ -32,20 +32,20 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
 
     const chatHistoryEntries = [...Object.entries(chats)].reverse()
     for (const [id, entry] of chatHistoryEntries) {
-        let lastHumanMessageText: PromptString | undefined = undefined
+        let lastHumanMessage: ChatMessage | undefined = undefined
 
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
-            lastHumanMessageText = prepareChatMessage(
+            lastHumanMessage = prepareChatMessage(
                 PromptString.unsafe_deserializeChatMessage(entry.interactions[index]?.humanMessage)
-            )?.text
-            if (lastHumanMessageText) {
+            )
+            if (lastHumanMessage) {
                 break
             }
         }
 
-        if (lastHumanMessageText) {
-            const lastHumanText = lastHumanMessageText.toString().split('\n')[0]
+        if (lastHumanMessage?.text) {
+            const lastHumanText = lastHumanMessage.text?.toString().split('\n')[0]
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
             const timestamp = new Date(entry.lastInteractionTimestamp)
             const timeUnit = getRelativeChatPeriod(timestamp)
