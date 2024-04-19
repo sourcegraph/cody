@@ -72,8 +72,6 @@ interface CodyAgentServer {
   fun graphql_getRepoIdIfEmbeddingExists(params: Graphql_GetRepoIdIfEmbeddingExistsParams): CompletableFuture<String?>
   @JsonRequest("graphql/getRepoId")
   fun graphql_getRepoId(params: Graphql_GetRepoIdParams): CompletableFuture<String?>
-  @JsonRequest("check/isCodyIgnoredFile")
-  fun check_isCodyIgnoredFile(params: Check_IsCodyIgnoredFileParams): CompletableFuture<Boolean>
   @JsonRequest("git/codebaseName")
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
@@ -98,6 +96,8 @@ interface CodyAgentServer {
   fun extensionConfiguration_status(params: Null): CompletableFuture<AuthStatus?>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
+  @JsonRequest("ignore/forUri")
+  fun ignore_forUri(params: Ignore_ForUriParams): CompletableFuture<IgnoreForUriResult>
   @JsonRequest("remoteRepo/has")
   fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
   @JsonRequest("remoteRepo/list")

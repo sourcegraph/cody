@@ -34,6 +34,8 @@ interface CodyAgentClient {
   fun editTask_didDelete(params: EditTask)
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams)
+  @JsonNotification("ignore/didChange")
+  fun ignore_didChange(params: Ignore_DidChangeParams)
   @JsonNotification("webview/postMessage")
   fun webview_postMessage(params: WebviewPostMessageParams)
   @JsonNotification("progress/start")
