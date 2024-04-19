@@ -150,6 +150,9 @@ importers:
       win-ca:
         specifier: ^3.5.1
         version: 3.5.1
+      ws:
+        specifier: ^8.16.0
+        version: 8.16.0
     devDependencies:
       '@types/dedent':
         specifier: ^0.7.0
@@ -169,6 +172,9 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.5.10
       diff:
         specifier: ^5.2.0
         version: 5.2.0
@@ -5599,6 +5605,12 @@ packages:
 
   /@types/vscode@1.80.0:
     resolution: {integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg==}
+    dev: true
+
+  /@types/ws@8.5.10:
+    resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
+    dependencies:
+      '@types/node': 20.4.0
     dev: true
 
   /@types/yaml@1.9.7:
@@ -14110,7 +14122,6 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-    dev: true
 
   /xml-name-validator@4.0.0:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
