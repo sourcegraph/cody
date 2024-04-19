@@ -54,6 +54,7 @@ class LlmDropdown(
     models.sortedBy { it.codyProOnly }.forEach(::addItem)
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
+      if (accountTier == null) return@thenApply
       isCurrentUserFree = accountTier == AccountTier.DOTCOM_FREE
 
       val selectedModel = HistoryService.getInstance(project).getDefaultLlm()

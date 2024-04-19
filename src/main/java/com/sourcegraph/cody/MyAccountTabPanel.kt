@@ -87,20 +87,16 @@ class MyAccountTabPanel(val project: Project) : JPanel() {
   }
 
   @RequiresEdt
-  fun update(accountTier: AccountTier? = null) {
+  fun update() {
     this.removeAll()
     chatLimitError = UpgradeToCodyProNotification.chatRateLimitError.get()
     autocompleteLimitError = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
     if (chatLimitError != null || autocompleteLimitError != null) {
       this.add(createRateLimitPanel(), BorderLayout.PAGE_START)
     }
+    var accountTier =
+        CodyAuthenticationManager.getInstance(project).getActiveAccountTier().getNow(null)
     this.add(createCenterPanel(accountTier))
-
-    if (accountTier == null) {
-      CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply {
-        ApplicationManager.getApplication().invokeLater { update(it) }
-      }
-    }
 
     revalidate()
     repaint()

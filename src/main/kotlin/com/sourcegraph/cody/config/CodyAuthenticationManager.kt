@@ -43,7 +43,7 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
   private val publisher = project.messageBus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
-  @Volatile private var activeAccountTier: CompletableFuture<AccountTier>? = null
+  @Volatile private var activeAccountTier: CompletableFuture<AccountTier?>? = null
 
   init {
     scheduler.scheduleAtFixedRate(
@@ -70,7 +70,7 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
   @CalledInAny fun getAccounts(): Set<CodyAccount> = accountManager.accounts
 
   @CalledInAny
-  fun getActiveAccountTier(): CompletableFuture<AccountTier> =
+  fun getActiveAccountTier(): CompletableFuture<AccountTier?> =
       getActiveAccountTier(forceRefresh = false)
 
   /**
@@ -80,12 +80,12 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
    * to update their state accordingly later.
    */
   @CalledInAny
-  private fun getActiveAccountTier(forceRefresh: Boolean): CompletableFuture<AccountTier> {
+  private fun getActiveAccountTier(forceRefresh: Boolean): CompletableFuture<AccountTier?> {
     activeAccountTier?.let { if (!forceRefresh) return it }
 
     val account = getActiveAccount() ?: return CompletableFuture.completedFuture(null)
     val previousAccountTier = activeAccountTier?.getNow(null)
-    val accountTierFuture = CompletableFuture<AccountTier>()
+    val accountTierFuture = CompletableFuture<AccountTier?>()
     activeAccountTier = accountTierFuture
 
     accountTierFuture.thenApply { currentAccountTier ->
