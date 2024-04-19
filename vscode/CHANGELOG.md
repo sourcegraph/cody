@@ -8,7 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Chat: Fixed an issue where older chats were displaying as 'N months ago' in the Chat History sidebar. [pull/3864](https://github.com/sourcegraph/cody/pull/3864)
+- Chat: Fixed an issue where older chats were displaying as 'N months ago' instead of the number in the Chat History sidebar. [pull/3864](https://github.com/sourcegraph/cody/pull/3864)
 
 ### Changed
 
