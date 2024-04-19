@@ -355,7 +355,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const authStatus = this.authProvider.getAuthStatus()
         const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-            debugEnable: config.debugEnable,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
         }

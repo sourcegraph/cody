@@ -55,10 +55,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.tracing':
                         return true
-                    case 'cody.debug.enable':
-                        return true
-                    case 'cody.debug.verbose':
-                        return true
                     case 'cody.debug.filter':
                         return /.*/
                     case 'cody.telemetry.level':
@@ -135,7 +131,6 @@ describe('getConfiguration', () => {
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
-            debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
