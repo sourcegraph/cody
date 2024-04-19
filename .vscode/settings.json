@@ -29,4 +29,7 @@
     "Supercompletion",
     "Supercompletions"
   ],
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
 }
