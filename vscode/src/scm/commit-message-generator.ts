@@ -74,17 +74,18 @@ export class CommitMessageGenerator implements vscode.Disposable {
                             return
                         }
 
+                        console.log('Got commit message', commitMessage)
                         scm.inputBox.value = commitMessage
-                        await vscode.commands.executeCommand(
-                            'setContext',
-                            'cody.generating-commit-message',
-                            false
-                        )
                     } catch {
                         scm.inputBox.value = this.initialScmValue
                     } finally {
                         scm.inputBox.placeholder = this.initialScmPlaceholder
                         scm.inputBox.enabled = true
+                        await vscode.commands.executeCommand(
+                            'setContext',
+                            'cody.generating-commit-message',
+                            false
+                        )
                     }
                 }
             ),
@@ -125,6 +126,7 @@ export class CommitMessageGenerator implements vscode.Disposable {
         const multiplexer = new BotResponseMultiplexer()
         multiplexer.sub(COMMIT_MESSAGE_TOPIC, {
             onResponse: (content: string) => {
+                console.log('Got content', content)
                 completion = content
                 return Promise.resolve()
             },
@@ -158,18 +160,18 @@ export class CommitMessageGenerator implements vscode.Disposable {
                 {
                     model,
                     stopSequences: [`</${COMMIT_MESSAGE_TOPIC}>`],
-                    maxTokensToSample: 500,
+                    maxTokensToSample: 1000,
                 }
             )
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change':
-                        void multiplexer.publish(message.text)
+                        await multiplexer.publish(message.text)
                         break
                     case 'error':
                         throw message.error
                     case 'complete':
-                        void multiplexer.notifyTurnComplete()
+                        await multiplexer.notifyTurnComplete()
                         break
                 }
             }
