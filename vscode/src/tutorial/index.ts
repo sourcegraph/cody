@@ -3,7 +3,8 @@ import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
-import { COMPLETE_DECORATION, INTRO_DECORATION, TODO_DECORATION } from './constants'
+import { CodyTaskState } from '../non-stop/utils'
+import { COMPLETE_DECORATION, TODO_DECORATION } from './constants'
 import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT, getInteractiveRanges } from './content'
 import { setTutorialUri } from './helpers'
 import { CodyChatLinkProvider, findRangeOfText } from './utils'
@@ -23,14 +24,14 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
     disposables.push(diagnosticCollection)
 
     const editor = await openTutorial(documentUri)
-    let chatComplete = false
-    const introductionRange = findRangeOfText(editor.document, 'Welcome to Cody!')
-    let chatRange = findRangeOfText(editor.document, 'Start a Chat')
     const interactiveRanges = getInteractiveRanges(editor.document)
 
-    // Set gutter decorations for associated lines, note: VS Code automatically keeps track of
-    // these lines so we don't need to update these
-    editor.setDecorations(INTRO_DECORATION, introductionRange ? [introductionRange] : [])
+    /**
+     * Track if the "Chat" step is completed.
+     * We cannot detect this from the document, so we need to store this flag separately
+     */
+    let chatComplete = false
+    let chatRange = findRangeOfText(editor.document, 'Start a Chat')
 
     disposables.push(
         vscode.languages.registerDocumentLinkProvider(
@@ -57,8 +58,6 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
     setDiagnostic()
 
     const setCompletedStates = (editor: vscode.TextEditor) => {
-        // We don't actually care about the changes here, we just want to inspect our tracked
-        // lines to see if they are still empty. If they are not, they we can report success
         const completeDecorations: vscode.DecorationOptions[] = []
         const todoDecorations: vscode.DecorationOptions[] = []
 
@@ -85,6 +84,7 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
             }
         }
 
+        // Update the chat decoration manually, depending on the flag
         if (chatComplete && chatRange) {
             completeDecorations.push({ range: chatRange })
         } else if (chatRange) {
@@ -185,14 +185,24 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
             setCompletedStates(editor)
             return vscode.commands.executeCommand('cody.chat.panel.new')
         }),
-        vscode.commands.registerCommand('cody.tutorial.edit', document => {
-            return executeEdit({
+        vscode.commands.registerCommand('cody.tutorial.edit', async document => {
+            const task = await executeEdit({
                 configuration: {
                     document: editor.document,
                     preInstruction: PromptString.unsafe_fromUserQuery(
                         'Function that finds logs in a dir'
                     ),
                 },
+            })
+
+            // Poll for task completion
+            const taskCompletion = await new Promise(resolve => {
+                const interval = setInterval(() => {
+                    if (task?.state === CodyTaskState.applied) {
+                        console.log('Done')
+                        clearInterval(interval)
+                    }
+                }, 100)
             })
         }),
         listenForInteractiveLineRangeUpdates,
@@ -205,12 +215,6 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
             if (!tutorialIsActive) {
                 return
             }
-            // TODO: This is kinda weird, the editor will change when visible editors changes
-            // We need to always update `editor` to match this value, otherwise our logic might get
-            // out of date.
-            // We should try to create the document on register, and then always get a fresh editor
-            // when it becomes visible. This will mean calling start() on visible and stop() when hidden.
-            console.log('Setting compelted states...')
             // Decorations are cleared when an editor is no longer visible, we need to ensure we always set
             // them when the tutorial becomes visible
             return setCompletedStates(tutorialIsActive)
