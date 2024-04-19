@@ -480,8 +480,16 @@ export class MockServer {
                         break
                     }
                     default:
-                        res.sendStatus(400)
-                        res.statusMessage = `unhandled GraphQL operation ${operation}`
+                        res.status(400).send(
+                            JSON.stringify({
+                                errors: [
+                                    {
+                                        message: `Cannot query field "unknown" on type "${operation}".`,
+                                        locations: [],
+                                    },
+                                ],
+                            })
+                        )
                         break
                 }
             }

@@ -200,8 +200,9 @@ const register = async (
     )
     disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
-    const bindedRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
-    await contextFiltersProvider.init(bindedRepoNameResolver).then(() => contextProvider.init())
+    const boundRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    await contextFiltersProvider.init(boundRepoNameResolver)
+    await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -250,12 +251,8 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
-        promises.push(
-            contextFiltersProvider
-                .init(bindedRepoNameResolver)
-                .then(() => contextProvider.onConfigurationChange(newConfig))
-        )
-        promises.push(contextFiltersProvider.init(bindedRepoNameResolver))
+        promises.push(contextFiltersProvider.init(boundRepoNameResolver))
+        promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
