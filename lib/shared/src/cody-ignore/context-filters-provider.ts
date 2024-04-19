@@ -20,11 +20,17 @@ interface ParsedContextFilterItem {
 }
 
 export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
+type RepoName = string
+type IsRepoNameAllowed = boolean
 
 export class ContextFiltersProvider implements vscode.Disposable {
+    /**
+     * `null` value means that we failed to fetch context filters.
+     * In that case, we should exclude all the URIs.
+     */
     private contextFilters: ParsedContextFilters | null = null
     private fetchIntervalId: NodeJS.Timer | undefined
-    private cache = new LRUCache<string, boolean>({ max: 128 })
+    private cache = new LRUCache<RepoName, IsRepoNameAllowed>({ max: 128 })
     private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
 
     async init(getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
