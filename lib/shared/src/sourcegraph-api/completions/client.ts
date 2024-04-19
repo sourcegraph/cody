@@ -129,15 +129,13 @@ export abstract class SourcegraphCompletionsClient {
         }
         await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
 
-        return (async function* () {
-            for (let i = 0; ; i++) {
-                const val = await values[i]
-                delete values[i]
-                yield val
-                if (val.type === 'complete' || val.type === 'error') {
-                    break
-                }
+        for (let i = 0; ; i++) {
+            const val = await values[i]
+            delete values[i]
+            yield val
+            if (val.type === 'complete' || val.type === 'error') {
+                break
             }
-        })()
+        }
     }
 }
