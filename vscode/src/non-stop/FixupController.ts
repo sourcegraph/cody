@@ -420,7 +420,7 @@ export class FixupController
             return
         }
         void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        this.setTaskState(task, CodyTaskState.working)
+        void vscode.commands.executeCommand('cody.command.start-edit', task)
     }
 
     private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {

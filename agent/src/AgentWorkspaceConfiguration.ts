@@ -79,8 +79,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.advanced.agent.running':
                 return true
-            case 'cody.debug.enable':
-                return extensionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return extensionConfig?.verboseDebug ?? false
             case 'cody.experimental.tracing':
