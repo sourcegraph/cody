@@ -206,9 +206,14 @@ export class AuthProvider {
             ...options
         )
         switch (option) {
-            case 'Manage Account':
-                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()))
+            case 'Manage Account': {
+                // Add the username to the web can warn if the logged in session on web is different from VS Code
+                const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
+                    query: `username=${this.authStatus.username}`,
+                })
+                void vscode.env.openExternal(uri)
                 break
+            }
             case 'Switch Account...':
                 await this.signinMenu()
                 break
