@@ -10,7 +10,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
-    SerializedCodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
     createSSEIterator,
@@ -81,10 +81,12 @@ export function createClient(
                 const serializedParams: SerializedCodeCompletionsParams & { stream: boolean } = {
                     ...params,
                     stream: enableStreaming,
-                    messages: params.messages.map(m => ({
-                        ...m,
-                        text: m.text?.toFilteredString(contextFiltersProvider),
-                    })),
+                    messages: await Promise.all(
+                        params.messages.map(async m => ({
+                            ...m,
+                            text: await m.text?.toFilteredString(contextFiltersProvider),
+                        }))
+                    ),
                 }
 
                 const response = await fetch(url, {

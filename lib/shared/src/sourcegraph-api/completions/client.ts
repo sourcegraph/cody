@@ -87,7 +87,7 @@ export abstract class SourcegraphCompletionsClient {
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void
+    ): Promise<void>
 
     public stream(
         params: CompletionParameters,

@@ -13,18 +13,20 @@ import type {
 } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    protected _streamWithCallbacks(
+    protected async _streamWithCallbacks(
         params: CompletionParameters,
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
+    ): Promise<void> {
         const serializedParams: SerializedCompletionParameters = {
             ...params,
-            messages: params.messages.map(m => ({
-                ...m,
-                text: m.text?.toFilteredString(contextFiltersProvider) ?? '',
-            })),
+            messages: await Promise.all(
+                params.messages.map(async m => ({
+                    ...m,
+                    text: await m.text?.toFilteredString(contextFiltersProvider),
+                }))
+            ),
         }
 
         const url = new URL(this.completionsEndpoint)

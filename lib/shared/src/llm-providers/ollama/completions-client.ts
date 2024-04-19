@@ -37,7 +37,7 @@ export function createOllamaClient(
                 method: 'POST',
                 body: JSON.stringify({
                     ...params,
-                    prompt: params.prompt.toFilteredString(contextFiltersProvider),
+                    prompt: await params.prompt.toFilteredString(contextFiltersProvider),
                 }),
                 headers: {
                     'Content-Type': 'application/json',

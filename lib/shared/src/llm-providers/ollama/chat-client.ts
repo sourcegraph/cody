@@ -14,14 +14,14 @@ import type {
  *
  * Doc: https://github.com/ollama/ollama/blob/main/docs/api.md#chat-request-with-history
  */
-export function ollamaChatClient(
+export async function ollamaChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
-): void {
+): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     const model = params.model?.replace('ollama/', '')
     if (!model || !params.messages) {
@@ -31,12 +31,14 @@ export function ollamaChatClient(
 
     const ollamaChatParams = {
         model,
-        messages: params.messages.map(msg => {
-            return {
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text?.toFilteredString(contextFiltersProvider) ?? '',
-            }
-        }),
+        messages: await Promise.all(
+            params.messages.map(async msg => {
+                return {
+                    role: msg.speaker === 'human' ? 'user' : 'assistant',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                }
+            })
+        ),
         options: {
             temperature: params.temperature,
             top_k: params.topK,

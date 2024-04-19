@@ -361,7 +361,8 @@ class FireworksProvider extends Provider {
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
                 // Convert the SG instance messages array back to the original prompt
-                const prompt = requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
+                const prompt =
+                    await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {

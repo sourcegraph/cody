@@ -25,13 +25,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
+    ): Promise<void> {
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
 
-        tracer.startActiveSpan(`POST ${url.toString()}`, span => {
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,
@@ -65,10 +65,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const serializedParams: SerializedCompletionParameters = {
                 ...params,
-                messages: params.messages.map(m => ({
-                    ...m,
-                    text: m.text?.toFilteredString(contextFiltersProvider),
-                })),
+                messages: await Promise.all(
+                    params.messages.map(async m => ({
+                        ...m,
+                        text: await m.text?.toFilteredString(contextFiltersProvider),
+                    }))
+                ),
             }
 
             const log = this.logger?.startCompletion(params, url.toString())

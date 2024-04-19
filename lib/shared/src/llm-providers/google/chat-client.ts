@@ -1,6 +1,5 @@
 import type { GeminiCompletionResponse } from '.'
 import { getCompletionsModelConfig } from '../..'
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'

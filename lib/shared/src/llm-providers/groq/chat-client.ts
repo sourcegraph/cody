@@ -19,14 +19,14 @@ const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completio
  * This also works with the OpenAI API or any OpenAI compatible providers.
  * The endpoint can be changed via the apiEndpoint field in the `chat.dev.models` configuration.
  */
-export function groqChatClient(
+export async function groqChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
-): void {
+): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         log?.onError('No model or messages')
@@ -41,12 +41,14 @@ export function groqChatClient(
 
     const chatParams = {
         model: config?.model,
-        messages: params.messages.map(msg => {
-            return {
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: msg.text?.toFilteredString(contextFiltersProvider) ?? '',
-            }
-        }),
+        messages: await Promise.all(
+            params.messages.map(async msg => {
+                return {
+                    role: msg.speaker === 'human' ? 'user' : 'assistant',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                }
+            })
+        ),
         stream: true,
     }
 
