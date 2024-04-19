@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 1dfb41922fe5dd97eb41ccb518d056d5
+    - _id: 03d466855b0746c7f8469dd1989fa621
       _order: 0
       cache: {}
       request:
-        bodySize: 336
+        bodySize: 242
         cookies: []
         headers:
           - name: content-type
@@ -23,7 +23,7 @@ log:
             value: rateLimitedClient / v1
           - name: host
             value: sourcegraph.com
-        headersSize: 267
+        headersSize: 281
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -32,19 +32,18 @@ log:
           textJSON:
             maxTokensToSample: 4000
             messages:
-              - speaker: human
+              - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: sqrt(9)
-              - speaker: assistant
-            model: anthropic/claude-2.0
+            model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
             topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
       response:
         bodySize: 0
         content:
@@ -53,7 +52,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 17 Apr 2024 09:12:26 GMT
+            value: Thu, 18 Apr 2024 15:00:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -67,14 +66,14 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: retry-after
-            value: Thu, 18 Apr 2024 09:10:39 UTC
+            value: Fri, 19 Apr 2024 14:21:41 UTC
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 39ba1bf7b12eb7eb16be2c2297a2c436
+            value: da21e48564b79ce98e33c6f77d146399
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -92,7 +91,7 @@ log:
         redirectURL: ""
         status: 429
         statusText: OK
-      startedDateTime: 2024-04-17T09:12:26.244Z
+      startedDateTime: 2024-04-18T15:00:15.492Z
       time: 0
       timings:
         blocked: -1

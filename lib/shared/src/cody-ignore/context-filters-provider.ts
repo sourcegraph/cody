@@ -29,9 +29,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
      * In that case, we should exclude all the URIs.
      */
     private contextFilters: ParsedContextFilters | null = null
-    private fetchIntervalId: NodeJS.Timer | undefined
     private cache = new LRUCache<RepoName, IsRepoNameAllowed>({ max: 128 })
     private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
+    private fetchIntervalId: NodeJS.Timeout | undefined | number
 
     async init(getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
         this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
