@@ -618,13 +618,11 @@
       {
         "command": "cody.supercompletion.jumpTo",
         "args": ["next"],
-        "args": ["next"],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
         "args": ["previous"],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
