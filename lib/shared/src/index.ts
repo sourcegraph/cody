@@ -239,7 +239,7 @@ export {
 export {
     getURLContextItems,
     isURLContextItem,
-    fetchContentForURLContextItem,
+    resolveURLContextItem,
 } from './mentions/urlContextItems'
 export { TokenCounter } from './token/counter'
 export {

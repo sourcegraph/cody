@@ -31,7 +31,7 @@ import {
 import type { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
-import { fillInContextItemContent } from '../../editor/utils/editor-context'
+import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -451,7 +451,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
-                const userContextItems: ContextItemWithContent[] = await fillInContextItemContent(
+                const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
                     userContextFiles || []
                 )

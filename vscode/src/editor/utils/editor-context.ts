@@ -13,11 +13,11 @@ import {
     type SymbolKind,
     TokenCounter,
     displayPath,
-    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
     isURLContextItem,
     isWindows,
+    resolveURLContextItem,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
@@ -274,31 +274,47 @@ export async function filterContextItemFiles(
     return filtered
 }
 
-export async function fillInContextItemContent(
+export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[]
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let { content, size, range, uri } = item
-                if (!content) {
-                    try {
-                        if (isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())) {
-                            content = (await fetchContentForURLContextItem(uri.toString())) ?? ''
-                        } else {
-                            content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
-                        }
-                        size = size ?? TokenCounter.countTokens(content)
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
+                try {
+                    return await resolveContextItem(item, editor)
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                    )
+                    return null
                 }
-                return { ...item, content: content!, size }
             })
         )
     ).filter(isDefined)
+}
+
+async function resolveContextItem(item: ContextItem, editor: Editor): Promise<ContextItemWithContent> {
+    const resolvedItem =
+        isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())
+            ? await resolveURLContextItem(item)
+            : await resolveFileOrSymbolContextItem(item, editor)
+    return {
+        ...resolvedItem,
+        size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
+    }
+}
+
+async function resolveFileOrSymbolContextItem(
+    contextItem: ContextItem,
+    editor: Editor
+): Promise<ContextItemWithContent> {
+    const content =
+        contextItem.content ??
+        (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    return {
+        ...contextItem,
+        content,
+        size: contextItem.size ?? TokenCounter.countTokens(content),
+    }
 }

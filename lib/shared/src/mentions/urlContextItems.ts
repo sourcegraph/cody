@@ -1,5 +1,9 @@
 import { URI } from 'vscode-uri'
-import { type ContextItem, ContextItemSource } from '../codebase-context/messages'
+import {
+    type ContextItem,
+    ContextItemSource,
+    type ContextItemWithContent,
+} from '../codebase-context/messages'
 
 /**
  * Given a possibly incomplete URL from user input (that the user may be typing), return context
@@ -15,7 +19,7 @@ export async function getURLContextItems(
     }
 
     try {
-        const content = await fetchContentForURLContextItem(url.toString(), signal)
+        const content = await fetchContentForURLContextItem(url.toString(), false, signal)
         if (content === null) {
             return []
         }
@@ -38,12 +42,37 @@ export function isURLContextItem(item: Pick<ContextItem, 'uri'>): boolean {
     return item.uri.scheme === 'http' || item.uri.scheme === 'https'
 }
 
-export async function fetchContentForURLContextItem(
+export async function resolveURLContextItem(
+    item: ContextItem,
+    signal?: AbortSignal
+): Promise<ContextItemWithContent> {
+    if (item.content !== undefined) {
+        return item as ContextItemWithContent
+    }
+    const content = await fetchContentForURLContextItem(item.uri.toString(), true, signal)
+    return { ...item, content }
+}
+
+async function fetchContentForURLContextItem(
     url: string,
+    throwIfNotOK: true,
+    signal?: AbortSignal
+): Promise<string>
+async function fetchContentForURLContextItem(
+    url: string,
+    throwIfNotOK: false,
+    signal?: AbortSignal
+): Promise<string | null>
+async function fetchContentForURLContextItem(
+    url: string,
+    throwIfNotOK: boolean,
     signal?: AbortSignal
 ): Promise<string | null> {
     const resp = await fetch(url.toString(), { signal })
     if (!resp.ok) {
+        if (throwIfNotOK) {
+            throw new Error(`HTTP ${resp.status} ${resp.statusText}`)
+        }
         return null
     }
     const body = await resp.text()
