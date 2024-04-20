@@ -36,7 +36,7 @@ export const OptionsList: FunctionComponent<
         setHighlightedIndex(0)
     }, [options])
 
-    const mentionQuery = parseMentionQuery(query)
+    const mentionQuery = parseMentionQuery(query, [])
 
     return (
         <div className={styles.container}>

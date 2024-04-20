@@ -2,7 +2,6 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
-import { isURLContextItem } from '../../mentions/providers/urlMentions'
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -41,7 +40,7 @@ export function webviewOpenURIForContextItem(item: Pick<ContextItem, 'uri' | 'ra
     href: string
     target: '_blank' | undefined
 } {
-    if (isURLContextItem(item)) {
+    if (item.uri.scheme === 'http' || item.uri.scheme === 'https') {
         return {
             href: item.uri.toString(),
             target: '_blank',

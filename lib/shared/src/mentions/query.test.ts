@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
+import type { ContextMentionProvider } from './api'
 import {
     type MentionQuery,
     type MentionTrigger,
@@ -9,21 +10,21 @@ import {
 
 describe('parseMentionQuery', () => {
     test('empty query for empty string', () => {
-        expect(parseMentionQuery('')).toEqual<MentionQuery>({
+        expect(parseMentionQuery('', [])).toEqual<MentionQuery>({
             provider: 'default',
             text: '',
         })
     })
 
     test('file query without prefix', () => {
-        expect(parseMentionQuery('foo')).toEqual<MentionQuery>({
+        expect(parseMentionQuery('foo', [])).toEqual<MentionQuery>({
             provider: 'file',
             text: 'foo',
         })
     })
 
     test('symbol query without prefix', () => {
-        expect(parseMentionQuery('#bar')).toEqual<MentionQuery>({
+        expect(parseMentionQuery('#bar', [])).toEqual<MentionQuery>({
             provider: 'symbol',
             text: 'bar',
         })
@@ -32,18 +33,24 @@ describe('parseMentionQuery', () => {
     test('file query with @ prefix', () => {
         // Note: This means that the user is literally looking for a file whose name contains `@`.
         // This is a very rare case. See the docstring for `parseMentionQuery`.
-        expect(parseMentionQuery('@baz')).toEqual<MentionQuery>({
+        expect(parseMentionQuery('@baz', [])).toEqual<MentionQuery>({
             provider: 'file',
             text: '@baz',
         })
     })
 
     test('url query with http:// prefix', () => {
-        expect(parseMentionQuery('http://example.com/p')).toEqual<MentionQuery>({
+        const providers: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[] = [
+            {
+                id: 'url',
+                triggerPrefixes: ['http://', 'https://'],
+            },
+        ]
+        expect(parseMentionQuery('http://example.com/p', providers)).toEqual<MentionQuery>({
             provider: 'url',
             text: 'http://example.com/p',
         })
-        expect(parseMentionQuery('https://example.com/p')).toEqual<MentionQuery>({
+        expect(parseMentionQuery('https://example.com/p', providers)).toEqual<MentionQuery>({
             provider: 'url',
             text: 'https://example.com/p',
         })

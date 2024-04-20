@@ -1,3 +1,5 @@
+import type { ContextMentionProvider, ContextMentionProviderID } from './api'
+
 /**
  * The parsed representation of a user's (partial or complete) input of an @-mention query.
  */
@@ -5,7 +7,7 @@ export interface MentionQuery {
     /**
      * The type of context item to search for.
      */
-    provider: 'file' | 'symbol' | 'url' | 'default'
+    provider: 'file' | 'symbol' | 'default' | ContextMentionProviderID
 
     /**
      * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
@@ -23,7 +25,10 @@ export interface MentionQuery {
  * where {@link query} may begin with `@` is if the user is searching for context items that contain
  * `@`, such as if the user typed `@@foo` to mention a file that is literally named `@foo.js`.
  */
-export function parseMentionQuery(query: string): MentionQuery {
+export function parseMentionQuery(
+    query: string,
+    contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
+): MentionQuery {
     if (query === '') {
         return { provider: 'default', text: '' }
     }
@@ -31,9 +36,13 @@ export function parseMentionQuery(query: string): MentionQuery {
     if (query.startsWith('#')) {
         return { provider: 'symbol', text: query.slice(1) }
     }
-    if (query.startsWith('http://') || query.startsWith('https://')) {
-        return { provider: 'url', text: query }
+
+    for (const provider of contextMentionProviders) {
+        if (provider.triggerPrefixes.some(trigger => query.startsWith(trigger))) {
+            return { provider: provider.id, text: query }
+        }
     }
+
     return { provider: 'file', text: query }
 }
 

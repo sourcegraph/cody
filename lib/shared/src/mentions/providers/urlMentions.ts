@@ -1,56 +1,49 @@
 import { URI } from 'vscode-uri'
-import {
-    type ContextItem,
-    ContextItemSource,
-    type ContextItemWithContent,
-} from '../../codebase-context/messages'
+import { ContextItemSource, type ContextItemWithContent } from '../../codebase-context/messages'
+import type { ContextMentionProvider } from '../api'
 
-/**
- * Given a possibly incomplete URL from user input (that the user may be typing), return context
- * items from fetching the URL and extracting its text content.
- */
-export async function getURLContextItems(
-    urlInput: string,
-    signal?: AbortSignal
-): Promise<ContextItem[]> {
-    const url = tryParsePossiblyIncompleteURL(urlInput)
-    if (url === null) {
-        return []
-    }
+export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
+    id: 'url',
+    triggerPrefixes: ['http://', 'https://'],
 
-    try {
-        const content = await fetchContentForURLContextItem(url.toString(), false, signal)
-        if (content === null) {
+    /**
+     * Given a possibly incomplete URL from user input (that the user may be typing), return context
+     * items from fetching the URL and extracting its text content.
+     */
+    async queryContextItems(query, signal) {
+        const url = tryParsePossiblyIncompleteURL(query)
+        if (url === null) {
             return []
         }
-        return [
-            {
-                type: 'file',
-                uri: url,
-                content,
-                title: tryGetHTMLDocumentTitle(content),
-                source: ContextItemSource.Uri,
-            },
-        ]
-    } catch (error) {
-        // Suppress errors because the user might be typing a URL that is not yet valid.
-        return []
-    }
-}
 
-export function isURLContextItem(item: Pick<ContextItem, 'uri'>): boolean {
-    return item.uri.scheme === 'http' || item.uri.scheme === 'https'
-}
+        try {
+            const content = await fetchContentForURLContextItem(url.toString(), false, signal)
+            if (content === null) {
+                return []
+            }
+            return [
+                {
+                    type: 'file',
+                    uri: url,
+                    content,
+                    title: tryGetHTMLDocumentTitle(content),
+                    source: ContextItemSource.Uri,
+                    provider: 'url',
+                },
+            ]
+        } catch (error) {
+            // Suppress errors because the user might be typing a URL that is not yet valid.
+            return []
+        }
+    },
 
-export async function resolveURLContextItem(
-    item: ContextItem,
-    signal?: AbortSignal
-): Promise<ContextItemWithContent> {
-    if (item.content !== undefined) {
-        return item as ContextItemWithContent
-    }
-    const content = await fetchContentForURLContextItem(item.uri.toString(), true, signal)
-    return { ...item, content }
+    async resolveContextItem(item, signal) {
+        if (item.content !== undefined) {
+            return [item as ContextItemWithContent]
+        }
+        const content = await fetchContentForURLContextItem(item.uri.toString(), true, signal)
+        return [{ ...item, content }]
+    },
 }
 
 async function fetchContentForURLContextItem(
