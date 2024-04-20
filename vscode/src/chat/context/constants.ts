@@ -13,7 +13,6 @@ export const LARGE_FILE_WARNING_LABEL =
 export const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0'
 export const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check)'
 
-export const LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD = "contextSnippetSummary"
-export const LOGGER_CONTEXT_REPO_NAME_FIELD = "gitRepoUrl"
+export const LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD = 'contextSnippetSummary'
+export const LOGGER_CONTEXT_REPO_NAME_FIELD = 'gitRepoUrl'
 export const LOGGER_MAX_CONTEXT_SNIPPET_LENGTH = 2048
-

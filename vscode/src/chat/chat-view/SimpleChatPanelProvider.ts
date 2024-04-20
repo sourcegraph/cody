@@ -69,9 +69,15 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
+import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
+import {
+    LOGGER_CONTEXT_REPO_NAME_FIELD,
+    LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD,
+    LOGGER_MAX_CONTEXT_SNIPPET_LENGTH,
+} from '../context/constants'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -88,12 +94,6 @@ import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
-import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api'
-import {
-    LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD,
-    LOGGER_CONTEXT_REPO_NAME_FIELD,
-    LOGGER_MAX_CONTEXT_SNIPPET_LENGTH
-} from '../context/constants'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -852,9 +852,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     continue
                 }
                 if (contextSummary[source]) {
-                    contextSummary[source] = Number(contextSummary[source]) + 1;
+                    contextSummary[source] = Number(contextSummary[source]) + 1
                 } else {
-                    contextSummary[source] = 1;
+                    contextSummary[source] = 1
                 }
             }
 
@@ -868,9 +868,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const contextSnippetSummary = []
             for (const contextSourceItem of newContextUsed) {
                 contextSnippetSummary.push({
-                    'source': contextSourceItem.source,
-                    'content': contextSourceItem.content?.slice(0, LOGGER_MAX_CONTEXT_SNIPPET_LENGTH),
-                    'url': contextSourceItem.uri.path,
+                    source: contextSourceItem.source,
+                    content: contextSourceItem.content?.slice(0, LOGGER_MAX_CONTEXT_SNIPPET_LENGTH),
+                    url: contextSourceItem.uri.path,
                 })
             }
             contextSummary[LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD] = JSON.stringify(contextSnippetSummary)
