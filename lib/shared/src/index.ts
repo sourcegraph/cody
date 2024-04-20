@@ -240,7 +240,7 @@ export {
     getURLContextItems,
     isURLContextItem,
     resolveURLContextItem,
-} from './mentions/urlContextItems'
+} from './mentions/providers/urlMentions'
 export { TokenCounter } from './token/counter'
 export {
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,

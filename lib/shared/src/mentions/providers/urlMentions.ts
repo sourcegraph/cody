@@ -3,7 +3,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemWithContent,
-} from '../codebase-context/messages'
+} from '../../codebase-context/messages'
 
 /**
  * Given a possibly incomplete URL from user input (that the user may be typing), return context

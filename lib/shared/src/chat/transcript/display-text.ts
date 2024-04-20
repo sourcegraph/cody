@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
-import { isURLContextItem } from '../../mentions/urlContextItems'
+import { isURLContextItem } from '../../mentions/providers/urlMentions'
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
