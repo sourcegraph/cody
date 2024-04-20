@@ -88,6 +88,12 @@ import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter, type IPrompter } from './prompt'
+import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api'
+import {
+    LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD,
+    LOGGER_CONTEXT_REPO_NAME_FIELD,
+    LOGGER_MAX_CONTEXT_SNIPPET_LENGTH
+} from '../context/constants'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -840,17 +846,34 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
-            const contextSummary: { [key: string]: number } = {}
+            const contextSummary: { [key: string]: number | string } = {}
             for (const { source } of newContextUsed) {
                 if (!source) {
                     continue
                 }
                 if (contextSummary[source]) {
-                    contextSummary[source] += 1
+                    contextSummary[source] = Number(contextSummary[source]) + 1;
                 } else {
-                    contextSummary[source] = 1
+                    contextSummary[source] = 1;
                 }
             }
+
+            const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
+            if (vscodeUri) {
+                const gitUri = gitRemoteUrlFromGitExtension(vscodeUri)
+                if (gitUri) {
+                    contextSummary[LOGGER_CONTEXT_REPO_NAME_FIELD] = gitUri
+                }
+            }
+            const contextSnippetSummary = []
+            for (const contextSourceItem of newContextUsed) {
+                contextSnippetSummary.push({
+                    'source': contextSourceItem.source,
+                    'content': contextSourceItem.content?.slice(0, LOGGER_MAX_CONTEXT_SNIPPET_LENGTH),
+                    'url': contextSourceItem.uri.path,
+                })
+            }
+            contextSummary[LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD] = JSON.stringify(contextSnippetSummary)
 
             // Log the size of all user context items (e.g., @-mentions)
             // Includes the count of files and the size of each file
@@ -864,7 +887,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
                 excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
             }
-
             sendTelemetry(contextSummary, privateContextStats)
         }
 
