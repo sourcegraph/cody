@@ -402,7 +402,7 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.type === 'symbol'
+                                mentionQuery.provider === 'symbol'
                                     ? mentionQuery.text.length === 0
                                         ? SYMBOL_HELP_LABEL
                                         : NO_SYMBOL_MATCHES_LABEL
@@ -451,9 +451,9 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.type === 'symbol'
+                            mentionQuery?.provider === 'symbol'
                                 ? SYMBOL_HELP_LABEL
-                                : mentionQuery?.type === 'file'
+                                : mentionQuery?.provider === 'file'
                                   ? FILE_HELP_LABEL
                                   : GENERAL_HELP_LABEL,
                     },

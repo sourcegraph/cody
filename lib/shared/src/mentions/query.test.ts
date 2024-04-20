@@ -10,21 +10,21 @@ import {
 describe('parseMentionQuery', () => {
     test('empty query for empty string', () => {
         expect(parseMentionQuery('')).toEqual<MentionQuery>({
-            type: 'empty',
+            provider: 'default',
             text: '',
         })
     })
 
     test('file query without prefix', () => {
         expect(parseMentionQuery('foo')).toEqual<MentionQuery>({
-            type: 'file',
+            provider: 'file',
             text: 'foo',
         })
     })
 
     test('symbol query without prefix', () => {
         expect(parseMentionQuery('#bar')).toEqual<MentionQuery>({
-            type: 'symbol',
+            provider: 'symbol',
             text: 'bar',
         })
     })
@@ -33,18 +33,18 @@ describe('parseMentionQuery', () => {
         // Note: This means that the user is literally looking for a file whose name contains `@`.
         // This is a very rare case. See the docstring for `parseMentionQuery`.
         expect(parseMentionQuery('@baz')).toEqual<MentionQuery>({
-            type: 'file',
+            provider: 'file',
             text: '@baz',
         })
     })
 
     test('url query with http:// prefix', () => {
         expect(parseMentionQuery('http://example.com/p')).toEqual<MentionQuery>({
-            type: 'url',
+            provider: 'url',
             text: 'http://example.com/p',
         })
         expect(parseMentionQuery('https://example.com/p')).toEqual<MentionQuery>({
-            type: 'url',
+            provider: 'url',
             text: 'https://example.com/p',
         })
     })

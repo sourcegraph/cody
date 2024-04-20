@@ -20,7 +20,7 @@ export async function getChatContextItemsForMention(
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
-        withType: (type: MentionQuery['type']) => void
+        withType: (type: MentionQuery['provider']) => void
     },
     range?: RangeData
 ): Promise<ContextItem[]> {
@@ -29,15 +29,15 @@ export async function getChatContextItemsForMention(
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.type === 'empty') {
+    if (mentionQuery.provider === 'default') {
         telemetryRecorder?.empty()
     } else if (mentionQuery.text.length === 1) {
-        telemetryRecorder?.withType(mentionQuery.type)
+        telemetryRecorder?.withType(mentionQuery.provider)
     }
 
     const MAX_RESULTS = 20
-    switch (mentionQuery.type) {
-        case 'empty':
+    switch (mentionQuery.provider) {
+        case 'default':
             return getOpenTabsContextFile()
         case 'symbol':
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't

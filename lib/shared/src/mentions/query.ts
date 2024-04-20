@@ -5,11 +5,11 @@ export interface MentionQuery {
     /**
      * The type of context item to search for.
      */
-    type: 'file' | 'symbol' | 'url' | 'empty'
+    provider: 'file' | 'symbol' | 'url' | 'default'
 
     /**
      * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
-     * prefix characters that indicate the {@link MentionQuery.type}, such as `#` for symbols.
+     * prefix characters that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
      */
     text: string
 }
@@ -25,16 +25,16 @@ export interface MentionQuery {
  */
 export function parseMentionQuery(query: string): MentionQuery {
     if (query === '') {
-        return { type: 'empty', text: '' }
+        return { provider: 'default', text: '' }
     }
 
     if (query.startsWith('#')) {
-        return { type: 'symbol', text: query.slice(1) }
+        return { provider: 'symbol', text: query.slice(1) }
     }
     if (query.startsWith('http://') || query.startsWith('https://')) {
-        return { type: 'url', text: query }
+        return { provider: 'url', text: query }
     }
-    return { type: 'file', text: query }
+    return { provider: 'file', text: query }
 }
 
 const PUNCTUATION = ',\\+\\*\\$\\@\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
