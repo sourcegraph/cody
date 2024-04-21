@@ -223,9 +223,6 @@ async function searchSymf(
                     let text: string | undefined
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
-                        if (!text) {
-                            return []
-                        }
                     } catch (error) {
                         logError(
                             'SimpleChatPanelProvider.searchSymf',

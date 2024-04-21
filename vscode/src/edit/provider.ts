@@ -38,6 +38,7 @@ export class EditProvider {
     private insertionResponse: string | null = null
     private insertionInProgress = false
     private insertionPromise: Promise<void> | null = null
+    private abortController: AbortController | null = null
 
     constructor(public config: EditProviderOptions) {}
 
@@ -111,7 +112,7 @@ export class EditProvider {
                 }
             }
 
-            const abortController = new AbortController()
+            this.abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
                 {
@@ -119,7 +120,7 @@ export class EditProvider {
                     stopSequences,
                     maxTokensToSample: contextWindow.output,
                 },
-                abortController.signal
+                this.abortController.signal
             )
 
             let textConsumed = 0
@@ -159,6 +160,10 @@ export class EditProvider {
                 }
             }
         })
+    }
+
+    public abortEdit(): void {
+        this.abortController?.abort()
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {

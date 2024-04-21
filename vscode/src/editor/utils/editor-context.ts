@@ -289,10 +289,8 @@ export async function fillInContextItemContent(
                         } else {
                             content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
                         }
-                        if (content) {
-                            size = size ?? TokenCounter.countTokens(content)
-                            range = range ?? getRangeByContentLineCount(content)
-                        }
+                        size = size ?? TokenCounter.countTokens(content)
+                        range = range ?? getRangeByContentLineCount(content)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`

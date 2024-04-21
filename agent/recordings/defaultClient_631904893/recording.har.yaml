@@ -180,164 +180,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9c03ab4648e9c752e0c33b9085c0fab7
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 570
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: My name is Lars Monsen
-              - speaker: assistant
-                text: It's nice to meet you Lars! I'm Cody, an AI assistant for helping with
-                  coding and technical tasks. How can I be of assistance to you
-                  today?
-              - speaker: human
-                text: What is my name?
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1019
-        content:
-          mimeType: text/event-stream
-          size: 1019
-          text: >+
-            event: completion
-
-            data: {"completion":"You","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is L","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Mon","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Apr 2024 15:22:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-17T15:22:08.709Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 8f6d82f270695d480a98416a4ce0b2cb
       _order: 0
       cache: {}
@@ -13470,6 +13312,7 @@ log:
 
 
 
+
                       
                   </selected>
               - speaker: assistant
@@ -24828,6 +24671,153 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-04-18T12:25:33.399Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7bc46e529c9025dba3fd3c7d2b771b73
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 476
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: My name is Lars Monsen
+              - speaker: assistant
+                text: It's nice to meet you Lars! I'm Cody, an AI assistant for helping with
+                  coding and technical tasks. How can I be of assistance to you
+                  today?
+              - speaker: human
+                text: What is my name?
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 840
+        content:
+          mimeType: text/event-stream
+          size: 840
+          text: >+
+            event: completion
+
+            data: {"completion":"You","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Mon","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Apr 2024 15:00:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-18T15:00:06.576Z
       time: 0
       timings:
         blocked: -1
