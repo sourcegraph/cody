@@ -1,7 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, ModelContextWindow } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
