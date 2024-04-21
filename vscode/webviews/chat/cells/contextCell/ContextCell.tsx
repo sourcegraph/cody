@@ -32,26 +32,11 @@ export const ContextCell: React.FunctionComponent<{
         }
     }
 
-    // It checks if file.range exists first before accessing start and end.
-    // If range doesn't exist, it adds 0 lines for that file.
-    const lineCount = usedContext.reduce(
-        (total, file) =>
-            total +
-            (file.range
-                ? // Don't count a line with no characters included (character == 0).
-                  (file.range.end.character === 0 ? file.range.end.line - 1 : file.range.end.line) -
-                  file.range.start?.line +
-                  1
-                : 0),
-        0
-    )
     const fileCount = new Set(usedContext.map(file => file.uri.toString())).size
-    const lines = `${lineCount} line${lineCount > 1 ? 's' : ''}`
-    const files = `${fileCount} file${fileCount > 1 ? 's' : ''}`
-    let title = lineCount ? `${lines} from ${files}` : `${files}`
+    let fileCountLabel = `${fileCount} file${fileCount > 1 ? 's' : ''}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
-        title = `${title} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
+        fileCountLabel = `${fileCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
     function logContextOpening() {
@@ -59,7 +44,6 @@ export const ContextCell: React.FunctionComponent<{
             command: 'event',
             eventName: 'CodyVSCodeExtension:chat:context:opened',
             properties: {
-                lineCount,
                 fileCount,
                 excludedAtContext: excludedAtContext.length,
             },
@@ -82,10 +66,10 @@ export const ContextCell: React.FunctionComponent<{
                         className={styles.summary}
                         onClick={logContextOpening}
                         onKeyUp={logContextOpening}
-                        title={title}
+                        title={fileCountLabel}
                     >
                         <h4 className={styles.heading}>
-                            Context <span className={styles.stats}>&mdash; {title}</span>
+                            Context <span className={styles.stats}>&mdash; {fileCountLabel}</span>
                         </h4>
                     </summary>
                     <ul className={styles.list}>

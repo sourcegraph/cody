@@ -77,16 +77,12 @@ export function getContextCell(
 
 export async function expectContextCellCounts(
     contextCell: Locator,
-    counts: { files: number; lines?: number; timeout?: number }
+    counts: { files: number; timeout?: number }
 ): Promise<void> {
     const summary = contextCell.locator('summary', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
-        `${
-            counts.lines !== undefined
-                ? `${counts.lines} line${counts.lines === 1 ? '' : 's'} from `
-                : ''
-        }${counts.files} file${counts.files === 1 ? '' : 's'}`,
+        `${counts.files} file${counts.files === 1 ? '' : 's'}`,
         { timeout: counts.timeout }
     )
 }
