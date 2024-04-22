@@ -11,11 +11,11 @@ export const getStepContent = (step: TutorialStepType): string => {
             stepContent = dedent`
                 ### Welcome to Cody!
                 """
-                This is an interactive getting started doc to show
-                you how to use some of Cody's editing features
+                Learn how to use Cody to write, edit and fix code by
+                completing the 4 tasks below.
                 """
 
-                ### Part 1: Autocomplete
+                ### Task 1 of 4: Autocomplete
                 """
                 Place your cursor at the end of the following
                 function and press tab to accept the
@@ -26,20 +26,17 @@ export const getStepContent = (step: TutorialStepType): string => {
                 """Prints hello world (with an emoji)"""
 
                 #   ^ Place cursor above
-                """
-                Pro-tip: you can press Opt+\\ to generate new
-                autocomplete suggestions.
-                """
+                # When you see a suggestion, press Tab to accept
+                # or Opt+\ to generate another.
             `
             break
         case 'edit':
             stepContent = dedent`
                 \n\n
-                ### Part 2: Edit Code with instructions
+                ### Task 2 of 4: Edit Code with instructions
                 """
-                Next, let's edit code with an instruction. Place the
-                cursor on the empty line below, and press
-                Opt+K to open the Edit Code input.
+                Place the cursor on the empty line below,
+                and press Opt+K to open the Edit Code input.
                 We've pre-filled the instruction,
                 all you need to do is choose Submit.
                 """
@@ -50,7 +47,7 @@ export const getStepContent = (step: TutorialStepType): string => {
         case 'fix':
             stepContent = dedent`
                 \n\n
-                ### Part 3: Ask Cody to Fix
+                ### Task 3 of 4: Ask Cody to Fix
                 """
                 The following code has a bug. Place the cursor
                 under the word with the wavy underline,
@@ -59,13 +56,13 @@ export const getStepContent = (step: TutorialStepType): string => {
                 """
                 def log_fruits():
                     print("List of fruits:", "apple,", "banana,", "cherry")
-                #         ^ Place cursor here and press Cmd+.
+                #         ^ Place cursor anywhere here, press Cmd+., and "Ask Cody to Fix"
             `
             break
         case 'chat':
             stepContent = dedent`
                 \n\n
-                ### Part 4: Start a chat
+                ### Task 4 of 4: Start a chat
                 #
                 # Start a Chat (Opt+L)
             `
