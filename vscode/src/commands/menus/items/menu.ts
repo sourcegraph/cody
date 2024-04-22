@@ -107,22 +107,22 @@ export const CommandModeMenuOptions: ContextOption[] = [
     {
         id: 'ask',
         label: 'Ask',
-        description: 'Submit your question as a prompt.',
-        detail: 'Cody will respond to your question in Chat.',
+        description: 'Start new chat',
+        detail: 'Start a new chat and send a message with a configured prompt.'
         picked: true,
     },
     {
         id: 'edit',
         label: 'Edit',
-        description: 'Execute your prompt as an edit command.',
-        detail: 'Cody will replace your selected code with its response.',
+        description: 'Replace selected code',
+        detail: 'Edit the selected code, replacing the selection with the response.'
         picked: false,
     },
     {
         id: 'insert',
         label: 'Insert',
-        description: "Execute your prompt as an edit command to insert Cody's response.",
-        detail: 'Cody will insert its response above your selected code.',
+        description: 'Insert above selected code',
+        detail: 'Edit the selected code, inserting the response above the selection.'
         picked: false,
     },
 ]
