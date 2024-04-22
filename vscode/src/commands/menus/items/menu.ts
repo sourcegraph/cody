@@ -108,21 +108,21 @@ export const CommandModeMenuOptions: ContextOption[] = [
         id: 'ask',
         label: 'Ask',
         description: 'Start new chat',
-        detail: 'Start a new chat and send a message with a configured prompt.'
+        detail: 'Start a new chat and send a message with a configured prompt.',
         picked: true,
     },
     {
         id: 'edit',
         label: 'Edit',
         description: 'Replace selected code',
-        detail: 'Edit the selected code, replacing the selection with the response.'
+        detail: 'Edit the selected code, replacing the selection with the response.',
         picked: false,
     },
     {
         id: 'insert',
         label: 'Insert',
         description: 'Insert above selected code',
-        detail: 'Edit the selected code, inserting the response above the selection.'
+        detail: 'Edit the selected code, inserting the response above the selection.',
         picked: false,
     },
 ]
