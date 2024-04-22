@@ -17,7 +17,7 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
         }
 
         try {
-            const content = await fetchContentForURLContextItem(url.toString(), false, signal)
+            const content = await fetchContentForURLContextItem(url.toString(), signal)
             if (content === null) {
                 return []
             }
@@ -41,31 +41,22 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
         if (item.content !== undefined) {
             return [item as ContextItemWithContent]
         }
-        const content = await fetchContentForURLContextItem(item.uri.toString(), true, signal)
-        return [{ ...item, content }]
+        const content = await fetchContentForURLContextItem(item.uri.toString(), signal)
+        return content ? [{ ...item, content }] : []
     },
 }
 
 async function fetchContentForURLContextItem(
-    url: string,
-    throwIfNotOK: true,
-    signal?: AbortSignal
-): Promise<string>
-async function fetchContentForURLContextItem(
-    url: string,
-    throwIfNotOK: false,
-    signal?: AbortSignal
-): Promise<string | null>
-async function fetchContentForURLContextItem(
-    url: string,
-    throwIfNotOK: boolean,
+    urlStr: string,
     signal?: AbortSignal
 ): Promise<string | null> {
-    const resp = await fetch(url.toString(), { signal })
+    const url = new URL(urlStr)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('unsupported protocol for URL mention')
+    }
+
+    const resp = await fetch(urlStr, { signal })
     if (!resp.ok) {
-        if (throwIfNotOK) {
-            throw new Error(`HTTP ${resp.status} ${resp.statusText}`)
-        }
         return null
     }
     const body = await resp.text()

@@ -304,7 +304,7 @@ async function resolveContextItem(item: ContextItem, editor: Editor): Promise<Co
     }))
 }
 
-export async function resolveContextMentionProviderContextItem({
+async function resolveContextMentionProviderContextItem({
     provider: itemProvider,
     ...item
 }: ContextItem): Promise<ContextItemWithContent[]> {

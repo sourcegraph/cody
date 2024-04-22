@@ -32,6 +32,8 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     /**
      * Get a list of possible context items to show (in a completion menu) when the user triggers
      * this provider while typing `@` in a chat message.
+     *
+     * {@link query} omits the `@` but includes the trigger prefix from {@link triggerPrefixes}.
      */
     queryContextItems(query: string, signal?: AbortSignal): Promise<ContextItemFromProvider<ID>[]>
 

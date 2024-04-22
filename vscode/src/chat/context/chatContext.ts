@@ -19,7 +19,7 @@ export async function getChatContextItemsForMention(
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
-        withType: (type: MentionQuery['provider']) => void
+        withProvider: (type: MentionQuery['provider']) => void
     },
     range?: RangeData
 ): Promise<ContextItem[]> {
@@ -31,8 +31,8 @@ export async function getChatContextItemsForMention(
     // query repeatedly, which is not needed.
     if (mentionQuery.provider === 'default') {
         telemetryRecorder?.empty()
-    } else if (mentionQuery.text.length === 1) {
-        telemetryRecorder?.withType(mentionQuery.provider)
+    } else {
+        telemetryRecorder?.withProvider(mentionQuery.provider)
     }
 
     const MAX_RESULTS = 20
