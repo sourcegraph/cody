@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
-            : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
+            : (config: LocalEmbeddingsConfig): Promise<LocalEmbeddingsController> =>
                   createLocalEmbeddingsController(context, config),
         createContextRankingController: (config: ContextRankerConfig) =>
             createContextRankingController(context, config),
