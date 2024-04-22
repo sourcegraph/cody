@@ -52,11 +52,6 @@ export class CustomCommandsManager implements vscode.Disposable {
         this.configFileName = config.isRunningInsideAgent ? ConfigFiles.COMMAND : ConfigFiles.VSCODE
         this.userConfigFile = Utils.joinPath(URI.file(userHomePath), this.configFileName)
 
-        // Generate a cody.json for vs code users if there is not one already.
-        if (!config.isRunningInsideAgent) {
-            tryCreateCodyJSON(this.userConfigFile)
-        }
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.menu.custom.build', () =>
                 this.newCustomCommandQuickPick()
@@ -188,7 +183,6 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (!newCommand) {
             return
         }
-
         // Save the prompt to the current Map and Extension storage
         await this.save(newCommand.key, newCommand.prompt, newCommand.type)
         await this.refresh()
