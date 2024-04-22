@@ -3,17 +3,17 @@ import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
-import { CodyTaskState } from '../non-stop/utils'
-import { COMPLETE_DECORATION, TODO_DECORATION } from './constants'
-import { TUTORIAL_CONTENT, TUTORIAL_MACOS_CONTENT, getInteractiveRanges } from './content'
+import { TODO_DECORATION } from './constants'
+import { type TutorialStepType, getNextStep, getStepContent, getStepRange } from './content'
 import { setTutorialUri } from './helpers'
-import { CodyChatLinkProvider, findRangeOfText } from './utils'
+import { CodyChatLinkProvider } from './utils'
+import { CodyTaskState } from '../non-stop/utils'
 
-const openTutorial = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
+const openTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
     if (process.platform === 'darwin') {
-        await fs.writeFile(uri.fsPath, TUTORIAL_MACOS_CONTENT)
+        await fs.writeFile(uri.fsPath, '')
     } else {
-        await fs.writeFile(uri.fsPath, TUTORIAL_CONTENT)
+        await fs.writeFile(uri.fsPath, '')
     }
     return vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.Beside })
 }
@@ -23,24 +23,36 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
     disposables.push(diagnosticCollection)
 
-    const editor = await openTutorial(documentUri)
-    const interactiveRanges = getInteractiveRanges(editor.document)
+    const editor = await openTutorialDocument(documentUri)
+
+    let originalRangeText: string | undefined
+    let activeRange: vscode.Range | undefined
+    let activeRangeListener: vscode.Disposable | undefined
 
     /**
-     * Track if the "Chat" step is completed.
-     * We cannot detect this from the document, so we need to store this flag separately
+     * Listen for changes in the tutorial text document, and update the
+     * active line ranges depending on those changes.
+     * This ensures that, even if the user modifies the document,
+     * we can accurately track where we want them to interact.
      */
-    let chatComplete = false
-    let chatRange = findRangeOfText(editor.document, 'Start a Chat')
+    const setActiveRangeListener = (range: vscode.Range) => {
+        activeRangeListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (event.document.uri !== editor.document.uri) {
+                return
+            }
 
-    disposables.push(
-        vscode.languages.registerDocumentLinkProvider(
-            editor.document.uri,
-            new CodyChatLinkProvider(editor)
-        )
-    )
+            const changes = new Array<TextChange>(...event.contentChanges)
 
-    const setDiagnostic = () => {
+            const newInteractiveRange = updateRangeMultipleChanges(range, changes, {
+                supportRangeAffix: true,
+            })
+            if (!newInteractiveRange.isEqual(range)) {
+                activeRange = newInteractiveRange
+            }
+        })
+    }
+
+    const setDiagnostic = (range: vscode.Range) => {
         if (!diagnosticCollection || diagnosticCollection.has(documentUri)) {
             return
         }
@@ -49,90 +61,12 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
         // a Python language server installed, they will still see the "Ask Cody to Fix" option.
         diagnosticCollection.set(documentUri, [
             {
-                range: interactiveRanges.Fix.range,
+                range,
                 message: 'Implicit string concatenation not allowed',
                 severity: vscode.DiagnosticSeverity.Error,
             },
         ])
     }
-    setDiagnostic()
-
-    const setCompletedStates = (editor: vscode.TextEditor) => {
-        const completeDecorations: vscode.DecorationOptions[] = []
-        const todoDecorations: vscode.DecorationOptions[] = []
-
-        for (const [key, interactiveRange] of Object.entries(interactiveRanges)) {
-            const activeText = editor.document.getText(interactiveRange.range).trim()
-            if (activeText.length > 0 && activeText !== interactiveRange.originalText) {
-                completeDecorations.push({
-                    range: new vscode.Range(interactiveRange.range.start, interactiveRange.range.start),
-                })
-
-                if (key === 'Fix') {
-                    // Additionally reset the diagnostics
-                    diagnosticCollection?.clear()
-                }
-            } else {
-                todoDecorations.push({
-                    range: new vscode.Range(interactiveRange.range.start, interactiveRange.range.start),
-                })
-
-                if (key === 'Fix') {
-                    // Re-apply the diagnostic
-                    setDiagnostic()
-                }
-            }
-        }
-
-        // Update the chat decoration manually, depending on the flag
-        if (chatComplete && chatRange) {
-            completeDecorations.push({ range: chatRange })
-        } else if (chatRange) {
-            todoDecorations.push({ range: chatRange })
-        }
-
-        editor.setDecorations(TODO_DECORATION, todoDecorations)
-        editor.setDecorations(COMPLETE_DECORATION, completeDecorations)
-    }
-    setCompletedStates(editor)
-
-    /**
-     * Listen for changes in the tutorial text document, and update the
-     * interactive line ranges depending on those changes.
-     * This ensures that, even if the user modifies the document,
-     * we can accurately track where we want them to interact.
-     */
-    const listenForInteractiveLineRangeUpdates = vscode.workspace.onDidChangeTextDocument(event => {
-        if (event.document.uri !== editor.document.uri) {
-            return
-        }
-
-        const changes = new Array<TextChange>(...event.contentChanges)
-
-        if (chatRange) {
-            const newChatRange = updateRangeMultipleChanges(chatRange, changes, {
-                supportRangeAffix: true,
-            })
-            if (!newChatRange.isEqual(chatRange)) {
-                chatRange = newChatRange
-            }
-        }
-
-        for (const [key, interactiveRange] of Object.entries(interactiveRanges)) {
-            const newInteractiveRange = updateRangeMultipleChanges(interactiveRange.range, changes, {
-                supportRangeAffix: true,
-            })
-            if (!newInteractiveRange.isEqual(interactiveRange.range)) {
-                interactiveRange.range = newInteractiveRange
-
-                if (key === 'Fix') {
-                    // We need to update the diagnostic onto the new range
-                    diagnosticCollection?.clear()
-                    setDiagnostic()
-                }
-            }
-        }
-    })
 
     /**
      * Listen for cursor updates in the tutorial text document,
@@ -141,8 +75,9 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
      * This is intended as a shortcut to typical completions without
      * requiring the user to actually start typing.
      */
-    const listenForAutocomplete = vscode.window.onDidChangeTextEditorSelection(
-        async ({ textEditor }) => {
+    let autocompleteListener: vscode.Disposable | undefined
+    const registerAutocompleteListener = () => {
+        autocompleteListener = vscode.window.onDidChangeTextEditorSelection(async ({ textEditor }) => {
             const document = textEditor.document
             if (document.uri !== editor.document.uri) {
                 return
@@ -152,40 +87,93 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
                 return
             }
 
-            const interactiveRange = interactiveRanges.Autocomplete
+            if (!activeRange) {
+                // TODO: Should never happen...
+                return
+            }
+
             if (
-                interactiveRange.range.contains(textEditor.selection.active) &&
-                document.getText(interactiveRange.range).trim() === interactiveRange.originalText
+                activeRange.contains(textEditor.selection.active) &&
+                document.getText(activeRange).trim() === originalRangeText
             ) {
                 // Cursor is on the intended autocomplete line, and we don't already have any content
                 // Manually trigger an autocomplete for the ease of the tutorial
                 await vscode.commands.executeCommand('cody.autocomplete.manual-trigger')
+                autocompleteListener?.dispose()
             }
-        }
-    )
+        })
+    }
 
-    /**
-     * Listen to __any__ changes in the interactive text document, so we can
-     * check to see if the user has made any progress on the tutorial tasks.
-     *
-     * If the user has modified any of the interactive lines, then we mark
-     * that line as complete.
-     */
-    const listenForSuccess = vscode.workspace.onDidChangeTextDocument(async ({ document }) => {
-        if (document.uri !== editor.document.uri) {
+    let activeStep: TutorialStepType
+    const progressToNextStep = async () => {
+        const nextStep = activeStep ? getNextStep(activeStep) : 'autocomplete'
+
+        if (nextStep === null) {
+            // Clear any decorations on complete
+            editor.setDecorations(TODO_DECORATION, [])
+            // Close the window
             return
         }
 
-        return setCompletedStates(editor)
-    })
+        const currentStep = activeStep
+        // Side effects triggered by leaving the active state
+        switch (currentStep) {
+            case 'autocomplete':
+                autocompleteListener?.dispose()
+                break
+            case 'fix':
+                diagnosticCollection?.clear()
+                break
+            case 'edit':
+                editTutorialCommand?.dispose()
+                break
+            case 'chat':
+                chatTutorialCommand?.dispose()
+                break
+        }
+        // Clear any existing range listener
+        activeRangeListener?.dispose()
 
-    disposables.push(
-        vscode.commands.registerCommand('cody.tutorial.chat', () => {
-            chatComplete = true
-            setCompletedStates(editor)
-            return vscode.commands.executeCommand('cody.chat.panel.new')
-        }),
-        vscode.commands.registerCommand('cody.tutorial.edit', async document => {
+        activeStep = nextStep
+        const content = getStepContent(nextStep)
+
+        // Add to the bottom of the document with the new step content
+        const edit = new vscode.WorkspaceEdit()
+        edit.insert(documentUri, new vscode.Position(editor.document.lineCount, 0), content)
+        await vscode.workspace.applyEdit(edit)
+        startListeningForSuccess(nextStep)
+
+        const stepRange = getStepRange(editor.document, nextStep)
+        originalRangeText = stepRange?.originalText
+        activeRange = stepRange?.range
+        if (stepRange) {
+            setActiveRangeListener(stepRange.range)
+            editor.setDecorations(TODO_DECORATION, [stepRange.range])
+        }
+
+        // Side effects triggered by entering the new state
+        switch (nextStep) {
+            case 'autocomplete':
+                registerAutocompleteListener()
+                break
+            case 'fix':
+                if (stepRange?.range) {
+                    setDiagnostic(stepRange.range)
+                }
+                break
+            case 'edit':
+                registerEditTutorialCommand()
+                break
+            case 'chat':
+                registerChatTutorialCommand()
+                break
+        }
+    }
+
+    let editTutorialCommand: vscode.Disposable | undefined
+    const registerEditTutorialCommand = () => {
+        editTutorialCommand?.dispose()
+        editTutorialCommand = vscode.commands.registerCommand('cody.tutorial.edit', async document => {
             const task = await executeEdit({
                 configuration: {
                     document: editor.document,
@@ -195,29 +183,82 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
                 },
             })
 
-            // Poll for task completion
-            const taskCompletion = await new Promise(resolve => {
-                const interval = setInterval(() => {
-                    if (task?.state === CodyTaskState.applied) {
-                        console.log('Done')
-                        clearInterval(interval)
-                    }
-                }, 100)
-            })
-        }),
-        listenForInteractiveLineRangeUpdates,
-        listenForAutocomplete,
-        listenForSuccess,
+            if (!task) {
+                // TODO: What to do?
+                return
+            }
+
+            // Poll for task.state being applied
+            const interval = setInterval(async () => {
+                if (task.state === CodyTaskState.applied) {
+                    clearInterval(interval)
+                    progressToNextStep()
+                }
+            }, 100)
+        })
+    }
+
+    let chatTutorialCommand: vscode.Disposable | undefined
+    const registerChatTutorialCommand = () => {
+        chatTutorialCommand?.dispose()
+        chatTutorialCommand = vscode.commands.registerCommand('cody.tutorial.chat', () => {
+            progressToNextStep()
+            return vscode.commands.executeCommand('cody.chat.panel.new')
+        })
+    }
+
+    disposables.push(
+        vscode.languages.registerDocumentLinkProvider(
+            editor.document.uri,
+            new CodyChatLinkProvider(editor)
+        )
+    )
+
+    /**
+     * Listen to __any__ changes in the interactive text document, so we can
+     * check to see if the user has made any progress on the tutorial tasks.
+     *
+     * If the user has modified any of the interactive lines, then we mark
+     * that line as complete.
+     */
+    let successListener: vscode.Disposable | undefined
+    const startListeningForSuccess = (step: TutorialStepType) => {
+        // Dispose of any existing listener
+        successListener?.dispose()
+
+        successListener = vscode.workspace.onDidChangeTextDocument(async ({ document }) => {
+            if (document.uri !== editor.document.uri) {
+                return
+            }
+            if (activeStep !== step || !activeRange || originalRangeText === undefined) {
+                return
+            }
+
+            const activeText = editor.document.getText(activeRange).trim()
+            if (activeText.length > 0 && activeText !== originalRangeText) {
+                if (activeStep === 'fix') {
+                    // Additionally reset the diagnostics
+                    diagnosticCollection?.clear()
+                }
+                progressToNextStep()
+            }
+        })
+    }
+
+    progressToNextStep()
+    startListeningForSuccess('autocomplete')
+
+    disposables.push(
         vscode.window.onDidChangeVisibleTextEditors(editors => {
             const tutorialIsActive = editors.find(
                 editor => editor.document.uri.toString() === documentUri.toString()
             )
-            if (!tutorialIsActive) {
+            if (!tutorialIsActive || !activeRange) {
                 return
             }
             // Decorations are cleared when an editor is no longer visible, we need to ensure we always set
             // them when the tutorial becomes visible
-            return setCompletedStates(tutorialIsActive)
+            editor.setDecorations(TODO_DECORATION, [activeRange])
         })
     )
 
