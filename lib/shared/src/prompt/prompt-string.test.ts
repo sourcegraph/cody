@@ -62,10 +62,10 @@ describe('PromptString', () => {
         const promptString = PromptString.fromDocumentText(document)
 
         const allowPolicy = {
-            isUriBlocked: () => Promise.resolve(false),
+            isUriIgnored: () => Promise.resolve(false),
         }
         const denyPolicy = {
-            isUriBlocked: () => Promise.resolve(true),
+            isUriIgnored: () => Promise.resolve(true),
         }
 
         expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')

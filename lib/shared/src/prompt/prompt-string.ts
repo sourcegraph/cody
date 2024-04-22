@@ -55,10 +55,10 @@ export class PromptString {
      * Returns a string that is safe to use in a prompt that is sent to an LLM.
      */
     public async toFilteredString(
-        contextFilter: Pick<ContextFiltersProvider, 'isUriBlocked'>
+        contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(reference => contextFilter.isUriBlocked(reference))
+        const checks = references.map(reference => contextFilter.isUriIgnored(reference))
         const resolved = await Promise.all(checks)
         if (!resolved.every(value => value === false)) {
             throw new Error(

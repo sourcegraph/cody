@@ -21,7 +21,7 @@ interface ParsedContextFilterItem {
 
 export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
 type RepoName = string
-type IsRepoNameAllowed = boolean
+type IsRepoNameIgnored = boolean
 
 export class ContextFiltersProvider implements vscode.Disposable {
     /**
@@ -29,7 +29,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
      * In that case, we should exclude all the URIs.
      */
     private contextFilters: ParsedContextFilters | null = null
-    private cache = new LRUCache<RepoName, IsRepoNameAllowed>({ max: 128 })
+    private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
     private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
 
@@ -68,41 +68,38 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }, REFETCH_INTERVAL)
     }
 
-    public isRepoNameAllowed(repoName: string): boolean {
+    public isRepoNameIgnored(repoName: string): boolean {
         const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
         }
 
         // If we don't have any context filters, we exclude everything.
-        let isAllowed = Boolean(this.contextFilters)
+        let isIgnored = this.contextFilters === null
 
         if (this.contextFilters?.include.length) {
             for (const parsedFilter of this.contextFilters.include) {
-                isAllowed = checkContextFilter(parsedFilter, repoName)
-
-                if (isAllowed) {
+                isIgnored = !matchesContextFilter(parsedFilter, repoName)
+                if (!isIgnored) {
                     break
                 }
             }
         }
 
-        if (isAllowed && this.contextFilters?.exclude.length) {
+        if (!isIgnored && this.contextFilters?.exclude.length) {
             for (const parsedFilter of this.contextFilters.exclude) {
-                const matchesFilter = checkContextFilter(parsedFilter, repoName)
-
-                if (matchesFilter) {
-                    isAllowed = false
+                if (matchesContextFilter(parsedFilter, repoName)) {
+                    isIgnored = true
                     break
                 }
             }
         }
 
-        this.cache.set(repoName, isAllowed)
-        return isAllowed
+        this.cache.set(repoName, isIgnored)
+        return isIgnored
     }
 
-    public async isUriBlocked(uri: vscode.Uri): Promise<boolean> {
+    public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
         if (this.hasIncludeEverythingFilters()) {
             return false
         }
@@ -113,7 +110,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
-            logDebug('ContextFiltersProvider', 'isUriAllowed', `non-file URI ${uri.scheme}`)
+            logDebug('ContextFiltersProvider', 'isUriIgnored', `non-file URI ${uri.scheme}`)
             return true
         }
 
@@ -121,7 +118,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             this.getRepoNameFromWorkspaceUri?.(uri)
         )
 
-        return repoName ? !this.isRepoNameAllowed(repoName) : true
+        return repoName ? !this.isRepoNameIgnored(repoName) : true
     }
 
     public dispose(): void {
@@ -145,7 +142,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 }
 
-function checkContextFilter(parsedFilter: ParsedContextFilterItem, repoName: string): boolean {
+function matchesContextFilter(parsedFilter: ParsedContextFilterItem, repoName: string): boolean {
     return Boolean(parsedFilter.repoNamePattern.match(repoName))
 }
 
