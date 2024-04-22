@@ -36,15 +36,15 @@ export const OptionsList: FunctionComponent<
         setHighlightedIndex(0)
     }, [options])
 
-    const mentionQuery = parseMentionQuery(query)
+    const mentionQuery = parseMentionQuery(query, [])
 
     return (
         <div className={styles.container}>
             <h3 className={classNames(styles.item, styles.helpItem)}>
                 <span>
-                    {mentionQuery.type === 'empty'
+                    {mentionQuery.provider === 'default'
                         ? GENERAL_HELP_LABEL
-                        : mentionQuery.type === 'symbol'
+                        : mentionQuery.provider === 'symbol'
                           ? options.length > 0 || !mentionQuery.text.length
                                 ? SYMBOL_HELP_LABEL
                                 : NO_SYMBOL_MATCHES_LABEL +

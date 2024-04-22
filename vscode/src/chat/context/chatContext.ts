@@ -1,10 +1,9 @@
 import {
+    CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
-    FeatureFlag,
+    type ContextMentionProvider,
     type MentionQuery,
     type RangeData,
-    featureFlagProvider,
-    getURLContextItems,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -20,24 +19,25 @@ export async function getChatContextItemsForMention(
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
-        withType: (type: MentionQuery['type']) => void
+        withProvider: (type: MentionQuery['provider']) => void
     },
     range?: RangeData
 ): Promise<ContextItem[]> {
-    const mentionQuery = typeof query === 'string' ? parseMentionQuery(query) : query
+    const mentionQuery =
+        typeof query === 'string' ? parseMentionQuery(query, getEnabledContextMentionProviders()) : query
 
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.type === 'empty') {
+    if (mentionQuery.provider === 'default') {
         telemetryRecorder?.empty()
-    } else if (mentionQuery.text.length === 1) {
-        telemetryRecorder?.withType(mentionQuery.type)
+    } else {
+        telemetryRecorder?.withProvider(mentionQuery.provider)
     }
 
     const MAX_RESULTS = 20
-    switch (mentionQuery.type) {
-        case 'empty':
+    switch (mentionQuery.provider) {
+        case 'default':
             return getOpenTabsContextFile()
         case 'symbol':
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
@@ -56,23 +56,34 @@ export async function getChatContextItemsForMention(
 
             return files
         }
-        case 'url':
-            return (await isURLContextFeatureFlagEnabled())
-                ? getURLContextItems(
-                      mentionQuery.text,
-                      convertCancellationTokenToAbortSignal(cancellationToken)
-                  )
-                : []
-        default:
+
+        default: {
+            for (const provider of getEnabledContextMentionProviders()) {
+                if (provider.id === mentionQuery.provider) {
+                    return provider.queryContextItems(
+                        mentionQuery.text,
+                        convertCancellationTokenToAbortSignal(cancellationToken)
+                    )
+                }
+            }
             return []
+        }
     }
 }
 
-export async function isURLContextFeatureFlagEnabled(): Promise<boolean> {
-    return (
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true ||
-        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.URLContext))
-    )
+export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
+    const isAllEnabled =
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.noodle') === true
+    if (isAllEnabled) {
+        return CONTEXT_MENTION_PROVIDERS
+    }
+
+    const isURLProviderEnabled =
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
+    if (isURLProviderEnabled) {
+        return CONTEXT_MENTION_PROVIDERS.filter(provider => provider.id === 'url')
+    }
+    return []
 }
 
 function convertCancellationTokenToAbortSignal(token: vscode.CancellationToken): AbortSignal {

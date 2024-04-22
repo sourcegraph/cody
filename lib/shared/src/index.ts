@@ -237,10 +237,9 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    getURLContextItems,
-    isURLContextItem,
-    fetchContentForURLContextItem,
-} from './mentions/urlContextItems'
+    CONTEXT_MENTION_PROVIDERS,
+    type ContextMentionProvider,
+} from './mentions/api'
 export { TokenCounter } from './token/counter'
 export {
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
