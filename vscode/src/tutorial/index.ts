@@ -15,8 +15,7 @@ import { setTutorialUri } from './helpers'
 import { CodyChatLinkProvider } from './utils'
 
 const openTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
-    const firstStepContent = new TextEncoder().encode(getStepContent('autocomplete'))
-    await vscode.workspace.fs.writeFile(uri, firstStepContent)
+    await vscode.workspace.fs.writeFile(uri, new Uint8Array())
     return vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.Beside })
 }
 
@@ -142,9 +141,9 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
         const content = getStepContent(nextStep)
 
         // Add to the bottom of the document with the new step content
-        const edit = new vscode.WorkspaceEdit()
-        edit.insert(documentUri, new vscode.Position(editor.document.lineCount, 0), content)
-        await vscode.workspace.applyEdit(edit)
+        await editor.edit(editBuilder => {
+            editBuilder.insert(new vscode.Position(editor.document.lineCount, 0), content)
+        })
         disposables.push(startListeningForSuccess(nextStep))
 
         activeStep = getStepData(editor.document, nextStep)
@@ -247,6 +246,7 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
     }
 
     progressToNextStep()
+
     disposables.push(
         startListeningForSuccess('autocomplete'),
         vscode.languages.registerDocumentLinkProvider(
@@ -281,6 +281,7 @@ export const registerInteractiveTutorial = async (
     let hasStarted = false
 
     const start = async () => {
+        stop()
         hasStarted = true
         activeDisposables.push(...(await startTutorial(documentUri)))
     }
