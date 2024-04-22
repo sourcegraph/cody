@@ -1,14 +1,19 @@
 import path from 'node:path'
 
 import * as vscode from 'vscode'
-import type Parser from 'web-tree-sitter'
 
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
-import type { Tree } from 'web-tree-sitter'
+import Parser, { type Tree } from 'web-tree-sitter'
 import { captureException } from '../services/sentry/sentry'
 import { DOCUMENT_LANGUAGE_TO_GRAMMAR, type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { initQueries } from './query-sdk'
-const ParserImpl = require('web-tree-sitter') as typeof Parser
+
+// HACK(sqs): Calling `await WebTreeSitter.init(...)` (as required) somehow reassigns the
+// `WebTreeSitter` binding value when running in vitest, and the new value is not a class. As a
+// workaround, use a const to be able to refer to the pre-init() value. The alternative is for us to
+// return to using `const Parser = require('web-tree-sitter')`, which seems to be essentially the
+// same behavior (keeping a reference to the pre-init() value).
+const ParserConst = Parser
 
 /*
  * Loading wasm grammar and creation parser instance every time we trigger
@@ -76,10 +81,10 @@ export async function createParser(settings: ParserSettings): Promise<WrappedPar
         return undefined
     }
 
-    await ParserImpl.init({ grammarDirectory })
-    const parser = new ParserImpl()
+    await ParserConst.init({ grammarDirectory })
+    const parser = new ParserConst()
 
-    const languageGrammar = await ParserImpl.Language.load(wasmPath)
+    const languageGrammar = await ParserConst.Language.load(wasmPath)
 
     parser.setLanguage(languageGrammar)
 

@@ -38,7 +38,6 @@ type ExternalServicesConfiguration = Pick<
     | 'useContext'
     | 'customHeaders'
     | 'accessToken'
-    | 'debugEnable'
     | 'debugVerbose'
     | 'experimentalTracing'
 > &

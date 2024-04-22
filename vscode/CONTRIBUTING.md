@@ -5,7 +5,7 @@
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
 1. Open this repository in VS Code and run the `Launch VS Code Extension (Desktop)` build/debug task (or run `cd vscode && pnpm run build && pnpm run dev`).
 
-Tip: Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings during extension development.
+Tip: Enable `cody.debug.verbose` in VS Code settings during extension development.
 
 ## File structure
 
@@ -27,7 +27,7 @@ The best way to help us improve code completions is by contributing your example
 
 ### Accessing autocomplete logs
 
-1. Enable `cody.debug.enable` and `cody.debug.verbose` in VS Code settings
+1. Enable `cody.debug.verbose` in VS Code settings
    - Make sure to restart or reload VS Code after changing these settings
 1. Open the Cody debug panel via "View > Output" and selecting the "Cody by Sourcegraph" option in the dropdown.
 

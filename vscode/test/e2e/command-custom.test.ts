@@ -178,7 +178,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 5, lines: 56 })
+    await expectContextCellCounts(contextCell, { files: 5 })
     await contextCell.click()
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
@@ -194,7 +194,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('treeitem', { name: 'filePath' }).locator('a').click()
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
-    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await expectContextCellCounts(contextCell, { files: 2 })
 
     /* Test: context.directory with directory command */
 
@@ -204,7 +204,7 @@ test.extend<ExpectedEvents>({
     await page.getByPlaceholder('Search command to run...').fill('directory')
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
-    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     await expect(
         chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
@@ -225,7 +225,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context
-    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     await expect(chatContext.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     await expect(
@@ -326,11 +326,11 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await expect(menuInputBox).not.toBeVisible()
 
     // Check the context list to confirm the terminal output is added as file
-    const chatFrame = getChatPanel(page)
-    const contextCell = getContextCell(chatFrame)
-    await expectContextCellCounts(contextCell, { files: 2, lines: 1 })
+    const panel = getChatPanel(page)
+    const contextCell = getContextCell(panel)
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
-    const chatContext = chatFrame.locator('details').last()
+    const chatContext = panel.locator('details').last()
     await expect(
         chatContext.getByRole('link', { name: withPlatformSlashes('/terminal-output') })
     ).toBeVisible()

@@ -23,7 +23,6 @@ describe('symf', () => {
             'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
-        debugEnable: true,
     })
 
     describe('expand-query', () => {

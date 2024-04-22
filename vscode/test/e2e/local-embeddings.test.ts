@@ -159,7 +159,6 @@ test
     const contextCell = getContextCell(chatFrame)
     await expectContextCellCounts(contextCell, {
         files: 2,
-        lines: 2,
         timeout: 10000,
     })
 })

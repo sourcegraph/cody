@@ -289,10 +289,7 @@ export async function fillInContextItemContent(
                         } else {
                             content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
                         }
-                        if (content) {
-                            size = size ?? TokenCounter.countTokens(content)
-                            range = range ?? getRangeByContentLineCount(content)
-                        }
+                        size = size ?? TokenCounter.countTokens(content)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -300,21 +297,8 @@ export async function fillInContextItemContent(
                         return null
                     }
                 }
-                return { ...item, content: content!, size, range }
+                return { ...item, content: content!, size }
             })
         )
     ).filter(isDefined)
-}
-
-/**
- * Gets a `vscode.Range` representing the full content of the given string.
- *
- * @param content The string content to get the range for.
- * @returns A `vscode.Range` representing the full content of the given string, or `undefined` if the input is empty.
- */
-function getRangeByContentLineCount(content: string): vscode.Range | undefined {
-    if (!content.trim()) {
-        return undefined
-    }
-    return new vscode.Range(0, 0, content?.split('\n')?.length, 0)
 }

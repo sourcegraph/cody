@@ -2,7 +2,13 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedEvents,
+    executeCommandInPalette,
+    openFile,
+    test,
+} from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -126,3 +132,59 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(modelSelect).toBeDisabled()
     }
 )
+
+test('chat readability: long text are wrapped and scrollable in chat views', async ({
+    page,
+    sidebar,
+}) => {
+    // Open a file before starting a new chat to make sure chat will be opened on the side
+    await sidebarSignin(page, sidebar)
+    await openFile(page, 'buzz.test.ts')
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+
+    // Use the width of the welcome chat to determine if the chat messages are wrapped.
+    const welcomeText = chatFrame.getByText('Welcome to Cody')
+    const welcomeTextContainer = await welcomeText.boundingBox()
+    const welcomeTextContainerWidth = welcomeTextContainer?.width || 0
+    expect(welcomeTextContainerWidth).toBeGreaterThan(0)
+
+    await chatInput.fill(
+        `Lorem ipsum Cody.
+        export interface Animal {
+                name: string
+                makeAnimalSound(): string
+                isMammal: boolean
+                printName(): void {
+                    console.log(this.name);
+                }
+            }
+        }
+        `
+    )
+
+    await chatInput.press('Enter')
+
+    // Verify if whitespaces are preserved in the chat view for human messages
+    const humanText = chatFrame.getByText('Lorem ipsum Cody.')
+    await expect(humanText).toHaveText(/\s\s\s\sname: string/)
+
+    const humanTextContainerBox = await humanText.boundingBox()
+    expect(humanTextContainerBox?.width).toBeLessThan(welcomeTextContainerWidth)
+
+    // Code block should be scrollable
+    const codeBlock = chatFrame.locator('pre').last()
+    expect(codeBlock).toBeVisible()
+    const codeBlockElement = await codeBlock.boundingBox()
+    expect(codeBlockElement?.width).toBeLessThan(welcomeTextContainerWidth)
+
+    // Go to the bottom of the chat transcript view
+    await codeBlock.click()
+    await page.keyboard.press('PageDown')
+
+    const botResponseText = chatFrame.getByText('Excepteur')
+    await expect(botResponseText).toBeVisible()
+
+    // The response text element and the code block element should have the same width
+    const botResponseElement = await botResponseText.boundingBox()
+    expect(botResponseElement?.width).toBeLessThan(welcomeTextContainerWidth)
+})

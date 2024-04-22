@@ -9,6 +9,7 @@ import {
     ModelProvider,
     PromptMixin,
     PromptString,
+    contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -65,7 +66,11 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import {
+    enableVerboseDebugMode,
+    exportOutputLog,
+    openCodyOutputChannel,
+} from './services/utils/export-logs'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -193,7 +198,10 @@ const register = async (
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
     )
+    disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
+    const boundRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    await contextFiltersProvider.init(boundRepoNameResolver)
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -243,6 +251,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        promises.push(contextFiltersProvider.init(boundRepoNameResolver))
         promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
@@ -551,7 +560,7 @@ const register = async (
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
-        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode()),
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
