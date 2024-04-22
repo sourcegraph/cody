@@ -87,9 +87,9 @@ export abstract class SourcegraphCompletionsClient {
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void
+    ): Promise<void>
 
-    public stream(
+    public async *stream(
         params: CompletionParameters,
         apiVersion: number,
         signal?: AbortSignal
@@ -127,17 +127,15 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        this._streamWithCallbacks(params, apiVersion, callbacks, signal)
+        await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
 
-        return (async function* () {
-            for (let i = 0; ; i++) {
-                const val = await values[i]
-                delete values[i]
-                yield val
-                if (val.type === 'complete' || val.type === 'error') {
-                    break
-                }
+        for (let i = 0; ; i++) {
+            const val = await values[i]
+            delete values[i]
+            yield val
+            if (val.type === 'complete' || val.type === 'error') {
+                break
             }
-        })()
+        }
     }
 }

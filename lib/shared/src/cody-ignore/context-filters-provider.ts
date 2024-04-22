@@ -1,15 +1,11 @@
 import { LRUCache } from 'lru-cache'
 import { RE2 } from 're2-wasm'
 import type * as vscode from 'vscode'
-
-import {
-    type CodyContextFilterItem,
-    graphqlClient,
-    isFileURI,
-    logError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
-import { repoNameResolver } from '../repository/repo-name-resolver'
+import { isFileURI } from '../common/uri'
+import { logDebug, logError } from '../logger'
+import { graphqlClient } from '../sourcegraph-api/graphql'
+import type { CodyContextFilterItem } from '../sourcegraph-api/graphql/client'
+import { wrapInActiveSpan } from '../tracing'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -23,12 +19,23 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
-export class ContextFiltersProvider implements vscode.Disposable {
-    private contextFilters: ParsedContextFilters | null = null
-    private fetchIntervalId: NodeJS.Timeout | undefined | number
-    private cache = new LRUCache<string, boolean>({ max: 128 })
+export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
+type RepoName = string
+type IsRepoNameAllowed = boolean
 
-    async init() {
+export class ContextFiltersProvider implements vscode.Disposable {
+    /**
+     * `null` value means that we failed to fetch context filters.
+     * In that case, we should exclude all the URIs.
+     */
+    private contextFilters: ParsedContextFilters | null = null
+    private cache = new LRUCache<RepoName, IsRepoNameAllowed>({ max: 128 })
+    private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
+    private fetchIntervalId: NodeJS.Timeout | undefined | number
+
+    async init(getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
+        this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
+        this.dispose()
         await this.fetchContextFilters()
         this.startRefetchTimer()
     }
@@ -36,17 +43,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private async fetchContextFilters(): Promise<void> {
         try {
             const response = await graphqlClient.contextFilters()
-            if (response instanceof Error) {
-                logError('ContextFiltersProvider', 'fetchContextFilters', response)
-            } else {
-                this.cache.clear()
-                this.contextFilters = null
+            this.cache.clear()
+            this.contextFilters = null
 
-                if (response) {
-                    this.contextFilters = {
-                        include: response.include.map(parseContextFilterItem),
-                        exclude: response.exclude.map(parseContextFilterItem),
-                    }
+            if (response) {
+                logDebug('ContextFiltersProvider', 'fetchContextFilters', { verbose: response })
+                this.contextFilters = {
+                    include: (response.include || []).map(parseContextFilterItem),
+                    exclude: (response.exclude || []).map(parseContextFilterItem),
                 }
             }
         } catch (error) {
@@ -99,12 +103,22 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
+        if (this.hasIncludeEverythingFilters()) {
+            return true
+        }
+
+        if (this.hasExcludeEverythingFilters()) {
+            return false
+        }
+
+        // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
+            logDebug('ContextFiltersProvider', 'isUriAllowed', `non-file URI ${uri.scheme}`)
             return false
         }
 
         const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
-            repoNameResolver.getRepoNameFromWorkspaceUri(uri)
+            this.getRepoNameFromWorkspaceUri?.(uri)
         )
 
         return repoName ? this.isRepoNameAllowed(repoName) : false
@@ -116,6 +130,18 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (this.fetchIntervalId) {
             clearTimeout(this.fetchIntervalId)
         }
+    }
+
+    private hasIncludeEverythingFilters() {
+        return this.contextFilters?.include.length === 0 && this.contextFilters?.exclude.length === 0
+    }
+
+    private hasExcludeEverythingFilters() {
+        return (
+            this.contextFilters?.include.length === 0 &&
+            this.contextFilters?.exclude.length === 1 &&
+            this.contextFilters.exclude[0].repoNamePattern.toString() === '.*'
+        )
     }
 }
 
