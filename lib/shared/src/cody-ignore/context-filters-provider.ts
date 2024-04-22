@@ -118,7 +118,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             this.getRepoNameFromWorkspaceUri?.(uri)
         )
 
-        return repoName ? !this.isRepoNameIgnored(repoName) : true
+        return repoName ? this.isRepoNameIgnored(repoName) : true
     }
 
     public dispose(): void {

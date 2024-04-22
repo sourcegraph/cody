@@ -319,7 +319,7 @@ describe('ContextFiltersProvider', () => {
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
             expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
 
-            expect(await provider.isUriIgnored(includedURI)).toBe(true)
+            expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
@@ -327,10 +327,10 @@ describe('ContextFiltersProvider', () => {
                 'github.com/sourcegraph/sourcegraph'
             )
 
-            expect(await provider.isUriIgnored(excludedURI)).toBe(false)
+            expect(await provider.isUriIgnored(excludedURI)).toBe(true)
         })
 
-        it('returns `false` if repo name is not found', async () => {
+        it('returns `true` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
