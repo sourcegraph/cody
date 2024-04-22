@@ -1,10 +1,6 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import {
-    LexicalTypeaheadMenuPlugin,
-    MenuOption,
-    type MenuTextMatch,
-} from '@lexical/react/LexicalTypeaheadMenuPlugin'
+import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     $createTextNode,
     COMMAND_PRIORITY_NORMAL,
@@ -15,22 +11,27 @@ import {
 import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
-import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    ContextItemSource,
+    type RangeData,
+    displayPath,
+    scanForMentionTriggerInUserTextInput,
+} from '@sourcegraph/cody-shared'
+import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
-import { $createContextItemMentionNode } from '../../nodes/ContextItemMentionNode'
+import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
+import { toSerializedPromptEditorValue } from '../../PromptEditor'
+import {
+    $createContextItemMentionNode,
+    $createContextItemTextNode,
+    ContextItemMentionNode,
+} from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
 
-const PUNCTUATION = ',\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]!%\'"~=<>:;'
-
-const TRIGGERS = ['@'].join('')
-
-// Chars we expect to see in a mention (non-space, non-punctuation).
-const VALID_CHARS = '[^' + TRIGGERS + PUNCTUATION + '\\s]'
-
-const MAX_LENGTH = 75
-
-const RANGE_REGEXP = '(?::\\d+-\\d+)?'
+export const RANGE_MATCHES_REGEXP = /:(\d+)?-?(\d+)?$/
+export const LINE_RANGE_REGEXP = /:(\d+)-(\d+)$/
 
 /**
  * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
@@ -41,7 +42,7 @@ export function parseLineRangeInMention(text: string): {
     textWithoutRange: string
     range?: RangeData
 } {
-    const match = text.match(/:(\d+)-(\d+)$/)
+    const match = text.match(LINE_RANGE_REGEXP)
     if (match === null) {
         return { textWithoutRange: text }
     }
@@ -61,44 +62,7 @@ export function parseLineRangeInMention(text: string): {
     }
 }
 
-const AT_MENTIONS_REGEXP = new RegExp(
-    '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
-        '[' +
-        TRIGGERS +
-        ']' +
-        '(?<matchingString>#?(?:' +
-        VALID_CHARS +
-        '){0,' +
-        MAX_LENGTH +
-        '}' +
-        RANGE_REGEXP +
-        ')' +
-        ')$'
-)
-
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
-
-function checkForAtSignMentions(text: string, minMatchLength: number): MenuTextMatch | null {
-    const match = AT_MENTIONS_REGEXP.exec(text)
-
-    if (match?.groups) {
-        const maybeLeadingWhitespace = match.groups.maybeLeadingWhitespace
-        const replaceableString = match.groups.replaceableString
-        const matchingString = match.groups.matchingString
-        if (matchingString.length >= minMatchLength) {
-            return {
-                leadOffset: match.index + maybeLeadingWhitespace.length,
-                matchingString,
-                replaceableString,
-            }
-        }
-    }
-    return null
-}
-
-export function getPossibleQueryMatch(text: string): MenuTextMatch | null {
-    return checkForAtSignMentions(text, 0)
-}
 
 export class MentionTypeaheadOption extends MenuOption {
     public displayPath: string
@@ -121,7 +85,9 @@ export class MentionTypeaheadOption extends MenuOption {
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState<string | null>(null)
+
+    const [tokenAdded, setTokenAdded] = useState<number>(0)
 
     const { x, y, refs, strategy, update } = useFloating({
         placement: 'top-start',
@@ -129,17 +95,43 @@ export default function MentionsPlugin(): JSX.Element | null {
     })
 
     const results = useChatContextItems(query)
-    const options = useMemo(
-        () =>
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
+    const options = useMemo(() => {
+        const model = useCurrentChatModel()
+        const limit =
+            model?.contextWindow?.context?.user ||
+            model?.contextWindow?.input ||
+            FAST_CHAT_INPUT_TOKEN_BUDGET
+        return (
             results
-                ?.map(result => new MentionTypeaheadOption(result))
-                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? [],
-        [results]
-    )
+                ?.map(r => {
+                    if (r.size) {
+                        r.isTooLarge = r.size > limit - tokenAdded
+                    }
+                    // All @-mentions should have a source of `User`.
+                    r.source = ContextItemSource.User
+                    return new MentionTypeaheadOption(r)
+                })
+                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
+        )
+    }, [results])
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
         update()
     }, [options, update])
+
+    // Listen for changes to ContextItemMentionNode to update the token count.
+    // This updates the token count when a mention is added or removed.
+    editor.registerMutationListener(ContextItemMentionNode, node => {
+        const items = toSerializedPromptEditorValue(editor)?.contextItems
+        if (!items?.length) {
+            setTokenAdded(0)
+            return
+        }
+        setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
+    })
 
     const onSelectOption = useCallback(
         (
@@ -148,28 +140,41 @@ export default function MentionsPlugin(): JSX.Element | null {
             closeMenu: () => void
         ) => {
             editor.update(() => {
-                const mentionNode = $createContextItemMentionNode(selectedOption.item)
-                if (nodeToReplace) {
-                    nodeToReplace.replace(mentionNode)
+                const currentInputText = nodeToReplace?.__text
+                if (!currentInputText) {
+                    return
                 }
 
-                const spaceAfter = $createTextNode(' ')
-                mentionNode.insertAfter(spaceAfter)
-                spaceAfter.select()
-
+                const selectedItem = selectedOption.item
+                const isLargeFile = selectedItem.isTooLarge
+                // When selecting a large file without range, add the selected option as text node with : at the end.
+                // This allows users to autocomplete the file path, and provide them with the options to add range.
+                if (isLargeFile && !selectedItem.range) {
+                    const textNode = $createContextItemTextNode(selectedItem)
+                    nodeToReplace.replace(textNode)
+                    const colonNode = $createTextNode(':')
+                    textNode.insertAfter(colonNode)
+                    colonNode.select()
+                } else {
+                    const mentionNode = $createContextItemMentionNode(selectedItem)
+                    nodeToReplace.replace(mentionNode)
+                    const spaceNode = $createTextNode(' ')
+                    mentionNode.insertAfter(spaceNode)
+                    spaceNode.select()
+                }
                 closeMenu()
             })
         },
         [editor]
     )
 
-    const onQueryChange = useCallback((query: string | null) => setQuery(query ?? ''), [])
+    const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
             onQueryChange={onQueryChange}
             onSelectOption={onSelectOption}
-            triggerFn={getPossibleQueryMatch}
+            triggerFn={scanForMentionTriggerInUserTextInput}
             options={options}
             anchorClassName={styles.resetAnchor}
             commandPriority={
@@ -204,7 +209,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={classNames(styles.popover)}
                             >
                                 <OptionsList
-                                    query={query}
+                                    query={query ?? ''}
                                     options={options}
                                     selectedIndex={selectedIndex}
                                     setHighlightedIndex={setHighlightedIndex}

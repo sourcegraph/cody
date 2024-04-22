@@ -22,6 +22,7 @@ sealed class ExtensionMessage {
           "notice" -> context.deserialize<NoticeExtensionMessage>(element, NoticeExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
+          "chat-input-context" -> context.deserialize<`chat-input-contextExtensionMessage`>(element, `chat-input-contextExtensionMessage`::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
           "update-search-results" -> context.deserialize<`update-search-resultsExtensionMessage`>(element, `update-search-resultsExtensionMessage`::class.java)
           "index-updated" -> context.deserialize<`index-updatedExtensionMessage`>(element, `index-updatedExtensionMessage`::class.java)
@@ -71,7 +72,7 @@ data class HistoryExtensionMessage(
 
 data class TranscriptExtensionMessage(
   val type: TypeEnum? = null, // Oneof: transcript
-  val messages: List<ChatMessage>? = null,
+  val messages: List<SerializedChatMessage>? = null,
   val isMessageInProgress: Boolean? = null,
   val chatID: String? = null,
 ) : ExtensionMessage() {
@@ -128,6 +129,16 @@ data class UserContextFilesExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("userContextFiles") UserContextFiles,
+  }
+}
+
+data class `chat-input-contextExtensionMessage`(
+  val type: TypeEnum? = null, // Oneof: chat-input-context
+  val items: List<ContextItem>? = null,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("chat-input-context") `Chat-input-context`,
   }
 }
 

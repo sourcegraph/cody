@@ -1,28 +1,38 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
+import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
 import { commands, window } from 'vscode'
 import { CommandMenuOption, CustomCommandConfigMenuItems } from './items'
 
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
+import type { CodyCommandArgs } from '../types'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
 import { type CommandMenuButton, CommandMenuSeperator, CommandMenuTitleItem } from './items'
 import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
-    customCommands: CodyCommand[]
+    customCommands: CodyCommand[],
+    args?: CodyCommandArgs
 ): Promise<void> {
     const items: CommandMenuItem[] = []
     const configOption = CommandMenuOption.config
     const addOption = CommandMenuOption.add
 
-    telemetryService.log(`CodyVSCodeExtension:menu:command:${type}:clicked`)
-    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked')
+    // Log Command Menu opened event
+    const source = args?.source
+    telemetryService.log(
+        `CodyVSCodeExtension:menu:command:${type}:clicked`,
+        { source },
+        { hasV2Event: true }
+    )
+    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked', {
+        privateMetadata: { source },
+    })
 
     // Add items to menus accordingly:
     // 1. default: contains default commands and custom commands
@@ -125,7 +135,7 @@ export async function showCommandMenu(
 
         quickPick.onDidAccept(async () => {
             const selection = quickPick.activeItems[0] as CommandMenuItem
-            const value = normalize(quickPick.value)
+            const value = PromptString.unsafe_fromUserQuery(normalize(quickPick.value))
             const source = 'menu'
 
             // On item button click
@@ -146,7 +156,7 @@ export async function showCommandMenu(
                 // Check if it's an ask command
                 if (selection.key === 'ask') {
                     // show input box if no value
-                    if (!value) {
+                    if (value.length === 0) {
                         void commands.executeCommand('cody.chat.panel.new')
                     } else {
                         void executeChat({
@@ -161,7 +171,10 @@ export async function showCommandMenu(
 
                 // Check if it's an edit command
                 if (selection.key === 'edit') {
-                    void executeEdit({ configuration: { instruction: value }, source })
+                    void executeEdit({
+                        configuration: { instruction: value },
+                        source,
+                    })
                     quickPick.hide()
                     return
                 }

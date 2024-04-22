@@ -3,15 +3,37 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { SourcegraphCompletionsClient } from './client'
-import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import type {
+    CompletionCallbacks,
+    CompletionParameters,
+    Event,
+    SerializedCompletionParameters,
+} from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
-    protected _streamWithCallbacks(
+    protected async _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
+    ): Promise<void> {
+        const serializedParams: SerializedCompletionParameters = {
+            ...params,
+            messages: await Promise.all(
+                params.messages.map(async m => ({
+                    ...m,
+                    text: await m.text?.toFilteredString(contextFiltersProvider),
+                }))
+            ),
+        }
+
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+
         const abort = dependentAbortController(signal)
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         addCustomUserAgent(headersInstance)
@@ -27,10 +49,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         // Disable gzip compression since the sg instance will start to batch
         // responses afterwards.
         headersInstance.set('Accept-Encoding', 'gzip;q=0')
-        fetchEventSource(this.completionsEndpoint, {
+        fetchEventSource(url.toString(), {
             method: 'POST',
             headers: Object.fromEntries(headersInstance.entries()),
-            body: JSON.stringify(params),
+            body: JSON.stringify(serializedParams),
             signal: abort.signal,
             openWhenHidden: isRunningInWebWorker, // otherwise tries to call document.addEventListener
             async onopen(response) {

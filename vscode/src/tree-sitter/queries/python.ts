@@ -63,6 +63,15 @@ const DOCUMENTABLE_NODES_QUERY = dedent`
     ;--------------------------------
     (assignment
         left: (identifier) @symbol.identifier) @range.identifier
+
+    ; Comments
+    ;--------------------------------
+    (expression_statement (string)) @comment
+    (comment) @comment
+`
+
+const ENCLOSING_FUNCTION_QUERY = dedent`
+    (function_definition (identifier) @symbol.function) @range.function
 `
 
 export const pythonQueries = {
@@ -71,5 +80,6 @@ export const pythonQueries = {
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
         graphContextIdentifiers: '(call (identifier) @identifier)',
+        enclosingFunction: ENCLOSING_FUNCTION_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

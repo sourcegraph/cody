@@ -1,6 +1,6 @@
 import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/git-extension-api'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
 import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'
@@ -16,7 +16,11 @@ const GIT_REFRESH_DELAY = 2000
 export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMapper {
     private changeEmitter = new vscode.EventEmitter<{ name: string; id: string }[]>()
     private disposables: vscode.Disposable[] = [this.changeEmitter]
+    // The workspace repos.
     private repos: { name: string; id: string }[] = []
+    // A cache of results for non-workspace repos. This caches repos that are
+    // not found, as well as repo IDs.
+    private nonWorkspaceRepos = new Map<string, string | undefined>()
     private started: Promise<void> | undefined
 
     public dispose(): void {
@@ -35,7 +39,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         if (!repoName) {
             return
         }
-        // Check cached repository list.
+        // Check workspace repository list.
         const item = this.repos.find(item => item.name === repoName)
         if (item) {
             return {
@@ -43,17 +47,27 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 name: item.name,
             }
         }
+        // Check cached, non-workspace repository list.
+        if (this.nonWorkspaceRepos.has(repoName)) {
+            const id = this.nonWorkspaceRepos.get(repoName)
+            return id
+                ? {
+                      id,
+                      name: repoName,
+                  }
+                : undefined
+        }
         const result = await graphqlClient.getRepoId(repoName)
         if (isError(result)) {
             throw result
         }
-        if (!result) {
-            return
-        }
-        return {
-            name: repoName,
-            id: result,
-        }
+        this.nonWorkspaceRepos.set(repoName, result || undefined)
+        return result
+            ? {
+                  name: repoName,
+                  id: result,
+              }
+            : undefined
     }
 
     // Fetches the set of repo IDs and starts listening for workspace changes.

@@ -1,12 +1,20 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
 import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { $getRoot, CLEAR_HISTORY_COMMAND, type LexicalEditor, type SerializedEditorState } from 'lexical'
+import {
+    $createTextNode,
+    $getRoot,
+    $getSelection,
+    CLEAR_HISTORY_COMMAND,
+    type LexicalEditor,
+    type SerializedEditorState,
+} from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
+    $createContextItemMentionNode,
     type SerializedContextItem,
     deserializeContextItem,
     isSerializedContextItemMentionNode,
@@ -14,7 +22,6 @@ import {
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
-    containerClassName?: string
     editorClassName?: string
 
     placeholder?: string
@@ -32,13 +39,13 @@ export interface PromptEditorRefAPI {
     setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean): void
+    addContextItemAsToken(items: ContextItem[]): void
 }
 
 /**
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
-    containerClassName,
     editorClassName,
     placeholder,
     initialEditorState,
@@ -90,6 +97,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     }
                 }
             },
+            addContextItemAsToken(items: ContextItem[]) {
+                editorRef?.current?.update(() => {
+                    const selection = $getSelection()
+                    const spaceNode = $createTextNode(' ')
+                    const mentionNodes = items.map($createContextItemMentionNode)
+                    selection?.insertNodes([spaceNode, ...mentionNodes, spaceNode])
+                    spaceNode.select()
+                })
+            },
         }),
         []
     )
@@ -104,23 +120,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={classNames(styles.container, containerClassName)}>
-            <BaseEditor
-                className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
-                initialEditorState={initialEditorState?.lexicalEditorState ?? null}
-                onChange={onBaseEditorChange}
-                onFocusChange={onFocusChange}
-                editorRef={editorRef}
-                placeholder={placeholder}
-                disabled={disabled}
-                aria-label="Chat message"
-                //
-                // KeyboardEventPluginProps
-                onKeyDown={onKeyDown}
-                onEnterKey={onEnterKey}
-                onEscapeKey={onEscapeKey}
-            />
-        </div>
+        <BaseEditor
+            className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
+            initialEditorState={initialEditorState?.lexicalEditorState ?? null}
+            onChange={onBaseEditorChange}
+            onFocusChange={onFocusChange}
+            editorRef={editorRef}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-label="Chat message"
+            //
+            // KeyboardEventPluginProps
+            onKeyDown={onKeyDown}
+            onEnterKey={onEnterKey}
+            onEscapeKey={onEscapeKey}
+        />
     )
 }
 
@@ -135,7 +149,7 @@ export interface SerializedPromptEditorValue {
     editorState: SerializedPromptEditorState
 }
 
-function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptEditorValue {
+export function toSerializedPromptEditorValue(editor: LexicalEditor): SerializedPromptEditorValue {
     const editorState = toPromptEditorState(editor)
     return {
         text: editorStateToText(editor.getEditorState()),
@@ -247,7 +261,7 @@ export function serializedPromptEditorStateFromChatMessage(
     // It would be smoother to automatically import or convert textual @-mentions to the Lexical
     // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
     // of editing old messages in your chat history.
-    return serializedPromptEditorStateFromText(chatMessage.text ?? '')
+    return serializedPromptEditorStateFromText(chatMessage.text ? chatMessage.text.toString() : '')
 }
 
 export function contextItemsFromPromptEditorValue(

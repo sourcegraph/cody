@@ -12,7 +12,6 @@ import { ContextStatusAggregator } from '../local-context/enhanced-context-statu
 import type { LocalEmbeddingsController } from '../local-context/local-embeddings'
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import { getProcessInfo } from '../services/LocalAppDetector'
 import { logPrefix, telemetryService } from '../services/telemetry'
 import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
@@ -25,7 +24,6 @@ export type Config = Pick<
     ConfigurationWithAccessToken,
     | 'codebase'
     | 'serverEndpoint'
-    | 'debugEnable'
     | 'debugFilter'
     | 'debugVerbose'
     | 'customHeaders'
@@ -36,7 +34,6 @@ export type Config = Pick<
     | 'commandCodeLenses'
     | 'experimentalSimpleChatContext'
     | 'experimentalSymfContext'
-    | 'editorTitleCommandIcon'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
 >
@@ -166,7 +163,12 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
+        const eventValue = isLoggedOut
+            ? 'disconnected'
+            : authStatus.isLoggedIn && !isAuthError
+              ? 'connected'
+              : 'failed'
         switch (ContextEvent.Auth) {
             case 'auth':
                 telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
@@ -186,10 +188,8 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
-                ...localProcess,
-                debugEnable: this.config.debugEnable,
+                uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
             }

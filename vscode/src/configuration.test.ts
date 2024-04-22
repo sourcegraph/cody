@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
+import { type Configuration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -37,8 +37,6 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.editorTitleCommandIcon':
-                        return true
                     case 'cody.experimental.guardrails':
                         return true
                     case 'cody.codeActions.enabled':
@@ -57,8 +55,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.tracing':
                         return true
-                    case 'cody.debug.enable':
-                        return true
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
@@ -67,6 +63,8 @@ describe('getConfiguration', () => {
                         return 'off'
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
+                    case 'cody.edit.preInstruction':
+                        return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
                         return 'unstable-openai'
                     case 'cody.autocomplete.advanced.model':
@@ -102,6 +100,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.chatContextRanker':
                         return false
+                    case 'cody.experimental.supercompletions':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -115,16 +115,17 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
-            chatPreInstruction: 'My name is Jeff.',
+            chatPreInstruction: ps`My name is Jeff.`,
+            editPreInstruction: ps`My name is not Jeff.`,
             autocomplete: false,
             autocompleteLanguages: {
                 '*': true,
             },
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
+            experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
-            editorTitleCommandIcon: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             codeActions: true,
@@ -132,7 +133,6 @@ describe('getConfiguration', () => {
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
-            debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',

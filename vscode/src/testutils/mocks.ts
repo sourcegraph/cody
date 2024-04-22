@@ -1,5 +1,5 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
@@ -14,6 +14,7 @@ import {
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -685,7 +686,10 @@ export enum UIKind {
     Web = 2,
 }
 
+export class FileSystemError extends Error {}
+
 export const vsCodeMocks = {
+    FileSystemError,
     FileType,
     Range,
     Position,
@@ -805,16 +809,17 @@ export const DEFAULT_VSCODE_SETTINGS = {
     proxy: null,
     codebase: '',
     customHeaders: {},
-    chatPreInstruction: '',
+    chatPreInstruction: ps``,
+    editPreInstruction: ps``,
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
     },
     commandCodeLenses: false,
-    editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
+    experimentalSupercompletions: false,
     experimentalOllamaChat: false,
     experimentalSymfContext: true,
     experimentalTracing: false,
@@ -822,7 +827,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',

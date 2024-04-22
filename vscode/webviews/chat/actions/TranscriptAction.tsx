@@ -19,10 +19,11 @@ export const TranscriptAction: React.FunctionComponent<{
     title: string | { verb: string; object: string; tooltip?: string }
     steps: TranscriptActionStep[]
     className?: string
-}> = ({ title, steps, className }) => {
+    onClick?: () => void
+}> = ({ title, steps, className, onClick }) => {
     return (
         <details className={classNames(className, styles.container)}>
-            <summary>
+            <summary onClick={onClick} onKeyDown={onClick}>
                 {typeof title === 'string' ? (
                     title
                 ) : (

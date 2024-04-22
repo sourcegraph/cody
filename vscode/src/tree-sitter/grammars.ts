@@ -12,6 +12,7 @@ export enum SupportedLanguage {
     cpp = 'cpp',
     csharp = 'csharp',
     css = 'css',
+    dart = 'dart',
     elixir = 'elixir',
     elm = 'elm',
     go = 'go',
@@ -32,11 +33,8 @@ export enum SupportedLanguage {
     scala = 'scala',
     shellscript = 'bash',
     swift = 'swift',
-    toml = 'toml',
     typescript = 'typescript',
     typescriptreact = 'typescriptreact',
-    vue = 'vue',
-    yaml = 'yaml',
 }
 
 export const DOCUMENT_LANGUAGE_TO_GRAMMAR: Record<SupportedLanguage, string> = {
@@ -45,6 +43,7 @@ export const DOCUMENT_LANGUAGE_TO_GRAMMAR: Record<SupportedLanguage, string> = {
     [SupportedLanguage.cpp]: 'tree-sitter-cpp.wasm',
     [SupportedLanguage.csharp]: 'tree-sitter-c_sharp.wasm',
     [SupportedLanguage.css]: 'tree-sitter-css.wasm',
+    [SupportedLanguage.dart]: 'tree-sitter-dart.wasm',
     [SupportedLanguage.elisp]: 'tree-sitter-elisp.wasm',
     [SupportedLanguage.elixir]: 'tree-sitter-elixir.wasm',
     [SupportedLanguage.elm]: 'tree-sitter-elm.wasm',
@@ -65,11 +64,8 @@ export const DOCUMENT_LANGUAGE_TO_GRAMMAR: Record<SupportedLanguage, string> = {
     [SupportedLanguage.scala]: 'tree-sitter-scala.wasm',
     [SupportedLanguage.shellscript]: 'tree-sitter-bash.wasm',
     [SupportedLanguage.swift]: 'tree-sitter-swift.wasm',
-    [SupportedLanguage.toml]: 'tree-sitter-toml.wasm',
     [SupportedLanguage.typescript]: 'tree-sitter-typescript.wasm',
     [SupportedLanguage.typescriptreact]: 'tree-sitter-tsx.wasm',
-    [SupportedLanguage.vue]: 'tree-sitter-vue.wasm',
-    [SupportedLanguage.yaml]: 'tree-sitter-yaml.wasm',
 } as const
 
 export const isSupportedLanguage = (

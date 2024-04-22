@@ -4,6 +4,8 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    type ModelContextWindow,
+    ModelProvider,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
@@ -11,17 +13,26 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
+    public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
         private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
-    ) {}
+    ) {
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
+    }
+
+    public updateModel(newModelID: string): void {
+        this.modelID = newModelID
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
+    }
 
     public isEmpty(): boolean {
         return this.messages.length === 0
@@ -114,7 +125,7 @@ export class SimpleChatModel {
             return this.customChatTitle
         }
         const lastHumanMessage = this.getLastHumanMessage()
-        return getChatPanelTitle(lastHumanMessage?.text ?? '')
+        return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
     public getCustomChatTitle(): string | undefined {
@@ -176,7 +187,10 @@ function messageToSerializedChatInteraction(
         )
     }
 
-    return { humanMessage, assistantMessage: assistantMessage ?? null }
+    return {
+        humanMessage: serializeChatMessage(humanMessage),
+        assistantMessage: assistantMessage ? serializeChatMessage(assistantMessage) : null,
+    }
 }
 
 export function prepareChatMessage(message: ChatMessage): ChatMessage {

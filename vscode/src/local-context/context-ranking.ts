@@ -1,15 +1,16 @@
-import * as path from 'path'
+import * as fspromises from 'node:fs/promises'
+import * as path from 'node:path'
 import {
     type ConfigurationWithAccessToken,
     type ContextItem,
+    ContextItemSource,
     type EmbeddingsSearchResult,
     type FileURI,
+    type PromptString,
     isDotCom,
     isFileURI,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import * as fspromises from 'fs/promises'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import type { RankContextItem, RankerPrediction } from '../jsonrpc/context-ranking-protocol'
@@ -19,7 +20,7 @@ import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
 interface ContextRanker {
-    rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]>
+    rankContextItems(query: PromptString, contextItems: ContextItem[]): Promise<ContextItem[]>
 }
 
 export function createContextRankingController(
@@ -165,7 +166,10 @@ export class ContextRankingController implements ContextRanker {
         }
     }
 
-    public async rankContextItems(query: string, contextItems: ContextItem[]): Promise<ContextItem[]> {
+    public async rankContextItems(
+        query: PromptString,
+        contextItems: ContextItem[]
+    ): Promise<ContextItem[]> {
         const repoUri = this.getRepoUri()
         if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
             return contextItems
@@ -177,7 +181,7 @@ export class ContextRankingController implements ContextRanker {
             const rankedItemsOrder = await service.request('context-ranking/rank-items', {
                 repoPath: repoUri.path,
                 contextItems: rankItems,
-                query: query,
+                query: query.toString(),
             })
 
             if (rankedItemsOrder.prediction.length !== contextItems.length) {
@@ -223,7 +227,7 @@ export class ContextRankingController implements ContextRanker {
     }
 
     public async retrieveEmbeddingBasedContext(
-        query: string,
+        query: PromptString,
         numResults: number,
         modelName: string
     ): Promise<EmbeddingsSearchResult[]> {
@@ -235,7 +239,7 @@ export class ContextRankingController implements ContextRanker {
             const service = await this.getService()
             const resp = await service.request('context-ranking/context-retriever-embedding', {
                 repoPath: repoUri.path,
-                query: query,
+                query: query.toString(),
                 modelName: modelName,
                 numResults: numResults,
             })
@@ -254,7 +258,7 @@ export class ContextRankingController implements ContextRanker {
         }
     }
 
-    public async precomputeContextRankingFeatures(query: string): Promise<void> {
+    public async precomputeContextRankingFeatures(query: PromptString): Promise<void> {
         const repoUri = this.getRepoUri()
         if (!repoUri || !this.endpointIsDotcom || !this.serviceStarted) {
             return
@@ -262,7 +266,7 @@ export class ContextRankingController implements ContextRanker {
         try {
             const service = await this.getService()
             await service.request('context-ranking/precompute-query-embedding', {
-                query: query,
+                query: query.toString(),
             })
         } catch (error) {
             logDebug(
@@ -274,7 +278,7 @@ export class ContextRankingController implements ContextRanker {
     }
 
     public async searchModelSpecificEmbeddings(
-        text: string,
+        text: PromptString,
         numResults: number
     ): Promise<ContextItem[]> {
         return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {

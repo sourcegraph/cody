@@ -25,4 +25,11 @@
     "source.organizeImports.biome": "explicit"
   },
   "editor.insertSpaces": true,
+  "cSpell.words": [
+    "Supercompletion",
+    "Supercompletions"
+  ],
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
 }

@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ChatEventSource, ContextItem, EditModel } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type EditModel,
+    type EventSource,
+    type PromptString,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 import type { EditIntent, EditMode } from '../edit/types'
 
@@ -9,10 +15,17 @@ import type { FixupFile } from './FixupFile'
 import type { Diff } from './diff'
 import { CodyTaskState } from './utils'
 
-export type taskID = string
+export type FixupTaskID = string
+
+/**
+ * Arbitrary metadata that will be included in telemetry events for this task.
+ */
+export type FixupTelemetryMetadata = {
+    [key: string]: unknown
+}
 
 export class FixupTask {
-    public id: taskID
+    public id: FixupTaskID
     public state_: CodyTaskState = CodyTaskState.idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
@@ -52,22 +65,24 @@ export class FixupTask {
          * and will be updated by the FixupController for tasks using the 'new' mode
          */
         public fixupFile: FixupFile,
-        public readonly instruction: string,
+        public readonly instruction: PromptString,
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
+        /* The range being edited. This range is tracked and updates as the user (or Cody) edits code. */
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         public readonly model: EditModel,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
-        public source?: ChatEventSource,
+        public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri,
-        public insertionPoint?: vscode.Position
+        public insertionPoint?: vscode.Position,
+        public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
-        this.instruction = instruction.replace(/^\/(edit|fix)/, '').trim()
+        this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         this.originalRange = selectionRange
         this.model = getOverridenModelForIntent(this.intent, this.model)
     }

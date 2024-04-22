@@ -1,4 +1,4 @@
-import type { ChatMessage } from './messages'
+import type { ChatMessage, SerializedChatMessage } from './messages'
 
 /**
  * The serialized form of a chat transcript (all data needed to display and recreate a chat
@@ -25,8 +25,15 @@ export interface SerializedChatTranscript {
  * The serialized form of a back-and-forth interaction in a chat transcript.
  */
 export interface SerializedChatInteraction {
-    humanMessage: ChatMessage
+    humanMessage: SerializedChatMessage
 
     /** `null` if the assistant has not yet replied to the human message. */
-    assistantMessage: ChatMessage | null
+    assistantMessage: SerializedChatMessage | null
+}
+
+export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
+    return {
+        ...chatMessage,
+        text: chatMessage.text ? chatMessage.text.toString() : undefined,
+    }
 }

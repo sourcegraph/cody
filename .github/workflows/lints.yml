@@ -1,0 +1,46 @@
+name: lints
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  safe-prompts-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: checkout
+        run: |
+          commits=${{ github.event.pull_request.commits }}
+          if [[ -n "$commits" ]]; then
+            # Prepare enough depth for diffs with master
+            git fetch --depth="$(( commits + 1 ))"
+          fi
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-20-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-20-pnpm-store-
+      - run: pnpm install
+      - name: Run lints
+        run: pnpm ts-node lints/safe-prompts.ts `pnpm ts-node lints/git-diff-ts-ranges.ts`
+      - uses: actions/github-script@v6
+        if: ${{ failure() }}
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
+            })

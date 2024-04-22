@@ -5,14 +5,16 @@ import './App.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type Configuration,
+    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
+    PromptString,
     type SerializedChatTranscript,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/components/EnhancedContext'
+import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
@@ -25,12 +27,14 @@ import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import { ConnectionIssuesPage } from './Troubleshooting'
+import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<LocalEnv | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -39,12 +43,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>({
-        isDotComUser: true,
-        isCodyProUser: false,
-    })
+    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>([])
+    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
     const [chatIDHistory, setChatIDHistory] = useState<string[]>([])
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -59,6 +60,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
+
+    const [userContextFromSelection, setUserContextFromSelection] = useState<ContextItem[]>([])
+
     const onChooseRemoteSearchRepo = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
     }, [vscodeAPI])
@@ -90,13 +94,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'transcript': {
+                        const deserializedMessages = message.messages.map(
+                            PromptString.unsafe_deserializeChatMessage
+                        )
                         if (message.isMessageInProgress) {
-                            const msgLength = message.messages.length - 1
-                            setTranscript(message.messages.slice(0, msgLength))
-                            setMessageInProgress(message.messages[msgLength])
+                            const msgLength = deserializedMessages.length - 1
+                            setTranscript(deserializedMessages.slice(0, msgLength))
+                            setMessageInProgress(deserializedMessages[msgLength])
                             setIsTranscriptError(false)
                         } else {
-                            setTranscript(message.messages)
+                            setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
                         setChatIDHistory([...chatIDHistory, message.chatID])
@@ -111,6 +118,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
+                            user: message.authStatus,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
@@ -125,6 +133,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
+                        break
+                    case 'chat-input-context':
+                        setUserContextFromSelection(message.items)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
@@ -191,67 +202,99 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
 
+    const onCurrentChatModelChange = useCallback(
+        (selected: ModelProvider): void => {
+            if (!chatModels || !setChatModels) {
+                return
+            }
+            vscodeAPI.postMessage({
+                command: 'chatModel',
+                model: selected.model,
+            })
+            const updatedChatModels = chatModels.map(m =>
+                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
+            )
+            setChatModels(updatedChatModels)
+        },
+        [chatModels, vscodeAPI]
+    )
+    const chatModelContext = useMemo<ChatModelContext>(
+        () => ({ chatModels, onCurrentChatModelChange }),
+        [chatModels, onCurrentChatModelChange]
+    )
+
+    // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
 
-    return (
-        <div className="outer-container">
-            {view === 'login' || !authStatus.isLoggedIn ? (
+    if (authStatus.showNetworkError) {
+        return (
+            <div className="outer-container">
+                <ConnectionIssuesPage
+                    configuredEndpoint={authStatus.endpoint}
+                    telemetryService={telemetryService}
+                    vscodeAPI={vscodeAPI}
+                />
+            </div>
+        )
+    }
+
+    if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
+        return (
+            <div className="outer-container">
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
                     uiKindIsWeb={config?.uiKindIsWeb}
                     vscodeAPI={vscodeAPI}
                 />
-            ) : (
-                <>
-                    <Notices
-                        probablyNewInstall={
-                            !userHistory.filter(chat => chat.interactions.length)?.length
-                        }
-                        vscodeAPI={vscodeAPI}
-                    />
-                    {errorMessages && (
-                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
-                    )}
-                    {view === 'chat' && (
-                        <EnhancedContextEventHandlers.Provider
-                            value={{
-                                onChooseRemoteSearchRepo,
-                                onConsentToEmbeddings,
-                                onEnabledChange: (enabled): void => {
-                                    if (enabled !== enhancedContextEnabled) {
-                                        setEnhancedContextEnabled(enabled)
-                                    }
-                                },
-                                onRemoveRemoteSearchRepo,
-                                onShouldBuildSymfIndex,
-                            }}
-                        >
-                            <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                                <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        isTranscriptError={isTranscriptError}
-                                        chatModels={chatModels}
-                                        setChatModels={setChatModels}
-                                        welcomeMessage={getWelcomeMessageByOS(config?.os)}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        chatIDHistory={chatIDHistory}
-                                        isWebviewActive={isWebviewActive}
-                                    />
-                                </EnhancedContextEnabled.Provider>
-                            </EnhancedContextContext.Provider>
-                        </EnhancedContextEventHandlers.Provider>
-                    )}
-                </>
+            </div>
+        )
+    }
+
+    return (
+        <div className="outer-container">
+            {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
+            {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+            {view === 'chat' && userHistory && (
+                <EnhancedContextEventHandlers.Provider
+                    value={{
+                        onChooseRemoteSearchRepo,
+                        onConsentToEmbeddings,
+                        onEnabledChange: (enabled): void => {
+                            if (enabled !== enhancedContextEnabled) {
+                                setEnhancedContextEnabled(enabled)
+                            }
+                        },
+                        onRemoveRemoteSearchRepo,
+                        onShouldBuildSymfIndex,
+                    }}
+                >
+                    <EnhancedContextContext.Provider value={enhancedContextStatus}>
+                        <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
+                            <ChatModelContextProvider value={chatModelContext}>
+                                <Chat
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    isTranscriptError={isTranscriptError}
+                                    welcomeMessage={welcomeMessageMarkdown}
+                                    guardrails={attributionEnabled ? guardrails : undefined}
+                                    chatIDHistory={chatIDHistory}
+                                    isWebviewActive={isWebviewActive}
+                                    isNewInstall={isNewInstall}
+                                    userContextFromSelection={userContextFromSelection}
+                                />
+                            </ChatModelContextProvider>
+                        </EnhancedContextEnabled.Provider>
+                    </EnhancedContextContext.Provider>
+                </EnhancedContextEventHandlers.Provider>
             )}
         </div>
     )
@@ -276,18 +319,15 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-function getWelcomeMessageByOS(os: string): string {
-    const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
+const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
 
 To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
-        os === 'darwin' ? '⌥' : 'Alt'
-    }</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
+    isMacOS() ? '⌥' : 'Alt'
+}</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
 
 You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
-        os === 'darwin' ? '⌥' : 'Alt'
-    }</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
+    isMacOS() ? '⌥' : 'Alt'
+}</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
 
 For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
 `
-    return welcomeMessageMarkdown
-}

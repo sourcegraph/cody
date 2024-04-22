@@ -7,7 +7,6 @@ import {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     type Guardrails,
-    ModelProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { View } from '../../../webviews/NavBar'
@@ -19,13 +18,13 @@ import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ChatPanelsManager } from './ChatPanelsManager'
 import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
-import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import type { ChatSession } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 
@@ -90,25 +89,12 @@ export class ChatManager implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
-            )
+            ),
+            vscode.commands.registerCommand('cody.chat.context.add', () => this.sendSelectionToChat())
         )
     }
 
-    private async getChatProvider(): Promise<SimpleChatPanelProvider> {
-        const provider = await this.chatPanelsManager.getChatPanel()
-        return provider
-    }
-
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
         await this.chatPanelsManager.syncAuthStatus(authStatus)
     }
 
@@ -119,25 +105,44 @@ export class ChatManager implements vscode.Disposable {
             return vscode.commands.executeCommand('cody.focus')
         }
 
-        const chatProvider = await this.getChatProvider()
+        const chatProvider = await this.chatPanelsManager.getNewChatPanel()
         await chatProvider?.setWebviewView(view)
     }
 
     /**
      * Execute a chat request in a new chat panel
      */
-    public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const provider = await this.getChatProvider()
+    public async executeChat({
+        text,
+        submitType,
+        contextFiles,
+        editorState,
+        addEnhancedContext,
+        source = DEFAULT_EVENT_SOURCE,
+        command,
+    }: ExecuteChatArguments): Promise<ChatSession | undefined> {
+        const provider = await this.chatPanelsManager.getNewChatPanel()
         await provider?.handleUserMessageSubmission(
             uuid.v4(),
-            args.text,
-            args?.submitType,
-            args?.contextFiles ?? [],
-            args?.editorState,
-            args?.addEnhancedContext ?? true,
-            args?.source
+            text,
+            submitType,
+            contextFiles ?? [],
+            editorState,
+            addEnhancedContext ?? true,
+            source,
+            command
         )
         return provider
+    }
+
+    private async sendSelectionToChat(): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
+        await provider?.handleGetUserEditorContext()
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -217,7 +222,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async triggerNotice(notice: { key: string }): Promise<void> {
-        const provider = await this.getChatProvider()
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
         provider.webviewPanel?.onDidChangeViewState(e => {
             if (e.webviewPanel.visible) {
                 void provider?.webview?.postMessage({

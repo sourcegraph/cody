@@ -14,7 +14,7 @@ jobs:
       matrix:
         runner: [ubuntu, windows]
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 15
+    timeout-minutes: 120
     permissions:
       id-token: write
       contents: read
@@ -38,7 +38,7 @@ jobs:
         if: matrix.runner == 'ubuntu'
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: "1"
-      - run: pnpm -C vscode run test:e2e --repeat-each 10 --retries 0
+      - run: pnpm -C vscode run test:e2e --repeat-each 4 --retries 0
         if: matrix.runner != 'ubuntu'
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: "1"

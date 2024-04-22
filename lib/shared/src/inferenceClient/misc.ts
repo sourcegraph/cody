@@ -1,5 +1,9 @@
 import type { CompletionLogger, CompletionsClientConfig } from '../sourcegraph-api/completions/client'
-import type { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
+import type {
+    CompletionParameters,
+    CompletionResponse,
+    SerializedCompletionParameters,
+} from '../sourcegraph-api/completions/types'
 
 /**
  * Marks the yielded value as an incomplete response.
@@ -19,6 +23,9 @@ export enum CompletionStopReason {
 }
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
+export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'> & {
+    timeoutMs: number
+}
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {

@@ -1,4 +1,4 @@
-import os from 'os'
+import os from 'node:os'
 import { omit } from 'lodash'
 import * as vscode from 'vscode'
 
@@ -7,7 +7,7 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 import { logDebug, logError } from '../../log'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { CustomCommandType } from '@sourcegraph/cody-shared/src/commands/types'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { URI, Utils } from 'vscode-uri'
 import { getConfiguration } from '../../configuration'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
@@ -95,6 +95,16 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (this.fileWatcherDisposables.length) {
             logDebug('CommandsController:init', 'watchers created')
         }
+    }
+
+    /**
+     * Gets the map of custom commands.
+     *
+     * The custom commands map is a collection of CodyCommand objects, where the key
+     * is the command name and the value is the command object.
+     */
+    public get commands(): Map<string, CodyCommand> {
+        return this.customCommandsMap
     }
 
     /**

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { expectContextCellCounts, getContextCell, sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -16,9 +16,8 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:sidebar:explain:clicked',
         'CodyVSCodeExtension:command:explain:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:explain:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
@@ -47,14 +46,16 @@ test.extend<ExpectedEvents>({
     // When no selection is made, we will try to create smart selection from the cursor position
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
-    await chatPanel.getByText('Context: 11 lines from 1 file').click()
+    const contextCell = getContextCell(chatPanel)
+    await expectContextCellCounts(contextCell, { files: 1 })
+    await contextCell.click()
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
     // Click on the file link in chat
     const chatContext = chatPanel.locator('details').last()
-    await chatContext.getByRole('link', { name: '@index.html' }).click()
+    await chatContext.getByRole('link', { name: 'index.html' }).click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
@@ -65,8 +66,10 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await chatPanel.getByText('Context: 20 lines from 1 file').click()
-    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
+    await expectContextCellCounts(contextCell, { files: 1 })
+    await contextCell.click()
+    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
+    await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message/ })
     // Edit button and Edit Last Message are shown on all command messages.
@@ -77,9 +80,9 @@ test.extend<ExpectedEvents>({
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
-    await expect(chatPanel.getByText('Context: 9 lines from 1 file')).toBeVisible()
-    await chatPanel.getByText('Context: 9 lines from 1 file').click()
-    await expect(chatPanel.locator('span').filter({ hasText: '@index.html:2-10' })).toBeVisible()
+    await expectContextCellCounts(contextCell, { files: 1 })
+    await contextCell.click()
+    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(0)
     await expect(editLastMessageButton).toBeVisible()
 })
@@ -129,6 +132,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:sidebar:doc:clicked',
         'CodyVSCodeExtension:command:doc:executed',
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
@@ -154,8 +158,11 @@ test.extend<ExpectedEvents>({
     await page.getByText('Document Code').hover()
     await page.getByText('Document Code').click()
 
-    // Code lens should be visible
-    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
+    // Code lens should be visible.
+    await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible({
+        // Wait a bit longer because formatting can sometimes be slow.
+        timeout: 10000,
+    })
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
     // Code lens should be at the start of the function (range expanded from click position)

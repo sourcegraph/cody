@@ -2,13 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
-    ChatMessage,
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
     SearchPanelFile,
+    SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -71,12 +71,11 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
       }
-    | { command: 'getUserContext'; query: string }
+    | { command: 'getUserContext'; query: string; range?: RangeData }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
@@ -89,6 +88,9 @@ export type WebviewMessage =
     | {
           command: 'attribution-search'
           snippet: string
+      }
+    | {
+          command: 'troubleshoot/reloadAuth'
       }
 
 /**
@@ -111,10 +113,17 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    /**
+     * Context files returned from a @-mention search
+     */
     | {
           type: 'userContextFiles'
           userContextFiles: ContextItem[] | null
       }
+    /**
+     * Send Context Files to chat view as input context (@-mentions)
+     */
+    | { type: 'chat-input-context'; items: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'
@@ -168,7 +177,7 @@ interface WebviewContextMessage {
 }
 
 export interface ExtensionTranscriptMessage {
-    messages: ChatMessage[]
+    messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
 }
@@ -177,10 +186,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ConfigurationWithAccessToken,
-        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
-    > {}
+    extends Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -190,7 +196,7 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
-export const CODY_SUPPORT_URL = new URL('https://help.sourcegraph.com/hc/en-us/requests/new')
+export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
@@ -213,6 +219,7 @@ export const defaultAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const unauthenticatedStatus = {
@@ -230,6 +237,7 @@ export const unauthenticatedStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies AuthStatus
 
 export const networkErrorAuthStatus = {
@@ -247,18 +255,12 @@ export const networkErrorAuthStatus = {
     primaryEmail: '',
     displayName: '',
     avatarURL: '',
+    codyApiVersion: 0,
 } satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
-    // The  operating system kind
-    os: string
-    arch: string
-    homeDir?: string | undefined
-
-    extensionVersion: string
-
-    // Whether the extension is running in VS Code Web (as opposed to VS Code Desktop).
+    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
 }
 

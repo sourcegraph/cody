@@ -1,3 +1,10 @@
 .context-item-mention-node {
-    background-color: var(--vscode-list-dropBackground);
+    color: var(--vscode-textLink-foreground);
+    background-color: color-mix(in lch, var(--vscode-textLink-foreground) 10%, transparent);
+    border-radius: 2px;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {
+    background-color: var(--code-background);
+    color: var(--code-foreground);
 }

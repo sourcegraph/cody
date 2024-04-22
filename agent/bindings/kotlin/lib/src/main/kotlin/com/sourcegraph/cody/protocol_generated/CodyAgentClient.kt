@@ -28,8 +28,10 @@ interface CodyAgentClient {
   // =============
   @JsonNotification("debug/message")
   fun debug_message(params: DebugMessage)
-  @JsonNotification("editTaskState/didChange")
-  fun editTaskState_didChange(params: EditTask)
+  @JsonNotification("editTask/didUpdate")
+  fun editTask_didUpdate(params: EditTask)
+  @JsonNotification("editTask/didDelete")
+  fun editTask_didDelete(params: EditTask)
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("webview/postMessage")
@@ -40,4 +42,8 @@ interface CodyAgentClient {
   fun progress_report(params: ProgressReportParams)
   @JsonNotification("progress/end")
   fun progress_end(params: Progress_EndParams)
+  @JsonNotification("remoteRepo/didChange")
+  fun remoteRepo_didChange(params: RemoteRepo_DidChangeParams)
+  @JsonNotification("remoteRepo/didChangeState")
+  fun remoteRepo_didChangeState(params: RemoteRepoFetchState)
 }

@@ -1,14 +1,13 @@
 import * as vscode from 'vscode'
 
-import { logDebug } from '@sourcegraph/cody-shared'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
@@ -82,9 +81,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
 
 /**
  * The command that generates a new docstring for the selected code.
- * When calls, the command will be executed as an inline-edit command.
- *
- * Context: add by the edit command
+ * When called, the command will be executed as an inline-edit command.
  */
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
@@ -92,18 +89,22 @@ export async function executeDocCommand(
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { args })
-        let prompt = defaultCommands.doc.prompt
 
+        let prompt = PromptString.fromDefaultCommands(defaultCommands, 'doc')
         if (args?.additionalInstruction) {
             span.addEvent('additionalInstruction')
-            prompt = `${prompt} ${args.additionalInstruction}`
+            prompt = ps`${prompt} ${args.additionalInstruction}`
         }
 
-        const editor = getEditor()?.active
+        const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active
         const document = editor?.document
 
         if (!document) {
             return undefined
+        }
+
+        if (args?.range) {
+            editor.selection = new vscode.Selection(args.range.start, args.range.end)
         }
 
         const { range, insertionPoint } = getDocumentableRange(editor)
@@ -118,7 +119,7 @@ export async function executeDocCommand(
                     range,
                     insertionPoint,
                 },
-                source: DefaultEditCommands.Doc,
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

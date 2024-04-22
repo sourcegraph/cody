@@ -2,27 +2,28 @@ import type * as vscode from 'vscode'
 
 import {
     type ContextItem,
+    ContextItemSource,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
+    type PromptString,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
-    truncateText,
-    truncateTextStart,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
 import { fillInContextItemContent } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
-    selectedText: string
-    precedingText: string
-    followingText: string
+    selectedText: PromptString
+    precedingText: PromptString
+    followingText: PromptString
     uri: vscode.Uri
     selectionRange: vscode.Range
     editor: VSCodeEditor
@@ -36,25 +37,30 @@ const getContextFromIntent = async ({
     selectionRange,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
-    const truncatedPrecedingText = truncateTextStart(precedingText, MAX_CURRENT_FILE_TOKENS)
-    const truncatedFollowingText = truncateText(followingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedPrecedingText = truncatePromptStringStart(precedingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = truncatePromptString(followingText, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
+        /**
+         * The context for the test intent is handled by the executeTestEditCommand function,
+         * we don't need to add additional context here to avoid duplication.
+         */
+        case 'test':
+            return []
         /**
          * Very broad set of possible instructions.
          * Fetch context from the users' instructions and use context from current file.
          * Include the following code from the current file.
          * The preceding code is already included as part of the response to better guide the output.
          */
-        case 'test':
         case 'add': {
             return [
                 {
                     speaker: 'human',
                     text: populateCodeGenerationContextTemplate(
-                        `<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
-                        `<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
+                        ps`<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
+                        ps`<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),

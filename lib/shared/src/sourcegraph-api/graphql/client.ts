@@ -11,6 +11,7 @@ import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 
 import {
+    CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -180,6 +181,35 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+export interface ContextFiltersResponse {
+    site: {
+        codyContextFilters: {
+            raw: ContextFilters | null
+        } | null
+    } | null
+}
+
+export interface ContextFilters {
+    include?: CodyContextFilterItem[]
+    exclude?: CodyContextFilterItem[]
+}
+
+export interface CodyContextFilterItem {
+    repoNamePattern: string
+    // Not implemented
+    filePathPatterns?: string[]
+}
+
+const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
+    include: [],
+    exclude: [],
+}
+
+const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
+    include: [],
+    exclude: [{ repoNamePattern: '.*' }],
 }
 
 interface SearchAttributionResults {
@@ -515,6 +545,39 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async contextFilters(): Promise<ContextFilters> {
+        const response =
+            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
+                CONTEXT_FILTERS_QUERY
+            )
+
+        const result = extractDataOrError(response, data => {
+            if (data?.site?.codyContextFilters?.raw === null) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            if (data?.site?.codyContextFilters?.raw) {
+                return data.site.codyContextFilters.raw
+            }
+
+            // Exclude everything in case of an unexpected response structure.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        })
+
+        if (result instanceof Error) {
+            // Ignore errors caused by outdated Sourcegraph API instances.
+            if (hasOutdatedAPIErrorMessages(result)) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
+            // Exclude everything in case of an unexpected error.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
+        return result
+    }
+
     /**
      * Checks if Cody is enabled on the current Sourcegraph instance.
      * @returns
@@ -751,7 +814,7 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    private fetchSourcegraphAPI<T>(
+    public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {}
     ): Promise<T | Error> {
@@ -810,7 +873,7 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
-        const url = 'http://localhost:49300/.api/testLogging'
+        const url = 'http://localhost:49300/.test/testLogging'
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
@@ -871,9 +934,7 @@ export class ConfigFeaturesSingleton {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (
-                !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
-            ) {
+            if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
@@ -910,3 +971,7 @@ export type LogEventMode =
     | 'dotcom-only' // only log to dotcom
     | 'connected-instance-only' // only log to the connected instance
     | 'all' // log to both dotcom AND the connected instance
+
+function hasOutdatedAPIErrorMessages(error: Error): boolean {
+    return error.message.includes('Cannot query field')
+}

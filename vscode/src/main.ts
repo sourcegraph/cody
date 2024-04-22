@@ -2,11 +2,14 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    type ChatEventSource,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
+    type DefaultCodyCommands,
+    type EventSource,
     ModelProvider,
     PromptMixin,
+    PromptString,
+    contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -14,7 +17,6 @@ import {
     setLogger,
 } from '@sourcegraph/cody-shared'
 
-import type { DefaultCodyCommands } from '@sourcegraph/cody-shared/src/commands/types'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -23,6 +25,7 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
+import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -43,12 +46,15 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { gitAPIinit } from './repository/repositoryHelpers'
+import { gitAPIinit } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
+import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -60,8 +66,15 @@ import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
-import { enableDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import {
+    enableVerboseDebugMode,
+    exportOutputLog,
+    openCodyOutputChannel,
+} from './services/utils/export-logs'
+import { openCodyIssueReporter } from './services/utils/issue-reporter'
+import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { version } from './version'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -94,9 +107,10 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                if (config.chatPreInstruction) {
+                if (config.chatPreInstruction.length > 0) {
                     PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
                 }
+                getChatModelsFromConfiguration()
             }
         })
     )
@@ -113,6 +127,8 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    const authProvider = new AuthProvider(initialConfig)
+
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -124,7 +140,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest)
+    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
 
@@ -132,7 +148,7 @@ const register = async (
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    if (config.chatPreInstruction) {
+    if (config.chatPreInstruction.length > 0) {
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
@@ -153,14 +169,12 @@ const register = async (
         })
     )
 
-    const authProvider = new AuthProvider(initialConfig)
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
     void featureFlagProvider.syncAuthStatus()
 
     const {
-        intentDetector,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -184,13 +198,15 @@ const register = async (
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
     )
+    disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
+    const boundRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    await contextFiltersProvider.init(boundRepoNameResolver)
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
-        intentDetector,
         guardrails,
         editor,
         authProvider,
@@ -216,9 +232,9 @@ const register = async (
     const editorManager = new EditManager({
         chat: chatClient,
         editor,
-        contextProvider,
         ghostHintDecorator,
         authProvider,
+        extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
 
@@ -235,9 +251,10 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        promises.push(contextFiltersProvider.init(boundRepoNameResolver))
         promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
-        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest))
+        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
         symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
         enterpriseContextFactory.clientConfigurationDidChange()
@@ -262,6 +279,8 @@ const register = async (
         })
     )
 
+    const statusBar = createStatusBar()
+
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
@@ -276,10 +295,13 @@ const register = async (
         )
     }
 
-    const statusBar = createStatusBar()
+    if (config.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        syncModelProviders(authStatus)
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
@@ -298,26 +320,30 @@ const register = async (
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
         }
-
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
     // Sync initial auth status
-    await chatManager.syncAuthStatus(authProvider.getAuthStatus())
+    const initAuthStatus = authProvider.getAuthStatus()
+    syncModelProviders(initAuthStatus)
+    await chatManager.syncAuthStatus(initAuthStatus)
+    editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
-    statusBar.syncAuthStatus(authProvider.getAuthStatus())
+    statusBar.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        return executeCommandUnsafe(commandKey, args).catch(error => {
+        return executeCommandUnsafe(PromptString.unsafe_fromUserQuery(commandKey), args).catch(error => {
             if (error instanceof Error) {
                 console.log(error.stack)
             }
@@ -327,7 +353,7 @@ const register = async (
     }
 
     const executeCommandUnsafe = async (
-        id: DefaultCodyCommands | string,
+        id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
         const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
@@ -357,8 +383,8 @@ const register = async (
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (url, token) =>
-            authProvider.auth(url, token)
+        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
+            authProvider.auth({ endpoint, token })
         ),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
@@ -375,7 +401,13 @@ const register = async (
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (await authProvider.auth(serverEndpoint, accessToken, customHeaders)).authStatus
+                return (
+                    await authProvider.auth({
+                        endpoint: serverEndpoint,
+                        token: accessToken,
+                        customHeaders,
+                    })
+                ).authStatus
             }
         ),
         // Chat
@@ -394,6 +426,9 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: '@ext:sourcegraph.cody-ai chat',
             })
+        ),
+        vscode.commands.registerCommand('cody.copy.version', () =>
+            vscode.env.clipboard.writeText(version)
         ),
 
         // Account links
@@ -514,7 +549,7 @@ const register = async (
         ),
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: ChatEventSource = 'sidebar'
+            const source: EventSource = 'sidebar'
             telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
@@ -525,8 +560,14 @@ const register = async (
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
-        vscode.commands.registerCommand('cody.debug.enable.all', () => enableDebugMode())
+        vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
+        new CharactersLogger()
     )
+
+    // Experimental features: Hover Commands
+    disposables.push(hoverCommandsProvider)
+    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
@@ -615,7 +656,11 @@ const register = async (
         })
     }
 
-    await autocompleteSetup
+    const [_, extensionClientDispose] = await Promise.all([
+        autocompleteSetup,
+        platform.extensionClient.provide({ enterpriseContextFactory }),
+    ])
+    disposables.push(extensionClientDispose)
 
     return {
         disposable: vscode.Disposable.from(...disposables),
@@ -629,10 +674,11 @@ const register = async (
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest)
-    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
+    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
+    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }
 
 export type CommandResult = ChatCommandResult | EditCommandResult

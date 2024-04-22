@@ -3,14 +3,22 @@ import {
     type ContextItem,
     type ContextMessage,
     type Message,
+    type ModelContextWindow,
+    TokenCounter,
     isCodyIgnoredFile,
+    ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+interface PromptBuilderContextResult {
+    limitReached: boolean
+    used: ContextItem[]
+    ignored: ContextItem[]
+    duplicate: ContextItem[]
+}
 
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
@@ -21,25 +29,24 @@ const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private charsUsed = 0
     private seenContext = new Set<string>()
-    constructor(private readonly charLimit: number) {}
+
+    private tokenCounter: TokenCounter
+
+    constructor(contextWindow: ModelContextWindow) {
+        this.tokenCounter = new TokenCounter(contextWindow)
+    }
 
     public build(): Message[] {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        let numChars = 0
-        for (const message of messages) {
-            numChars += messageChars(message)
+        const withinLimit = this.tokenCounter.updateUsage('preamble', messages)
+        if (withinLimit) {
+            this.prefixMessages.push(...messages)
         }
-        if (numChars + this.charsUsed > this.charLimit) {
-            return false
-        }
-        this.prefixMessages.push(...messages)
-        this.charsUsed += numChars
-        return true
+        return withinLimit
     }
 
     /**
@@ -59,99 +66,75 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            const countChar = (msg: Message) => msg.speaker.length + (msg.text?.length || 0) + 3
-            const msgLen = countChar(humanMsg) + (assistantMsg ? countChar(assistantMsg) : 0)
-            if (this.charsUsed + msgLen > this.charLimit) {
+            const withinLimit = this.tokenCounter.updateUsage('input', [humanMsg, assistantMsg])
+            if (!withinLimit) {
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
-            this.charsUsed += msgLen
         }
         return 0
     }
 
-    /**
-     * Tries to add context items to the prompt, tracking characters used.
-     * Returns info about which items were used vs. ignored.
-     *
-     * If charLimit is specified, then imposes an additional limit on the
-     * amount of context added from contextItems. This does not affect the
-     * overall character limit, which is still enforced.
-     */
-    public tryAddContext(
-        contextItemsAndMessages: (ContextItem | ContextMessage)[],
-        charLimit?: number
-    ): {
-        limitReached: boolean
-        used: ContextItem[]
-        ignored: ContextItem[]
-        duplicate: ContextItem[]
-    } {
-        let effectiveCharLimit = this.charLimit - this.charsUsed
-        if (charLimit && charLimit < effectiveCharLimit) {
-            effectiveCharLimit = charLimit
-        }
+    private processedContextType = new Set<ContextTokenUsageType>()
 
-        let limitReached = false
-        const used: ContextItem[] = []
-        const ignored: ContextItem[] = []
-        const duplicate: ContextItem[] = []
-        if (isAgentTesting) {
-            // Need deterministic ordering of context files for the tests to pass
-            // consistently across different file systems.
-            contextItemsAndMessages.sort((a, b) =>
-                contextItem(a).uri.path.localeCompare(contextItem(b).uri.path)
-            )
-            // Move the selectionContext to the first position so that it'd be
-            // the last context item to be read by the LLM to avoid confusions where
-            // other files also include the selection text in test files.
-            const selectionContext = contextItemsAndMessages.find(
-                item =>
-                    (isContextItem(item) ? item.source : item.file.source) ===
-                    ContextItemSource.Selection
-            )
-            if (selectionContext) {
-                contextItemsAndMessages.splice(contextItemsAndMessages.indexOf(selectionContext), 1)
-                contextItemsAndMessages.unshift(selectionContext)
-            }
+    public tryAddContext(
+        tokenType: ContextTokenUsageType,
+        contextMessages: (ContextItem | ContextMessage)[]
+    ): PromptBuilderContextResult {
+        const result = {
+            limitReached: false, // Indicates if the token budget was exceeded
+            used: [] as ContextItem[], // The items that were successfully added
+            ignored: [] as ContextItem[], // The items that were ignored
+            duplicate: [] as ContextItem[], // The items that were duplicates of previously seen items
         }
-        for (const v of contextItemsAndMessages) {
-            const uri = contextItem(v).uri
-            if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
-                ignored.push(contextItem(v))
+        this.processedContextType.add(tokenType)
+        // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
+        const reversedContextItems = contextMessages.slice().reverse()
+        for (const item of reversedContextItems) {
+            const userContextItem = contextItem(item)
+            const id = contextItemId(item)
+            // Skip context items that are in the Cody ignore list
+            if (isCodyIgnoredFile(userContextItem.uri)) {
+                result.ignored.push(userContextItem)
                 continue
             }
-            const id = contextItemId(v)
+            // Skip context items that have already been seen
             if (this.seenContext.has(id)) {
-                duplicate.push(contextItem(v))
+                result.duplicate.push(userContextItem)
                 continue
             }
-            const contextMessage = isContextItem(v) ? renderContextItem(v) : v
-            const contextLen = contextMessage
-                ? contextMessage.speaker.length + contextMessage.text.length + 3
-                : 0
-            if (this.charsUsed + contextLen > effectiveCharLimit) {
-                ignored.push(contextItem(v))
-                limitReached = true
+            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
+            if (!contextMsg) {
                 continue
             }
+            const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
+            const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
+
+            // Check if the type of context item has been processed before to determine if it is a new item or not.
+            // We do not want to update exisiting context items from chat history that's not related to last human message,
+            // unless isTooLarge is undefined, meaning it has not been processed before like new enhanced context.
+            if (
+                (tokenType === 'user' && !this.processedContextType.has(tokenType)) ||
+                userContextItem.isTooLarge === undefined
+            ) {
+                userContextItem.isTooLarge = !withinLimit
+            }
+
             this.seenContext.add(id)
-            if (contextMessage) {
-                this.reverseMessages.push({ speaker: 'assistant', text: 'Ok.' })
-                this.reverseMessages.push(contextMessage)
+            // Skip context items that would exceed the token budget
+            if (!withinLimit) {
+                userContextItem.content = undefined
+                result.ignored.push(userContextItem)
+                result.limitReached = true
+                continue
             }
-            this.charsUsed += contextLen
-            used.push(contextItem(v))
+            this.reverseMessages.push(assistantMsg, contextMsg)
+            result.used.push(userContextItem)
         }
-        return {
-            limitReached,
-            used,
-            ignored,
-            duplicate,
-        }
+        return result
     }
 }
 
@@ -179,8 +162,4 @@ function contextItemId(value: ContextItem | ContextMessage): string {
     }
 
     return item.uri.toString()
-}
-
-function messageChars(message: Message): number {
-    return message.speaker.length + (message.text?.length || 0) + 3 // space and 2 newlines
 }

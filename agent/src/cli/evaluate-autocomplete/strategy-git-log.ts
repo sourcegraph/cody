@@ -1,6 +1,6 @@
-import { execSync } from 'child_process'
-import * as path from 'path'
-import * as fspromises from 'fs/promises'
+import { execSync } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import * as path from 'node:path'
 
 import parseGitDiff, { type AddedLine } from 'parse-git-diff'
 import * as vscode from 'vscode'

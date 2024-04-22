@@ -28,7 +28,7 @@ export const CodyCommandMenuItems = [
         description: 'Document Code',
         icon: 'book',
         command: { command: 'cody.command.document-code' },
-        keybinding: '',
+        keybinding: `${osIcon}D`,
         mode: 'edit',
         type: 'default',
     },

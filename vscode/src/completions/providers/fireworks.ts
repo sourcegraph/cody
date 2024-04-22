@@ -1,7 +1,6 @@
-import * as vscode from 'vscode'
-
 import {
     type AuthStatus,
+    type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -10,30 +9,29 @@ import {
     CompletionStopReason,
     type ConfigurationWithAccessToken,
     NetworkError,
+    PromptString,
     TracedError,
     addTraceparent,
+    contextFiltersProvider,
     createSSEIterator,
-    displayPath,
     dotcomTokenToGatewayToken,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
     isRateLimitError,
+    logResponseHeadersToSpan,
+    ps,
+    recordErrorToSpan,
     tokensToChars,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
-import { fetch } from '@sourcegraph/cody-shared/src/fetch'
+import { fetch } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
-import {
-    logResponseHeadersToSpan,
-    recordErrorToSpan,
-    tracer,
-} from '@sourcegraph/cody-shared/src/tracing'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
 import {
@@ -114,7 +112,7 @@ function getMaxContextTokens(model: FireworksModel): number {
 }
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [],
+    singlelineStopSequences: ['\n\n', '\n\r\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
@@ -162,47 +160,53 @@ class FireworksProvider extends Provider {
         }
     }
 
-    private createPrompt(snippets: ContextSnippet[]): string {
-        const { prefix, suffix } = this.options.docContext
+    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
 
-        const intro: string[] = []
-        let prompt = ''
+        const intro: PromptString[] = []
+        let prompt = ps``
 
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
         if (!isStarCoderFamily(this.model)) {
-            intro.push(`Path: ${this.options.document.fileName}`)
+            intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                if ('symbol' in snippet && snippet.symbol !== '') {
+                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
+                if (contextPrompts.symbol) {
                     intro.push(
-                        `Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`
+                        ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
                     )
                 } else {
                     intro.push(
-                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${
-                            snippet.content
-                        }`
+                        ps`Here is a reference snippet of code from ${PromptString.fromDisplayPath(
+                            snippet.uri
+                        )}:\n\n${contextPrompts.content}`
                     )
                 }
             }
 
-            const introString = `${intro
-                .join('\n\n')
-                .split('\n')
-                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                .join('\n')}\n`
+            const introString = ps`${PromptString.join(
+                PromptString.join(intro, ps`\n\n`)
+                    .split('\n')
+                    .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
+                ps`\n`
+            )}\n`
 
             // We want to remove the same line suffix from a completion request since both StarCoder and Llama
             // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
-                vscode.workspace.asRelativePath(this.options.document.fileName),
+                PromptString.fromDisplayPath(this.options.document.uri),
                 introString,
                 prefix,
                 suffixAfterFirstNewline
@@ -220,7 +224,7 @@ class FireworksProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
@@ -244,13 +248,14 @@ class FireworksProvider extends Provider {
         } satisfies CodeCompletionsParams
 
         if (requestParams.model.includes('starcoder2')) {
-            requestParams.stopSequences?.push(
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
                 '<fim_prefix>',
                 '<fim_suffix>',
                 '<fim_middle>',
                 '<|endoftext|>',
-                '<file_sep>'
-            )
+                '<file_sep>',
+            ]
         }
 
         tracer?.params(requestParams)
@@ -293,23 +298,23 @@ class FireworksProvider extends Provider {
     }
 
     private createInfillingPrompt(
-        filename: string,
-        intro: string,
-        prefix: string,
-        suffix: string
-    ): string {
+        filename: PromptString,
+        intro: PromptString,
+        prefix: PromptString,
+        suffix: PromptString
+    ): PromptString {
         if (isStarCoderFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
-            return `<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+            return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-            return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
 
         console.error('Could not generate infilling prompt for', this.model)
-        return `${intro}${prefix}`
+        return ps`${intro}${prefix}`
     }
 
     private postProcess = (content: string): string => {
@@ -356,7 +361,8 @@ class FireworksProvider extends Provider {
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
                 // Convert the SG instance messages array back to the original prompt
-                const prompt = requestParams.messages[0]!.text!
+                const prompt =
+                    await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {

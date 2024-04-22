@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import dedent from 'dedent'
 import { findLast } from 'lodash'
@@ -27,7 +27,7 @@ function getCommentDelimiter(language: SupportedLanguage): CommentSymbolInfo {
         throw new Error(`No language config found for ${language}`)
     }
 
-    const delimiter = languageConfig.commentStart.trim()
+    const delimiter = languageConfig.commentStart.trim().toString()
     const indent = ' '.repeat(delimiter.length)
     const separator = `${delimiter} ${SNIPPET_SEPARATOR}`
 

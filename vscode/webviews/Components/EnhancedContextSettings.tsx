@@ -11,12 +11,13 @@ import type {
     LocalSearchProvider,
     RemoteSearchProvider,
 } from '@sourcegraph/cody-shared'
-import { useEnhancedContextEnabled } from '../chat/components/EnhancedContext'
+import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
 
 import { PopupFrame } from '../Popups/Popup'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import popupStyles from '../Popups/Popup.module.css'
+import { SparkleSlash } from '../icons/SparkleSlash'
 import styles from './EnhancedContextSettings.module.css'
 
 export enum EnhancedContextPresentationMode {
@@ -30,6 +31,7 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
+    isNewInstall: boolean | undefined
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -339,20 +341,23 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
+    isNewInstall,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
-        (event: any): void => {
-            const shouldEnable = !!event.target.checked
+        (shouldEnable: boolean, source: 'btn' | 'checkbox'): void => {
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
                 setEnabled(shouldEnable)
-                // Log when a user clicks on the Enhanced Context toggle
+                // Log when a user clicks on the Enhanced Context toggle. Event names:
+                // Checkbox click: `CodyVSCodeExtension:useEnhancedContextToggler:clicked`
+                // Button click: `CodyVSCodeExtension:useEnhancedContextTogglerBtn:clicked`
+                const eventName = source === 'btn' ? 'Btn' : ''
                 getVSCodeAPI().postMessage({
                     command: 'event',
-                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
+                    eventName: `CodyVSCodeExtension:useEnhancedContextToggler${eventName}:clicked`,
                     properties: { useEnhancedContext: shouldEnable },
                 })
             }
@@ -383,20 +388,32 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const autofocusTarget = React.useRef<any>(null)
     React.useEffect(() => {
         if (isOpen) {
-            autofocusTarget.current?.focus()
+            // Set focus to the checkbox when the popup is opened
+            // after a 100ms delay to ensure the popup is fully rendered
+            setTimeout(() => {
+                autofocusTarget.current?.focus()
+            }, 100)
         }
     }, [isOpen])
 
     // Can't point at and use VSCodeButton type with 'ref'
-
     const restoreFocusTarget = React.useRef<any>(null)
     const handleDismiss = React.useCallback(() => {
         setOpen(false)
-        restoreFocusTarget.current?.focus()
     }, [setOpen])
 
+    const onKeyDown = React.useCallback(
+        (event: React.KeyboardEvent<HTMLElement>): void => {
+            // Close the popup on escape
+            if (event.key === 'Escape') {
+                handleDismiss()
+            }
+        },
+        [handleDismiss]
+    )
+
     return (
-        <div className={classNames(popupStyles.popupHost)}>
+        <div className={classNames(popupStyles.popupHost)} onKeyDown={onKeyDown}>
             <PopupFrame
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
@@ -405,7 +422,9 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 <div className={styles.container}>
                     <div>
                         <VSCodeCheckbox
-                            onChange={enabledChanged}
+                            onChange={e =>
+                                enabledChanged((e.target as HTMLInputElement)?.checked, 'checkbox')
+                            }
                             checked={enabled}
                             id="enhanced-context-checkbox"
                             ref={autofocusTarget}
@@ -447,9 +466,22 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             </PopupFrame>
             <VSCodeButton
                 className={classNames(
-                    popupStyles.popupHost,
+                    styles.settingsBtns,
+                    styles.settingsIndicator,
+                    enabled && styles.settingsIndicatorActive
+                )}
+                onClick={() => enabledChanged(!enabled, 'btn')}
+                appearance="icon"
+                type="button"
+                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}
+            >
+                {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(
+                    styles.settingsBtns,
                     styles.settingsBtn,
-                    enabled && styles.settingsBtnActive
+                    isOpen && styles.settingsBtnActive
                 )}
                 appearance="icon"
                 type="button"
@@ -457,8 +489,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 title="Configure Enhanced Context"
                 ref={restoreFocusTarget}
             >
-                <i className="codicon codicon-sparkle" />
-                {isOpen || hasOpenedBefore ? null : <div className={styles.glowyDot} />}
+                <i className="codicon codicon-chevron-down" />
             </VSCodeButton>
         </div>
     )

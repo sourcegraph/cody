@@ -20,6 +20,8 @@ interface CodyAgentServer {
   fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
+  @JsonRequest("chat/export")
+  fun chat_export(params: Null): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/submitMessage")
@@ -34,10 +36,20 @@ interface CodyAgentServer {
   fun commands_smell(params: Null): CompletableFuture<String>
   @JsonRequest("commands/custom")
   fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
+  @JsonRequest("editCommands/code")
+  fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
   @JsonRequest("editCommands/test")
   fun editCommands_test(params: Null): CompletableFuture<EditTask>
-  @JsonRequest("commands/document")
-  fun commands_document(params: Null): CompletableFuture<EditTask>
+  @JsonRequest("editCommands/document")
+  fun editCommands_document(params: Null): CompletableFuture<EditTask>
+  @JsonRequest("editTask/accept")
+  fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null>
+  @JsonRequest("editTask/undo")
+  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null>
+  @JsonRequest("editTask/cancel")
+  fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null>
+  @JsonRequest("editTask/getFoldingRanges")
+  fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
   fun command_execute(params: ExecuteCommandParams): CompletableFuture<Any>
   @JsonRequest("autocomplete/execute")
@@ -86,6 +98,10 @@ interface CodyAgentServer {
   fun extensionConfiguration_status(params: Null): CompletableFuture<AuthStatus?>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
+  @JsonRequest("remoteRepo/has")
+  fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
+  @JsonRequest("remoteRepo/list")
+  fun remoteRepo_list(params: RemoteRepo_ListParams): CompletableFuture<RemoteRepo_ListResult>
 
   // =============
   // Notifications

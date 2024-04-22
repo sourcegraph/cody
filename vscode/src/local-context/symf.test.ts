@@ -7,9 +7,10 @@ import { startPollyRecording } from '../testutils/polly'
 import { _getSymfPath } from './download-symf'
 import { symfExpandQuery } from './symfExpandQuery'
 
-import { tmpdir } from 'os'
-import path from 'path'
-import { mkdtemp, open, rmdir } from 'fs/promises'
+import { mkdtemp, open, rmdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
@@ -22,7 +23,6 @@ describe('symf', () => {
             'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
-        debugEnable: true,
     })
 
     describe('expand-query', () => {
@@ -31,40 +31,38 @@ describe('symf', () => {
             polly = startPollyRecording({ recordingName: 'symf' })
         })
 
-        function check(query: string, expectedHandler: (expandedTerm: string) => void): void {
-            it(query, async () => {
+        function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
+            it(query.toString(), async () => {
                 expectedHandler(await symfExpandQuery(client, query))
             })
         }
 
-        check('ocean', expanded =>
+        check(ps`ocean`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"circulation current ebb flow heat ocean ppt psu salinity salt sea stream surf temp temperature tidal tide water wave waves"`
+                `"circulation current ebb flow ocean ppt psu salinity salt sea stream surf tidal tide water wave waves"`
             )
         )
 
-        check('How do I write a file to disk in Go', expanded =>
+        check(ps`How do I write a file to disk in Go`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"disk file files go golang harddrive storage write writefile writetofile"'
+                `"disk drive file files go golang storage write writefile writetofile"`
             )
         )
 
-        check('Where is authentication router defined?', expanded =>
+        check(ps`Where is authentication router defined?`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 '"auth authenticate authentication define defined definition route router routing"'
             )
         )
 
-        check('parse file with tree-sitter', expanded =>
+        check(ps`parse file with tree-sitter`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"file files parser parsing sitter tree tree-sitter ts"'
+                `"file parse parser parsing read reading reads tree tree-sitter treesitter"`
             )
         )
 
-        check('scan tokens in C++', expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"c c++ cin cplusplus cpp f getline in scan scan_f scanf token tokenization tokenize tokens"`
-            )
+        check(ps`scan tokens in C++`, expanded =>
+            expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
         )
         afterAll(async () => {
             await polly.stop()

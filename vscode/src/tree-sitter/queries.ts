@@ -8,6 +8,7 @@ export type QueryName =
     | 'intents'
     | 'documentableNodes'
     | 'graphContextIdentifiers'
+    | 'enclosingFunction'
 
 /**
  * Completion intents sorted by priority.

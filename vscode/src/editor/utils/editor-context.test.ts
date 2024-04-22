@@ -5,15 +5,14 @@ import { URI } from 'vscode-uri'
 import {
     type ContextItem,
     type ContextItemFile,
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     ignores,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { fillInContextItemContent, filterLargeFiles, getFileContextFiles } from './editor-context'
+import { fillInContextItemContent, filterContextItemFiles, getFileContextFiles } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -41,11 +40,7 @@ describe('getFileContextFiles', () => {
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
-        const results = await getFileContextFiles(
-            query,
-            maxResults,
-            new vscode.CancellationTokenSource().token
-        )
+        const results = await getFileContextFiles(query, maxResults)
 
         return results.map(f => uriBasename(f.uri))
     }
@@ -125,18 +120,9 @@ describe('getFileContextFiles', () => {
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
     })
-
-    it('cancels previous requests', async () => {
-        vscode.workspace.findFiles = vi.fn().mockResolvedValueOnce([])
-        const cancellation = new vscode.CancellationTokenSource()
-        await getFileContextFiles('search', 5, cancellation.token)
-        await getFileContextFiles('search', 5, new vscode.CancellationTokenSource().token)
-        expect(cancellation.token.isCancellationRequested)
-        expect(vscode.workspace.findFiles).toBeCalledTimes(2)
-    })
 })
 
-describe('filterLargeFiles', () => {
+describe('filterContextItemFiles', () => {
     it('filters out files larger than 1MB', async () => {
         const largeFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-file.txt'),
@@ -147,7 +133,7 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeFile])
+        const filtered = await filterContextItemFiles([largeFile])
 
         expect(filtered).toEqual([])
     })
@@ -162,27 +148,29 @@ describe('filterLargeFiles', () => {
             type: vscode.FileType.SymbolicLink,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([binaryFile])
+        const filtered = await filterContextItemFiles([binaryFile])
 
         expect(filtered).toEqual([])
     })
 
-    it('sets isTooLarge for files exceeding token limit', async () => {
+    it('convert file size in bytes to token for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
+        const fsSizeInBytes = EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
-            size: MAX_CURRENT_FILE_TOKENS * CHARS_PER_TOKEN + 1,
+            size: fsSizeInBytes,
             type: vscode.FileType.File,
         } as vscode.FileStat)
 
-        const filtered = await filterLargeFiles([largeTextFile])
-
+        const filtered = await filterContextItemFiles([largeTextFile])
+        // Frontend expects the size to be in tokens units so that they can be compared with the available tokens
+        // to set the isTooLarge field.
         expect(filtered[0]).toEqual<ContextItem>({
             type: 'file',
             uri: largeTextFile.uri,
-            isTooLarge: true,
+            size: Math.floor(fsSizeInBytes / 4.5),
         })
     })
 })
@@ -209,7 +197,12 @@ describe('fillInContextItemContent', () => {
             },
         ])
         expect(contextItems).toEqual<ContextItem[]>([
-            { type: 'file', uri: URI.parse('file:///a.txt'), content: 'a' },
+            {
+                type: 'file',
+                uri: URI.parse('file:///a.txt'),
+                content: 'a',
+                size: 1,
+            },
         ])
     })
 })

@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
+import os from 'node:os'
 import { promisify } from 'node:util'
-import os from 'os'
 
 import * as vscode from 'vscode'
 
@@ -9,11 +9,10 @@ import { logError } from '../../log'
 import path from 'node:path/posix'
 import {
     type ContextItem,
-    MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    ContextItemSource,
+    TokenCounter,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { ContextItemSource } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 const _exec = promisify(exec)
 
@@ -38,27 +37,28 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         try {
             const { stdout, stderr } = await _exec(filteredCommand, { cwd, encoding: 'utf8' })
-            const output = stdout ?? stderr
-            const outputString = JSON.stringify(output.trim())
-            if (!outputString) {
+            const output = JSON.stringify(stdout ?? stderr).trim()
+            if (!output) {
                 throw new Error('Empty output')
             }
 
-            const context = outputWrapper.replace('{command}', command).replace('{output}', outputString)
+            const content = outputWrapper.replace('{command}', command).replace('{output}', output)
+            const size = TokenCounter.countTokens(content)
 
             const file = {
                 type: 'file',
-                content: truncateText(context, MAX_CURRENT_FILE_TOKENS),
+                content,
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
                 source: ContextItemSource.Terminal,
+                size,
             } satisfies ContextItem
 
             return [file]
         } catch (error) {
             // Handles errors and empty output
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            void vscode.window.showErrorMessage('Command Failed: Make sure the command works locally.')
+            void vscode.window.showErrorMessage((error as Error).message)
             throw new Error('Failed to get shell output for Custom Command.')
         }
     })

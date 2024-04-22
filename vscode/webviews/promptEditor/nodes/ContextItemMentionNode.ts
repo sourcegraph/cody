@@ -22,6 +22,8 @@ import {
 } from 'lexical'
 import { URI } from 'vscode-uri'
 
+export const MENTION_CLASS_NAME = styles.contextItemMentionNode
+
 /**
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
@@ -191,6 +193,9 @@ export function $createContextItemMentionNode(
 ): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()
+    contextItem.type === 'file' &&
+        contextItem.isTooLarge &&
+        node.setStyle('color: var(--vscode-list-errorForeground)')
     return $applyNodeReplacement(node)
 }
 
@@ -204,4 +209,10 @@ export function isSerializedContextItemMentionNode(
     node: SerializedLexicalNode | null | undefined
 ): node is SerializedContextItemMentionNode {
     return Boolean(node && node.type === ContextItemMentionNode.getType())
+}
+
+export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {
+    const atNode = new ContextItemMentionNode(contextItem)
+    const textNode = new TextNode(atNode.__text)
+    return $applyNodeReplacement(textNode)
 }

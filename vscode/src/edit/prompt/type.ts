@@ -1,18 +1,24 @@
+import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 
+export interface LLMPrompt {
+    system?: PromptString
+    instruction: PromptString
+}
+
 export interface LLMInteraction {
-    prompt: string
+    prompt: LLMPrompt
     stopSequences?: string[]
-    responseTopic?: string
-    assistantText?: string
-    assistantPrefix?: string
+    responseTopic?: PromptString
+    assistantText?: PromptString
+    assistantPrefix?: PromptString
 }
 
 export interface GetLLMInteractionOptions {
-    instruction: string
-    precedingText: string
-    selectedText: string
-    followingText: string
+    instruction: PromptString
+    precedingText: PromptString
+    selectedText: PromptString
+    followingText: PromptString
     uri: vscode.Uri
     document: vscode.TextDocument
 }

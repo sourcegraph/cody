@@ -6,7 +6,11 @@ import {
     type CompletionParameters,
     type EditModel,
     type Message,
+    ModelProvider,
+    PromptString,
+    TokenCounter,
     getSimplePreamble,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -27,7 +31,7 @@ const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
     'anthropic/claude-3-sonnet-20240229': claude,
     'anthropic/claude-3-haiku-20240307': claude,
     'openai/gpt-3.5-turbo': openai,
-    'openai/gpt-4-1106-preview': openai,
+    'openai/gpt-4-turbo': openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -53,6 +57,7 @@ const getInteractionArgsFromIntent = (
 
 interface BuildInteractionOptions {
     model: EditModel
+    codyApiVersion: number
     contextWindow: number
     task: FixupTask
     editor: VSCodeEditor
@@ -66,12 +71,14 @@ interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
 
 export const buildInteraction = async ({
     model,
+    codyApiVersion,
     contextWindow,
     task,
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-    const precedingText = document.getText(
+    const precedingText = PromptString.fromDocumentText(
+        document,
         new vscode.Range(
             task.selectionRange.start.translate({
                 lineDelta: -Math.min(task.selectionRange.start.line, 50),
@@ -79,12 +86,14 @@ export const buildInteraction = async ({
             task.selectionRange.start
         )
     )
-    const selectedText = document.getText(task.selectionRange)
-    if (selectedText.length > contextWindow) {
+    const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
+    const tokenCount = TokenCounter.countPromptString(selectedText)
+    if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
-    task.original = selectedText
-    const followingText = document.getText(
+    task.original = selectedText.toString()
+    const followingText = PromptString.fromDocumentText(
+        document,
         new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
     )
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
@@ -96,13 +105,23 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
+    const promptBuilder = new PromptBuilder(ModelProvider.getContextWindowByID(model))
 
-    const promptBuilder = new PromptBuilder(contextWindow)
-
-    const preamble = getSimplePreamble(model)
+    const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: prompt }]
+    // Add pre-instruction for edit commands to end of human prompt to override the default
+    // prompt. This is used for providing additional information and guidelines by the user.
+    const preInstruction = PromptString.fromConfig(
+        vscode.workspace.getConfiguration('cody.edit'),
+        'preInstruction',
+        ps``
+    )
+    const additionalRule = preInstruction.length > 0 ? ps`\nIMPORTANT: ${preInstruction.trim()}` : ps``
+
+    const transcript: ChatMessage[] = [
+        { speaker: 'human', text: prompt.instruction.concat(additionalRule) },
+    ]
     if (assistantText) {
         transcript.push({ speaker: 'assistant', text: assistantText })
     }
@@ -118,12 +137,12 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext(contextItemsAndMessages)
+    promptBuilder.tryAddContext('user', contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),
         stopSequences,
-        responseTopic: responseTopic || BotResponseMultiplexer.DEFAULT_TOPIC,
-        responsePrefix: assistantPrefix,
+        responseTopic: responseTopic?.toString() || BotResponseMultiplexer.DEFAULT_TOPIC,
+        responsePrefix: assistantPrefix?.toString(),
     }
 }

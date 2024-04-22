@@ -1,53 +1,45 @@
-import path from 'path'
-
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    type ContextFileSource,
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
+    ContextItemSource,
     type ContextItemSymbol,
+    type ContextItemWithContent,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
+    TokenCounter,
     displayPath,
+    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
+    isURLContextItem,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
-import {
-    ContextItemSource,
-    type ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { CHARS_PER_TOKEN } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { getOpenTabsUris, getWorkspaceSymbols } from '.'
+import { getOpenTabsUris } from '.'
+import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
-
-const findWorkspaceFiles = async (
-    cancellationToken: vscode.CancellationToken
-): Promise<vscode.Uri[]> => {
-    // TODO(toolmantim): Add support for the search.exclude option, e.g.
-    // Object.keys(vscode.workspace.getConfiguration().get('search.exclude',
-    // {}))
-    const fileExcludesPattern =
-        '**/{*.env,.git/,.class,out/,dist/,build/,snap,node_modules/,__pycache__/}**'
-    // TODO(toolmantim): Check this performs with remote workspaces (do we need a UI spinner etc?)
-    return vscode.workspace.findFiles('', fileExcludesPattern, undefined, cancellationToken)
-}
+import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
 // but could also be junk (`bin/` in .NET). If a file path contains a segment matching any of these
 // items it will be ranked low unless the users query contains the exact segment.
 const lowScoringPathSegments = ['bin']
 
-// This is expensive for large repos (e.g. Chromium), so we only do it max once
-// every 10 seconds. It also handily supports a cancellation callback to use
-// with the cancellation token to discard old requests.
-const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
+/**
+ * This is expensive for large repos (e.g. Chromium), so we only do it max once every 10 seconds.
+ *
+ * We do NOT allow passing a cancellation token because that is highly likely to result in buggy
+ * behavior for a throttled function. If the first call to {@link findWorkspaceFiles} is cancelled,
+ * we still want it to complete so that its results are cached for subsequent calls. If we cancel
+ * and it throws an exception, then we lose all work we did until the cancellation and could
+ * potentially swallow errors and return (and cache) incomplete data.
+ */
+const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -57,18 +49,13 @@ const throttledFindFiles = throttle(findWorkspaceFiles, 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number,
-    token: vscode.CancellationToken
+    maxResults: number
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
     }
-    token.onCancellationRequested(() => {
-        throttledFindFiles.cancel()
-    })
 
-    const uris = await throttledFindFiles(token)
-
+    const uris = await throttledFindFiles()
     if (!uris) {
         return []
     }
@@ -97,7 +84,7 @@ export async function getFileContextFiles(
 
     // Apply a penalty for segments that are in the low scoring list.
     const adjustedResults = [...results].map(result => {
-        const segments = result.obj.uri.fsPath.split(path.sep)
+        const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {
@@ -122,7 +109,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return await filterLargeFiles(sortedResults)
+    return await filterContextItemFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -133,7 +120,11 @@ export async function getSymbolContextFiles(
         return []
     }
 
-    const queryResults = await getWorkspaceSymbols(query) // doesn't support cancellation tokens :(
+    // doesn't support cancellation tokens :(
+    const queryResults = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+        'vscode.executeWorkspaceSymbolProvider',
+        query
+    )
 
     const relevantQueryResults = queryResults?.filter(
         symbol =>
@@ -185,7 +176,7 @@ export async function getSymbolContextFiles(
  * Filters out large files over 1MB to avoid expensive parsing.
  */
 export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
-    return await filterLargeFiles(
+    return await filterContextItemFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
             .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
@@ -194,7 +185,7 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
 
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: 'symbol',
     selectionRange: vscode.Range,
     kind: SymbolKind,
@@ -202,13 +193,13 @@ function createContextFileFromUri(
 ): ContextItemSymbol[]
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: 'file',
     selectionRange?: vscode.Range
 ): ContextItemFile[]
 function createContextFileFromUri(
     uri: vscode.Uri,
-    source: ContextFileSource,
+    source: ContextItemSource,
     type: ContextFileType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
@@ -253,9 +244,10 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets {@link ContextItemFile.isTooLarge} for files contains more characters than the token limit.
  */
-export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise<ContextItemFile[]> {
+export async function filterContextItemFiles(
+    contextFiles: ContextItemFile[]
+): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
         // Remove file larger than 1MB and non-text files
@@ -264,15 +256,19 @@ export async function filterLargeFiles(contextFiles: ContextItemFile[]): Promise
             stat => stat,
             error => undefined
         )
-        if (fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
+        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
-        // Check if file contains more characters than the token limit based on fileStat.size
-        // and set {@link ContextItemFile.isTooLarge} for webview to display file size
-        // warning.
-        if (fileStat.size > CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS) {
-            cf.isTooLarge = true
-        }
+        // TODO (bee) consider a better way to estimate the token size of a file
+        // We cannot get the exact token size without parsing the file, which is expensive.
+        // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
+        // For markdown files, we divide by 3.5 because they tend to have more text and fewer code blocks and whitespaces.
+        //
+        // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
+        // on available tokens, so that it can prompt the user to import the file via '@file-range' or
+        // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
+        // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
         filtered.push(cf)
     }
     return filtered
@@ -285,13 +281,15 @@ export async function fillInContextItemContent(
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let content = item.content
-                if (!item.content) {
+                let { content, size, range, uri } = item
+                if (!content) {
                     try {
-                        content = await editor.getTextEditorContentForFile(
-                            item.uri,
-                            toVSCodeRange(item.range)
-                        )
+                        if (isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())) {
+                            content = (await fetchContentForURLContextItem(uri.toString())) ?? ''
+                        } else {
+                            content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
+                        }
+                        size = size ?? TokenCounter.countTokens(content)
                     } catch (error) {
                         void vscode.window.showErrorMessage(
                             `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -299,7 +297,7 @@ export async function fillInContextItemContent(
                         return null
                     }
                 }
-                return { ...item, content: content! }
+                return { ...item, content: content!, size }
             })
         )
     ).filter(isDefined)

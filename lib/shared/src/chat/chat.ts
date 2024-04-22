@@ -1,64 +1,39 @@
-import { dotcomTokenToGatewayToken } from '../auth/tokens'
 import type { AuthStatus } from '../auth/types'
-import type { ConfigurationWithAccessToken } from '../configuration'
-import { supportsFastPath } from '../models/utils'
-import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
-import type {
-    CompletionLogger,
-    SourcegraphCompletionsClient,
-} from '../sourcegraph-api/completions/client'
+import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
-import { createFastPathClient } from './fast-path-client'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
+const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSample'> = {
     temperature: 0.2,
-    maxTokensToSample: ANSWER_TOKENS,
     topK: -1,
     topP: -1,
 }
 
 export class ChatClient {
-    private fastPathAccessToken?: string
-
     constructor(
         private completions: SourcegraphCompletionsClient,
-        config: Pick<ConfigurationWithAccessToken, 'accessToken'>,
-        private getAuthStatus: () => Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>,
-        private completionLogger: CompletionLogger
-    ) {
-        this.onConfigurationChange(config)
-    }
-
-    public onConfigurationChange(newConfig: Pick<ConfigurationWithAccessToken, 'accessToken'>): void {
-        const isNode = typeof process !== 'undefined'
-        this.fastPathAccessToken =
-            newConfig.accessToken &&
-            // Require the upstream to be dotcom
-            this.getAuthStatus().isDotCom &&
-            // The fast path client only supports Node.js style response streams
-            isNode
-                ? dotcomTokenToGatewayToken(newConfig.accessToken)
-                : undefined
-    }
+        private getAuthStatus: () => Pick<
+            AuthStatus,
+            'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'codyApiVersion'
+        >
+    ) {}
 
     public chat(
         messages: Message[],
-        params: Partial<ChatParameters>,
+        params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
-        const useFastPath =
-            this.fastPathAccessToken !== undefined && params.model && supportsFastPath(params.model)
-
+        const authStatus = this.getAuthStatus()
+        const useApiV1 = authStatus.codyApiVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const augmentedMessages =
-            params?.model?.startsWith('fireworks/') || useFastPath
+            params?.model?.startsWith('fireworks/') || useApiV1
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
@@ -77,17 +52,11 @@ export class ChatClient {
             messages: messagesToSend,
         }
 
-        if (useFastPath) {
-            return createFastPathClient(
-                completionParams,
-                this.getAuthStatus(),
-                this.fastPathAccessToken!,
-                abortSignal,
-                this.completionLogger
-            )
-        }
-
-        return this.completions.stream(completionParams, abortSignal)
+        return this.completions.stream(
+            completionParams,
+            useApiV1 ? authStatus.codyApiVersion : 0,
+            abortSignal
+        )
     }
 }
 
@@ -97,7 +66,7 @@ export function sanitizeMessages(messages: Message[]): Message[] {
     // 1. If the last message is from an `assistant` with no or empty `text`, omit it
     let lastMessage = messages.at(-1)
     const truncateLastMessage =
-        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.text
+        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.text?.length
     sanitizedMessages = truncateLastMessage ? messages.slice(0, -1) : messages
 
     // 2. If there is any assistant message in the middle of the messages without a `text`, omit
@@ -112,8 +81,8 @@ export function sanitizeMessages(messages: Message[]): Message[] {
         // the next one
         const nextMessage = sanitizedMessages[index + 1]
         if (
-            (nextMessage.speaker === 'assistant' && !nextMessage.text) ||
-            (message.speaker === 'assistant' && !message.text)
+            (nextMessage.speaker === 'assistant' && !nextMessage.text?.length) ||
+            (message.speaker === 'assistant' && !message.text?.length)
         ) {
             return false
         }
@@ -122,7 +91,7 @@ export function sanitizeMessages(messages: Message[]): Message[] {
 
     // 3. Final assistant content cannot end with trailing whitespace
     lastMessage = sanitizedMessages.at(-1)
-    if (lastMessage?.speaker === 'assistant' && lastMessage.text) {
+    if (lastMessage?.speaker === 'assistant' && lastMessage.text?.length) {
         const lastMessageText = lastMessage.text.trimEnd()
         lastMessage.text = lastMessageText
     }

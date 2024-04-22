@@ -11,6 +11,7 @@ import {
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
+    type PromptString,
     featureFlagProvider,
     isDotCom,
     isFileURI,
@@ -569,7 +570,7 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }
@@ -581,7 +582,7 @@ export class LocalEmbeddingsController
             const service = await this.getService()
             const resp = await service.request('embeddings/query', {
                 repoName: lastRepo.repoName,
-                query,
+                query: query.toString(),
                 numResults,
             })
             logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)

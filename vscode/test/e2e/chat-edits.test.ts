@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { sidebarSignin } from './common'
+import { createEmptyChatPanel, expectContextCellCounts, getContextCell, sidebarSignin } from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
 const osKey = isMacOS() ? 'Meta' : 'Control'
@@ -21,10 +21,7 @@ test.extend<ExpectedEvents>({
 })('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Chat Action Buttons - above the input box
     const editLastMessageButton = chatFrame.getByRole('button', { name: /^Edit Last Message / })
@@ -37,21 +34,24 @@ test.extend<ExpectedEvents>({
     const startNewChatButton = chatFrame.getByTitle('Start New Chat')
 
     // Submit three new messages
-    await chatInput.fill('One')
-    await chatInput.press('Enter')
-    await chatInput.fill('Two')
-    await chatInput.press('Enter')
-    await chatInput.fill('Three')
-    await chatInput.press('Enter')
-
     // Three edit buttons should show up, one per each message submitted
     const editButtons = chatFrame.locator('.codicon-edit')
+    await chatInput.fill('One')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await chatInput.fill('Two')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('Two')).toBeVisible()
+    await chatInput.fill('Three')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('Three')).toBeVisible()
     await expect(editButtons).toHaveCount(3)
 
     // Click on the first edit button to get into the editing mode
     // The text area should automatically get the focuse,
     // and contains the original message text,
     // The submit button will also be replaced with "Update Message" button
+    await chatFrame.getByText('One').hover()
     await editButtons.nth(0).click()
     await expect(chatInput).toBeFocused()
     await expect(chatInput).toHaveText('One')
@@ -70,6 +70,7 @@ test.extend<ExpectedEvents>({
 
     // click on the second edit button to get into the editing mode again
     // edit the message from "Two" to "Four"
+    await chatFrame.getByText('Two').hover()
     await editButtons.nth(1).click()
     // the original message text should shows up in the text box
     await expect(chatInput).toHaveText('Two')
@@ -127,8 +128,9 @@ test.extend<ExpectedEvents>({
     )
     await chatInput.press('Enter')
     // both main.java and var.go should be used
-    await expect(chatFrame.getByText(/Context: 2 files/)).toBeVisible()
-    await chatFrame.getByText(/Context: 2 files/).click()
+    const contextCell = getContextCell(chatFrame)
+    await expectContextCellCounts(contextCell, { files: 2 })
+    await contextCell.click()
     const chatContext = chatFrame.locator('details').last()
     await expect(chatContext.getByRole('link', { name: 'Main.java' })).toBeVisible()
     await expect(

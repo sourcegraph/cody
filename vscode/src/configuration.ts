@@ -6,6 +6,8 @@ import {
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
+    PromptString,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
@@ -53,7 +55,10 @@ export function getConfiguration(
     }
 
     let autocompleteAdvancedProvider = config.get<
-        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+        | Configuration['autocompleteAdvancedProvider']
+        | 'unstable-ollama'
+        | 'unstable-fireworks'
+        | 'experimental-openaicompatible'
     >(CONFIG_KEY.autocompleteAdvancedProvider, null)
 
     // Handle deprecated provider identifiers
@@ -99,7 +104,6 @@ export function getConfiguration(
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
-        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, true),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
@@ -107,9 +111,9 @@ export function getConfiguration(
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
-        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
+        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
+        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(
@@ -138,6 +142,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+        experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 

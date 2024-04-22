@@ -10,6 +10,7 @@ import {
     FeatureFlag,
     NetworkError,
     RateLimitError,
+    type SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
     createSSEIterator,
@@ -18,15 +19,13 @@ import {
     isAbortError,
     isNodeResponse,
     isRateLimitError,
-} from '@sourcegraph/cody-shared'
-
-import { SpanStatusCode } from '@opentelemetry/api'
-import { fetch } from '@sourcegraph/cody-shared/src/fetch'
-import {
     logResponseHeadersToSpan,
     recordErrorToSpan,
     tracer,
-} from '@sourcegraph/cody-shared/src/tracing'
+} from '@sourcegraph/cody-shared'
+
+import { SpanStatusCode } from '@opentelemetry/api'
+import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -79,12 +78,20 @@ export function createClient(
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
 
+                const serializedParams: SerializedCodeCompletionsParams & { stream: boolean } = {
+                    ...params,
+                    stream: enableStreaming,
+                    messages: await Promise.all(
+                        params.messages.map(async m => ({
+                            ...m,
+                            text: await m.text?.toFilteredString(contextFiltersProvider),
+                        }))
+                    ),
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        ...params,
-                        stream: enableStreaming,
-                    }),
+                    body: JSON.stringify(serializedParams),
                     headers,
                     signal,
                 })

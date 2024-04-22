@@ -1,11 +1,11 @@
-import { promises as fs } from 'fs'
-import * as path from 'path'
+import { promises as fs } from 'node:fs'
+import * as path from 'node:path'
 
 import { expect } from '@playwright/test'
 
 import { SERVER_URL } from '../fixtures/mock-server'
 
-import { sidebarSignin } from './common'
+import { expectContextCellCounts, getContextCell, sidebarSignin } from './common'
 import * as helpers from './helpers'
 import { newChat, openFile, spawn, withTempDir } from './helpers'
 
@@ -92,11 +92,11 @@ test.extend<helpers.WorkspaceDirectory>({
         })
     },
 })('non-git repositories should explain lack of embeddings', async ({ page, sidebar }) => {
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
+    // The Enhanced Context settings is opened on first chat by default
     const chatFrame = await newChat(page)
-    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await enhancedContextButton.click()
 
     // Embeddings is visible at first as cody-engine starts...
     await expect(chatFrame.getByText('Embeddings')).toBeVisible()
@@ -108,11 +108,10 @@ test.extend<helpers.WorkspaceDirectory>({
 })
 
 test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
-    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await enhancedContextButton.click()
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
         timeout: 60000,
     })
@@ -140,11 +139,10 @@ test
             'CodyVSCodeExtension:chat-question:executed',
         ],
     })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
-    const enhancedContextButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await enhancedContextButton.click()
 
     const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
     // This may take a while, we download and start cody-engine
@@ -160,7 +158,9 @@ test
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await chatInput.fill('hello world')
     await chatInput.press('Enter')
-    await expect(chatFrame.getByText(/✨ Context: \d+ lines from 2 files/)).toBeVisible({
+    const contextCell = getContextCell(chatFrame)
+    await expectContextCellCounts(contextCell, {
+        files: 2,
         timeout: 10000,
     })
 })

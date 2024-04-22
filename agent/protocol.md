@@ -63,7 +63,7 @@ shutdown: [null, null]
 
 
 ```ts
-'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string; }, string]
+'chat/restore': [{ modelID: string; messages: AgentChatMessage[]; chatID: string; }, string]
 ```
 <h2 id="chat_models"><a href="#chat_models" name="chat_models"><code>chat/models</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>
@@ -498,5 +498,12 @@ exit: [null]
 
 ```ts
 'progress/end': [{ id: string; }]
+
+```ts
+'remoteRepo/*: ...'
+```
+
+Methods and notifications related to a remote list of repositories. Only for enterprise configurations. See [agent-protocol.ts].
+
 ```
 <!-- PROTOCOL END -->

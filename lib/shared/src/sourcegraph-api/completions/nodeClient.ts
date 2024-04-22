@@ -1,5 +1,5 @@
-import http from 'http'
-import https from 'https'
+import http from 'node:http'
+import https from 'node:https'
 
 import { onAbort } from '../../common/abortController'
 import { logError } from '../../logger'
@@ -8,21 +8,30 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
-import { ollamaChatClient } from '../../ollama/chat-client'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
+import { googleChatClient } from '../../llm-providers/google/chat-client'
+import { groqChatClient } from '../../llm-providers/groq/chat-client'
+import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters, SerializedCompletionParameters } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
-        tracer.startActiveSpan(`POST ${this.completionsEndpoint}`, span => {
+    ): Promise<void> {
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,
@@ -39,20 +48,39 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             }
 
-            if (params.model?.startsWith('ollama')) {
+            // TODO - Centralize this logic in a single place
+            const [provider] = params.model?.split('/') ?? []
+            if (provider === 'ollama') {
                 ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
+            if (provider === 'google') {
+                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
+            }
+            if (provider === 'groq') {
+                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                return
+            }
 
-            const log = this.logger?.startCompletion(params, this.completionsEndpoint)
+            const serializedParams: SerializedCompletionParameters = {
+                ...params,
+                messages: await Promise.all(
+                    params.messages.map(async m => ({
+                        ...m,
+                        text: await m.text?.toFilteredString(contextFiltersProvider),
+                    }))
+                ),
+            }
 
-            const requestFn = this.completionsEndpoint.startsWith('https://')
-                ? https.request
-                : http.request
+            const log = this.logger?.startCompletion(params, url.toString())
+
+            const requestFn = url.protocol === 'https:' ? https.request : http.request
 
             // Keep track if we have send any message to the completion callbacks
             let didSendMessage = false
             let didSendError = false
+            let didReceiveAnyEvent = false
 
             // Call the error callback only once per request.
             const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
@@ -64,8 +92,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             }
 
+            // Text which has not been decoded as a server-sent event (SSE)
+            let bufferText = ''
+
             const request = requestFn(
-                this.completionsEndpoint,
+                url,
                 {
                     method: 'POST',
                     headers: {
@@ -81,8 +112,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ...getTraceparentHeaders(),
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized:
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
@@ -150,10 +180,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         return
                     }
 
-                    // By tes which have not been decoded as UTF-8 text
+                    // Bytes which have not been decoded as UTF-8 text
                     let bufferBin = Buffer.of()
-                    // Text which has not been decoded as a server-sent event (SSE)
-                    let bufferText = ''
 
                     res.on('data', chunk => {
                         if (!(chunk instanceof Buffer)) {
@@ -176,6 +204,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
 
                         didSendMessage = true
+                        didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
                         log?.onEvents(parseResult.events)
                         this.sendEvents(parseResult.events, cb, span)
                         bufferText = parseResult.remainingBuffer
@@ -203,12 +232,21 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             //
             // We still want to close the request.
             request.on('close', () => {
+                if (!didReceiveAnyEvent) {
+                    logError(
+                        'SourcegraphNodeCompletionsClient',
+                        "request.on('close')",
+                        'Connection closed without receiving any events',
+                        { verbose: { bufferText } }
+                    )
+                    onErrorOnce(new Error('Connection closed without receiving any events'))
+                }
                 if (!didSendMessage) {
                     onErrorOnce(new Error('Connection unexpectedly closed'))
                 }
             })
 
-            request.write(JSON.stringify(params))
+            request.write(JSON.stringify(serializedParams))
             request.end()
 
             onAbort(signal, () => request.destroy())

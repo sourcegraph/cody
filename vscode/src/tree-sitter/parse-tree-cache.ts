@@ -50,7 +50,7 @@ async function parseDocument(document: TextDocument): Promise<void> {
 }
 
 export function updateParseTreeCache(document: TextDocument, parser: WrappedParser): void {
-    const tree = parser.parse(document.getText())
+    const tree = parser.safeParse(document.getText())
     parseTreesPerFile.set(document.uri.toString(), tree)
 }
 
@@ -106,7 +106,7 @@ export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent): voi
         })
     }
 
-    const updatedTree = parser.parse(document.getText(), tree)
+    const updatedTree = parser.safeParse(document.getText(), tree)
     parseTreesPerFile.set(cacheKey, updatedTree)
 }
 

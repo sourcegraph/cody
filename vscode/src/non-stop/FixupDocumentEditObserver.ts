@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { type RangeData, toRangeData } from '@sourcegraph/cody-shared'
 import type { Edit, Position } from './diff'
-import type { FixupFileCollection, FixupTextChanged } from './roles'
+import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
 
@@ -44,7 +44,7 @@ function updateEdits(edits: Edit[], changes: TextChange[]): void {
  * and the decorations indicating where edits will appear.
  */
 export class FixupDocumentEditObserver {
-    constructor(private readonly provider_: FixupFileCollection & FixupTextChanged) {}
+    constructor(private readonly provider_: FixupFileCollection & FixupTextChanged & FixupActor) {}
 
     public textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
         const file = this.provider_.maybeFileForUri(event.document.uri)
@@ -60,7 +60,7 @@ export class FixupDocumentEditObserver {
                 task.state === CodyTaskState.inserting &&
                 event.reason === vscode.TextDocumentChangeReason.Undo
             ) {
-                this.provider_.cancelTask(task)
+                this.provider_.cancel(task)
                 continue
             }
 

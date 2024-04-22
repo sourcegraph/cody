@@ -1,14 +1,14 @@
-import assert from 'assert'
+import assert from 'node:assert'
 
 import { createPatch } from 'diff'
 
-import { type ChildProcessWithoutNullStreams, spawn } from 'child_process'
-import os from 'os'
-import path from 'path'
-import { type ChatMessage, type ContextItem, logError } from '@sourcegraph/cody-shared'
+import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
+import fspromises from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
-import fspromises from 'fs/promises'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
@@ -343,33 +343,52 @@ export class TestClient extends MessageHandler {
                 )
         }
 
-        let disposable: vscode.Disposable
+        let disposables: vscode.Disposable[]
         return new Promise<void>((resolve, reject) => {
-            disposable = this.onDidChangeTaskState(({ id, state, error }) => {
-                if (id === params.id) {
-                    switch (state) {
-                        case CodyTaskState.applied:
-                            return resolve()
-                        case CodyTaskState.error:
-                        case CodyTaskState.finished:
-                            return reject(
-                                new Error(
-                                    `Task reached terminal state before being applied ${JSON.stringify({
-                                        id,
-                                        state: CodyTaskState[state],
-                                        error,
-                                    })}`
+            disposables = [
+                this.onDidUpdateTask(({ id, state, error }) => {
+                    if (id === params.id) {
+                        switch (state) {
+                            case CodyTaskState.applied:
+                                return resolve()
+                            case CodyTaskState.error:
+                            case CodyTaskState.finished:
+                                return reject(
+                                    new Error(
+                                        `Task reached terminal state before being applied ${JSON.stringify(
+                                            {
+                                                id,
+                                                state: CodyTaskState[state],
+                                                error,
+                                            }
+                                        )}`
+                                    )
                                 )
-                            )
+                        }
                     }
-                }
-            })
-        }).finally(() => disposable.dispose())
+                }),
+                this.onDidDeleteTask(task => {
+                    if (task.id === params.id) {
+                        // Applied tasks can also be deleted, but in that case
+                        // the Promise is already resolved and this is a no-op.
+                        reject(
+                            new Error(`Task was deleted before being applied ${JSON.stringify(task)}`)
+                        )
+                    }
+                }),
+            ]
+        }).finally(() => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        })
     }
 
     public codeLenses = new Map<string, ProtocolCodeLens[]>()
-    public newTaskState = new vscode.EventEmitter<EditTask>()
-    public onDidChangeTaskState = this.newTaskState.event
+    public taskUpdate = new vscode.EventEmitter<EditTask>()
+    public onDidUpdateTask = this.taskUpdate.event
+    public taskDelete = new vscode.EventEmitter<EditTask>()
+    public onDidDeleteTask = this.taskDelete.event
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
 
@@ -416,8 +435,11 @@ export class TestClient extends MessageHandler {
         this.connectProcess(this.agentProcess, error => {
             console.error(error)
         })
-        this.registerNotification('editTaskState/didChange', params => {
-            this.newTaskState.fire(params)
+        this.registerNotification('editTask/didUpdate', params => {
+            this.taskUpdate.fire(params)
+        })
+        this.registerNotification('editTask/didDelete', params => {
+            this.taskDelete.fire(params)
         })
 
         this.registerNotification('webview/postMessage', params => {
@@ -460,7 +482,7 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
                 id,
@@ -480,7 +502,7 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
             ?.lastMessage
     }
@@ -488,14 +510,18 @@ export class TestClient extends MessageHandler {
     public async sendSingleMessageToNewChat(
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
-    ): Promise<ChatMessage | undefined> {
+    ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
-    ): Promise<{ lastMessage?: ChatMessage; panelID: string; transcript: ExtensionTranscriptMessage }> {
+    ): Promise<{
+        lastMessage?: SerializedChatMessage
+        panelID: string
+        transcript: ExtensionTranscriptMessage
+    }> {
         const id = params?.id ?? (await this.request('chat/new', null))
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {

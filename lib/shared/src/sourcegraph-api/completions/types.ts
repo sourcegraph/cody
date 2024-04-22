@@ -1,3 +1,6 @@
+import type { SerializedChatMessage } from '../../chat/transcript/messages'
+import type { PromptString } from '../../prompt/prompt-string'
+
 interface DoneEvent {
     type: 'done'
 }
@@ -16,7 +19,7 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
-    text?: string
+    text?: PromptString
 }
 
 export interface CompletionResponse {
@@ -33,6 +36,10 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+}
+
+export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
+    messages: SerializedChatMessage[]
 }
 
 export interface CompletionCallbacks {

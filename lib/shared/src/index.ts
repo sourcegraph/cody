@@ -1,24 +1,36 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export type { ChatModel, EditModel } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
+export { getDotComDefaultModels } from './models/dotcom'
+export {
+    getProviderName,
+    getModelInfo,
+} from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
-export { CODY_IGNORE_POSIX_GLOB, type IgnoreFileContent } from './cody-ignore/ignore-helper'
+export {
+    IgnoreHelper,
+    CODY_IGNORE_POSIX_GLOB,
+    type IgnoreFileContent,
+    CODY_IGNORE_URI_PATH,
+} from './cody-ignore/ignore-helper'
 export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
 } from './chat/transcript'
-export { errorToChatError } from './chat/transcript/messages'
+export { serializeChatMessage } from './chat/transcript'
+export { errorToChatError, DEFAULT_EVENT_SOURCE } from './chat/transcript/messages'
 export type {
     ChatError,
-    ChatEventSource,
+    EventSource,
     ChatHistory,
     ChatMessage,
     UserLocalHistory,
+    SerializedChatMessage,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -37,26 +49,34 @@ export type {
     RemoteSearchProvider,
     SearchProvider,
 } from './codebase-context/context-status'
-export type {
-    ContextItem,
-    ContextItemFile,
-    ContextItemSource as ContextFileSource,
-    ContextItemSymbol,
-    ContextFileType,
-    ContextMessage,
-    SymbolKind,
+export {
+    type ContextItem,
+    type ContextItemFile,
+    ContextItemSource,
+    type ContextItemWithContent,
+    type ContextItemSymbol,
+    type ContextFileType,
+    type ContextMessage,
+    type SymbolKind,
 } from './codebase-context/messages'
-export type { CodyCommand, CodyCommandContext, CodyCommandType } from './commands/types'
-export { type DefaultCodyCommands, DefaultChatCommands } from './commands/types'
+export type {
+    CodyCommand,
+    CodyCommandContext,
+    CodyCommandType,
+    TerminalOutputArguments,
+} from './commands/types'
+export { CustomCommandType } from './commands/types'
+export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
 export {
     ProgrammingLanguage,
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
+    extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths } from './common/path'
+export { posixFilePaths, pathFunctionsForURI } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -74,6 +94,7 @@ export type {
     ConfigurationWithAccessToken,
     OllamaGenerateParameters,
     OllamaOptions,
+    ConfigGetter,
 } from './configuration'
 export { NoopEditor } from './editor'
 export type {
@@ -93,6 +114,7 @@ export {
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export * from './editor/utils'
 export {
     FeatureFlag,
     FeatureFlagProvider,
@@ -105,10 +127,9 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
-export type { IntentClassificationOption, IntentDetector } from './intent-detector'
-export { SourcegraphIntentDetectorClient } from './intent-detector/client'
 export type {
     ContextResult,
     FilenameContextFetcher,
@@ -125,22 +146,22 @@ export {
     ollamaChatClient,
     type OllamaGenerateParams,
     OLLAMA_DEFAULT_URL,
-} from './ollama'
+} from './llm-providers/ollama'
 export {
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
-    MAX_HUMAN_INPUT_TOKENS,
+    ANSWER_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
-    tokensToChars,
 } from './prompt/constants'
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
 export {
     truncateText,
     truncateTextNearestLine,
-    truncateTextStart,
+    truncatePromptStringStart,
+    truncatePromptString,
 } from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
@@ -173,6 +194,9 @@ export {
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
+    type ContextFilters,
+    type CodyContextFilterItem,
+    type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -193,9 +217,38 @@ export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider
 export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
-export { addTraceparent, getActiveTraceAndSpanId, wrapInActiveSpan } from './tracing'
+export {
+    addTraceparent,
+    getActiveTraceAndSpanId,
+    wrapInActiveSpan,
+    recordErrorToSpan,
+    tracer,
+    logResponseHeadersToSpan,
+} from './tracing'
 export { convertGitCloneURLToCodebaseName, isError } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
 export * from './chat/sse-iterator'
+export {
+    parseMentionQuery,
+    type MentionQuery,
+    scanForMentionTriggerInUserTextInput,
+} from './mentions/query'
+export {
+    getURLContextItems,
+    isURLContextItem,
+    fetchContentForURLContextItem,
+} from './mentions/urlContextItems'
+export { TokenCounter } from './token/counter'
+export {
+    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
+    ENHANCED_CONTEXT_ALLOCATION,
+} from './token/constants'
+export { tokensToChars, charsToTokens } from './token/utils'
+export * from './prompt/prompt-string'
+export { getCompletionsModelConfig } from './llm-providers/utils'
+export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
+export * from './fetch'
+export * from './completions/types'
+export * from './cody-ignore/context-filters-provider'

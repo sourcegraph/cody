@@ -8,12 +8,16 @@ import {
 
 import { logError } from '../../log'
 
-import { createProviderConfig as createAnthropicProviderConfig } from './anthropic'
+import {
+    type AnthropicOptions,
+    createProviderConfig as createAnthropicProviderConfig,
+} from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
+import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -47,7 +51,16 @@ export async function createProviderConfig(
                 })
             }
             case 'anthropic': {
-                return createAnthropicProviderConfig({ client })
+                return createAnthropicProviderConfig({ client, model })
+            }
+            case 'experimental-openaicompatible': {
+                return createOpenAICompatibleProviderConfig({
+                    client,
+                    model: config.autocompleteAdvancedModel ?? model ?? null,
+                    timeouts: config.autocompleteTimeouts,
+                    authStatus,
+                    config,
+                })
             }
             case 'experimental-ollama':
             case 'unstable-ollama': {
@@ -99,6 +112,14 @@ export async function createProviderConfig(
                     authStatus,
                     config,
                 })
+            case 'experimental-openaicompatible':
+                return createOpenAICompatibleProviderConfig({
+                    client,
+                    timeouts: config.autocompleteTimeouts,
+                    model: model ?? null,
+                    authStatus,
+                    config,
+                })
             case 'aws-bedrock':
             case 'anthropic':
                 return createAnthropicProviderConfig({
@@ -126,16 +147,17 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
 ): Promise<{
     provider: string
-    model?: FireworksOptions['model']
+    model?: FireworksOptions['model'] | AnthropicOptions['model']
 } | null> {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B] = await Promise.all([
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3] = await Promise.all([
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
     ])
 
     if (llamaCode13B) {
@@ -148,6 +170,10 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
 
     if (starCoderHybrid) {
         return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    }
+
+    if (claude3) {
+        return { provider: 'anthropic', model: 'anthropic/claude-3-haiku-20240307' }
     }
 
     return null

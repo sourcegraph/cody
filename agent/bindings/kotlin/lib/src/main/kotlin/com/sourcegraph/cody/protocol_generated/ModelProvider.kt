@@ -6,9 +6,7 @@ data class ModelProvider(
   val codyProOnly: Boolean? = null,
   val provider: String? = null,
   val title: String? = null,
-  val privateProviders: Map<String, ModelProvider>? = null,
-  val dotComProviders: List<ModelProvider>? = null,
-  val ollamaProvidersEnabled: Boolean? = null,
-  val ollamaProviders: List<ModelProvider>? = null,
+  val primaryProviders: List<ModelProvider>? = null,
+  val localProviders: List<ModelProvider>? = null,
 )
 

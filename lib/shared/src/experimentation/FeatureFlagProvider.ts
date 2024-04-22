@@ -17,6 +17,8 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enable StarCoder2 7b and 15b as the default model via Fireworks
     CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
+    // Enables Claude 3 if the user is in our holdout group
+    CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
     // context.
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
@@ -31,9 +33,6 @@ export enum FeatureFlag {
     // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
 
-    // Enable Cody PLG features on JetBrains
-    CodyProJetBrains = 'cody-pro-jetbrains',
-
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 
@@ -41,17 +40,20 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    // When enabled, fuses embeddings and symf context for chat.
-    CodyChatFusedContext = 'cody-chat-fused-context',
-
-    // Show command hints alongside editor selections. "Opt+K to Edit, Opt+L to Chat"
-    CodyCommandHints = 'cody-command-hints',
-
     // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
     CodyDocumentHints = 'cody-document-hints',
 
     /** Use Sourcegraph embeddings instead of OpenAI. */
     CodyUseSourcegraphEmbeddings = 'cody-use-sourcegraph-embeddings',
+
+    /** Support @-mentioning URLs in chat to add context from web pages. */
+    URLContext = 'cody-url-context',
+
+    /** Display Cody commands in a pop-up window on hover. */
+    CodyHoverCommands = 'cody-hover-commands',
+
+    /** Apply a higher context window for user context items (e.g., @-mentions). */
+    CodyChatContextBudget = 'cody-chat-context-budget',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

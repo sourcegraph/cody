@@ -38,6 +38,16 @@ const DOCUMENTABLE_NODES = dedent`
     (interface_type
         (_
             name: (field_identifier) @symbol.identifier)  @range.identifier)
+
+    ; Comments
+    ;--------------------------------
+    (comment) @comment
+`
+
+const ENCLOSING_FUNCTION_QUERY = dedent`
+    (function_declaration (identifier) @symbol.function) @range.function
+    (method_declaration (field_identifier) @symbol.function) @range.function
+    (func_literal) @range.function
 `
 
 export const goQueries = {
@@ -51,5 +61,6 @@ export const goQueries = {
             (type_spec (type_identifier) @identifier)
             (selector_expression (field_identifier)) @identifier
         `,
+        enclosingFunction: ENCLOSING_FUNCTION_QUERY,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>

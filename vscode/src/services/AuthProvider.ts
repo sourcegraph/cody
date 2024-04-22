@@ -14,7 +14,7 @@ import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import {
     ACCOUNT_USAGE_URL,
     defaultAuthStatus,
-    isLoggedIn as isAuthed,
+    isLoggedIn as isAuthenticated,
     isSourcegraphToken,
     networkErrorAuthStatus,
     unauthenticatedStatus,
@@ -33,6 +33,8 @@ import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
+
+const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 export class AuthProvider {
     private endpointHistory: string[] = []
@@ -56,6 +58,10 @@ export class AuthProvider {
     public async init(): Promise<void> {
         let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        logDebug(
+            'AuthProvider:init',
+            token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage'
+        )
         if (lastEndpoint === LOCAL_APP_URL.toString()) {
             // If the user last signed in to app, which talks to dotcom, try
             // signing them in to dotcom.
@@ -64,7 +70,8 @@ export class AuthProvider {
             token = (await secretStorage.get(lastEndpoint)) || null
         }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        await this.auth(lastEndpoint, token || null)
+
+        await this.auth({ endpoint: lastEndpoint, token: token || null, isExtensionStartup: true })
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
@@ -116,13 +123,13 @@ export class AuthProvider {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
                 const token = await secretStorage.get(selectedEndpoint)
-                let authStatus = await this.auth(selectedEndpoint, token || null)
+                let authStatus = await this.auth({ endpoint: selectedEndpoint, token: token || null })
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
                     if (!newToken) {
                         return
                     }
-                    authStatus = await this.auth(selectedEndpoint, newToken || null)
+                    authStatus = await this.auth({ endpoint: selectedEndpoint, token: newToken || null })
                 }
                 await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -135,7 +142,7 @@ export class AuthProvider {
         if (!accessToken) {
             return
         }
-        const authState = await this.auth(instanceUrl, accessToken)
+        const authState = await this.auth({ endpoint: instanceUrl, token: accessToken })
         telemetryService.log(
             'CodyVSCodeExtension:auth:fromToken',
             {
@@ -215,7 +222,7 @@ export class AuthProvider {
     private async signout(endpoint: string): Promise<void> {
         await secretStorage.deleteToken(endpoint)
         await localStorage.deleteEndpoint()
-        await this.auth(endpoint, null)
+        await this.auth({ endpoint, token: null })
         this.authStatus.endpoint = ''
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
@@ -236,15 +243,15 @@ export class AuthProvider {
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const [{ enabled, version }, codyLLMConfiguration] = await Promise.all([
+        const [{ enabled, version }, codyLLMConfiguration, userInfo] = await Promise.all([
             this.client.isCodyEnabled(),
             this.client.getCodyLLMConfiguration(),
+            this.client.getCurrentUserInfo(),
         ])
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
-        const userInfo = await this.client.getCurrentUserInfo()
 
         if (!isDotCom) {
             const hasVerifiedEmail = false
@@ -310,21 +317,37 @@ export class AuthProvider {
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
-    public async auth(
-        uri: string,
-        token: string | null,
+    public async auth({
+        endpoint,
+        token,
+        customHeaders,
+        isExtensionStartup = false,
+    }: {
+        endpoint: string
+        token: string | null
         customHeaders?: Record<string, string> | null
-    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
-        const endpoint = formatURL(uri) || ''
+        isExtensionStartup?: boolean
+    }): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
+        const url = formatURL(endpoint) || ''
         const config = {
-            serverEndpoint: endpoint,
+            serverEndpoint: url,
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
         const authStatus = await this.makeAuthStatus(config)
-        const isLoggedIn = isAuthed(authStatus)
+        const isLoggedIn = isAuthenticated(authStatus)
         authStatus.isLoggedIn = isLoggedIn
-        await this.storeAuthInfo(endpoint, token)
+
+        // If the extension is authenticated on startup, it can't be a user's first
+        // ever authentication. We store this to prevent logging first-ever events
+        // for already existing users.
+        if (isExtensionStartup && isLoggedIn) {
+            await this.setHasAuthenticatedBefore()
+        } else if (isLoggedIn) {
+            this.logFirstEverAuthentication()
+        }
+
+        await this.storeAuthInfo(url, token)
         this.syncAuthStatus(authStatus)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
@@ -333,7 +356,11 @@ export class AuthProvider {
     // Set auth status in case of reload
     public async reloadAuthStatus(): Promise<void> {
         this.config = await getFullConfig()
-        await this.auth(this.config.serverEndpoint, this.config.accessToken, this.config.customHeaders)
+        await this.auth({
+            endpoint: this.config.serverEndpoint,
+            token: this.config.accessToken,
+            customHeaders: this.config.customHeaders,
+        })
     }
 
     // Set auth status and share it with chatview
@@ -369,7 +396,7 @@ export class AuthProvider {
         if (!token || !endpoint) {
             return
         }
-        const authState = await this.auth(endpoint, token, customHeaders)
+        const authState = await this.auth({ endpoint, token, customHeaders })
         telemetryService.log(
             'CodyVSCodeExtension:auth:fromCallback',
             {
@@ -444,6 +471,17 @@ export class AuthProvider {
 
         // Simplified onboarding only supports dotcom.
         this.authStatus.endpoint = DOTCOM_URL.toString()
+    }
+
+    // Logs a telemetry event if the user has never authenticated to Sourcegraph.
+    private logFirstEverAuthentication(): void {
+        if (!localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+            telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
+            this.setHasAuthenticatedBefore()
+        }
+    }
+    private setHasAuthenticatedBefore() {
+        return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }
 

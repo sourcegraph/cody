@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import * as assert from 'node:assert'
 
 import * as vscode from 'vscode'
 
@@ -19,6 +19,12 @@ async function getChatViewProvider(): Promise<SimpleChatPanelProvider> {
     return chatViewProvider
 }
 
+// Note: The integration runner can not require from lib-shared so we have to expose
+// this instead.
+function getPs() {
+    return getExtensionAPI().exports.testing?.ps!
+}
+
 suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
@@ -28,16 +34,16 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            'hello from the human',
+            getPs()`hello from the human`,
             'user',
             [],
             undefined,
             false
         )
 
-        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 
@@ -48,7 +54,7 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
-            'hello from the human',
+            getPs()`hello from the human`,
             'user',
             [],
             undefined,
@@ -56,9 +62,9 @@ suite('Chat', function () {
         )
 
         // Display text should include file link at the end of message
-        assert.match((await getTranscript(0)).text || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).text || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 })

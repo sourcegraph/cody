@@ -1,23 +1,35 @@
 import {
-    type ChatEventSource,
     type ContextItem,
     type EditModel,
+    type EventSource,
+    ModelProvider,
+    PromptString,
     displayLineRange,
+    parseMentionQuery,
+    scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import {
+    FILE_HELP_LABEL,
+    GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
+    NO_FILE_MATCHES_LABEL,
+    NO_SYMBOL_MATCHES_LABEL,
+    SYMBOL_HELP_LABEL,
+} from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { commands as defaultCommands } from '../../commands/execute/cody.json'
 import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
-import { FILE_HELP_LABEL, NO_MATCHES_LABEL, SYMBOL_HELP_LABEL } from './constants'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
@@ -31,7 +43,7 @@ import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from 
 
 interface QuickPickInput {
     /** The user provided instruction */
-    instruction: string
+    instruction: PromptString
     /** Any user provided context, from @ or @# */
     userContextFiles: ContextItem[]
     /** The LLM that the user has selected */
@@ -51,7 +63,7 @@ export interface EditInputInitialValues {
     initialExpandedRange?: vscode.Range
     initialModel: EditModel
     initialIntent: EditIntent
-    initialInputValue?: string
+    initialInputValue?: PromptString
     initialSelectedContextItems?: ContextItem[]
 }
 
@@ -66,12 +78,15 @@ export const getInput = async (
     document: vscode.TextDocument,
     authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
-    source: ChatEventSource
+    source: EventSource
 ): Promise<QuickPickInput | null> => {
     const editor = getEditor().active
     if (!editor) {
         return null
     }
+
+    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
+    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -90,6 +105,12 @@ export const getInput = async (
 
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
+
+    const getContextWindowOnModelChange = (model: EditModel) => {
+        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
+    }
+    let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextItem>()
@@ -198,6 +219,7 @@ export const getInput = async (
                 editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
+                activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
 
                 editInput.render(activeTitle, editInput.input.value)
             },
@@ -278,7 +300,7 @@ export const getInput = async (
                 return executeEdit({
                     configuration: {
                         document,
-                        instruction: defaultCommands.doc.prompt,
+                        instruction: PromptString.fromDefaultCommands(defaultCommands, 'doc'),
                         range: activeRange,
                         intent: 'doc',
                         mode: 'insert',
@@ -351,29 +373,19 @@ export const getInput = async (
                 const input = editInput.input
                 if (
                     initialValues.initialInputValue !== undefined &&
-                    value === initialValues.initialInputValue
+                    value.toString() === initialValues.initialInputValue.toString()
                 ) {
                     // Noop, this event is fired when an initial value is set
                     return
                 }
 
-                const isFileSearch = value.endsWith('@')
-                const isSymbolSearch = value.endsWith('@#')
+                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionQuery = mentionTrigger
+                    ? parseMentionQuery(mentionTrigger.matchingString)
+                    : undefined
 
-                // If we have the beginning of a file or symbol match, show a helpful label
-                if (isFileSearch) {
-                    input.items = [{ alwaysShow: true, label: FILE_HELP_LABEL }]
-                    return
-                }
-                if (isSymbolSearch) {
-                    input.items = [{ alwaysShow: true, label: SYMBOL_HELP_LABEL }]
-                    return
-                }
-
-                const matchingContext = await getMatchingContext(value)
-                if (matchingContext === null) {
+                if (!mentionQuery) {
                     // Nothing to match, re-render existing items
-                    // eslint-disable-next-line no-self-assign
                     input.items = getEditInputItems(
                         input.value,
                         activeRangeItem,
@@ -383,27 +395,73 @@ export const getInput = async (
                     return
                 }
 
+                const matchingContext = await getMatchingContext(mentionQuery)
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
-                    input.items = [{ alwaysShow: true, label: NO_MATCHES_LABEL }]
+                    input.items = [
+                        {
+                            alwaysShow: true,
+                            label:
+                                mentionQuery.type === 'symbol'
+                                    ? mentionQuery.text.length === 0
+                                        ? SYMBOL_HELP_LABEL
+                                        : NO_SYMBOL_MATCHES_LABEL
+                                    : mentionQuery.text.length === 0
+                                      ? FILE_HELP_LABEL
+                                      : NO_FILE_MATCHES_LABEL,
+                        },
+                    ]
                     return
                 }
 
                 // Update stored context items so we can retrieve them later
-                for (const { key, file } of matchingContext) {
-                    contextItems.set(key, file)
+                for (const { key, item } of matchingContext) {
+                    contextItems.set(key, item)
+                }
+
+                /**
+                 * Checks if the total size of the selected context items exceeds the context budget.
+                 */
+                const isOverLimit = (size?: number): boolean => {
+                    const currentInput = input.value
+                    let used = currentInput.length
+                    for (const [k, v] of selectedContextItems) {
+                        if (currentInput.includes(`@${k}`)) {
+                            used += v.size ?? 0
+                        } else {
+                            selectedContextItems.delete(k)
+                        }
+                    }
+                    const totalBudget = activeModelContextWindow
+                    return size ? totalBudget - used < size : false
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them
-                input.items = matchingContext.map(({ key, shortLabel }) => ({
-                    alwaysShow: true,
-                    label: shortLabel || key,
-                    description: shortLabel ? key : undefined,
-                }))
+                input.items = [
+                    ...matchingContext.map(({ key, shortLabel, item }) => ({
+                        alwaysShow: true,
+                        label: shortLabel || key,
+                        description: shortLabel ? key : undefined,
+                        detail: isOverLimit(item.size) ? LARGE_FILE_WARNING_LABEL : undefined,
+                    })),
+                    {
+                        kind: vscode.QuickPickItemKind.Separator,
+                        label: 'help',
+                    },
+                    {
+                        alwaysShow: true,
+                        label:
+                            mentionQuery?.type === 'symbol'
+                                ? SYMBOL_HELP_LABEL
+                                : mentionQuery?.type === 'file'
+                                  ? FILE_HELP_LABEL
+                                  : GENERAL_HELP_LABEL,
+                    },
+                ]
             },
             onDidAccept: () => {
                 const input = editInput.input
-                const instruction = input.value.trim()
+                const instruction = PromptString.unsafe_fromUserQuery(input.value.trim())
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = input.selectedItems[0]
@@ -420,10 +478,18 @@ export const getInput = async (
                     case TEST_ITEM.label:
                         unitTestInput.render(activeTitle, '')
                         return
+                    case FILE_HELP_LABEL:
+                    case LARGE_FILE_WARNING_LABEL:
+                    case SYMBOL_HELP_LABEL:
+                    case NO_FILE_MATCHES_LABEL:
+                    case NO_SYMBOL_MATCHES_LABEL:
+                    case GENERAL_HELP_LABEL:
+                        // Noop, the user has actioned an item that is non intended to be actionable.
+                        return
                 }
 
                 // Empty input flow, do nothing
-                if (!instruction) {
+                if (instruction.length === 0) {
                     return
                 }
 
@@ -433,7 +499,7 @@ export const getInput = async (
                     const contextItem = contextItems.get(key)
                     if (contextItem) {
                         // Replace fuzzy value with actual context in input
-                        input.value = `${removeAfterLastAt(instruction)}@${key} `
+                        input.value = `${removeAfterLastAt(instruction.toString())}@${key} `
                         selectedContextItems.set(key, contextItem)
                         return
                     }
@@ -445,7 +511,7 @@ export const getInput = async (
                 return resolve({
                     instruction: instruction.trim(),
                     userContextFiles: Array.from(selectedContextItems)
-                        .filter(([key]) => instruction.includes(`@${key}`))
+                        .filter(([key]) => instruction.toString().includes(`@${key}`))
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
@@ -454,7 +520,7 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, initialValues.initialInputValue || '')
+        editInput.render(activeTitle, initialValues.initialInputValue?.toString() || '')
         editInput.input.activeItems = []
     })
 }

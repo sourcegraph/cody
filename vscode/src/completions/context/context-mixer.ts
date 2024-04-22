@@ -1,9 +1,12 @@
 import type * as vscode from 'vscode'
 
-import { isCodyIgnoredFile, wrapInActiveSpan } from '@sourcegraph/cody-shared'
-
-import type { DocumentContext } from '../get-current-doc-context'
-import type { ContextSnippet } from '../types'
+import {
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    contextFiltersProvider,
+    isCodyIgnoredFile,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
@@ -47,7 +50,7 @@ export interface ContextSummary {
 }
 
 export interface GetContextResult {
-    context: ContextSnippet[]
+    context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
 }
 
@@ -93,7 +96,8 @@ export class ContextMixer implements vscode.Disposable {
                             },
                         })
                 )
-                const filteredSnippets = allSnippets.filter(snippet => !isCodyIgnoredFile(snippet.uri))
+
+                const filteredSnippets = await filter(allSnippets)
 
                 return {
                     identifier: retriever.identifier,
@@ -124,7 +128,7 @@ export class ContextMixer implements vscode.Disposable {
         // total chars with the prefix and suffix sizes.
         let totalChars = options.docContext.prefix.length + options.docContext.suffix.length
 
-        const mixedContext: ContextSnippet[] = []
+        const mixedContext: AutocompleteContextSnippet[] = []
         const retrieverStats: ContextSummary['retrieverStats'] = {}
         let position = 0
         for (const snippet of fusedResults) {
@@ -174,4 +178,20 @@ export class ContextMixer implements vscode.Disposable {
     public dispose(): void {
         this.strategyFactory.dispose()
     }
+}
+
+async function filter(snippets: AutocompleteContextSnippet[]): Promise<AutocompleteContextSnippet[]> {
+    return (
+        await Promise.all(
+            snippets.map(async snippet => {
+                if (isCodyIgnoredFile(snippet.uri)) {
+                    return null
+                }
+                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
+                    return null
+                }
+                return snippet
+            })
+        )
+    ).filter((snippet): snippet is AutocompleteContextSnippet => snippet !== null)
 }
