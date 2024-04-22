@@ -58,9 +58,7 @@ export class PromptString {
         contextFilter: Pick<ContextFiltersProvider, 'isUriAllowed'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(reference =>
-            contextFilter.isUriAllowed(reference)
-        )
+        const checks = references.map(reference => contextFilter.isUriAllowed(reference))
         const resolved = await Promise.all(checks)
         if (!resolved.every(value => value === true)) {
             throw new Error(
