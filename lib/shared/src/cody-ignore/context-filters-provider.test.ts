@@ -36,11 +36,11 @@ describe('ContextFiltersProvider', () => {
     interface AssertFilters {
         label: string
         filters: ContextFilters
-        allowed?: [string, string][]
-        notAllowed?: [string, string][]
+        allowed?: string[]
+        ignored?: string[]
     }
 
-    describe('isRepoNameAllowed', () => {
+    describe('isRepoNameIgnored', () => {
         it.each<AssertFilters>([
             {
                 label: 'allows everything if both include and exclude are empty',
@@ -48,11 +48,8 @@ describe('ContextFiltersProvider', () => {
                     include: [],
                     exclude: [],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/cody', 'src/main.ts'],
-                    ['github.com/evilcorp/cody', 'src/main.ts'],
-                ],
-                notAllowed: [],
+                allowed: ['github.com/sourcegraph/cody', 'github.com/evilcorp/cody'],
+                ignored: [],
             },
             {
                 label: 'only include rules',
@@ -60,11 +57,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '.*non-sensitive.*' }],
                     exclude: [],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/non-sensitive', 'src/main.ts'],
-                    ['github.com/non-sensitive/cody', 'agent/readme.md'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/non-sensitive', 'github.com/non-sensitive/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'only exclude rules',
@@ -72,11 +66,8 @@ describe('ContextFiltersProvider', () => {
                     include: [],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/whatever', 'src/main.ts'],
-                    ['github.com/sourcegraph/cody', 'agent/readme.md'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/whatever', 'github.com/sourcegraph/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'include and exclude rules',
@@ -87,11 +78,8 @@ describe('ContextFiltersProvider', () => {
                     ],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/cody', 'src/main.ts'],
-                    ['github.com/evilcorp/cody', 'src/main.ts'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/cody', 'github.com/evilcorp/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'does not allow a repo if it does not match the include pattern',
@@ -99,7 +87,7 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                notAllowed: [['github.com/other/repo', 'src/main.ts']],
+                ignored: ['github.com/other/repo'],
             },
             {
                 label: 'does not allow a repo if it matches the exclude pattern',
@@ -113,10 +101,10 @@ describe('ContextFiltersProvider', () => {
                         { repoNamePattern: '.*not-allowed.*' },
                     ],
                 },
-                allowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
-                notAllowed: [
-                    ['github.com/sensitive/sensitive-repo', 'src/main.ts'],
-                    ['github.com/sourcegraph/not-allowed-repo', 'src/main.ts'],
+                allowed: ['github.com/sourcegraph/cody'],
+                ignored: [
+                    'github.com/sensitive/sensitive-repo',
+                    'github.com/sourcegraph/not-allowed-repo',
                 ],
             },
             {
@@ -125,7 +113,7 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-repo', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-repo'],
             },
             {
                 label: 'excludes repos with anchored exclude pattern starting with the specific term',
@@ -133,10 +121,10 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: 'github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-data', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-data'],
                 allowed: [
-                    ['company.github.com/sourcegraph/sensitive-data', 'src/main.ts'],
-                    ['github.com/sourcegraph/general', 'src/main.ts'],
+                    'company.github.com/sourcegraph/sensitive-data',
+                    'github.com/sourcegraph/general',
                 ],
             },
             {
@@ -145,8 +133,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/sensitive$' }],
                 },
-                allowed: [['github.com/sourcegraph/data-sensitive', 'src/main.ts']],
-                notAllowed: [['github.com/sourcegraph/sensitive', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/data-sensitive'],
+                ignored: ['github.com/sourcegraph/sensitive'],
             },
             {
                 label: 'excludes repos using non-capturing groups',
@@ -154,8 +142,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/(sensitive|classified).*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-project', 'src/main.ts']],
-                allowed: [['github.com/evilcorp/public', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-project'],
+                allowed: ['github.com/evilcorp/public'],
             },
             {
                 label: 'multiple include and exclude patterns',
@@ -168,15 +156,12 @@ describe('ContextFiltersProvider', () => {
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.+\\/docker\\/.+' }],
                 },
                 allowed: [
-                    ['github.com/sourcegraph/about', ''],
-                    ['github.com/sourcegraph/annotate', ''],
-                    ['github.com/sourcegraph/sourcegraph', ''],
-                    ['github.com/facebook/react', ''],
+                    'github.com/sourcegraph/about',
+                    'github.com/sourcegraph/annotate',
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/facebook/react',
                 ],
-                notAllowed: [
-                    ['github.com/docker/compose', ''],
-                    ['github.com/sourcegraph/cody', ''],
-                ],
+                ignored: ['github.com/docker/compose', 'github.com/sourcegraph/cody'],
             },
             {
                 label: 'exclude everything',
@@ -189,13 +174,13 @@ describe('ContextFiltersProvider', () => {
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.*' }],
                 },
                 allowed: [],
-                notAllowed: [
-                    ['github.com/sourcegraph/about', ''],
-                    ['github.com/sourcegraph/annotate', ''],
-                    ['github.com/sourcegraph/sourcegraph', ''],
-                    ['github.com/facebook/react', ''],
-                    ['github.com/docker/compose', ''],
-                    ['github.com/sourcegraph/cody', ''],
+                ignored: [
+                    'github.com/sourcegraph/about',
+                    'github.com/sourcegraph/annotate',
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/facebook/react',
+                    'github.com/docker/compose',
+                    'github.com/sourcegraph/cody',
                 ],
             },
             {
@@ -207,17 +192,17 @@ describe('ContextFiltersProvider', () => {
                     ],
                     exclude: [],
                 },
-                notAllowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/cody'],
             },
-        ])('$label', async ({ filters, allowed = [], notAllowed = [] }) => {
+        ])('$label', async ({ filters, allowed = [], ignored = [] }) => {
             await initProviderWithContextFilters(filters)
 
-            for (const [repoName] of allowed) {
-                expect(provider.isRepoNameAllowed(repoName)).toBe(true)
+            for (const repoName of allowed) {
+                expect(provider.isRepoNameIgnored(repoName)).toBe(false)
             }
 
-            for (const [repoName] of notAllowed) {
-                expect(provider.isRepoNameAllowed(repoName)).toBe(false)
+            for (const repoName of ignored) {
+                expect(provider.isRepoNameIgnored(repoName)).toBe(true)
             }
         })
 
@@ -225,7 +210,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
 
         it('excludes everything on unknown API errors', async () => {
@@ -234,7 +219,7 @@ describe('ContextFiltersProvider', () => {
             )
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
 
         it('excludes everything on invalid response structure', async () => {
@@ -246,7 +231,7 @@ describe('ContextFiltersProvider', () => {
             )
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
 
         it('includes everything on empty responses', async () => {
@@ -255,7 +240,7 @@ describe('ContextFiltersProvider', () => {
             })
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
 
         it('includes everything on for Sourcegraph API without context filters support', async () => {
@@ -264,7 +249,7 @@ describe('ContextFiltersProvider', () => {
             )
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
 
         it('uses cached results for repeated calls', async () => {
@@ -279,8 +264,8 @@ describe('ContextFiltersProvider', () => {
 
             await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
             expect(mockedApiRequest).toBeCalledTimes(1)
         })
 
@@ -300,17 +285,17 @@ describe('ContextFiltersProvider', () => {
             await provider.init(getRepoNameFromWorkspaceUri)
 
             expect(mockedApiRequest).toBeCalledTimes(1)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
 
             await vi.runOnlyPendingTimersAsync()
 
             expect(mockedApiRequest).toBeCalledTimes(2)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(false)
-            expect(provider.isRepoNameAllowed('github.com/other/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/other/cody')).toBe(false)
         })
     })
 
-    describe('isUriAllowed', () => {
+    describe('isUriIgnored', () => {
         interface TestUriParams {
             repoName: string
             filePath: string
@@ -334,7 +319,7 @@ describe('ContextFiltersProvider', () => {
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
             expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
 
-            expect(await provider.isUriAllowed(includedURI)).toBe(true)
+            expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
@@ -342,10 +327,10 @@ describe('ContextFiltersProvider', () => {
                 'github.com/sourcegraph/sourcegraph'
             )
 
-            expect(await provider.isUriAllowed(excludedURI)).toBe(false)
+            expect(await provider.isUriIgnored(excludedURI)).toBe(true)
         })
 
-        it('returns `false` if repo name is not found', async () => {
+        it('returns `true` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
@@ -353,7 +338,7 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             getRepoNameFromWorkspaceUri.mockResolvedValue(undefined)
-            expect(await provider.isUriAllowed(uri)).toBe(false)
+            expect(await provider.isUriIgnored(uri)).toBe(true)
         })
     })
 })
