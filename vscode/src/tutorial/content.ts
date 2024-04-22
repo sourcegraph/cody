@@ -2,9 +2,9 @@ import dedent from 'dedent'
 import * as vscode from 'vscode'
 import { findRangeOfText } from './utils'
 
-export type TutorialStepType = 'autocomplete' | 'edit' | 'fix' | 'chat'
+export type TutorialStepKey = 'autocomplete' | 'edit' | 'fix' | 'chat'
 
-export const getStepContent = (step: TutorialStepType): string => {
+export const getStepContent = (step: TutorialStepKey): string => {
     let stepContent = ''
     switch (step) {
         case 'autocomplete':
@@ -23,9 +23,9 @@ export const getStepContent = (step: TutorialStepType): string => {
                 """
 
                 def hello_world():
-                """Prints hello world (with an emoji)"""
-
-                #   ^ Place cursor above
+                    """Prints hello world (with an emoji)"""
+                    p
+                #    ^ Autocomplete: Place cursor above
                 # When you see a suggestion, press Tab to accept
                 # or Opt+\ to generate another.
             `
@@ -41,7 +41,7 @@ export const getStepContent = (step: TutorialStepType): string => {
                 all you need to do is choose Submit.
                 """
 
-                # ^ Place cursor above and press Opt+K
+                # ^ Edit: Place cursor above and press Opt+K
             `
             break
         case 'fix':
@@ -56,7 +56,7 @@ export const getStepContent = (step: TutorialStepType): string => {
                 """
                 def log_fruits():
                     print("List of fruits:", "apple,", "banana,", "cherry")
-                #         ^ Place cursor anywhere here, press Cmd+., and "Ask Cody to Fix"
+                #         ^ Fix: Place cursor anywhere here, press Cmd+., and "Ask Cody to Fix"
             `
             break
         case 'chat':
@@ -73,52 +73,76 @@ export const getStepContent = (step: TutorialStepType): string => {
         : stepContent.replace('Opt', 'Alt').replace('Cmd', 'Ctrl')
 }
 
-export const getStepRange = (
-    document: vscode.TextDocument,
-    step: TutorialStepType
-): { range: vscode.Range; originalText: string } | null => {
+interface BaseTutorialStep {
+    key: TutorialStepKey
+    range: vscode.Range
+}
+interface OnChangeTutorialStep extends BaseTutorialStep {
+    range: vscode.Range
+    originalText: string
+    type: 'onTextChange'
+}
+interface ManualTutorialStep extends BaseTutorialStep {
+    range: vscode.Range
+    type: 'manual'
+}
+export type TutorialStep = OnChangeTutorialStep | ManualTutorialStep
+
+export const getStepData = (document: vscode.TextDocument, step: TutorialStepKey): TutorialStep => {
     switch (step) {
         case 'autocomplete': {
-            const autocompleteLine = findRangeOfText(document, '^ Place cursor above')!.start.line - 1
+            const autocompleteLine = findRangeOfText(document, '^ Autocomplete:')!.start.line - 1
             const autocompleteRange = new vscode.Range(
                 new vscode.Position(autocompleteLine, 0),
                 new vscode.Position(autocompleteLine, Number.MAX_SAFE_INTEGER)
             )
             return {
-                /**
-                 * The range of the target text that should be replaced during an autocomplete operation.
-                 */
-                /**
-                 * The range of the target text to be used for the current tutorial step.
-                 */
+                key: 'autocomplete',
                 range: autocompleteRange,
                 originalText: document.getText(autocompleteRange).trim(),
+                type: 'onTextChange',
             }
         }
         case 'edit': {
-            // We don't track a range for edit, just that the command was successfully executed
-            return null
+            const editLine = findRangeOfText(document, '^ Edit:')!.start.line - 1
+            return {
+                key: 'edit',
+                range: new vscode.Range(
+                    new vscode.Position(editLine, 0),
+                    new vscode.Position(editLine, Number.MAX_SAFE_INTEGER)
+                ),
+                type: 'manual',
+            }
         }
         case 'fix': {
-            const fixLine = findRangeOfText(document, '^ Place cursor here and press')!.start.line - 1
+            const fixLine = findRangeOfText(document, '^ Fix:')!.start.line - 1
             // The fix range already has characters, so limit this to the actual text in the line
             const fixRange = new vscode.Range(
                 new vscode.Position(fixLine, document.lineAt(fixLine).firstNonWhitespaceCharacterIndex),
                 new vscode.Position(fixLine, Number.MAX_SAFE_INTEGER)
             )
             return {
+                key: 'fix',
                 range: fixRange,
                 originalText: document.getText(fixRange).trim(),
+                type: 'onTextChange',
             }
         }
         case 'chat': {
-            // We don't track a range for chat, just that the command was successfully executed
-            return null
+            const chatLine = findRangeOfText(document, 'Start a Chat')!.start.line
+            return {
+                key: 'chat',
+                range: new vscode.Range(
+                    new vscode.Position(chatLine, 0),
+                    new vscode.Position(chatLine, Number.MAX_SAFE_INTEGER)
+                ),
+                type: 'manual',
+            }
         }
     }
 }
 
-export const getNextStep = (step: TutorialStepType): TutorialStepType | null => {
+export const getNextStep = (step: TutorialStepKey): TutorialStepKey | null => {
     switch (step) {
         case 'autocomplete':
             return 'edit'

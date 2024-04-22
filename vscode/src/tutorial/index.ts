@@ -1,20 +1,22 @@
-import * as fs from 'node:fs/promises'
 import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { executeEdit } from '../edit/execute'
+import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
-import { type TutorialStepType, getNextStep, getStepContent, getStepRange } from './content'
+import {
+    type TutorialStep,
+    type TutorialStepKey,
+    getNextStep,
+    getStepContent,
+    getStepData,
+} from './content'
 import { setTutorialUri } from './helpers'
 import { CodyChatLinkProvider } from './utils'
-import { CodyTaskState } from '../non-stop/utils'
 
 const openTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
-    if (process.platform === 'darwin') {
-        await fs.writeFile(uri.fsPath, '')
-    } else {
-        await fs.writeFile(uri.fsPath, '')
-    }
+    const firstStepContent = new TextEncoder().encode(getStepContent('autocomplete'))
+    await vscode.workspace.fs.writeFile(uri, firstStepContent)
     return vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.Beside })
 }
 
@@ -24,10 +26,7 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
     disposables.push(diagnosticCollection)
 
     const editor = await openTutorialDocument(documentUri)
-
-    let originalRangeText: string | undefined
-    let activeRange: vscode.Range | undefined
-    let activeRangeListener: vscode.Disposable | undefined
+    let activeStep: TutorialStep | undefined
 
     /**
      * Listen for changes in the tutorial text document, and update the
@@ -35,9 +34,14 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
      * This ensures that, even if the user modifies the document,
      * we can accurately track where we want them to interact.
      */
+    let activeRangeListener: vscode.Disposable | undefined
     const setActiveRangeListener = (range: vscode.Range) => {
+        activeRangeListener?.dispose()
         activeRangeListener = vscode.workspace.onDidChangeTextDocument(event => {
             if (event.document.uri !== editor.document.uri) {
+                return
+            }
+            if (!activeStep) {
                 return
             }
 
@@ -47,9 +51,10 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
                 supportRangeAffix: true,
             })
             if (!newInteractiveRange.isEqual(range)) {
-                activeRange = newInteractiveRange
+                activeStep.range = newInteractiveRange
             }
         })
+        return activeRangeListener
     }
 
     const setDiagnostic = (range: vscode.Range) => {
@@ -87,37 +92,36 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
                 return
             }
 
-            if (!activeRange) {
-                // TODO: Should never happen...
+            if (!activeStep || activeStep.type !== 'onTextChange') {
+                // todo should nebver happe
                 return
             }
 
             if (
-                activeRange.contains(textEditor.selection.active) &&
-                document.getText(activeRange).trim() === originalRangeText
+                activeStep.range.contains(textEditor.selection.active) &&
+                document.getText(activeStep.range).trim() === activeStep.originalText
             ) {
                 // Cursor is on the intended autocomplete line, and we don't already have any content
                 // Manually trigger an autocomplete for the ease of the tutorial
                 await vscode.commands.executeCommand('cody.autocomplete.manual-trigger')
-                autocompleteListener?.dispose()
             }
         })
+        return autocompleteListener
     }
 
-    let activeStep: TutorialStepType
     const progressToNextStep = async () => {
-        const nextStep = activeStep ? getNextStep(activeStep) : 'autocomplete'
+        const nextStep = activeStep?.key ? getNextStep(activeStep.key) : 'autocomplete'
 
         if (nextStep === null) {
-            // Clear any decorations on complete
             editor.setDecorations(TODO_DECORATION, [])
-            // Close the window
+            await editor.document.save()
+            // TODO: Should we do this, is it worth it?
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor', documentUri)
             return
         }
 
-        const currentStep = activeStep
         // Side effects triggered by leaving the active state
-        switch (currentStep) {
+        switch (activeStep?.key) {
             case 'autocomplete':
                 autocompleteListener?.dispose()
                 break
@@ -133,39 +137,35 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
         }
         // Clear any existing range listener
         activeRangeListener?.dispose()
+        editor.setDecorations(TODO_DECORATION, [])
 
-        activeStep = nextStep
         const content = getStepContent(nextStep)
 
         // Add to the bottom of the document with the new step content
         const edit = new vscode.WorkspaceEdit()
         edit.insert(documentUri, new vscode.Position(editor.document.lineCount, 0), content)
         await vscode.workspace.applyEdit(edit)
-        startListeningForSuccess(nextStep)
+        disposables.push(startListeningForSuccess(nextStep))
 
-        const stepRange = getStepRange(editor.document, nextStep)
-        originalRangeText = stepRange?.originalText
-        activeRange = stepRange?.range
-        if (stepRange) {
-            setActiveRangeListener(stepRange.range)
-            editor.setDecorations(TODO_DECORATION, [stepRange.range])
-        }
+        activeStep = getStepData(editor.document, nextStep)
+        disposables.push(setActiveRangeListener(activeStep.range))
+        editor.setDecorations(TODO_DECORATION, [
+            new vscode.Range(activeStep.range.start.line, 0, activeStep.range.start.line, 0),
+        ])
 
         // Side effects triggered by entering the new state
         switch (nextStep) {
             case 'autocomplete':
-                registerAutocompleteListener()
+                disposables.push(registerAutocompleteListener())
                 break
             case 'fix':
-                if (stepRange?.range) {
-                    setDiagnostic(stepRange.range)
-                }
+                setDiagnostic(activeStep.range)
                 break
             case 'edit':
-                registerEditTutorialCommand()
+                disposables.push(registerEditTutorialCommand())
                 break
             case 'chat':
-                registerChatTutorialCommand()
+                disposables.push(registerChatTutorialCommand())
                 break
         }
     }
@@ -184,9 +184,12 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
             })
 
             if (!task) {
-                // TODO: What to do?
                 return
             }
+
+            // Clear the existing decoration, the user has actioned it,
+            // we're just waiting for the full response.
+            editor.setDecorations(TODO_DECORATION, [])
 
             // Poll for task.state being applied
             const interval = setInterval(async () => {
@@ -196,6 +199,7 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
                 }
             }, 100)
         })
+        return editTutorialCommand
     }
 
     let chatTutorialCommand: vscode.Disposable | undefined
@@ -205,14 +209,8 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
             progressToNextStep()
             return vscode.commands.executeCommand('cody.chat.panel.new')
         })
+        return chatTutorialCommand
     }
-
-    disposables.push(
-        vscode.languages.registerDocumentLinkProvider(
-            editor.document.uri,
-            new CodyChatLinkProvider(editor)
-        )
-    )
 
     /**
      * Listen to __any__ changes in the interactive text document, so we can
@@ -222,43 +220,49 @@ export const startTutorial = async (documentUri: vscode.Uri): Promise<vscode.Dis
      * that line as complete.
      */
     let successListener: vscode.Disposable | undefined
-    const startListeningForSuccess = (step: TutorialStepType) => {
+    const startListeningForSuccess = (key: TutorialStepKey) => {
         // Dispose of any existing listener
         successListener?.dispose()
-
         successListener = vscode.workspace.onDidChangeTextDocument(async ({ document }) => {
             if (document.uri !== editor.document.uri) {
                 return
             }
-            if (activeStep !== step || !activeRange || originalRangeText === undefined) {
+            if (activeStep?.key !== key || activeStep.type !== 'onTextChange') {
                 return
             }
 
-            const activeText = editor.document.getText(activeRange).trim()
-            if (activeText.length > 0 && activeText !== originalRangeText) {
-                if (activeStep === 'fix') {
+            const activeText = editor.document.getText(activeStep.range).trim()
+            if (activeText.length > 0 && activeText !== activeStep.originalText) {
+                if (key === 'fix') {
                     // Additionally reset the diagnostics
                     diagnosticCollection?.clear()
                 }
-                progressToNextStep()
+                if (key === 'autocomplete' || key === 'fix') {
+                    successListener?.dispose()
+                    progressToNextStep()
+                }
             }
         })
+        return successListener
     }
 
     progressToNextStep()
-    startListeningForSuccess('autocomplete')
-
     disposables.push(
+        startListeningForSuccess('autocomplete'),
+        vscode.languages.registerDocumentLinkProvider(
+            editor.document.uri,
+            new CodyChatLinkProvider(editor)
+        ),
         vscode.window.onDidChangeVisibleTextEditors(editors => {
             const tutorialIsActive = editors.find(
                 editor => editor.document.uri.toString() === documentUri.toString()
             )
-            if (!tutorialIsActive || !activeRange) {
+            if (!tutorialIsActive || !activeStep?.range) {
                 return
             }
             // Decorations are cleared when an editor is no longer visible, we need to ensure we always set
             // them when the tutorial becomes visible
-            editor.setDecorations(TODO_DECORATION, [activeRange])
+            editor.setDecorations(TODO_DECORATION, [activeStep.range])
         })
     )
 
