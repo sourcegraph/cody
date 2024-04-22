@@ -1,0 +1,31 @@
+name: Analytics Telemetry Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-telemetry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for deprecated telemetry calls
+        run: |
+          MATCHES=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")
+          if [ -n "$MATCHES" ]; then
+            echo "::error::Deprecated telemetry calls found: $MATCHES"
+            exit 1
+          fi
+
+  check-telemetry-event:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for telemetry event with numbers
+        run: |
+          MATCHES=$(grep -rn "telemetryRecorder\.recorderEvent\([^)]*\d+[^)]*\)" --include="*.{js,ts,tsx}")
+          if [ -n "$MATCHES" ]; then
+            echo "::error::Telemetry events with numbers found: $MATCHES"
+            exit 1
+          fi
