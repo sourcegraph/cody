@@ -1,5 +1,5 @@
 // Sentry should be imported first
-import { NodeSentryService } from './services/sentry/sentry.node'
+import { NodeSentryService, insideExtensionAsyncLocalStorage } from './services/sentry/sentry.node'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import * as vscode from 'vscode'
@@ -24,6 +24,11 @@ import { SymfRunner } from './local-context/symf'
 import { gitRemoteUrlFromGitCli } from './repository/repo-name-getter.node'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
+// An error outside the async local context
+setTimeout(() => {
+    throw new Error('oh no!')
+}, 10000)
+
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).
@@ -32,36 +37,38 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
-    initializeNetworkAgent()
+    return insideExtensionAsyncLocalStorage.run(true, () => {
+        initializeNetworkAgent()
 
-    // When activated by VSCode, we are only passed the extension context.
-    // Create the default client for VSCode.
-    extensionClient ||= defaultVSCodeExtensionClient()
+        // When activated by VSCode, we are only passed the extension context.
+        // Create the default client for VSCode.
+        extensionClient ||= defaultVSCodeExtensionClient()
 
-    // NOTE: local embeddings are only going to be supported in VSC for now.
-    // Until we revisit this decision, we disable local embeddings for all agent
-    // clients like the JetBrains plugin.
-    const isLocalEmbeddingsDisabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.advanced.agent.running', false)
+        // NOTE: local embeddings are only going to be supported in VSC for now.
+        // Until we revisit this decision, we disable local embeddings for all agent
+        // clients like the JetBrains plugin.
+        const isLocalEmbeddingsDisabled = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.advanced.agent.running', false)
 
-    return activateCommon(context, {
-        createLocalEmbeddingsController: isLocalEmbeddingsDisabled
-            ? undefined
-            : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
-                  createLocalEmbeddingsController(context, config),
-        createContextRankingController: (config: ContextRankerConfig) =>
-            createContextRankingController(context, config),
-        createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
-        createCommandsProvider: () => new CommandsProvider(),
-        createSymfRunner: (...args) => new SymfRunner(...args),
-        createBfgRetriever: () => new BfgRetriever(context),
-        createSentryService: (...args) => new NodeSentryService(...args),
-        createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
-        getRemoteUrlGetters: () => [gitRemoteUrlFromGitCli],
-        startTokenReceiver: (...args) => startTokenReceiver(...args),
+        return activateCommon(context, {
+            createLocalEmbeddingsController: isLocalEmbeddingsDisabled
+                ? undefined
+                : (config: LocalEmbeddingsConfig): LocalEmbeddingsController =>
+                      createLocalEmbeddingsController(context, config),
+            createContextRankingController: (config: ContextRankerConfig) =>
+                createContextRankingController(context, config),
+            createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
+            createCommandsProvider: () => new CommandsProvider(),
+            createSymfRunner: (...args) => new SymfRunner(...args),
+            createBfgRetriever: () => new BfgRetriever(context),
+            createSentryService: (...args) => new NodeSentryService(...args),
+            createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+            getRemoteUrlGetters: () => [gitRemoteUrlFromGitCli],
+            startTokenReceiver: (...args) => startTokenReceiver(...args),
 
-        onConfigurationChange: setCustomAgent,
-        extensionClient,
+            onConfigurationChange: setCustomAgent,
+            extensionClient,
+        })
     })
 }

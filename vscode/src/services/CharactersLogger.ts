@@ -42,6 +42,7 @@ export class CharactersLogger implements vscode.Disposable {
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
     }
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+        throw new Error('hehe!')
         if (!isFileURI(event.document.uri)) {
             return
         }

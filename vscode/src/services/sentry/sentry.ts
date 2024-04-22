@@ -39,13 +39,19 @@ export abstract class SentryService {
 
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
-            if (!isProd && !isSentryEnabled) {
-                return
-            }
+            // if (!isProd && !isSentryEnabled) {
+            //     return
+            // }
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
                 release: version,
+<<<<<<< Updated upstream
+||||||| Stash base
+                sampleRate: 0.05, // 5% of errors are sent to Sentry
+=======
+                sampleRate: 1, // 0.05, // 5% of errors are sent to Sentry
+>>>>>>> Stashed changes
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'
@@ -53,7 +59,7 @@ export abstract class SentryService {
                       : 'vscode-node',
 
                 // In dev mode, have Sentry log extended debug information to the console.
-                debug: !isProd,
+                debug: !!isProd,
 
                 // Only send errors when connected to dotcom in the production build.
                 beforeSend: (event, hint) => {
