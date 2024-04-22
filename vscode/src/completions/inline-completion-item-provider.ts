@@ -811,6 +811,6 @@ function logIgnored(uri: vscode.Uri, reason: 'cody-ignore' | 'context-filter') {
     lasIgnoredUriLogged = string
     logDebug(
         'CodyCompletionProvider:ignored',
-        'Cody is disabled in file ' + uri.toString() + '(' + reason + ')'
+        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
 }
