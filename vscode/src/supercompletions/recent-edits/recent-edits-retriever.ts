@@ -1,4 +1,4 @@
-import { PromptString } from '@sourcegraph/cody-shared'
+import { PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 interface TrackedDocument {
@@ -24,7 +24,11 @@ export class RecentEditsRetriever implements vscode.Disposable {
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
     }
 
-    public getDiff(uri: vscode.Uri): PromptString | null {
+    public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
+        if (!(await contextFiltersProvider.isUriAllowed(uri))) {
+            return null
+        }
+
         const trackedDocument = this.trackedDocuments.get(uri.toString())
         if (!trackedDocument) {
             return null
