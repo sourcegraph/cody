@@ -122,7 +122,7 @@ export class TokenCounter {
     /**
      * The default tokenizer is cl100k_base.
      */
-    private static tokenize = getEncoding('cl100k_base')
+    private static tokenizer = getEncoding('cl100k_base')
 
     /**
      * Encode the given text using the tokenizer.
@@ -130,11 +130,11 @@ export class TokenCounter {
      * All special tokens are included in the token count.
      */
     public static encode(text: string): number[] {
-        return TokenCounter.tokenize.encode(text.normalize('NFKC'), 'all')
+        return TokenCounter.tokenizer.encode(text.normalize('NFKC'), 'all')
     }
 
     public static decode(encoded: number[]): string {
-        return TokenCounter.tokenize.decode(encoded)
+        return TokenCounter.tokenizer.decode(encoded)
     }
 
     /**
