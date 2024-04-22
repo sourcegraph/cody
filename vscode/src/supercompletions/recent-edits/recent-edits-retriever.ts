@@ -25,7 +25,7 @@ export class RecentEditsRetriever implements vscode.Disposable {
     }
 
     public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
-        if (!(await contextFiltersProvider.isUriAllowed(uri))) {
+        if (await contextFiltersProvider.isUriIgnored(uri)) {
             return null
         }
 

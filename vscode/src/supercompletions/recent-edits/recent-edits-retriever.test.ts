@@ -17,7 +17,7 @@ describe('RecentEditsRetriever', () => {
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
     beforeEach(() => {
         vi.useFakeTimers()
-        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockReturnValue(Promise.resolve(true))
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
 
         retriever = new RecentEditsRetriever(FIVE_MINUTES, {
             onDidChangeTextDocument(listener) {
@@ -115,7 +115,7 @@ describe('RecentEditsRetriever', () => {
     })
 
     it('no-ops for blocked files due to the context filter', async () => {
-        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockReturnValue(Promise.resolve(false))
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce(true)
 
         replaceFooLogWithNumber()
 

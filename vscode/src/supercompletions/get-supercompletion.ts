@@ -38,7 +38,7 @@ export async function* getSupercompletions({
     recentEditsRetriever,
     chat,
 }: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
-    if (!(await contextFiltersProvider.isUriAllowed(document.uri))) {
+    if (await contextFiltersProvider.isUriIgnored(document.uri)) {
         return null
     }
 
