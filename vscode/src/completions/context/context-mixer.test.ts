@@ -1,8 +1,9 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
     type AutocompleteContextSnippet,
     CODY_IGNORE_URI_PATH,
+    contextFiltersProvider,
     ignores,
     isCodyIgnoredFile,
     testFileUri,
@@ -16,6 +17,8 @@ import type { ContextRetriever } from '../types'
 import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
+
+import type * as vscode from 'vscode'
 
 function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []
@@ -55,6 +58,10 @@ const defaultOptions = {
 }
 
 describe('ContextMixer', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementation(() => Promise.resolve(true))
+    })
+
     describe('with no retriever', () => {
         it('returns empty result if no retrievers', async () => {
             const mixer = new ContextMixer(createMockStrategy([]))
@@ -225,7 +232,7 @@ describe('ContextMixer', () => {
             })
         })
 
-        describe('retrived context is filtered by .cody/ignore', () => {
+        describe('retrieved context is filtered by .cody/ignore', () => {
             const workspaceRoot = testFileUri('')
             beforeAll(() => {
                 ignores.setActiveState(true)
@@ -285,6 +292,62 @@ describe('ContextMixer', () => {
                         isCodyIgnoredFile(Utils.joinPath(workspaceRoot, context.fileName))
                     ).toBeFalsy()
                 }
+            })
+        })
+
+        describe('retrieved context is filtered by context filters', () => {
+            beforeAll(() => {
+                vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementation(
+                    async (uri: vscode.Uri) => {
+                        if (uri.path.includes('foo.ts')) {
+                            return false
+                        }
+                        return true
+                    }
+                )
+            })
+            it('mixes results are filtered', async () => {
+                const mixer = new ContextMixer(
+                    createMockStrategy([
+                        [
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                            {
+                                uri: testFileUri('foo/bar.ts'),
+                                content: 'function bar1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                        ],
+                        [
+                            {
+                                uri: testFileUri('test/foo.ts'),
+                                content: 'function foo3() {}',
+                                startLine: 10,
+                                endLine: 10,
+                            },
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}\nfunction foo2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                            {
+                                uri: testFileUri('example/bar.ts'),
+                                content: 'function bar1() {}\nfunction bar2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                        ],
+                    ])
+                )
+                const { context } = await mixer.getContext(defaultOptions)
+                const contextFiles = normalize(context)
+                expect(contextFiles.map(c => c.fileName)).toEqual(['bar.ts', 'bar.ts'])
             })
         })
     })

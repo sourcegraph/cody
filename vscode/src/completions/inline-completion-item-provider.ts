@@ -5,6 +5,7 @@ import {
     ConfigFeaturesSingleton,
     FeatureFlag,
     RateLimitError,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -206,6 +207,10 @@ export class InlineCompletionItemProvider
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            if (!(await contextFiltersProvider.isUriAllowed(document.uri))) {
+                return null
+            }
+
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {

@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type DocumentContext,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -95,7 +96,8 @@ export class ContextMixer implements vscode.Disposable {
                             },
                         })
                 )
-                const filteredSnippets = allSnippets.filter(snippet => !isCodyIgnoredFile(snippet.uri))
+
+                const filteredSnippets = await filter(allSnippets)
 
                 return {
                     identifier: retriever.identifier,
@@ -176,4 +178,20 @@ export class ContextMixer implements vscode.Disposable {
     public dispose(): void {
         this.strategyFactory.dispose()
     }
+}
+
+async function filter(snippets: AutocompleteContextSnippet[]): Promise<AutocompleteContextSnippet[]> {
+    return (
+        await Promise.all(
+            snippets.map(async snippet => {
+                if (isCodyIgnoredFile(snippet.uri)) {
+                    return null
+                }
+                if (!(await contextFiltersProvider.isUriAllowed(snippet.uri))) {
+                    return null
+                }
+                return snippet
+            })
+        )
+    ).filter((snippet): snippet is AutocompleteContextSnippet => snippet !== null)
 }
