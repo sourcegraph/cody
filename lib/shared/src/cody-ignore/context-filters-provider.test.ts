@@ -310,7 +310,7 @@ describe('ContextFiltersProvider', () => {
         })
     })
 
-    describe('isUriAllowed', () => {
+    describe('isUriBlocked', () => {
         interface TestUriParams {
             repoName: string
             filePath: string
@@ -334,7 +334,7 @@ describe('ContextFiltersProvider', () => {
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
             expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
 
-            expect(await provider.isUriAllowed(includedURI)).toBe(true)
+            expect(await provider.isUriBlocked(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
@@ -342,7 +342,7 @@ describe('ContextFiltersProvider', () => {
                 'github.com/sourcegraph/sourcegraph'
             )
 
-            expect(await provider.isUriAllowed(excludedURI)).toBe(false)
+            expect(await provider.isUriBlocked(excludedURI)).toBe(true)
         })
 
         it('returns `false` if repo name is not found', async () => {
@@ -353,7 +353,7 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             getRepoNameFromWorkspaceUri.mockResolvedValue(undefined)
-            expect(await provider.isUriAllowed(uri)).toBe(false)
+            expect(await provider.isUriBlocked(uri)).toBe(true)
         })
     })
 })

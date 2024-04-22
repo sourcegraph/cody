@@ -55,12 +55,12 @@ export class PromptString {
      * Returns a string that is safe to use in a prompt that is sent to an LLM.
      */
     public async toFilteredString(
-        contextFilter: Pick<ContextFiltersProvider, 'isUriAllowed'>
+        contextFilter: Pick<ContextFiltersProvider, 'isUriBlocked'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(reference => contextFilter.isUriAllowed(reference))
+        const checks = references.map(reference => contextFilter.isUriBlocked(reference))
         const resolved = await Promise.all(checks)
-        if (!resolved.every(value => value === true)) {
+        if (!resolved.every(value => value === false)) {
             throw new Error(
                 'The prompt string contains a reference to a file that is not allowed by the context filters.'
             )

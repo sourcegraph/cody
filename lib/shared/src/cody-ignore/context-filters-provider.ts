@@ -102,26 +102,26 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return isAllowed
     }
 
-    public async isUriAllowed(uri: vscode.Uri): Promise<boolean> {
+    public async isUriBlocked(uri: vscode.Uri): Promise<boolean> {
         if (this.hasIncludeEverythingFilters()) {
-            return true
+            return false
         }
 
         if (this.hasExcludeEverythingFilters()) {
-            return false
+            return true
         }
 
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
             logDebug('ContextFiltersProvider', 'isUriAllowed', `non-file URI ${uri.scheme}`)
-            return false
+            return true
         }
 
         const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
             this.getRepoNameFromWorkspaceUri?.(uri)
         )
 
-        return repoName ? this.isRepoNameAllowed(repoName) : false
+        return repoName ? !this.isRepoNameAllowed(repoName) : true
     }
 
     public dispose(): void {
