@@ -845,6 +845,11 @@
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
           "group": "inline@1"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
+          "group": "inline@1"
         }
       ],
       "terminal/context": [
