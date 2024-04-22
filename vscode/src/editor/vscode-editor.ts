@@ -74,11 +74,7 @@ export class VSCodeEditor implements Editor {
     public async getTextEditorContentForFile(
         fileUri: vscode.Uri,
         selectionRange?: RangeData
-    ): Promise<string | undefined> {
-        if (!fileUri) {
-            return undefined
-        }
-
+    ): Promise<string> {
         let range: vscode.Range | undefined
         if (selectionRange) {
             const startLine = selectionRange?.start?.line

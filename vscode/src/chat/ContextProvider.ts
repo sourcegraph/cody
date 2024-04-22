@@ -24,7 +24,6 @@ export type Config = Pick<
     ConfigurationWithAccessToken,
     | 'codebase'
     | 'serverEndpoint'
-    | 'debugEnable'
     | 'debugFilter'
     | 'debugVerbose'
     | 'customHeaders'
@@ -191,7 +190,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             const authStatus = this.authProvider.getAuthStatus()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-                debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
             }

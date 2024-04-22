@@ -38,8 +38,8 @@ export class MockEditor implements Editor {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
 
-    public async getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string | undefined> {
-        return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve(undefined)
+    public async getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string> {
+        return this.mocks.getTextEditorContentForFile?.(uri, range) ?? Promise.resolve('')
     }
 }
 

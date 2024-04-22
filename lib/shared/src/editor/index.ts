@@ -51,7 +51,7 @@ export interface Editor {
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
-    getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string | undefined>
+    getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string>
 
     showWarningMessage(message: string): Promise<void>
 }
@@ -77,8 +77,8 @@ export class NoopEditor implements Editor {
         return null
     }
 
-    public getTextEditorContentForFile(_uri: URI, _range?: RangeData): Promise<string | undefined> {
-        return Promise.resolve(undefined)
+    public getTextEditorContentForFile(_uri: URI, _range?: RangeData): Promise<string> {
+        return Promise.reject(new Error('NoopEditor: no file content available'))
     }
 
     public showWarningMessage(_message: string): Promise<void> {

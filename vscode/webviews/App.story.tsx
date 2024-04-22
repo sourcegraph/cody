@@ -26,7 +26,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         cb({
             type: 'config',
             config: {
-                debugEnable: true,
                 serverEndpoint: 'https://example.com',
                 uiKindIsWeb: false,
                 experimentalGuardrails: false,
