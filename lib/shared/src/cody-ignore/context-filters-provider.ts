@@ -111,7 +111,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return false
         }
 
+        // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
+            logDebug('ContextFiltersProvider', 'isUriAllowed', `non-file URI ${uri.scheme}`)
             return false
         }
 
