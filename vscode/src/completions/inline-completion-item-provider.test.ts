@@ -92,7 +92,7 @@ describe('InlineCompletionItemProvider', () => {
         await initCompletionProviderConfig({})
     })
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementation(() => Promise.resolve(true))
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     it('returns results that span the whole line', async () => {
@@ -230,9 +230,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     it('no-ops on files that are ignored by the context filter policy', async () => {
-        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementationOnce(() =>
-            Promise.resolve(false)
-        )
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce(true)
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn()
         const provider = new MockableInlineCompletionItemProvider(fn)

@@ -59,7 +59,7 @@ const defaultOptions = {
 
 describe('ContextMixer', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementation(() => Promise.resolve(true))
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     describe('with no retriever', () => {
@@ -98,7 +98,6 @@ describe('ContextMixer', () => {
                 ])
             )
             const { context, logSummary } = await mixer.getContext(defaultOptions)
-
             expect(normalize(context)).toEqual([
                 {
                     fileName: 'foo.ts',
@@ -297,12 +296,12 @@ describe('ContextMixer', () => {
 
         describe('retrieved context is filtered by context filters', () => {
             beforeAll(() => {
-                vi.spyOn(contextFiltersProvider, 'isUriAllowed').mockImplementation(
+                vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
                     async (uri: vscode.Uri) => {
                         if (uri.path.includes('foo.ts')) {
-                            return false
+                            return true
                         }
-                        return true
+                        return false
                     }
                 )
             })

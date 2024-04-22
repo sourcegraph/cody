@@ -208,7 +208,7 @@ export class InlineCompletionItemProvider
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
-            if (!(await contextFiltersProvider.isUriAllowed(document.uri))) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter')
                 return null
             }
