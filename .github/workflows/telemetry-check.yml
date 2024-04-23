@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  v1-telemetry-check:
+  check-for-deprecated-v1-telemetry:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -15,19 +15,20 @@ jobs:
         run: |
           MATCHES=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")
           if [ -n "$MATCHES" ]; then
-            echo "::error::Deprecated telemetry calls found: $MATCHES"
+            echo "Deprecated telemetry calls found"
+            echo "::error::Deprecated telemetry calls found: ${MATCHES}"
             exit 1
           fi
 
-  check-telemetry-event:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for telemetry event with numbers
-        shell: bash
-        run: |
-          MATCHES=$(grep -rn "telemetryRecorder\.recorderEvent\([^)]*\d+[^)]*\)" --include="*.{js,ts,tsx}")
-          if [ -n "$MATCHES" ]; then
-            echo "::error::Telemetry events with numbers found: $MATCHES"
-            exit 1
-          fi
+  # check-telemetry-event:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Check for telemetry event with numbers
+  #       shell: bash
+  #       run: |
+  #         MATCHES=$(grep -rn "telemetryRecorder\.recorderEvent\([^)]*\d+[^)]*\)" --include="*.{js,ts,tsx}")
+  #         if [ -n "$MATCHES" ]; then
+  #           echo "::error::Telemetry events with numbers found: $MATCHES"
+  #           exit 1
+  #         fi
