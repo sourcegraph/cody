@@ -86,7 +86,9 @@ describe('renderCodyMarkdown', () => {
         expect(renderCodyMarkdown('<object data="something"></object>')).toBe('<p></p>')
     })
     it('drops SVG <object> tags', () => {
-        expect(renderCodyMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>')
+        expect(renderCodyMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe(
+            '<p></p>'
+        )
     })
     it('forbids <svg> tags', () => {
         const input =
