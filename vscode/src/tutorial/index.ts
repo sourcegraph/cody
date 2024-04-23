@@ -224,7 +224,6 @@ export const registerInteractiveTutorial = async (
                 return stop()
             }
             if (status === 'stopped' && tutorialIsVisible) {
-                console.log('CALLING FROM VISIBLE')
                 return start()
             }
             return

@@ -630,8 +630,8 @@ const register = async (
         )
     }
 
-    registerInteractiveTutorial(context).then(diposables => {
-        disposables.push(...diposables)
+    registerInteractiveTutorial(context).then(disposable => {
+        disposables.push(...disposable)
     })
 
     // INC-267 do NOT await on this promise. This promise triggers
