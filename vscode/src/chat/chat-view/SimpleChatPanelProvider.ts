@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 
 import {
     ANSWER_TOKENS,
+    BillingCategory,
+    BillingProduct,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
@@ -57,6 +59,7 @@ import { countGeneratedCode, getContextWindowLimitInBytes } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -334,6 +337,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
+                break
+            case 'recordEvent':
+                telemetryRecorder.recordEvent(
+                    // 👷 HACK: We have no control over what gets sent over JSON RPC,
+                    // so we depend on client implementations to give type guidance
+                    // to ensure that we don't accidentally share arbitrary,
+                    // potentially sensitive string values. In this RPC handler,
+                    // when passing the provided event to the TelemetryRecorder
+                    // implementation, we forcibly cast all the inputs below
+                    // (feature, action, parameters) into known types (strings
+                    // 'feature', 'action', 'key') so that the recorder will accept
+                    // it. DO NOT do this elsewhere!
+                    message.feature as 'feature',
+                    message.action as 'action',
+                    message.parameters as TelemetryEventParameters<
+                        { key: number },
+                        BillingProduct,
+                        BillingCategory
+                    >
+                )
                 break
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
