@@ -82,6 +82,7 @@
 .content {
     word-break: break-word;
     line-height: 150%;
+    text-wrap: wrap;
 }
 
 /* Style @-file tokens to match TranscriptAction context files */
@@ -115,6 +116,7 @@
 .content pre {
     font-family: var(--vscode-editor-font-family);
     font-size: var(--vscode-editor-font-size);
+    overflow: scroll;
 }
 
 .content pre,

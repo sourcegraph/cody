@@ -1,7 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, ModelContextWindow } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
@@ -63,6 +63,7 @@ export type {
     CodyCommand,
     CodyCommandContext,
     CodyCommandType,
+    CodyCommandMode,
     TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'
@@ -127,6 +128,7 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
 export type {
@@ -190,10 +192,12 @@ export {
     customUserAgent,
     isNodeResponse,
     setUserAgent,
+    INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
-    type ContextFiltersResult,
+    type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
@@ -235,10 +239,9 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    getURLContextItems,
-    isURLContextItem,
-    fetchContentForURLContextItem,
-} from './mentions/urlContextItems'
+    CONTEXT_MENTION_PROVIDERS,
+    type ContextMentionProvider,
+} from './mentions/api'
 export { TokenCounter } from './token/counter'
 export {
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
@@ -250,3 +253,4 @@ export { getCompletionsModelConfig } from './llm-providers/utils'
 export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
 export * from './fetch'
 export * from './completions/types'
+export * from './cody-ignore/context-filters-provider'

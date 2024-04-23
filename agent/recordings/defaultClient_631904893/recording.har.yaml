@@ -180,164 +180,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9c03ab4648e9c752e0c33b9085c0fab7
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 570
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 263
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: My name is Lars Monsen
-              - speaker: assistant
-                text: It's nice to meet you Lars! I'm Cody, an AI assistant for helping with
-                  coding and technical tasks. How can I be of assistance to you
-                  today?
-              - speaker: human
-                text: What is my name?
-              - speaker: assistant
-            model: anthropic/claude-2.0
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/stream
-      response:
-        bodySize: 1019
-        content:
-          mimeType: text/event-stream
-          size: 1019
-          text: >+
-            event: completion
-
-            data: {"completion":"You","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is L","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Mon","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"You told me your name is Lars Monsen.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Apr 2024 15:22:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-17T15:22:08.709Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 8f6d82f270695d480a98416a4ce0b2cb
       _order: 0
       cache: {}
@@ -13468,6 +13310,9 @@ log:
                       return function inner() {}
 
 
+
+
+
                       
                   </selected>
               - speaker: assistant
@@ -23155,6 +23000,1833 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 88be82ce66137d2068f5f146fa0dde12
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1968
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/sum.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+
+                  </SELECTEDCODE7662>
+
+
+                  The user wants you to replace parts of the selected code or correct a problem by following their instructions.
+
+                  Provide your generated code using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Rename `a` parameter to `c`
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-sonnet-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 2154
+        content:
+          mimeType: text/event-stream
+          size: 2154
+          text: >+
+            event: completion
+
+            data: {"completion":"export","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number):","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /*","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Apr 2024 10:24:51 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-18T10:24:49.735Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 63705a77c3f43c29ee052a9dae676ceb
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2801
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Here is my selected code from my codebase file
+                  src/trickyLogic.ts, enclosed in <SELECTEDCODE7662> tags:
+
+                  <SELECTEDCODE7662>export function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+
+                  </SELECTEDCODE7662>
+
+
+                  As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing framework, conventions, and libraries as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.
+
+
+                  RULES:
+
+                  - Do not enclose response with any markdown formatting or triple backticks.
+
+                  - Enclose only the unit tests between <CODE5711> XML tags.
+
+                  - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context
+              - speaker: assistant
+                text: <CODE5711><TESTFILE7041>
+            model: anthropic/claude-3-sonnet-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 119189
+        content:
+          mimeType: text/event-stream
+          size: 119189
+          text: >+
+            event: completion
+
+            data: {"completion":"src","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TEST","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from '","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vi","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from '","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vi","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from '","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vi","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic }","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers',","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', ()","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(tric","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(tricky","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLog","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5,","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toB","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)\n    ","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)\n    })","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)\n    })\n})","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)\n    })\n})\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 10)).toBe(1)\n    })\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(10, 2)).toBe(1)\n    })\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 5)).toBe(5)\n    })\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8)\n        expect(trickyLogic(5, -3)).toBe(8)\n    })\n})\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Apr 2024 12:25:35 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-18T12:25:33.399Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7bc46e529c9025dba3fd3c7d2b771b73
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 476
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: My name is Lars Monsen
+              - speaker: assistant
+                text: It's nice to meet you Lars! I'm Cody, an AI assistant for helping with
+                  coding and technical tasks. How can I be of assistance to you
+                  today?
+              - speaker: human
+                text: What is my name?
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 840
+        content:
+          mimeType: text/event-stream
+          size: 840
+          text: >+
+            event: completion
+
+            data: {"completion":"You","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Mon","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You said your name is Lars Monsen.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 18 Apr 2024 15:00:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-18T15:00:06.576Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: e2ae0ab84c1239bc6be31f736d44652b
       _order: 0
       cache: {}
@@ -23251,6 +24923,398 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-15T03:41:10.500Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 09b59ac55ce3c40d6f9ab8c79846a2c6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 144
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "144"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 236
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query ContextFilters {
+                  site {
+                      codyContextFilters(version: V1) {
+                          raw
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: ContextFilters
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ContextFilters
+      response:
+        bodySize: 114
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 114
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+            ciWrvNKcnNra2loAAAAA//8=\",\"AwA2LshlNQAAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Apr 2024 12:22:37 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-19T12:22:37.001Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 9f169ea53648c5b76a24de6da9e3a92f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 144
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_4a92106dd3be39a589d6e2d0a6e32b705744d4007d74518fdfd1dbf953176dc6
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "144"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 320
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query ContextFilters {
+                  site {
+                      codyContextFilters(version: V1) {
+                          raw
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: ContextFilters
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ContextFilters
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Apr 2024 12:22:37 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-04-19T12:22:37.252Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: dbf7d94d9f6dd1b4d70e06cd56009c06
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 144
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "144"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 320
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query ContextFilters {
+                  site {
+                      codyContextFilters(version: V1) {
+                          raw
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: ContextFilters
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ContextFilters
+      response:
+        bodySize: 107
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 107
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+            ciWrvNKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Apr 2024 12:22:37 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-19T12:22:37.483Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ff15c1591a827be177c7c2adca6e207e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 144
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "144"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 332
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query ContextFilters {
+                  site {
+                      codyContextFilters(version: V1) {
+                          raw
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: ContextFilters
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ContextFilters
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 19 Apr 2024 12:22:37 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-04-19T12:22:37.686Z
       time: 0
       timings:
         blocked: -1

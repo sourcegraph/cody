@@ -55,8 +55,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.tracing':
                         return true
-                    case 'cody.debug.enable':
-                        return true
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
@@ -135,7 +133,6 @@ describe('getConfiguration', () => {
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
-            debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
@@ -155,9 +152,7 @@ describe('getConfiguration', () => {
                 multiline: undefined,
                 singleline: undefined,
             },
-            testingLocalEmbeddingsEndpoint: undefined,
-            testingLocalEmbeddingsIndexLibraryPath: undefined,
-            testingLocalEmbeddingsModel: undefined,
+            testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)
     })

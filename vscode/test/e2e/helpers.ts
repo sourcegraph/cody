@@ -402,3 +402,12 @@ const isPlatform = (platform: string) => process.platform === platform
 export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
 }
+
+export const openCustomCommandMenu = async (page: Page): Promise<void> => {
+    const customCommandSidebarItem = page
+        .getByRole('treeitem', { name: 'Custom Commands' })
+        .locator('a')
+        // The second item is the setting icon attached to the "Custom Commands" item.
+        .first()
+    await customCommandSidebarItem.click()
+}

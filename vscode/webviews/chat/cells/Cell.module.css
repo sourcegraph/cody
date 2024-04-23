@@ -20,7 +20,10 @@
 
 .content {
     flex: 1 0;
-    min-width: 0;
+
+    overflow: auto;
+    word-break: break-word;
+    text-wrap: pretty;
 }
 
 .container--disabled {

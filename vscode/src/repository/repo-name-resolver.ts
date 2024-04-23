@@ -1,20 +1,26 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
-import { convertGitCloneURLToCodebaseName, isFileURI } from '@sourcegraph/cody-shared'
+import {
+    convertGitCloneURLToCodebaseName,
+    graphqlClient,
+    isDefined,
+    isFileURI,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
 import { LRUCache } from 'lru-cache'
-import { gitRemoteUrlFromGitExtension } from './git-extension-api'
+import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 
-export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
-type FsPath = string
+export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
 type RepoName = string
+type RemoteUrl = string
 
 export class RepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    private fsPathToRepoNameCache = new LRUCache<FsPath, RepoName>({ max: 1000 })
+    private fsPathToRepoNameCache = new LRUCache<RepoName, string[]>({ max: 1000 })
+    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<string | null>>({ max: 1000 })
 
     /**
      * Currently is used to set node specific remote url getters on the extension init.
@@ -24,50 +30,75 @@ export class RepoNameResolver {
     }
 
     /**
-     * Gets the codebase name from a workspace / file URI.
+     * Gets the repo names for a file URI.
      *
      * Checks if the Git API is initialized, initializes it if not.
-     * If found, gets the codebase name from the repository.
-     * If not found, attempts to use Git CLI to get the codebase name (in node.js environment only).
+     * If found, gets repo names from the repository.
      * if not found, walks the file system upwards until it finds a `.git` folder.
+     * If not found, attempts to use Git CLI to get the repo names (in node.js environment only).
      * If not found, returns `undefined`.
      */
-    public async getRepoNameFromWorkspaceUri(uri: vscode.Uri): Promise<string | undefined> {
+    public async getRepoNamesFromWorkspaceUri(uri: vscode.Uri): Promise<string[]> {
         if (!isFileURI(uri)) {
-            return undefined
+            return []
         }
 
         if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
-            return this.fsPathToRepoNameCache.get(uri.fsPath)
+            return this.fsPathToRepoNameCache.get(uri.fsPath)!
         }
 
         try {
-            let remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
+            let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
-            if (!remoteOriginUrl) {
-                remoteOriginUrl = await gitRemoteUrlFromTreeWalk(uri)
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
+                remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
             }
 
-            if (!remoteOriginUrl) {
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
                 for (const getter of this.platformSpecificGitRemoteGetters) {
-                    remoteOriginUrl = await getter(uri)
+                    remoteUrls = await getter(uri)
 
-                    if (remoteOriginUrl) {
+                    if (remoteUrls?.length !== 0) {
                         break
                     }
                 }
             }
 
-            if (remoteOriginUrl) {
-                const repoName = convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
-                this.fsPathToRepoNameCache.set(uri.fsPath, repoName)
+            if (remoteUrls) {
+                const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
+                const repoNames = await Promise.all(
+                    uniqueRemoteUrls.map(remoteUrl => {
+                        return this.resolveRepoNameForRemoteUrl(remoteUrl)
+                    })
+                )
 
-                return repoName
+                const definedRepoNames = repoNames.filter(isDefined)
+                this.fsPathToRepoNameCache.set(uri.fsPath, definedRepoNames)
+
+                return definedRepoNames
             }
         } catch (error) {
+            console.error(error)
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
-        return undefined
+
+        return []
+    }
+
+    private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
+        if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
+            return this.remoteUrlToRepoNameCache.get(remoteUrl)!
+        }
+
+        const repoNameRequest = graphqlClient.getRepoName(remoteUrl).then(repoName => {
+            if (repoName === null) {
+                return convertGitCloneURLToCodebaseName(remoteUrl)
+            }
+            return repoName
+        })
+        this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
+
+        return repoNameRequest
     }
 }
 
@@ -75,10 +106,9 @@ const textDecoder = new TextDecoder('utf-8')
 
 /**
  * Walks the tree from the current directory to find the `.git` folder and
- * extracts remote URL. Prioritizes `pushurl` over `fetchurl` and `url` defined
- * in `.git/config`.
+ * extracts remote URLs.
  */
-export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string | undefined> {
+export async function gitRemoteUrlsFromTreeWalk(uri: vscode.Uri): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -86,43 +116,44 @@ export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string 
     const isFile = (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File
     const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
 
-    return gitRemoteUrlFromTreeWalkRecursive(dirUri)
+    return gitRemoteUrlsFromTreeWalkRecursive(dirUri)
 }
 
-async function gitRemoteUrlFromTreeWalkRecursive(uri: vscode.Uri): Promise<string | undefined> {
+async function gitRemoteUrlsFromTreeWalkRecursive(uri: vscode.Uri): Promise<string[] | undefined> {
     const gitConfigUri = await resolveGitConfigUri(uri)
+
     if (!gitConfigUri) {
         const parentUri = vscode.Uri.joinPath(uri, '..')
         if (parentUri.fsPath === uri.fsPath) {
             return undefined
         }
 
-        return gitRemoteUrlFromTreeWalkRecursive(parentUri)
+        return gitRemoteUrlsFromTreeWalkRecursive(parentUri)
     }
 
     try {
         const raw = await vscode.workspace.fs.readFile(gitConfigUri)
         const configContents = textDecoder.decode(raw)
         const config = ini.parse(configContents)
-
-        let remoteFetchUrl: string | undefined = undefined
-        let remoteUrl: string | undefined = undefined
+        const remoteUrls = new Set<string>()
 
         for (const [key, value] of Object.entries(config)) {
             if (key.startsWith('remote ')) {
                 if (value?.pushurl) {
-                    return value.pushurl.trim()
+                    remoteUrls.add(value.pushurl)
                 }
 
-                if (!remoteFetchUrl && value?.fetchurl) {
-                    remoteFetchUrl = value.fetchurl
-                } else if (!remoteUrl && value.url) {
-                    remoteUrl = value.url
+                if (value?.fetchurl) {
+                    remoteUrls.add(value.fetchurl)
+                }
+
+                if (value?.url) {
+                    remoteUrls.add(value.url)
                 }
             }
         }
 
-        return remoteFetchUrl || remoteUrl
+        return remoteUrls.size ? Array.from(remoteUrls) : undefined
     } catch (error) {
         if (error instanceof vscode.FileSystemError) {
             return undefined

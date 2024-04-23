@@ -272,6 +272,7 @@ export class MessageHandler {
             reject: (params: Error) => void
         }
     > = new Map()
+    public fallbackHandler?: (msg: any) => void = msg => {}
     public isAlive(): boolean {
         return this.alive
     }
@@ -374,7 +375,11 @@ export class MessageHandler {
                             this.cancelTokens.delete(msg.id)
                         })
                 } else {
-                    console.error(`No handler for request with method ${msg.method}`)
+                    if (this.fallbackHandler) {
+                        this.fallbackHandler(msg)
+                    } else {
+                        console.error(`No handler for request with method ${msg.method}`)
+                    }
                 }
             } else if (msg.id !== undefined) {
                 // Responses have ids
@@ -387,7 +392,11 @@ export class MessageHandler {
                     }
                     this.responseHandlers.delete(msg.id)
                 } else {
-                    console.error(`No handler for response with id ${msg.id}`)
+                    if (this.fallbackHandler) {
+                        this.fallbackHandler(msg)
+                    } else {
+                        console.error(`No handler for response with id ${msg.id}`)
+                    }
                 }
             } else if (msg.method) {
                 // Notifications have methods
@@ -411,7 +420,11 @@ export class MessageHandler {
                             )
                         }
                     } else {
-                        console.error(`No handler for notification with method ${msg.method}`)
+                        if (this.fallbackHandler) {
+                            this.fallbackHandler(msg)
+                        } else {
+                            console.error(`No handler for message with method ${msg.method}`)
+                        }
                     }
                 }
             }
