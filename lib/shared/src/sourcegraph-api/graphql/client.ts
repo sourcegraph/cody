@@ -197,8 +197,8 @@ export interface ContextFiltersResponse {
 }
 
 export interface ContextFilters {
-    include?: CodyContextFilterItem[]
-    exclude?: CodyContextFilterItem[]
+    include?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
+    exclude?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
 }
 
 export interface CodyContextFilterItem {
@@ -207,15 +207,22 @@ export interface CodyContextFilterItem {
     filePathPatterns?: string[]
 }
 
-const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
-    include: [],
-    exclude: [],
-}
+/**
+ * Default value used on the client in case context filters are not set.
+ */
+export const INCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: [{ repoNamePattern: '.*' }],
+    exclude: null,
+} satisfies ContextFilters
 
-const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
-    include: [],
+/**
+ * Default value used on the client in case client encounters errors
+ * fetching or parsing context filters.
+ */
+export const EXCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: null,
     exclude: [{ repoNamePattern: '.*' }],
-}
+} satisfies ContextFilters
 
 interface SearchAttributionResults {
     limitHit: boolean
