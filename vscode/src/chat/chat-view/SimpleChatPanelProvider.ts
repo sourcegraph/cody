@@ -987,33 +987,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const authStatus = this.authProvider.getAuthStatus()
 
         // Count code generated from response
-        const codeCount = countGeneratedCode(messageText.toString())
-        if (codeCount?.charCount) {
-            // const metadata = lastInteraction?.getHumanMessage().metadata
-            telemetryService.log(
-                'CodyVSCodeExtension:chatResponse:hasCode',
-                { ...codeCount, requestID, chatModel: this.chatModel.modelID },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.chatResponse.new', 'hasCode', {
-                metadata: {
-                    ...codeCount,
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
-                },
-                privateMetadata: {
-                    requestID,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
-                    responseText:
-                        authStatus.isDotCom &&
-                        truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
-                    chatModel: this.chatModel.modelID,
-                },
-            })
-        }
+        const hasCode = countGeneratedCode(messageText.toString())
+        const responeEventName = hasCode?.charCount ? 'hasCode' : 'noCode'
+        telemetryService.log(
+            `CodyVSCodeExtension:chatResponse:${responeEventName}`,
+            { ...hasCode, requestID, chatModel: this.chatModel.modelID },
+            { hasV2Event: true }
+        )
+        telemetryRecorder.recordEvent('cody.chatResponse', responeEventName, {
+            metadata: {
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+            },
+            privateMetadata: {
+                ...hasCode,
+                requestID,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an aditional safegaurd measure
+                responseText:
+                    authStatus.isDotCom && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
+                chatModel: this.chatModel.modelID,
+            },
+        })
     }
 
     // #endregion
