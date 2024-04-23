@@ -7,12 +7,12 @@ import { ContextFiltersProvider } from './context-filters-provider'
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
-    let getRepoNameFromWorkspaceUri: Mock<[vscode.Uri], any>
+    let getRepoNamesFromWorkspaceUri: Mock<[vscode.Uri], any>
 
     beforeEach(() => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
-        getRepoNameFromWorkspaceUri = vi.fn()
+        getRepoNamesFromWorkspaceUri = vi.fn()
     })
 
     afterEach(() => {
@@ -30,7 +30,7 @@ describe('ContextFiltersProvider', () => {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
-        await provider.init(getRepoNameFromWorkspaceUri)
+        await provider.init(getRepoNamesFromWorkspaceUri)
     }
 
     interface AssertFilters {
@@ -208,7 +208,7 @@ describe('ContextFiltersProvider', () => {
 
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -217,7 +217,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -229,7 +229,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -238,7 +238,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -247,7 +247,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -259,7 +259,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -268,7 +268,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -277,7 +277,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -292,7 +292,7 @@ describe('ContextFiltersProvider', () => {
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValue(apiResponseForFilters(contextFilters))
 
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -312,7 +312,7 @@ describe('ContextFiltersProvider', () => {
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters1))
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters2))
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(mockedApiRequest).toBeCalledTimes(1)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -334,7 +334,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            getRepoNameFromWorkspaceUri.mockResolvedValue(`github.com/sourcegraph/${repoName}`)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([`github.com/sourcegraph/${repoName}`])
 
             return URI.file(`/${repoName}/${filePath}`)
         }
@@ -347,15 +347,17 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
+            expect(await getRepoNamesFromWorkspaceUri(includedURI)).toEqual([
+                'github.com/sourcegraph/cody',
+            ])
 
             expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
-            expect(await getRepoNameFromWorkspaceUri(excludedURI)).toBe(
-                'github.com/sourcegraph/sourcegraph'
-            )
+            expect(await getRepoNamesFromWorkspaceUri(excludedURI)).toEqual([
+                'github.com/sourcegraph/sourcegraph',
+            ])
 
             expect(await provider.isUriIgnored(excludedURI)).toBe(true)
         })
@@ -367,7 +369,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNameFromWorkspaceUri.mockResolvedValue(undefined)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
             expect(await provider.isUriIgnored(uri)).toBe(true)
         })
     })
