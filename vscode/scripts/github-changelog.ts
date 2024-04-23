@@ -138,7 +138,7 @@ async function main(): Promise<void> {
 
                 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${number}`
                 // @ts-ignore: Fetch is available in node :shrug:
-                const json = await fetch(apiUrl).then(res => res.json())
+                const json = await fetch(apiUrl).then(res => res.json() as any)
                 if (json?.user?.login) {
                     author = json.user.login
                 }

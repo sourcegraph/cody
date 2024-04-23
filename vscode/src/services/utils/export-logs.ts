@@ -65,12 +65,11 @@ export function openCodyOutputChannel(): void {
 
 /**
  * Enables debug mode by updating workspace configuration settings.
- * Sets 'cody.debug.enable' and 'cody.debug.verbose' to true globally.
+ * Sets 'cody.debug.verbose' to true globally.
  * Opens the Cody output channel.
  */
-export function enableDebugMode(): void {
+export function enableVerboseDebugMode(): void {
     const workspaceConfig = vscode.workspace.getConfiguration()
-    void workspaceConfig.update('cody.debug.enable', undefined, vscode.ConfigurationTarget.Global)
     void workspaceConfig.update('cody.debug.verbose', true, vscode.ConfigurationTarget.Global)
     openCodyOutputChannel()
 }

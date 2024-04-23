@@ -5,7 +5,6 @@ import './App.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type Configuration,
     type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
@@ -28,13 +27,14 @@ import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
+import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<LocalEnv | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -235,60 +235,71 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         return <LoadingPage />
     }
 
-    return (
-        <div className="outer-container">
-            {view === 'login' || !authStatus.isLoggedIn || !userAccountInfo ? (
+    if (authStatus.showNetworkError) {
+        return (
+            <div className="outer-container">
+                <ConnectionIssuesPage
+                    configuredEndpoint={authStatus.endpoint}
+                    telemetryService={telemetryService}
+                    vscodeAPI={vscodeAPI}
+                />
+            </div>
+        )
+    }
+
+    if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
+        return (
+            <div className="outer-container">
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
                     uiKindIsWeb={config?.uiKindIsWeb}
                     vscodeAPI={vscodeAPI}
                 />
-            ) : (
-                <>
-                    {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
-                    {errorMessages && (
-                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
-                    )}
-                    {view === 'chat' && userHistory && (
-                        <EnhancedContextEventHandlers.Provider
-                            value={{
-                                onChooseRemoteSearchRepo,
-                                onConsentToEmbeddings,
-                                onEnabledChange: (enabled): void => {
-                                    if (enabled !== enhancedContextEnabled) {
-                                        setEnhancedContextEnabled(enabled)
-                                    }
-                                },
-                                onRemoveRemoteSearchRepo,
-                                onShouldBuildSymfIndex,
-                            }}
-                        >
-                            <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                                <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                                    <ChatModelContextProvider value={chatModelContext}>
-                                        <Chat
-                                            chatEnabled={chatEnabled}
-                                            userInfo={userAccountInfo}
-                                            messageInProgress={messageInProgress}
-                                            transcript={transcript}
-                                            vscodeAPI={vscodeAPI}
-                                            telemetryService={telemetryService}
-                                            telemetryRecorder={telemetryRecorder}
-                                            isTranscriptError={isTranscriptError}
-                                            welcomeMessage={welcomeMessageMarkdown}
-                                            guardrails={attributionEnabled ? guardrails : undefined}
-                                            chatIDHistory={chatIDHistory}
-                                            isWebviewActive={isWebviewActive}
-                                            isNewInstall={isNewInstall}
-                                            userContextFromSelection={userContextFromSelection}
-                                        />
-                                    </ChatModelContextProvider>
-                                </EnhancedContextEnabled.Provider>
-                            </EnhancedContextContext.Provider>
-                        </EnhancedContextEventHandlers.Provider>
-                    )}
-                </>
+            </div>
+        )
+    }
+
+    return (
+        <div className="outer-container">
+            {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
+            {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+            {view === 'chat' && userHistory && (
+                <EnhancedContextEventHandlers.Provider
+                    value={{
+                        onChooseRemoteSearchRepo,
+                        onConsentToEmbeddings,
+                        onEnabledChange: (enabled): void => {
+                            if (enabled !== enhancedContextEnabled) {
+                                setEnhancedContextEnabled(enabled)
+                            }
+                        },
+                        onRemoveRemoteSearchRepo,
+                        onShouldBuildSymfIndex,
+                    }}
+                >
+                    <EnhancedContextContext.Provider value={enhancedContextStatus}>
+                        <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
+                            <ChatModelContextProvider value={chatModelContext}>
+                                <Chat
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    isTranscriptError={isTranscriptError}
+                                    welcomeMessage={welcomeMessageMarkdown}
+                                    guardrails={attributionEnabled ? guardrails : undefined}
+                                    chatIDHistory={chatIDHistory}
+                                    isWebviewActive={isWebviewActive}
+                                    isNewInstall={isNewInstall}
+                                    userContextFromSelection={userContextFromSelection}
+                                />
+                            </ChatModelContextProvider>
+                        </EnhancedContextEnabled.Provider>
+                    </EnhancedContextContext.Provider>
+                </EnhancedContextEventHandlers.Provider>
             )}
         </div>
     )

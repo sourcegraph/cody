@@ -8,13 +8,14 @@ import { RateLimitError } from '../errors'
 import { customUserAgent } from '../graphql/client'
 import { toPartialUtf8String } from '../utils'
 
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { googleChatClient } from '../../llm-providers/google/chat-client'
 import { groqChatClient } from '../../llm-providers/groq/chat-client'
 import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
 import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters } from './types'
+import type { CompletionCallbacks, CompletionParameters, SerializedCompletionParameters } from './types'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -24,13 +25,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
+    ): Promise<void> {
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
 
-        tracer.startActiveSpan(`POST ${url.toString()}`, span => {
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,
@@ -60,6 +61,16 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             if (provider === 'groq') {
                 groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
+            }
+
+            const serializedParams: SerializedCompletionParameters = {
+                ...params,
+                messages: await Promise.all(
+                    params.messages.map(async m => ({
+                        ...m,
+                        text: await m.text?.toFilteredString(contextFiltersProvider),
+                    }))
+                ),
             }
 
             const log = this.logger?.startCompletion(params, url.toString())
@@ -101,8 +112,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ...getTraceparentHeaders(),
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized:
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0' && !this.config.debugEnable,
+                    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
@@ -236,7 +246,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             })
 
-            request.write(JSON.stringify(params))
+            request.write(JSON.stringify(serializedParams))
             request.end()
 
             onAbort(signal, () => request.destroy())

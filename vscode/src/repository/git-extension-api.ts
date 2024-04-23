@@ -5,7 +5,7 @@ import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-sha
 import { logDebug } from '../log'
 
 import { TestSupport } from '../test-support'
-import type { API, GitExtension, Repository } from './builtinGitExtension'
+import type { API, GitExtension } from './builtinGitExtension'
 
 export function gitAPI(): API | undefined {
     const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
@@ -78,8 +78,11 @@ export async function gitAPIinit(): Promise<vscode.Disposable> {
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     try {
         const repository = vscodeGitAPI?.getRepository(uri)
-        if (repository) {
-            return getCodebaseNameFromGitRepo(repository)
+        const remoteOriginUrl =
+            repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
+
+        if (remoteOriginUrl) {
+            return convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
         }
     } catch (error) {
         logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
@@ -87,11 +90,19 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     return undefined
 }
 
-// HELPER FUNCTIONS
-function getCodebaseNameFromGitRepo(repository: Repository): string | undefined {
-    const remoteUrl = repository.state.remotes[0]?.pushUrl || repository.state.remotes[0]?.fetchUrl
-    if (!remoteUrl) {
-        return undefined
+export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
+    const repository = vscodeGitAPI?.getRepository(uri)
+    const remoteUrls = new Set<string>()
+
+    for (const remote of repository?.state?.remotes || []) {
+        if (remote.fetchUrl) {
+            remoteUrls.add(remote.fetchUrl)
+        }
+
+        if (remote.pushUrl) {
+            remoteUrls.add(remote.pushUrl)
+        }
     }
-    return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
+
+    return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }

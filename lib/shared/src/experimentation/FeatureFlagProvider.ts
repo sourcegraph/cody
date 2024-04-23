@@ -43,11 +43,17 @@ export enum FeatureFlag {
     // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
     CodyDocumentHints = 'cody-document-hints',
 
+    /** Use Sourcegraph embeddings instead of OpenAI. */
+    CodyUseSourcegraphEmbeddings = 'cody-use-sourcegraph-embeddings',
+
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
 
     /** Display Cody commands in a pop-up window on hover. */
     CodyHoverCommands = 'cody-hover-commands',
+
+    /** Apply a higher context window for user context items (e.g., @-mentions). */
+    CodyChatContextBudget = 'cody-chat-context-budget',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

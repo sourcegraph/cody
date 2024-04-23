@@ -15,7 +15,7 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
         return new Promise<ContextItem[]>((resolve, reject) => {
             const vscodeApi = getVSCodeAPI()
-            vscodeApi.postMessage({ command: 'getUserContext', query: backendQuery })
+            vscodeApi.postMessage({ command: 'getUserContext', query: backendQuery, range })
 
             const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
 

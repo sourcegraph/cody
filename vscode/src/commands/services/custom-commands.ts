@@ -14,7 +14,7 @@ import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvide
 import { getCommandTreeItems } from '../../services/tree-views/commands'
 import { showNewCustomCommandMenu } from '../menus'
 import { type CodyCommandsFile, ConfigFiles } from '../types'
-import { createFileWatchers, createJSONFile, saveJSONFile } from '../utils/config-file'
+import { createFileWatchers, tryCreateCodyJSON, writeToCodyJSON } from '../utils/config-file'
 import { buildCodyCommandMap } from '../utils/get-commands'
 import { getDocText } from '../utils/workspace-files'
 
@@ -183,7 +183,6 @@ export class CustomCommandsManager implements vscode.Disposable {
         if (!newCommand) {
             return
         }
-
         // Save the prompt to the current Map and Extension storage
         await this.save(newCommand.key, newCommand.prompt, newCommand.type)
         await this.refresh()
@@ -223,7 +222,7 @@ export class CustomCommandsManager implements vscode.Disposable {
         const parsed = JSON.parse(fileContent) as Record<string, any>
         const commands = parsed.commands ?? parsed
         commands[id] = omit(command, 'key')
-        await saveJSONFile(parsed, uri)
+        await writeToCodyJSON(uri, parsed)
     }
 
     private async configFileActions(
@@ -262,7 +261,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 break
             }
             case 'create':
-                await createJSONFile(uri)
+                await tryCreateCodyJSON(uri)
                     .then(() => {
                         vscode.window
                             .showInformationMessage(

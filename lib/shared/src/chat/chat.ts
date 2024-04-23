@@ -1,5 +1,4 @@
 import type { AuthStatus } from '../auth/types'
-import { ANSWER_TOKENS } from '../prompt/constants'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -9,9 +8,8 @@ import type {
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: ChatParameters = {
+const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSample'> = {
     temperature: 0.2,
-    maxTokensToSample: ANSWER_TOKENS,
     topK: -1,
     topP: -1,
 }
@@ -27,7 +25,7 @@ export class ChatClient {
 
     public chat(
         messages: Message[],
-        params: Partial<ChatParameters>,
+        params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         const authStatus = this.getAuthStatus()

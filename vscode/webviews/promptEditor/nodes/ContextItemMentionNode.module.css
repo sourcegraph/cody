@@ -1,7 +1,6 @@
 .context-item-mention-node {
-    /** Match styles in ContextCell. */
     color: var(--vscode-textLink-foreground);
-    background-color: var(--vscode-list-activeSelectionBackground);
+    background-color: color-mix(in lch, var(--vscode-textLink-foreground) 10%, transparent);
     border-radius: 2px;
 }
 

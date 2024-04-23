@@ -16,8 +16,8 @@ export const dummyChatContextClient: ChatContextClient = {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
         query = query.toLowerCase()
-        const mentionQuery = parseMentionQuery(query)
-        return mentionQuery.type === 'symbol'
+        const mentionQuery = parseMentionQuery(query, [])
+        return mentionQuery.provider === 'symbol'
             ? DUMMY_SYMBOLS.filter(
                   f =>
                       f.symbolName.toLowerCase().includes(query.slice(1)) ||

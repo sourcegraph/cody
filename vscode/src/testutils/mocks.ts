@@ -686,7 +686,10 @@ export enum UIKind {
     Web = 2,
 }
 
+export class FileSystemError extends Error {}
+
 export const vsCodeMocks = {
+    FileSystemError,
     FileType,
     Range,
     Position,
@@ -824,7 +827,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',
@@ -845,8 +847,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
+    testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

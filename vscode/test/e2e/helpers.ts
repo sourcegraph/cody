@@ -15,11 +15,18 @@ import { type Frame, type FrameLocator, type Page, expect, test as base } from '
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { MockServer, loggedEvents, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
+import {
+    MockServer,
+    SERVER_URL,
+    VALID_TOKEN,
+    loggedEvents,
+    resetLoggedEvents,
+    sendTestInfo,
+} from '../fixtures/mock-server'
 
+import { expectAuthenticated } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
-
 // Playwright test extension: The workspace directory to run the test in.
 export interface WorkspaceDirectory {
     workspaceDirectory: string
@@ -38,6 +45,10 @@ export interface ExtraWorkspaceSettings {
 // Playwright test extension: Treat this URL as if it is "dotcom".
 export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
+}
+
+export interface TestConfiguration {
+    preAuthenticate?: true | false
 }
 
 // playwright test extension: Add expectedEvents to each test to compare against
@@ -67,17 +78,26 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<TestConfiguration>({
+        preAuthenticate: false,
+    })
     // By default, these events should always fire for each test
     .extend<ExpectedEvents>({
-        expectedEvents: [
-            'CodyInstalled',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-        ],
+        expectedEvents: async ({ preAuthenticate }, use) =>
+            await use(
+                preAuthenticate
+                    ? ['CodyInstalled']
+                    : [
+                          'CodyInstalled',
+                          'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+                          'CodyVSCodeExtension:login:clicked',
+                          'CodyVSCodeExtension:auth:selectSigninMenu',
+                          'CodyVSCodeExtension:auth:fromToken',
+                          'CodyVSCodeExtension:Auth:connected',
+                      ]
+            ),
     })
+
     .extend<{ server: MockServer }>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
         server: async ({}, use) => {
@@ -95,6 +115,7 @@ export const test = base
                 dotcomUrl,
                 server: MockServer,
                 expectedEvents,
+                preAuthenticate,
             },
             use,
             testInfo
@@ -125,12 +146,20 @@ export const test = base
                 dotcomUrlOverride = { TESTING_DOTCOM_URL: dotcomUrl }
             }
 
+            //pre authenticated can ensure that a token is already set in the secret storage
+            let secretStorageState: { [key: string]: string } = {}
+            if (preAuthenticate) {
+                secretStorageState = {
+                    TESTING_SECRET_STORAGE_TOKEN: JSON.stringify([SERVER_URL, VALID_TOKEN]),
+                }
+            }
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
                 executablePath: vscodeExecutablePath,
                 env: {
                     ...process.env,
                     ...dotcomUrlOverride,
+                    ...secretStorageState,
                     CODY_TESTING: 'true',
                 },
                 args: [
@@ -165,12 +194,12 @@ export const test = base
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
             await new Promise(resolve => setTimeout(resolve, 500))
-
-            // Ensure we're signed out.
-            if (await page.isVisible('[aria-label="User Settings"]')) {
+            if (preAuthenticate) {
+                await expectAuthenticated(page)
+            } else if (await page.isVisible('[aria-label="User Settings"]')) {
+                // Ensure we're signed out.
                 await signOut(page)
             }
-
             await use(page)
 
             // Critical test to prevent event logging regressions.
@@ -183,6 +212,7 @@ export const test = base
                 console.log('Logged:', loggedEvents)
                 throw error
             }
+
             resetLoggedEvents()
 
             await app.close()
@@ -196,10 +226,17 @@ export const test = base
             await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
     })
-    .extend<{ sidebar: Frame }>({
-        sidebar: async ({ page }, use) => {
-            const sidebar = await getCodySidebar(page)
-            await use(sidebar)
+    .extend<{ sidebar: Frame | null; getCodySidebar: () => Promise<Frame> }>({
+        sidebar: async ({ page, preAuthenticate }, use) => {
+            if (preAuthenticate) {
+                await use(null)
+            } else {
+                const sidebar = await getCodySidebar(page)
+                await use(sidebar)
+            }
+        },
+        getCodySidebar: async ({ page }, use) => {
+            await use(() => getCodySidebar(page))
         },
     })
 /**
@@ -364,4 +401,13 @@ export function withPlatformSlashes(input: string) {
 const isPlatform = (platform: string) => process.platform === platform
 export function getMetaKeyByOS(): string {
     return isPlatform('darwin') ? 'Meta' : 'Control'
+}
+
+export const openCustomCommandMenu = async (page: Page): Promise<void> => {
+    const customCommandSidebarItem = page
+        .getByRole('treeitem', { name: 'Custom Commands' })
+        .locator('a')
+        // The second item is the setting icon attached to the "Custom Commands" item.
+        .first()
+    await customCommandSidebarItem.click()
 }

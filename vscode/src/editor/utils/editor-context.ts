@@ -3,7 +3,6 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    CHARS_PER_TOKEN,
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
@@ -11,18 +10,16 @@ import {
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
-    MAX_CURRENT_FILE_TOKENS,
     type SymbolKind,
+    TokenCounter,
     displayPath,
-    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
-    isURLContextItem,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
-import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
+import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -50,8 +47,7 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number,
-    charsLimit?: number
+    maxResults: number
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
@@ -111,7 +107,7 @@ export async function getFileContextFiles(
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
-    return await filterLargeFiles(sortedResults, charsLimit)
+    return await filterContextItemFiles(sortedResults)
 }
 
 export async function getSymbolContextFiles(
@@ -177,12 +173,11 @@ export async function getSymbolContextFiles(
  * Gets context files for each open editor tab in VS Code.
  * Filters out large files over 1MB to avoid expensive parsing.
  */
-export async function getOpenTabsContextFile(charsLimit?: number): Promise<ContextItemFile[]> {
-    return await filterLargeFiles(
+export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
+    return await filterContextItemFiles(
         getOpenTabsUris()
             .filter(uri => !isCodyIgnoredFile(uri))
-            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file')),
-        charsLimit
+            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
     )
 }
 
@@ -247,11 +242,9 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 
 /**
  * Filters the given context files to remove files larger than 1MB and non-text files.
- * Sets {@link ContextItemFile.isTooLarge} for files contains more characters than the token limit.
  */
-export async function filterLargeFiles(
-    contextFiles: ContextItemFile[],
-    charsLimit = CHARS_PER_TOKEN * MAX_CURRENT_FILE_TOKENS
+export async function filterContextItemFiles(
+    contextFiles: ContextItemFile[]
 ): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
@@ -264,48 +257,77 @@ export async function filterLargeFiles(
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
-        // Check if file contains more characters than the token limit based on fileStat.size
-        // and set {@link ContextItemFile.isTooLarge} for webview to display file size
-        // warning.
-        cf.size = fileStat.size
-        if (fileStat.size > charsLimit) {
-            cf.isTooLarge = true
-        }
+        // TODO (bee) consider a better way to estimate the token size of a file
+        // We cannot get the exact token size without parsing the file, which is expensive.
+        // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
+        // For markdown files, we divide by 3.5 because they tend to have more text and fewer code blocks and whitespaces.
+        //
+        // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
+        // on available tokens, so that it can prompt the user to import the file via '@file-range' or
+        // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
+        // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
         filtered.push(cf)
     }
     return filtered
 }
 
-export async function fillInContextItemContent(
+export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[]
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let content = item.content
-                if (!item.content) {
-                    try {
-                        if (isURLContextItem(item)) {
-                            if (await isURLContextFeatureFlagEnabled()) {
-                                content =
-                                    (await fetchContentForURLContextItem(item.uri.toString())) ?? ''
-                            }
-                        } else {
-                            content = await editor.getTextEditorContentForFile(
-                                item.uri,
-                                toVSCodeRange(item.range)
-                            )
-                        }
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
+                try {
+                    return await resolveContextItem(item, editor)
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                    )
+                    return null
                 }
-                return { ...item, content: content! }
             })
         )
-    ).filter(isDefined)
+    )
+        .filter(isDefined)
+        .flat()
+}
+
+async function resolveContextItem(item: ContextItem, editor: Editor): Promise<ContextItemWithContent[]> {
+    const resolvedItems = item.provider
+        ? await resolveContextMentionProviderContextItem(item)
+        : [await resolveFileOrSymbolContextItem(item, editor)]
+    return resolvedItems.map(resolvedItem => ({
+        ...resolvedItem,
+        size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
+    }))
+}
+
+async function resolveContextMentionProviderContextItem({
+    provider: itemProvider,
+    ...item
+}: ContextItem): Promise<ContextItemWithContent[]> {
+    for (const provider of getEnabledContextMentionProviders()) {
+        if (provider.id === itemProvider && provider.resolveContextItem) {
+            return provider.resolveContextItem({ ...item, provider: itemProvider })
+        }
+    }
+
+    // No resolver, so return the context item as-is if it has content.
+    return item.content !== undefined ? [item as ContextItemWithContent] : []
+}
+
+async function resolveFileOrSymbolContextItem(
+    contextItem: ContextItem,
+    editor: Editor
+): Promise<ContextItemWithContent> {
+    const content =
+        contextItem.content ??
+        (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    return {
+        ...contextItem,
+        content,
+        size: contextItem.size ?? TokenCounter.countTokens(content),
+    }
 }

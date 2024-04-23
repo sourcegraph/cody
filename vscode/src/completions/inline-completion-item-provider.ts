@@ -5,6 +5,7 @@ import {
     ConfigFeaturesSingleton,
     FeatureFlag,
     RateLimitError,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -202,10 +203,16 @@ export class InlineCompletionItemProvider
     ): Promise<AutocompleteResult | null> {
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
+            logIgnored(document.uri, 'cody-ignore')
             return null
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                logIgnored(document.uri, 'context-filter')
+                return null
+            }
+
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -793,4 +800,17 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+let lasIgnoredUriLogged: string | undefined = undefined
+function logIgnored(uri: vscode.Uri, reason: 'cody-ignore' | 'context-filter') {
+    const string = uri.toString()
+    if (lasIgnoredUriLogged === string) {
+        return
+    }
+    lasIgnoredUriLogged = string
+    logDebug(
+        'CodyCompletionProvider:ignored',
+        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
+    )
 }

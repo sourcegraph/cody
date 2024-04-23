@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { ChatModelDropdownMenu } from './ChatModelDropdownMenu'
 
 const meta: Meta<typeof ChatModelDropdownMenu> = {
@@ -10,7 +10,7 @@ const meta: Meta<typeof ChatModelDropdownMenu> = {
     component: ChatModelDropdownMenu,
     decorators: [VSCodeStandaloneComponent],
     args: {
-        models: DEFAULT_DOT_COM_MODELS,
+        models: getDotComDefaultModels('default'),
         disabled: false,
     },
 }

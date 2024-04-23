@@ -39,6 +39,7 @@ export class EditProvider {
     private insertionResponse: string | null = null
     private insertionInProgress = false
     private insertionPromise: Promise<void> | null = null
+    private abortController: AbortController | null = null
 
     constructor(public config: EditProviderOptions) {}
 
@@ -46,7 +47,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getMaxCharsByModel(model)
+            const contextWindow = ModelProvider.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
@@ -55,7 +56,7 @@ export class EditProvider {
             } = await buildInteraction({
                 model,
                 codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
-                contextWindow,
+                contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
             }).catch(err => {
@@ -112,11 +113,15 @@ export class EditProvider {
                 }
             }
 
-            const abortController = new AbortController()
+            this.abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
-                abortController.signal
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: contextWindow.output,
+                },
+                this.abortController.signal
             )
 
             let textConsumed = 0
@@ -157,6 +162,10 @@ export class EditProvider {
                 }
             }
         })
+    }
+
+    public abortEdit(): void {
+        this.abortController?.abort()
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {

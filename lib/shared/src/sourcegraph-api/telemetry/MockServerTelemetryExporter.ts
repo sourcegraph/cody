@@ -4,11 +4,11 @@ import { logError } from '../../logger'
 import { isError } from '../../utils'
 
 const MOCK_URL = 'http://localhost:49300'
-const ENDPOINT = '/.api/mockEventRecording'
+const ENDPOINT = '/.test/mockEventRecording'
 
 /**
  * MockServerTelemetryExporter exports events to a mock endpoint at
- * http://localhost:49300/.api/mockEventRecording
+ * http://localhost:49300/.test/mockEventRecording
  */
 export class MockServerTelemetryExporter implements TelemetryExporter {
     constructor(private anonymousUserID: string) {}

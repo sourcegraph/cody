@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import {
     FILE_HELP_LABEL,
     GENERAL_HELP_LABEL,
@@ -105,6 +106,12 @@ export const getInput = async (
 
     let activeModel = initialValues.initialModel
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
+
+    const getContextWindowOnModelChange = (model: EditModel) => {
+        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
+    }
+    let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
 
     // ContextItems to store possible user-provided context
     const contextItems = new Map<string, ContextItem>()
@@ -213,6 +220,7 @@ export const getInput = async (
                 editModel.set(acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
+                activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
 
                 editInput.render(activeTitle, editInput.input.value)
             },
@@ -374,7 +382,10 @@ export const getInput = async (
 
                 const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
                 const mentionQuery = mentionTrigger
-                    ? parseMentionQuery(mentionTrigger.matchingString)
+                    ? parseMentionQuery(
+                          mentionTrigger.matchingString,
+                          getEnabledContextMentionProviders()
+                      )
                     : undefined
 
                 if (!mentionQuery) {
@@ -395,7 +406,7 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.type === 'symbol'
+                                mentionQuery.provider === 'symbol'
                                     ? mentionQuery.text.length === 0
                                         ? SYMBOL_HELP_LABEL
                                         : NO_SYMBOL_MATCHES_LABEL
@@ -417,7 +428,6 @@ export const getInput = async (
                  */
                 const isOverLimit = (size?: number): boolean => {
                     const currentInput = input.value
-                    const max = ModelProvider.getMaxCharsByModel(activeModel)
                     let used = currentInput.length
                     for (const [k, v] of selectedContextItems) {
                         if (currentInput.includes(`@${k}`)) {
@@ -426,7 +436,8 @@ export const getInput = async (
                             selectedContextItems.delete(k)
                         }
                     }
-                    return size ? max - used < size : false
+                    const totalBudget = activeModelContextWindow
+                    return size ? totalBudget - used < size : false
                 }
 
                 // Add human-friendly labels to the quick pick so the user can select them
@@ -444,9 +455,9 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.type === 'symbol'
+                            mentionQuery?.provider === 'symbol'
                                 ? SYMBOL_HELP_LABEL
-                                : mentionQuery?.type === 'file'
+                                : mentionQuery?.provider === 'file'
                                   ? FILE_HELP_LABEL
                                   : GENERAL_HELP_LABEL,
                     },

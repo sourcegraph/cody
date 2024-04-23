@@ -110,12 +110,11 @@ export type WebviewMessage =
           authMethod?: AuthMethod
       }
     | { command: 'abort' }
-    | { command: 'reload' }
     | {
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
       }
-    | { command: 'getUserContext'; query: string }
+    | { command: 'getUserContext'; query: string; range?: RangeData }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
@@ -128,6 +127,9 @@ export type WebviewMessage =
     | {
           command: 'attribution-search'
           snippet: string
+      }
+    | {
+          command: 'troubleshoot/reloadAuth'
       }
 
 /**
@@ -223,10 +225,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ConfigurationWithAccessToken,
-        'debugEnable' | 'experimentalGuardrails' | 'serverEndpoint'
-    > {}
+    extends Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.

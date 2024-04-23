@@ -1,7 +1,7 @@
+import * as http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { expect } from '@playwright/test'
-
 import { isWindows } from '@sourcegraph/cody-shared'
-
 import {
     createEmptyChatPanel,
     expectContextCellCounts,
@@ -9,7 +9,13 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
+import {
+    type ExpectedEvents,
+    type ExtraWorkspaceSettings,
+    getMetaKeyByOS,
+    test,
+    withPlatformSlashes,
+} from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
@@ -22,6 +28,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:executed',
         // Log once on the first character entered for an @-mention query, e.g. "@."
         'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
@@ -287,7 +294,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
     // @-file range with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 3 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
@@ -347,7 +354,7 @@ test.extend<ExpectedEvents>({
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 15 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
@@ -392,11 +399,55 @@ test.extend<ExpectedEvents>({
     // The chat input should have the new code selections appended as @-mention items
     // instead of replacing the existing one or adding to a new chat.
     await page.getByRole('tab', { name: 'buzz.ts' }).click()
-    await page.getByText('4', { exact: true }).click()
+    await page.locator('div[class*="line-numbers"]').getByText('4', { exact: true }).click()
     await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
     await page.keyboard.press(`${metaKey}+Shift+P`)
     await expect(commandPaletteInputBox).toBeVisible()
     await commandPaletteInputBox.fill('>Cody Chat: Add context')
     await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
+})
+
+test.extend<ExtraWorkspaceSettings>({
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
+    extraWorkspaceSettings: async ({}, use) => {
+        use({ 'cody.experimental.urlContext': true })
+    },
+})('@-mention URL', async ({ page, sidebar }) => {
+    // Start an HTTP server to serve up the web page that we will @-mention.
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        res.end(`<h1>Hello from URL ${req.url}</h1>`)
+    })
+    const serverURL = await new Promise<URL>(resolve => {
+        server.listen(0, () => {
+            const addr = server.address() as AddressInfo
+            resolve(new URL(`http://localhost:${addr.port}`))
+        })
+    })
+
+    try {
+        await sidebarSignin(page, sidebar)
+
+        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+
+        // Type @-mention of the URL.
+        const mentionURL = new URL('/foo', serverURL)
+        await chatInput.fill(`@${mentionURL}`)
+        const optionTitle = `foo ${serverURL}`
+        await expect(chatPanelFrame.getByRole('option', { name: optionTitle })).toBeVisible()
+        await chatPanelFrame.getByRole('option', { name: optionTitle }).click()
+        await expect(chatInput).toHaveText(`@${mentionURL} `)
+
+        // Submit the message
+        await chatInput.press('Enter')
+
+        // URL context item shows up and is clickable.
+        const contextCell = getContextCell(chatPanelFrame)
+        await expectContextCellCounts(contextCell, { files: 1 })
+        await contextCell.click()
+        await contextCell.getByRole('link', { name: mentionURL.toString() }).click()
+    } finally {
+        server.close()
+    }
 })

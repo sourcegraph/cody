@@ -835,21 +835,24 @@ function completionItemToItemInfo(
 }
 
 const otherCompletionProviders = [
-    'GitHub.copilot',
-    'GitHub.copilot-nightly',
-    'TabNine.tabnine-vscode',
-    'TabNine.tabnine-vscode-self-hosted-updater',
     'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
-    'Codeium.codeium',
-    'Codeium.codeium-enterprise-updater',
-    'CodeComplete.codecomplete-vscode',
-    'Venthe.fauxpilot',
-    'TabbyML.vscode-tabby',
-    'blackboxapp.blackbox',
-    'devsense.intelli-php-vscode',
     'aminer.codegeex',
-    'svipas.code-autocomplete',
+    'AskCodi.askcodi-autocomplete',
+    'Bito.Bito',
+    'Blackboxapp.blackbox',
+    'CodeComplete.codecomplete-vscode',
+    'Codeium.codeium-enterprise-updater',
+    'Codeium.codeium',
+    'Continue.continue',
+    'devsense.intelli-php-vscode',
+    'GitHub.copilot-nightly',
+    'GitHub.copilot',
     'mutable-ai.mutable-ai',
+    'svipas.code-autocomplete',
+    'TabbyML.vscode-tabby',
+    'TabNine.tabnine-vscode-self-hosted-updater',
+    'TabNine.tabnine-vscode',
+    'Venthe.fauxpilot',
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)

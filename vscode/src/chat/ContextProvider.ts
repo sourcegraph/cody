@@ -24,7 +24,6 @@ export type Config = Pick<
     ConfigurationWithAccessToken,
     | 'codebase'
     | 'serverEndpoint'
-    | 'debugEnable'
     | 'debugFilter'
     | 'debugVerbose'
     | 'customHeaders'
@@ -164,7 +163,12 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
         await this.onConfigurationChange(newConfig)
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const eventValue = isLoggedOut ? 'disconnected' : authStatus.isLoggedIn ? 'connected' : 'failed'
+        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
+        const eventValue = isLoggedOut
+            ? 'disconnected'
+            : authStatus.isLoggedIn && !isAuthError
+              ? 'connected'
+              : 'failed'
         switch (ContextEvent.Auth) {
             case 'auth':
                 telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
@@ -186,7 +190,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             const authStatus = this.authProvider.getAuthStatus()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-                debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
             }

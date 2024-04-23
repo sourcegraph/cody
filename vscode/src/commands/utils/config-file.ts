@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { doesFileExist } from './workspace-files'
 
 //Help functions for the custom commands config file
 
@@ -16,18 +17,37 @@ export function createFileWatchers(configFile?: vscode.Uri): vscode.FileSystemWa
     return watcher
 }
 
-// Create an empty Json file at the given path
-export async function createJSONFile(file: vscode.Uri): Promise<void> {
-    await saveJSONFile({ commands: [] }, file)
+/**
+ * Creates a Cody JSON file at the specified URI if it does not already exist.
+ *
+ * @param uri The URI of the Cody JSON file to create.
+ * @returns A Promise that resolves when the file has been created.
+ */
+export async function tryCreateCodyJSON(uri: vscode.Uri): Promise<void> {
+    await doesFileExist(uri).then(async exists => {
+        if (exists) {
+            return
+        }
+        // TODO (bee) provide example commands
+        await writeToCodyJSON(uri, {})
+    })
 }
 
-// Add context to the given file
-export async function saveJSONFile(data: unknown, file: vscode.Uri): Promise<void> {
+/**
+ * Writes the provided data to a Cody JSON file at the specified URI.
+ *
+ * @param file The URI of the Cody JSON file to write to.
+ * @param data The data to write to the Cody JSON file.
+ * @returns A Promise that resolves when the file has been written.
+ * @throws Error if there is a failure saving the file.
+ */
+export async function writeToCodyJSON(file: vscode.Uri, data: unknown): Promise<void> {
     try {
         const workspaceEditor = new vscode.WorkspaceEdit()
-        // Clear the file before writing to it
-        workspaceEditor.deleteFile(file, { ignoreIfNotExists: true })
-        workspaceEditor.createFile(file, { ignoreIfExists: true })
+        workspaceEditor.createFile(file, {
+            overwrite: true,
+            ignoreIfExists: true,
+        })
         workspaceEditor.insert(file, new vscode.Position(0, 0), JSON.stringify(data, null, 2))
         await vscode.workspace.applyEdit(workspaceEditor)
         // Save the file

@@ -1,8 +1,8 @@
 import type { Decorator } from '@storybook/react'
 
 import {
-    DEFAULT_DOT_COM_MODELS,
     type ModelProvider,
+    getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -38,6 +38,12 @@ export const VSCodeSidebar: Decorator = VSCodeDecorator(styles.containerSidebar)
 export const VSCodeStandaloneComponent: Decorator = VSCodeDecorator(undefined)
 
 /**
+ * A decorator that displays a story with VS Code theme colors applied and maximizes the viewport.
+ */
+export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = style =>
+    VSCodeDecorator(styles.containerViewport, style)
+
+/**
  * A customizable decorator for components with VS Code theme colors applied.
  */
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
@@ -54,7 +60,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 }
 
 function useDummyChatModelContext(): ChatModelContext {
-    const [chatModels, setChatModels] = useState(DEFAULT_DOT_COM_MODELS)
+    const [chatModels, setChatModels] = useState(getDotComDefaultModels('default'))
     const onCurrentChatModelChange = (value: ModelProvider): void => {
         setChatModels(chatModels =>
             chatModels.map(model => ({ ...model, default: model.model === value.model }))

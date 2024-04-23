@@ -10,6 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
+import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { decodeURIs } from './decodeURIs'
 import { isNode16 } from './isNode16'
@@ -229,23 +230,32 @@ describe('Agent', () => {
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
-              "Sure, here's a simple "Hello World" function in Java:
+              "Here's a simple "Hello, World!" function in Java:
 
               \`\`\`java
               public class HelloWorld {
                   public static void main(String[] args) {
-                      System.out.println("Hello World!");
+                      System.out.println("Hello, World!");
                   }
               }
               \`\`\`
 
               To explain:
 
-              1. \`public class HelloWorld { ... }\` defines a new class named \`HelloWorld\`.
-              2. \`public static void main(String[] args)\` is the main method that serves as the entry point of the Java program.
-              3. \`System.out.println("Hello World!");\` prints the string "Hello World!" to the console.
+              1. \`public class HelloWorld\` declares a new public class named \`HelloWorld\`.
+              2. \`public static void main(String[] args)\` is the main method that is the entry point of any Java program. It's a \`static\` method, so it can be called without instantiating an object of the class.
+              3. \`System.out.println("Hello, World!");\` prints the string \`"Hello, World!"\` to the console.
 
-              To run this program, you'll need to save it in a file with a \`.java\` extension (e.g., \`HelloWorld.java\`), compile it using the Java compiler (\`javac HelloWorld.java\`), and then run the compiled bytecode with the Java Virtual Machine (\`java HelloWorld\`)."
+              To run this program, you need to save it in a file with a \`.java\` extension (e.g., \`HelloWorld.java\`), compile it using a Java compiler, and then run the compiled bytecode.
+
+              If you're using the command line, you can compile and run the program with the following commands:
+
+              \`\`\`
+              javac HelloWorld.java
+              java HelloWorld
+              \`\`\`
+
+              This will print \`Hello, World!\` to the console."
             `,
                 explainPollyError
             )
@@ -289,7 +299,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You told me your name is Lars Monsen."`,
+                `"You said your name is Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
@@ -327,7 +337,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"I'm afraid I don't know the specific details of what model architecture or training approach was used to create me. That information hasn't been shared publicly by the Anthropic team that developed me. What I can say is that I am a large language model focused on coding assistance and technical topics. But the exact model name or type is not something I'm aware of. Please let me know if there are any other ways I can try to help!"`,
+                `"I don't actually have a specific model name or number. I'm an AI created by Anthropic, but I don't know all the details about the type of model or training process that was used to develop me. I apologize that I can't give you a more specific answer on that. Let me know if there are any other questions I can assist with!"`,
                 explainPollyError
             )
         }, 30_000)
@@ -396,17 +406,17 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
               "\`\`\`typescript
-              class Dog implements Animal {
-                name: string;
-                isMammal: boolean = true;
+              export class Dog implements Animal {
+                  name: string;
+                  isMammal: boolean = true;
 
-                constructor(name: string) {
-                  this.name = name;
-                }
+                  constructor(name: string) {
+                      this.name = name;
+                  }
 
-                makeAnimalSound(): string {
-                  return "Woof!";
-                }
+                  makeAnimalSound(): string {
+                      return "Woof!";
+                  }
               }
               \`\`\`"
             `,
@@ -694,10 +704,12 @@ describe('Agent', () => {
         }, 20_000)
     })
 
-    function checkDocumentCommand(
+    function checkEditCommand(
         documentClient: TestClient,
+        command: RequestMethodName,
         name: string,
         filename: string,
+        param: any,
         assertion: (obtained: string) => void
     ): void {
         it(
@@ -708,7 +720,7 @@ describe('Agent', () => {
                 })
                 const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
                 await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request('editCommands/document', null)
+                const task = await documentClient.request(command, param)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
                 expect(lenses).toHaveLength(0) // Code lenses are now handled client side
@@ -719,6 +731,32 @@ describe('Agent', () => {
             },
             20_000
         )
+    }
+
+    function checkEditCodeCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        instruction: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(
+            documentClient,
+            'editCommands/code',
+            name,
+            filename,
+            { instruction: instruction },
+            assertion
+        )
+    }
+
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(documentClient, 'editCommands/document', name, filename, null, assertion)
     }
 
     describe('Commands', () => {
@@ -738,19 +776,23 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The code \`@src/animal.ts:1-6\` defines an interface called \`Animal\` in TypeScript. An interface is a way to define the structure of an object in TypeScript. It acts as a blueprint or contract that specifies the properties and methods that other objects must have to be considered an \`Animal\`.
+              "The code you provided, \`@src/animal.ts:1-6\`, defines an interface called \`Animal\` in TypeScript. An interface is a way to describe the structure of an object in TypeScript. It acts as a blueprint or a contract that defines the properties and methods that an object must have.
 
-              This particular \`Animal\` interface does not take any direct inputs. Instead, it outlines the requirements for any object that wants to be considered an \`Animal\`. Specifically, it states that an \`Animal\` must have the following:
+              The \`Animal\` interface has three properties:
 
-              1. A property called \`name\` of type \`string\`.
-              2. A method called \`makeAnimalSound()\` that returns a \`string\`.
-              3. A property called \`isMammal\` of type \`boolean\`.
+              1. \`name\`: This property represents the name of the animal. It is expected to be a string value.
+              2. \`makeAnimalSound()\`: This is a method that is expected to return a string value. It likely represents a function that simulates the sound made by the animal.
+              3. \`isMammal\`: This property is a boolean value indicating whether the animal is a mammal or not.
 
-              The interface itself does not produce any output. It merely serves as a contract or set of rules that other objects must follow to be considered an \`Animal\`. When you create an object that implements this interface, you are essentially promising that the object will have the specified properties and methods.
+              The purpose of this code is to provide a standardized structure for objects representing animals. It ensures that any object that implements the \`Animal\` interface will have these three properties and methods defined.
 
-              The purpose of this code is to provide a clear and consistent structure for representing animals in your TypeScript codebase. By defining the \`Animal\` interface, you ensure that any object representing an animal will have a \`name\`, a way to make a sound (\`makeAnimalSound()\`), and a flag indicating whether it is a mammal (\`isMammal\`). This consistency can help prevent bugs and make your code more maintainable, as you can rely on the fact that all \`Animal\` objects will have these properties and methods.
+              The code itself does not take any direct input, as it is just a definition of an interface. However, when you create an object that implements the \`Animal\` interface, you need to provide values for the \`name\` and \`isMammal\` properties, as well as a implementation for the \`makeAnimalSound()\` method.
 
-              While the interface itself does not contain any logic or algorithms, it serves as a blueprint that other parts of your codebase can rely on. For example, you might have a function that takes an \`Animal\` object as input and performs some operations based on the assumption that the object has a \`name\`, a \`makeAnimalSound()\` method, and an \`isMammal\` property."
+              The output of this code is not a direct value, but rather a blueprint or contract that other parts of the codebase can use to create and work with objects representing animals.
+
+              The code achieves its purpose by defining the structure of the \`Animal\` interface. Any object that implements this interface must have the specified properties and methods. This allows for consistent handling of animal objects throughout the codebase, as well as type-checking and code completion benefits provided by TypeScript.
+
+              There are no complex logic flows or data transformations happening in this particular code snippet, as it is simply defining an interface. However, the implementation of the \`makeAnimalSound()\` method in objects that implement the \`Animal\` interface may involve some logic to generate the appropriate sound for each animal."
             `,
                 explainPollyError
             )
@@ -768,57 +810,67 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the provided code context, the test framework being used is Vitest. No additional imports or dependencies are needed beyond what is already included in the shared context.
+                  "For the provided code context, it appears that the Vitest test framework is being used, as evidenced by the imports from \`vitest\` in the \`src/example.test.ts\` file.
 
-                  The \`Animal\` interface defines the shape of an object with a \`name\` property (string), a \`makeAnimalSound\` method that returns a string, and a boolean \`isMammal\` property. The test suite should cover the following aspects:
+                  To generate a suite of multiple unit tests for the \`Animal\` interface in the \`src/animal.ts\` file, we can import the necessary types and use the Vitest testing utilities.
 
-                  1. Ensure that instances of objects conforming to the \`Animal\` interface have the required properties and methods.
-                  2. Test the behavior of the \`makeAnimalSound\` method for different types of animals (mammals and non-mammals).
+                  No new imports needed - using existing libs from Vitest.
 
-                  Here's a suite of unit tests that covers these aspects:
+                  The generated tests will cover the following aspects of the \`Animal\` interface:
+
+                  1. Ensuring that an implementation of the \`Animal\` interface has the required properties (\`name\`, \`makeAnimalSound\`, and \`isMammal\`).
+                  2. Verifying that the \`makeAnimalSound\` method returns a string.
+                  3. Testing different scenarios for the \`isMammal\` property.
+
+                  Here is the complete code for the new unit tests, enclosed in a markdown codeblock:
 
                   \`\`\`typescript
-                  import { describe, it, expect } from 'vitest'
-                  import { Animal } from './animal'
-
-                  // Mock implementation of the Animal interface
-                  class MockAnimal implements Animal {
-                    name: string
-                    isMammal: boolean
-
-                    constructor(name: string, isMammal: boolean) {
-                      this.name = name
-                      this.isMammal = isMammal
-                    }
-
-                    makeAnimalSound(): string {
-                      return this.isMammal ? 'Moo' : 'Chirp'
-                    }
-                  }
+                  import { describe, it, expect } from 'vitest';
+                  import type { Animal } from './animal';
 
                   describe('Animal', () => {
-                    it('should have the required properties and methods', () => {
-                      const mockAnimal = new MockAnimal('Cow', true)
-                      expect(mockAnimal).toHaveProperty('name')
-                      expect(mockAnimal).toHaveProperty('isMammal')
-                      expect(mockAnimal).toHaveProperty('makeAnimalSound')
-                    })
+                    class MockAnimal implements Animal {
+                      name = 'Mocked Animal';
+                      makeAnimalSound = () => 'Mock sound';
+                      isMammal = true;
+                    }
 
-                    it('should make the correct sound for mammals', () => {
-                      const mammal = new MockAnimal('Cow', true)
-                      expect(mammal.makeAnimalSound()).toBe('Moo')
-                    })
+                    it('should have the required properties', () => {
+                      const animal = new MockAnimal();
+                      expect(animal).toHaveProperty('name');
+                      expect(animal).toHaveProperty('makeAnimalSound');
+                      expect(animal).toHaveProperty('isMammal');
+                    });
 
-                    it('should make the correct sound for non-mammals', () => {
-                      const nonMammal = new MockAnimal('Bird', false)
-                      expect(nonMammal.makeAnimalSound()).toBe('Chirp')
-                    })
-                  })
+                    it('makeAnimalSound should return a string', () => {
+                      const animal = new MockAnimal();
+                      const sound = animal.makeAnimalSound();
+                      expect(typeof sound).toBe('string');
+                    });
+
+                    it('isMammal should be true for mammals', () => {
+                      const mammal: Animal = {
+                        name: 'Mammal',
+                        makeAnimalSound: () => 'Mammal sound',
+                        isMammal: true,
+                      };
+                      expect(mammal.isMammal).toBe(true);
+                    });
+
+                    it('isMammal should be false for non-mammals', () => {
+                      const nonMammal: Animal = {
+                        name: 'Non-Mammal',
+                        makeAnimalSound: () => 'Non-mammal sound',
+                        isMammal: false,
+                      };
+                      expect(nonMammal.isMammal).toBe(false);
+                    });
+                  });
                   \`\`\`
 
-                  This test suite ensures that objects conforming to the \`Animal\` interface have the required properties and methods, and that the \`makeAnimalSound\` method behaves correctly for both mammals and non-mammals.
+                  This suite of tests covers the essential functionality of the \`Animal\` interface, ensuring that implementations have the required properties, the \`makeAnimalSound\` method returns a string, and the \`isMammal\` property is correctly set based on the type of animal.
 
-                  Note that since the \`Animal\` interface is an abstract definition and does not have an implementation, we created a \`MockAnimal\` class that implements the \`Animal\` interface for testing purposes."
+                  Note that these tests do not cover any specific implementation details of the \`Animal\` interface, as the provided code only defines the interface itself. If there were specific implementations of \`Animal\`, additional tests could be added to cover those implementations."
                 `,
                     explainPollyError
                 )
@@ -833,38 +885,33 @@ describe('Agent', () => {
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Here are a few suggestions to potentially improve the provided code:
+              "1. Consider separating concerns by creating separate interfaces for different animal types (e.g., \`Mammal\`, \`Bird\`, \`Reptile\`). This would promote better code organization and extensibility, as different animal types may have unique properties and behaviors.
 
-              1. **Use Type Aliases Instead of Interfaces**: Type aliases in TypeScript are more flexible and can be extended or composed more easily than interfaces. Consider using a type alias instead of an interface for the \`Animal\` type.
+              Benefit: Enhanced code organization, extensibility, and maintainability.
 
-              Potential benefits: Improved code flexibility and composability.
+              2. Provide better naming conventions for the \`isMammal\` property. Consider using a more descriptive name like \`isMammalian\` or \`isWarmBlooded\` to better convey the meaning of the property.
 
-              2. **Consider Adding a Return Type for the \`makeAnimalSound\` Method**: While TypeScript can infer the return type from the implementation, explicitly specifying the return type can improve code readability and maintainability.
+              Benefit: Improved code readability and self-documentation.
 
-              Potential benefits: Improved code readability and maintainability.
+              3. If the \`makeAnimalSound\` method is intended to return a specific sound for each animal type, consider making it an abstract method or providing a default implementation that throws an error or returns a generic sound. This would prevent instances where the method is not implemented for a specific animal type.
 
-              3. **Add Documentation or Comments**: While the code is relatively simple, adding comments or documentation can improve the understandability of the code, especially for larger projects or when working in a team.
+              Benefit: Enhanced code correctness and robustness.
 
-              Potential benefits: Improved code readability and maintainability.
+              4. Consider adding documentation (e.g., JSDoc comments) to explain the purpose and usage of the \`Animal\` interface, its properties, and methods. This would improve code maintainability and make it easier for other developers to understand and work with the code.
 
-              4. **Use Descriptive Names**: The name \`Animal\` is a bit generic, and the code might benefit from a more descriptive name that better represents the specific use case or domain.
+              Benefit: Improved code maintainability and collaboration.
 
-              Potential benefits: Improved code readability and maintainability.
+              5. If performance is a concern and the \`Animal\` interface will be used extensively, consider using a class instead of an interface. Classes can provide better performance optimizations through techniques like inlining and monomorphic dispatch.
 
-              5. **Consider Adding Default Values or Optional Properties**: If applicable, adding default values or making properties optional (using the \`?\` syntax) can make the interface more flexible and easier to work with in different scenarios.
+              Benefit: Potential performance improvements.
 
-              Potential benefits: Improved code flexibility and maintainability.
-
-              Overall, the provided code appears to be relatively straightforward and follows reasonable design principles for a simple interface definition. While there are some potential areas for improvement, the code quality seems satisfactory for its intended purpose."
+              Overall, the provided code snippet follows sound design principles and adheres to TypeScript's interface declaration syntax. However, there are opportunities to enhance code organization, readability, robustness, and maintainability by addressing the suggestions mentioned above."
             `,
                 explainPollyError
             )
         }, 30_000)
 
-        // Skipped because it's timing out for some reason and the functionality
-        // is still not working 100% correctly. Keeping the test so we can fix
-        // the test later.
-        it.skip('editCommand/test', async () => {
+        it('editCommand/test', async () => {
             const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
             const uri = vscode.Uri.file(trickyLogicPath)
 
@@ -872,7 +919,8 @@ describe('Agent', () => {
             const id = await client.request('editCommands/test', null)
             await client.taskHasReachedAppliedPhase(id)
             const originalDocument = client.workspace.getDocument(uri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
               "export function trickyLogic(a: number, b: number): number {
                   if (a === 0) {
                       return 1
@@ -886,53 +934,88 @@ describe('Agent', () => {
 
 
               "
-            `)
+            `,
+                explainPollyError
+            )
 
             const untitledDocuments = client.workspace
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(1)
             const [untitledDocument] = untitledDocuments
-            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
-            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(`
-              "import { trickyLogic } from './trickyLogic';
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
+                `
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
+              import { trickyLogic } from './trickyLogic'
 
               describe('trickyLogic', () => {
-                it('should return 1 if a is 0', () => {
-                  expect(trickyLogic(0, 1)).toBe(1);
-                });
+                  it('should return 1 when a is 0', () => {
+                      expect(trickyLogic(0, 10)).toBe(1)
+                  })
 
-                it('should return 1 if b is 2', () => {
-                  expect(trickyLogic(1, 2)).toBe(1);
-                });
+                  it('should return 1 when b is 2', () => {
+                      expect(trickyLogic(10, 2)).toBe(1)
+                  })
 
-                it('should return a - b if neither a is 0 nor b is 2', () => {
-                  expect(trickyLogic(3, 1)).toBe(2);
-                });
-              });
+                  it('should return a - b when a is not 0 and b is not 2', () => {
+                      expect(trickyLogic(5, 3)).toBe(2)
+                      expect(trickyLogic(10, 5)).toBe(5)
+                  })
+
+                  it('should handle negative numbers', () => {
+                      expect(trickyLogic(-5, 3)).toBe(-8)
+                      expect(trickyLogic(5, -3)).toBe(8)
+                  })
+              })
               "
-            `)
+            `,
+                explainPollyError
+            )
 
             // Just to make sure the edit happened via `workspace/edit` instead
             // of `textDocument/edit`.
             expect(client.workspaceEditParams).toHaveLength(1)
         }, 30_000)
 
+        describe('Edit code', () => {
+            checkEditCodeCommand(
+                client,
+                'editCommands/code (basic function)',
+                'sum.ts',
+                'Rename `a` parameter to `c`',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
+                  "export function sum(c: number, b: number): number {
+                      /* CURSOR */
+                  }
+                  "
+                `,
+                        explainPollyError
+                    )
+            )
+        })
+
         describe('Document code', () => {
-            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
+            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
+                expect(obtained).toMatchInlineSnapshot(
+                    `
                   "/**
-                   * Adds two numbers together and returns the result.
-                   *
-                   * @param a The first number to add.
-                   * @param b The second number to add.
+                   * Adds two numbers and returns the result.
+                   * @param a - The first number to add.
+                   * @param b - The second number to add.
                    * @returns The sum of \`a\` and \`b\`.
                    */
                   export function sum(a: number, b: number): number {
                       /* CURSOR */
                   }
                   "
-                `)
+                `,
+                    explainPollyError
+                )
             )
 
             checkDocumentCommand(
@@ -940,23 +1023,26 @@ describe('Agent', () => {
                 'commands/document (Method as part of a class)',
                 'TestClass.ts',
                 obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "const foo = 42
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
+                  "const foo = 42
 
-                      export class TestClass {
-                          constructor(private shouldGreet: boolean) {}
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
 
-                              /**
-                           * Logs 'Hello World!' to the console if the \`shouldGreet\` parameter is true.
-                           */
-                      public functionName() {
-                              if (this.shouldGreet) {
-                                  console.log(/* CURSOR */ 'Hello World!')
-                              }
+                          /**
+                       * Logs a "Hello World!" message to the console if the \`shouldGreet\` property is true.
+                       */
+                  public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
                           }
                       }
-                      "
-                    `)
+                  }
+                  "
+                `,
+                        explainPollyError
+                    )
             )
 
             checkDocumentCommand(
@@ -964,14 +1050,15 @@ describe('Agent', () => {
                 'commands/document (Function within a property)',
                 'TestLogger.ts',
                 obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
                       "const foo = 42
                       export const TestLogger = {
                           startLogging: () => {
                               // Do some stuff
 
                                       /**
-                               * Logs a message indicating that a log is being recorded.
+                               * Records a log message.
                                */
                       function recordLog() {
                                   console.log(/* CURSOR */ 'Recording the log')
@@ -981,7 +1068,9 @@ describe('Agent', () => {
                           },
                       }
                       "
-                    `)
+                    `,
+                        explainPollyError
+                    )
             )
 
             checkDocumentCommand(
@@ -989,31 +1078,34 @@ describe('Agent', () => {
                 'commands/document (nested test case)',
                 'example.test.ts',
                 obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "import { expect } from 'vitest'
-                      import { it } from 'vitest'
-                      import { describe } from 'vitest'
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-                      describe('test block', () => {
-                          it('does 1', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does 2', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does something else', () => {
-                              // This line will error due to incorrect usage of \`performance.now\`
-                                      /**
-                               * Returns the current high-resolution time in milliseconds.
-                               * This can be used to measure the duration of an operation.
-                               */
-                      const startTime = performance.now(/* CURSOR */)
-                          })
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
                       })
-                      "
-                    `)
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                                  /**
+                           * Retrieves the current time in milliseconds since the page was loaded.
+                           * This can be used to measure the duration of an operation.
+                           */
+                  const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `,
+                        explainPollyError
+                    )
             )
         })
     })
@@ -1037,17 +1129,17 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the file paths and code snippets you've shared, the file names are:
+              "Based on the codebase context you provided, the file names are:
 
-              1. src/trickyLogic.ts
-              2. src/TestLogger.ts
-              3. src/TestClass.ts
-              4. src/sum.ts
-              5. src/squirrel.ts
-              6. src/multiple-selections.ts
-              7. src/example.test.ts
-              8. src/animal.ts
-              9. .cody/ignore"
+              1. \`src/trickyLogic.ts\`
+              2. \`src/animal.ts\`
+              3. \`src/example.test.ts\`
+              4. \`src/multiple-selections.ts\`
+              5. \`src/squirrel.ts\`
+              6. \`src/sum.ts\`
+              7. \`src/TestClass.ts\`
+              8. \`src/TestLogger.ts\`
+              9. \`src/trickyLogic.ts\` (repeated)"
             `,
                 explainPollyError
             )
@@ -1065,27 +1157,35 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Here's the equivalent Python code for the selected TypeScript code:
+              "Here's the translation of the selected TypeScript code into Python:
 
               \`\`\`python
-              class Animal:
-                  def __init__(self, name, is_mammal):
-                      self.name = name
-                      self.is_mammal = is_mammal
+              from abc import ABC, abstractmethod
 
-                  def make_animal_sound(self):
-                      raise NotImplementedError("Subclasses must implement make_animal_sound method")
+              class Animal(ABC):
+                  @abstractmethod
+                  def makeAnimalSound(self) -> str:
+                      pass
+
+                  @property
+                  @abstractmethod
+                  def isMammal(self) -> bool:
+                      pass
+
+                  @property
+                  @abstractmethod
+                  def name(self) -> str:
+                      pass
               \`\`\`
 
               Explanation:
 
-              1. In Python, we use classes to define interfaces or abstract base classes.
-              2. The \`Animal\` class has an \`__init__\` method that serves as a constructor and initializes the \`name\` and \`is_mammal\` attributes.
-              3. The \`make_animal_sound\` method is defined as an abstract method using the \`NotImplementedError\` exception. Subclasses of \`Animal\` must override this method to provide their own implementation.
+              1. In Python, we don't have interfaces like in TypeScript. Instead, we use abstract classes with abstract methods to achieve a similar behavior.
+              2. The \`Animal\` class is defined as an abstract base class (ABC) using the \`abc\` module.
+              3. The \`makeAnimalSound\` method is defined as an abstract method using the \`@abstractmethod\` decorator. It returns a string.
+              4. The \`isMammal\` and \`name\` properties are defined as abstract properties using the \`@abstractmethod\` and \`@property\` decorators. \`isMammal\` returns a boolean, and \`name\` returns a string.
 
-              In TypeScript, the \`Animal\` interface defines the structure of an object, including its properties and methods. In Python, we use a class with an abstract method to achieve a similar goal. Subclasses of \`Animal\` in Python will need to implement the \`make_animal_sound\` method to provide the specific behavior for that animal.
-
-              Note that in Python, there is no direct equivalent to TypeScript interfaces. Instead, we use abstract base classes and inheritance to achieve similar functionality."
+              In Python, classes that inherit from the \`Animal\` abstract base class must implement all the abstract methods and properties defined in the base class. This enforces a similar behavior to the TypeScript interface."
             `,
                 explainPollyError
             )
@@ -1102,7 +1202,7 @@ describe('Agent', () => {
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `"No"`,
+                `"no"`,
                 explainPollyError
             )
         }, 30_000)
@@ -1123,18 +1223,7 @@ describe('Agent', () => {
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
                 `
-              "You have shared codebase context from 10 different file paths:
-
-              1. \`src/trickyLogic.ts\`
-              2. \`src/TestLogger.ts\`
-              3. \`src/TestClass.ts\`
-              4. \`src/sum.ts\`
-              5. \`src/squirrel.ts\`
-              6. \`src/multiple-selections.ts\`
-              7. \`src/example.test.ts\`
-              8. \`src/animal.ts\`
-
-              And you also shared the selected code snippet from \`src/animal.ts\`."
+                "You have shared codebase context from 9 different files."
             `,
                 explainPollyError
             )
@@ -1178,16 +1267,15 @@ describe('Agent', () => {
 
             const originalDocument = client.workspace.getDocument(animalUri)!
             expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
-              "/* SELECTION_START */
-              export interface Animal {
+              "export interface Animal {
                   name: string
                   makeAnimalSound(): string
                   isMammal: boolean
-                  logName(): void {
+                  printName(): void {
                       console.log(this.name);
                   }
               }
-              /* SELECTION_END */
+
               "
             `)
         }, 30_000)
@@ -1332,33 +1420,36 @@ describe('Agent', () => {
             'commands/document (enterprise client)',
             'example.test.ts',
             obtained =>
-                expect(obtained).toMatchInlineSnapshot(`
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+                expect(obtained).toMatchInlineSnapshot(
+                    `
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block that contains three tests:
-                   * - Test that does something and expects true === true
-                   * - Another test that does something else and expects true === true
-                   * - Test that attempts to measure performance incorrectly
-                  */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              /**
+               * A test block that contains:
+               * - A test to assert true is true
+               * - A second test to assert true is true
+               * - A test expecting an error due to incorrect usage of performance.now
+              */
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `)
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `,
+                    explainPollyError
+                )
         )
 
         // NOTE(olafurpg) disabled on Windows because the multi-repo keyword

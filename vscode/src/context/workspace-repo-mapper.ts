@@ -1,6 +1,6 @@
 import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/git-extension-api'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
 import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'

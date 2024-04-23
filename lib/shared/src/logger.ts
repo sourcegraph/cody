@@ -19,10 +19,10 @@ interface CodyLogger {
 
 const consoleLogger: CodyLogger = {
     logDebug(filterLabel, text, ...args) {
-        console.log(`${filterLabel}:${text}`, ...args)
+        console.log(`${filterLabel}: ${text}`, ...args)
     },
     logError(filterLabel, text, ...args) {
-        console.log(`${filterLabel}:${text}`, ...args)
+        console.log(`${filterLabel}: ${text}`, ...args)
     },
 }
 

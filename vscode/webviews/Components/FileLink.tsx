@@ -52,7 +52,8 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         const pathToDisplay = `${repoShortName} ${title}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
-        href = uri.toString()
+        // We can skip encoding when the uri path already contains '@'.
+        href = uri.toString(uri.path.includes('@'))
         target = '_blank'
     } else {
         const pathToDisplay = `${displayPath(uri)}`

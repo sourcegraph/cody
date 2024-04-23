@@ -15,7 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { URI } from 'vscode-uri'
-import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+import { getCodebaseFromWorkspaceUri } from '../repository/git-extension-api'
 import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {

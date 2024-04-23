@@ -6,9 +6,12 @@ import { executeCommandInPalette } from './helpers'
 // Sign into Cody with valid auth from the sidebar
 export const sidebarSignin = async (
     page: Page,
-    sidebar: Frame,
+    sidebar: Frame | null,
     enableNotifications = false
 ): Promise<void> => {
+    if (sidebar === null) {
+        throw new Error('Sidebar is null, likely because preAuthenticate is `true`')
+    }
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
@@ -21,6 +24,10 @@ export const sidebarSignin = async (
         await disableNotifications(page)
     }
 
+    await expectAuthenticated(page)
+}
+
+export async function expectAuthenticated(page: Page) {
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 }
 
@@ -70,16 +77,12 @@ export function getContextCell(
 
 export async function expectContextCellCounts(
     contextCell: Locator,
-    counts: { files: number; lines?: number; timeout?: number }
+    counts: { files: number; timeout?: number }
 ): Promise<void> {
     const summary = contextCell.locator('summary', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
-        `${
-            counts.lines !== undefined
-                ? `${counts.lines} line${counts.lines === 1 ? '' : 's'} from `
-                : ''
-        }${counts.files} file${counts.files === 1 ? '' : 's'}`,
+        `${counts.files} file${counts.files === 1 ? '' : 's'}`,
         { timeout: counts.timeout }
     )
 }

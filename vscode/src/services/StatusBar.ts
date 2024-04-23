@@ -9,7 +9,7 @@ import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/Hover
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
-import { enableDebugMode } from './utils/export-logs'
+import { enableVerboseDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
@@ -234,8 +234,8 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: config.debugEnable ? 'Check Debug Logs' : 'Turn on Debug Mode',
-                onClick: () => enableDebugMode(),
+                tooltip: config.debugVerbose ? 'Check Debug Logs' : 'Turn on Debug Mode',
+                onClick: () => enableVerboseDebugMode(),
             } as vscode.QuickInputButton,
         ]
         quickPick.onDidTriggerButton(async item => {
@@ -263,11 +263,21 @@ export function createStatusBar(): CodyStatusBar {
         // Only show this if authStatus is present, otherwise you get a flash of
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
-        if (authStatus && !authStatus.isLoggedIn) {
-            statusBarItem.text = '$(cody-logo-heavy) Sign In'
-            statusBarItem.tooltip = 'Sign in to get started with Cody'
-            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-            return
+        if (authStatus) {
+            if (authStatus.showNetworkError) {
+                statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
+                statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
+                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground')
+                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
+                return
+            }
+            if (!authStatus.isLoggedIn) {
+                statusBarItem.text = '$(cody-logo-heavy) Sign In'
+                statusBarItem.tooltip = 'Sign in to get started with Cody'
+                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground')
+                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+                return
+            }
         }
 
         if (errors.length > 0) {

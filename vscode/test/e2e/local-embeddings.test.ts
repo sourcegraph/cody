@@ -64,6 +64,8 @@ const test = helpers.test
                 use({
                     'cody.testing.localEmbeddings.model': 'stub/stub',
                     'cody.testing.localEmbeddings.indexLibraryPath': dir,
+                    'cody.testing.localEmbeddings.endpoint': SERVER_URL + '/v1/embeddings',
+                    'cody.testing.localEmbeddings.dimension': 1536,
                 })
             )
         },
@@ -90,7 +92,7 @@ test.extend<helpers.WorkspaceDirectory>({
         })
     },
 })('non-git repositories should explain lack of embeddings', async ({ page, sidebar }) => {
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     // The Enhanced Context settings is opened on first chat by default
@@ -106,7 +108,7 @@ test.extend<helpers.WorkspaceDirectory>({
 })
 
 test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
@@ -137,7 +139,7 @@ test
             'CodyVSCodeExtension:chat-question:executed',
         ],
     })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
+    await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
@@ -159,7 +161,6 @@ test
     const contextCell = getContextCell(chatFrame)
     await expectContextCellCounts(contextCell, {
         files: 2,
-        lines: 2,
         timeout: 10000,
     })
 })

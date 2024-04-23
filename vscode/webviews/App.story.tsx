@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
-import { DEFAULT_DOT_COM_MODELS } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -26,7 +26,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         cb({
             type: 'config',
             config: {
-                debugEnable: true,
                 serverEndpoint: 'https://example.com',
                 uiKindIsWeb: false,
                 experimentalGuardrails: false,
@@ -43,7 +42,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             workspaceFolderUris: [],
         })
-        cb({ type: 'chatModels', models: DEFAULT_DOT_COM_MODELS })
+        cb({ type: 'chatModels', models: getDotComDefaultModels('default') })
         cb({
             type: 'history',
             localHistory: {
