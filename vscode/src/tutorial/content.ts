@@ -78,23 +78,27 @@ interface BaseTutorialStep {
     range: vscode.Range
 }
 interface OnChangeTutorialStep extends BaseTutorialStep {
-    range: vscode.Range
     originalText: string
     type: 'onTextChange'
 }
 interface ManualTutorialStep extends BaseTutorialStep {
-    range: vscode.Range
     type: 'manual'
 }
 export type TutorialStep = OnChangeTutorialStep | ManualTutorialStep
 
-export const getStepData = (document: vscode.TextDocument, step: TutorialStepKey): TutorialStep => {
+export const getStepData = (
+    document: vscode.TextDocument,
+    step: TutorialStepKey
+): TutorialStep | null => {
     switch (step) {
         case 'autocomplete': {
-            const autocompleteLine = findRangeOfText(document, '^ Autocomplete:')!.start.line - 1
+            const triggerText = findRangeOfText(document, '^ Autocomplete:')
+            if (!triggerText) {
+                return null
+            }
             const autocompleteRange = new vscode.Range(
-                new vscode.Position(autocompleteLine, 0),
-                new vscode.Position(autocompleteLine, Number.MAX_SAFE_INTEGER)
+                new vscode.Position(triggerText.start.line - 1, 0),
+                new vscode.Position(triggerText.start.line - 1, Number.MAX_SAFE_INTEGER)
             )
             return {
                 key: 'autocomplete',
@@ -104,7 +108,11 @@ export const getStepData = (document: vscode.TextDocument, step: TutorialStepKey
             }
         }
         case 'edit': {
-            const editLine = findRangeOfText(document, '^ Edit:')!.start.line - 1
+            const triggerText = findRangeOfText(document, '^ Edit:')
+            if (!triggerText) {
+                return null
+            }
+            const editLine = triggerText.start.line - 1
             return {
                 key: 'edit',
                 range: new vscode.Range(
@@ -115,7 +123,11 @@ export const getStepData = (document: vscode.TextDocument, step: TutorialStepKey
             }
         }
         case 'fix': {
-            const fixLine = findRangeOfText(document, '^ Fix:')!.start.line - 1
+            const triggerText = findRangeOfText(document, '^ Fix:')
+            if (!triggerText) {
+                return null
+            }
+            const fixLine = triggerText.start.line - 1
             // The fix range already has characters, so limit this to the actual text in the line
             const fixRange = new vscode.Range(
                 new vscode.Position(fixLine, document.lineAt(fixLine).firstNonWhitespaceCharacterIndex),
@@ -129,7 +141,11 @@ export const getStepData = (document: vscode.TextDocument, step: TutorialStepKey
             }
         }
         case 'chat': {
-            const chatLine = findRangeOfText(document, 'Start a Chat')!.start.line
+            const triggerText = findRangeOfText(document, 'Start a Chat')
+            if (!triggerText) {
+                return null
+            }
+            const chatLine = triggerText.start.line
             return {
                 key: 'chat',
                 range: new vscode.Range(

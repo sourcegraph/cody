@@ -1,4 +1,4 @@
-import { type Page } from 'playwright/test'
+import type { Page } from 'playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 import { sidebarSignin } from './common'
 import {
