@@ -10,12 +10,15 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.InlayModel
+import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.wm.ToolWindowId
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -406,7 +409,14 @@ class CodyAutocompleteManager {
       }
     }
 
-    if (inlay?.bounds?.location != null) {
+    if (inlay?.bounds?.location != null && project != null) {
+      val isProjectViewVisible =
+          ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.PROJECT_VIEW)?.isVisible
+              ?: false
+      val position =
+          if (isProjectViewVisible) Balloon.Position.atLeft
+          else if (inlay.bounds!!.location.y < 150) Balloon.Position.below
+          else Balloon.Position.above
       val gotit =
           GotItTooltip(
                   "cody.autocomplete.gotIt",
@@ -417,15 +427,31 @@ class CodyAutocompleteManager {
                           KeymapUtil.getShortcutText("cody.cycleBackAutocompleteAction")),
                   inlay /* dispose tooltip alongside inlay */)
               .withHeader(CodyBundle.getString("gotit.autocomplete.header"))
-              .withPosition(Balloon.Position.above)
+              .withPosition(position)
               .withIcon(Icons.CodyLogo)
               .andShowCloseShortcut()
       try {
-        gotit.show(editor.contentComponent) { _, _ -> inlay.bounds!!.location }
+        gotit.show(editor.contentComponent) { a, b ->
+          val location = inlay.bounds!!.location
+          if (position == Balloon.Position.below) {
+            val lineHeight = getLineHeight()
+            location.setLocation(location.x, location.y + lineHeight)
+          }
+          location
+        }
       } catch (e: Exception) {
         logger.info("Failed to display gotit tooltip", e)
       }
     }
+  }
+
+  private fun getLineHeight(): Int {
+    val colorsManager = EditorColorsManager.getInstance()
+    val fontPreferences = colorsManager.globalScheme.fontPreferences
+    val fontSize = fontPreferences.getSize(fontPreferences.fontFamily)
+    val lineSpacing = fontPreferences.lineSpacing.toInt()
+    val extraMargin = 4
+    return fontSize + lineSpacing + extraMargin
   }
 
   private fun findLastCommonSuffixElementPosition(
