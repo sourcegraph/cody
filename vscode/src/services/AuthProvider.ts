@@ -222,7 +222,7 @@ export class AuthProvider {
             case 'Manage Account': {
                 // Add the username to the web can warn if the logged in session on web is different from VS Code
                 const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
-                    query: `cody_client_user=${this.authStatus.username}`,
+                    query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
                 })
                 void vscode.env.openExternal(uri)
                 break
