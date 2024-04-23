@@ -9,43 +9,21 @@ jobs:
   check-for-deprecated-v1-telemetry:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
-
-      - name: Get changed files
-        id: changed-files
-        run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
-              echo "changed_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_ENV
-          else
-              echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_ENV
-          fi
-
-      - name: List changed files
-        run: |
-          for file in ${{ env.changed_files }}; do
-              echo "$file was changed"
-          done
-
+      - uses: actions/checkout@v3
       - name: Check for deprecated telemetry calls
-        if: success()
+
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
-          if echo "${{ env.changed_files }}" | grep -qE 'logEvent|logEvents|eventLogger\.log'; then
+          echo "logEvent('this should get flagged')"
+          if grep -rEn 'logEvent|logEvents|eventLogger\.log' .; then
               echo "Found log events in the following files:"
-              echo "${{ env.changed_files }}" | grep -E 'logEvent|logEvents|eventLogger\.log' | while read -r file ; do
-                  echo "File: $file"
-                  grep -En 'logEvent|logEvents|eventLogger\.log' "$file" | while read -r line ; do
-                      line_number=$(echo "$line" | cut -d':' -f1)
-                      matched_text=$(echo "$line" | cut -d':' -f2-)
-                      echo "  Line $line_number: $matched_text"
-                  done
-              done
-              exit 1
+              grep -rEn 'logEvent|logEvents|eventLogger\.log' . | while read -r line ; do
+              file=$(echo "$line" | cut -d':' -f1)                match=$(echo "$line" | cut -d':' -f2-)
+              echo "File: $file, Match: $match"
+          done
+          exit 1
           else
-              echo "No log events found in modified files."
-              exit 0
+            echo "No log events found in modified files."
+            exit 0
           fi
