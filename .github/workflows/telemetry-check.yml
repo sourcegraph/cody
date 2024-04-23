@@ -17,7 +17,7 @@ jobs:
           echo "Checking for deprecated telemetry calls"
           echo "logEvent('this should get flagged')"
           cd ${{ github.workspace }}
-          files_modified=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          files_modified=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
           if [ -n "$files_modified" ]; then
             echo "Modified files found: $files_modified"
             if echo "$files_modified" | xargs grep -rnE 'logEvent|logEvents|eventLogger\.log'; then
