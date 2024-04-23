@@ -13,7 +13,8 @@ jobs:
       - name: Check for deprecated telemetry calls
         shell: bash
         run: |
-          MATCHES=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")
+          MATCHES="$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")"
+          echo "matches: ${MATCHES}"
           if [ -n "$MATCHES" ]; then
             echo "Deprecated telemetry calls found"
             echo "::error::Deprecated telemetry calls found: ${MATCHES}"
