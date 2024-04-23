@@ -376,7 +376,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(true)
@@ -386,7 +386,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
@@ -396,7 +396,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
