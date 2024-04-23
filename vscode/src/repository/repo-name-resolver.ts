@@ -50,7 +50,7 @@ export class RepoNameResolver {
         try {
             let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
-            if (remoteUrls?.length === 0) {
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
                 remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
             }
 
