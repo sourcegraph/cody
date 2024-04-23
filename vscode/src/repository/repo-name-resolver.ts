@@ -1,7 +1,7 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
-import { convertGitCloneURLToCodebaseName, isFileURI } from '@sourcegraph/cody-shared'
+import { graphqlClient, isFileURI } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -9,12 +9,13 @@ import { LRUCache } from 'lru-cache'
 import { gitRemoteUrlFromGitExtension } from './git-extension-api'
 
 export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
-type FsPath = string
-type RepoName = string
+type RepoName = string | typeof nullCacheValue
+type RemoteUrl = string
 
 export class RepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    private fsPathToRepoNameCache = new LRUCache<FsPath, RepoName>({ max: 1000 })
+    private fsPathToRepoNameCache = new LRUCacheWithNullValues()
+    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<string | null>>({ max: 1000 })
 
     /**
      * Currently is used to set node specific remote url getters on the extension init.
@@ -32,9 +33,9 @@ export class RepoNameResolver {
      * if not found, walks the file system upwards until it finds a `.git` folder.
      * If not found, returns `undefined`.
      */
-    public async getRepoNameFromWorkspaceUri(uri: vscode.Uri): Promise<string | undefined> {
+    public async getRepoNameFromWorkspaceUri(uri: vscode.Uri): Promise<string | null> {
         if (!isFileURI(uri)) {
-            return undefined
+            return null
         }
 
         if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
@@ -42,24 +43,24 @@ export class RepoNameResolver {
         }
 
         try {
-            let remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
+            let remoteUrl = gitRemoteUrlFromGitExtension(uri)
 
-            if (!remoteOriginUrl) {
-                remoteOriginUrl = await gitRemoteUrlFromTreeWalk(uri)
+            if (!remoteUrl) {
+                remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
             }
 
-            if (!remoteOriginUrl) {
+            if (!remoteUrl) {
                 for (const getter of this.platformSpecificGitRemoteGetters) {
-                    remoteOriginUrl = await getter(uri)
+                    remoteUrl = await getter(uri)
 
-                    if (remoteOriginUrl) {
+                    if (remoteUrl) {
                         break
                     }
                 }
             }
 
-            if (remoteOriginUrl) {
-                const repoName = convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
+            if (remoteUrl) {
+                const repoName = await this.resolveRepoNameForRemoteUrl(remoteUrl)
                 this.fsPathToRepoNameCache.set(uri.fsPath, repoName)
 
                 return repoName
@@ -67,7 +68,41 @@ export class RepoNameResolver {
         } catch (error) {
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
-        return undefined
+
+        return null
+    }
+
+    private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
+        if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
+            return this.remoteUrlToRepoNameCache.get(remoteUrl)!
+        }
+
+        const repoNameRequest = graphqlClient.getRepoName(remoteUrl)
+        this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
+
+        return repoNameRequest
+    }
+}
+
+// Required to store null values in the cache.
+// See https://github.com/isaacs/node-lru-cache#storing-undefined-values
+const nullCacheValue = Symbol('null cache value')
+type UriFsPath = string
+
+class LRUCacheWithNullValues {
+    cache = new LRUCache<UriFsPath, RepoName>({ max: 1000 })
+
+    has(key: string): boolean {
+        return this.cache.has(key)
+    }
+
+    set(key: string, value: string | null): void {
+        this.cache.set(key, value === null ? nullCacheValue : value)
+    }
+
+    get(key: string): string | null {
+        const value = this.cache.get(key) || null
+        return value === nullCacheValue ? null : value
     }
 }
 

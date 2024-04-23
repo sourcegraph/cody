@@ -32,6 +32,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -128,6 +129,10 @@ export interface RepoListResponse {
 
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryNameResponse {
+    repository: { name: string } | null
 }
 
 interface RepositoryIdsResponse {
@@ -515,6 +520,18 @@ export class SourcegraphGraphQLAPIClient {
             names,
             first,
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
+    }
+
+    public async getRepoName(cloneURL: string): Promise<string | null> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
+            REPO_NAME_QUERY,
+            {
+                cloneURL,
+            }
+        )
+
+        const result = extractDataOrError(response, data => data.repository?.name ?? null)
+        return isError(result) ? null : result
     }
 
     public async contextSearch(
