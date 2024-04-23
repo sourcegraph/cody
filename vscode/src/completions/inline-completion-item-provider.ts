@@ -15,6 +15,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
+import { type CodyIgnoreType, notifyCodyIgnored } from '../context-filters/notification'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
@@ -803,7 +804,7 @@ function onlyCompletionWidgetSelectionChanged(
 }
 
 let lasIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, reason: 'cody-ignore' | 'context-filter') {
+function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType) {
     const string = uri.toString()
     if (lasIgnoredUriLogged === string) {
         return
@@ -813,4 +814,5 @@ function logIgnored(uri: vscode.Uri, reason: 'cody-ignore' | 'context-filter') {
         'CodyCompletionProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
+    notifyCodyIgnored(uri, reason)
 }

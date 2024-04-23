@@ -1231,6 +1231,13 @@
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0049"
         }
+      },
+      "cody-logo-heavy-slash": {
+        "description": "Cody logo heavy slash",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004A"
+        }
       }
     }
   },

@@ -1,11 +1,17 @@
 import * as vscode from 'vscode'
 
-import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type Configuration,
+    contextFiltersProvider,
+    isCodyIgnoredFile,
+} from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
+import { CodyIgnoreType } from '../context-filters/notification'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
@@ -35,6 +41,7 @@ export interface CodyStatusBar {
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
+const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash)'
 const DEFAULT_TOOLTIP = 'Cody Settings'
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
@@ -54,6 +61,30 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.tooltip = DEFAULT_TOOLTIP
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
+
+    let isCodyIgnoredType: null | CodyIgnoreType = null
+    async function isCodyIgnored(uri: vscode.Uri): Promise<null | CodyIgnoreType> {
+        if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
+            return 'cody-ignore'
+        }
+        if (await contextFiltersProvider.isUriIgnored(uri)) {
+            return 'context-filter'
+        }
+        return null
+    }
+    vscode.window.onDidChangeActiveTextEditor(async editor => {
+        if (!editor) {
+            return
+        }
+        isCodyIgnoredType = await isCodyIgnored(editor.document.uri)
+        rerender()
+    })
+    const currentUri = vscode.window.activeTextEditor?.document?.uri
+    if (currentUri) {
+        isCodyIgnored(currentUri).then(isIgnored => {
+            isCodyIgnoredType = isIgnored
+        })
+    }
 
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
@@ -131,6 +162,20 @@ export function createStatusBar(): CodyStatusBar {
                               return Promise.resolve()
                           },
                       })),
+                  ]
+                : []),
+            { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
+            ...(isCodyIgnoredType
+                ? [
+                      {
+                          label: '$(debug-pause) Cody is disabled in this file',
+                          description: '',
+                          detail:
+                              QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX +
+                              (isCodyIgnoredType === 'context-filter'
+                                  ? 'Your administrator has disabled Cody in this repository.'
+                                  : 'Cody is disabled in this file because of your .cody/ignore file.'),
+                      },
                   ]
                 : []),
             { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
@@ -213,7 +258,7 @@ export function createStatusBar(): CodyStatusBar {
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
             ...SupportOptionItems,
             ...FeedbackOptionItems,
-        ]
+        ].filter(Boolean)
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'
         quickPick.matchOnDescription = true
@@ -256,7 +301,7 @@ export function createStatusBar(): CodyStatusBar {
         if (openLoadingLeases > 0) {
             statusBarItem.text = '$(loading~spin)'
         } else {
-            statusBarItem.text = DEFAULT_TEXT
+            statusBarItem.text = isCodyIgnoredType ? DEFAULT_TEXT_DISABLED : DEFAULT_TEXT
             statusBarItem.tooltip = DEFAULT_TOOLTIP
         }
 
@@ -299,27 +344,6 @@ export function createStatusBar(): CodyStatusBar {
         }
         rerender()
     }
-
-    // NOTE: Behind unstable feature flag and requires .cody/ignore enabled
-    // Listens for changes to the active text editor and updates the status bar text
-    // based on whether the active file is ignored by Cody or not.
-    // If ignored, adds 'Ignored' to the status bar text.
-    // Otherwise, rerenders the status bar.
-    const verifyActiveEditor = (uri?: vscode.Uri) => {
-        // NOTE: Non-file URIs are not supported by the .cody/ignore files and
-        // are ignored by default. As they are files that a user would not expect to
-        // be used by Cody, we will not display them with the "warning".
-        if (uri?.scheme === 'file' && isCodyIgnoredFile(uri)) {
-            statusBarItem.tooltip = 'Current file is ignored by Cody'
-            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-        } else {
-            rerender()
-        }
-    }
-    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(e => {
-        verifyActiveEditor(e?.document?.uri)
-    })
-    verifyActiveEditor(vscode.window.activeTextEditor?.document?.uri)
 
     return {
         startLoading(label: string, params: { timeoutMs?: number } = {}) {

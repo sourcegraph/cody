@@ -10,6 +10,7 @@ import {
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+import { notifyCodyIgnored } from '../context-filters/notification'
 import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
 import type { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 import { fixIndentation } from './utils/fix-indentation'
@@ -39,6 +40,7 @@ export async function* getSupercompletions({
     chat,
 }: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
     if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+        notifyCodyIgnored(document.uri, 'context-filter')
         return null
     }
 

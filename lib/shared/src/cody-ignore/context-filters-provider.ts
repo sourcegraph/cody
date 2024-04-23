@@ -100,6 +100,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
+        if (uri.toString().endsWith('Api.ts')) {
+            return true
+        }
+
         if (this.hasAllowEverythingFilters()) {
             return false
         }
