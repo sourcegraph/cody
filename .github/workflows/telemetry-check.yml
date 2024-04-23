@@ -11,28 +11,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check for deprecated telemetry calls
-
+        if: github.event_name == 'pull_request'
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
-          echo "logEvent('this should get flagged')"
-          cd ${{ github.workspace }}
-          files_modified=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
-          if [ -n "$files_modified" ]; then
-            echo "Modified files found: $files_modified"
-            if echo "$files_modified" | xargs grep -rnE 'logEvent|logEvents|eventLogger\.log'; then
+          modified_files=$(git diff --name-only origin/main...HEAD)
+          echo "Modified files: $modified_files"
+          if echo "$modified_files" | grep -qE 'logEvent|logEvents|eventLogger\.log'; then
               echo "Found log events in the following files:"
-              echo "$files_modified" | xargs grep -rEn 'logEvent|logEvents|eventLogger\.log' | while read -r line ; do
-                file=$(echo "$line" | cut -d':' -f1)
-                match=$(echo "$line" | cut -d':' -f2-)
-                echo "File: $file, Match: $match"
+              echo "$modified_files" | grep -E 'logEvent|logEvents|eventLogger\.log' | while read -r file ; do
+                  echo "File: $file"
+                  grep -En 'logEvent|logEvents|eventLogger\.log' "$file" | while read -r line ; do
+                      line_number=$(echo "$line" | cut -d':' -f1)
+                      matched_text=$(echo "$line" | cut -d':' -f2-)
+                      echo "  Line $line_number: $matched_text"
+                  done
               done
               exit 1
-            else
+          else
               echo "No log events found in modified files."
               exit 0
-            fi
-          else
-            echo "No modified files found."
-            exit 0
           fi
