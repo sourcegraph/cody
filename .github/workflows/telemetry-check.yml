@@ -10,23 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+
       - name: Check for deprecated telemetry calls
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
           echo "logEvent('this should get flagged')"
+          echo "ChangedFiles: ${{steps.changed-files.outputs.files}}"
 
-          # Get the list of modified files
-          files=$(git diff --name-only HEAD^ HEAD)
-
-          if grep -rEn 'logEvent|logEvents|eventLogger\.log' $files; then
+          if grep -rEn 'logEvent|logEvents|eventLogger\.log' "${{ steps.changed-files.outputs.files }}"; then
               echo "Found log events in the following files:"
-              grep -rEn 'logEvent|logEvents|eventLogger\.log' $files | while read -r line ; do
-              file=$(echo "$line" | cut -d':' -f1)
-              match=$(echo "$line" | cut -d':' -f2-)
-              echo "File: $file, Match: $match"
-          done
-          exit 1
+              grep -rEn 'logEvent|logEvents|eventLogger\.log' "${{ steps.changed-files.outputs.files }}" | while read -r line ; do
+                file=$(echo "$line" | cut -d':' -f1)
+                match=$(echo "$line" | cut -d':' -f2-)
+                echo "File: $file, Match: $match"
+              done
+              exit 1
           else
             echo "No log events found in modified files."
             exit 0
