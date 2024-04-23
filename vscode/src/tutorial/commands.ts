@@ -1,9 +1,8 @@
-import { PromptString } from '@sourcegraph/cody-shared'
+import { ps } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
 import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
-import type { TutorialStep } from './content'
 
 export const setFixDiagnostic = (
     collection: vscode.DiagnosticCollection,
@@ -37,7 +36,7 @@ export const registerEditTutorialCommand = (
         const task = await executeEdit({
             configuration: {
                 document: editor.document,
-                preInstruction: PromptString.unsafe_fromUserQuery('Function that finds logs in a dir'),
+                preInstruction: ps`Function that finds logs in a dir`,
             },
         })
 
