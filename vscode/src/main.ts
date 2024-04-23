@@ -9,6 +9,7 @@ import {
     ModelProvider,
     PromptMixin,
     PromptString,
+    contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
@@ -197,7 +198,10 @@ const register = async (
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
     )
+    disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
+    const boundRepoNameResolver = repoNameResolver.getRepoNameFromWorkspaceUri.bind(repoNameResolver)
+    await contextFiltersProvider.init(boundRepoNameResolver)
     await contextProvider.init()
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -247,6 +251,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        promises.push(contextFiltersProvider.init(boundRepoNameResolver))
         promises.push(contextProvider.onConfigurationChange(newConfig))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))

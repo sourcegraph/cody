@@ -1,16 +1,18 @@
-import { type ContextFiltersResult, graphqlClient } from '@sourcegraph/cody-shared'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { repoNameResolver } from '../repository/repo-name-resolver'
+import { type ContextFilters, graphqlClient } from '../sourcegraph-api/graphql/client'
 import { ContextFiltersProvider } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
+    let getRepoNameFromWorkspaceUri: Mock<[vscode.Uri], any>
+
     beforeEach(() => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
+        getRepoNameFromWorkspaceUri = vi.fn()
     })
 
     afterEach(() => {
@@ -18,19 +20,27 @@ describe('ContextFiltersProvider', () => {
         vi.restoreAllMocks()
     })
 
-    async function initProviderWithContextFilters(contextFilters: ContextFiltersResult): Promise<void> {
-        vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(contextFilters)
-        await provider.init()
+    function apiResponseForFilters(contextFilters: ContextFilters) {
+        return {
+            data: { site: { codyContextFilters: { raw: contextFilters } } },
+        }
+    }
+
+    async function initProviderWithContextFilters(contextFilters: ContextFilters): Promise<void> {
+        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+            apiResponseForFilters(contextFilters)
+        )
+        await provider.init(getRepoNameFromWorkspaceUri)
     }
 
     interface AssertFilters {
         label: string
-        filters: ContextFiltersResult
-        allowed?: [string, string][]
-        notAllowed?: [string, string][]
+        filters: ContextFilters
+        allowed?: string[]
+        ignored?: string[]
     }
 
-    describe('isRepoNameAllowed', () => {
+    describe('isRepoNameIgnored', () => {
         it.each<AssertFilters>([
             {
                 label: 'allows everything if both include and exclude are empty',
@@ -38,11 +48,8 @@ describe('ContextFiltersProvider', () => {
                     include: [],
                     exclude: [],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/cody', 'src/main.ts'],
-                    ['github.com/evilcorp/cody', 'src/main.ts'],
-                ],
-                notAllowed: [],
+                allowed: ['github.com/sourcegraph/cody', 'github.com/evilcorp/cody'],
+                ignored: [],
             },
             {
                 label: 'only include rules',
@@ -50,11 +57,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '.*non-sensitive.*' }],
                     exclude: [],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/non-sensitive', 'src/main.ts'],
-                    ['github.com/non-sensitive/cody', 'agent/readme.md'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/non-sensitive', 'github.com/non-sensitive/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'only exclude rules',
@@ -62,11 +66,8 @@ describe('ContextFiltersProvider', () => {
                     include: [],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/whatever', 'src/main.ts'],
-                    ['github.com/sourcegraph/cody', 'agent/readme.md'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/whatever', 'github.com/sourcegraph/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'include and exclude rules',
@@ -77,11 +78,8 @@ describe('ContextFiltersProvider', () => {
                     ],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                allowed: [
-                    ['github.com/sourcegraph/cody', 'src/main.ts'],
-                    ['github.com/evilcorp/cody', 'src/main.ts'],
-                ],
-                notAllowed: [['github.com/sensitive/whatever', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/cody', 'github.com/evilcorp/cody'],
+                ignored: ['github.com/sensitive/whatever'],
             },
             {
                 label: 'does not allow a repo if it does not match the include pattern',
@@ -89,7 +87,7 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                notAllowed: [['github.com/other/repo', 'src/main.ts']],
+                ignored: ['github.com/other/repo'],
             },
             {
                 label: 'does not allow a repo if it matches the exclude pattern',
@@ -103,10 +101,10 @@ describe('ContextFiltersProvider', () => {
                         { repoNamePattern: '.*not-allowed.*' },
                     ],
                 },
-                allowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
-                notAllowed: [
-                    ['github.com/sensitive/sensitive-repo', 'src/main.ts'],
-                    ['github.com/sourcegraph/not-allowed-repo', 'src/main.ts'],
+                allowed: ['github.com/sourcegraph/cody'],
+                ignored: [
+                    'github.com/sensitive/sensitive-repo',
+                    'github.com/sourcegraph/not-allowed-repo',
                 ],
             },
             {
@@ -115,7 +113,7 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-repo', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-repo'],
             },
             {
                 label: 'excludes repos with anchored exclude pattern starting with the specific term',
@@ -123,10 +121,10 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: 'github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-data', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-data'],
                 allowed: [
-                    ['company.github.com/sourcegraph/sensitive-data', 'src/main.ts'],
-                    ['github.com/sourcegraph/general', 'src/main.ts'],
+                    'company.github.com/sourcegraph/sensitive-data',
+                    'github.com/sourcegraph/general',
                 ],
             },
             {
@@ -135,8 +133,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/sensitive$' }],
                 },
-                allowed: [['github.com/sourcegraph/data-sensitive', 'src/main.ts']],
-                notAllowed: [['github.com/sourcegraph/sensitive', 'src/main.ts']],
+                allowed: ['github.com/sourcegraph/data-sensitive'],
+                ignored: ['github.com/sourcegraph/sensitive'],
             },
             {
                 label: 'excludes repos using non-capturing groups',
@@ -144,8 +142,8 @@ describe('ContextFiltersProvider', () => {
                     include: [{ repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*' }],
                     exclude: [{ repoNamePattern: '.*\\/(sensitive|classified).*' }],
                 },
-                notAllowed: [['github.com/sourcegraph/sensitive-project', 'src/main.ts']],
-                allowed: [['github.com/evilcorp/public', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/sensitive-project'],
+                allowed: ['github.com/evilcorp/public'],
             },
             {
                 label: 'multiple include and exclude patterns',
@@ -158,15 +156,12 @@ describe('ContextFiltersProvider', () => {
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.+\\/docker\\/.+' }],
                 },
                 allowed: [
-                    ['github.com/sourcegraph/about', ''],
-                    ['github.com/sourcegraph/annotate', ''],
-                    ['github.com/sourcegraph/sourcegraph', ''],
-                    ['github.com/facebook/react', ''],
+                    'github.com/sourcegraph/about',
+                    'github.com/sourcegraph/annotate',
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/facebook/react',
                 ],
-                notAllowed: [
-                    ['github.com/docker/compose', ''],
-                    ['github.com/sourcegraph/cody', ''],
-                ],
+                ignored: ['github.com/docker/compose', 'github.com/sourcegraph/cody'],
             },
             {
                 label: 'exclude everything',
@@ -179,13 +174,13 @@ describe('ContextFiltersProvider', () => {
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.*' }],
                 },
                 allowed: [],
-                notAllowed: [
-                    ['github.com/sourcegraph/about', ''],
-                    ['github.com/sourcegraph/annotate', ''],
-                    ['github.com/sourcegraph/sourcegraph', ''],
-                    ['github.com/facebook/react', ''],
-                    ['github.com/docker/compose', ''],
-                    ['github.com/sourcegraph/cody', ''],
+                ignored: [
+                    'github.com/sourcegraph/about',
+                    'github.com/sourcegraph/annotate',
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/facebook/react',
+                    'github.com/docker/compose',
+                    'github.com/sourcegraph/cody',
                 ],
             },
             {
@@ -197,32 +192,64 @@ describe('ContextFiltersProvider', () => {
                     ],
                     exclude: [],
                 },
-                notAllowed: [['github.com/sourcegraph/cody', 'src/main.ts']],
+                ignored: ['github.com/sourcegraph/cody'],
             },
-        ])('$label', async ({ filters, allowed = [], notAllowed = [] }) => {
+        ])('$label', async ({ filters, allowed = [], ignored = [] }) => {
             await initProviderWithContextFilters(filters)
 
-            for (const [repoName] of allowed) {
-                expect(provider.isRepoNameAllowed(repoName)).toBe(true)
+            for (const repoName of allowed) {
+                expect(provider.isRepoNameIgnored(repoName)).toBe(false)
             }
 
-            for (const [repoName] of notAllowed) {
-                expect(provider.isRepoNameAllowed(repoName)).toBe(false)
+            for (const repoName of ignored) {
+                expect(provider.isRepoNameIgnored(repoName)).toBe(true)
             }
         })
 
-        it('exclude everything on unknown API errors', async () => {
-            vi.spyOn(graphqlClient, 'contextFilters').mockResolvedValue(new Error('API error message'))
-            await provider.init()
+        it('excludes everything on network errors', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
+            await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
 
-        it('exclude everything on network errors', async () => {
-            vi.spyOn(graphqlClient, 'contextFilters').mockRejectedValue(new Error('network error'))
-            await provider.init()
+        it('excludes everything on unknown API errors', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('API error message')
+            )
+            await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/whatever')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
+        })
+
+        it('excludes everything on invalid response structure', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: { something: true } } } },
+            })
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('API error message')
+            )
+            await provider.init(getRepoNameFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
+        })
+
+        it('includes everything on empty responses', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: null } } },
+            })
+            await provider.init(getRepoNameFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
+        })
+
+        it('includes everything on for Sourcegraph API without context filters support', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('Error: Cannot query field `codyContextFilters`')
+            )
+            await provider.init(getRepoNameFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
 
         it('uses cached results for repeated calls', async () => {
@@ -232,13 +259,13 @@ describe('ContextFiltersProvider', () => {
             }
 
             const mockedApiRequest = vi
-                .spyOn(graphqlClient, 'contextFilters')
-                .mockResolvedValue(contextFilters)
+                .spyOn(graphqlClient, 'fetchSourcegraphAPI')
+                .mockResolvedValue(apiResponseForFilters(contextFilters))
 
-            await provider.init()
+            await provider.init(getRepoNameFromWorkspaceUri)
 
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
             expect(mockedApiRequest).toBeCalledTimes(1)
         })
 
@@ -252,23 +279,23 @@ describe('ContextFiltersProvider', () => {
                 exclude: [],
             }
             const mockedApiRequest = vi
-                .spyOn(graphqlClient, 'contextFilters')
-                .mockResolvedValueOnce(mockContextFilters1)
-                .mockResolvedValueOnce(mockContextFilters2)
-            await provider.init()
+                .spyOn(graphqlClient, 'fetchSourcegraphAPI')
+                .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters1))
+                .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters2))
+            await provider.init(getRepoNameFromWorkspaceUri)
 
             expect(mockedApiRequest).toBeCalledTimes(1)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
 
             await vi.runOnlyPendingTimersAsync()
 
             expect(mockedApiRequest).toBeCalledTimes(2)
-            expect(provider.isRepoNameAllowed('github.com/sourcegraph/cody')).toBe(false)
-            expect(provider.isRepoNameAllowed('github.com/other/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(true)
+            expect(provider.isRepoNameIgnored('github.com/other/cody')).toBe(false)
         })
     })
 
-    describe('isUriAllowed', () => {
+    describe('isUriIgnored', () => {
         interface TestUriParams {
             repoName: string
             filePath: string
@@ -277,11 +304,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            vi.spyOn(repoNameResolver, 'getRepoNameFromWorkspaceUri').mockResolvedValue(
-                `github.com/sourcegraph/${repoName}`
-            )
-
-            vi.spyOn(vscode.workspace, 'asRelativePath').mockReturnValue(filePath)
+            getRepoNameFromWorkspaceUri.mockResolvedValue(`github.com/sourcegraph/${repoName}`)
 
             return URI.file(`/${repoName}/${filePath}`)
         }
@@ -294,30 +317,28 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await repoNameResolver.getRepoNameFromWorkspaceUri(includedURI)).toBe(
-                'github.com/sourcegraph/cody'
-            )
+            expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
 
-            expect(await provider.isUriAllowed(includedURI)).toBe(true)
+            expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
-            expect(await repoNameResolver.getRepoNameFromWorkspaceUri(excludedURI)).toBe(
+            expect(await getRepoNameFromWorkspaceUri(excludedURI)).toBe(
                 'github.com/sourcegraph/sourcegraph'
             )
 
-            expect(await provider.isUriAllowed(excludedURI)).toBe(false)
+            expect(await provider.isUriIgnored(excludedURI)).toBe(true)
         })
 
-        it('returns `false` if repo name is not found', async () => {
+        it('returns `true` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            vi.spyOn(repoNameResolver, 'getRepoNameFromWorkspaceUri').mockResolvedValue(undefined)
-            expect(await provider.isUriAllowed(uri)).toBe(false)
+            getRepoNameFromWorkspaceUri.mockResolvedValue(undefined)
+            expect(await provider.isUriIgnored(uri)).toBe(true)
         })
     })
 })

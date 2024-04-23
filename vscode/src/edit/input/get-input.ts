@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import {
     FILE_HELP_LABEL,
     GENERAL_HELP_LABEL,
@@ -381,7 +382,10 @@ export const getInput = async (
 
                 const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
                 const mentionQuery = mentionTrigger
-                    ? parseMentionQuery(mentionTrigger.matchingString)
+                    ? parseMentionQuery(
+                          mentionTrigger.matchingString,
+                          getEnabledContextMentionProviders()
+                      )
                     : undefined
 
                 if (!mentionQuery) {
@@ -402,7 +406,7 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.type === 'symbol'
+                                mentionQuery.provider === 'symbol'
                                     ? mentionQuery.text.length === 0
                                         ? SYMBOL_HELP_LABEL
                                         : NO_SYMBOL_MATCHES_LABEL
@@ -451,9 +455,9 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.type === 'symbol'
+                            mentionQuery?.provider === 'symbol'
                                 ? SYMBOL_HELP_LABEL
-                                : mentionQuery?.type === 'file'
+                                : mentionQuery?.provider === 'file'
                                   ? FILE_HELP_LABEL
                                   : GENERAL_HELP_LABEL,
                     },

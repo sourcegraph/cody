@@ -10,11 +10,7 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "!**/*.test.*"
-  ],
+  "files": ["dist", "src", "!**/*.test.*"],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -34,7 +30,9 @@
     "isomorphic-fetch": "^3.0.0",
     "js-tiktoken": "^1.0.10",
     "lodash": "^4.17.21",
+    "lru-cache": "^10.0.0",
     "marked": "^4.0.16",
+    "re2-wasm": "^1.0.2",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {

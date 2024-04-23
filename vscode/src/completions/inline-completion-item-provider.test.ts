@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type GraphQLAPIClientConfig,
     RateLimitError,
+    contextFiltersProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
@@ -89,6 +90,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 describe('InlineCompletionItemProvider', () => {
     beforeAll(async () => {
         await initCompletionProviderConfig({})
+    })
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     it('returns results that span the whole line', async () => {
@@ -223,6 +227,20 @@ describe('InlineCompletionItemProvider', () => {
         // On the 2nd call, lastInlineCompletionResult is provided.
         await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
         expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
+    })
+
+    it('no-ops on files that are ignored by the context filter policy', async () => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce(true)
+        const { document, position } = documentAndPosition('const foo = █', 'typescript')
+        const fn = vi.fn()
+        const provider = new MockableInlineCompletionItemProvider(fn)
+        const completions = await provider.provideInlineCompletionItems(
+            document,
+            position,
+            DUMMY_CONTEXT
+        )
+        expect(completions).toBe(null)
+        expect(fn).not.toHaveBeenCalled()
     })
 
     describe('onboarding', () => {
