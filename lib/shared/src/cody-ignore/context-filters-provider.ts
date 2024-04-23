@@ -19,7 +19,7 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
-export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
+export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
 

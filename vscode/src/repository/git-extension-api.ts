@@ -77,9 +77,9 @@ export async function gitAPIinit(): Promise<vscode.Disposable> {
  */
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     try {
-        const remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
-        if (remoteOriginUrl) {
-            return convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
+        const remoteUrl = gitRemoteUrlFromGitExtension(uri)
+        if (remoteUrl) {
+            return convertGitCloneURLToCodebaseName(remoteUrl) || undefined
         }
     } catch (error) {
         logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
