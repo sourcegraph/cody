@@ -14,7 +14,8 @@ jobs:
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
-          matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")
+          set -e
+          matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}" || true)
           echo "matches: ${matches}"
 
         # run: |
