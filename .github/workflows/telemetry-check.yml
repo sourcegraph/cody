@@ -6,11 +6,12 @@ on:
       - main
 
 jobs:
-  check-telemetry:
+  v1-telemetry-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Check for deprecated telemetry calls
+        shell: bash
         run: |
           MATCHES=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")
           if [ -n "$MATCHES" ]; then
@@ -23,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check for telemetry event with numbers
+        shell: bash
         run: |
           MATCHES=$(grep -rn "telemetryRecorder\.recorderEvent\([^)]*\d+[^)]*\)" --include="*.{js,ts,tsx}")
           if [ -n "$MATCHES" ]; then
