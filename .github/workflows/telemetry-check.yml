@@ -15,7 +15,7 @@ jobs:
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
-          modified_files=$(git diff --name-only origin/main...HEAD)
+          modified_files=$(git diff --name-only main...HEAD)
           echo "Modified files: $modified_files"
           if echo "$modified_files" | grep -qE 'logEvent|logEvents|eventLogger\.log'; then
               echo "Found log events in the following files:"
