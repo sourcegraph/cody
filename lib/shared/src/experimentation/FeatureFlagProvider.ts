@@ -51,6 +51,9 @@ export enum FeatureFlag {
 
     /** Apply a higher context window for user context items (e.g., @-mentions). */
     CodyChatContextBudget = 'cody-chat-context-budget',
+
+    /** Interactive tutorial, primarily for onboarding */
+    CodyInteractiveTutorial = 'cody-interactive-tutorial',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

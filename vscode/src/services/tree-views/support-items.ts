@@ -1,3 +1,4 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { releaseType } from '../../release'
 import { version } from '../../version'
 import type { CodySidebarTreeItem } from './treeViewItems'
@@ -36,8 +37,9 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
     },
     {
         title: 'Tutorial',
-        icon: 'question', // todo select an icon
+        icon: 'tasklist',
         command: { command: 'cody.tutorial.start' },
+        requireFeature: FeatureFlag.CodyInteractiveTutorial,
     },
     {
         title: 'Documentation',

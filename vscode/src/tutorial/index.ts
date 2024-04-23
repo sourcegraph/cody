@@ -17,6 +17,7 @@ import {
     registerEditTutorialCommand,
     setFixDiagnostic,
 } from './commands'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
@@ -187,6 +188,11 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
 export const registerInteractiveTutorial = async (
     context: vscode.ExtensionContext
 ): Promise<vscode.Disposable[]> => {
+    const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
+    if (!enabled) {
+        return []
+    }
+
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
     const document = await initTutorialDocument(documentUri)
@@ -247,7 +253,6 @@ export const registerInteractiveTutorial = async (
         editor => editor.document.uri.toString() === documentUri.toString()
     )
     if (tutorialVisible) {
-        console.log('CALLING FROM THE TOP!')
         start()
     }
 
