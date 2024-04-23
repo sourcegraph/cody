@@ -141,13 +141,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         ?.contextFiles?.some(file => file.source === 'embeddings')
                         ? 1
                         : 0,
-                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 0 : 1,
+                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                 },
                 privateMetadata: {
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    responseText: JSON.stringify(transcript),
+                    responseText: userInfo.isDotComUser ? JSON.stringify(transcript) : '',
                 },
             })
         },
