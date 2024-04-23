@@ -141,7 +141,7 @@ export function getConfiguration(
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
