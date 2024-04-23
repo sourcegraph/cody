@@ -46,6 +46,12 @@ interface ContextItemCommon {
      * Whether the content of the item is too large to be included as context.
      */
     isTooLarge?: boolean
+
+    /**
+     * The ID of the {@link ContextMentionProvider} that supplied this context item (or `undefined`
+     * if from a built-in context source such as files and symbols).
+     */
+    provider?: string
 }
 
 /**

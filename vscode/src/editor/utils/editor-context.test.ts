@@ -12,7 +12,7 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { fillInContextItemContent, filterContextItemFiles, getFileContextFiles } from './editor-context'
+import { filterContextItemFiles, getFileContextFiles, resolveContextItems } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -175,7 +175,7 @@ describe('filterContextItemFiles', () => {
     })
 })
 
-describe('fillInContextItemContent', () => {
+describe('resolveContextItems', () => {
     it('omits files that could not be read', async () => {
         // Fixes https://github.com/sourcegraph/cody/issues/2390.
         const mockEditor: Partial<Editor> = {
@@ -186,7 +186,7 @@ describe('fillInContextItemContent', () => {
                 throw new Error('error')
             },
         }
-        const contextItems = await fillInContextItemContent(mockEditor as Editor, [
+        const contextItems = await resolveContextItems(mockEditor as Editor, [
             {
                 type: 'file',
                 uri: URI.parse('file:///a.txt'),
@@ -202,16 +202,6 @@ describe('fillInContextItemContent', () => {
                 uri: URI.parse('file:///a.txt'),
                 content: 'a',
                 size: 1,
-                range: {
-                    end: {
-                        character: 0,
-                        line: 1,
-                    },
-                    start: {
-                        character: 0,
-                        line: 0,
-                    },
-                },
             },
         ])
     })

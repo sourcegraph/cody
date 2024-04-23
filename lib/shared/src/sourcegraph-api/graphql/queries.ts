@@ -154,17 +154,20 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
 
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
-	site {
-        codyContextFilters {
-            exclude {
-                repoNamePattern
-            }
-            include {
-                repoNamePattern
-            }
+    site {
+        codyContextFilters(version: V1) {
+            raw
         }
-	}
+    }
 }`
+
+export const REPO_NAME_QUERY = `
+query ResolveRepoName($cloneURL: String!) {
+    repository(cloneURL: $cloneURL) {
+        name
+    }
+}
+`
 
 export const SEARCH_ATTRIBUTION_QUERY = `
 query SnippetAttribution($snippet: String!) {

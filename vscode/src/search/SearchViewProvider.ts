@@ -10,6 +10,7 @@ import {
     hydrateAfterPostMessage,
     isDefined,
     isFileURI,
+    uriBasename,
 } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
@@ -89,7 +90,7 @@ class IndexManager implements vscode.Disposable {
         void vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: `Updating Cody search index for ${displayPath(scopeDir)}`,
+                title: `Updating Cody search index for ${uriBasename(scopeDir)}`,
                 cancellable: true,
             },
             async (_progress, token) => {
