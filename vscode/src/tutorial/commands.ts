@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
 import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
+import type { TutorialStep } from './content'
 
 export const setFixDiagnostic = (
     collection: vscode.DiagnosticCollection,
