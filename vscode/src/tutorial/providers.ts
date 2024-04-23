@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import { findRangeOfText } from './utils'
-import { getStepContent } from './content'
 
 export class ChatLinkProvider implements vscode.DocumentLinkProvider {
     constructor(public editor: vscode.TextEditor) {}
@@ -29,18 +28,12 @@ export class ChatLinkProvider implements vscode.DocumentLinkProvider {
 
 export class ResetLensProvider implements vscode.CodeLensProvider {
     private disposables: vscode.Disposable[] = []
-    private initialTutorialText = getStepContent('autocomplete')
 
     constructor(public editor: vscode.TextEditor) {
         this.disposables.push(vscode.languages.registerCodeLensProvider(editor.document.uri, this))
     }
 
     provideCodeLenses(document: vscode.TextDocument): vscode.ProviderResult<vscode.CodeLens[]> {
-        const originalDocument = document.getText() === this.initialTutorialText
-        if (originalDocument) {
-            return []
-        }
-
         return [
             new vscode.CodeLens(new vscode.Range(0, 0, 0, 0), {
                 title: 'Reset Tutorial',

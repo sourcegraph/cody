@@ -52,9 +52,7 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
 
             const changes = new Array<TextChange>(...event.contentChanges)
 
-            const newInteractiveRange = updateRangeMultipleChanges(range, changes, {
-                supportRangeAffix: true,
-            })
+            const newInteractiveRange = updateRangeMultipleChanges(range, changes)
             if (!newInteractiveRange.isEqual(range)) {
                 activeStep.range = newInteractiveRange
             }
