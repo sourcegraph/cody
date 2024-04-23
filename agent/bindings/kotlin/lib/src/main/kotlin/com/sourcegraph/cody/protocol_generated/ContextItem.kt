@@ -31,6 +31,7 @@ data class ContextItemFile(
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri
   val size: Int? = null,
   val isTooLarge: Boolean? = null,
+  val provider: String? = null,
   val type: TypeEnum, // Oneof: file
 ) : ContextItem() {
 
@@ -49,6 +50,7 @@ data class ContextItemSymbol(
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri
   val size: Int? = null,
   val isTooLarge: Boolean? = null,
+  val provider: String? = null,
   val type: TypeEnum, // Oneof: symbol
   val symbolName: String,
   val kind: SymbolKind, // Oneof: class, function, method
