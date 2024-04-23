@@ -20,6 +20,12 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
 
+/**
+ * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
+ * createWebviewTelemetryRecorder instead in webviews..
+ *
+ * V2 telemetry RPC parameter type for webviews.
+ */
 export type WebviewRecordEventParameters = TelemetryEventParameters<
     // 👷 HACK:  We use looser string types instead of the actual SDK at
     // '@sourcegraph/cody-shared/src/telemetry-v2' because this defines a
@@ -43,9 +49,14 @@ export type WebviewMessage =
           command: 'event'
           eventName: string
           properties: TelemetryEventProperties | undefined
-      } // new event log internal API (use createWebviewTelemetryService wrapper)
+      }
     | {
-          // v2 telemetry
+          /**
+             * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
+             * createWebviewTelemetryRecorder instead for webviews.
+             *
+             * V2 telemetry RPC for the webview.
+             */
           command: 'recordEvent'
           // 👷 HACK: WARNING: We use looser string types instead of the actual SDK at
           // '@sourcegraph/cody-shared/src/telemetry-v2' because this defines a

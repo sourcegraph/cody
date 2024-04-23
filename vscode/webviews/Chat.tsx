@@ -338,6 +338,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
                         properties: { source: 'chat', eventType: 'keyDown' },
                     })
+                    postMessage?.({
+                        command: 'recordEvent',
+                        feature: 'chatActions:editLast',
+                        action: 'executed',
+                        parameters: {
+                            metadata: { properties: { source: 'chat', eventType: 'keyDown' } },
+                        },
+                    })
                     return
                 }
             }

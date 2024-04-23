@@ -31,8 +31,7 @@ import { LoginSimplified } from './OnboardingExperiment'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { createWebviewTelemetryService } from './utils/telemetry'
-import { telemetryRecorder } from '../src/services/telemetry-v2'
+import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
@@ -202,7 +201,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
+    // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+    // V2 telemetry recorder
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+
+    // Is this user a new installation?
     const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
 
     const onCurrentChatModelChange = useCallback(
