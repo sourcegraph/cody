@@ -161,6 +161,14 @@ query ContextFilters {
     }
 }`
 
+export const REPO_NAME_QUERY = `
+query ResolveRepoName($cloneURL: String!) {
+    repository(cloneURL: $cloneURL) {
+        name
+    }
+}
+`
+
 export const SEARCH_ATTRIBUTION_QUERY = `
 query SnippetAttribution($snippet: String!) {
     snippetAttribution(snippet: $snippet) {

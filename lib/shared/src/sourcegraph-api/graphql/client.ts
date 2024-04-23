@@ -32,6 +32,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -130,6 +131,10 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
+interface RepositoryNameResponse {
+    repository: { name: string } | null
+}
+
 interface RepositoryIdsResponse {
     repositories: {
         nodes: { name: string; id: string }[]
@@ -192,8 +197,8 @@ export interface ContextFiltersResponse {
 }
 
 export interface ContextFilters {
-    include?: CodyContextFilterItem[]
-    exclude?: CodyContextFilterItem[]
+    include?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
+    exclude?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
 }
 
 export interface CodyContextFilterItem {
@@ -202,15 +207,22 @@ export interface CodyContextFilterItem {
     filePathPatterns?: string[]
 }
 
-const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
-    include: [],
-    exclude: [],
-}
+/**
+ * Default value used on the client in case context filters are not set.
+ */
+export const INCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: [{ repoNamePattern: '.*' }],
+    exclude: null,
+} satisfies ContextFilters
 
-const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFilters = {
-    include: [],
+/**
+ * Default value used on the client in case client encounters errors
+ * fetching or parsing context filters.
+ */
+export const EXCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: null,
     exclude: [{ repoNamePattern: '.*' }],
-}
+} satisfies ContextFilters
 
 interface SearchAttributionResults {
     limitHit: boolean
@@ -515,6 +527,18 @@ export class SourcegraphGraphQLAPIClient {
             names,
             first,
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
+    }
+
+    public async getRepoName(cloneURL: string): Promise<string | null> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
+            REPO_NAME_QUERY,
+            {
+                cloneURL,
+            }
+        )
+
+        const result = extractDataOrError(response, data => data.repository?.name ?? null)
+        return isError(result) ? null : result
     }
 
     public async contextSearch(

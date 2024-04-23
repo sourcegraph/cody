@@ -192,6 +192,8 @@ export {
     customUserAgent,
     isNodeResponse,
     setUserAgent,
+    INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
@@ -237,10 +239,9 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    getURLContextItems,
-    isURLContextItem,
-    fetchContentForURLContextItem,
-} from './mentions/urlContextItems'
+    CONTEXT_MENTION_PROVIDERS,
+    type ContextMentionProvider,
+} from './mentions/api'
 export { TokenCounter } from './token/counter'
 export {
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,

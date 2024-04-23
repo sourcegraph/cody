@@ -13,15 +13,13 @@ import {
     type SymbolKind,
     TokenCounter,
     displayPath,
-    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
-    isURLContextItem,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
-import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
+import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -274,31 +272,62 @@ export async function filterContextItemFiles(
     return filtered
 }
 
-export async function fillInContextItemContent(
+export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[]
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let { content, size, range, uri } = item
-                if (!content) {
-                    try {
-                        if (isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())) {
-                            content = (await fetchContentForURLContextItem(uri.toString())) ?? ''
-                        } else {
-                            content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
-                        }
-                        size = size ?? TokenCounter.countTokens(content)
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
+                try {
+                    return await resolveContextItem(item, editor)
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                    )
+                    return null
                 }
-                return { ...item, content: content!, size }
             })
         )
-    ).filter(isDefined)
+    )
+        .filter(isDefined)
+        .flat()
+}
+
+async function resolveContextItem(item: ContextItem, editor: Editor): Promise<ContextItemWithContent[]> {
+    const resolvedItems = item.provider
+        ? await resolveContextMentionProviderContextItem(item)
+        : [await resolveFileOrSymbolContextItem(item, editor)]
+    return resolvedItems.map(resolvedItem => ({
+        ...resolvedItem,
+        size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
+    }))
+}
+
+async function resolveContextMentionProviderContextItem({
+    provider: itemProvider,
+    ...item
+}: ContextItem): Promise<ContextItemWithContent[]> {
+    for (const provider of getEnabledContextMentionProviders()) {
+        if (provider.id === itemProvider && provider.resolveContextItem) {
+            return provider.resolveContextItem({ ...item, provider: itemProvider })
+        }
+    }
+
+    // No resolver, so return the context item as-is if it has content.
+    return item.content !== undefined ? [item as ContextItemWithContent] : []
+}
+
+async function resolveFileOrSymbolContextItem(
+    contextItem: ContextItem,
+    editor: Editor
+): Promise<ContextItemWithContent> {
+    const content =
+        contextItem.content ??
+        (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    return {
+        ...contextItem,
+        content,
+        size: contextItem.size ?? TokenCounter.countTokens(content),
+    }
 }

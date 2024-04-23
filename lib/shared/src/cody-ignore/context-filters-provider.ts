@@ -10,8 +10,8 @@ import { wrapInActiveSpan } from '../tracing'
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
 interface ParsedContextFilters {
-    include: ParsedContextFilterItem[]
-    exclude: ParsedContextFilterItem[]
+    include: null | ParsedContextFilterItem[]
+    exclude: null | ParsedContextFilterItem[]
 }
 
 interface ParsedContextFilterItem {
@@ -19,7 +19,7 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
-export type GetRepoNameFromWorkspaceUri = (uri: vscode.Uri) => Promise<string | undefined>
+export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[] | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
 
@@ -30,11 +30,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
      */
     private contextFilters: ParsedContextFilters | null = null
     private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
-    private getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri | undefined = undefined
+    private getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
 
-    async init(getRepoNameFromWorkspaceUri: GetRepoNameFromWorkspaceUri) {
-        this.getRepoNameFromWorkspaceUri = getRepoNameFromWorkspaceUri
+    async init(getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri) {
+        this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
         this.dispose()
         await this.fetchContextFilters()
         this.startRefetchTimer()
@@ -49,8 +49,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
             if (response) {
                 logDebug('ContextFiltersProvider', 'fetchContextFilters', { verbose: response })
                 this.contextFilters = {
-                    include: (response.include || []).map(parseContextFilterItem),
-                    exclude: (response.exclude || []).map(parseContextFilterItem),
+                    include: response.include?.map(parseContextFilterItem) || null,
+                    exclude: response.exclude?.map(parseContextFilterItem) || null,
                 }
             }
         } catch (error) {
@@ -77,7 +77,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         // If we don't have any context filters, we exclude everything.
         let isIgnored = this.contextFilters === null
 
-        if (this.contextFilters?.include.length) {
+        if (this.contextFilters?.include?.length) {
             for (const parsedFilter of this.contextFilters.include) {
                 isIgnored = !matchesContextFilter(parsedFilter, repoName)
                 if (!isIgnored) {
@@ -86,7 +86,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         }
 
-        if (!isIgnored && this.contextFilters?.exclude.length) {
+        if (!isIgnored && this.contextFilters?.exclude?.length) {
             for (const parsedFilter of this.contextFilters.exclude) {
                 if (matchesContextFilter(parsedFilter, repoName)) {
                     isIgnored = true
@@ -100,11 +100,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
-        if (this.hasIncludeEverythingFilters()) {
+        if (this.hasAllowEverythingFilters()) {
             return false
         }
 
-        if (this.hasExcludeEverythingFilters()) {
+        if (this.hasIgnoreEverythingFilters()) {
             return true
         }
 
@@ -114,11 +114,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return true
         }
 
-        const repoName = await wrapInActiveSpan('repoNameResolver.getRepoNameFromWorkspaceUri', () =>
-            this.getRepoNameFromWorkspaceUri?.(uri)
+        const repoNames = await wrapInActiveSpan('repoNameResolver.getRepoNamesFromWorkspaceUri', () =>
+            this.getRepoNamesFromWorkspaceUri?.(uri)
         )
 
-        return repoName ? this.isRepoNameIgnored(repoName) : true
+        return repoNames ? repoNames.some(repoName => this.isRepoNameIgnored(repoName)) : true
     }
 
     public dispose(): void {
@@ -129,15 +129,19 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    private hasIncludeEverythingFilters() {
-        return this.contextFilters?.include.length === 0 && this.contextFilters?.exclude.length === 0
+    private hasAllowEverythingFilters() {
+        return (
+            this.contextFilters?.exclude === null &&
+            this.contextFilters?.include?.length === 1 &&
+            this.contextFilters.include[0].repoNamePattern.toString() === '/.*/u'
+        )
     }
 
-    private hasExcludeEverythingFilters() {
+    private hasIgnoreEverythingFilters() {
         return (
-            this.contextFilters?.include.length === 0 &&
-            this.contextFilters?.exclude.length === 1 &&
-            this.contextFilters.exclude[0].repoNamePattern.toString() === '.*'
+            this.contextFilters?.include === null &&
+            this.contextFilters?.exclude?.length === 1 &&
+            this.contextFilters.exclude[0].repoNamePattern.toString() === '/.*/u'
         )
     }
 }
