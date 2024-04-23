@@ -1,23 +1,23 @@
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
-import { TODO_DECORATION } from './constants'
-import {
-    type TutorialStepKey,
-    getNextStep,
-    getStepContent,
-    getStepData,
-    type TutorialStep,
-    initTutorialDocument,
-} from './content'
-import { setTutorialUri } from './helpers'
-import { ChatLinkProvider, ResetLensProvider } from './providers'
 import {
     registerAutocompleteListener,
     registerChatTutorialCommand,
     registerEditTutorialCommand,
     setFixDiagnostic,
 } from './commands'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { TODO_DECORATION } from './constants'
+import {
+    type TutorialStep,
+    type TutorialStepKey,
+    getNextStep,
+    getStepContent,
+    getStepData,
+    initTutorialDocument,
+} from './content'
+import { setTutorialUri } from './helpers'
+import { ChatLinkProvider, ResetLensProvider } from './providers'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []

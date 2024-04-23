@@ -1,8 +1,8 @@
+import { PromptString } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
-import { PromptString } from '@sourcegraph/cody-shared'
-import { TODO_DECORATION } from './constants'
 import { CodyTaskState } from '../non-stop/utils'
+import { TODO_DECORATION } from './constants'
 import type { TutorialStep } from './content'
 
 export const setFixDiagnostic = (
