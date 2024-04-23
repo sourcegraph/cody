@@ -246,6 +246,13 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
     treeRoot.add(contextRoot)
     treeModel.reload()
     resize()
+
+    // Update the extension-side state for this chat.
+    RemoteRepoUtils.resolveReposWithErrorNotification(
+        project, repoNames.map { it -> CodebaseName(it) }) { repos ->
+          chatSession.sendWebviewMessage(
+              WebviewMessage(command = "context/choose-remote-search-repo", explicitRepos = repos))
+        }
   }
 
   @RequiresEdt
@@ -273,22 +280,11 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
   // Given a textual list of repos, extract a best effort list of repositories from it and update
   // context settings.
   private fun applyRepoSpec(spec: String) {
-    val repos = spec.split(Regex("""\s+""")).toSet()
-    RemoteRepoUtils.getRepositories(project, repos.map { it -> CodebaseName(it) }.toList())
-        .completeOnTimeout(null, 15, TimeUnit.SECONDS)
-        .thenApply { resolvedRepos ->
-          if (resolvedRepos == null) {
-            runInEdt { RemoteRepoResolutionFailedNotification().notify(project) }
-            return@thenApply
-          }
-          var trimmedRepos = resolvedRepos.take(MAX_REMOTE_REPOSITORY_COUNT)
+    val repos = spec.split(Regex("""\s+""")).filter { it -> it != "" }.toSet()
+    RemoteRepoUtils.resolveReposWithErrorNotification(
+        project, repos.map { it -> CodebaseName(it) }.toList()) { trimmedRepos ->
           runInEdt {
-            // Update the extension-side state.
-            chatSession.sendWebviewMessage(
-                WebviewMessage(
-                    command = "context/choose-remote-search-repo", explicitRepos = trimmedRepos))
-
-            // Update the plugin's copy of the state. :(
+            // Update the plugin's copy of the state.
             updateContextState { state ->
               state.remoteRepositories.clear()
               state.remoteRepositories.addAll(
@@ -303,6 +299,11 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
             // Update the UI.
             updateTree(trimmedRepos.map { it -> it.name })
             resize()
+
+            // Update the extension state.
+            chatSession.sendWebviewMessage(
+                WebviewMessage(
+                    command = "context/choose-remote-search-repo", explicitRepos = trimmedRepos))
           }
         }
   }
