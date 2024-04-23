@@ -11,6 +11,7 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
+    type MentionTrigger,
     type Message,
     ModelProvider,
     PromptString,
@@ -283,7 +284,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query, message.range)
+                await this.handleGetUserContextFilesCandidates(
+                    message.trigger,
+                    message.query,
+                    message.range
+                )
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -573,14 +578,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
+    private async handleGetUserContextFilesCandidates(
+        trigger: MentionTrigger,
+        query: string,
+        range?: RangeData
+    ): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
-        const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
+        const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[3] = {
             empty: () => {
                 telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
                     source,
@@ -599,6 +608,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         try {
             const items = await getChatContextItemsForMention(
+                trigger,
                 query,
                 cancellation.token,
                 scopedTelemetryRecorder,

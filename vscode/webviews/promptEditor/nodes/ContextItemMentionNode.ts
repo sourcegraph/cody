@@ -4,6 +4,7 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemInstruction,
     type ContextItemSymbol,
     displayLineRange,
     displayPath,
@@ -29,6 +30,7 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
  * item mentions.
  */
 export type SerializedContextItem = { uri: string; content?: undefined } & (
+    | Omit<ContextItemInstruction, 'uri' | 'content'>
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
 )

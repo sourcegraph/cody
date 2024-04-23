@@ -12,11 +12,11 @@ import type { ChatContextClient } from './chatContextClient'
  * @internal
  */
 export const dummyChatContextClient: ChatContextClient = {
-    async getChatContextItems(query) {
+    async getChatContextItems(trigger, query) {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
         query = query.toLowerCase()
-        const mentionQuery = parseMentionQuery(query, [])
+        const mentionQuery = parseMentionQuery(trigger, query, [])
         return mentionQuery.provider === 'symbol'
             ? DUMMY_SYMBOLS.filter(
                   f =>

@@ -55,6 +55,7 @@ export {
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
+    type ContextItemInstruction,
     type ContextFileType,
     type ContextMessage,
     type SymbolKind,
@@ -241,6 +242,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type Trigger as MentionTrigger,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export {

@@ -207,6 +207,10 @@ function createContextFileFromUri(
         return []
     }
 
+    if (type === 'instruction') {
+        return []
+    }
+
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return [
         type === 'file'

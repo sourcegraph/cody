@@ -1,5 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    type MentionTrigger,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -23,11 +24,11 @@ import styles from './OptionsList.module.css'
 import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
 
 export const OptionsList: FunctionComponent<
-    { query: string; options: MentionTypeaheadOption[] } & Pick<
+    { trigger: MentionTrigger; query: string; options: MentionTypeaheadOption[] } & Pick<
         Parameters<MenuRenderFn<MentionTypeaheadOption>>[1],
         'selectedIndex' | 'setHighlightedIndex' | 'selectOptionAndCleanUp'
     >
-> = ({ query, options, selectedIndex, setHighlightedIndex, selectOptionAndCleanUp }) => {
+> = ({ trigger, query, options, selectedIndex, setHighlightedIndex, selectOptionAndCleanUp }) => {
     const ref = useRef<HTMLUListElement>(null)
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `options` changes.
     useEffect(() => {
@@ -36,7 +37,7 @@ export const OptionsList: FunctionComponent<
         setHighlightedIndex(0)
     }, [options])
 
-    const mentionQuery = parseMentionQuery(query, [])
+    const mentionQuery = parseMentionQuery(trigger, query, [])
 
     return (
         <div className={styles.container}>
@@ -91,8 +92,17 @@ const Item: FunctionComponent<{
 }> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const isFileType = item.type === 'file'
-    const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
+    const isInstructionType = item.type === 'instruction'
+    const icon = isFileType
+        ? null
+        : isInstructionType
+          ? null
+          : item.kind === 'class'
+              ? 'symbol-structure'
+              : 'symbol-method'
+    const title =
+        item.title ??
+        (isFileType ? displayPathBasename(item.uri) : isInstructionType ? item.title : item.symbolName)
 
     const range = getLineRangeInMention(query, item.range)
     const dir = displayPathDirname(item.uri)

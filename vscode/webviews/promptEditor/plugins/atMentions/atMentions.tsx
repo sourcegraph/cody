@@ -14,6 +14,7 @@ import styles from './atMentions.module.css'
 import {
     type ContextItem,
     ContextItemSource,
+    type MentionTrigger,
     type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
@@ -86,6 +87,7 @@ export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
     const [query, setQuery] = useState<string | null>(null)
+    const [trigger, setTrigger] = useState<MentionTrigger | null>(null)
 
     const [tokenAdded, setTokenAdded] = useState<number>(0)
 
@@ -94,7 +96,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         middleware: [offset(6), flip(), shift()],
     })
 
-    const results = useChatContextItems(query)
+    const results = useChatContextItems(trigger, query)
 
     const model = useCurrentChatModel()
     const options = useMemo(() => {
@@ -170,13 +172,19 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
+    const triggerFn = useCallback((textBeforeCursor: string) => {
+        const trigger = scanForMentionTriggerInUserTextInput(textBeforeCursor)
+        setTrigger(trigger?.trigger || null)
+        return trigger
+    }, [])
+
     const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
             onQueryChange={onQueryChange}
             onSelectOption={onSelectOption}
-            triggerFn={scanForMentionTriggerInUserTextInput}
+            triggerFn={triggerFn}
             options={options}
             anchorClassName={styles.resetAnchor}
             commandPriority={
@@ -211,6 +219,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={classNames(styles.popover)}
                             >
                                 <OptionsList
+                                    trigger={trigger ?? '@'}
                                     query={query ?? ''}
                                     options={options}
                                     selectedIndex={selectedIndex}

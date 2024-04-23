@@ -383,6 +383,7 @@ export const getInput = async (
                 const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
                 const mentionQuery = mentionTrigger
                     ? parseMentionQuery(
+                          mentionTrigger.trigger,
                           mentionTrigger.matchingString,
                           getEnabledContextMentionProviders()
                       )
@@ -399,7 +400,10 @@ export const getInput = async (
                     return
                 }
 
-                const matchingContext = await getMatchingContext(mentionQuery)
+                const matchingContext = await getMatchingContext(
+                    mentionTrigger?.trigger || '@',
+                    mentionQuery
+                )
                 if (matchingContext.length === 0) {
                     // Attempted to match but found nothing
                     input.items = [

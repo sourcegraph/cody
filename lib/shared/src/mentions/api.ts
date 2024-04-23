@@ -1,6 +1,8 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
+import { RESPONSE_STYLE_CONTEXT_PROVIDER } from './providers/responseStyle'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 
+export type Trigger = '#' | '@'
 /**
  * A unique identifier for a {@link ContextMentionProvider}.
  */
@@ -13,7 +15,10 @@ export type ContextMentionProviderID = string
  *
  * In VS Code, use {@link getEnabledContextMentionProviders} instead of this.
  */
-export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [URL_CONTEXT_MENTION_PROVIDER]
+export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
+    URL_CONTEXT_MENTION_PROVIDER,
+    RESPONSE_STYLE_CONTEXT_PROVIDER,
+]
 
 /**
  * A provider that can supply context for users to @-mention in chat.
@@ -21,10 +26,15 @@ export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [URL_CONTEXT_
  * This API is *experimental* and subject to rapid, unannounced change.
  */
 export interface ContextMentionProvider<ID extends ContextMentionProviderID = ContextMentionProviderID> {
-    id: ID
+    readonly id: ID
 
     /**
-     * Prefix strings for the user input after the `@` that trigger this provider. For example, a
+     *
+     */
+    triggers: Trigger[]
+
+    /**
+     * Prefix strings for the user input after the <trigger-character> that triggered this provider. For example, a
      * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
      */
     triggerPrefixes: string[]
@@ -48,7 +58,7 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     ): Promise<ContextItemWithContent[]>
 }
 
-type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {
+export type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {
     /**
      * The ID of the {@link ContextMentionProvider} that supplied this context item.
      */
