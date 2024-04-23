@@ -247,6 +247,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
                 properties: { source: 'chat', eventType },
             })
+            postMessage?.({
+                command: 'recordEvent',
+                feature: 'chatActions:reset',
+                action: 'executed',
+                parameters: { properties: { source: 'chat', eventType } },
+            })
         },
         [postMessage, setEditMessageState]
     )
