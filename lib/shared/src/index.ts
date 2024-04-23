@@ -215,7 +215,7 @@ export {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
-    NOOP_TELEMETRY_RECORDER_SERVICE,
+    noOpTelemetryRecorder,
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export { EventLogger } from './telemetry/EventLogger'

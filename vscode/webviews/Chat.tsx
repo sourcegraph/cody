@@ -27,6 +27,8 @@ import {
 } from './promptEditor/PromptEditor'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
@@ -147,7 +149,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
-                    responseText: userInfo.isDotComUser ? JSON.stringify(transcript) : '',
+                    responseText: userInfo.isDotComUser
+                        ? truncateTextStart(transcript.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        : '',
                 },
             })
         },
@@ -247,14 +251,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
                 properties: { source: 'chat', eventType },
             })
-            postMessage?.({
-                command: 'recordEvent',
-                feature: 'chatActions:reset',
-                action: 'executed',
-                parameters: { properties: { source: 'chat', eventType } },
+            telemetryRecorder.recordEvent('cody.chatActions', 'reset.executed', {
+                privateMetadata: { source: 'chat', eventType },
             })
         },
-        [postMessage, setEditMessageState]
+        [postMessage, setEditMessageState, telemetryRecorder]
     )
 
     const submitInput = useCallback(
@@ -344,13 +345,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
                         properties: { source: 'chat', eventType: 'keyDown' },
                     })
-                    postMessage?.({
-                        command: 'recordEvent',
-                        feature: 'chatActions:editLast',
-                        action: 'executed',
-                        parameters: {
-                            metadata: { properties: { source: 'chat', eventType: 'keyDown' } },
-                        },
+                    telemetryRecorder.recordEvent('cody.chatActions', 'editLast.executed', {
+                        privateMetadata: { source: 'chat', eventType: 'keyDown' },
                     })
                     return
                 }
@@ -417,6 +413,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             lastHumanMessageIndex,
             enableNewChatMode,
             postMessage,
+            telemetryRecorder,
         ]
     )
 

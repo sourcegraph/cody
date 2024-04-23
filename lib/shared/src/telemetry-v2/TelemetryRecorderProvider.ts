@@ -80,13 +80,6 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
  */
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
-/** For testing. */
-export const NOOP_TELEMETRY_RECORDER_SERVICE: TelemetryRecorder = {
-    recordEvent() {
-        /* noop */
-    },
-}
-
 export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingProduct,
     BillingCategory
@@ -96,7 +89,7 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
     }
 }
 
-const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
+export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
 /**
  * MockServerTelemetryRecorderProvider uses MockServerTelemetryExporter to export
