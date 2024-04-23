@@ -1,5 +1,6 @@
 import { type ChildProcessWithoutNullStreams, fork } from 'node:child_process'
 import { displayLineRange } from '@sourcegraph/cody-shared'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import type { ServerInfo } from '../../vscode/src/jsonrpc/agent-protocol'
@@ -35,9 +36,12 @@ export async function createAgentClient({
     debug = false,
 }: AgentClientOptions): Promise<AgentClient> {
     const agentProcess = spawnAgent()
-    const rpc = new MessageHandler()
-    agentProcess.stdout.pipe(rpc.messageDecoder)
-    rpc.messageEncoder.pipe(agentProcess.stdin)
+
+    const conn = createMessageConnection(
+        new StreamMessageReader(agentProcess.stdout),
+        new StreamMessageWriter(agentProcess.stdin)
+    )
+    const rpc = new MessageHandler(conn)
 
     rpc.registerNotification('debug/message', message => {
         if (debug) {
@@ -49,6 +53,7 @@ export async function createAgentClient({
             console.debug('agent: debug:', message)
         }
     })
+    conn.listen()
 
     const serverInfo = await rpc.request('initialize', {
         name: 'cody-cli',
