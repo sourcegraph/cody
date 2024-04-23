@@ -78,6 +78,7 @@ export class RepoNameResolver {
                 return definedRepoNames
             }
         } catch (error) {
+            console.error(error)
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
 

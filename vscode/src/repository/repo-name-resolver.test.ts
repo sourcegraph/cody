@@ -8,8 +8,8 @@ import { RepoNameResolver, gitRemoteUrlsFromTreeWalk } from './repo-name-resolve
 
 interface MockFsCallsParams {
     filePath: string
-    gitConfig: string
-    gitRepoPath: string
+    gitConfig?: string
+    gitRepoPath?: string
     gitSubmodule?: {
         path: string
         gitFile: string
@@ -30,7 +30,7 @@ function mockFsCalls(params: MockFsCallsParams) {
             return { type: vscode.FileType.File } as vscode.FileStat
         }
 
-        if (fsPath === `${gitRepoPath}/.git`) {
+        if (gitRepoPath && fsPath === `${gitRepoPath}/.git`) {
             return { type: vscode.FileType.Directory } as vscode.FileStat
         }
 
@@ -40,7 +40,7 @@ function mockFsCalls(params: MockFsCallsParams) {
     const readFileMock = vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(async uri => {
         const fsPath = deWindowsifyPath(uri.fsPath)
 
-        if (fsPath === `${gitRepoPath}/.git/config`) {
+        if (gitConfig && fsPath === `${gitRepoPath}/.git/config`) {
             return new TextEncoder().encode(dedent(gitConfig))
         }
 
@@ -181,10 +181,6 @@ describe('gitRemoteUrlFromTreeWalk', () => {
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/nested/foo.ts',
             gitRepoPath: '/repo',
-            gitSubmodule: {
-                path: '/repo/submodule/nested',
-                gitFile: 'gitdir: ../../.git/modules/submodule/modules/nested',
-            },
             gitConfig: `
                 [core]
                     repositoryformatversion = 0
@@ -223,19 +219,25 @@ describe('getRepoNamesFromWorkspaceUri', () => {
     it('resolves the repo name using graphql', async () => {
         const resolver = new RepoNameResolver()
         resolver.init([() => Promise.resolve(['git@github.com:sourcegraph/cody.git'])])
-        const uri = URI.file('foo.ts')
+
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/foo.ts',
+        })
 
         vi.spyOn(graphqlClient, 'getRepoName').mockResolvedValue('sourcegraph/cody')
-        expect(resolver.getRepoNamesFromWorkspaceUri(uri)).resolves.toEqual(['sourcegraph/cody'])
+        expect(resolver.getRepoNamesFromWorkspaceUri(fileUri)).resolves.toEqual(['sourcegraph/cody'])
     })
 
     it('falls back to parsing the URI if the GraphQL API does not return', async () => {
         const resolver = new RepoNameResolver()
         resolver.init([() => Promise.resolve(['git@github.com:sourcegraph/cody.git'])])
-        const uri = URI.file('foo.ts')
+
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/foo.ts',
+        })
 
         vi.spyOn(graphqlClient, 'getRepoName').mockResolvedValue(null)
-        expect(resolver.getRepoNamesFromWorkspaceUri(uri)).resolves.toEqual([
+        expect(resolver.getRepoNamesFromWorkspaceUri(fileUri)).resolves.toEqual([
             'github.com/sourcegraph/cody',
         ])
     })
