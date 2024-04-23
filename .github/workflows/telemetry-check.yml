@@ -14,9 +14,19 @@ jobs:
         shell: bash
         run: |
           echo "Checking for deprecated telemetry calls"
-          matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx,yml}")
           echo "logEvent('this should get flagged')"
-          echo "matches: ${matches}"
+          if grep -rqE 'logEvent|logEvents|eventLogger\.log' .; then
+            echo "Found log events in modified files."
+            exit 1
+          else
+            echo "No log events found in modified files."
+            exit 0
+          fi
+
+          # echo "Checking for deprecated telemetry calls"
+          # matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx,yml}")
+          # echo "logEvent('this should get flagged')"
+          # echo "matches: ${matches}"
 
         # run: |
         #   MATCHES="$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}")"
