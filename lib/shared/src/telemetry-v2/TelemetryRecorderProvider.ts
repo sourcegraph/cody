@@ -80,6 +80,13 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
  */
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
+/** For testing. */
+export const NOOP_TELEMETRY_RECORDER_SERVICE: TelemetryRecorder = {
+    recordEvent() {
+        /* noop */
+    },
+}
+
 export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingProduct,
     BillingCategory

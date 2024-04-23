@@ -2,9 +2,8 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    ANSWER_TOKENS,
-    BillingCategory,
-    BillingProduct,
+    type BillingCategory,
+    type BillingProduct,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
@@ -65,7 +64,7 @@ import {
     CHAT_OUTPUT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared/src/token/constants'
 import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
