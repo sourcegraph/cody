@@ -27,10 +27,13 @@ export interface RemoteSearchProvider {
     inclusion: 'auto' | 'manual'
 }
 
+export type EmbeddingsProvider = 'sourcegraph' | 'openai'
+
 export interface LocalEmbeddingsProvider {
     kind: 'embeddings'
     state: 'indeterminate' | 'no-match' | 'unconsented' | 'indexing' | 'ready'
     errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
+    embeddingsAPIProvider: EmbeddingsProvider
 }
 
 export type SearchProvider = LocalSearchProvider | RemoteSearchProvider
