@@ -21,6 +21,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
     ],
 })('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
