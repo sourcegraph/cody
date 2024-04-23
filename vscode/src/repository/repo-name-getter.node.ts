@@ -8,7 +8,7 @@ import { logDebug } from '../log'
 
 import { pathFunctionsForURI } from '@sourcegraph/cody-shared/src/common/path'
 
-export async function gitRemoteUrlFromGitCli(uri: vscode.Uri): Promise<string | undefined> {
+export async function gitRemoteUrlsFromGitCli(uri: vscode.Uri): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -26,20 +26,20 @@ export async function gitRemoteUrlFromGitCli(uri: vscode.Uri): Promise<string | 
             return undefined
         }
 
-        let fetchRemote = undefined
+        const remoteUrls = new Set<string>()
         for (const line of remotes.trim().split('\n')) {
             // Splits "origin  https://github.com/sourcegraph/cody (fetch)"
-            const parts = line.split(/\s+/)
+            const parts = line.trim().split(/\s+/)
             if (parts[2] === '(push)') {
-                return parts[1].trim()
+                remoteUrls.add(parts[1].trim())
             }
 
-            if (!fetchRemote && parts[2] === '(fetch)') {
-                fetchRemote = parts[1].trim()
+            if (parts[2] === '(fetch)') {
+                remoteUrls.add(parts[1].trim())
             }
         }
 
-        return fetchRemote
+        return remoteUrls.size ? Array.from(remoteUrls) : undefined
     } catch (error) {
         if (error instanceof Error) {
             logDebug('gitRemoteUrlFromGitCli', 'not a git repository', { verbose: error })

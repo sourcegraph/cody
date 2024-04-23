@@ -77,7 +77,10 @@ export async function gitAPIinit(): Promise<vscode.Disposable> {
  */
 export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
     try {
-        const remoteOriginUrl = gitRemoteUrlFromGitExtension(uri)
+        const repository = vscodeGitAPI?.getRepository(uri)
+        const remoteOriginUrl =
+            repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
+
         if (remoteOriginUrl) {
             return convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
         }
@@ -87,7 +90,19 @@ export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined
     return undefined
 }
 
-export function gitRemoteUrlFromGitExtension(uri: vscode.Uri): string | undefined {
+export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
-    return repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
+    const remoteUrls = new Set<string>()
+
+    for (const remote of repository?.state?.remotes || []) {
+        if (remote.fetchUrl) {
+            remoteUrls.add(remote.fetchUrl)
+        }
+
+        if (remote.pushUrl) {
+            remoteUrls.add(remote.pushUrl)
+        }
+    }
+
+    return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }

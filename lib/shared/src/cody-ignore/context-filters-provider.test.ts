@@ -7,12 +7,12 @@ import { ContextFiltersProvider } from './context-filters-provider'
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
-    let getRepoNameFromWorkspaceUri: Mock<[vscode.Uri], any>
+    let getRepoNamesFromWorkspaceUri: Mock<[vscode.Uri], any>
 
     beforeEach(() => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
-        getRepoNameFromWorkspaceUri = vi.fn()
+        getRepoNamesFromWorkspaceUri = vi.fn()
     })
 
     afterEach(() => {
@@ -30,7 +30,7 @@ describe('ContextFiltersProvider', () => {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
-        await provider.init(getRepoNameFromWorkspaceUri)
+        await provider.init(getRepoNamesFromWorkspaceUri)
     }
 
     interface AssertFilters {
@@ -45,8 +45,8 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'allows everything if both include and exclude are empty',
                 filters: {
-                    include: [],
-                    exclude: [],
+                    include: null,
+                    exclude: null,
                 },
                 allowed: ['github.com/sourcegraph/cody', 'github.com/evilcorp/cody'],
                 ignored: [],
@@ -55,7 +55,6 @@ describe('ContextFiltersProvider', () => {
                 label: 'only include rules',
                 filters: {
                     include: [{ repoNamePattern: '.*non-sensitive.*' }],
-                    exclude: [],
                 },
                 allowed: ['github.com/sourcegraph/non-sensitive', 'github.com/non-sensitive/cody'],
                 ignored: ['github.com/sensitive/whatever'],
@@ -63,7 +62,6 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'only exclude rules',
                 filters: {
-                    include: [],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
                 allowed: ['github.com/sourcegraph/whatever', 'github.com/sourcegraph/cody'],
@@ -190,7 +188,6 @@ describe('ContextFiltersProvider', () => {
                         { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
                         { repoNamePattern: '(invalid_regex' },
                     ],
-                    exclude: [],
                 },
                 ignored: ['github.com/sourcegraph/cody'],
             },
@@ -208,7 +205,7 @@ describe('ContextFiltersProvider', () => {
 
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -217,7 +214,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -229,7 +226,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
         })
@@ -238,7 +235,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -247,7 +244,37 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
+        })
+
+        it('excludes everything on invalid response structure', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: { something: true } } } },
+            })
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('API error message')
+            )
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(true)
+        })
+
+        it('includes everything on empty responses', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: null } } },
+            })
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
+        })
+
+        it('includes everything for Sourcegraph API without context filters support', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('Error: Cannot query field `codyContextFilters`')
+            )
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/whatever')).toBe(false)
         })
@@ -255,14 +282,13 @@ describe('ContextFiltersProvider', () => {
         it('uses cached results for repeated calls', async () => {
             const contextFilters = {
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
-                exclude: [],
-            }
+            } satisfies ContextFilters
 
             const mockedApiRequest = vi
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValue(apiResponseForFilters(contextFilters))
 
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -272,17 +298,17 @@ describe('ContextFiltersProvider', () => {
         it('refetches context filters after the specified interval', async () => {
             const mockContextFilters1 = {
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
-                exclude: [],
-            }
+            } satisfies ContextFilters
+
             const mockContextFilters2 = {
                 include: [{ repoNamePattern: '^github\\.com\\/other\\/.*' }],
-                exclude: [],
-            }
+            } satisfies ContextFilters
+
             const mockedApiRequest = vi
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters1))
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters2))
-            await provider.init(getRepoNameFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri)
 
             expect(mockedApiRequest).toBeCalledTimes(1)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -304,7 +330,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            getRepoNameFromWorkspaceUri.mockResolvedValue(`github.com/sourcegraph/${repoName}`)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([`github.com/sourcegraph/${repoName}`])
 
             return URI.file(`/${repoName}/${filePath}`)
         }
@@ -317,15 +343,17 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await getRepoNameFromWorkspaceUri(includedURI)).toBe('github.com/sourcegraph/cody')
+            expect(await getRepoNamesFromWorkspaceUri(includedURI)).toEqual([
+                'github.com/sourcegraph/cody',
+            ])
 
             expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
-            expect(await getRepoNameFromWorkspaceUri(excludedURI)).toBe(
-                'github.com/sourcegraph/sourcegraph'
-            )
+            expect(await getRepoNamesFromWorkspaceUri(excludedURI)).toEqual([
+                'github.com/sourcegraph/sourcegraph',
+            ])
 
             expect(await provider.isUriIgnored(excludedURI)).toBe(true)
         })
@@ -337,8 +365,41 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNameFromWorkspaceUri.mockResolvedValue(undefined)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
             expect(await provider.isUriIgnored(uri)).toBe(true)
+        })
+
+        it('excludes everything on invalid response structure', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: { something: true } } } },
+            })
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('API error message')
+            )
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(uri)).toBe(true)
+        })
+
+        it('includes everything on empty responses', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+                data: { site: { codyContextFilters: { raw: null } } },
+            })
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(uri)).toBe(false)
+        })
+
+        it('includes everything on for Sourcegraph API without context filters support', async () => {
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
+                new Error('Error: Cannot query field `codyContextFilters`')
+            )
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(uri)).toBe(false)
         })
     })
 })

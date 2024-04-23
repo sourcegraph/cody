@@ -26,6 +26,7 @@ data class LocalEmbeddingsProvider(
   val kind: KindEnum? = null, // Oneof: embeddings
   val state: StateEnum? = null, // Oneof: indeterminate, no-match, unconsented, indexing, ready
   val errorReason: ErrorReasonEnum? = null, // Oneof: not-a-git-repo, git-repo-has-no-remote
+  val embeddingsAPIProvider: EmbeddingsProvider? = null, // Oneof: sourcegraph, openai
 ) : ContextProvider() {
 
   enum class KindEnum {
