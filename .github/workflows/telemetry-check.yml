@@ -15,7 +15,7 @@ jobs:
         run: |
           echo "Checking for deprecated telemetry calls"
           set -e
-          matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx}" || true)
+          matches=$(grep -rn "logEvent\|telemetryService.log\|logEvents\|eventLogger\.log" --include="*.{js,ts,tsx,yml}" || true)
           echo "matches: ${matches}"
 
         # run: |
