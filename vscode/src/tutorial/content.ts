@@ -11,23 +11,18 @@ export const getStepContent = (step: TutorialStepKey): string => {
             stepContent = dedent`
                 ### Welcome to Cody!
                 """
-                Learn how to use Cody to write, edit and fix code by
-                completing the 4 tasks below.
+                Learn how to use Cody to write, edit and fix code by completing the 4 tasks below.
                 """
 
                 ### Task 1 of 4: Autocomplete
                 """
-                Place your cursor at the end of the following
-                function and press tab to accept the
-                Cody-powered autocomplete.
+                Place your cursor at the end of the following function and press tab to accept the Cody-powered autocomplete.
                 """
-
-                def hello_world():
-                    """Prints hello world (with an emoji)"""
+                def greet(name, surname):
+                    """Greets a user with a simple message"""
                     p
                 #    ^ Autocomplete: Place cursor above
-                # When you see a suggestion, press Tab to accept
-                # or Opt+\ to generate another.
+                # When you see a suggestion, press Tab to accept or Opt+\ to generate another.
             `
             break
         case 'edit':
@@ -35,10 +30,8 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 \n\n
                 ### Task 2 of 4: Edit Code with instructions
                 """
-                Place the cursor on the empty line below,
-                and press Opt+K to open the Edit Code input.
-                We've pre-filled the instruction,
-                all you need to do is choose Submit.
+                Place the cursor on the empty line below, and press Opt+K to open the Edit Code input.
+                We've pre-filled the instruction, all you need to do is choose Submit.
                 """
 
                 # ^ Edit: Place cursor above and press Opt+K
@@ -49,10 +42,8 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 \n\n
                 ### Task 3 of 4: Ask Cody to Fix
                 """
-                The following code has a bug. Place the cursor
-                under the word with the wavy underline,
-                click the lightbulb (or hit Cmd+.), and ask
-                Cody to fix it for you:
+                The following code has a bug. Hover over the text with the error,
+                select "Quick Fix" and then "Ask Cody to Fix".
                 """
                 def log_fruits():
                     print("List of fruits:", "apple,", "banana,", "cherry")
@@ -169,4 +160,10 @@ export const getNextStep = (step: TutorialStepKey): TutorialStepKey | null => {
         case 'chat':
             return null
     }
+}
+
+export const initTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextDocument> => {
+    const firstStep = getStepContent('autocomplete')
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(firstStep))
+    return vscode.workspace.openTextDocument(uri)
 }

@@ -24,28 +24,3 @@ export function findRangeOfText(document: vscode.TextDocument, searchText: strin
 
     return null
 }
-
-export class CodyChatLinkProvider implements vscode.DocumentLinkProvider {
-    constructor(public editor: vscode.TextEditor) {}
-
-    provideDocumentLinks(
-        document: vscode.TextDocument,
-        token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.DocumentLink[]> {
-        if (document.uri.fsPath !== this.editor.document.uri.fsPath) {
-            return []
-        }
-
-        const linkRange = findRangeOfText(document, 'Start a Chat')
-        if (!linkRange) {
-            return []
-        }
-
-        const decorationType = vscode.window.createTextEditorDecorationType({
-            color: new vscode.ThemeColor('textLink.activeForeground'),
-        })
-        this.editor.setDecorations(decorationType, [{ range: linkRange }])
-
-        return [new vscode.DocumentLink(linkRange, vscode.Uri.parse('command:cody.tutorial.chat'))]
-    }
-}

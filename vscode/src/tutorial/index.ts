@@ -7,9 +7,10 @@ import {
     getStepContent,
     getStepData,
     type TutorialStep,
+    initTutorialDocument,
 } from './content'
 import { setTutorialUri } from './helpers'
-import { CodyChatLinkProvider } from './utils'
+import { ChatLinkProvider, ResetLensProvider } from './providers'
 import {
     registerAutocompleteListener,
     registerChatTutorialCommand,
@@ -17,25 +18,20 @@ import {
     setFixDiagnostic,
 } from './commands'
 
-// const openTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextEditor> => {
-//     const firstStep = getStepContent('autocomplete')
-//     await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(firstStep))
-//     // await vscode.workspace.fs.writeFile(uri, new Uint8Array())
-//     const document = await vscode.workspace.openTextDocument(uri)
-//     return vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Beside })
-// }
-
-export const startTutorial = async (document: vscode.TextDocument): Promise<() => void> => {
+export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    const editor = await vscode.window.showTextDocument(document, {
-        viewColumn: vscode.ViewColumn.Beside,
-    })
+    const editor = await vscode.window.showTextDocument(document)
+    const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
+    disposables.push(diagnosticCollection)
+
     let activeStep: TutorialStep | null = null
 
+    // We set these disposables dynamically, based on the active step
     let editTutorialCommand: vscode.Disposable | undefined
     let chatTutorialCommand: vscode.Disposable | undefined
     let autocompleteListener: vscode.Disposable | undefined
     let activeRangeListener: vscode.Disposable | undefined
+    let successListener: vscode.Disposable | undefined
 
     /**
      * Listen for changes in the tutorial text document, and update the
@@ -65,17 +61,11 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<() =
         return activeRangeListener
     }
 
-    const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
-    disposables.push(diagnosticCollection)
-
     const progressToNextStep = async () => {
         const nextStep = activeStep?.key ? getNextStep(activeStep.key) : 'autocomplete'
 
         if (nextStep === null) {
             editor.setDecorations(TODO_DECORATION, [])
-            await editor.document.save()
-            // TODO: Should we do this, is it worth it?
-            await vscode.commands.executeCommand('workbench.action.closeActiveEditor', document.uri)
             return
         }
 
@@ -108,18 +98,16 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<() =
             })
         }
 
-        disposables.push(startListeningForSuccess(nextStep))
+        // Save the document once we've finished modifying the document
+        // This ensures the user doesn't get prompted to save it themselves on close
+        editor.document.save()
 
         activeStep = getStepData(editor.document, nextStep)
         if (!activeStep) {
-            console.log('DIDNT FIND THE ACTIVE STEP')
             return
         }
-
-        disposables.push(setActiveRangeListener(activeStep.range))
-        editor.setDecorations(TODO_DECORATION, [
-            new vscode.Range(activeStep.range.start.line, 0, activeStep.range.start.line, 0),
-        ])
+        disposables.push(startListeningForSuccess(nextStep), setActiveRangeListener(activeStep.range))
+        editor.setDecorations(TODO_DECORATION, [activeStep.range])
 
         // Side effects triggered by entering the new state
         switch (nextStep) {
@@ -145,7 +133,6 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<() =
      * If the user has modified any of the interactive lines, then we mark
      * that line as complete.
      */
-    let successListener: vscode.Disposable | undefined
     const startListeningForSuccess = (key: TutorialStepKey) => {
         // Dispose of any existing listener
         successListener?.dispose()
@@ -174,10 +161,8 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<() =
 
     disposables.push(
         startListeningForSuccess('autocomplete'),
-        vscode.languages.registerDocumentLinkProvider(
-            editor.document.uri,
-            new CodyChatLinkProvider(editor)
-        ),
+        new ResetLensProvider(editor),
+        vscode.languages.registerDocumentLinkProvider(editor.document.uri, new ChatLinkProvider(editor)),
         vscode.window.onDidChangeVisibleTextEditors(editors => {
             const tutorialIsActive = editors.find(
                 editor => editor.document.uri.toString() === document.uri.toString()
@@ -191,39 +176,33 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<() =
         })
     )
 
-    return () => {
+    return new vscode.Disposable(() => {
         for (const disposable of disposables) {
             disposable.dispose()
         }
-    }
+        return initTutorialDocument(document.uri)
+    })
 }
 
 export const registerInteractiveTutorial = async (
     context: vscode.ExtensionContext
-): Promise<{
-    disposables: vscode.Disposable[]
-    start: () => Promise<void>
-}> => {
+): Promise<vscode.Disposable[]> => {
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
-    let hasStarted = false
-    let cleanup: (() => void) | undefined
+    const document = await initTutorialDocument(documentUri)
 
-    const firstStep = getStepContent('autocomplete')
-    await vscode.workspace.fs.writeFile(documentUri, new TextEncoder().encode(firstStep))
-    // await vscode.workspace.fs.writeFile(uri, new Uint8Array())
-    const document = await vscode.workspace.openTextDocument(documentUri)
-    console.log(document)
+    let status: 'stopped' | 'started' | 'starting' = 'stopped'
 
+    let cleanup: vscode.Disposable | undefined
     const start = async () => {
-        stop()
-        hasStarted = true
+        status = 'starting'
         cleanup = await startTutorial(document)
+        disposables.push(cleanup)
+        status = 'started'
     }
-
     const stop = async () => {
-        hasStarted = false
-        cleanup?.()
+        cleanup?.dispose()
+        status = 'stopped'
     }
 
     disposables.push(
@@ -231,10 +210,17 @@ export const registerInteractiveTutorial = async (
             const tutorialIsVisible = editors.find(
                 editor => editor.document.uri.toString() === documentUri.toString()
             )
-            if (!tutorialIsVisible && hasStarted) {
+
+            if (status === 'starting') {
+                // Do not re-fire start/stop events whilst the tutorial is starting
+                return
+            }
+
+            if (status === 'started' && !tutorialIsVisible) {
                 return stop()
             }
-            if (tutorialIsVisible && !hasStarted) {
+            if (status === 'stopped' && tutorialIsVisible) {
+                console.log('CALLING FROM VISIBLE')
                 return start()
             }
             return
@@ -244,10 +230,15 @@ export const registerInteractiveTutorial = async (
             return vscode.commands.executeCommand('setContext', 'cody.tutorialActive', tutorialIsActive)
         }),
         vscode.commands.registerCommand('cody.tutorial.start', () => {
-            if (hasStarted) {
+            if (status === 'started') {
                 return vscode.window.showTextDocument(documentUri)
             }
-
+            return start()
+        }),
+        vscode.commands.registerCommand('cody.tutorial.reset', async () => {
+            stop()
+            // We need to close the tutorial to ensure we get a full reset of the editor
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor', documentUri)
             return start()
         })
     )
@@ -255,12 +246,10 @@ export const registerInteractiveTutorial = async (
     const tutorialVisible = vscode.window.visibleTextEditors.some(
         editor => editor.document.uri.toString() === documentUri.toString()
     )
-    if (!hasStarted && tutorialVisible) {
+    if (tutorialVisible) {
+        console.log('CALLING FROM THE TOP!')
         start()
     }
 
-    return {
-        disposables,
-        start,
-    }
+    return disposables
 }

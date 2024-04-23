@@ -19,14 +19,21 @@ export const setFixDiagnostic = (
     collection.set(uri, [
         {
             range,
-            message: 'Implicit string concatenation not allowed',
+            message: 'Python: Implicit string concatenation not allowed',
             severity: vscode.DiagnosticSeverity.Error,
         },
     ])
 }
 
-export const registerEditTutorialCommand = (editor: vscode.TextEditor, onComplete: () => void) => {
+export const registerEditTutorialCommand = (
+    editor: vscode.TextEditor,
+    onComplete: () => void
+): vscode.Disposable => {
     const disposable = vscode.commands.registerCommand('cody.tutorial.edit', async document => {
+        // Clear the existing decoration, the user has actioned this step,
+        // we're just waiting for the response.
+        editor.setDecorations(TODO_DECORATION, [])
+
         const task = await executeEdit({
             configuration: {
                 document: editor.document,
@@ -37,10 +44,6 @@ export const registerEditTutorialCommand = (editor: vscode.TextEditor, onComplet
         if (!task) {
             return
         }
-
-        // Clear the existing decoration, the user has actioned it,
-        // we're just waiting for the full response.
-        editor.setDecorations(TODO_DECORATION, [])
 
         // Poll for task.state being applied
         const interval = setInterval(async () => {
@@ -53,7 +56,7 @@ export const registerEditTutorialCommand = (editor: vscode.TextEditor, onComplet
     return disposable
 }
 
-export const registerChatTutorialCommand = (onComplete: () => void) => {
+export const registerChatTutorialCommand = (onComplete: () => void): vscode.Disposable => {
     const disposable = vscode.commands.registerCommand('cody.tutorial.chat', async () => {
         await vscode.commands.executeCommand('cody.chat.panel.new')
         onComplete()
@@ -68,7 +71,10 @@ export const registerChatTutorialCommand = (onComplete: () => void) => {
  * This is intended as a shortcut to typical completions without
  * requiring the user to actually start typing.
  */
-export const registerAutocompleteListener = (editor: vscode.TextEditor, activeStep: TutorialStep) => {
+export const registerAutocompleteListener = (
+    editor: vscode.TextEditor,
+    activeStep: TutorialStep
+): vscode.Disposable => {
     const disposable = vscode.window.onDidChangeTextEditorSelection(async ({ textEditor }) => {
         const document = textEditor.document
         if (document.uri !== editor.document.uri) {

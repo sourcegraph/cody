@@ -153,8 +153,6 @@ const register = async (
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
 
-    const interactiveTutorial = registerInteractiveTutorial(context)
-
     // Enable tracking for pasting chat responses into editor text
     disposables.push(
         vscode.workspace.onDidChangeTextDocument(async e => {
@@ -632,13 +630,14 @@ const register = async (
         )
     }
 
+    registerInteractiveTutorial(context).then(diposables => {
+        disposables.push(...diposables)
+    })
+
     if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
         void vscode.commands.executeCommand('cody.focus')
-        // TODO: Do not do this for e2e tests
-        console.log(interactiveTutorial)
-        // ;(await interactiveTutorial).start()
     } else {
         // INC-267 do NOT await on this promise. This promise triggers
         // `vscode.window.showInformationMessage()`, which only resolves after the
