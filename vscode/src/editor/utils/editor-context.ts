@@ -198,6 +198,12 @@ function createContextFileFromUri(
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
+    type: 'mixin',
+    selectionRange?: vscode.Range
+): never
+function createContextFileFromUri(
+    uri: vscode.Uri,
+    source: ContextItemSource,
     type: ContextFileType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
@@ -206,7 +212,9 @@ function createContextFileFromUri(
     if (isCodyIgnoredFile(uri)) {
         return []
     }
-
+    if (type === 'mixin') {
+        return []
+    }
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     return [
         type === 'file'

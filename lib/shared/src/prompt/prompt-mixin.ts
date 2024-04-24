@@ -19,7 +19,7 @@ export class PromptMixin {
      * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
      * and any new change could replace the old one.
      */
-    public static addCustom(mixin: PromptMixin): void {
+    public static setCustom(mixin: PromptMixin): void {
         PromptMixin.customMixin = [mixin]
     }
 

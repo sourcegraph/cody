@@ -3,7 +3,7 @@ import type { URI } from 'vscode-uri'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
-export type ContextFileType = 'file' | 'symbol'
+export type ContextFileType = 'file' | 'symbol' | 'mixin'
 
 /**
  * Fields that are common to any context item included in chat messages.
@@ -91,7 +91,7 @@ export enum ContextItemSource {
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem = ContextItemFile | ContextItemSymbol
+export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemMixin
 
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
@@ -111,6 +111,10 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
     /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
+}
+
+export interface ContextItemMixin extends ContextItemCommon {
+    type: 'mixin'
 }
 
 /** The valid kinds of a symbol. */

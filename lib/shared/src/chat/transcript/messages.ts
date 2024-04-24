@@ -6,7 +6,6 @@ import type { SerializedChatTranscript } from '.'
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
     error?: ChatError
-
     /**
      * For messages composed in a rich text editor field, this is the representation of the editor
      * state that can be used to instantiate the editor to edit the message or to render the
