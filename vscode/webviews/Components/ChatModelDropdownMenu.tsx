@@ -120,9 +120,14 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                 option.provider
                             )}`}</span>
                         </span>
-                        {isModelDisabled(option.codyProOnly) && (
-                            <span className={styles.badge}>Pro</span>
-                        )}
+                        <span className={styles.badge}>
+                            {isModelDisabled(option.codyProOnly) && (
+                                <span className={styles.codyProBadge}>Pro</span>
+                            )}
+                            {option.provider === 'Ollama' && (
+                                <span className={styles.experimentalBadge}>Experimental</span>
+                            )}
+                        </span>
                     </VSCodeOption>
                 ))}
 

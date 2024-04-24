@@ -1,11 +1,15 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
+import type { KotlinCodegen } from './KotlinCodegen'
 import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
-import { capitalize, typescriptKeywordSyntax } from './utils'
+import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
 export class KotlinFormatter {
-    constructor(private readonly symtab: SymbolTable) {}
+    constructor(
+        private readonly symtab: SymbolTable,
+        private codegen: KotlinCodegen
+    ) {}
     public functionName(info: scip.SymbolInformation): string {
         return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
     }
@@ -31,7 +35,39 @@ export class KotlinFormatter {
         return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
     }
 
+    public isNullish(symbol: string): boolean {
+        return symbol === typescriptKeyword('undefined') || symbol === typescriptKeyword('null')
+    }
+
+    public isNullableInfo(info: scip.SymbolInformation): boolean {
+        return this.isNullable(info.signature.value_signature.tpe)
+    }
+    public nullableSyntax(tpe: scip.Type): string {
+        return this.isNullable(tpe) ? '?' : ''
+    }
+    public isNullable(tpe: scip.Type): boolean {
+        if (tpe.has_type_ref) {
+            return this.isNullish(tpe.type_ref.symbol)
+        }
+        return (
+            tpe.has_union_type &&
+            tpe.union_type.types.length >= 2 &&
+            tpe.union_type.types.some(t => this.isNullable(t))
+        )
+    }
+
     public jsonrpcTypeName(
+        jsonrpcMethod: scip.SymbolInformation,
+        parameterOrResultType: scip.Type,
+        kind: 'parameter' | 'result'
+    ): string {
+        return (
+            this.nonNullableJsonrpcTypeName(jsonrpcMethod, parameterOrResultType, kind) +
+            this.nullableSyntax(parameterOrResultType)
+        )
+    }
+
+    public nonNullableJsonrpcTypeName(
         jsonrpcMethod: scip.SymbolInformation,
         parameterOrResultType: scip.Type,
         kind: 'parameter' | 'result'
@@ -55,11 +91,7 @@ export class KotlinFormatter {
             if (keyword) {
                 return keyword
             }
-            const name = this.typeName(this.symtab.info(parameterOrResultType.type_ref.symbol))
-            if (name === 'Map') {
-                console.log(JSON.stringify(parameterOrResultType.toObject(), null, 2))
-            }
-            return name
+            return this.typeName(this.symtab.info(parameterOrResultType.type_ref.symbol))
         }
 
         if (
@@ -82,11 +114,14 @@ export class KotlinFormatter {
         }
 
         if (parameterOrResultType.has_union_type) {
-            if (
-                parameterOrResultType.union_type.types.every(
-                    type => type.has_constant_type && type.constant_type.constant.has_string_constant
-                )
-            ) {
+            const nonNullableTypes = parameterOrResultType.union_type.types.filter(
+                tpe => !this.isNullable(tpe)
+            )
+            if (nonNullableTypes.length === 1) {
+                return this.nonNullableJsonrpcTypeName(jsonrpcMethod, nonNullableTypes[0], kind)
+            }
+
+            if (nonNullableTypes.every(tpe => this.codegen.isStringType(tpe))) {
                 return 'String'
             }
             const nonNullTypes = parameterOrResultType.union_type.types.filter(

@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import {
     type AuthStatus,
@@ -33,7 +34,19 @@ import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import type { Har } from '@pollyjs/persister'
+import {
+    setIgnorePolicyChangeListener,
+    setTestingIgnorePolicyOverride,
+} from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
 import levenshtein from 'js-levenshtein'
+import {
+    AbstractMessageReader,
+    AbstractMessageWriter,
+    type Disposable,
+    type MessageConnection,
+    type MessageReader,
+    type MessageWriter,
+} from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
@@ -127,7 +140,6 @@ export async function newAgentClient(
     clientInfo: ClientInfo & { codyAgentPath?: string }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const serverHandler = new MessageHandler()
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
@@ -135,10 +147,23 @@ export async function newAgentClient(
         const child = spawn(arg0, args, {
             env: { ENABLE_SENTRY: 'false', ...process.env },
         })
-        serverHandler.connectProcess(child, reject)
+        child.on('error', error => reject?.(error))
+        child.on('exit', code => {
+            if (code !== 0) {
+                reject?.(new Error(`exit: ${code}`))
+            }
+        })
+
+        const conn = createMessageConnection(
+            new StreamMessageReader(child.stdout),
+            new StreamMessageWriter(child.stdin)
+        )
+        const serverHandler = new MessageHandler(conn)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
         })
+        conn.listen()
+        serverHandler.conn.onClose(() => reject())
         await serverHandler.request('initialize', clientInfo)
         serverHandler.notify('initialized', null)
         return serverHandler
@@ -153,13 +178,24 @@ export async function newAgentClient(
 
 export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
-    const agent = new Agent()
-    const debugHandler = new MessageHandler()
-    debugHandler.registerNotification('debug/message', params => {
+
+    // Create noop MessageConnection because we're just using clientForThisInstance.
+    const conn = createMessageConnection(
+        new (class extends AbstractMessageReader implements MessageReader {
+            listen(): Disposable {
+                return { dispose: () => {} }
+            }
+        })(),
+        new (class extends AbstractMessageWriter implements MessageWriter {
+            async write(): Promise<void> {}
+            end(): void {}
+        })()
+    )
+
+    const agent = new Agent({ conn })
+    agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
-    debugHandler.messageEncoder.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
@@ -236,20 +272,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
         new NoOpTelemetryRecorderProvider([
             {
                 processEvent: event =>
-                    process.stderr.write(
+                    console.error(
                         `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
                     ),
             },
         ])
 
     constructor(
-        private readonly params?: {
+        private readonly params: {
             polly?: Polly | undefined
-            networkRequests: Request[]
-            requestErrors: PollyRequestError[]
+            networkRequests?: Request[]
+            requestErrors?: PollyRequestError[]
+            conn: MessageConnection
         }
     ) {
-        super()
+        super(params.conn)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
@@ -271,7 +308,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
             }
             if (process.env.CODY_DEBUG === 'true') {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
                 )
             }
@@ -313,7 +350,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     authStatus,
                 }
             } catch (error) {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
                 )
                 process.exit(1)
@@ -723,11 +760,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
-        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
-            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
-            return Promise.resolve(result.length > 0)
-        })
-
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
@@ -987,25 +1019,46 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest(
-            'remoteRepo/list',
-            async ({ query, first, afterId }, cancelToken) => {
-                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                    query,
-                    first,
-                    afterId
-                )
-                return {
-                    repos: result.repos,
-                    startIndex: result.startIndex,
-                    count: result.count,
-                    state: {
-                        state: result.state,
-                        error: errorToCodyError(result.lastError),
-                    },
-                }
+        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
+            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                query,
+                first,
+                afterId
+            )
+            return {
+                repos: result.repos,
+                startIndex: result.startIndex,
+                count: result.count,
+                state: {
+                    state: result.state,
+                    error: errorToCodyError(result.lastError),
+                },
             }
-        )
+        })
+
+        this.registerAuthenticatedRequest('ignore/test', async ({ uri }) => {
+            const policy: 'ignore' | 'use' = isCodyIgnoredFile(vscode.Uri.parse(uri)) ? 'ignore' : 'use'
+            return {
+                policy,
+            }
+        })
+
+        setIgnorePolicyChangeListener(() => {
+            // Forward policy change notifications to the client.
+            this.notify('ignore/didChange', null)
+        })
+
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async options => {
+            setTestingIgnorePolicyOverride(
+                options
+                    ? {
+                          repoRe: RegExp(options.repoRe),
+                          uriRe: RegExp(options.uriRe),
+                      }
+                    : undefined
+            )
+            return null
+        })
     }
 
     // ExtensionClient callbacks.
@@ -1035,7 +1088,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             }),
             repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', {})
+                this.notify('remoteRepo/didChange', null)
             }),
             {
                 dispose: () => {

@@ -2,13 +2,13 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Event(
-  val event: String? = null,
-  val userCookieID: String? = null,
-  val url: String? = null,
-  val source: String? = null,
+  val event: String,
+  val userCookieID: String,
+  val url: String,
+  val source: String,
   val argument: String? = null,
   val publicArgument: String? = null,
-  val client: String? = null,
+  val client: String,
   val connectedSiteID: String? = null,
   val hashedLicenseKey: String? = null,
 )

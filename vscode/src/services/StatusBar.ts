@@ -242,6 +242,14 @@ export function createStatusBar(): CodyStatusBar {
                 c => c.experimentalSymfContext,
                 false
             ),
+            await createFeatureToggle(
+                'Ollama for Chat',
+                'Experimental',
+                'Use local Ollama models for chat and commands when available',
+                'cody.experimental.ollamaChat',
+                c => c.experimentalOllamaChat,
+                false
+            ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
                 label: '$(gear) Cody Extension Settings',

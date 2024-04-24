@@ -9,8 +9,8 @@ data class CompletionItemInfo(
   val truncatedWith: TruncatedWithEnum? = null, // Oneof: tree-sitter, indentation
   val nodeTypes: NodeTypesParams? = null,
   val nodeTypesWithCompletion: NodeTypesWithCompletionParams? = null,
-  val lineCount: Int? = null,
-  val charCount: Int? = null,
+  val lineCount: Int,
+  val charCount: Int,
   val insertText: String? = null,
   val stopReason: String? = null,
 ) {

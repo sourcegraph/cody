@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class RemoteRepo_HasParams(
-  val repoName: String? = null,
+  val repoName: String,
 )
 

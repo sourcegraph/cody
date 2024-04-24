@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Chat_ModelsParams(
-  val modelUsage: ModelUsage? = null, // Oneof: chat, edit
+  val modelUsage: ModelUsage, // Oneof: chat, edit
 )
 

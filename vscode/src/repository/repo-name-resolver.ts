@@ -1,7 +1,12 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
-import { graphqlClient, isDefined, isFileURI } from '@sourcegraph/cody-shared'
+import {
+    convertGitCloneURLToCodebaseName,
+    graphqlClient,
+    isDefined,
+    isFileURI,
+} from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -14,7 +19,7 @@ type RemoteUrl = string
 
 export class RepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    private fsPathToRepoNameCache = new LRUCacheWithNullValues()
+    private fsPathToRepoNameCache = new LRUCache<RepoName, string[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<string | null>>({ max: 1000 })
 
     /**
@@ -33,23 +38,23 @@ export class RepoNameResolver {
      * If not found, attempts to use Git CLI to get the repo names (in node.js environment only).
      * If not found, returns `undefined`.
      */
-    public async getRepoNamesFromWorkspaceUri(uri: vscode.Uri): Promise<string[] | null> {
+    public async getRepoNamesFromWorkspaceUri(uri: vscode.Uri): Promise<string[]> {
         if (!isFileURI(uri)) {
-            return null
+            return []
         }
 
         if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
-            return this.fsPathToRepoNameCache.get(uri.fsPath)
+            return this.fsPathToRepoNameCache.get(uri.fsPath)!
         }
 
         try {
             let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
-            if (remoteUrls?.length === 0) {
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
                 remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
             }
 
-            if (remoteUrls?.length === 0) {
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
                 for (const getter of this.platformSpecificGitRemoteGetters) {
                     remoteUrls = await getter(uri)
 
@@ -75,10 +80,11 @@ export class RepoNameResolver {
                 return definedRepoNames
             }
         } catch (error) {
+            console.error(error)
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
 
-        return null
+        return []
     }
 
     private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
@@ -86,32 +92,15 @@ export class RepoNameResolver {
             return this.remoteUrlToRepoNameCache.get(remoteUrl)!
         }
 
-        const repoNameRequest = graphqlClient.getRepoName(remoteUrl)
+        const repoNameRequest = graphqlClient.getRepoName(remoteUrl).then(repoName => {
+            if (repoName === null) {
+                return convertGitCloneURLToCodebaseName(remoteUrl)
+            }
+            return repoName
+        })
         this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
 
         return repoNameRequest
-    }
-}
-
-// Required to store null values in the cache.
-// See https://github.com/isaacs/node-lru-cache#storing-undefined-values
-const nullCacheValue = Symbol('null cache value')
-type UriFsPath = string
-
-class LRUCacheWithNullValues {
-    cache = new LRUCache<UriFsPath, RepoName[] | typeof nullCacheValue>({ max: 1000 })
-
-    has(key: string): boolean {
-        return this.cache.has(key)
-    }
-
-    set(key: string, value: string[]): void {
-        this.cache.set(key, value.length === 0 ? nullCacheValue : value)
-    }
-
-    get(key: string): string[] | null {
-        const value = this.cache.get(key) || null
-        return value === nullCacheValue ? null : value
     }
 }
 
