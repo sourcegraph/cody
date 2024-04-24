@@ -13,7 +13,7 @@ type RepoName = string
 type RemoteUrl = string
 type UriFsPath = string
 
-export class RepoNameResolver {
+export class EnterpriseRepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
     private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
@@ -184,7 +184,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 }
 
 /**
- * A a singleton instance of the RepoNameResolver class.
- * `repoNameResolver.init` is called on extension activation to set platform specific remote url getters.
+ * A a singleton instance of the `EnterpriseRepoNameResolver` class.
+ * `enterpriseRepoNameResolver.init` is called on extension activation to set platform specific remote url getters.
  */
-export const repoNameResolver = new RepoNameResolver()
+export const enterpriseRepoNameResolver = new EnterpriseRepoNameResolver()

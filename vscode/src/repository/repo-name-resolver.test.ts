@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import dedent from 'dedent'
-import { gitRemoteUrlsFromTreeWalk } from './repo-name-resolver'
+import { gitRemoteUrlsFromTreeWalk } from './enterprise-repo-name-resolver'
 
 interface MockFsCallsParams {
     filePath: string
