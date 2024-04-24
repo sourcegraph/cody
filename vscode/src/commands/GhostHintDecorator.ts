@@ -1,6 +1,7 @@
 import {
     type AuthStatus,
     FeatureFlag,
+    contextFiltersProvider,
     featureFlagProvider,
     getEditorInsertSpaces,
     getEditorTabSize,
@@ -236,7 +237,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     private init(enabledFeatures: EnabledFeatures): void {
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection(
-                (event: vscode.TextEditorSelectionChangeEvent) => {
+                async (event: vscode.TextEditorSelectionChangeEvent) => {
                     const editor = event.textEditor
 
                     if (editor.document.uri.scheme !== 'file') {
@@ -357,12 +358,17 @@ export class GhostHintDecorator implements vscode.Disposable {
         }
     }
 
-    private setGhostText(
+    private async setGhostText(
         editor: vscode.TextEditor,
         position: vscode.Position,
         variant: GhostVariant,
         textPadding = 0
-    ): void {
+    ): Promise<void> {
+        if (await contextFiltersProvider.isUriIgnored(editor.document.uri)) {
+            // The current file is ignored, so do nothing
+            return
+        }
+
         this.fireThrottledDisplayEvent(variant)
 
         const decorationHint = HINT_DECORATIONS[variant]
