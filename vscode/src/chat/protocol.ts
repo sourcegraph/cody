@@ -22,7 +22,7 @@ import type { Repo } from '../context/repo-fetcher'
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
- * createWebviewTelemetryRecorder instead in webviews..
+ * createWebviewTelemetryRecorder instead in webviews.
  *
  * V2 telemetry RPC parameter type for webviews.
  */

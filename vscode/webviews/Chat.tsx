@@ -136,8 +136,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData, {
                 hasV2Event: true,
             })
-            telemetryRecorder.recordEvent(`cody.${text}`, 'feedback', {
+            enum FeedbackType {
+                thumbsUp = 1,
+                thumbsDown = 0,
+            }
+            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
+                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
                     lastChatUsedEmbeddings: transcript
                         .at(-1)
                         ?.contextFiles?.some(file => file.source === 'embeddings')
@@ -146,6 +151,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                 },
                 privateMetadata: {
+                    FeedbackText: text,
+
                     // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure

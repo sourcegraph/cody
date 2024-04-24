@@ -45,7 +45,7 @@ const WebLogin: React.FunctionComponent<
                     href="about:blank"
                     onClick={event => {
                         telemetryService.log('CodyVSCodeExtension:auth:clickSignInWeb')
-                        telemetryRecorder.recordEvent('auth', 'clickSignInWeb')
+                        telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignInWeb')
                         vscodeAPI.postMessage({
                             command: 'simplified-onboarding',
                             onboardingKind: 'web-sign-in-token',
@@ -97,7 +97,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGitHubClick'
                                             )
                                             telemetryRecorder.recordEvent(
-                                                'auth',
+                                                'cody.webview.auth',
                                                 'simplifiedSignInGitLabClick'
                                             )
                                             simplifiedLoginRedirect('github')
@@ -114,7 +114,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGitLabClick'
                                             )
                                             telemetryRecorder.recordEvent(
-                                                'auth',
+                                                'cody.webview.auth',
                                                 'simplifiedSignInGitLabClick'
                                             )
                                             simplifiedLoginRedirect('gitlab')
@@ -131,7 +131,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGoogleClick'
                                             )
                                             telemetryRecorder.recordEvent(
-                                                'auth',
+                                                'cody.webview.auth',
                                                 'simplifiedSignInGoogleClick'
                                             )
                                             simplifiedLoginRedirect('google')

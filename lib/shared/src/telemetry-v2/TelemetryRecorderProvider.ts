@@ -88,7 +88,9 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
 }
-
+/**
+ * noOpTelemetryRecorder should ONLY be used in tests - it discards all recorded events and does nothing with them.
+ */
 export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
 /**
