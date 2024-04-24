@@ -32,9 +32,8 @@
 3. Select a chat model (model that includes instruct or chat, e.g. [gemma:7b-instruct-q4_K_M](https://ollama.com/library/gemma:7b-instruct-q4_K_M)) from the [Ollama Library](https://ollama.com/library)
 4. Pull the chat model locally (e.g. `ollama pull gemma:7b-instruct-q4_K_M`)
 5. Once the chat model is downloaded successfully, open Cody in VS Code
-6. Select `Preferences: Open Settings (JSON)` from the Command Palette and add the `"cody.experimental.ollamaChat": true` configuration to enable Cody's experimental chat support for Ollama.
-7. Open a new Cody chat
-8. In the new chat panel, you should see the chat model you've pulled in the dropdown list
-9. Currently, you will need to restart VS Code to see the new models
+6. Open a new Cody chat
+7. In the new chat panel, you should see the chat model you've pulled in the dropdown list
+8. Currently, you will need to restart VS Code to see the new models
 
-Note: You can run `curl http://localhost:11434/api/tags` in your terminal to see what models are currently available on your machine
+Note: You can run `ollama list` in your terminal to see what Ollama models are currently available on your machine
