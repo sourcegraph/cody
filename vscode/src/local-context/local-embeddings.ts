@@ -15,7 +15,9 @@ import {
     featureFlagProvider,
     isDotCom,
     isFileURI,
+    recordErrorToSpan,
     uriBasename,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import type { EmbeddingsModelConfig } from '@sourcegraph/cody-shared/src/configuration'
@@ -578,21 +580,30 @@ export class LocalEmbeddingsController
         if (!lastRepo || !lastRepo.repoName) {
             return []
         }
-        try {
-            const service = await this.getService()
-            const resp = await service.request('embeddings/query', {
-                repoName: lastRepo.repoName,
-                query: query.toString(),
-                numResults,
-            })
-            logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
-            return resp.results.map(result => ({
-                ...result,
-                uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
-            }))
-        } catch (error) {
-            logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
-            return []
-        }
+        // without this, assingment to repoName below complains about | boolean
+        const lastRepoName = lastRepo.repoName
+        return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
+            try {
+                const service = await this.getService()
+                const resp = await service.request('embeddings/query', {
+                    repoName: lastRepoName,
+                    query: query.toString(),
+                    numResults,
+                })
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'query',
+                    `returning ${resp.results.length} results`
+                )
+                return resp.results.map(result => ({
+                    ...result,
+                    uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+                }))
+            } catch (error) {
+                logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
+                recordErrorToSpan(span, error as Error)
+                return []
+            }
+        })
     }
 }
