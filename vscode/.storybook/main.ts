@@ -9,6 +9,10 @@ const config: StorybookConfig = {
         options: {},
     },
     viteFinal: async config =>
-        defineProjectWithDefaults(__dirname, { ...config, define: { 'process.env': '{}' } }),
+        defineProjectWithDefaults(__dirname, {
+            ...config,
+            define: { 'process.env': '{}' },
+            resolve: { alias: { 're2-wasm': __dirname + '/re2-wasm-shim.js' } },
+        }),
 }
 export default config
