@@ -71,6 +71,10 @@ class CodyAgentService(project: Project) : Disposable {
         RemoteRepoSearcher.getInstance(project).remoteRepoDidChangeState(state)
       }
 
+      agent.client.onIgnoreDidChange = Consumer {
+        println("handling ignore rules changing not yet implemented")
+      }
+
       if (!project.isDisposed) {
         AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
         CodyFileEditorListener.registerAllOpenedFiles(project, agent)

@@ -86,7 +86,9 @@
         <errorHandler
                 implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
 
-        <!-- status bar -->
+        <!-- status bar widgets -->
+        <statusBarWidgetFactory order="first" id="cody.internalsStatusBarWidget"
+                                implementation="com.sourcegraph.cody.internals.InternalsStatusBarWidgetFactory"/>
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
         <actionPromoter order="last"
@@ -264,6 +266,10 @@
 
         <group id="CodyStatusBarActions" popup="true" searchable="false"
                class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
+        </group>
+
+        <group id="InternalsStatusBarActions" popup="true" searchable="false"
+               class="com.sourcegraph.cody.internals.InternalsStatusBarActionGroup">
         </group>
 
         <group id="Cody.Accounts.AddAccount">

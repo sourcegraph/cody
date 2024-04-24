@@ -69,6 +69,15 @@ public class CodyAgentClient {
     }
   }
 
+  @Nullable Consumer<Void> onIgnoreDidChange;
+
+  @JsonNotification("ignore/didChange")
+  public void ignoreDidChange() {
+    if (onIgnoreDidChange != null) {
+      onIgnoreDidChange.accept(null);
+    }
+  }
+
   @JsonRequest("textDocument/edit")
   public CompletableFuture<Void> textDocumentEdit(TextDocumentEditParams params) {
     return acceptOnEventThread("textDocument/edit", onTextDocumentEdit, params);
