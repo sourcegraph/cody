@@ -530,6 +530,14 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
+        vscode.commands.registerCommand('cody.walkthrough.ollama', () => {
+            vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'sourcegraph.cody-ai#ollama',
+                true
+            )
+            telemetryRecorder.recordEvent('cody.walkthrough.ollama', 'clicked')
+        }),
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
