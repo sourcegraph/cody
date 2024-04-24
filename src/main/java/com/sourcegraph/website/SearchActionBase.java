@@ -8,11 +8,11 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
+import com.sourcegraph.common.ui.DumbAwareBGTAction;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.vcs.RepoInfo;
 import com.sourcegraph.vcs.RepoUtil;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class SearchActionBase extends DumbAwareAction {
+public abstract class SearchActionBase extends DumbAwareBGTAction {
   public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
     final Project project = event.getProject();
 

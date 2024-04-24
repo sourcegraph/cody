@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
@@ -14,6 +13,7 @@ import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.common.ErrorNotification;
+import com.sourcegraph.common.ui.DumbAwareBGTAction;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RevisionContext;
@@ -22,8 +22,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /** JetBrains IDE action to open a selected revision in Sourcegraph. */
-@SuppressWarnings("MissingActionUpdateThread")
-public class OpenRevisionAction extends DumbAwareAction {
+public class OpenRevisionAction extends DumbAwareBGTAction {
   private final Logger logger = Logger.getInstance(this.getClass());
 
   @Override

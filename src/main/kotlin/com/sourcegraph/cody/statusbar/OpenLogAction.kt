@@ -6,11 +6,11 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications.Bus
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.sourcegraph.common.ui.DumbAwareBGTAction
 
-class OpenLogAction : DumbAwareAction("Open Log To Troubleshoot Issue") {
+class OpenLogAction : DumbAwareBGTAction("Open Log To Troubleshoot Issue") {
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project

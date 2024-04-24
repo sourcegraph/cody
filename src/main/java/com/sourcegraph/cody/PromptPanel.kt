@@ -1,10 +1,8 @@
 package com.sourcegraph.cody
 
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -20,6 +18,7 @@ import com.sourcegraph.cody.chat.ui.SendButton
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
 import java.awt.Dimension
 import java.awt.event.*
 import javax.swing.DefaultListModel
@@ -115,11 +114,7 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
           }
         })
     for (shortcut in listOf(ENTER, UP, DOWN, TAB)) { // key listeners
-      object : DumbAwareAction() {
-            override fun actionPerformed(e: AnActionEvent) {
-              didUseShortcut(shortcut)
-            }
-          }
+      SimpleDumbAwareBGTAction { didUseShortcut(shortcut) }
           .registerCustomShortcutSet(shortcut, textArea)
     }
 

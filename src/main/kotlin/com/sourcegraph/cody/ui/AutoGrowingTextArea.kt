@@ -2,14 +2,13 @@ package com.sourcegraph.cody.ui
 
 import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.actionSystem.ShortcutSet
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.UIUtil
+import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
 import java.awt.Dimension
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
@@ -86,12 +85,9 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
         KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_DOWN_MASK), null)
     val insertEnterShortcut: ShortcutSet =
         CustomShortcutSet(ctrlEnter, shiftEnter, metaEnter, altOrOptionEnter)
-    val insertEnterAction: AnAction =
-        object : DumbAwareAction() {
-          override fun actionPerformed(e: AnActionEvent) {
-            promptInput.insert("\n", promptInput.caretPosition)
-          }
-        }
+    val insertEnterAction: AnAction = SimpleDumbAwareBGTAction {
+      promptInput.insert("\n", promptInput.caretPosition)
+    }
     insertEnterAction.registerCustomShortcutSet(insertEnterShortcut, promptInput)
     return promptInput
   }

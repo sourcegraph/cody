@@ -1,9 +1,7 @@
 package com.sourcegraph.cody.chat.ui
 
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -17,6 +15,7 @@ import com.sourcegraph.cody.chat.ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDT
 import com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN
 import com.sourcegraph.cody.ui.AccordionSection
 import com.sourcegraph.common.BrowserOpener.openInBrowser
+import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
 import java.awt.BorderLayout
 import java.awt.Insets
 import javax.swing.JPanel
@@ -74,16 +73,13 @@ class ContextFilesPanel(
 
   @RequiresEdt
   private fun createFileWithLinkPanel(contextItemFile: ContextItemFile): JPanel {
-    val anAction =
-        object : DumbAwareAction() {
-          override fun actionPerformed(anActionEvent: AnActionEvent) {
-            if (contextItemFile.isLocal()) {
-              openInEditor(contextItemFile)
-            } else {
-              openInBrowser(project, contextItemFile.uri)
-            }
-          }
-        }
+    val anAction = SimpleDumbAwareBGTAction {
+      if (contextItemFile.isLocal()) {
+        openInEditor(contextItemFile)
+      } else {
+        openInBrowser(project, contextItemFile.uri)
+      }
+    }
 
     val goToFile = ContextFileActionLink(project, contextItemFile, anAction)
     val panel = JPanel(BorderLayout())

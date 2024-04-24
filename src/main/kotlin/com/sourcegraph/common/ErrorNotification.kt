@@ -4,20 +4,14 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
+import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
 
 object ErrorNotification {
   fun show(project: Project?, errorMessage: String) {
     val notification = create(errorMessage)
-    val dismissAction: AnAction =
-        object : DumbAwareAction("Dismiss") {
-          override fun actionPerformed(anActionEvent: AnActionEvent) {
-            notification.expire()
-          }
-        }
+    val dismissAction: AnAction = SimpleDumbAwareBGTAction("Dismiss") { notification.expire() }
     notification.addAction(dismissAction)
     Notifications.Bus.notify(notification)
     notification.notify(project)

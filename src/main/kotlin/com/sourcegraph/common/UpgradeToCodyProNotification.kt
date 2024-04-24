@@ -4,12 +4,11 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.common.BrowserOpener.openInBrowser
+import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
 import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
@@ -18,33 +17,19 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
     NotificationFullContent {
   init {
     icon = Icons.CodyLogo
-    val learnMoreAction: AnAction =
-        object : DumbAwareAction("Learn more") {
-          override fun actionPerformed(anActionEvent: AnActionEvent) {
-            val learnMoreLink =
-                when {
-                  shouldShowUpgradeOption -> "https://sourcegraph.com/cody/subscription"
-                  else ->
-                      "https://sourcegraph.com/docs/cody/core-concepts/cody-gateway#rate-limits-and-quotas"
-                }
-            openInBrowser(anActionEvent.project, learnMoreLink)
-            hideBalloon()
-          }
+    val learnMoreAction =
+        SimpleDumbAwareBGTAction("Learn more") { anActionEvent ->
+          val learnMoreLink = if (shouldShowUpgradeOption) UPGRADE_URL else RATE_LIMITS_URL
+          openInBrowser(anActionEvent.project, learnMoreLink)
+          hideBalloon()
         }
-    val dismissAction: AnAction =
-        object : DumbAwareAction("Dismiss") {
-          override fun actionPerformed(anActionEvent: AnActionEvent) {
-            hideBalloon()
-          }
-        }
+    val dismissAction: AnAction = SimpleDumbAwareBGTAction("Dismiss") { hideBalloon() }
 
     if (shouldShowUpgradeOption) {
-      val upgradeAction: AnAction =
-          object : DumbAwareAction("Upgrade") {
-            override fun actionPerformed(anActionEvent: AnActionEvent) {
-              openInBrowser(anActionEvent.project, "https://sourcegraph.com/cody/subscription")
-              hideBalloon()
-            }
+      val upgradeAction =
+          SimpleDumbAwareBGTAction("Upgrade") { anActionEvent ->
+            openInBrowser(anActionEvent.project, UPGRADE_URL)
+            hideBalloon()
           }
       addAction(upgradeAction)
     }
@@ -54,6 +39,11 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
   }
 
   companion object {
+
+    const val UPGRADE_URL = "https://sourcegraph.com/cody/subscription"
+    const val RATE_LIMITS_URL =
+        "https://sourcegraph.com/docs/cody/core-concepts/cody-gateway#rate-limits-and-quotas"
+
     fun notify(rateLimitError: RateLimitError, project: Project) {
 
       val shouldShowUpgradeOption = rateLimitError.upgradeIsAvailable

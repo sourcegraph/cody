@@ -6,7 +6,6 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -19,6 +18,7 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.initialization.Activity;
 import com.sourcegraph.cody.statusbar.CodyManageAccountsAction;
 import com.sourcegraph.common.NotificationGroups;
+import com.sourcegraph.common.ui.DumbAwareBGTAction;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyAuthNotificationActivity implements Activity {
@@ -52,7 +52,7 @@ public class CodyAuthNotificationActivity implements Activity {
             NotificationType.WARNING);
 
     AnAction openCodySidebar =
-        new DumbAwareAction("Open Cody") {
+        new DumbAwareBGTAction("Open Cody") {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();
@@ -67,7 +67,7 @@ public class CodyAuthNotificationActivity implements Activity {
         };
 
     AnAction neverShowAgainAction =
-        new DumbAwareAction("Never Show Again") {
+        new DumbAwareBGTAction("Never Show Again") {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();

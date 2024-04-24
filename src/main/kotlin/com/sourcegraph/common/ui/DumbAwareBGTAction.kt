@@ -1,9 +1,11 @@
 package com.sourcegraph.common.ui
 
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.util.NlsActions
 import com.sourcegraph.cody.ui.BGTActionSetter
 import javax.swing.Icon
+import org.jetbrains.annotations.NotNull
 
 abstract class DumbAwareBGTAction : DumbAwareAction {
 
@@ -20,4 +22,13 @@ abstract class DumbAwareBGTAction : DumbAwareAction {
       description: @NlsActions.ActionDescription String?,
       icon: Icon?
   ) : super(text, description, icon)
+}
+
+class SimpleDumbAwareBGTAction(
+    text: @NlsActions.ActionText String? = null,
+    private val action: (@NotNull AnActionEvent) -> Unit
+) : DumbAwareBGTAction(text) {
+  override fun actionPerformed(@NotNull e: AnActionEvent) {
+    action(e)
+  }
 }
