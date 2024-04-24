@@ -578,13 +578,14 @@ export class LocalEmbeddingsController
         }
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
-                if (!this.lastRepo || !this.lastRepo.repoName) {
+                const lastRepo = this.lastRepo
+                if (!lastRepo || !lastRepo.repoName) {
                     span.setAttribute('noResultReason', 'last-repo-not-set')
                     return []
                 }
                 const service = await this.getService()
                 const resp = await service.request('embeddings/query', {
-                    repoName: this.lastRepo.repoName,
+                    repoName: lastRepo.repoName,
                     query: query.toString(),
                     numResults,
                 })
