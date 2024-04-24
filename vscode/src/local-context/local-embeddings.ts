@@ -579,7 +579,7 @@ export class LocalEmbeddingsController
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
                 const lastRepo = this.lastRepo
-                if (!lastRepo || !lastRepo.repoName) {
+                if (!lastRepo?.repoName) {
                     span.setAttribute('noResultReason', 'last-repo-not-set')
                     return []
                 }
