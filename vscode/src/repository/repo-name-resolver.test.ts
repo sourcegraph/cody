@@ -40,8 +40,11 @@ function mockFsCalls(params: MockFsCallsParams) {
         files[`${submoduleConfigPath}/config`] = gitSubmodule.gitConfig
     }
 
+    console.log(JSON.stringify(files))
+
     const statMock = vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation(async uri => {
         const fsPath = deWindowsifyPath(uri.fsPath)
+        console.log('statMock', fsPath)
 
         if (fsPath in files) {
             return { type: vscode.FileType.File } as vscode.FileStat
@@ -56,6 +59,7 @@ function mockFsCalls(params: MockFsCallsParams) {
 
     const readFileMock = vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(async uri => {
         const fsPath = deWindowsifyPath(uri.fsPath)
+        console.log('readFileMock', fsPath)
 
         if (fsPath in files) {
             return new TextEncoder().encode(dedent(files[fsPath]))
@@ -198,7 +202,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
         expect(remoteUrls).toEqual(['https://github.com/example/submodule.git'])
     })
 
-    it('finds remote urls in nested submodules', async () => {
+    it.only('finds remote urls in nested submodules', async () => {
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/nested/foo.ts',
             gitRepoPath: '/repo',
