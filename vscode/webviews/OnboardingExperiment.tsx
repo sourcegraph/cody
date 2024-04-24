@@ -45,7 +45,7 @@ const WebLogin: React.FunctionComponent<
                     href="about:blank"
                     onClick={event => {
                         telemetryService.log('CodyVSCodeExtension:auth:clickSignInWeb')
-                        telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignInWeb')
+                        telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
                         vscodeAPI.postMessage({
                             command: 'simplified-onboarding',
                             onboardingKind: 'web-sign-in-token',
