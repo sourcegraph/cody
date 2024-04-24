@@ -42,7 +42,7 @@ export async function activeNotification(
     uri: vscode.Uri | undefined,
     type: CodyIgnoreType
 ): Promise<void> {
-    vscode.window.showInformationMessage(
+    vscode.window.showErrorMessage(
         type === 'context-filter'
             ? 'Cody has ignored this file because of your Sourcegraph admin policy.'
             : 'Cody has ignored this file because of your cody ignore config.'

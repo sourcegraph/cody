@@ -2,6 +2,7 @@ import {
     type AuthStatus,
     FeatureFlag,
     PromptString,
+    contextFiltersProvider,
     featureFlagProvider,
     isCodyIgnoredFile,
     logDebug,
@@ -87,13 +88,17 @@ class HoverCommandsProvider implements vscode.Disposable {
         // Only show hover commands for files
         this.current = {}
         if (doc.uri?.scheme !== 'file' || isCodyIgnoredFile(doc.uri)) {
-            return undefined
+            return
+        }
+
+        if (await contextFiltersProvider.isUriIgnored(doc.uri)) {
+            return
         }
 
         // Skip if isEnrolled is false so that we can log the first enrollment event.
         if (!this.isActive && this.isEnrolled) {
             this.reset()
-            return undefined
+            return
         }
 
         this.current.document = doc
@@ -102,7 +107,7 @@ class HoverCommandsProvider implements vscode.Disposable {
         // Get the clickable commands for the current hover
         const commands = await this.getHoverCommands(doc, position)
         if (!commands.length) {
-            return undefined
+            return
         }
 
         // Log Enrollment event at the first Hover Commands for all users,
@@ -111,7 +116,7 @@ class HoverCommandsProvider implements vscode.Disposable {
             this.isEnrolled = logFirstEnrollmentEvent(this.id, this.isInTreatment)
             if (!this.isInTreatment) {
                 this.dispose()
-                return undefined
+                return
             }
         }
 

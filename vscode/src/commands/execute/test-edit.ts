@@ -1,9 +1,16 @@
-import { type ContextItem, PromptString, logError, ps } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    PromptString,
+    contextFiltersProvider,
+    logError,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
+import { activeNotification } from '../../context-filters/notification'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
@@ -65,6 +72,7 @@ export async function executeTestEditCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.test', async span => {
         span.setAttribute('sampled', true)
+
         // The prompt for generating tests in a new test file
         const newTestFilePrompt = PromptString.fromDefaultCommands(defaultCommands, 'test')
         // The prompt for adding new test suite to an existing test file
@@ -73,6 +81,11 @@ export async function executeTestEditCommand(
         const editor = getEditor()?.active
         const document = editor?.document
         if (!document) {
+            return
+        }
+
+        if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+            activeNotification(document.uri, 'context-filter')
             return
         }
 

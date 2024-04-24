@@ -3,10 +3,12 @@ import {
     type DefaultChatCommands,
     type EventSource,
     type PromptString,
+    contextFiltersProvider,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
+import { activeNotification } from '../../context-filters/notification'
 import { getEditor } from '../../editor/active-editor'
 
 export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'> {
@@ -29,9 +31,14 @@ export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSessi
         return undefined
     }
 
-    if (isCommand && getEditor()?.ignored) {
+    const editor = getEditor()
+    if (isCommand && editor.ignored) {
         void vscode.window.showErrorMessage('Cannot execute a command in an ignored file.')
         return undefined
+    }
+    if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
+        activeNotification(editor.active.document.uri, 'context-filter')
+        return
     }
 
     return vscode.commands.executeCommand<ChatSession | undefined>('cody.action.chat', args)

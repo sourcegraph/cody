@@ -2,11 +2,13 @@ import {
     type ContextItem,
     DefaultChatCommands,
     PromptString,
+    contextFiltersProvider,
     displayLineRange,
     logDebug,
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -16,13 +18,18 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
+import { activeNotification } from '../../context-filters/notification'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
  *
  * Context: Current selection
  */
-async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promise<ExecuteChatArguments> {
+async function smellCommand(
+    span: Span,
+    args?: Partial<CodyCommandArgs>
+): Promise<ExecuteChatArguments | null> {
     const addEnhancedContext = false
     let prompt = PromptString.fromDefaultCommands(defaultCommands, 'smell')
 
@@ -43,6 +50,8 @@ async function smellCommand(span: Span, args?: Partial<CodyCommandArgs>): Promis
             'the selected code',
             ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
         )
+    } else {
+        return null
     }
 
     return {
@@ -63,6 +72,13 @@ export async function executeSmellCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.smell', async span => {
         span.setAttribute('sampled', true)
+
+        const editor = getEditor()
+        if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
+            activeNotification(editor.active.document.uri, 'context-filter')
+            return
+        }
+
         logDebug('executeSmellCommand', 'executing', { args })
         telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
             useCodebaseContex: false,
@@ -82,9 +98,17 @@ export async function executeSmellCommand(
             },
         })
 
+        const chatArguments = await smellCommand(span, args)
+        if (chatArguments === null) {
+            vscode.window.showInformationMessage(
+                'Please select text before running the "Explain" command.'
+            )
+            return
+        }
+
         return {
             type: 'chat',
-            session: await executeChat(await smellCommand(span, args)),
+            session: await executeChat(chatArguments),
         }
     })
 }

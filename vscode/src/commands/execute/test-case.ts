@@ -1,6 +1,7 @@
-import { type ContextItem, logError, ps } from '@sourcegraph/cody-shared'
+import { type ContextItem, contextFiltersProvider, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { Range } from 'vscode'
+import { activeNotification } from '../../context-filters/notification'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
@@ -23,6 +24,11 @@ export async function executeTestCaseEditCommand(
         const document = editor?.document
         // Current selection is required
         if (!document || !editor.selection) {
+            return
+        }
+
+        if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+            activeNotification(document.uri, 'context-filter')
             return
         }
 
