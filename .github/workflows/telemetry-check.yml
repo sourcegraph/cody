@@ -8,23 +8,38 @@ on:
 jobs:
   check-for-deprecated-v1-telemetry:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
       - name: Check for deprecated telemetry calls
         shell: bash
         run: |
+
           echo "Checking for deprecated telemetry calls"
+
           # ToDo: test below before pushing
           echo "logEvent('this should get flagged')"
+
           if grep -rEn 'logEvent|logEvents|eventLogger\.log' .; then
-              echo "Found log events in the following files:"
-              grep -rEn 'logEvent|logEvents|eventLogger\.log' . | while read -r line ; do
-              file=$(echo "$line" | cut -d':' -f1)                match=$(echo "$line" | cut -d':' -f2-)
+
+            echo "Found log events in the following files:"
+
+            grep -rEn 'logEvent|logEvents|eventLogger\.log' . |
+            while read -r line ; do
+
+              file=$(echo "$line" | cut -d':' -f1)
+              match=$(echo "$line" | cut -d':' -f2-)
+
               echo "File: $file, Match: $match"
-          done
-          exit 1
+
+            done
+
+            exit 1
+
           else
+
             echo "No log events found in modified files."
             exit 0
+
           fi
