@@ -287,6 +287,7 @@ abstract class FixupSession(
           if (op.edits == null) {
             logger.warn("Workspace edit operation has no edits")
           } else {
+            logger.info("Applying edits to a file: ${op.uri}")
             performInlineEdits(op.edits)
           }
         }
@@ -312,19 +313,23 @@ abstract class FixupSession(
       // Apply the edits in a write action.
       WriteCommandAction.runWriteCommandAction(project) {
         for ((edit, marker) in sortedEdits) {
-          when (edit.type) {
-            "replace",
-            "delete" -> {
-              val action = ReplaceUndoableAction(project, session = this, edit, marker)
-              this.performedActions.add(action)
-              action.apply()
+          try {
+            when (edit.type) {
+              "replace",
+              "delete" -> {
+                val action = ReplaceUndoableAction(project, session = this, edit, marker)
+                this.performedActions.add(action)
+                action.apply()
+              }
+              "insert" -> {
+                val action = InsertUndoableAction(project, session = this, edit, marker)
+                this.performedActions.add(action)
+                action.apply()
+              }
+              else -> logger.warn("Unknown edit type: ${edit.type}")
             }
-            "insert" -> {
-              val action = InsertUndoableAction(project, session = this, edit, marker)
-              this.performedActions.add(action)
-              action.apply()
-            }
-            else -> logger.warn("Unknown edit type: ${edit.type}")
+          } catch (e: RuntimeException) {
+            throw EditException(edit, marker, e)
           }
         }
       }
