@@ -2,6 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "sourceMap": false, // sourcemaps come from esbuild/vite
+    "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",

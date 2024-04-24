@@ -14,6 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
+import { ResponseSettings } from './Components/ResponseSettings'
 import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
@@ -65,6 +66,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     // Display the enhanced context settings on first chats
     const [isEnhancedContextOpen, setIsEnhancedContextOpen] = useState(isNewInstall)
+    const [isResponseSettingsOpen, setIsResponseSettingsOpen] = useState(false)
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
     const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
@@ -445,6 +447,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         setIsEnhancedContextOpen(open)
     }, [])
 
+    const onResponseSettingsTogglerClick = useCallback(
+        (open: boolean) => {
+            if (!isResponseSettingsOpen && !open) {
+                setInputFocus(true)
+            }
+            setIsResponseSettingsOpen(open)
+        },
+        [isResponseSettingsOpen, setInputFocus]
+    )
+
     const [isEditorFocused, setIsEditorFocused] = useState(false)
 
     const isNewChat = transcript.length === 0
@@ -503,12 +515,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             onEscapeKey={onEditorEscapeKey}
                             editorRef={editorRef}
                         />
-                        <div className={styles.contextButton}>
+                        <div className={styles.editorSuffixButtons}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
                                 setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                                 isNewInstall={isNewInstall}
+                            />
+                            <ResponseSettings
+                                isOpen={isResponseSettingsOpen}
+                                setOpen={onResponseSettingsTogglerClick}
                             />
                         </div>
                     </div>
