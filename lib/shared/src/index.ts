@@ -228,7 +228,7 @@ export {
     tracer,
     logResponseHeadersToSpan,
 } from './tracing'
-export { convertGitCloneURLToCodebaseName, isError } from './utils'
+export { convertGitCloneURLToCodebaseName, isError, createSubscriber } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
