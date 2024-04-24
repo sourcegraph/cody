@@ -287,7 +287,7 @@ abstract class FixupSession(
           if (op.edits == null) {
             logger.warn("Workspace edit operation has no edits")
           } else {
-            logger.info("Applying edits to a file: ${op.uri}")
+            logger.info("Applying edits to a file (size ${document.textLength} chars): ${op.uri}")
             performInlineEdits(op.edits)
           }
         }
