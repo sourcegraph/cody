@@ -57,6 +57,7 @@ import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentCodeLenses } from './AgentCodeLenses'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
+import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
@@ -76,6 +77,7 @@ import type {
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
+import { Uri } from './vscode-shim'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -434,12 +436,39 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+            const oldDocumentContent = this.workspace.getDocument(documentWithUri.uri)?.content
             const textDocument = this.workspace.addDocument(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
+
+            let contentChanges: vscode.TextDocumentContentChangeEvent[] = []
+
+            if (document.jetbrainsDocumentEvent && document.content && oldDocumentContent) {
+                if (document.jetbrainsDocumentEvent.offset) {
+                    const oldDocument = AgentTextDocument.from(Uri.file('dummy'), oldDocumentContent)
+                    const start: vscode.Position = oldDocument.positionAt(
+                        document.jetbrainsDocumentEvent?.offset
+                    )
+                    const end: vscode.Position = oldDocument.positionAt(
+                        document.jetbrainsDocumentEvent?.offset +
+                            document.jetbrainsDocumentEvent.oldLength
+                    )
+                    const range = new vscode.Range(start, end)
+
+                    contentChanges = [
+                        {
+                            range: range,
+                            rangeOffset: document.jetbrainsDocumentEvent?.offset,
+                            rangeLength: document.jetbrainsDocumentEvent?.oldLength,
+                            text: document.jetbrainsDocumentEvent.content,
+                        },
+                    ]
+                }
+            }
+
             this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
+                contentChanges: contentChanges,
                 reason: undefined,
             })
 

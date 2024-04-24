@@ -542,6 +542,7 @@ export interface ProtocolTextDocument {
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
     filePath?: string
     content?: string
+    jetbrainsDocumentEvent?: JetbrainsDocumentEvent
     selection?: Range
 }
 
@@ -770,4 +771,10 @@ export interface GetFoldingRangeResult {
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
     error: CodyError | undefined
+}
+
+export interface JetbrainsDocumentEvent {
+    offset: number
+    oldLength: number
+    content: string
 }
