@@ -576,17 +576,15 @@ export class LocalEmbeddingsController
         if (!this.endpointIsDotcom) {
             return []
         }
-        const lastRepo = this.lastRepo
-        if (!lastRepo || !lastRepo.repoName) {
-            return []
-        }
-        // without this, assignment to repoName below complains about | boolean
-        const lastRepoName = lastRepo.repoName
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
+                if (!this.lastRepo || !this.lastRepo.repoName) {
+                    span.setAttribute('noResultReason', 'last-repo-not-set')
+                    return []
+                }
                 const service = await this.getService()
                 const resp = await service.request('embeddings/query', {
-                    repoName: lastRepoName,
+                    repoName: this.lastRepo.repoName,
                     query: query.toString(),
                     numResults,
                 })
