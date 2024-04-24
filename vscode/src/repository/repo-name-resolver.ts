@@ -64,8 +64,6 @@ export class RepoNameResolver {
                 }
             }
 
-            console.log({ remoteUrls })
-
             if (remoteUrls) {
                 const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
                 const repoNames = await Promise.all(
