@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class RenameFile(
-  val oldUri: String? = null,
-  val newUri: String? = null,
+  val oldUri: String,
+  val newUri: String,
 )
 

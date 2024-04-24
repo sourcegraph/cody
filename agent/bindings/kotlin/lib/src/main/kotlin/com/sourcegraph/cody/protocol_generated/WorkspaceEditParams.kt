@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class WorkspaceEditParams(
-  val operations: List<WorkspaceEditOperation>? = null,
+  val operations: List<WorkspaceEditOperation>,
   val metadata: WorkspaceEditMetadata? = null,
 )
 

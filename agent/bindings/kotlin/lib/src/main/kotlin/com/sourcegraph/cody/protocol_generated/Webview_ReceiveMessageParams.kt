@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Webview_ReceiveMessageParams(
-  val id: String? = null,
-  val message: WebviewMessage? = null,
+  val id: String,
+  val message: WebviewMessage,
 )
 
