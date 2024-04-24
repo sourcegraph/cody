@@ -178,7 +178,12 @@ export type ClientRequests = {
 
     // Gets whether the specified URI is sensitive and should not be sent to
     // LLM providers.
-    'ignore/forUri': [{ uri: string }, IgnoreForUriResult]
+    'ignore/test': [
+        { uri: string },
+        {
+            policy: 'ignore' | 'use'
+        },
+    ]
 
     // For testing. Overrides any ignore policy to ignore repositories and URIs
     // which match the specified regular expressions. Pass `undefined` to remove
@@ -319,7 +324,7 @@ export type ServerNotifications = {
     'codeLenses/display': [DisplayCodeLensParams]
 
     // The set of ignored files/repositories has changed. The client should
-    // re-query using ignore/forUri.
+    // re-query using ignore/test.
     'ignore/didChange': [null]
 
     // Low-level webview notification for the given chat session ID (created via
@@ -762,8 +767,4 @@ export interface GetFoldingRangeResult {
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
     error: CodyError | undefined
-}
-
-export interface IgnoreForUriResult {
-    policy: 'ignore' | 'use'
 }

@@ -1036,7 +1036,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest('ignore/forUri', async ({ uri }) => {
+        this.registerAuthenticatedRequest('ignore/test', async ({ uri }) => {
             const policy: 'ignore' | 'use' = isCodyIgnoredFile(vscode.Uri.parse(uri)) ? 'ignore' : 'use'
             return {
                 policy,

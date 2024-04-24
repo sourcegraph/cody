@@ -112,7 +112,7 @@ describe('Agent', () => {
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Confirm .cody/ignore is active at start up
-        const ignore = await client.request('ignore/forUri', {
+        const ignore = await client.request('ignore/test', {
             uri: URI.file(ignoredPath).toString(),
         })
         expect(ignore.policy).toBe('ignore')
@@ -542,7 +542,7 @@ describe('Agent', () => {
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
 
-            const result = await client.request('ignore/forUri', {
+            const result = await client.request('ignore/test', {
                 uri: URI.file(ignoredPath).toString(),
             })
             expect(result.policy).toBe('ignore')
@@ -580,7 +580,7 @@ describe('Agent', () => {
             // Ignored file should not be included in context files
             const contextFilesUrls = contextFiles.map(f => f.uri).filter(uri => uri)
             const result = await Promise.all(
-                contextFilesUrls.map(uri => client.request('ignore/forUri', { uri: uri.toString() }))
+                contextFilesUrls.map(uri => client.request('ignore/test', { uri: uri.toString() }))
             )
             for (const r of result) {
                 expect(r.policy).toBe('use')
@@ -608,7 +608,7 @@ describe('Agent', () => {
             // Ignored file should not be included in context files
             const result = await Promise.all(
                 contextUrls.map(uri =>
-                    client.request('ignore/forUri', {
+                    client.request('ignore/test', {
                         uri,
                     })
                 )
@@ -639,7 +639,7 @@ describe('Agent', () => {
 
         it('ignore rule is not case sensitive', async () => {
             const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
-            const result = await client.request('ignore/forUri', {
+            const result = await client.request('ignore/test', {
                 uri: URI.file(alsoIgnoredPath).toString(),
             })
             expect(result.policy).toBe('ignore')
@@ -648,7 +648,7 @@ describe('Agent', () => {
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
             // as it should stay active for each workspace session.
-            const result = await client.request('ignore/forUri', {
+            const result = await client.request('ignore/test', {
                 uri: URI.file(ignoredPath).toString(),
             })
             expect(result.policy).toBe('ignore')
@@ -1565,29 +1565,24 @@ describe('Agent', () => {
                 go()
             })
             expect(
-                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
             ).toStrictEqual({ policy: 'use' })
             await Promise.all([
                 stop(),
-                enterpriseClient.request('testing/ignore/overridePolicy',
-                        {
-                            repoRe: '$^',
-                            uriRe: '.*bar.*',
-                        },
-                ),
+                enterpriseClient.request('testing/ignore/overridePolicy', {
+                    repoRe: '$^',
+                    uriRe: '.*bar.*',
+                }),
             ])
             expect(
-                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
             ).toStrictEqual({ policy: 'ignore' })
             expect(
-                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/quux.txt' })
+                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/quux.txt' })
             ).toStrictEqual({ policy: 'use' })
-            await Promise.all([
-                stop(),
-                enterpriseClient.request('testing/ignore/overridePolicy', null),
-            ])
+            await Promise.all([stop(), enterpriseClient.request('testing/ignore/overridePolicy', null)])
             expect(
-                await enterpriseClient.request('ignore/forUri', { uri: 'file:///foo/bar.txt' })
+                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
             ).toStrictEqual({ policy: 'use' })
             // Stop listening to 'ignore/didChange'
             enterpriseClient.registerNotification('ignore/didChange', () => {})
