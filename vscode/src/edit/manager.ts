@@ -5,6 +5,7 @@ import {
     type ChatClient,
     ConfigFeaturesSingleton,
     type ModelProvider,
+    contextFiltersProvider,
 } from '@sourcegraph/cody-shared'
 
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -14,6 +15,7 @@ import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import { activeNotification } from '../context-filters/notification'
 import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -99,13 +101,18 @@ export class EditManager implements vscode.Disposable {
 
         const editor = getEditor()
         if (editor.ignored) {
-            void vscode.window.showInformationMessage('Cannot edit Cody ignored file.')
+            activeNotification(editor.active?.document.uri, 'cody-ignore')
             return
         }
 
         const document = configuration.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
+            return
+        }
+
+        if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+            activeNotification(document.uri, 'cody-ignore')
             return
         }
 

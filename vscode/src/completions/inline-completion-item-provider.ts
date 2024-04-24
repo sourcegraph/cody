@@ -15,7 +15,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { type CodyIgnoreType, notifyCodyIgnored } from '../context-filters/notification'
+import { type CodyIgnoreType, passiveNotification } from '../context-filters/notification'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
@@ -814,5 +814,5 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType) {
         'CodyCompletionProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
-    notifyCodyIgnored(uri, reason)
+    passiveNotification(uri, reason)
 }
