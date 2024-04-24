@@ -23,9 +23,6 @@ export function removeAfterLastAt(str: string): string {
  * Includes the file path and an optional range or symbol specifier.
  */
 export function getLabelForContextItem(item: ContextItem): string {
-    if (item.type === 'instruction') {
-        return `Follow instruction: ${item.title}`
-    }
     const isFileType = item.type === 'file'
     if (isFileType && item.title) {
         return `Add context from: ${item.title}`

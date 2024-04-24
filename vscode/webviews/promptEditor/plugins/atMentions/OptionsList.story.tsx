@@ -11,7 +11,6 @@ const meta: Meta<typeof OptionsList> = {
     component: OptionsList,
 
     args: {
-        trigger: '@',
         query: '',
         options: [],
         selectedIndex: null,

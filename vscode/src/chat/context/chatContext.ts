@@ -3,7 +3,6 @@ import {
     type ContextItem,
     type ContextMentionProvider,
     type MentionQuery,
-    type MentionTrigger,
     type RangeData,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
@@ -16,7 +15,6 @@ import {
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
-    trigger: MentionTrigger,
     query: MentionQuery | string,
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
@@ -26,9 +24,7 @@ export async function getChatContextItemsForMention(
     range?: RangeData
 ): Promise<ContextItem[]> {
     const mentionQuery =
-        typeof query === 'string'
-            ? parseMentionQuery(trigger, query, getEnabledContextMentionProviders())
-            : query
+        typeof query === 'string' ? parseMentionQuery(query, getEnabledContextMentionProviders()) : query
 
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same

@@ -4,7 +4,6 @@ import type { ContextMentionProvider } from '../api'
 
 export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
     id: 'url',
-    triggers: ['@'],
     triggerPrefixes: ['http://', 'https://'],
 
     /**
