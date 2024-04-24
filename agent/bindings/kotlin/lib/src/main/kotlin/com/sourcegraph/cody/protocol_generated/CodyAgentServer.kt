@@ -96,8 +96,8 @@ interface CodyAgentServer {
   fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
-  @JsonRequest("ignore/forUri")
-  fun ignore_forUri(params: Ignore_ForUriParams): CompletableFuture<IgnoreForUriResult>
+  @JsonRequest("ignore/test")
+  fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
   @JsonRequest("testing/ignore/overridePolicy")
   fun testing_ignore_overridePolicy(params: Testing_Ignore_OverridePolicyParams?): CompletableFuture<Null?>
   @JsonRequest("remoteRepo/has")
