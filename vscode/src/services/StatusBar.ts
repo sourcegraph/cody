@@ -200,7 +200,7 @@ export function createStatusBar(): CodyStatusBar {
             await createFeatureToggle(
                 'Ollama for Chat',
                 'Experimental',
-                'Enable using your local Ollama models for chat and commands when available',
+                'Use local Ollama models for chat and commands when available',
                 'cody.experimental.ollamaChat',
                 c => c.experimentalOllamaChat,
                 false
