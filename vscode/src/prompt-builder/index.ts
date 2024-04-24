@@ -5,12 +5,12 @@ import {
     type Message,
     type ModelContextWindow,
     TokenCounter,
+    displayPath,
     isCodyIgnoredFile,
     ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
-import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
@@ -29,7 +29,9 @@ interface PromptBuilderContextResult {
 export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private seenContext = new Set<string>()
+
+    private processedContext = new Set<string>()
+    private processedContextType = new Set<ContextTokenUsageType>()
 
     private tokenCounter: TokenCounter
 
@@ -78,8 +80,6 @@ export class PromptBuilder {
         return 0
     }
 
-    private processedContextType = new Set<ContextTokenUsageType>()
-
     public tryAddContext(
         tokenType: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
@@ -95,17 +95,19 @@ export class PromptBuilder {
         const reversedContextItems = contextMessages.slice().reverse()
         for (const item of reversedContextItems) {
             const userContextItem = contextItem(item)
-            const id = contextItemId(item)
+            const id = this.getContextItemId(item)
             // Skip context items that are in the Cody ignore list
             if (isCodyIgnoredFile(userContextItem.uri)) {
                 result.ignored.push(userContextItem)
                 continue
             }
-            // Skip context items that have already been seen
-            if (this.seenContext.has(id)) {
+
+            // Check if the specific context item has already been seen
+            if (this.processedContext.has(id)) {
                 result.duplicate.push(userContextItem)
                 continue
             }
+
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
             if (!contextMsg) {
                 continue
@@ -123,7 +125,6 @@ export class PromptBuilder {
                 userContextItem.isTooLarge = !withinLimit
             }
 
-            this.seenContext.add(id)
             // Skip context items that would exceed the token budget
             if (!withinLimit) {
                 userContextItem.content = undefined
@@ -131,10 +132,35 @@ export class PromptBuilder {
                 result.limitReached = true
                 continue
             }
+            this.processedContext.add(id)
             this.reverseMessages.push(assistantMsg, contextMsg)
             result.used.push(userContextItem)
         }
         return result
+    }
+
+    public getContextItemId(value: ContextItem | ContextMessage): string {
+        const item = contextItem(value)
+
+        // Unified context items have a `title` property that is used for display instead of the URI path,
+        // as the source of the context lives remotely, we will not be able to use the uri path to match
+        // the local context items.
+        const displayFilePath = (item.source === 'unified' && item.title) || displayPath(item.uri)
+
+        if (this.processedContext.has(displayFilePath)) {
+            return displayFilePath
+        }
+
+        // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
+        // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
+        // bug, so protect against it. See the `toRangeData` docstring for more.
+        const range = toRangeData(item.range)
+        if (range) {
+            return `${displayFilePath}#${range.start.line}:${range.end.line}`
+        }
+
+        // If there's no range, it means the whole file was used as context
+        return displayFilePath
     }
 }
 
@@ -144,22 +170,4 @@ function isContextItem(value: ContextItem | ContextMessage): value is ContextIte
 
 function contextItem(value: ContextItem | ContextMessage): ContextItem {
     return isContextItem(value) ? value : value.file
-}
-
-function contextItemId(value: ContextItem | ContextMessage): string {
-    const item = contextItem(value)
-
-    // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
-    // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
-    // bug, so protect against it. See the `toRangeData` docstring for more.
-    const range = toRangeData(item.range)
-    if (range) {
-        return `${item.uri.toString()}#${range.start.line}:${range.end.line}`
-    }
-
-    if (item.content) {
-        return `${item.uri.toString()}#${SHA256(item.content).toString()}`
-    }
-
-    return item.uri.toString()
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
-import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
+import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
 
@@ -127,6 +127,78 @@ describe('PromptBuilder', () => {
             }
             const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
             expect(() => builder.tryAddContext('user', transcript.reverse())).toThrowError()
+        })
+    })
+
+    describe('getContextItemId', () => {
+        it('returns display file path for non-unified context items without range', () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar.js'),
+                content: 'foobar',
+                size: 100,
+                source: ContextItemSource.User,
+            }
+            const id = builder.getContextItemId(item)
+            expect(id).toBe('foo/bar.js')
+        })
+
+        it('returns display file path with line range for context items with range', () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar.js'),
+                content: 'foobar',
+                size: 100,
+                range: { start: { line: 2, character: 0 }, end: { line: 5, character: 10 } },
+                source: ContextItemSource.User,
+            }
+            const id = builder.getContextItemId(item)
+            expect(id).toBe('foo/bar.js#2:5')
+        })
+
+        it('returns title for unified context items without range', () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.parse('https://example.com/foo/bar.js'),
+                content: 'foobar',
+                size: 100,
+                title: 'foo/bar.js',
+                source: ContextItemSource.Unified,
+            }
+            const id = builder.getContextItemId(item)
+            expect(id).toBe('foo/bar.js')
+        })
+
+        it('returns title with line range for unified context items with range', () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.parse('https://example.com/foo/bar.js'),
+                content: 'foobar',
+                size: 100,
+                title: 'foo/bar.js',
+                range: { start: { line: 2, character: 0 }, end: { line: 5, character: 10 } },
+                source: ContextItemSource.Unified,
+            }
+            const id = builder.getContextItemId(item)
+            expect(id).toBe('foo/bar.js#2:5')
+        })
+
+        it('handles range values serialized from vscode.Range', () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar.js'),
+                content: 'foobar',
+                size: 100,
+                range: { start: { line: 2, character: 0 }, end: { line: 5, character: 10 } },
+                source: ContextItemSource.User,
+            }
+            const id = builder.getContextItemId(item)
+            expect(id).toBe('foo/bar.js#2:5')
         })
     })
 })
