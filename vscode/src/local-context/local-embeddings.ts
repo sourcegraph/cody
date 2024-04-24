@@ -580,7 +580,7 @@ export class LocalEmbeddingsController
         if (!lastRepo || !lastRepo.repoName) {
             return []
         }
-        // without this, assingment to repoName below complains about | boolean
+        // without this, assignment to repoName below complains about | boolean
         const lastRepoName = lastRepo.repoName
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
