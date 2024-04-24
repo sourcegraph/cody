@@ -31,20 +31,16 @@ function mockFsCalls(params: MockFsCallsParams) {
     }
 
     if (gitSubmodule) {
-        const submoduleConfigPath = path.join(
-            gitSubmodule.path,
-            gitSubmodule.gitFile.trim().replace('gitdir: ', '')
+        const submoduleConfigPath = deWindowsifyPath(
+            path.join(gitSubmodule.path, gitSubmodule.gitFile.trim().replace('gitdir: ', ''))
         )
 
         files[`${gitSubmodule.path}/.git`] = gitSubmodule.gitFile
         files[`${submoduleConfigPath}/config`] = gitSubmodule.gitConfig
     }
 
-    console.log('files', JSON.stringify(files, null, 2))
-
     const statMock = vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation(async uri => {
         const fsPath = deWindowsifyPath(uri.fsPath)
-        console.log('statMock', fsPath)
 
         if (fsPath in files) {
             return { type: vscode.FileType.File } as vscode.FileStat
@@ -59,7 +55,6 @@ function mockFsCalls(params: MockFsCallsParams) {
 
     const readFileMock = vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(async uri => {
         const fsPath = deWindowsifyPath(uri.fsPath)
-        console.log('readFileMock', fsPath)
 
         if (fsPath in files) {
             return new TextEncoder().encode(dedent(files[fsPath]))
