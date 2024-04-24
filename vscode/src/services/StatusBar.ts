@@ -72,7 +72,7 @@ export function createStatusBar(): CodyStatusBar {
         }
         return null
     }
-    vscode.window.onDidChangeActiveTextEditor(async editor => {
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(async editor => {
         if (!editor) {
             return
         }

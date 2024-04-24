@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import { isCodyIgnoredFile } from '@sourcegraph/cody-shared'
-import { activeNotification } from '../context-filters/notification'
 
 /**
  * Interface for tracking the last active text editor that is not a webview panel for
