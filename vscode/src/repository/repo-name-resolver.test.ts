@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
+import { graphqlClient } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { gitRemoteUrlsFromTreeWalk } from './enterprise-repo-name-resolver'
+import { EnterpriseRepoNameResolver, gitRemoteUrlsFromTreeWalk } from './enterprise-repo-name-resolver'
 
 interface MockFsCallsParams {
     filePath: string
@@ -252,5 +253,28 @@ describe('gitRemoteUrlFromTreeWalk', () => {
 
         const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
         expect(remoteUrls).toBe(undefined)
+    })
+})
+
+describe('getRepoNamesFromWorkspaceUri', () => {
+    it('resolves the repo name using graphql', async () => {
+        const resolver = new EnterpriseRepoNameResolver()
+        resolver.init([() => Promise.resolve(['git@github.com:sourcegraph/cody.git'])])
+
+        const { fileUri } = mockFsCalls({
+            filePath: '/repo/submodule/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: `
+                [core]
+                    repositoryformatversion = 0
+                    filemode = true
+                [remote "origin"]
+                    url = https://github.com/sourcegraph/cody.git
+                    fetch = +refs/heads/*:refs/remotes/origin/*
+            `,
+        })
+
+        vi.spyOn(graphqlClient, 'getRepoName').mockResolvedValue('sourcegraph/cody')
+        expect(resolver.getRepoNamesFromWorkspaceUri(fileUri)).resolves.toEqual(['sourcegraph/cody'])
     })
 })
