@@ -247,6 +247,11 @@
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 
+        <action id="cody.testCodeAction"
+                class="com.sourcegraph.cody.edit.actions.TestCodeAction">
+            <add-to-group group-id="CodyEditorActions" anchor="first"/>
+        </action>
+
         <action id="cody.enableInlineEditsActions"
                 class="com.sourcegraph.cody.edit.EnableInlineEditsAction"/>
 

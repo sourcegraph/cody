@@ -8,21 +8,22 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
-import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfoRt
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.io.createFile
+import com.intellij.util.io.exists
+import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -35,20 +36,24 @@ import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.TaskIdParam
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
-import com.sourcegraph.cody.edit.DocumentMarkerSession
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.EditShowDiffAction
 import com.sourcegraph.cody.edit.EditShowDiffAction.Companion.DIFF_SESSION_DATA_KEY
 import com.sourcegraph.cody.edit.FixupService
-import com.sourcegraph.cody.edit.FixupUndoableAction
-import com.sourcegraph.cody.edit.InsertUndoableAction
-import com.sourcegraph.cody.edit.ReplaceUndoableAction
+import com.sourcegraph.cody.edit.exception.EditCreationException
+import com.sourcegraph.cody.edit.exception.EditExecutionException
+import com.sourcegraph.cody.edit.fixupActions.FixupUndoableAction
+import com.sourcegraph.cody.edit.fixupActions.InsertUndoableAction
+import com.sourcegraph.cody.edit.fixupActions.ReplaceUndoableAction
 import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
+import com.sourcegraph.utils.CodyEditorUtil
+import java.net.URI
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.toPath
 
 /**
  * Common functionality for commands that let the agent edit the code inline, such as adding a doc
@@ -57,8 +62,8 @@ import java.util.concurrent.TimeUnit
 abstract class FixupSession(
     val controller: FixupService,
     val project: Project,
-    val editor: Editor
-) : DocumentMarkerSession(editor.document), Disposable {
+    var editor: Editor
+) : Disposable {
 
   private val logger = Logger.getInstance(FixupSession::class.java)
   private val fixupService = FixupService.getInstance(project)
@@ -71,12 +76,6 @@ abstract class FixupSession(
   private var selectionRange: Range? = null
 
   private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
-
-  protected fun createDiffSession() =
-      DiffSession(
-          project = project,
-          document = EditorFactory.getInstance().createDocument(document.text),
-          performedActions = performedActions)
 
   private val lensActionCallbacks =
       mapOf(
@@ -92,6 +91,9 @@ abstract class FixupSession(
   }
 
   fun commandCallbacks(): Map<String, () -> Unit> = lensActionCallbacks
+
+  private val document
+    get() = editor.document
 
   @RequiresEdt
   private fun triggerDocumentCodeAsync() {
@@ -114,7 +116,7 @@ abstract class FixupSession(
               fixupService.removeSession(this)
             } else {
               taskId = result.id
-              selectionRange = result.selectionRange
+              selectionRange = adjustToDocumentRange(result.selectionRange)
               fixupService.addSession(this)
             }
             null
@@ -203,10 +205,9 @@ abstract class FixupSession(
     showLensGroup(LensGroupFactory(this).createAcceptGroup())
   }
 
-  override fun finish() {
+  fun finish() {
     try {
       controller.removeSession(this)
-      super.finish()
     } catch (x: Exception) {
       logger.debug("Session cleanup error", x)
     }
@@ -252,7 +253,7 @@ abstract class FixupSession(
               when (dataId) {
                 CommonDataKeys.PROJECT.name -> project
                 EditShowDiffAction.EDITOR_DATA_KEY.name -> editor
-                DIFF_SESSION_DATA_KEY.name -> createDiffSession()
+                DIFF_SESSION_DATA_KEY.name -> createDiffDocument()
                 else -> null
               }
             },
@@ -271,7 +272,11 @@ abstract class FixupSession(
   }
 
   fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams) {
+
     for (op in workspaceEditParams.operations) {
+
+      op.uri?.let { createAndSwitchFileIfNeeded(it) }
+
       // TODO: We need to support the file-level operations.
       when (op.type) {
         "create-file" -> {
@@ -298,6 +303,25 @@ abstract class FixupSession(
     }
   }
 
+  private fun createAndSwitchFileIfNeeded(path: String) {
+    val uri = URI.create(path).withScheme("file")
+    if (!uri.toPath().exists()) uri.toPath().createFile()
+
+    val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return
+    if (FileDocumentManager.getInstance().getFile(document) == vf) {
+      return
+    }
+
+    ApplicationManager.getApplication().invokeAndWait { CodyEditorUtil.showDocument(project, path) }
+    editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+    val textFile = ProtocolTextDocument.fromVirtualFile(editor, vf)
+
+    CodyAgentService.withAgent(project) { agent ->
+      ensureSelectionRange(agent, textFile)
+      ApplicationManager.getApplication().invokeLater { showWorkingGroup() }
+    }
+  }
+
   fun performInlineEdits(edits: List<TextEdit>) {
     // TODO: This is an artifact of the update to concurrent editing tasks.
     // We do need to mute any LensGroup listeners, but this is an ugly way to do it.
@@ -306,75 +330,67 @@ abstract class FixupSession(
       if (!controller.isEligibleForInlineEdit(editor)) {
         return@withListenersMuted logger.warn("Inline edit not eligible")
       }
-      // Mark all the edit locations so the markers will move as we edit the document,
-      // preserving the original positions of the edits.
-      val markers = edits.mapNotNull { createMarkerForEdit(it) }
-      val sortedEdits = edits.zip(markers).sortedByDescending { it.second.startOffset }
-      // Apply the edits in a write action.
+
       WriteCommandAction.runWriteCommandAction(project) {
-        for ((edit, marker) in sortedEdits) {
-          try {
-            when (edit.type) {
-              "replace",
-              "delete" -> {
-                val action = ReplaceUndoableAction(project, session = this, edit, marker)
-                this.performedActions.add(action)
-                action.apply()
+        val currentActions =
+            edits.mapNotNull { edit ->
+              try {
+                when (edit.type) {
+                  "replace",
+                  "delete" -> ReplaceUndoableAction(project, edit, document)
+                  "insert" -> InsertUndoableAction(project, edit, document)
+                  else -> {
+                    logger.warn("Unknown edit type: ${edit.type}")
+                    null
+                  }
+                }
+              } catch (e: RuntimeException) {
+                throw EditCreationException(edit, e)
               }
-              "insert" -> {
-                val action = InsertUndoableAction(project, session = this, edit, marker)
-                this.performedActions.add(action)
-                action.apply()
-              }
-              else -> logger.warn("Unknown edit type: ${edit.type}")
             }
+
+        currentActions.forEach { action ->
+          try {
+            action.apply()
           } catch (e: RuntimeException) {
-            throw EditException(edit, marker, e)
+            throw EditExecutionException(action, e)
           }
         }
+
+        performedActions += currentActions
       }
     }
   }
 
-  private fun createMarkerForEdit(edit: TextEdit): RangeMarker? {
-    val startOffset: Int
-    val endOffset: Int
-    when (edit.type) {
-      "replace",
-      "delete" -> {
-        val range = edit.range ?: return null
-        startOffset = document.getLineStartOffset(range.start.line) + range.start.character
-        endOffset = document.getLineStartOffset(range.end.line) + range.end.character
-      }
-      "insert" -> {
-        val position = edit.position ?: return null
-        startOffset = document.getLineStartOffset(position.line) + position.character
-        endOffset = startOffset
-      }
-      else -> return null
-    }
-    return createMarker(startOffset, endOffset)
+  private fun adjustToDocumentRange(r: Range): Range {
+    // Negative values of the start/end line are used to mark beginning/end of the document
+    val start = if (r.start.line < 0) Position(line = 0, character = r.start.character) else r.start
+    val endLine = document.getLineNumber(document.textLength)
+    val endLineLength = document.getLineEndOffset(endLine) - document.getLineStartOffset(endLine)
+    val end = if (r.end.line < 0) Position(line = endLine, character = endLineLength) else r.end
+    return Range(start, end)
   }
 
   private fun undoEdits() {
     if (project.isDisposed) return
-    val fileEditor = getEditorForDocument()
-    val undoManager = UndoManager.getInstance(project)
-    if (undoManager.isUndoAvailable(fileEditor)) {
-      undoManager.undo(fileEditor)
+    WriteCommandAction.runWriteCommandAction(project) {
+      performedActions.reversed().forEach { it.undo() }
     }
   }
 
-  private fun getEditorForDocument(): FileEditor? {
-    val file = FileDocumentManager.getInstance().getFile(document)
-    return file?.let { getCurrentFileEditor(it) }
+  private fun createDiffDocument(): Document {
+    val document = EditorFactory.getInstance().createDocument(document.text)
+    val diffActions = performedActions.map { it.copyForDocument(document) }
+    WriteCommandAction.runWriteCommandAction(project) {
+      diffActions.reversed().forEach { it.undo() }
+    }
+    return document
   }
 
-  private fun getCurrentFileEditor(file: VirtualFile): FileEditor? {
-    return FileEditorManager.getInstance(project).getEditors(file).firstOrNull()
+  override fun dispose() {
+    if (project.isDisposed) return
+    performedActions.forEach { it.dispose() }
   }
-
-  override fun dispose() {}
 
   companion object {
     // Lens actions the user can take; we notify the Agent when they are taken.

@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.cody.edit.sessions.DocumentCodeSession
 import com.sourcegraph.cody.edit.sessions.FixupSession
+import com.sourcegraph.cody.edit.sessions.TestCodeSession
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
 
@@ -38,6 +39,12 @@ class FixupService(val project: Project) : Disposable {
   fun startDocumentCode(editor: Editor) {
     if (!isEligibleForInlineEdit(editor)) return
     DocumentCodeSession(this, editor, editor.project ?: return)
+  }
+
+  /** Entry point for the test code command, called by the action handler. */
+  fun startTestCode(editor: Editor) {
+    if (!isEligibleForInlineEdit(editor)) return
+    TestCodeSession(this, editor, editor.project ?: return)
   }
 
   fun isEligibleForInlineEdit(editor: Editor): Boolean {

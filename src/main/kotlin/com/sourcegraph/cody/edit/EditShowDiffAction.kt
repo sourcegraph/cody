@@ -9,9 +9,9 @@ import com.intellij.diff.contents.FileContent
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.sourcegraph.cody.edit.sessions.DiffSession
 
 class EditShowDiffAction : CompareFileWithEditorAction() {
 
@@ -24,12 +24,11 @@ class EditShowDiffAction : CompareFileWithEditorAction() {
   override fun getDiffRequestChain(e: AnActionEvent): DiffRequestChain {
     val project = e.project
     val documentAfter = e.dataContext.getData(EDITOR_DATA_KEY)!!.document
-    val diffSession = e.dataContext.getData(DIFF_SESSION_DATA_KEY)!!
+    val diffSessionDocument = e.dataContext.getData(DIFF_SESSION_DATA_KEY)!!
 
     val rhsContent = DiffContentFactory.getInstance().create(project, documentAfter)
     val fileType = (rhsContent as? FileContent)?.file?.fileType
-    val lhsContent =
-        DiffContentFactory.getInstance().create(project, diffSession.document, fileType)
+    val lhsContent = DiffContentFactory.getInstance().create(project, diffSessionDocument, fileType)
     lhsContent.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
     val editorFile = FileDocumentManager.getInstance().getFile(documentAfter)
@@ -53,6 +52,6 @@ class EditShowDiffAction : CompareFileWithEditorAction() {
 
   companion object {
     val EDITOR_DATA_KEY = DataKey.create<Editor>("editor")
-    val DIFF_SESSION_DATA_KEY = DataKey.create<DiffSession>("diff_session")
+    val DIFF_SESSION_DATA_KEY = DataKey.create<Document>("diff_session")
   }
 }

@@ -5,6 +5,7 @@ import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
@@ -12,21 +13,28 @@ import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings.IndentOptions
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.withScheme
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.config.ConfigUtil
-import java.util.*
+import java.net.URI
+import java.util.Optional
+import kotlin.io.path.toPath
 import kotlin.math.min
 
 object CodyEditorUtil {
+  private val logger = Logger.getInstance(CodyEditorUtil::class.java)
+
   const val VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction"
 
   private const val VIM_MOTION_COMMAND = "Motion"
@@ -190,5 +198,30 @@ object CodyEditorUtil {
 
   fun getEditorForUri(uri: String): Editor? {
     return getAllOpenEditors().firstOrNull { editor -> getDocumentUrl(editor) == uri }
+  }
+
+  @JvmStatic
+  @RequiresEdt
+  fun showDocument(
+      project: Project,
+      uriString: String,
+      selection: Range? = null,
+      preserveFocus: Boolean? = false
+  ): Boolean {
+    try {
+      val uri = URI.create(uriString).withScheme("file")
+      val vf =
+          LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return false
+      OpenFileDescriptor(
+              project,
+              vf,
+              selection?.start?.line ?: 0,
+              /* logicalColumn= */ selection?.start?.character ?: 0)
+          .navigate(/* requestFocus= */ preserveFocus != true)
+      return true
+    } catch (e: Exception) {
+      logger.error("Cannot switch view to file $uriString", e)
+      return false
+    }
   }
 }

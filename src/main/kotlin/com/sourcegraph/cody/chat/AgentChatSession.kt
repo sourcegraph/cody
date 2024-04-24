@@ -289,9 +289,9 @@ private constructor(
       val connectionId =
           createNewPanel(project) { agent: CodyAgent ->
             when (commandId) {
-              CommandId.Explain -> agent.server.commandsExplain()
-              CommandId.Smell -> agent.server.commandsSmell()
-              CommandId.Test -> agent.server.commandsTest()
+              CommandId.Explain -> agent.server.legacyCommandsExplain()
+              CommandId.Smell -> agent.server.legacyCommandsSmell()
+              CommandId.Test -> agent.server.legacyCommandsTest()
             }
           }
 

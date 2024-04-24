@@ -33,6 +33,7 @@ class CommandsTabPanel(
         CodyApplicationSettings.instance.isInlineEditionEnabled) {
       addInlineEditActionButton("cody.editCodeAction")
       addInlineEditActionButton("cody.documentCodeAction")
+      addInlineEditActionButton("cody.testCodeAction")
     }
   }
 
