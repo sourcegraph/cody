@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import path from 'node:path'
 import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
 import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
@@ -141,7 +142,7 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.User,
             }
             const id = builder.getContextItemId(item)
-            expect(id).toBe('foo/bar.js')
+            expect(id).toBe(getPlatformSlashes('foo/bar.js'))
         })
 
         it('returns display file path with line range for context items with range', () => {
@@ -155,7 +156,7 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.User,
             }
             const id = builder.getContextItemId(item)
-            expect(id).toBe('foo/bar.js#2:5')
+            expect(id).toBe(getPlatformSlashes('foo/bar.js#2:5'))
         })
 
         it('returns title for unified context items without range', () => {
@@ -198,7 +199,11 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.User,
             }
             const id = builder.getContextItemId(item)
-            expect(id).toBe('foo/bar.js#2:5')
+            expect(id).toBe(getPlatformSlashes('foo/bar.js#2:5'))
         })
     })
 })
+
+function getPlatformSlashes(input: string) {
+    return input.replaceAll(path.posix.sep, path.sep)
+}
