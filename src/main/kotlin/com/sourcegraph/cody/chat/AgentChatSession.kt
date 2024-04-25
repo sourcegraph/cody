@@ -16,6 +16,7 @@ import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.commands.CommandId
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.RateLimitStateManager
 import com.sourcegraph.cody.context.RemoteRepoUtils
 import com.sourcegraph.cody.error.CodyErrorSubmitter
@@ -255,7 +256,9 @@ private constructor(
 
     // Update the extension-side state.
     val remoteRepos = state.enhancedContext?.remoteRepositories
-    if (remoteRepos != null) {
+    if (remoteRepos != null &&
+        CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount() ==
+            false) {
       RemoteRepoUtils.resolveReposWithErrorNotification(
               project,
               remoteRepos
