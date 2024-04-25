@@ -55,7 +55,8 @@ export {
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
-    type ContextFileType,
+    type ContextItemMixin,
+    type ContextItemType,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -241,6 +242,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextMentionProviderInformation,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export {

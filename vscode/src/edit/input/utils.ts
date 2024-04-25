@@ -24,6 +24,10 @@ export function removeAfterLastAt(str: string): string {
  */
 export function getLabelForContextItem(item: ContextItem): string {
     const isFileType = item.type === 'file'
+    const isMixinType = item.type === 'mixin'
+    if (isMixinType) {
+        return `Inject prompt from: ${item.title}`
+    }
     if (isFileType && item.title) {
         return `Add context from: ${item.title}`
     }

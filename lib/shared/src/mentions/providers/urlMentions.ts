@@ -4,8 +4,9 @@ import type { ContextMentionProvider } from '../api'
 
 export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
     id: 'url',
-    triggerPrefixes: ['http://', 'https://'],
-
+    triggerPrefixes: ['https://', 'http://'],
+    description: 'Include a URL',
+    icon: 'globe',
     /**
      * Given a possibly incomplete URL from user input (that the user may be typing), return context
      * items from fetching the URL and extracting its text content.

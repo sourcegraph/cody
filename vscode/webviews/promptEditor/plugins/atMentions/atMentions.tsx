@@ -14,6 +14,7 @@ import styles from './atMentions.module.css'
 import {
     type ContextItem,
     ContextItemSource,
+    type ContextMentionProviderInformation,
     type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
@@ -63,8 +64,15 @@ export function parseLineRangeInMention(text: string): {
 }
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
+const MENTION_PROVIDER_SUGGESTION_LIMIT = 3
 
-export class MentionTypeaheadOption extends MenuOption {
+export type MentionTypeaheadOption = MentionProviderTypeaheadOption | MentionItemTypeaheadOption
+export class MentionProviderTypeaheadOption extends MenuOption {
+    constructor(public readonly provider: ContextMentionProviderInformation) {
+        super(provider.id)
+    }
+}
+export class MentionItemTypeaheadOption extends MenuOption {
     public displayPath: string
 
     constructor(public readonly item: ContextItem) {
@@ -94,7 +102,7 @@ export default function MentionsPlugin(): JSX.Element | null {
         middleware: [offset(6), flip(), shift()],
     })
 
-    const results = useChatContextItems(query)
+    const [items, mentionProviders] = useChatContextItems(query)
 
     const model = useCurrentChatModel()
     const options = useMemo(() => {
@@ -102,19 +110,23 @@ export default function MentionsPlugin(): JSX.Element | null {
             model?.contextWindow?.context?.user ||
             model?.contextWindow?.input ||
             FAST_CHAT_INPUT_TOKEN_BUDGET
-        return (
-            results
+        const providerOptions =
+            mentionProviders
+                ?.map(provider => new MentionProviderTypeaheadOption(provider))
+                .slice(0, MENTION_PROVIDER_SUGGESTION_LIMIT) ?? []
+        const itemOptions =
+            items
                 ?.map(r => {
                     if (r.size) {
                         r.isTooLarge = r.size > limit - tokenAdded
                     }
                     // All @-mentions should have a source of `User`.
                     r.source = ContextItemSource.User
-                    return new MentionTypeaheadOption(r)
+                    return new MentionItemTypeaheadOption(r)
                 })
                 .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
-        )
-    }, [results, model, tokenAdded])
+        return [...providerOptions, ...itemOptions]
+    }, [items, mentionProviders, model, tokenAdded])
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
@@ -135,9 +147,9 @@ export default function MentionsPlugin(): JSX.Element | null {
         return unregister
     }, [editor])
 
-    const onSelectOption = useCallback(
+    const onSelectMentionItemTypeaheadOption = useCallback(
         (
-            selectedOption: MentionTypeaheadOption,
+            selectedOption: MentionItemTypeaheadOption,
             nodeToReplace: TextNode | null,
             closeMenu: () => void
         ) => {
@@ -168,6 +180,53 @@ export default function MentionsPlugin(): JSX.Element | null {
             })
         },
         [editor]
+    )
+    const onSelectMentionProviderTypeaheadOption = useCallback(
+        (
+            selectedOption: MentionProviderTypeaheadOption,
+            nodeToReplace: TextNode | null,
+            matchingText: string
+        ) => {
+            // we simply update the text the user was typing to already include the prefix of the meniton provider
+            const suggestedPrefix = selectedOption.provider.triggerPrefixes.find(prefix =>
+                prefix.startsWith(matchingText)
+            )
+            if (!suggestedPrefix) {
+                return
+            }
+            editor.update(() => {
+                const text = nodeToReplace?.getTextContent() ?? ''
+                const newText = matchingText
+                    ? text.slice(0, -matchingText.length) + suggestedPrefix
+                    : text + suggestedPrefix
+
+                nodeToReplace?.setTextContent(newText)
+                nodeToReplace?.selectEnd()
+            })
+        },
+        [editor]
+    )
+    const onSelectOption = useCallback(
+        (
+            selectedOption: MentionTypeaheadOption,
+            nodeToReplace: TextNode | null,
+            closeMenu: () => void,
+            matchingText: string
+        ) => {
+            if (selectedOption instanceof MentionProviderTypeaheadOption) {
+                return onSelectMentionProviderTypeaheadOption(
+                    selectedOption,
+                    nodeToReplace,
+                    matchingText
+                )
+            }
+            if (selectedOption instanceof MentionItemTypeaheadOption) {
+                return onSelectMentionItemTypeaheadOption(selectedOption, nodeToReplace, closeMenu)
+            }
+
+            throw new Error(`Unknown selected option type: ${selectedOption}`)
+        },
+        [onSelectMentionItemTypeaheadOption, onSelectMentionProviderTypeaheadOption]
     )
 
     const onQueryChange = useCallback((query: string | null) => setQuery(query), [])

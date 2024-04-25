@@ -3,11 +3,11 @@ import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
 
 import {
-    type ContextFileType,
     type ContextItem,
     type ContextItemFile,
     ContextItemSource,
     type ContextItemSymbol,
+    type ContextItemType,
     type ContextItemWithContent,
     type Editor,
     type SymbolKind,
@@ -204,7 +204,7 @@ function createContextFileFromUri(
 function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
-    type: ContextFileType,
+    type: ContextItemType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
     symbolName?: string

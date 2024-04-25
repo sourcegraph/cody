@@ -23,6 +23,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    parseMentionQuery,
     reformatBotMessageForChat,
     serializeChatMessage,
     truncatePromptString,
@@ -70,7 +71,11 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import { chatModel } from '../../models'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
-import { getChatContextItemsForMention } from '../context/chatContext'
+import {
+    getChatContextItemsForMention,
+    getEnabledContextMentionProviders,
+    getMentionProvidersForMention,
+} from '../context/chatContext'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -153,7 +158,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly repoPicker: RemoteRepoPicker | null
 
     private history = new ChatHistoryManager()
-    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
+    private contextQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
@@ -283,7 +288,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query, message.range)
+                await this.handleGetUserContextCandidates(message.query, message.range)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -573,11 +578,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
+    private async handleGetUserContextCandidates(query: string, range?: RangeData): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
-        this.contextFilesQueryCancellation?.cancel()
-        this.contextFilesQueryCancellation = cancellation
+        this.contextQueryCancellation?.cancel()
+        this.contextQueryCancellation = cancellation
 
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
@@ -598,8 +603,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
 
         try {
+            const mentionQuery = parseMentionQuery(query, getEnabledContextMentionProviders())
             const items = await getChatContextItemsForMention(
-                query,
+                mentionQuery,
                 cancellation.token,
                 scopedTelemetryRecorder,
                 range
@@ -608,13 +614,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return
             }
             const { input, context } = this.chatModel.contextWindow
-            const userContextFiles = items.map(f => ({
+            const userContextItems = items.map(f => ({
                 ...f,
                 isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
             }))
+
+            const mentionProviders = getMentionProvidersForMention(
+                mentionQuery,
+                getEnabledContextMentionProviders()
+            )
+
             void this.postMessage({
-                type: 'userContextFiles',
-                userContextFiles,
+                type: 'userContext',
+                items: userContextItems,
+                mentionProviders,
             })
         } catch (error) {
             if (cancellation.token.isCancellationRequested) {

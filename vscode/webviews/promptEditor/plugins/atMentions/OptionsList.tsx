@@ -1,5 +1,9 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    type ContextItem,
+    type ContextItemFile,
+    type ContextItemMixin,
+    type ContextItemSymbol,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -20,7 +24,12 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
-import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
+import {
+    MentionItemTypeaheadOption,
+    MentionProviderTypeaheadOption,
+    type MentionTypeaheadOption,
+    RANGE_MATCHES_REGEXP,
+} from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -59,48 +68,58 @@ export const OptionsList: FunctionComponent<
             </h3>
             {options.length > 0 && (
                 <ul ref={ref} className={styles.list}>
-                    {options.map((option, i) => (
-                        <Item
-                            query={query}
-                            isSelected={selectedIndex === i}
-                            onClick={() => {
+                    {options.map((option, i) => {
+                        const sharedProps = {
+                            query,
+                            isSelected: selectedIndex === i,
+                            onClick: () => {
                                 setHighlightedIndex(i)
                                 selectOptionAndCleanUp(option)
-                            }}
-                            onMouseEnter={() => {
+                            },
+                            onMouseEnter: () => {
                                 setHighlightedIndex(i)
-                            }}
-                            key={option.key}
-                            option={option}
-                            className={styles.item}
-                        />
-                    ))}
+                            },
+                            className: styles.item,
+                            key: option.key,
+                        }
+                        if (option instanceof MentionItemTypeaheadOption) {
+                            return <Item {...sharedProps} option={option} />
+                        }
+                        if (option instanceof MentionProviderTypeaheadOption) {
+                            return <MentionProvider {...sharedProps} option={option} />
+                        }
+                        return null
+                    })}
                 </ul>
             )}
         </div>
     )
 }
 
-const Item: FunctionComponent<{
+interface ItemProps<T extends ContextItem> {
     query: string
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
-    option: MentionTypeaheadOption
+    option: Omit<MentionTypeaheadOption, 'item'> & { item: T }
     className?: string
-}> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
+}
+const FileItem: FunctionComponent<ItemProps<ContextItemFile>> = ({
+    query,
+    option,
+    className,
+    isSelected,
+    onMouseEnter,
+    onClick,
+}) => {
     const item = option.item
-    const isFileType = item.type === 'file'
-    const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
+    const title = item.title ?? displayPathBasename(item.uri)
 
     const range = getLineRangeInMention(query, item.range)
     const dir = displayPathDirname(item.uri)
-    const description = isFileType
-        ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-        : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+    const description = `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
 
-    const isLargeFile = isFileType && item.isTooLarge
+    const isLargeFile = item.isTooLarge
     const warning =
         isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
 
@@ -123,9 +142,6 @@ const Item: FunctionComponent<{
             onClick={onClick}
         >
             <div className={styles.optionItemRow}>
-                {item.type === 'symbol' && icon && (
-                    <i className={`codicon codicon-${icon}`} title={item.kind} />
-                )}
                 <span
                     className={classNames(
                         styles.optionItemTitle,
@@ -137,6 +153,186 @@ const Item: FunctionComponent<{
                 {description && <span className={styles.optionItemDescription}>{description}</span>}
             </div>
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
+        </li>
+    )
+}
+
+const SymbolItem: FunctionComponent<ItemProps<ContextItemSymbol>> = ({
+    query,
+    option,
+    className,
+    isSelected,
+    onMouseEnter,
+    onClick,
+}) => {
+    const item = option.item
+    const icon = item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+    const title = item.title ?? item.symbolName
+
+    const description = `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents:
+        <li
+            key={option.key}
+            tabIndex={-1}
+            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            ref={option.setRefElement}
+            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
+            role="option"
+            aria-selected={isSelected}
+            onMouseEnter={onMouseEnter}
+            onClick={onClick}
+        >
+            <div className={styles.optionItemRow}>
+                icon && (
+                <i className={`codicon codicon-${icon}`} title={item.kind} />)
+                <span className={classNames(styles.optionItemTitle)}>{title}</span>
+                {description && <span className={styles.optionItemDescription}>{description}</span>}
+            </div>
+        </li>
+    )
+}
+
+const MixinItem: FunctionComponent<ItemProps<ContextItemMixin>> = ({
+    query,
+    option,
+    className,
+    isSelected,
+    onMouseEnter,
+    onClick,
+}) => {
+    const item = option.item
+    const description = item.description
+    const title = item.title
+
+    const icon = item.emoji ? (
+        <span>{item.emoji}</span>
+    ) : item.icon ? (
+        <i className={`codicon codicon-${item.icon}`} />
+    ) : null
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents:
+        <li
+            key={option.key}
+            tabIndex={-1}
+            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            ref={option.setRefElement}
+            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
+            role="option"
+            aria-selected={isSelected}
+            onMouseEnter={onMouseEnter}
+            onClick={onClick}
+        >
+            <div className={styles.optionItemRow}>
+                {icon}
+                <span className={classNames(styles.optionItemTitle)}>{title}</span>
+                {description && <span className={styles.optionItemDescription}>{description}</span>}
+            </div>
+        </li>
+    )
+}
+
+const Item: FunctionComponent<ItemProps<ContextItem>> = props => {
+    switch (props.option.item.type) {
+        //todo(rnauta): the typechecker is botched here
+        case 'file': {
+            return <FileItem {...(props as ItemProps<ContextItemFile>)} />
+        }
+        case 'symbol':
+            return <SymbolItem {...(props as ItemProps<ContextItemSymbol>)} />
+        case 'mixin':
+            return <MixinItem {...(props as ItemProps<ContextItemMixin>)} />
+    }
+    // const item = option.item
+    // const isFileType = item.type === 'file'
+    // const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+    // const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
+
+    // const range = getLineRangeInMention(query, item.range)
+    // const dir = displayPathDirname(item.uri)
+    // const description = isFileType
+    //     ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+    //     : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+
+    // const isLargeFile = isFileType && item.isTooLarge
+    // const warning =
+    //     isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
+
+    // return (
+    //     // biome-ignore lint/a11y/useKeyWithClickEvents:
+    //     <li
+    //         key={option.key}
+    //         tabIndex={-1}
+    //         className={classNames(
+    //             className,
+    //             styles.optionItem,
+    //             isSelected && styles.selected,
+    //             warning && styles.disabled
+    //         )}
+    //         ref={option.setRefElement}
+    //         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
+    //         role="option"
+    //         aria-selected={isSelected}
+    //         onMouseEnter={onMouseEnter}
+    //         onClick={onClick}
+    //     >
+    //         <div className={styles.optionItemRow}>
+    //             {item.type === 'symbol' && icon && (
+    //                 <i className={`codicon codicon-${icon}`} title={item.kind} />
+    //             )}
+    //             <span
+    //                 className={classNames(
+    //                     styles.optionItemTitle,
+    //                     warning && styles.optionItemTitleWithWarning
+    //                 )}
+    //             >
+    //                 {title}
+    //             </span>
+    //             {description && <span className={styles.optionItemDescription}>{description}</span>}
+    //         </div>
+    //         {warning && <span className={styles.optionItemWarning}>{warning}</span>}
+    //     </li>
+    // )
+}
+
+interface MentionProviderProps {
+    query: string
+    isSelected: boolean
+    onClick: () => void
+    onMouseEnter: () => void
+    option: MentionProviderTypeaheadOption
+    className?: string
+}
+const MentionProvider: FunctionComponent<MentionProviderProps> = ({
+    option,
+    className,
+    onMouseEnter,
+    isSelected,
+    onClick,
+}) => {
+    const { provider } = option
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents:
+        <li
+            key={option.key}
+            tabIndex={-1}
+            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            ref={option.setRefElement}
+            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
+            role="option"
+            aria-selected={isSelected}
+            onMouseEnter={onMouseEnter}
+            onClick={onClick}
+        >
+            <div className={styles.optionItemRow}>
+                <i className={`codicon codicon-${provider.icon}`} title={provider.id} />
+                <span className={classNames(styles.optionItemTitle)}>{provider.triggerPrefixes[0]}</span>
+                <span className={styles.optionItemDescription}>
+                    {provider.description ?? 'No description'}
+                </span>
+            </div>
         </li>
     )
 }

@@ -4,6 +4,7 @@ import type {
     AuthStatus,
     ConfigurationWithAccessToken,
     ContextItem,
+    ContextMentionProviderInformation,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
@@ -116,9 +117,18 @@ export type ExtensionMessage =
     /**
      * Context files returned from a @-mention search
      */
+    // TODO(rnauta): deprecated
+    // | {
+    //       type: 'userContextFiles'
+    //       userContextFiles: ContextItem[] | null
+    //   }
+    /**
+     * Context items returned from a @-mention search with a getUserContext
+     */
     | {
-          type: 'userContextFiles'
-          userContextFiles: ContextItem[] | null
+          type: 'userContext'
+          items: ContextItem[] | null
+          mentionProviders?: ContextMentionProviderInformation[] | null
       }
     /**
      * Send Context Files to chat view as input context (@-mentions)
