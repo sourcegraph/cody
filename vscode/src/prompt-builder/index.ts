@@ -5,12 +5,11 @@ import {
     type Message,
     type ModelContextWindow,
     TokenCounter,
-    displayPath,
     isCodyIgnoredFile,
     ps,
-    toRangeData,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
+import { ContextTracker } from './context-tracker'
 import { renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
@@ -30,9 +29,9 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
 
-    private processedContext = new Set<string>()
     private processedContextType = new Set<ContextTokenUsageType>()
 
+    private contextTracker = new ContextTracker()
     private tokenCounter: TokenCounter
 
     constructor(contextWindow: ModelContextWindow) {
@@ -95,27 +94,25 @@ export class PromptBuilder {
         const reversedContextItems = contextMessages.slice().reverse()
         for (const item of reversedContextItems) {
             const userContextItem = contextItem(item)
-            const id = this.getContextItemId(item)
             // Skip context items that are in the Cody ignore list
             if (isCodyIgnoredFile(userContextItem.uri)) {
                 result.ignored.push(userContextItem)
                 continue
             }
 
-            // Check if the specific context item has already been seen
-            if (this.processedContext.has(id)) {
+            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
+            if (!contextMsg || !this.contextTracker.track(userContextItem)) {
+                continue
+            }
+
+            // Check if the specific context item has already been included
+            if (!this.contextTracker.track(userContextItem)) {
                 result.duplicate.push(userContextItem)
                 continue
             }
 
-            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            if (!contextMsg) {
-                continue
-            }
             const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
             const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
-
-            // Check if the type of context item has been processed before to determine if it is a new item or not.
             // We do not want to update exisiting context items from chat history that's not related to last human message,
             // unless isTooLarge is undefined, meaning it has not been processed before like new enhanced context.
             if (
@@ -129,38 +126,14 @@ export class PromptBuilder {
             if (!withinLimit) {
                 userContextItem.content = undefined
                 result.ignored.push(userContextItem)
+                this.contextTracker.untrack(userContextItem)
                 result.limitReached = true
                 continue
             }
-            this.processedContext.add(id)
+
             this.reverseMessages.push(assistantMsg, contextMsg)
-            result.used.push(userContextItem)
         }
         return result
-    }
-
-    public getContextItemId(value: ContextItem | ContextMessage): string {
-        const item = contextItem(value)
-
-        // Unified context items have a `title` property that is used for display instead of the URI path,
-        // as the source of the context lives remotely, we will not be able to use the uri path to match
-        // the local context items.
-        const displayFilePath = (item.source === 'unified' && item.title) || displayPath(item.uri)
-
-        if (this.processedContext.has(displayFilePath)) {
-            return displayFilePath
-        }
-
-        // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
-        // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
-        // bug, so protect against it. See the `toRangeData` docstring for more.
-        const range = toRangeData(item.range)
-        if (range) {
-            return `${displayFilePath}#${range.start.line}:${range.end.line}`
-        }
-
-        // If there's no range, it means the whole file was used as context
-        return displayFilePath
     }
 }
 
