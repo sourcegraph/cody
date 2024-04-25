@@ -13,11 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class UserLevelConfig {
-  /**
-   * Overrides the provider used for generating autocomplete suggestions. Only supported values at
-   * the moment are 'anthropic' (default), 'unstable-codegen', 'unstable-openai', or
-   * 'unstable-fireworks'.
-   */
+  /** Overrides the provider used for generating autocomplete suggestions. */
   @Nullable
   public static AutocompleteProviderType getAutocompleteProviderType() {
     Properties properties = readProperties();
@@ -31,26 +27,6 @@ public class UserLevelConfig {
                     properties.getProperty(oldKey, null))) // fallback to the old key
         .flatMap(AutocompleteProviderType::optionalValueOf)
         .orElse(null);
-  }
-
-  /**
-   * Overrides the server endpoint used for generating autocomplete suggestions. This is only
-   * supported with the `unstable-codegen` provider right now.
-   */
-  @Nullable
-  public static String getAutocompleteServerEndpoint() {
-    Properties properties = readProperties();
-    String currentKey = "cody.autocomplete.advanced.serverEndpoint";
-    @Deprecated(since = "3.0.4")
-    String oldKey = "cody.autocomplete.advanced.serverEndpoint";
-    return Optional.ofNullable(properties.getProperty(currentKey, null))
-        .orElse(properties.getProperty(oldKey, null)); // fallback to the old key
-  }
-
-  @Nullable
-  public static String getAutocompleteAccessToken() {
-    Properties properties = readProperties();
-    return properties.getProperty("cody.autocomplete.advanced.accessToken", null);
   }
 
   @Nullable

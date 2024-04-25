@@ -7,8 +7,6 @@ data class ExtensionConfiguration(
     val accessToken: String,
     val customHeaders: Map<String, String> = emptyMap(),
     val autocompleteAdvancedProvider: String? = null,
-    val autocompleteAdvancedServerEndpoint: String? = null,
-    val autocompleteAdvancedAccessToken: String? = null,
     val debug: Boolean? = false,
     val verboseDebug: Boolean? = false,
     val codebase: String? = null,
