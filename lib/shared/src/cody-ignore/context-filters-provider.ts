@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import { RE2 } from 're2-wasm'
+import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { isFileURI } from '../common/uri'
 import { logDebug, logError } from '../logger'
@@ -84,6 +84,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (this.contextFilters?.include?.length) {
             for (const parsedFilter of this.contextFilters.include) {
                 isIgnored = !matchesContextFilter(parsedFilter, repoName)
+                console.log('XX1', isIgnored, parsedFilter, repoName)
                 if (!isIgnored) {
                     break
                 }
@@ -137,7 +138,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return (
             this.contextFilters?.exclude === null &&
             this.contextFilters?.include?.length === 1 &&
-            this.contextFilters.include[0].repoNamePattern.toString() === '/.*/u'
+            this.contextFilters.include[0].repoNamePattern.pattern() === '.*'
         )
     }
 
@@ -145,19 +146,22 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return (
             this.contextFilters?.include === null &&
             this.contextFilters?.exclude?.length === 1 &&
-            this.contextFilters.exclude[0].repoNamePattern.toString() === '/.*/u'
+            this.contextFilters.exclude[0].repoNamePattern.pattern() === '.*'
         )
     }
 }
 
 function matchesContextFilter(parsedFilter: ParsedContextFilterItem, repoName: string): boolean {
-    return Boolean(parsedFilter.repoNamePattern.match(repoName))
+    // Calling `RE2.matches(input)` only looks for full matches, so we use
+    // `RE2.matcher(input).find(0)` to find matches anywhere in `input` (which is the standard way
+    // regexps work).
+    return Boolean(parsedFilter.repoNamePattern.matcher(repoName).find(0))
 }
 
 function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilterItem {
-    const repoNamePattern = new RE2(item.repoNamePattern, 'u')
+    const repoNamePattern = RE2.compile(item.repoNamePattern)
     const filePathPatterns = item.filePathPatterns
-        ? item.filePathPatterns.map(pattern => new RE2(pattern, 'u'))
+        ? item.filePathPatterns.map(pattern => RE2.compile(pattern))
         : undefined
 
     return { repoNamePattern, filePathPatterns }
