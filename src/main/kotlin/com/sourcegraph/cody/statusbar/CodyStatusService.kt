@@ -9,6 +9,7 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAccountManager
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
@@ -59,6 +60,8 @@ class CodyStatusService : CodyStatusListener, Disposable {
       status =
           if (!ConfigUtil.isCodyEnabled()) {
             CodyStatus.CodyDisabled
+          } else if (IgnoreOracle.getInstance(project).isEditingIgnoredFile) {
+            CodyStatus.InIgnoredFile
           } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
             CodyStatus.AutocompleteDisabled
           } else if (CodyAgentService.agentError.get() != null) {

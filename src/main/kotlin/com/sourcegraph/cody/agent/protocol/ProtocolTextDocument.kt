@@ -42,10 +42,13 @@ private constructor(
         editor: Editor,
         file: VirtualFile,
     ): ProtocolTextDocument {
-      val rfc3986Uri = Rfc3986UriEncoder.encode(file.url)
       val text = FileDocumentManager.getInstance().getDocument(file)?.text
       val selection = getSelection(editor)
-      return ProtocolTextDocument(rfc3986Uri, text, selection)
+      return ProtocolTextDocument(uriFor(file), text, selection)
+    }
+
+    fun uriFor(file: VirtualFile): String {
+      return Rfc3986UriEncoder.encode(file.url)
     }
   }
 }

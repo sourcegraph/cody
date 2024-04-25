@@ -25,6 +25,12 @@ enum class CodyStatus : PresentableEnum, WithIcon {
 
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteDisabled
   },
+  InIgnoredFile {
+    override fun getPresentableText(): String =
+        "Cody autocomplete is disabled in this file because of your admin policy"
+
+    override val icon: Icon = Icons.StatusBar.CodyAutocompleteDisabled
+  },
   CodyNotSignedIn {
     override fun getPresentableText(): String = "No account signed-in"
 

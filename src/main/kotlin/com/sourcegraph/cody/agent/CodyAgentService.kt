@@ -11,6 +11,7 @@ import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
 import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.utils.CodyEditorUtil
@@ -82,7 +83,7 @@ class CodyAgentService(project: Project) : Disposable {
       }
 
       agent.client.onIgnoreDidChange = Consumer {
-        println("handling ignore rules changing not yet implemented")
+        IgnoreOracle.getInstance(project).onIgnoreDidChange()
       }
 
       if (!project.isDisposed) {

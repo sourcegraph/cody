@@ -26,7 +26,7 @@ public interface Icons {
     Icon CompletionInProgress = new AnimatedIcon.Default();
     Icon CodyAvailable = IconLoader.getIcon("/icons/codyLogoMonochromatic.svg", Icons.class);
     Icon CodyAutocompleteDisabled =
-        IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
+        IconLoader.getIcon("/icons/cody-logo-heavy-slash.svg", Icons.class);
 
     Icon CodyUnavailable =
         IconLoader.getIcon("/icons/codyLogoMonochromaticUnavailable.svg", Icons.class);

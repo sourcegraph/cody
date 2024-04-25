@@ -8,6 +8,7 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.ignore.IgnoreOracle
 
 class CodyFocusChangeListener(val project: Project) : FocusChangeListener {
 
@@ -19,6 +20,7 @@ class CodyFocusChangeListener(val project: Project) : FocusChangeListener {
       CodyAgentService.withAgent(project) { agent: CodyAgent ->
         agent.server.textDocumentDidFocus(textDocument)
       }
+      IgnoreOracle.getInstance(project).focusedFileDidChange(textDocument.uri)
     }
   }
 }
