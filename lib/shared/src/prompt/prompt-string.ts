@@ -11,6 +11,7 @@ import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
+import { logDebug } from '../logger'
 
 // This module is designed to encourage, and to some degree enforce, safe
 // handling of file content that gets constructed into prompts. It works this
@@ -58,13 +59,30 @@ export class PromptString {
         contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(reference => contextFilter.isUriIgnored(reference))
+        const checks = references.map(async reference => [
+            reference,
+            await contextFilter.isUriIgnored(reference),
+        ])
         const resolved = await Promise.all(checks)
-        if (!resolved.every(value => value === false)) {
+
+        let shouldThrow = false
+        for (const [reference, isIgnored] of resolved) {
+            if (isIgnored) {
+                shouldThrow = true
+                logDebug(
+                    'PromptString',
+                    'toFilteredString',
+                    `${reference} is ignored by the current context filters ${contextFilter}`
+                )
+            }
+        }
+
+        if (shouldThrow) {
             throw new Error(
-                'The prompt string contains a reference to a file that is not allowed by the context filters.'
+                'The prompt contains a reference to a file that is not allowed by your current Cody policy.'
             )
         }
+
         return internal_toString(this)
     }
 
