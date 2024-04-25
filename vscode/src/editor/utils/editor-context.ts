@@ -10,6 +10,7 @@ import {
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
+    type PromptString,
     type SymbolKind,
     TokenCounter,
     displayPath,
@@ -274,13 +275,14 @@ export async function filterContextItemFiles(
 
 export async function resolveContextItems(
     editor: Editor,
-    items: ContextItem[]
+    items: ContextItem[],
+    input: PromptString
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
                 try {
-                    return await resolveContextItem(item, editor)
+                    return await resolveContextItem(item, editor, input)
                 } catch (error) {
                     void vscode.window.showErrorMessage(
                         `Cody could not include context from ${item.uri}. (Reason: ${error})`
@@ -294,9 +296,13 @@ export async function resolveContextItems(
         .flat()
 }
 
-async function resolveContextItem(item: ContextItem, editor: Editor): Promise<ContextItemWithContent[]> {
+async function resolveContextItem(
+    item: ContextItem,
+    editor: Editor,
+    input: PromptString
+): Promise<ContextItemWithContent[]> {
     const resolvedItems = item.provider
-        ? await resolveContextMentionProviderContextItem(item)
+        ? await resolveContextMentionProviderContextItem(item, input)
         : [await resolveFileOrSymbolContextItem(item, editor)]
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
@@ -304,13 +310,13 @@ async function resolveContextItem(item: ContextItem, editor: Editor): Promise<Co
     }))
 }
 
-async function resolveContextMentionProviderContextItem({
-    provider: itemProvider,
-    ...item
-}: ContextItem): Promise<ContextItemWithContent[]> {
+async function resolveContextMentionProviderContextItem(
+    { provider: itemProvider, ...item }: ContextItem,
+    input: PromptString
+): Promise<ContextItemWithContent[]> {
     for (const provider of getEnabledContextMentionProviders()) {
         if (provider.id === itemProvider && provider.resolveContextItem) {
-            return provider.resolveContextItem({ ...item, provider: itemProvider })
+            return provider.resolveContextItem({ ...item, provider: itemProvider }, input)
         }
     }
 

@@ -56,6 +56,7 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
+    type ContextItemPackage,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'

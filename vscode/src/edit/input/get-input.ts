@@ -16,7 +16,9 @@ import {
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
+    NO_PACKAGE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
+    PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
@@ -406,13 +408,17 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.provider === 'symbol'
-                                    ? mentionQuery.text.length === 0
-                                        ? SYMBOL_HELP_LABEL
-                                        : NO_SYMBOL_MATCHES_LABEL
-                                    : mentionQuery.text.length === 0
-                                      ? FILE_HELP_LABEL
-                                      : NO_FILE_MATCHES_LABEL,
+                                mentionQuery.provider === 'package'
+                                    ? mentionQuery.text.length < 3
+                                        ? PACKAGE_HELP_LABEL
+                                        : NO_PACKAGE_MATCHES_LABEL
+                                    : mentionQuery.provider === 'symbol'
+                                      ? mentionQuery.text.length === 0
+                                            ? SYMBOL_HELP_LABEL
+                                            : NO_SYMBOL_MATCHES_LABEL
+                                      : mentionQuery.text.length === 0
+                                          ? FILE_HELP_LABEL
+                                          : NO_FILE_MATCHES_LABEL,
                         },
                     ]
                     return
@@ -455,11 +461,13 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.provider === 'symbol'
-                                ? SYMBOL_HELP_LABEL
-                                : mentionQuery?.provider === 'file'
-                                  ? FILE_HELP_LABEL
-                                  : GENERAL_HELP_LABEL,
+                            mentionQuery?.provider === 'package'
+                                ? PACKAGE_HELP_LABEL
+                                : mentionQuery?.provider === 'symbol'
+                                  ? SYMBOL_HELP_LABEL
+                                  : mentionQuery?.provider === 'file'
+                                      ? FILE_HELP_LABEL
+                                      : GENERAL_HELP_LABEL,
                     },
                 ]
             },
@@ -485,6 +493,7 @@ export const getInput = async (
                     case FILE_HELP_LABEL:
                     case LARGE_FILE_WARNING_LABEL:
                     case SYMBOL_HELP_LABEL:
+                    case PACKAGE_HELP_LABEL:
                     case NO_FILE_MATCHES_LABEL:
                     case NO_SYMBOL_MATCHES_LABEL:
                     case GENERAL_HELP_LABEL:
