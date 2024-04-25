@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { type AutocompleteContextSnippet, isDefined } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, createSubscriber, isDefined } from '@sourcegraph/cody-shared'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import {
@@ -11,7 +11,6 @@ import {
 } from '../../../../graph/lsp/sections'
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { createSubscriber } from '../../../utils'
 import { baseLanguageId } from '../../utils'
 
 interface Section extends DocumentSection {}

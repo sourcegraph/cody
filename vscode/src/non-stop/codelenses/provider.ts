@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'
 import type { FixupTask, FixupTaskID } from '../FixupTask'

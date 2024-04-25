@@ -33,7 +33,7 @@ To improve Cody, we record some events as people use Cody.
 - In VSCode, record Telemetry events in the old and new system,
   described below. In other clients, it is acceptable to record
   Telemetry events in the "new" system only.
-  
+
 ### Rationale
 
 Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://sourcegraph.com/docs/dev/background-information/telemetry). Events primarily comprise of:
@@ -52,7 +52,7 @@ For now, all events in VSCode should be updated to use both the legacy event cli
 // Legacy events client
 import { telemetryService } from "../services/telemetry";
 // New events client
-import { telemetryRecorder } from "../services/telemetry-v2";
+import { telemetryRecorder } from "@sourcegraph/cody-shared";
 
 // Legacy instrumentation
 telemetryService.log(
@@ -113,10 +113,10 @@ When counting tokens, follow these principles:
 - When possible, count tokens after appending strings instead of
   counting tokens in each string and summing the counts. This produces
   a more accurate token count.
-  
+
 - If accurate token counting becomes a performance bottleneck, reach
   out for help with algorithms to balance performance and accuracy.
-  
+
 ### Rationale
 
 Different LLMs use different tokenizers, so the same string may

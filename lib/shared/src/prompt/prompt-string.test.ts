@@ -70,7 +70,7 @@ describe('PromptString', () => {
 
         expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')
         expect(async () => await promptString.toFilteredString(denyPolicy)).rejects.toThrowError(
-            'The prompt string contains a reference to a file that is not allowed by the context filters.'
+            'The prompt contains a reference to a file that is not allowed by your current Cody policy.'
         )
     })
 

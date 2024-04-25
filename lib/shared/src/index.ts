@@ -56,6 +56,7 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
+    type ContextItemPackage,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -217,6 +218,7 @@ export {
     TelemetryRecorderProvider,
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
+export * from './telemetry-v2/singleton'
 export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
@@ -228,7 +230,7 @@ export {
     tracer,
     logResponseHeadersToSpan,
 } from './tracing'
-export { convertGitCloneURLToCodebaseName, isError } from './utils'
+export { convertGitCloneURLToCodebaseName, isError, createSubscriber } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'

@@ -1,11 +1,11 @@
 import assert from 'node:assert'
-import { execSync } from 'node:child_process'
+import { execSync, spawnSync } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
@@ -13,7 +13,6 @@ import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage, getAgentDir } from './TestClient'
 import { decodeURIs } from './decodeURIs'
-import { isNode16 } from './isNode16'
 import type {
     CustomChatCommandResult,
     CustomEditCommandResult,
@@ -92,6 +91,14 @@ describe('Agent', () => {
         await fspromises.cp(prototypePath, workspaceRootPath, {
             recursive: true,
         })
+
+        // Init a repo in the workspace to make the tree-walk repo-name resolver work for Cody Ignore tests.
+        spawnSync('git', ['init'], { cwd: workspaceRootPath, stdio: 'inherit' })
+        spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
+            cwd: workspaceRootPath,
+            stdio: 'inherit',
+        })
+
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -468,8 +475,7 @@ describe('Agent', () => {
             }
         })
 
-        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
-        describe.skipIf(isNode16())('chat/editMessage', () => {
+        describe('chat/editMessage', () => {
             it(
                 'edits the last human chat message',
                 async () => {
@@ -805,7 +811,7 @@ describe('Agent', () => {
         }, 30_000)
 
         // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isNode16() || isWindows())(
+        it.skipIf(isWindows())(
             'commands/test',
             async () => {
                 await client.request('command/execute', {
@@ -1398,7 +1404,7 @@ describe('Agent', () => {
     })
 
     describe('Enterprise', () => {
-        const enterpriseClient = TestClient.create({
+        const demoEnterpriseClient = TestClient.create({
             name: 'enterpriseClient',
             accessToken:
                 process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
@@ -1410,19 +1416,19 @@ describe('Agent', () => {
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            const serverInfo = await enterpriseClient.initialize()
+            const serverInfo = await demoEnterpriseClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
             expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
         it('chat/submitMessage', async () => {
-            const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
+            const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
         checkDocumentCommand(
-            enterpriseClient,
+            demoEnterpriseClient,
             'commands/document (enterprise client)',
             'example.test.ts',
             obtained =>
@@ -1465,12 +1471,12 @@ describe('Agent', () => {
         it.skipIf(isWindows())(
             'chat/submitMessage (addEnhancedContext: true, multi-repo test)',
             async () => {
-                const id = await enterpriseClient.request('chat/new', null)
-                const { repos } = await enterpriseClient.request('graphql/getRepoIds', {
+                const id = await demoEnterpriseClient.request('chat/new', null)
+                const { repos } = await demoEnterpriseClient.request('graphql/getRepoIds', {
                     names: ['github.com/sourcegraph/sourcegraph'],
                     first: 1,
                 })
-                await enterpriseClient.request('webview/receiveMessage', {
+                await demoEnterpriseClient.request('webview/receiveMessage', {
                     id,
                     message: {
                         command: 'context/choose-remote-search-repo',
@@ -1478,7 +1484,7 @@ describe('Agent', () => {
                     },
                 })
                 const { lastMessage, transcript } =
-                    await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
+                    await demoEnterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
                         'What is Squirrel?',
                         {
                             id,
@@ -1501,7 +1507,7 @@ describe('Agent', () => {
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
                 expect(paths).includes('cmd/symbols/squirrel/README.md')
 
-                const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
+                const { remoteRepos } = await demoEnterpriseClient.request('chat/remoteRepos', { id })
                 expect(remoteRepos).toStrictEqual(repos)
             },
             30_000
@@ -1511,7 +1517,7 @@ describe('Agent', () => {
             // List a repo without a query
             let repos: Requests['remoteRepo/list'][1]
             do {
-                repos = await enterpriseClient.request('remoteRepo/list', {
+                repos = await demoEnterpriseClient.request('remoteRepo/list', {
                     query: undefined,
                     first: 10,
                 })
@@ -1520,7 +1526,7 @@ describe('Agent', () => {
 
             // Make a paginated query.
             const secondLastRepo = repos.repos.at(-2)
-            const moreRepos = await enterpriseClient.request('remoteRepo/list', {
+            const moreRepos = await demoEnterpriseClient.request('remoteRepo/list', {
                 query: undefined,
                 first: 2,
                 afterId: secondLastRepo?.id,
@@ -1528,7 +1534,7 @@ describe('Agent', () => {
             expect(moreRepos.repos[0].id).toBe(repos.repos.at(-1)?.id)
 
             // Make a query.
-            const filteredRepos = await enterpriseClient.request('remoteRepo/list', {
+            const filteredRepos = await demoEnterpriseClient.request('remoteRepo/list', {
                 query: 'sourceco',
                 first: 1000,
             })
@@ -1539,62 +1545,25 @@ describe('Agent', () => {
 
         it('remoteRepo/has', async () => {
             // Query a repo that does exist.
-            const codyRepoExists = await enterpriseClient.request('remoteRepo/has', {
+            const codyRepoExists = await demoEnterpriseClient.request('remoteRepo/has', {
                 repoName: 'github.com/sourcegraph/cody',
             })
             expect(codyRepoExists.result).toBe(true)
 
             // Query a repo that does not exist.
-            const codyForDos = await enterpriseClient.request('remoteRepo/has', {
+            const codyForDos = await demoEnterpriseClient.request('remoteRepo/has', {
                 repoName: 'github.com/sourcegraph/cody-edlin',
             })
             expect(codyForDos.result).toBe(false)
         })
 
-        it('testing/ignore/overridePolicy', async () => {
-            // To test that testing/ignore/overridePolicy generates an
-            // ignore/didChange notification, 'stop' sets up a Promise, 'go'
-            // unblocks it.
-            let go = () => {}
-            function stop() {
-                return new Promise(resolve => {
-                    go = () => resolve(undefined)
-                })
-            }
-            enterpriseClient.registerNotification('ignore/didChange', () => {
-                go()
-            })
-            expect(
-                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
-            ).toStrictEqual({ policy: 'use' })
-            await Promise.all([
-                stop(),
-                enterpriseClient.request('testing/ignore/overridePolicy', {
-                    repoRe: '$^',
-                    uriRe: '.*bar.*',
-                }),
-            ])
-            expect(
-                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
-            ).toStrictEqual({ policy: 'ignore' })
-            expect(
-                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/quux.txt' })
-            ).toStrictEqual({ policy: 'use' })
-            await Promise.all([stop(), enterpriseClient.request('testing/ignore/overridePolicy', null)])
-            expect(
-                await enterpriseClient.request('ignore/test', { uri: 'file:///foo/bar.txt' })
-            ).toStrictEqual({ policy: 'use' })
-            // Stop listening to 'ignore/didChange'
-            enterpriseClient.registerNotification('ignore/didChange', () => {})
-        })
-
         afterAll(async () => {
-            const { requests } = await enterpriseClient.request('testing/networkRequests', null)
+            const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)
             const nonServerInstanceRequests = requests
-                .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
+                .filter(({ url }) => !url.startsWith(demoEnterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
             expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
-            await enterpriseClient.shutdownAndExit()
+            await demoEnterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })
@@ -1602,7 +1571,7 @@ describe('Agent', () => {
     // Enterprise tests are run at demo instance, which is at a recent release version.
     // Use this section if you need to run against S2 which is released continuously.
     describe('Enterprise - close main branch', () => {
-        const enterpriseClient = TestClient.create({
+        const s2EnterpriseClient = TestClient.create({
             name: 'enterpriseMainBranchClient',
             accessToken:
                 process.env.SRC_S2_ACCESS_TOKEN ??
@@ -1615,15 +1584,19 @@ describe('Agent', () => {
 
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            const serverInfo = await enterpriseClient.initialize()
+            const serverInfo = await s2EnterpriseClient.initialize({
+                autocompleteAdvancedProvider: 'fireworks',
+            })
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
             expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
-        it('attribution/found', async () => {
-            const id = await enterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+        // Disabled because `attribution/search` GraphQL does not work on S2
+        // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
+        it.skip('attribution/found', async () => {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new URL',
             })
@@ -1632,8 +1605,8 @@ describe('Agent', () => {
         }, 20_000)
 
         it('attribution/not found', async () => {
-            const id = await enterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new LRU',
             })
@@ -1641,8 +1614,85 @@ describe('Agent', () => {
             expect(error).null
         }, 20_000)
 
+        // Use S2 instance for Cody Ignore enterprise tests
+        describe('Cody Ignore for enterprise', () => {
+            it('testing/ignore/overridePolicy', async () => {
+                const onChangeCallback = vi.fn()
+
+                // `sumUri` is located inside of the github.com/sourcegraph/cody repo.
+                const ignoreTest = () =>
+                    s2EnterpriseClient.request('ignore/test', { uri: sumUri.toString() })
+                s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
+
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/cody.*' }],
+                })
+
+                expect(onChangeCallback).toBeCalledTimes(1)
+                expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
+                })
+
+                expect(onChangeCallback).toBeCalledTimes(2)
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
+                })
+
+                // onChangeCallback is not called again because filters are the same
+                expect(onChangeCallback).toBeCalledTimes(2)
+            })
+
+            // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
+            // should include `sourcegraph/cody` repo for this test to pass.
+            it('autocomplete/execute (with Cody Ignore filters)', async () => {
+                // Documents to be used as context sources.
+                await s2EnterpriseClient.openFile(animalUri)
+                await s2EnterpriseClient.openFile(squirrelUri)
+
+                // Document to generate a completion from.
+                await s2EnterpriseClient.openFile(sumUri)
+
+                const { items, completionEvent } = await s2EnterpriseClient.request(
+                    'autocomplete/execute',
+                    {
+                        uri: sumUri.toString(),
+                        position: { line: 1, character: 3 },
+                        triggerKind: 'Invoke',
+                    }
+                )
+
+                expect(items.length).toBeGreaterThan(0)
+                expect(items.map(item => item.insertText)).toMatchInlineSnapshot(
+                    `
+              [
+                "   return a + b",
+              ]
+            `
+                )
+
+                // Two documents will be checked against context filters set in site-config on S2.
+                expect(
+                    completionEvent?.params.contextSummary?.retrieverStats['jaccard-similarity']
+                        .suggestedItems
+                ).toEqual(2)
+
+                s2EnterpriseClient.notify('autocomplete/completionAccepted', {
+                    completionID: items[0].id,
+                })
+            }, 10_000)
+        })
+
         afterAll(async () => {
-            await enterpriseClient.shutdownAndExit()
+            await s2EnterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })

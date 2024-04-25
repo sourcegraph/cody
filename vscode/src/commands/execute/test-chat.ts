@@ -7,10 +7,10 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import type { CodyCommandArgs } from '../types'

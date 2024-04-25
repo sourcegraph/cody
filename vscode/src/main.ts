@@ -15,6 +15,7 @@ import {
     isDotCom,
     newPromptMixin,
     setLogger,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { ContextProvider } from './chat/ContextProvider'
@@ -25,7 +26,6 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
-import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -50,8 +50,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
+import { enterpriseRepoNameResolver } from './repository/enterprise-repo-name-resolver'
 import { gitAPIinit } from './repository/git-extension-api'
-import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -64,7 +64,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
@@ -200,7 +200,8 @@ const register = async (
     )
     disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
-    const bindedRepoNamesResolver = repoNameResolver.getRepoNamesFromWorkspaceUri.bind(repoNameResolver)
+    const bindedRepoNamesResolver =
+        enterpriseRepoNameResolver.getRepoNamesFromWorkspaceUri.bind(enterpriseRepoNameResolver)
     await contextFiltersProvider.init(bindedRepoNamesResolver).then(() => contextProvider.init())
 
     // Shared configuration that is required for chat views to send and receive messages
@@ -325,7 +326,6 @@ const register = async (
         }
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
-        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
@@ -339,7 +339,7 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
-    repoNameResolver.init(platform.getRemoteUrlGetters?.())
+    enterpriseRepoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
@@ -567,10 +567,6 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
-
-    // Experimental features: Hover Commands
-    disposables.push(hoverCommandsProvider)
-    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
