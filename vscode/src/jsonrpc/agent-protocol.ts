@@ -409,6 +409,7 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
+// The capability should match the name of the JSON-RPC methods.
 interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
@@ -423,7 +424,7 @@ interface ClientCapabilities {
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
-    codyIgnore?: 'none' | 'enabled'
+    ignore?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {

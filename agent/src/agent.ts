@@ -304,7 +304,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.codeLenses.remove(codeLensProvider)
                 )
             }
-            if (clientInfo.capabilities?.codyIgnore === 'enabled') {
+            if (clientInfo.capabilities?.ignore === 'enabled') {
                 contextFiltersProvider.onContextFiltersChanged(() => {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)

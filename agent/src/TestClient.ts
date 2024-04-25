@@ -722,7 +722,7 @@ ${patch}`
                 showDocument: 'enabled',
                 codeLenses: 'enabled',
                 showWindowMessage: 'request',
-                codyIgnore: 'enabled',
+                ignore: 'enabled',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
