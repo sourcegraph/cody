@@ -56,7 +56,7 @@ export class PromptString {
      * Returns a string that is safe to use in a prompt that is sent to an LLM.
      */
     public async toFilteredString(
-        contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored'>
+        contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored' | 'toDebugObject'>
     ): Promise<string> {
         const references = internal_toReferences(this)
         const checks = references.map(async reference => [
@@ -66,13 +66,14 @@ export class PromptString {
         const resolved = await Promise.all(checks)
 
         let shouldThrow = false
-        for (const [reference, isIgnored] of resolved) {
-            if (isIgnored) {
+        for (const [reference, reason] of resolved) {
+            if (reason) {
                 shouldThrow = true
                 logDebug(
                     'PromptString',
                     'toFilteredString',
-                    `${reference} is ignored by the current context filters ${contextFilter}`
+                    `${reference} is ignored by the current context filters. Reason: ${reason}`,
+                    { verbose: contextFilter.toDebugObject() }
                 )
             }
         }
