@@ -98,21 +98,17 @@ export class ContextFiltersProvider implements vscode.Disposable {
         // If we don't have any context filters, we exclude everything.
         let isIgnored = this.parsedContextFilters === null
 
-        if (this.parsedContextFilters?.include?.length) {
-            for (const parsedFilter of this.parsedContextFilters.include) {
-                isIgnored = !matchesContextFilter(parsedFilter, repoName)
-                if (!isIgnored) {
-                    break
-                }
+        for (const parsedFilter of this.parsedContextFilters?.include || []) {
+            isIgnored = !matchesContextFilter(parsedFilter, repoName)
+            if (!isIgnored) {
+                break
             }
         }
 
-        if (!isIgnored && this.parsedContextFilters?.exclude?.length) {
-            for (const parsedFilter of this.parsedContextFilters.exclude) {
-                if (matchesContextFilter(parsedFilter, repoName)) {
-                    isIgnored = true
-                    break
-                }
+        for (const parsedFilter of this.parsedContextFilters?.exclude || []) {
+            if (matchesContextFilter(parsedFilter, repoName)) {
+                isIgnored = true
+                break
             }
         }
 

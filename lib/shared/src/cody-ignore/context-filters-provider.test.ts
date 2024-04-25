@@ -369,7 +369,7 @@ describe('ContextFiltersProvider', () => {
         })
     })
 
-    describe('onFiltersChanged ', () => {
+    describe('onFiltersChanged', () => {
         it('calls callback on filter updates', async () => {
             const mockContextFilters1 = {
                 include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
