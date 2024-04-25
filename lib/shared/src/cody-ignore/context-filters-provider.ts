@@ -84,7 +84,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (this.contextFilters?.include?.length) {
             for (const parsedFilter of this.contextFilters.include) {
                 isIgnored = !matchesContextFilter(parsedFilter, repoName)
-                console.log('XX1', isIgnored, parsedFilter, repoName)
                 if (!isIgnored) {
                     break
                 }
