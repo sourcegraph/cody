@@ -25,7 +25,7 @@ jobs:
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.1.0
       - run: ./scripts/install-ldid.sh
-      - run: yarn global add pnpm@8.6.7
+      - run: yarn global add pnpm@9.0.5
       - run: |
           echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
       - run: echo "Publishing version $RELEASE_VERSION"
