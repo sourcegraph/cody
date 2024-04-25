@@ -26,6 +26,14 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
+// Note: This can not be an empty string to make all non `false` values truthy.
+export type IsIgnored =
+    | false
+    | 'has-ignore-everything-filters'
+    | 'non-file-uri'
+    | 'no-repo-found'
+    | `repo:${string}`
+
 export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[] | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
@@ -135,30 +143,38 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return isIgnored
     }
 
-    public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
+    public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
         if (uri.toString().endsWith('Api.ts')) {
-            return true
+            return 'repo:debug'
         }
 
         if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
-
         if (this.hasIgnoreEverythingFilters()) {
-            return true
+            return 'has-ignore-everything-filters'
         }
 
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
             logDebug('ContextFiltersProvider', 'isUriIgnored', `non-file URI ${uri.scheme}`)
-            return true
+            return 'non-file-uri'
         }
 
         const repoNames = await wrapInActiveSpan('repoNameResolver.getRepoNamesFromWorkspaceUri', () =>
             this.getRepoNamesFromWorkspaceUri?.(uri)
         )
 
-        return repoNames ? repoNames.some(repoName => this.isRepoNameIgnored(repoName)) : true
+        if (!repoNames) {
+            return 'no-repo-found'
+        }
+
+        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored(repoName))
+        if (ignoredRepo) {
+            return `repo:${ignoredRepo}`
+        }
+
+        return false
     }
 
     public dispose(): void {
@@ -175,6 +191,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     private hasIgnoreEverythingFilters() {
         return this.lastContextFiltersResponse === EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+
+    public toDebugObject() {
+        return {
+            lastContextFiltersResponse: JSON.parse(JSON.stringify(this.lastContextFiltersResponse)),
+        }
     }
 }
 
