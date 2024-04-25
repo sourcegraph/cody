@@ -104,16 +104,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
-        if (this.hasAllowEverythingFilters()) {
+        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
 
         if (this.hasIgnoreEverythingFilters()) {
             return true
-        }
-
-        if (allowedSchemes.has(uri.scheme)) {
-            return false
         }
 
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
