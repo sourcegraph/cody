@@ -1,10 +1,10 @@
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { document } from '../completions/test-helpers'
 import { range } from '../testutils/textDocument'
 import { CharactersLogger, LOG_INTERVAL } from './CharactersLogger'
-import { telemetryRecorder } from './telemetry-v2'
 
 const testDocument = document('foo')
 describe('CharactersLogger', () => {

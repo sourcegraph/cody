@@ -4,10 +4,10 @@ import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourceg
 
 import { getConfiguration } from '../configuration'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
-import { telemetryRecorder } from './telemetry-v2'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
 interface StatusBarError {

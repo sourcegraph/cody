@@ -7,13 +7,14 @@ import {
     type PromptString,
     displayPathBasename,
     getEditorInsertSpaces,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
 import { telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
 import { PersistenceTracker } from '../common/persistence-tracker'

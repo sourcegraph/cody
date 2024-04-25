@@ -12,6 +12,7 @@ import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
 import { logDebug } from '../logger'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 
 // This module is designed to encourage, and to some degree enforce, safe
 // handling of file content that gets constructed into prompts. It works this
@@ -59,10 +60,9 @@ export class PromptString {
         contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(async reference => [
-            reference,
-            await contextFilter.isUriIgnored(reference),
-        ])
+        const checks = references.map(
+            async reference => [reference, await contextFilter.isUriIgnored(reference)] as const
+        )
         const resolved = await Promise.all(checks)
 
         let shouldThrow = false
@@ -74,6 +74,11 @@ export class PromptString {
                     'toFilteredString',
                     `${reference} is ignored by the current context filters ${contextFilter}`
                 )
+                telemetryRecorder.recordEvent('contextFilters.promptString', 'illegalReference', {
+                    privateMetadata: {
+                        scheme: reference.scheme,
+                    },
+                })
             }
         }
 
