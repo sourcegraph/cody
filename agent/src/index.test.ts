@@ -1651,6 +1651,8 @@ describe('Agent', () => {
                 expect(onChangeCallback).toBeCalledTimes(2)
             })
 
+            // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
+            // should include `sourcegraph/cody` repo for this test to pass.
             it('autocomplete/execute (with Cody Ignore filters)', async () => {
                 // Documents to be used as context sources.
                 await s2EnterpriseClient.openFile(animalUri)
