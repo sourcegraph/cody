@@ -181,7 +181,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // display ranges are 1-indexed.
     const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
     if (contextItem.type === 'file') {
-        return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}`
+        return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
     }
     if (contextItem.type === 'symbol') {
         return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
