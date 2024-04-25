@@ -2,6 +2,7 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    ContextFilters,
     CurrentUserCodySubscription,
     ModelProvider,
     ModelUsage,
@@ -188,7 +189,7 @@ export type ClientRequests = {
     // For testing. Overrides any ignore policy to ignore repositories and URIs
     // which match the specified regular expressions. Pass `undefined` to remove
     // the override.
-    'testing/ignore/overridePolicy': [{ repoRe: string; uriRe: string } | null, null]
+    'testing/ignore/overridePolicy': [ContextFilters, null]
 
     // Gets whether the specific repo name is known on the remote.
     'remoteRepo/has': [{ repoName: string }, { result: boolean }]

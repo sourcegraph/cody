@@ -60,26 +60,35 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private async fetchContextFilters(): Promise<void> {
         try {
             const response = await graphqlClient.contextFilters()
-
-            if (isEqual(response, this.lastContextFiltersResponse)) {
-                return
-            }
-
-            this.cache.clear()
-            this.parsedContextFilters = null
-            this.lastContextFiltersResponse = response
-            this.contextFiltersSubscriber.notify(response)
-
-            if (response) {
-                logDebug('ContextFiltersProvider', 'fetchContextFilters', { verbose: response })
-                this.parsedContextFilters = {
-                    include: response.include?.map(parseContextFilterItem) || null,
-                    exclude: response.exclude?.map(parseContextFilterItem) || null,
-                }
-            }
+            this.setContextFilters(response)
         } catch (error) {
             logError('ContextFiltersProvider', 'fetchContextFilters', { verbose: error })
         }
+    }
+
+    private setContextFilters(contextFilters: ContextFilters): void {
+        if (isEqual(contextFilters, this.lastContextFiltersResponse)) {
+            return
+        }
+
+        this.cache.clear()
+        this.parsedContextFilters = null
+        this.lastContextFiltersResponse = contextFilters
+        this.contextFiltersSubscriber.notify(contextFilters)
+
+        logDebug('ContextFiltersProvider', 'setContextFilters', { verbose: contextFilters })
+        this.parsedContextFilters = {
+            include: contextFilters.include?.map(parseContextFilterItem) || null,
+            exclude: contextFilters.exclude?.map(parseContextFilterItem) || null,
+        }
+    }
+
+    /**
+     * Sets an override context filters for testing.
+     */
+    public setTestingContextFilters(contextFilters: ContextFilters): void {
+        console.warn('Overriding Cody Ignore context filters for testing')
+        this.setContextFilters(contextFilters)
     }
 
     private startRefetchTimer(): void {

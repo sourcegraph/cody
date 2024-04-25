@@ -15,6 +15,7 @@ import {
     ModelProvider,
     NoOpTelemetryRecorderProvider,
     PromptString,
+    contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
@@ -34,10 +35,6 @@ import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import type { Har } from '@pollyjs/persister'
-import {
-    setIgnorePolicyChangeListener,
-    setTestingIgnorePolicyOverride,
-} from '@sourcegraph/cody-shared/src/cody-ignore/context-filter'
 import levenshtein from 'js-levenshtein'
 import {
     AbstractMessageReader,
@@ -1036,27 +1033,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest('ignore/test', async ({ uri }) => {
-            const policy: 'ignore' | 'use' = isCodyIgnoredFile(vscode.Uri.parse(uri)) ? 'ignore' : 'use'
+        this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
+            const uri = vscode.Uri.parse(uriString)
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+
+            // Use experimental Cody Ignore version for PLG users for now.
+            const isUriIgnored = authStatus.isDotCom
+                ? isCodyIgnoredFile(uri)
+                : await contextFiltersProvider.isUriIgnored(uri)
+
             return {
-                policy,
-            }
+                policy: isUriIgnored ? 'ignore' : 'use',
+            } as const
         })
 
-        setIgnorePolicyChangeListener(() => {
+        contextFiltersProvider.onContextFiltersChanged(() => {
             // Forward policy change notifications to the client.
             this.notify('ignore/didChange', null)
         })
 
-        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async options => {
-            setTestingIgnorePolicyOverride(
-                options
-                    ? {
-                          repoRe: RegExp(options.repoRe),
-                          uriRe: RegExp(options.uriRe),
-                      }
-                    : undefined
-            )
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
+            contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
     }
