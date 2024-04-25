@@ -77,7 +77,6 @@ import type {
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
-import { Uri } from './vscode-shim'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -442,27 +441,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             let contentChanges: vscode.TextDocumentContentChangeEvent[] = []
 
-            if (document.jetbrainsDocumentEvent && document.content && oldDocumentContent) {
-                if (document.jetbrainsDocumentEvent.offset) {
-                    const oldDocument = AgentTextDocument.from(Uri.file('dummy'), oldDocumentContent)
-                    const start: vscode.Position = oldDocument.positionAt(
-                        document.jetbrainsDocumentEvent?.offset
-                    )
-                    const end: vscode.Position = oldDocument.positionAt(
-                        document.jetbrainsDocumentEvent?.offset +
-                            document.jetbrainsDocumentEvent.oldLength
-                    )
-                    const range = new vscode.Range(start, end)
+            if (document.jetbrainsDocumentEvent?.offset && document.content && oldDocumentContent) {
+                const oldDocument = AgentTextDocument.from(vscode.Uri.file('dummy'), oldDocumentContent)
+                const start: vscode.Position = oldDocument.positionAt(
+                    document.jetbrainsDocumentEvent?.offset
+                )
+                const end: vscode.Position = oldDocument.positionAt(
+                    document.jetbrainsDocumentEvent?.offset + document.jetbrainsDocumentEvent.oldLength
+                )
+                const range = new vscode.Range(start, end)
 
-                    contentChanges = [
-                        {
-                            range: range,
-                            rangeOffset: document.jetbrainsDocumentEvent?.offset,
-                            rangeLength: document.jetbrainsDocumentEvent?.oldLength,
-                            text: document.jetbrainsDocumentEvent.content,
-                        },
-                    ]
-                }
+                contentChanges = [
+                    {
+                        range: range,
+                        rangeOffset: document.jetbrainsDocumentEvent?.offset,
+                        rangeLength: document.jetbrainsDocumentEvent?.oldLength,
+                        text: document.jetbrainsDocumentEvent.content,
+                    },
+                ]
             }
 
             this.workspace.setActiveTextEditor(textEditor)

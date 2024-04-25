@@ -542,6 +542,10 @@ export interface ProtocolTextDocument {
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
     filePath?: string
     content?: string
+    /** `textDocument/didChange` fires `onDidChangeTextDocument` and we want to include `contentChanges` within.
+     * `contentChanges` can be determined based on the document event.
+     * The JetBrains client document event structure is different from `vscode.TextDocumentChangeEvent`.
+     * Hence, we need to "translate" JetBrains event to VSC event. */
     jetbrainsDocumentEvent?: JetbrainsDocumentEvent
     selection?: Range
 }
@@ -774,7 +778,10 @@ export interface RemoteRepoFetchState {
 }
 
 export interface JetbrainsDocumentEvent {
+    /** The start offset of a text change. */
     offset: number
+    /** The length of the original text fragment that was replaced. */
     oldLength: number
+    /** The text fragment that replaced the original text. */
     content: string
 }
