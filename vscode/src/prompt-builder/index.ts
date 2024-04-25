@@ -85,9 +85,7 @@ export class PromptBuilder {
     ): PromptBuilderContextResult {
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
-            used: [] as ContextItem[], // The items that were successfully added
             ignored: [] as ContextItem[], // The items that were ignored
-            duplicate: [] as ContextItem[], // The items that were duplicates of previously seen items
         }
         this.processedContextType.add(tokenType)
         // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
@@ -100,14 +98,9 @@ export class PromptBuilder {
                 continue
             }
 
+            // Check if the specific context item has already been included
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
             if (!contextMsg || !this.contextTracker.track(userContextItem)) {
-                continue
-            }
-
-            // Check if the specific context item has already been included
-            if (!this.contextTracker.track(userContextItem)) {
-                result.duplicate.push(userContextItem)
                 continue
             }
 
@@ -133,7 +126,11 @@ export class PromptBuilder {
 
             this.reverseMessages.push(assistantMsg, contextMsg)
         }
-        return result
+
+        return {
+            ...result,
+            ...this.contextTracker.usedContextItems,
+        }
     }
 }
 

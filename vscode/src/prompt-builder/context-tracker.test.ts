@@ -1,4 +1,4 @@
-import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, displayPath } from '@sourcegraph/cody-shared'
 import { SHA256 } from 'crypto-js'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -79,7 +79,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(item)).toBeTruthy()
         })
 
-        it('should remove a range from a context item with multiple ranges', () => {
+        it('should remove a range from a context item with overlapping ranges', () => {
             const tracker = new ContextTracker()
             const item1: ContextItem = {
                 type: 'file',
@@ -93,13 +93,18 @@ describe('ContextTracker', () => {
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
                 size: 100,
-                range: {
-                    start: { line: 15, character: 0 },
-                    end: { line: 20, character: 0 },
-                },
+                range: { start: { line: 15, character: 0 }, end: { line: 20, character: 0 } },
+            }
+            const item3: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar'),
+                content: 'foobar',
+                size: 100,
+                range: { start: { line: 1, character: 0 }, end: { line: 10, character: 0 } },
             }
             expect(tracker.track(item1)).toBeTruthy()
-            expect(tracker.track(item2)).toBeFalsy()
+            expect(tracker.track(item2)).toBeTruthy()
+            expect(tracker.track(item3)).toBeFalsy()
         })
 
         it('should remove a context item when all its ranges are removed', () => {
@@ -109,12 +114,9 @@ describe('ContextTracker', () => {
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
                 size: 100,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 10, character: 0 },
-                },
+                range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
-            tracker.track(item)
+            expect(tracker.track(item)).toBeTruthy()
             tracker.untrack(item)
             expect(tracker.track(item)).toBeTruthy()
         })
@@ -137,10 +139,12 @@ describe('ContextTracker', () => {
                 size: 100,
                 source: ContextItemSource.Uri,
             }
-            const id1 = tracker.getContextItemId(item1)
-            const id2 = tracker.getContextItemId(item2)
-            expect(id1).toBe(`${item1.uri.toString()}#${SHA256(item1.content ?? '').toString()}`)
-            expect(id2).toBe(`${item2.uri.toString()}#${SHA256(item2.content ?? '').toString()}`)
+            expect(tracker.getContextItemId(item1)).toBe(
+                `${displayPath(item1.uri)}#${SHA256(item1.content ?? '').toString()}`
+            )
+            expect(tracker.getContextItemId(item2)).toBe(
+                `${displayPath(item2.uri)}#${SHA256(item2.content ?? '').toString()}`
+            )
         })
 
         it('should generate correct ID for unified context items', () => {
@@ -167,7 +171,7 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Editor,
             }
             const id = tracker.getContextItemId(item)
-            expect(id).toBe('/foo/bar')
+            expect(id).toBe(displayPath(item.uri))
         })
     })
 })
