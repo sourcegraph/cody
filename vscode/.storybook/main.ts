@@ -12,7 +12,6 @@ const config: StorybookConfig = {
         defineProjectWithDefaults(__dirname, {
             ...config,
             define: { 'process.env': '{}' },
-            resolve: { alias: { 're2-wasm': __dirname + '/re2-wasm-shim.js' } },
         }),
 }
 export default config

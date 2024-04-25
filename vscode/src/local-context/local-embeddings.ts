@@ -15,7 +15,9 @@ import {
     featureFlagProvider,
     isDotCom,
     isFileURI,
+    recordErrorToSpan,
     uriBasename,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import type { EmbeddingsModelConfig } from '@sourcegraph/cody-shared/src/configuration'
@@ -574,25 +576,33 @@ export class LocalEmbeddingsController
         if (!this.endpointIsDotcom) {
             return []
         }
-        const lastRepo = this.lastRepo
-        if (!lastRepo || !lastRepo.repoName) {
-            return []
-        }
-        try {
-            const service = await this.getService()
-            const resp = await service.request('embeddings/query', {
-                repoName: lastRepo.repoName,
-                query: query.toString(),
-                numResults,
-            })
-            logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
-            return resp.results.map(result => ({
-                ...result,
-                uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
-            }))
-        } catch (error) {
-            logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
-            return []
-        }
+        return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
+            try {
+                const lastRepo = this.lastRepo
+                if (!lastRepo?.repoName) {
+                    span.setAttribute('noResultReason', 'last-repo-not-set')
+                    return []
+                }
+                const service = await this.getService()
+                const resp = await service.request('embeddings/query', {
+                    repoName: lastRepo.repoName,
+                    query: query.toString(),
+                    numResults,
+                })
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'query',
+                    `returning ${resp.results.length} results`
+                )
+                return resp.results.map(result => ({
+                    ...result,
+                    uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+                }))
+            } catch (error) {
+                logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
+                recordErrorToSpan(span, error as Error)
+                return []
+            }
+        })
     }
 }

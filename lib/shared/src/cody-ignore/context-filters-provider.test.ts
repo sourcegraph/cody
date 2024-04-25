@@ -1,3 +1,4 @@
+import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -75,8 +76,8 @@ describe('ContextFiltersProvider', () => {
                 label: 'include and exclude rules',
                 filters: {
                     include: [
-                        { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
-                        { repoNamePattern: '^github\\.com\\/evilcorp\\/.*' },
+                        { repoNamePattern: '^github\\.com/sourcegraph/.*' },
+                        { repoNamePattern: '^github\\.com/evilcorp/.*' },
                     ],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
@@ -86,7 +87,7 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'does not allow a repo if it does not match the include pattern',
                 filters: {
-                    include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+                    include: [{ repoNamePattern: '^github\\.com/sourcegraph/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
                 ignored: ['github.com/other/repo'],
@@ -95,8 +96,8 @@ describe('ContextFiltersProvider', () => {
                 label: 'does not allow a repo if it matches the exclude pattern',
                 filters: {
                     include: [
-                        { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
-                        { repoNamePattern: '^github\\.com\\/sensitive\\/.*' },
+                        { repoNamePattern: '^github\\.com/sourcegraph/.*' },
+                        { repoNamePattern: '^github\\.com/sensitive/.*' },
                     ],
                     exclude: [
                         { repoNamePattern: '.*sensitive.*' },
@@ -112,7 +113,7 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'excludes repos that match both include and exclude patterns',
                 filters: {
-                    include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+                    include: [{ repoNamePattern: '^github\\.com/sourcegraph/.*' }],
                     exclude: [{ repoNamePattern: '.*sensitive.*' }],
                 },
                 ignored: ['github.com/sourcegraph/sensitive-repo'],
@@ -120,8 +121,8 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'excludes repos with anchored exclude pattern starting with the specific term',
                 filters: {
-                    include: [{ repoNamePattern: 'github\\.com\\/sourcegraph\\/.*' }],
-                    exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sensitive.*' }],
+                    include: [{ repoNamePattern: 'github\\.com/sourcegraph/.*' }],
+                    exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sensitive.*' }],
                 },
                 ignored: ['github.com/sourcegraph/sensitive-data'],
                 allowed: [
@@ -132,8 +133,8 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'excludes repos with anchored exclude pattern ending with the specific term',
                 filters: {
-                    include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
-                    exclude: [{ repoNamePattern: '.*\\/sensitive$' }],
+                    include: [{ repoNamePattern: '^github\\.com/sourcegraph/.*' }],
+                    exclude: [{ repoNamePattern: '.*/sensitive$' }],
                 },
                 allowed: ['github.com/sourcegraph/data-sensitive'],
                 ignored: ['github.com/sourcegraph/sensitive'],
@@ -141,8 +142,8 @@ describe('ContextFiltersProvider', () => {
             {
                 label: 'excludes repos using non-capturing groups',
                 filters: {
-                    include: [{ repoNamePattern: '^github\\.com\\/(sourcegraph|evilcorp)\\/.*' }],
-                    exclude: [{ repoNamePattern: '.*\\/(sensitive|classified).*' }],
+                    include: [{ repoNamePattern: '^github\\.com/(sourcegraph|evilcorp)/.*' }],
+                    exclude: [{ repoNamePattern: '.*/(sensitive|classified).*' }],
                 },
                 ignored: ['github.com/sourcegraph/sensitive-project'],
                 allowed: ['github.com/evilcorp/public'],
@@ -151,11 +152,11 @@ describe('ContextFiltersProvider', () => {
                 label: 'multiple include and exclude patterns',
                 filters: {
                     include: [
-                        { repoNamePattern: '^github\\.com\\/sourcegraph\\/.+' },
-                        { repoNamePattern: '^github\\.com\\/docker\\/compose$' },
-                        { repoNamePattern: '^github\\.com\\/.+\\/react' },
+                        { repoNamePattern: '^github\\.com/sourcegraph/.+' },
+                        { repoNamePattern: '^github\\.com/docker/compose$' },
+                        { repoNamePattern: '^github\\.com/.+/react' },
                     ],
-                    exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.+\\/docker\\/.+' }],
+                    exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.+/docker/.+' }],
                 },
                 allowed: [
                     'github.com/sourcegraph/about',
@@ -169,9 +170,9 @@ describe('ContextFiltersProvider', () => {
                 label: 'exclude everything',
                 filters: {
                     include: [
-                        { repoNamePattern: '^github\\.com\\/sourcegraph\\/.+' },
-                        { repoNamePattern: '^github\\.com\\/docker\\/compose$' },
-                        { repoNamePattern: '^github\\.com\\/.+\\/react' },
+                        { repoNamePattern: '^github\\.com/sourcegraph/.+' },
+                        { repoNamePattern: '^github\\.com/docker/compose$' },
+                        { repoNamePattern: '^github\\.com/.+/react' },
                     ],
                     exclude: [{ repoNamePattern: '.*cody.*' }, { repoNamePattern: '.*' }],
                 },
@@ -189,7 +190,7 @@ describe('ContextFiltersProvider', () => {
                 label: 'invalid patterns cause all repo names to be excluded',
                 filters: {
                     include: [
-                        { repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' },
+                        { repoNamePattern: '^github\\.com/sourcegraph/.*' },
                         { repoNamePattern: '(invalid_regex' },
                     ],
                 },
@@ -209,7 +210,7 @@ describe('ContextFiltersProvider', () => {
 
         it('uses cached results for repeated calls', async () => {
             const contextFilters = {
-                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/.*' }],
             } satisfies ContextFilters
 
             const mockedApiRequest = vi
@@ -225,11 +226,11 @@ describe('ContextFiltersProvider', () => {
 
         it('refetches context filters after the specified interval', async () => {
             const mockContextFilters1 = {
-                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/.*' }],
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/.*' }],
             } satisfies ContextFilters
 
             const mockContextFilters2 = {
-                include: [{ repoNamePattern: '^github\\.com\\/other\\/.*' }],
+                include: [{ repoNamePattern: '^github\\.com/other/.*' }],
             } satisfies ContextFilters
 
             const mockedApiRequest = vi
@@ -265,8 +266,8 @@ describe('ContextFiltersProvider', () => {
 
         it('applies context filters correctly', async () => {
             await initProviderWithContextFilters({
-                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
-                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
             })
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
@@ -288,8 +289,8 @@ describe('ContextFiltersProvider', () => {
 
         it('returns `true` if repo name is not found', async () => {
             await initProviderWithContextFilters({
-                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
-                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
@@ -350,8 +351,8 @@ describe('ContextFiltersProvider', () => {
 
         it('does not block remote context/http(s) URIs', async () => {
             await initProviderWithContextFilters({
-                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
-                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
             })
             expect(
                 await provider.isUriIgnored(URI.parse('https://sourcegraph.sourcegraph.com/foo/bar'))
@@ -410,5 +411,18 @@ describe('ContextFiltersProvider', () => {
             // Even though the value changed, we already unsubscribed, so the callback is not called.
             expect(onChangeCallback).toBeCalledTimes(2)
         })
+    })
+})
+
+describe('RE2JS', () => {
+    it('exhibits RE2 u (unicode) flag behavior without the flag being explicitly set', () => {
+        // This is the behavior of the 'u' flag as documented at
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/unicode#description:
+        //
+        // > Surrogate pairs will be interpreted as whole characters instead of two separate
+        // > characters. For example, /[😄]/u would only match "😄" but not "\ud83d".
+        const re = RE2.compile('[😄]')
+        expect(re.matches('😄')).toBe(true)
+        expect(re.matches('\ud83d')).toBe(false)
     })
 })
