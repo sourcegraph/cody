@@ -77,7 +77,6 @@ test('chat input focus', async ({ page, sidebar }) => {
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
 
     // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).hover()
     await page.getByLabel(/Commands \(/).click()
     await page.waitForTimeout(100)
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
@@ -87,6 +86,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     await chatInput.fill('delay')
     await chatInput.press('Enter')
     await expect(chatInput).toBeFocused()
+    await chatInput.click()
 
     // Ensure equal-width columns so we can be sure the code we're about to click is in view (and is
     // not out of the editor's scroll viewport). This became required due to new (undocumented)
