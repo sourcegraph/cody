@@ -5,6 +5,7 @@ import { ConsoleReporter } from './ConsoleReporter'
 import { KotlinCodegen } from './KotlinCodegen'
 import { MarkdownCodegen } from './MarkdownCodegen'
 import { SymbolTable } from './SymbolTable'
+import { TypeScriptCodegen } from './TypeScriptCodegen'
 import { scip } from './scip'
 
 export interface CodegenOptions {
@@ -19,6 +20,7 @@ export interface CodegenOptions {
 
 enum CodegenLanguage {
     Kotlin = 'kotlin',
+    TypeScript = 'typescript',
     Markdown = 'markdown',
 }
 
@@ -39,6 +41,8 @@ function languageOption(value: string): CodegenLanguage {
     switch (value) {
         case 'kotlin':
             return CodegenLanguage.Kotlin
+        case 'typescript':
+            return CodegenLanguage.TypeScript
         case 'markdown':
             return CodegenLanguage.Markdown
         default:
@@ -90,6 +94,8 @@ async function initializeCodegen(options: CodegenOptions): Promise<BaseCodegen> 
     switch (options.language) {
         case CodegenLanguage.Kotlin:
             return new KotlinCodegen(options, symtab, reporter)
+        case CodegenLanguage.TypeScript:
+            return new TypeScriptCodegen(options, symtab, reporter)
         case CodegenLanguage.Markdown:
             return new MarkdownCodegen(options, symtab, reporter)
         default:
