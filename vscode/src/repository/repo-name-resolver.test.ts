@@ -31,9 +31,8 @@ function mockFsCalls(params: MockFsCallsParams) {
     }
 
     if (gitSubmodule) {
-        const submoduleConfigPath = path.join(
-            gitSubmodule.path,
-            gitSubmodule.gitFile.trim().replace('gitdir: ', '')
+        const submoduleConfigPath = deWindowsifyPath(
+            path.join(gitSubmodule.path, gitSubmodule.gitFile.trim().replace('gitdir: ', ''))
         )
 
         files[`${gitSubmodule.path}/.git`] = gitSubmodule.gitFile
