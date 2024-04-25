@@ -3845,7 +3845,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 25 Apr 2024 15:17:36 GMT
+            value: Thu, 25 Apr 2024 15:39:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -3873,7 +3873,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-04-25T15:17:36.693Z
+      startedDateTime: 2024-04-25T15:39:16.215Z
       time: 0
       timings:
         blocked: -1
