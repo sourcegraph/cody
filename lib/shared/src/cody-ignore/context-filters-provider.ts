@@ -26,7 +26,7 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
-type IsIgnored =
+export type IsIgnored =
     | false
     | 'has-ignore-everything-filters'
     | 'non-file-uri'

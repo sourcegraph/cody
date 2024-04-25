@@ -284,10 +284,12 @@ describe('ContextFiltersProvider', () => {
                 'github.com/sourcegraph/sourcegraph',
             ])
 
-            expect(await provider.isUriIgnored(excludedURI)).toBe(true)
+            expect(await provider.isUriIgnored(excludedURI)).toBe(
+                'repo:github.com/sourcegraph/sourcegraph'
+            )
         })
 
-        it('returns `true` if repo name is not found', async () => {
+        it('returns the `no-repo-found` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
@@ -295,7 +297,7 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
-            expect(await provider.isUriIgnored(uri)).toBe(true)
+            expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
         it('excludes everything on network errors', async () => {
@@ -303,7 +305,7 @@ describe('ContextFiltersProvider', () => {
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe(true)
+            expect(await provider.isUriIgnored(uri)).toBe('repo:github.com/sourcegraph/whatever')
         })
 
         it('excludes everything on unknown API errors', async () => {
@@ -313,7 +315,7 @@ describe('ContextFiltersProvider', () => {
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe(true)
+            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
         })
 
         it('excludes everything on invalid response structure', async () => {
@@ -326,7 +328,7 @@ describe('ContextFiltersProvider', () => {
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe(true)
+            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
         })
 
         it('includes everything on empty responses', async () => {
