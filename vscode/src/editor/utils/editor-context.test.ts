@@ -8,6 +8,7 @@ import {
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
     ignores,
+    ps,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
@@ -186,16 +187,20 @@ describe('resolveContextItems', () => {
                 throw new Error('error')
             },
         }
-        const contextItems = await resolveContextItems(mockEditor as Editor, [
-            {
-                type: 'file',
-                uri: URI.parse('file:///a.txt'),
-            },
-            {
-                type: 'file',
-                uri: URI.parse('file:///error.txt'),
-            },
-        ])
+        const contextItems = await resolveContextItems(
+            mockEditor as Editor,
+            [
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///a.txt'),
+                },
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///error.txt'),
+                },
+            ],
+            ps``
+        )
         expect(contextItems).toEqual<ContextItem[]>([
             {
                 type: 'file',

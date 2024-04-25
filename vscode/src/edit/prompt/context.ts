@@ -149,6 +149,6 @@ export const getContext = async ({
     }
 
     const derivedContext = await getContextFromIntent({ editor, ...options })
-    const userContext = await resolveContextItems(editor, userContextItems)
+    const userContext = await resolveContextItems(editor, userContextItems, options.selectedText)
     return [...derivedContext, ...userContext]
 }

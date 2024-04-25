@@ -453,7 +453,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    userContextFiles || []
+                    userContextFiles || [],
+                    inputText
                 )
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(

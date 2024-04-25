@@ -249,3 +249,23 @@ export const EVALUATE_FEATURE_FLAG_QUERY = `
         evaluateFeatureFlag(flagName: $flagName)
     }
 `
+
+export const PACKAGE_LIST_QUERY = `
+    query Packages($kind: PackageRepoReferenceKind!, $name: String!, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
+            nodes {
+                id
+                name
+                kind
+                repository {
+                    id
+                    name
+                    url
+                }
+            }
+            pageInfo {
+                endCursor
+            }
+        }
+    }
+`
