@@ -189,7 +189,7 @@ export type ClientRequests = {
     // For testing. Overrides any ignore policy to ignore repositories and URIs
     // which match the specified regular expressions. Pass `undefined` to remove
     // the override.
-    'testing/ignore/overridePolicy': [ContextFilters, null]
+    'testing/ignore/overridePolicy': [ContextFilters | null, null]
 
     // Gets whether the specific repo name is known on the remote.
     'remoteRepo/has': [{ repoName: string }, { result: boolean }]
