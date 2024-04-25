@@ -25,7 +25,6 @@ import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from 
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
-import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -326,7 +325,6 @@ const register = async (
         }
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
-        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
@@ -568,10 +566,6 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
-
-    // Experimental features: Hover Commands
-    disposables.push(hoverCommandsProvider)
-    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

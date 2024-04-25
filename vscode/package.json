@@ -1065,13 +1065,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.experimental.hoverCommands": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Display commands in hover tooltips for code elements.",
-          "description": "%config.experimental.hoverCommands%",
-          "tags": ["experimental", "feature-flag"]
-        },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
           "default": false,

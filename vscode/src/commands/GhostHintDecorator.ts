@@ -1,7 +1,5 @@
 import {
     type AuthStatus,
-    FeatureFlag,
-    featureFlagProvider,
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
@@ -19,8 +17,6 @@ const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
 const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
 
 /**
- * NOTE: When the HoverCommands A/B test is running, Ghost Text is disabled for users in the HoverCommands treatment group.
- *
  * Checks if the given selection in the document is an incomplete line selection.
  * @param document - The text document containing the selection
  * @param selection - The selection to check
@@ -102,27 +98,16 @@ function getSymbolDecorationPadding(
 type GhostVariant = 'EditOrChat' | 'Document' | 'Generate'
 type EnabledFeatures = Record<GhostVariant, boolean>
 
-/**
- * NOTE: Ghost Text should be disabled for users in the HoverCommands A/B test treatment group.
- */
 export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
-    const hoverFeatureFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyHoverCommands)
     const config = vscode.workspace.getConfiguration('cody')
     const configSettings = config.inspect<boolean>('commandHints.enabled')
-    const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue
+    const settingValue = configSettings?.workspaceValue ?? configSettings?.globalValue ?? true
 
     // Return the actual configuration setting, if set. Otherwise return the default value from the feature flag.
     return {
-        /**
-         * Toggle the default settings for EditOrChat & Document based on the feature flagss for hover commands and ghost text.
-         */
-        EditOrChat: settingValue ?? !hoverFeatureFlag,
-        Document: settingValue ?? !hoverFeatureFlag,
-        /**
-         * We're not running an A/B test on the "Opt+K" to generate text.
-         * We can safely set the default of this to `true`.
-         */
-        Generate: settingValue ?? true,
+        EditOrChat: settingValue,
+        Document: settingValue,
+        Generate: settingValue,
     }
 }
 

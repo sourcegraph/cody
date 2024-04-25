@@ -5,7 +5,6 @@ import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourceg
 import { getConfiguration } from '../configuration'
 
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { telemetryRecorder } from './telemetry-v2'
@@ -166,29 +165,16 @@ export function createStatusBar(): CodyStatusBar {
                 'cody.commandCodeLenses',
                 c => c.commandCodeLenses
             ),
-            ...(hoverCommandsProvider.getEnablement()
-                ? [
-                      await createFeatureToggle(
-                          'Commands on Hover',
-                          'Experimental',
-                          'Enable Cody commands to appear on hover',
-                          'cody.experimental.hoverCommands',
-                          () => isHoverCommandsEnabled()
-                      ),
-                  ]
-                : [
-                      await createFeatureToggle(
-                          'Command Hints',
-                          undefined,
-                          'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
-                          'cody.commandHints.enabled',
-                          async () => {
-                              const enablement = await getGhostHintEnablement()
-                              return enablement.Document || enablement.EditOrChat || enablement.Generate
-                          }
-                      ),
-                  ]),
-
+            await createFeatureToggle(
+                'Command Hints',
+                undefined,
+                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
+                'cody.commandHints.enabled',
+                async () => {
+                    const enablement = await getGhostHintEnablement()
+                    return enablement.Document || enablement.EditOrChat || enablement.Generate
+                }
+            ),
             await createFeatureToggle(
                 'Search Context',
                 'Beta',
