@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -7,6 +7,7 @@ import {
     type ContextItemFile,
     EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
+    contextFiltersProvider,
     ignores,
     ps,
     testFileUri,
@@ -22,6 +23,9 @@ afterEach(() => {
 })
 
 describe('getFileContextFiles', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi
             .fn()
