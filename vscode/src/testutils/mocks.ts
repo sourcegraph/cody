@@ -686,7 +686,9 @@ export enum UIKind {
     Web = 2,
 }
 
-export class FileSystemError extends Error {}
+export class FileSystemError extends Error {
+    public code = 'FileSystemError'
+}
 
 export const vsCodeMocks = {
     FileSystemError,

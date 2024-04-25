@@ -145,7 +145,7 @@ async function gitRemoteUrlsFromTreeWalkRecursive(uri: vscode.Uri): Promise<stri
 
         return remoteUrls.size ? Array.from(remoteUrls) : undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
@@ -175,7 +175,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 
         return undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
