@@ -191,7 +191,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     public toDebugObject() {
         return {
-            lastContextFiltersResponse: this.lastContextFiltersResponse,
+            lastContextFiltersResponse: JSON.parse(JSON.stringify(this.lastContextFiltersResponse)),
         }
     }
 }
