@@ -1,3 +1,4 @@
+import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -424,5 +425,18 @@ describe('ContextFiltersProvider', () => {
             ).toBe(false)
             expect(await provider.isUriIgnored(URI.parse('http://[::1]/goodies'))).toBe(false)
         })
+    })
+})
+
+describe('RE2JS', () => {
+    it('exhibits RE2 u (unicode) flag behavior without the flag being explicitly set', () => {
+        // This is the behavior of the 'u' flag as documented at
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/unicode#description:
+        //
+        // > Surrogate pairs will be interpreted as whole characters instead of two separate
+        // > characters. For example, /[😄]/u would only match "😄" but not "\ud83d".
+        const re = RE2.compile('[😄]')
+        expect(re.matches('😄')).toBe(true)
+        expect(re.matches('\ud83d')).toBe(false)
     })
 })
