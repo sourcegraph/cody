@@ -1,5 +1,6 @@
 packages:
   - agent
+  - agent/bindings/typescript
   - cli
   - lib/*
   - vscode
