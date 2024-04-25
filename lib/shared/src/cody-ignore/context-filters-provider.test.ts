@@ -289,7 +289,7 @@ describe('ContextFiltersProvider', () => {
             )
         })
 
-        it('returns the `no-repo-found` if repo name is not found', async () => {
+        it('returns `no-repo-found` if repo name is not found', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
