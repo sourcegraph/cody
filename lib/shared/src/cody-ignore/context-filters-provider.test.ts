@@ -401,5 +401,16 @@ describe('ContextFiltersProvider', () => {
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
         })
+
+        it('does not block remote context/http(s) URIs', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+            })
+            expect(
+                await provider.isUriIgnored(URI.parse('https://sourcegraph.sourcegraph.com/foo/bar'))
+            ).toBe(false)
+            expect(await provider.isUriIgnored(URI.parse('http://[::1]/goodies]'))).toBe(false)
+        })
     })
 })
