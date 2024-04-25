@@ -152,6 +152,14 @@
             "media": {
               "markdown": "walkthroughs/keyboard.md"
             }
+          },
+          {
+            "id": "ollama",
+            "title": "Ollama (Experimental)",
+            "description": "Learn how to use your local models with Cody.",
+            "media": {
+              "markdown": "walkthroughs/ollama.md"
+            }
           }
         ]
       }
