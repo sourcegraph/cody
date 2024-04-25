@@ -82,25 +82,20 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.cache.clear()
         this.parsedContextFilters = null
         this.lastContextFiltersResponse = contextFilters
-        this.contextFiltersSubscriber.notify(contextFilters)
 
         logDebug('ContextFiltersProvider', 'setContextFilters', { verbose: contextFilters })
         this.parsedContextFilters = {
             include: contextFilters.include?.map(parseContextFilterItem) || null,
             exclude: contextFilters.exclude?.map(parseContextFilterItem) || null,
         }
+
+        this.contextFiltersSubscriber.notify(contextFilters)
     }
 
     /**
      * Overrides context filters for testing.
      */
     public setTestingContextFilters(contextFilters: ContextFilters | null): void {
-        if (process.env.VITEST !== 'true') {
-            throw new Error(
-                'contextFiltersProvider.setTestingContextFilters should be only used in tests'
-            )
-        }
-
         if (contextFilters === null) {
             // Reset context filters to the value from the Sourcegraph API.
             this.init(this.getRepoNamesFromWorkspaceUri!)
