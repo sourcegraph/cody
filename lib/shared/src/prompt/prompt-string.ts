@@ -78,6 +78,7 @@ export class PromptString {
                 telemetryRecorder.recordEvent('contextFilters.promptString', 'illegalReference', {
                     privateMetadata: {
                         scheme: reference.scheme,
+                        reason,
                     },
                 })
             }
