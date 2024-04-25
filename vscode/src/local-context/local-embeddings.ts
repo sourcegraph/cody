@@ -6,6 +6,7 @@ import {
     type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
+    type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
     FeatureFlag,
     type FileURI,
@@ -20,7 +21,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import type { EmbeddingsModelConfig } from '@sourcegraph/cody-shared/src/configuration'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'

@@ -2,17 +2,22 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type ContextItemFile,
     ContextItemSource,
+    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
     type Message,
     ModelProvider,
+    ModelUsage,
     PromptString,
     type RangeData,
     type SerializedChatInteraction,
@@ -23,8 +28,10 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    tracer,
     truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
@@ -52,16 +59,6 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type {
-    ContextItemFile,
-    ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import {
-    CHAT_INPUT_TOKEN_BUDGET,
-    CHAT_OUTPUT_TOKEN_BUDGET,
-} from '@sourcegraph/cody-shared/src/token/constants'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
