@@ -84,10 +84,15 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     /**
-     * Sets an override context filters for testing.
+     * Overrides context filters for testing.
      */
     public setTestingContextFilters(contextFilters: ContextFilters): void {
-        console.warn('Overriding Cody Ignore context filters for testing')
+        if (process.env.VITEST !== 'true') {
+            throw new Error(
+                'contextFiltersProvider.setTestingContextFilters should be only used in tests'
+            )
+        }
+
         this.setContextFilters(contextFilters)
     }
 
