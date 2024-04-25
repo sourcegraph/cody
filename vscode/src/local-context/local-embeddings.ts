@@ -578,6 +578,7 @@ export class LocalEmbeddingsController
         }
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
+                span.setAttribute('provider', this.modelConfig.provider)
                 const lastRepo = this.lastRepo
                 if (!lastRepo?.repoName) {
                     span.setAttribute('noResultReason', 'last-repo-not-set')
