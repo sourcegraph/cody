@@ -49,9 +49,6 @@ export enum FeatureFlag {
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
 
-    /** Display Cody commands in a pop-up window on hover. */
-    CodyHoverCommands = 'cody-hover-commands',
-
     /** Apply a higher context window for user context items (e.g., @-mentions). */
     CodyChatContextBudget = 'cody-chat-context-budget',
 }
