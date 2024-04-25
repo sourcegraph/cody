@@ -208,7 +208,7 @@ export function createStatusBar(): CodyStatusBar {
                     {
                         iconPath: new vscode.ThemeIcon('book'),
                         tooltip: 'Learn more about using local models',
-                        onClick: () => vscode.commands.executeCommand('cody.walkthrough.ollama'),
+                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
                     } as vscode.QuickInputButton,
                 ]
             ),

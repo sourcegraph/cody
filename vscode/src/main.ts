@@ -21,7 +21,12 @@ import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    CODY_FEEDBACK_URL,
+    CODY_OLLAMA_DOCS_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -530,14 +535,13 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
-        vscode.commands.registerCommand('cody.walkthrough.ollama', () => {
-            vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#ollama',
-                true
-            )
-            telemetryRecorder.recordEvent('cody.walkthrough.ollama', 'clicked')
+
+        // StatusBar Commands
+        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
+            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
+            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
         }),
+
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()

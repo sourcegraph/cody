@@ -152,28 +152,13 @@
             "media": {
               "markdown": "walkthroughs/keyboard.md"
             }
-          }
-        ]
-      },
-      {
-        "id": "ollama",
-        "title": "Set up Ollama for Cody",
-        "description": "(Experimental) Discover how to use your local Olama models with  (Non-Enterprise) Cody",
-        "steps": [
-          {
-            "id": "ollama-autocomplete",
-            "title": "Code Autocomplete with Ollama",
-            "description": "(Experimental) Learn how to use your local Olama models with Code Autocomplete in Cody.",
-            "media": {
-              "markdown": "walkthroughs/ollama/autocomplete.md"
-            }
           },
           {
-            "id": "ollama-chat",
-            "title": "Chat & Commands with Ollama",
-            "description": "(Experimental) Learn how to use your local Olama models with chat and commands in Cody.",
+            "id": "ollama",
+            "title": "Ollama (Experimental)",
+            "description": "Learn how to use your local models with Cody.",
             "media": {
-              "markdown": "walkthroughs/ollama/chat.md"
+              "markdown": "walkthroughs/ollama.md"
             }
           }
         ]
