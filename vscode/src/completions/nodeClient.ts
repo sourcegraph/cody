@@ -1,21 +1,31 @@
+// The node client can not live in lib/shared (with its browserClient
+// counterpart) since it requires node-only APIs. These can't be part of
+// the main `lib/shared` bundle since it would otherwise not work in the
+// web build.
+
 import http from 'node:http'
 import https from 'node:https'
 
-import { onAbort } from '../../common/abortController'
-import { logError } from '../../logger'
-import { isError } from '../../utils'
-import { RateLimitError } from '../errors'
-import { customUserAgent } from '../graphql/client'
-import { toPartialUtf8String } from '../utils'
-
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
-import { googleChatClient } from '../../llm-providers/google/chat-client'
-import { groqChatClient } from '../../llm-providers/groq/chat-client'
-import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
-import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
-import { SourcegraphCompletionsClient } from './client'
-import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters, SerializedCompletionParameters } from './types'
+import {
+    type CompletionCallbacks,
+    type CompletionParameters,
+    RateLimitError,
+    type SerializedCompletionParameters,
+    SourcegraphCompletionsClient,
+    contextFiltersProvider,
+    customUserAgent,
+    getTraceparentHeaders,
+    googleChatClient,
+    groqChatClient,
+    isError,
+    logError,
+    ollamaChatClient,
+    onAbort,
+    parseEvents,
+    recordErrorToSpan,
+    toPartialUtf8String,
+    tracer,
+} from '@sourcegraph/cody-shared'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
