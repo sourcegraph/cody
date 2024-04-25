@@ -1,7 +1,11 @@
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { type ContextFilters, graphqlClient } from '../sourcegraph-api/graphql/client'
+import {
+    type ContextFilters,
+    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    graphqlClient,
+} from '../sourcegraph-api/graphql/client'
 import { ContextFiltersProvider } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
@@ -400,6 +404,25 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
+        })
+
+        it('does not block remote context/http(s) URIs', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com\\/sourcegraph\\/sourcegraph' }],
+            })
+            expect(
+                await provider.isUriIgnored(URI.parse('https://sourcegraph.sourcegraph.com/foo/bar'))
+            ).toBe(false)
+            expect(await provider.isUriIgnored(URI.parse('http://[::1]/goodies'))).toBe(false)
+        })
+
+        it('deny all filters should not block http/s URIs', async () => {
+            await initProviderWithContextFilters(EXCLUDE_EVERYTHING_CONTEXT_FILTERS)
+            expect(
+                await provider.isUriIgnored(URI.parse('https://sourcegraph.sourcegraph.com/foo/bar'))
+            ).toBe(false)
+            expect(await provider.isUriIgnored(URI.parse('http://[::1]/goodies'))).toBe(false)
         })
     })
 })

@@ -23,6 +23,10 @@ export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[]
 type RepoName = string
 type IsRepoNameIgnored = boolean
 
+// These schemes are always deemed safe. Remote context has https URIs, but
+// the remote applies Cody ignore rules.
+const allowedSchemes = new Set(['http', 'https'])
+
 export class ContextFiltersProvider implements vscode.Disposable {
     /**
      * `null` value means that we failed to fetch context filters.
@@ -100,7 +104,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<boolean> {
-        if (this.hasAllowEverythingFilters()) {
+        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
 
