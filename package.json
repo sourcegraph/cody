@@ -10,7 +10,7 @@
   },
   "engines": {
     "node": ">=18",
-    "pnpm": "^8.6.7"
+    "pnpm": "^9.0.5"
   },
   "browser": {
     "fs": false
@@ -59,7 +59,7 @@
     "react-dom": "18.2.0",
     "vscode-jsonrpc": "^8.2.0"
   },
-  "packageManager": "pnpm@8.6.7",
+  "packageManager": "pnpm@9.0.5",
   "resolutions": {
     "tslib": "2.1.0"
   },
