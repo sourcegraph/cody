@@ -26,6 +26,7 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
+// Note: This can not be an empty string to make all non `false` values truthy.
 export type IsIgnored =
     | false
     | 'has-ignore-everything-filters'
