@@ -1,7 +1,7 @@
 import type { FeatureFlag } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../LocalStorageProvider'
 import { telemetryService } from '../telemetry'
-import { telemetryRecorder } from '../telemetry-v2'
 
 /**
  * Logs the enrollment event for the given feature flag ONCE in user's lifetime

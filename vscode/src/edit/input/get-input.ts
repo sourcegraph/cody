@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import {
     FILE_HELP_LABEL,
@@ -28,7 +29,6 @@ import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'

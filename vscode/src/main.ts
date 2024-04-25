@@ -15,6 +15,7 @@ import {
     isDotCom,
     newPromptMixin,
     setLogger,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { ContextProvider } from './chat/ContextProvider'
@@ -63,7 +64,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
