@@ -339,6 +339,12 @@
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
+        "command": "cody.command.usageExamples",
+        "category": "Cody Command",
+        "title": "Find Usage Examples",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -669,6 +675,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -703,6 +713,11 @@
           "command": "cody.chat.context.add",
           "group": "0_cody",
           "when": "cody.activated && editorTextFocus && editorHasSelection"
+        },
+        {
+          "command": "cody.command.usageExamples",
+          "group": "0_cody",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
         }
       ],
       "cody.submenu": [
