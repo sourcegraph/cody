@@ -13,7 +13,6 @@ import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage, getAgentDir } from './TestClient'
 import { decodeURIs } from './decodeURIs'
-import { isNode16 } from './isNode16'
 import type {
     CustomChatCommandResult,
     CustomEditCommandResult,
@@ -468,8 +467,7 @@ describe('Agent', () => {
             }
         })
 
-        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
-        describe.skipIf(isNode16())('chat/editMessage', () => {
+        describe('chat/editMessage', () => {
             it(
                 'edits the last human chat message',
                 async () => {
@@ -805,7 +803,7 @@ describe('Agent', () => {
         }, 30_000)
 
         // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isNode16() || isWindows())(
+        it.skipIf(isWindows())(
             'commands/test',
             async () => {
                 await client.request('command/execute', {

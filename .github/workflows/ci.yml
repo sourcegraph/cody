@@ -21,7 +21,7 @@ jobs:
           # need to run this on all platforms as we're only verifying we don't
           # call any APIs not available in this version.
           - runner: ubuntu
-            node: 16 # Supported by VS Code 1.81 (July 2023).
+            node: 18 # VS Code started using Node 18 in Aug 2023 in v1.82: https://code.visualstudio.com/updates/v1_82#_engineering
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 10
     steps:

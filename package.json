@@ -9,7 +9,7 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^v20.4.0",
+    "node": ">=18",
     "pnpm": "^8.6.7"
   },
   "browser": {
@@ -72,9 +72,6 @@
         }
       }
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ]
+    "neverBuiltDependencies": ["deasync", "playwright"]
   }
 }
