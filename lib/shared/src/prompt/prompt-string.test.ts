@@ -62,10 +62,12 @@ describe('PromptString', () => {
         const promptString = PromptString.fromDocumentText(document)
 
         const allowPolicy = {
-            isUriIgnored: () => Promise.resolve(false),
+            isUriIgnored: () => Promise.resolve(false as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
         }
         const denyPolicy = {
-            isUriIgnored: () => Promise.resolve(true),
+            isUriIgnored: () => Promise.resolve('repo:foo' as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
         }
 
         expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')
