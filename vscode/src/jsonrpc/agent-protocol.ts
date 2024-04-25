@@ -423,6 +423,7 @@ interface ClientCapabilities {
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
+    codyIgnore?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {

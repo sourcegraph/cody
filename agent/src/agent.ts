@@ -304,6 +304,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.codeLenses.remove(codeLensProvider)
                 )
             }
+            if (clientInfo.capabilities?.codyIgnore === 'enabled') {
+                contextFiltersProvider.onContextFiltersChanged(() => {
+                    // Forward policy change notifications to the client.
+                    this.notify('ignore/didChange', null)
+                })
+            }
             if (process.env.CODY_DEBUG === 'true') {
                 console.error(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
@@ -1047,11 +1053,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return {
                 policy: isUriIgnored ? 'ignore' : 'use',
             } as const
-        })
-
-        contextFiltersProvider.onContextFiltersChanged(() => {
-            // Forward policy change notifications to the client.
-            this.notify('ignore/didChange', null)
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
