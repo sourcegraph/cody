@@ -16,7 +16,6 @@ interface PromptBuilderContextResult {
     limitReached: boolean
     used: ContextItem[]
     ignored: ContextItem[]
-    duplicate: ContextItem[]
 }
 
 /**
@@ -98,10 +97,10 @@ export class PromptBuilder {
                 continue
             }
 
-            // Check if the specific context item has already been included
+            // Skip duplicated or invalid items before updating the token usage.
             const isTrackable = this.contextTracker.track(userContextItem)
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            if (!isTrackable || !contextMsg) {
+            if (!contextMsg || !isTrackable) {
                 continue
             }
 
@@ -130,7 +129,7 @@ export class PromptBuilder {
 
         return {
             ...result,
-            ...this.contextTracker.getTrackedContextItems,
+            used: this.contextTracker.getTrackedContextItems,
         }
     }
 }

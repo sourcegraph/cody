@@ -94,13 +94,9 @@ describe('DefaultPrompter', () => {
             },
         ]
 
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
-            'enhanced',
-            contextItems
-        )
+        const { limitReached, ignored, used } = promptBuilder.tryAddContext('enhanced', contextItems)
         expect(limitReached).toBeTruthy()
         expect(ignored).toEqual(contextItems)
-        expect(duplicate).toEqual([])
         expect(used).toEqual([])
 
         const prompt = promptBuilder.build()

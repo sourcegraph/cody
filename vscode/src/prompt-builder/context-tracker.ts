@@ -10,39 +10,21 @@ export class ContextTracker {
     private store = new Map<ContextItemDisplayID, ContextItem[]>()
 
     /**
-     * A map of context items that are currently being tracked.
-     * NOTE: This gets reset after each call to `getTrackedContextItems`.
+     * A map of context item display IDs to the list of items that are being tracked.
+     * NOTE: This gets reset after each call to `getTrackedContextItems`
      */
     private tracking = new Map<ContextItemDisplayID, ContextItem[]>()
-    /**
-     * A list of context items that are duplicates of items already being tracked.
-     * This contains items that are subsets of the tracked items.
-     * NOTE: This gets reset after each call to `getTrackedContextItems`.
-     */
-    private duplicate: ContextItem[] = []
 
     /**
-     * Gets the tracked context items and resets the tracking state.
-     *
-     * This method adds all tracked items to the store, returns the used and duplicate items,
-     * and then resets the tracking and duplicate state.
+     * Gets the tracked context items and resets the current tracking state.
      *
      * @returns An object containing the used and duplicate context items.
      */
-    public get getTrackedContextItems(): {
-        used: ContextItem[]
-        duplicate: ContextItem[]
-    } {
-        const result = {
-            used: [...this.tracking.values()].flat(),
-            duplicate: this.duplicate,
-        }
-
-        // Reset the current list of tracking and duplicate items for the next round
+    public get getTrackedContextItems(): ContextItem[] {
+        const used = [...this.tracking.values()].flat()
+        // Reset the current tracking state for the next round
         this.tracking = new Map()
-        this.duplicate = []
-
-        return result
+        return used
     }
 
     /**
@@ -63,23 +45,19 @@ export class ContextTracker {
             for (let i = 0; i < items.length; i++) {
                 const existing = items[i]
                 if (existing.range) {
-                    // If the item is a subset of the tracked range,
-                    // add it to the duplicate list
+                    // Do not track item that is a subset of the tracked range
                     if (isRangeContain(range, existing.range)) {
-                        this.duplicate.push(item)
                         return false
                     }
-                    // If the item is a superset of the tracked range,
-                    // move the tracked item to the duplicate list and update the tracked item
+                    // If the item is a superset of a tracked range,
+                    // replace the current tracked item with the new item
                     if (isRangeContain(existing.range, range)) {
-                        this.duplicate.push(existing)
                         items[i] = item
                         return true
                     }
                 }
             }
         } else if (items.length > 0) {
-            this.duplicate.push(item)
             return false
         }
 
@@ -94,19 +72,15 @@ export class ContextTracker {
      */
     public untrack(contextItem: ContextItem): void {
         const id = this.getContextDisplayID(contextItem)
-        const items = this.tracking.get(id)
-        if (items) {
-            const index = items.indexOf(contextItem)
-            if (index >= 0) {
-                items.splice(index, 1)
-                if (items.length === 0) {
-                    /// If the list of items becomes empty,
-                    // remove the key from the trackers.
-                    this.tracking.delete(id)
-                    this.store.delete(id)
-                }
+        const removeFromTracker = (arr: ContextItem[]) => {
+            const index = arr.indexOf(contextItem)
+            if (index !== -1) {
+                arr.splice(index, 1)
             }
         }
+
+        removeFromTracker(this.tracking.get(id) ?? [])
+        removeFromTracker(this.store.get(id) ?? [])
     }
 
     /**
