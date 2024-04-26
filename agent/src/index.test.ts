@@ -269,7 +269,7 @@ describe('Agent', () => {
                     id: id1,
                     message: {
                         command: 'submit',
-                        text: 'My name is Lars Monsen',
+                        text: 'My name i Lar Monsen',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -299,7 +299,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You told me your name is Lars Monsen."`,
+                `"You told me your name is Lar Monsen."`,
                 explainPollyError
             )
         }, 30_000)
