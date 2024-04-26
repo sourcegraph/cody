@@ -2,8 +2,8 @@
     "editors": ["vscode", "jetbrains"],
     "features": [
         {
-        "name": "NotebookBasedChatUI",
-        "description": "new chat UI that resembles a notebook instead of a chat session",
+        "name": "NotebookChatUI",
+        "description": "Chat UI that resembles a Jupyter notebook instead of a chat session",
         "productLine": "all",
         "documentation": [],
         "editors": {
@@ -11,12 +11,12 @@
             "status": "stable",
           }
         },
-        tags: ['chat']
+        tags: ["chat"]
       },
       {
         "name": "Mixtral8x22BPreview",
-        "description": "Mixtral 8x22B Preview chat model available for Cody Pro Users",
-        "productLine": "consumer",
+        "description": "Mixtral 8x22B Preview chat model",
+        "productLine": "pro",
         "documentation": [],
         "editors": {
           "vscode": {
