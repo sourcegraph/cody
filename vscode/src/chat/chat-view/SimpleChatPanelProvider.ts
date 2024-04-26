@@ -430,10 +430,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
 
-            let gitUrl;
+            let gitUrl = ''
             const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
             if (vscodeUri) {
-                gitUrl = gitRemoteUrlFromGitExtension(vscodeUri)
+                const gitRemoteUrl = gitRemoteUrlFromGitExtension(vscodeUri)
+                if (gitRemoteUrl) {
+                    gitUrl = gitRemoteUrl
+                }
             }
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
