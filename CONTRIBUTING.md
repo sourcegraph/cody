@@ -50,7 +50,7 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 Few tips and tricks regarding versioning of the tooling:
 
 - If you are using macOS and chose not to use `asdf`, use `corepack`, not `brew`, to install `pnpm`
-  version `9.0.5`: `corepack install --global pnpm@9.0.5`
+  version `8.6.7`: `corepack install --global pnpm@8.6.7`
   Currently `brew` does not allow you to pick custom `pnpm` version which is
   causing [various issues](https://github.com/pnpm/pnpm/issues/6903).
 - Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).

@@ -12,7 +12,7 @@ jobs:
     name: "Upload SCIP"
     steps:
       - uses: actions/checkout@v3
-      - run: yarn global add pnpm@9.0.5
+      - run: yarn global add pnpm@8.6.7
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
