@@ -1,4 +1,9 @@
-import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    contextFiltersProvider,
+    logError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 
@@ -9,8 +14,7 @@ import { getContextFileFromUri } from './file-path'
  * and then creates ContextFile objects for each valid tab.
  */
 export async function getContextFileFromTabs(): Promise<ContextItem[]> {
-    return wrapInActiveSpan('commands.context.openTabs', async span => {
-        const contextFiles: ContextItem[] = []
+    return wrapInActiveSpan('commands.context.openTabs', async () => {
         try {
             // Get open tabs from the current editor
             const tabGroups = vscode.window.tabGroups.all
@@ -18,24 +22,26 @@ export async function getContextFileFromTabs(): Promise<ContextItem[]> {
                 group.tabs.map(tab => tab.input)
             ) as vscode.TabInputText[]
 
-            for (const tab of openTabs) {
-                // Skip non-file items
-                if (tab?.uri?.scheme !== 'file') {
-                    continue
-                }
+            return (
+                await Promise.all(
+                    openTabs.map(async tab => {
+                        // Skip non-file items
+                        if (!tab.uri || tab.uri.scheme !== 'file') {
+                            return []
+                        }
 
-                // Skip files that are not from the current workspace
-                if (!vscode.workspace.getWorkspaceFolder(tab?.uri)) {
-                    continue
-                }
+                        if (!vscode.workspace.getWorkspaceFolder(tab.uri)) {
+                            // Skip files that are not from the current workspace
+                            return []
+                        }
 
-                // Create context message
-                contextFiles.push(...(await getContextFileFromUri(tab?.uri)))
-            }
+                        return getContextFileFromUri(tab.uri)
+                    })
+                )
+            ).flat()
         } catch (error) {
             logError('getContextFileFromTabs', 'failed', { verbose: error })
+            return []
         }
-        // Returns what we have so far
-        return contextFiles
     })
 }

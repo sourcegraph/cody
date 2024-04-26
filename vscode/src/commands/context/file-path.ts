@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
+    contextFiltersProvider,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -14,6 +15,10 @@ import type { URI } from 'vscode-uri'
 export async function getContextFileFromUri(file: URI, range?: vscode.Range): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
+            if (await contextFiltersProvider.isUriIgnored(file)) {
+                return []
+            }
+
             const doc = await vscode.workspace.openTextDocument(file)
             const content = doc?.getText(range).trim()
             if (!content) {

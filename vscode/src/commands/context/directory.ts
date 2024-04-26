@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
+    contextFiltersProvider,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -47,6 +48,10 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             for (const [name, _type] of filtered) {
                 // Reconstruct the file URI with the file name and directory URI
                 const fileUri = Utils.joinPath(dirUri, name)
+
+                if (await contextFiltersProvider.isUriIgnored(fileUri)) {
+                    continue
+                }
 
                 // check file size before opening the file. skip file if it's larger than 1MB
                 const fileSize = await vscode.workspace.fs.stat(fileUri)
