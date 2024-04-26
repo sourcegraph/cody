@@ -9,6 +9,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type Guardrails,
+    type TelemetryRecorder,
     type TelemetryService,
     isMacOS,
 } from '@sourcegraph/cody-shared'
@@ -26,6 +27,8 @@ import {
 } from './promptEditor/PromptEditor'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
+import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
@@ -35,6 +38,7 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
@@ -52,6 +56,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     telemetryService,
+    telemetryRecorder,
     isTranscriptError,
     chatEnabled,
     userInfo,
@@ -126,16 +131,38 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 lastChatUsedEmbeddings: Boolean(
                     transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
                 ),
-                transcript: '',
             }
 
-            if (userInfo.isDotComUser) {
-                eventData.transcript = JSON.stringify(transcript)
+            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData, {
+                hasV2Event: true,
+            })
+            enum FeedbackType {
+                thumbsUp = 1,
+                thumbsDown = 0,
             }
+            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
+                metadata: {
+                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                    lastChatUsedEmbeddings: transcript
+                        .at(-1)
+                        ?.contextFiles?.some(file => file.source === 'embeddings')
+                        ? 1
+                        : 0,
+                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
+                },
+                privateMetadata: {
+                    FeedbackText: text,
 
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData)
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: userInfo.isDotComUser
+                        ? truncateTextStart(transcript.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        : '',
+                },
+            })
         },
-        [telemetryService, transcript, userInfo]
+        [telemetryService, transcript, userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
@@ -231,8 +258,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 eventName: 'CodyVSCodeExtension:chatActions:reset:executed',
                 properties: { source: 'chat', eventType },
             })
+            telemetryRecorder.recordEvent('cody.chatActions', 'reset.executed', {
+                privateMetadata: { source: 'chat', eventType },
+            })
         },
-        [postMessage, setEditMessageState]
+        [postMessage, setEditMessageState, telemetryRecorder]
     )
 
     const submitInput = useCallback(
@@ -322,6 +352,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         eventName: 'CodyVSCodeExtension:chatActions:editLast:executed',
                         properties: { source: 'chat', eventType: 'keyDown' },
                     })
+                    telemetryRecorder.recordEvent('cody.chatActions', 'editLast.executed', {
+                        privateMetadata: { source: 'chat', eventType: 'keyDown' },
+                    })
                     return
                 }
             }
@@ -387,6 +420,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             lastHumanMessageIndex,
             enableNewChatMode,
             postMessage,
+            telemetryRecorder,
         ]
     )
 

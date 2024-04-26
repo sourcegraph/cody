@@ -1,6 +1,6 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import type { TelemetryService } from '@sourcegraph/cody-shared'
+import type { TelemetryRecorder, TelemetryService } from '@sourcegraph/cody-shared'
 
 import type { AuthMethod } from '../src/chat/protocol'
 
@@ -15,6 +15,7 @@ import styles from './OnboardingExperiment.module.css'
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
 }
@@ -22,9 +23,10 @@ interface LoginProps {
 const WebLogin: React.FunctionComponent<
     React.PropsWithoutRef<{
         telemetryService: TelemetryService
+        telemetryRecorder: TelemetryRecorder
         vscodeAPI: VSCodeWrapper
     }>
-> = ({ telemetryService, vscodeAPI }) => {
+> = ({ telemetryService, telemetryRecorder, vscodeAPI }) => {
     return (
         <ol>
             <li>
@@ -43,6 +45,7 @@ const WebLogin: React.FunctionComponent<
                     href="about:blank"
                     onClick={event => {
                         telemetryService.log('CodyVSCodeExtension:auth:clickSignInWeb')
+                        telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
                         vscodeAPI.postMessage({
                             command: 'simplified-onboarding',
                             onboardingKind: 'web-sign-in-token',
@@ -62,6 +65,7 @@ const WebLogin: React.FunctionComponent<
 export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<LoginProps>> = ({
     simplifiedLoginRedirect,
     telemetryService,
+    telemetryRecorder,
     uiKindIsWeb,
     vscodeAPI,
 }) => {
@@ -78,7 +82,11 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             {uiKindIsWeb ? (
-                                <WebLogin telemetryService={telemetryService} vscodeAPI={vscodeAPI} />
+                                <WebLogin
+                                    telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                    vscodeAPI={vscodeAPI}
+                                />
                             ) : (
                                 <>
                                     <VSCodeButton
@@ -87,6 +95,10 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                         onClick={() => {
                                             telemetryService.log(
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGitHubClick'
+                                            )
+                                            telemetryRecorder.recordEvent(
+                                                'cody.webview.auth',
+                                                'simplifiedSignInGitLabClick'
                                             )
                                             simplifiedLoginRedirect('github')
                                         }}
@@ -101,6 +113,10 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                             telemetryService.log(
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGitLabClick'
                                             )
+                                            telemetryRecorder.recordEvent(
+                                                'cody.webview.auth',
+                                                'simplifiedSignInGitLabClick'
+                                            )
                                             simplifiedLoginRedirect('gitlab')
                                         }}
                                     >
@@ -113,6 +129,10 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                         onClick={() => {
                                             telemetryService.log(
                                                 'CodyVSCodeExtension:auth:simplifiedSignInGoogleClick'
+                                            )
+                                            telemetryRecorder.recordEvent(
+                                                'cody.webview.auth',
+                                                'simplifiedSignInGoogleClick'
                                             )
                                             simplifiedLoginRedirect('google')
                                         }}

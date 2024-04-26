@@ -2,14 +2,11 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
-    FeatureFlag,
     ModelProvider,
     ModelUsage,
-    featureFlagProvider,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 
 /**
  * Sets the model providers based on the authentication status.
@@ -24,18 +21,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     }
 
     if (authStatus.isDotCom) {
-        // Set the default models for dotcom users before evaluating the feature flag
-        // as it might take some time to resolve the promise.
-        ModelProvider.setProviders(getDotComDefaultModels('default'))
-        // Set the model providers again with the new limit if the user is enrolled in the feature.
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextBudget).then(isEnrolled => {
-            if (isEnrolled) {
-                const experimentalModels = getDotComDefaultModels('experimental')
-                ModelProvider.setProviders(experimentalModels)
-            }
-            getChatModelsFromConfiguration()
-            logFirstEnrollmentEvent(FeatureFlag.CodyChatContextBudget, isEnrolled)
-        })
+        ModelProvider.setProviders(getDotComDefaultModels())
+        getChatModelsFromConfiguration()
     }
 
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
@@ -45,8 +32,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // customers to set a model of their choice without us having to map it to a known model on
     // the client.
     //
-    // NOTE: If authStatus?.configOverwrites?.chatModel is empty, we will not set any model providers.
-    // Which means it will fallback to use the default model on the server.
+    // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
+    // automatically fallback to use the default model configured on the instance.
     if (!authStatus.isDotCom && authStatus?.configOverwrites?.chatModel) {
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')

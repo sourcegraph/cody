@@ -10,7 +10,7 @@ const meta: Meta<typeof ChatModelDropdownMenu> = {
     component: ChatModelDropdownMenu,
     decorators: [VSCodeStandaloneComponent],
     args: {
-        models: getDotComDefaultModels('default'),
+        models: getDotComDefaultModels(),
         disabled: false,
     },
 }
