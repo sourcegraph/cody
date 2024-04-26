@@ -439,26 +439,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const textDocument = this.workspace.addDocument(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
 
-            let contentChanges: vscode.TextDocumentContentChangeEvent[] = []
+            const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
 
-            if (document.jetbrainsDocumentEvent?.offset && document.content && oldDocumentContent) {
-                const oldDocument = AgentTextDocument.from(vscode.Uri.file('dummy'), oldDocumentContent)
-                const start: vscode.Position = oldDocument.positionAt(
-                    document.jetbrainsDocumentEvent?.offset
-                )
-                const end: vscode.Position = oldDocument.positionAt(
-                    document.jetbrainsDocumentEvent?.offset + document.jetbrainsDocumentEvent.oldLength
-                )
-                const range = new vscode.Range(start, end)
+            if (document.content && oldDocumentContent && document.textDocumentContentChangeEvents) {
+                for (const event of document.textDocumentContentChangeEvents) {
+                    const oldDocument = AgentTextDocument.from(
+                        vscode.Uri.file('dummy'),
+                        oldDocumentContent
+                    )
+                    const start: vscode.Position = oldDocument.positionAt(event.rangeOffset)
+                    const end: vscode.Position = oldDocument.positionAt(
+                        event.rangeOffset + event.rangeLength
+                    )
+                    const range = new vscode.Range(start, end)
 
-                contentChanges = [
-                    {
+                    // `rangeLength` seems to be redundant - see: https://github.com/microsoft/language-server-protocol/issues/9
+                    contentChanges.push({
                         range: range,
-                        rangeOffset: document.jetbrainsDocumentEvent?.offset,
-                        rangeLength: document.jetbrainsDocumentEvent?.oldLength,
-                        text: document.jetbrainsDocumentEvent.content,
-                    },
-                ]
+                        rangeOffset: event.rangeOffset,
+                        rangeLength: event.rangeLength,
+                        text: event.text,
+                    })
+                }
             }
 
             this.workspace.setActiveTextEditor(textEditor)

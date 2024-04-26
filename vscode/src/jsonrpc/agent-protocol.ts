@@ -543,10 +543,10 @@ export interface ProtocolTextDocument {
     filePath?: string
     content?: string
     /** `textDocument/didChange` fires `onDidChangeTextDocument` and we want to include `contentChanges` within.
-     * `contentChanges` can be determined based on the document event.
-     * The JetBrains client document event structure is different from `vscode.TextDocumentChangeEvent`.
-     * Hence, we need to "translate" JetBrains event to VSC event. */
-    jetbrainsDocumentEvent?: JetbrainsDocumentEvent
+     * `contentChanges` can be determined based on the document event. The JetBrains client document event structure
+     * is different from `vscode.TextDocumentChangeEvent` - it misses `range`.
+     * We need derive the range based on the JetBrains event, and it's easier to do it on the agent side. */
+    textDocumentContentChangeEvents?: Omit<vscode.TextDocumentContentChangeEvent, 'range'>[]
     selection?: Range
 }
 
@@ -775,13 +775,4 @@ export interface GetFoldingRangeResult {
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
     error: CodyError | undefined
-}
-
-export interface JetbrainsDocumentEvent {
-    /** The start offset of a text change. */
-    offset: number
-    /** The length of the original text fragment that was replaced. */
-    oldLength: number
-    /** The text fragment that replaced the original text. */
-    content: string
 }
