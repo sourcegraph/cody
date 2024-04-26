@@ -9,6 +9,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { toVSCodeRange } from '../../common/range'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 import type { ChatCommandResult } from '../../main'
@@ -101,7 +102,17 @@ export async function executeUsageExamplesCommand(
                 )
                 return undefined
             }
-            contextFiles.push(...filteredItems)
+            try {
+                const expandedItems = filteredItems.map(item => ({
+                    ...item,
+                    range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
+                }))
+                contextFiles.push(...expandedItems)
+            } catch (error) {
+                vscode.window.showErrorMessage(`Unable to get usage examples for ${symbolText}.`)
+                console.error(error)
+                return undefined
+            }
         }
 
         return {
@@ -154,7 +165,7 @@ function includeContextItem(item: ContextItem): boolean {
 
 function expandRangeByLines(range: vscode.Range, lines: number): vscode.Range {
     return new vscode.Range(
-        range.start.translate(-1 * lines).with({ character: 0 }),
+        range.start.translate(-1 * Math.min(range.start.line, lines)).with({ character: 0 }),
         range.end.translate(lines).with({ character: 0 })
     )
 }
