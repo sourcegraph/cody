@@ -9,6 +9,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { searchForRepos } from '@sourcegraph/cody-shared/src/mentions/providers/sourcegraphSearch'
 import * as vscode from 'vscode'
 import { toVSCodeRange } from '../../common/range'
 import { getEditor } from '../../editor/active-editor'
@@ -129,6 +130,20 @@ async function symbolContextItems(
         )
     ).filter(item => item.title === symbolPackage.name)
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
+
+    const globalRepos = await Promise.all(
+        packages.map(item =>
+            searchForRepos(
+                'file:^package\\.json$ select:repo content:' +
+                    JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
+                undefined
+            )
+        )
+    )
+    for (const repos of globalRepos) {
+        logDebug('executeUsageExampleCommand', 'global repos', JSON.stringify({ repos }))
+    }
+
     const resolvedItems = (
         await Promise.all(
             packages.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText))
