@@ -73,11 +73,6 @@ import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
-import {
-    LOGGER_CONTEXT_REPO_NAME_FIELD,
-    LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD,
-    LOGGER_MAX_CONTEXT_SNIPPET_LENGTH,
-} from '../context/constants'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -435,6 +430,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
 
+            let gitUrl;
+            const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
+            if (vscodeUri) {
+                gitUrl = gitRemoteUrlFromGitExtension(vscodeUri)
+            }
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -458,6 +458,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    gitUrl: gitUrl,
                 },
             })
 
@@ -846,34 +847,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
-            const contextSummary: { [key: string]: number | string } = {}
+            const contextSummary: { [key: string]: number } = {}
             for (const { source } of newContextUsed) {
                 if (!source) {
                     continue
                 }
                 if (contextSummary[source]) {
-                    contextSummary[source] = Number(contextSummary[source]) + 1
+                    contextSummary[source] += 1
                 } else {
                     contextSummary[source] = 1
                 }
             }
-
-            const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
-            if (vscodeUri) {
-                const gitUri = gitRemoteUrlFromGitExtension(vscodeUri)
-                if (gitUri) {
-                    contextSummary[LOGGER_CONTEXT_REPO_NAME_FIELD] = gitUri
-                }
-            }
-            const contextSnippetSummary = []
-            for (const contextSourceItem of newContextUsed) {
-                contextSnippetSummary.push({
-                    source: contextSourceItem.source,
-                    content: contextSourceItem.content?.slice(0, LOGGER_MAX_CONTEXT_SNIPPET_LENGTH),
-                    url: contextSourceItem.uri.path,
-                })
-            }
-            contextSummary[LOGGER_CONTEXT_SNIPPET_SUMMARY_FIELD] = JSON.stringify(contextSnippetSummary)
 
             // Log the size of all user context items (e.g., @-mentions)
             // Includes the count of files and the size of each file
