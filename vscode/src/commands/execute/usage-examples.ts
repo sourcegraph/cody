@@ -51,9 +51,20 @@ export async function executeUsageExamplesCommand(
             JSON.stringify(symbolText.toString())
         )
 
-        const prompt = ps`Show usage examples for \`${symbolText}\`. <!-- Use ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+        const symbolPackage = await guessSymbolPackage(doc, symbolRange)
+        logDebug('executeUsageExampleCommand', 'symbol package at cursor', JSON.stringify(symbolPackage))
+        if (!symbolPackage) {
+            vscode.window.showErrorMessage(`Unable to determine package for ${symbolText}.`)
+            return undefined
+        }
+
+        const prompt = ps`Show usage examples for \`${symbolText}\` from the ${PromptString.unsafe_fromUserQuery(
+            symbolPackage.ecosystem
+        )} package \`${PromptString.unsafe_fromUserQuery(
+            symbolPackage.name
+        )}\`.\n(No preamble, 2 concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
             doc.uri
-        )}. Show 2 concise examples, each with a Markdown header, a 1-sentence description, and then a code snippet. -->`
+        )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
         const contextFiles: ContextItem[] = []
 
         const snippetRange = expandRangeByLines(
@@ -67,8 +78,6 @@ export async function executeUsageExamplesCommand(
             source: ContextItemSource.Editor,
         })
 
-        const symbolPackage = await guessSymbolPackage(doc, symbolRange)
-        logDebug('executeUsageExampleCommand', 'symbol package at cursor', JSON.stringify(symbolPackage))
         if (symbolPackage) {
             const packages = (
                 await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
@@ -86,6 +95,12 @@ export async function executeUsageExamplesCommand(
             logDebug('executeUsageExampleCommand', 'resolved items', JSON.stringify({ resolvedItems }))
             const filteredItems = resolvedItems.filter(resolvedItem => includeContextItem(resolvedItem))
             logDebug('executeUsageExampleCommand', 'filtered items', JSON.stringify({ filteredItems }))
+            if (filteredItems.length === 0) {
+                vscode.window.showErrorMessage(
+                    `Unable to find enough usages of ${symbolText} to generate good usage examples.`
+                )
+                return undefined
+            }
             contextFiles.push(...filteredItems)
         }
 
@@ -130,7 +145,10 @@ function includeContextItem(item: ContextItem): boolean {
     return (
         !item.uri.path.endsWith('.map') &&
         !item.uri.path.endsWith('.tsbuildinfo') &&
-        !item.uri.path.includes('/dist/')
+        !item.uri.path.includes('/dist/') &&
+        !item.uri.path.includes('/umd/') &&
+        !item.uri.path.includes('/amd/') &&
+        !item.uri.path.includes('/cjs/')
     )
 }
 
