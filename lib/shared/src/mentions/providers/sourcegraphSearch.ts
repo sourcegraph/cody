@@ -60,7 +60,7 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
 
 type Chunk = Pick<ContextItemWithContent, 'uri' | 'range' | 'content' | 'repoName' | 'revision'>
 
-async function searchForFileChunks(
+export async function searchForFileChunks(
     query: string,
     signal: AbortSignal | undefined
 ): Promise<Chunk[] | Error> {
@@ -75,7 +75,11 @@ async function searchForFileChunks(
                         return []
                     }
                     const fileContext = {
-                        uri: URI.parse(result.file.url),
+                        uri: URI.parse(
+                            `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}?L${
+                                result.chunkMatches[0].contentStart.line
+                            }`
+                        ),
                         repoName: result.repository.name,
                         revision: result.file.commit.oid,
                     }

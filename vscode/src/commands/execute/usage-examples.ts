@@ -7,9 +7,13 @@ import {
     logError,
     ps,
     telemetryRecorder,
+    uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { searchForRepos } from '@sourcegraph/cody-shared/src/mentions/providers/sourcegraphSearch'
+import {
+    searchForFileChunks,
+    searchForRepos,
+} from '@sourcegraph/cody-shared/src/mentions/providers/sourcegraphSearch'
 import * as vscode from 'vscode'
 import { toVSCodeRange } from '../../common/range'
 import { getEditor } from '../../editor/active-editor'
@@ -19,8 +23,9 @@ import type { CodyCommandArgs } from '../types'
 import { executeChat } from './ask'
 
 /**
- * The command that generates a new docstring for the selected code.
- * When called, the command will be executed as an inline-edit command.
+ * "Cody > Usage Examples" command (typically invoked by right-clicking on a symbol in the editor).
+ *
+ * **Status:** experimental
  */
 export async function executeUsageExamplesCommand(
     args?: Partial<CodyCommandArgs>
@@ -37,6 +42,8 @@ export async function executeUsageExamplesCommand(
             },
         })
 
+        const abortController = new AbortController()
+
         const activeEditor = getEditor().active
         const doc = activeEditor?.document
         if (!doc) {
@@ -48,10 +55,16 @@ export async function executeUsageExamplesCommand(
         }
 
         const symbolText = PromptString.fromDocumentText(doc, symbolRange)
+
+        // HACK(sqs): expand the range to include the `(` in a func call like `myFunc(`. Assumes the
+        // next char is an open paren or similar.
+        const symbolUseRange = symbolRange.with(undefined, symbolRange.end.translate(0, 1))
+        const symbolUse = PromptString.fromDocumentText(doc, symbolUseRange)
+
         logDebug(
             'executeUsageExampleCommand',
-            'symbol text at cursor',
-            JSON.stringify(symbolText.toString())
+            'symbol at cursor',
+            JSON.stringify({ symbolText: symbolText.toString(), symbolUse: symbolUse.toString() })
         )
 
         const symbolPackage = await guessSymbolPackage(doc, symbolRange)
@@ -65,11 +78,9 @@ export async function executeUsageExamplesCommand(
             symbolPackage.ecosystem
         )} package \`${PromptString.unsafe_fromUserQuery(
             symbolPackage.name
-        )}\`.\n(No preamble, 2 concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+        )}\`.\n(No preamble, 2 idiomatic distinct concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
             doc.uri
-        )}, each with a Markdown header, a 1-sentence description, and then a code snippet. Use conventions but not data from code in ${PromptString.fromDisplayPath(
-            doc.uri
-        )}.)`
+        )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
         const contextFiles: ContextItem[] = []
 
         const snippetRange = expandRangeByLines(
@@ -84,7 +95,14 @@ export async function executeUsageExamplesCommand(
         })
 
         try {
-            contextFiles.push(...(await symbolContextItems(symbolText, symbolPackage)))
+            contextFiles.push(
+                ...(await symbolContextItems(
+                    symbolText,
+                    symbolUse,
+                    symbolPackage,
+                    abortController.signal
+                ))
+            )
         } catch (error) {
             void vscode.window.showErrorMessage(
                 `Unable to get usage examples for ${symbolText}. ${error}`
@@ -118,7 +136,9 @@ export async function executeUsageExamplesCommand(
  */
 async function symbolContextItems(
     symbolText: PromptString,
-    symbolPackage: SymbolPackage | null
+    symbolUse: PromptString,
+    symbolPackage: SymbolPackage | null,
+    signal: AbortSignal
 ): Promise<ContextItem[]> {
     if (!symbolPackage) {
         return []
@@ -131,35 +151,68 @@ async function symbolContextItems(
     ).filter(item => item.title === symbolPackage.name)
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
 
-    const globalRepos = await Promise.all(
-        packages.map(item =>
-            searchForRepos(
-                'file:^package\\.json$ select:repo content:' +
-                    JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
-                undefined
+    const globalRepos = (
+        await Promise.all(
+            packages.map(item =>
+                searchForRepos(
+                    'file:^package\\.json$ select:repo content:' +
+                        JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
+                    undefined
+                )
             )
         )
+    ).flat()
+    logDebug('executeUsageExampleCommand', 'global repos', JSON.stringify({ globalRepos }))
+    const uses = (
+        await Promise.all(
+            globalRepos.map(async repo =>
+                repo instanceof Error
+                    ? []
+                    : await searchForFileChunks(
+                          `repo:${repo.name} count:5 lang:typescript (content:${JSON.stringify(
+                              symbolPackage.name
+                          )} AND content:${JSON.stringify(symbolUse)})`,
+                          signal
+                      )
+            )
+        )
+    ).flatMap(result => (result instanceof Error ? [] : result))
+    logDebug(
+        'executeUsageExampleCommand',
+        'uses',
+        JSON.stringify({ uses: uses.map(use => `${use.uri.toString()}: ${use.content.slice(0, 25)}`) })
     )
-    for (const repos of globalRepos) {
-        logDebug('executeUsageExampleCommand', 'global repos', JSON.stringify({ repos }))
-    }
 
     const resolvedItems = (
         await Promise.all(
-            packages.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText))
+            packages.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolUse))
         )
     ).flat()
-    logDebug('executeUsageExampleCommand', 'resolved items', JSON.stringify({ resolvedItems }))
     const filteredItems = resolvedItems.filter(resolvedItem => includeContextItem(resolvedItem))
     logDebug('executeUsageExampleCommand', 'filtered items', JSON.stringify({ filteredItems }))
     if (filteredItems.length === 0) {
         throw new Error(`Unable to find enough usages of ${symbolText} to generate good usage examples.`)
     }
 
-    return filteredItems.map(item => ({
-        ...item,
-        range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
-    }))
+    return [
+        ...filteredItems.map(
+            item =>
+                ({
+                    ...item,
+                    type: 'file',
+                    range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
+                }) satisfies ContextItem
+        ),
+        ...uses.map(
+            use =>
+                ({
+                    ...use,
+                    type: 'file',
+                    title: uriBasename(use.uri),
+                    source: ContextItemSource.Search,
+                }) satisfies ContextItem
+        ),
+    ]
 }
 
 interface SymbolPackage {
@@ -195,7 +248,7 @@ function includeContextItem(item: ContextItem): boolean {
     return (
         !item.uri.path.endsWith('.map') &&
         !item.uri.path.endsWith('.tsbuildinfo') &&
-        !item.uri.path.includes('/dist/') &&
+        !item.uri.path.includes('.min') &&
         !item.uri.path.includes('/umd/') &&
         !item.uri.path.includes('/amd/') &&
         !item.uri.path.includes('/cjs/')
