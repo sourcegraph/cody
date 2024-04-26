@@ -2,12 +2,12 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Selection(
-  val start: Position? = null,
-  val end: Position? = null,
-  val isEmpty: Boolean? = null,
-  val isSingleLine: Boolean? = null,
-  val anchor: Position? = null,
-  val active: Position? = null,
-  val isReversed: Boolean? = null,
+  val start: Position,
+  val end: Position,
+  val isEmpty: Boolean,
+  val isSingleLine: Boolean,
+  val anchor: Position,
+  val active: Position,
+  val isReversed: Boolean,
 )
 

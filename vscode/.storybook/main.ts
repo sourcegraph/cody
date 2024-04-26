@@ -9,6 +9,9 @@ const config: StorybookConfig = {
         options: {},
     },
     viteFinal: async config =>
-        defineProjectWithDefaults(__dirname, { ...config, define: { 'process.env': '{}' } }),
+        defineProjectWithDefaults(__dirname, {
+            ...config,
+            define: { 'process.env': '{}' },
+        }),
 }
 export default config

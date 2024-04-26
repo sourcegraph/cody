@@ -1,3 +1,5 @@
+import type { ContextMentionProvider, ContextMentionProviderID } from './api'
+
 /**
  * The parsed representation of a user's (partial or complete) input of an @-mention query.
  */
@@ -5,11 +7,11 @@ export interface MentionQuery {
     /**
      * The type of context item to search for.
      */
-    type: 'file' | 'symbol' | 'url' | 'empty'
+    provider: 'file' | 'symbol' | 'default' | ContextMentionProviderID
 
     /**
      * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
-     * prefix characters that indicate the {@link MentionQuery.type}, such as `#` for symbols.
+     * prefix characters that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
      */
     text: string
 }
@@ -23,26 +25,33 @@ export interface MentionQuery {
  * where {@link query} may begin with `@` is if the user is searching for context items that contain
  * `@`, such as if the user typed `@@foo` to mention a file that is literally named `@foo.js`.
  */
-export function parseMentionQuery(query: string): MentionQuery {
+export function parseMentionQuery(
+    query: string,
+    contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
+): MentionQuery {
     if (query === '') {
-        return { type: 'empty', text: '' }
+        return { provider: 'default', text: '' }
     }
 
     if (query.startsWith('#')) {
-        return { type: 'symbol', text: query.slice(1) }
+        return { provider: 'symbol', text: query.slice(1) }
     }
-    if (query.startsWith('http://') || query.startsWith('https://')) {
-        return { type: 'url', text: query }
+
+    for (const provider of contextMentionProviders) {
+        if (provider.triggerPrefixes.some(trigger => query.startsWith(trigger))) {
+            return { provider: provider.id, text: query }
+        }
     }
-    return { type: 'file', text: query }
+
+    return { provider: 'file', text: query }
 }
 
-const PUNCTUATION = ',\\+\\*\\$\\@\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
+const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
 
 const TRIGGERS = '@'
 
 /** Chars we expect to see in a mention (non-space, non-punctuation). */
-const VALID_CHARS = '[^' + TRIGGERS + PUNCTUATION + '\\s]'
+const VALID_CHARS = '[^' + PUNCTUATION + '\\s]'
 
 const MAX_LENGTH = 250
 

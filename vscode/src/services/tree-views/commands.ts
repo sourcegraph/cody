@@ -12,10 +12,16 @@ export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem
     // Create a CodyTreeItem for each group and add to treeNodes
     // Log all event source as 'sidebar'
     for (const item of CodyCommandMenuItems) {
-        const treeItem = new CodyTreeItem(item.key, item.description, item.icon, {
-            command: 'cody.sidebar.commands',
-            args: [item.key, item.command.command],
-        })
+        const treeItem = new CodyTreeItem(
+            item.key,
+            item.description,
+            item.icon,
+            {
+                command: 'cody.sidebar.commands',
+                args: [item.key, item.command.command],
+            },
+            item.contextValue
+        )
         treeItem.description = item.keybinding
 
         if (item.key === 'custom' && customCommands?.length) {

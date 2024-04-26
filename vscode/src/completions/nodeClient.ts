@@ -1,20 +1,31 @@
+// The node client can not live in lib/shared (with its browserClient
+// counterpart) since it requires node-only APIs. These can't be part of
+// the main `lib/shared` bundle since it would otherwise not work in the
+// web build.
+
 import http from 'node:http'
 import https from 'node:https'
 
-import { onAbort } from '../../common/abortController'
-import { logError } from '../../logger'
-import { isError } from '../../utils'
-import { RateLimitError } from '../errors'
-import { customUserAgent } from '../graphql/client'
-import { toPartialUtf8String } from '../utils'
-
-import { googleChatClient } from '../../llm-providers/google/chat-client'
-import { groqChatClient } from '../../llm-providers/groq/chat-client'
-import { ollamaChatClient } from '../../llm-providers/ollama/chat-client'
-import { getTraceparentHeaders, recordErrorToSpan, tracer } from '../../tracing'
-import { SourcegraphCompletionsClient } from './client'
-import { parseEvents } from './parse'
-import type { CompletionCallbacks, CompletionParameters } from './types'
+import {
+    type CompletionCallbacks,
+    type CompletionParameters,
+    RateLimitError,
+    type SerializedCompletionParameters,
+    SourcegraphCompletionsClient,
+    contextFiltersProvider,
+    customUserAgent,
+    getTraceparentHeaders,
+    googleChatClient,
+    groqChatClient,
+    isError,
+    logError,
+    ollamaChatClient,
+    onAbort,
+    parseEvents,
+    recordErrorToSpan,
+    toPartialUtf8String,
+    tracer,
+} from '@sourcegraph/cody-shared'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -24,13 +35,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void {
+    ): Promise<void> {
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
 
-        tracer.startActiveSpan(`POST ${url.toString()}`, span => {
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,
@@ -60,6 +71,16 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             if (provider === 'groq') {
                 groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
+            }
+
+            const serializedParams: SerializedCompletionParameters = {
+                ...params,
+                messages: await Promise.all(
+                    params.messages.map(async m => ({
+                        ...m,
+                        text: await m.text?.toFilteredString(contextFiltersProvider),
+                    }))
+                ),
             }
 
             const log = this.logger?.startCompletion(params, url.toString())
@@ -235,7 +256,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             })
 
-            request.write(JSON.stringify(params))
+            request.write(JSON.stringify(serializedParams))
             request.end()
 
             onAbort(signal, () => request.destroy())

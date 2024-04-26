@@ -28,6 +28,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:executed',
         // Log once on the first character entered for an @-mention query, e.g. "@."
         'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
@@ -221,13 +222,13 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 10 })
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
     await chatInput.press('ArrowUp')
     await expect(chatInput).toHaveText('Explain @Main.java ')
     await chatInput.press('Meta+Enter')
-    await expectContextCellCounts(contextCell, { files: 1, lines: 10 })
+    await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit it again, add a new @-mention, and resend.
     await chatInput.press('ArrowUp')
@@ -239,7 +240,7 @@ test('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(chatPanelFrame.getByText('Explain @Main.java and @index.html')).toBeVisible()
-    await expectContextCellCounts(contextCell, { files: 2, lines: 22 })
+    await expectContextCellCounts(contextCell, { files: 2 })
 })
 
 test('pressing Enter with @-mention menu open selects item, does not submit message', async ({
@@ -293,7 +294,7 @@ test('@-mention file range', async ({ page, sidebar }) => {
 
     // @-file range with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 3 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
@@ -353,7 +354,7 @@ test.extend<ExpectedEvents>({
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 15 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await contextCell.click()
     const chatContext = chatPanelFrame.locator('details').last()
@@ -443,7 +444,7 @@ test.extend<ExtraWorkspaceSettings>({
 
         // URL context item shows up and is clickable.
         const contextCell = getContextCell(chatPanelFrame)
-        await expectContextCellCounts(contextCell, { files: 1, lines: 1 })
+        await expectContextCellCounts(contextCell, { files: 1 })
         await contextCell.click()
         await contextCell.getByRole('link', { name: mentionURL.toString() }).click()
     } finally {

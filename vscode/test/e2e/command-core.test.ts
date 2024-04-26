@@ -47,7 +47,7 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 11 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
 
     // Check if assistant responsed
@@ -66,7 +66,7 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await expectContextCellCounts(contextCell, { files: 1, lines: 20 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
@@ -80,7 +80,7 @@ test.extend<ExpectedEvents>({
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
-    await expectContextCellCounts(contextCell, { files: 1, lines: 9 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(0)

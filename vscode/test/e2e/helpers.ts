@@ -334,7 +334,8 @@ export async function signOut(page: Page): Promise<void> {
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
+    await page.getByPlaceholder('Type the name of a command to run.').click()
+    await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 
@@ -401,4 +402,13 @@ export function withPlatformSlashes(input: string) {
 const isPlatform = (platform: string) => process.platform === platform
 export function getMetaKeyByOS(): string {
     return isPlatform('darwin') ? 'Meta' : 'Control'
+}
+
+export const openCustomCommandMenu = async (page: Page): Promise<void> => {
+    const customCommandSidebarItem = page
+        .getByRole('treeitem', { name: 'Custom Commands' })
+        .locator('a')
+        // The second item is the setting icon attached to the "Custom Commands" item.
+        .first()
+    await customCommandSidebarItem.click()
 }

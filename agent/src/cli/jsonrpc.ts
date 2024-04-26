@@ -2,6 +2,7 @@ import { createServer } from 'node:net'
 import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
@@ -191,7 +192,12 @@ function setupAgentCommunication(params: {
     stdin: NodeJS.ReadableStream
     stdout: NodeJS.WritableStream
 }) {
-    const agent = new Agent(params)
+    const conn = createMessageConnection(
+        new StreamMessageReader(params.stdin),
+        new StreamMessageWriter(params.stdout)
+    )
+
+    new Agent({ ...params, conn })
 
     // Force the agent process to exit when stdin/stdout close as an attempt to
     // prevent zombie agent processes. We experienced this problem when we
@@ -204,6 +210,5 @@ function setupAgentCommunication(params: {
         params.stdin.on('close', () => process.exit(1))
     }
 
-    params.stdin.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(params.stdout)
+    conn.listen()
 }

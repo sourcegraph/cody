@@ -46,6 +46,7 @@ export abstract class SentryService {
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
                 release: version,
+                sampleRate: 0.05, // 5% of errors are sent to Sentry
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'

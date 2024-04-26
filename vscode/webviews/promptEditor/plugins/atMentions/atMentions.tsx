@@ -14,11 +14,11 @@ import styles from './atMentions.module.css'
 import {
     type ContextItem,
     ContextItemSource,
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
     type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
@@ -96,9 +96,8 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const results = useChatContextItems(query)
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: runs effect when `results` changes.
+    const model = useCurrentChatModel()
     const options = useMemo(() => {
-        const model = useCurrentChatModel()
         const limit =
             model?.contextWindow?.context?.user ||
             model?.contextWindow?.input ||
@@ -115,23 +114,26 @@ export default function MentionsPlugin(): JSX.Element | null {
                 })
                 .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
         )
-    }, [results])
+    }, [results, model, tokenAdded])
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
     useEffect(() => {
         update()
     }, [options, update])
 
-    // Listen for changes to ContextItemMentionNode to update the token count.
-    // This updates the token count when a mention is added or removed.
-    editor.registerMutationListener(ContextItemMentionNode, node => {
-        const items = toSerializedPromptEditorValue(editor)?.contextItems
-        if (!items?.length) {
-            setTokenAdded(0)
-            return
-        }
-        setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
-    })
+    useEffect(() => {
+        // Listen for changes to ContextItemMentionNode to update the token count.
+        // This updates the token count when a mention is added or removed.
+        const unregister = editor.registerMutationListener(ContextItemMentionNode, node => {
+            const items = toSerializedPromptEditorValue(editor)?.contextItems
+            if (!items?.length) {
+                setTokenAdded(0)
+                return
+            }
+            setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
+        })
+        return unregister
+    }, [editor])
 
     const onSelectOption = useCallback(
         (

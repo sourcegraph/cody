@@ -1,7 +1,7 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, ModelContextWindow } from './models/types'
+export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
@@ -56,6 +56,7 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
+    type ContextItemPackage,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -63,12 +64,14 @@ export type {
     CodyCommand,
     CodyCommandContext,
     CodyCommandType,
+    CodyCommandMode,
     TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'
 export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
 export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
+export * from './common/abortController'
 export {
     ProgrammingLanguage,
     languageFromFilename,
@@ -87,15 +90,6 @@ export {
     uriParseNameAndExtension,
     type FileURI,
 } from './common/uri'
-export type {
-    AutocompleteTimeouts,
-    Configuration,
-    ConfigurationUseContext,
-    ConfigurationWithAccessToken,
-    OllamaGenerateParameters,
-    OllamaOptions,
-    ConfigGetter,
-} from './configuration'
 export { NoopEditor } from './editor'
 export type {
     ActiveTextEditor,
@@ -127,6 +121,7 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
 export type {
@@ -166,11 +161,7 @@ export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type { CompletionLogger, CompletionsClientConfig } from './sourcegraph-api/completions/client'
-export type {
-    CompletionParameters,
-    CompletionResponse,
-    Event,
-} from './sourcegraph-api/completions/types'
+export * from './sourcegraph-api/completions/types'
 export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
 export {
     AbortError,
@@ -190,10 +181,12 @@ export {
     customUserAgent,
     isNodeResponse,
     setUserAgent,
+    INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
     type GraphQLAPIClientConfig,
     type LogEventMode,
-    type ContextFiltersResult,
+    type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
 } from './sourcegraph-api/graphql/client'
@@ -211,20 +204,15 @@ export {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
+    noOpTelemetryRecorder,
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
+export * from './telemetry-v2/singleton'
 export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
-export {
-    addTraceparent,
-    getActiveTraceAndSpanId,
-    wrapInActiveSpan,
-    recordErrorToSpan,
-    tracer,
-    logResponseHeadersToSpan,
-} from './tracing'
-export { convertGitCloneURLToCodebaseName, isError } from './utils'
+export * from './tracing'
+export { convertGitCloneURLToCodebaseName, isError, createSubscriber } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
@@ -235,18 +223,21 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    getURLContextItems,
-    isURLContextItem,
-    fetchContentForURLContextItem,
-} from './mentions/urlContextItems'
+    CONTEXT_MENTION_PROVIDERS,
+    type ContextMentionProvider,
+} from './mentions/api'
 export { TokenCounter } from './token/counter'
-export {
-    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
-    ENHANCED_CONTEXT_ALLOCATION,
-} from './token/constants'
+export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'
-export type { SourcegraphNodeCompletionsClient } from './sourcegraph-api/completions/nodeClient'
+export * from './llm-providers/google/chat-client'
+export * from './llm-providers/groq/chat-client'
 export * from './fetch'
 export * from './completions/types'
+export * from './sourcegraph-api/completions/parse'
+export * from './cody-ignore/context-filters-provider'
+export * from './sourcegraph-api/utils'
+export * from './token'
+export * from './token/constants'
+export * from './configuration'

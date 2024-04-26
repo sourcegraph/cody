@@ -10,6 +10,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
+import { URI } from 'vscode-uri'
 import {
     CONFIG_KEY,
     type ConfigKeys,
@@ -87,6 +88,17 @@ export function getConfiguration(
         null
     )
 
+    function hasValidLocalEmbeddingsConfig(): boolean {
+        return (
+            [
+                'testing.localEmbeddings.model',
+                'testing.localEmbeddings.endpoint',
+                'testing.localEmbeddings.indexLibraryPath',
+            ].every(key => !!getHiddenSetting<string | undefined>(key, undefined)) &&
+            !!getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
+        )
+    }
+
     return {
         proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
@@ -129,7 +141,7 @@ export function getConfiguration(
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', false),
+        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
@@ -170,16 +182,18 @@ export function getConfiguration(
                 undefined
             ),
         },
-
-        testingLocalEmbeddingsModel: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
-            : undefined,
-        testingLocalEmbeddingsEndpoint: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
-            : undefined,
-        testingLocalEmbeddingsIndexLibraryPath: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
-            : undefined,
+        testingModelConfig:
+            isTesting && hasValidLocalEmbeddingsConfig()
+                ? {
+                      model: getHiddenSetting<string>('testing.localEmbeddings.model'),
+                      dimension: getHiddenSetting<number>('testing.localEmbeddings.dimension'),
+                      endpoint: getHiddenSetting<string>('testing.localEmbeddings.endpoint'),
+                      indexPath: URI.file(
+                          getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
+                      ),
+                      provider: 'openai',
+                  }
+                : undefined,
     }
 }
 

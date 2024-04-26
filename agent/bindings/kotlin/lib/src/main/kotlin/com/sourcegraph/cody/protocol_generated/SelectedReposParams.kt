@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class SelectedReposParams(
-  val id: String? = null,
-  val name: String? = null,
+  val id: String,
+  val name: String,
 )
 

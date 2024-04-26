@@ -686,7 +686,9 @@ export enum UIKind {
     Web = 2,
 }
 
-export class FileSystemError extends Error {}
+export class FileSystemError extends Error {
+    public code = 'FileSystemError'
+}
 
 export const vsCodeMocks = {
     FileSystemError,
@@ -820,7 +822,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,
-    experimentalOllamaChat: false,
+    experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
@@ -847,8 +849,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
+    testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

@@ -2,11 +2,11 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ModelProvider(
-  val default: Boolean? = null,
-  val codyProOnly: Boolean? = null,
-  val provider: String? = null,
-  val title: String? = null,
-  val primaryProviders: List<ModelProvider>? = null,
-  val localProviders: List<ModelProvider>? = null,
+  val default: Boolean,
+  val codyProOnly: Boolean,
+  val provider: String,
+  val title: String,
+  val primaryProviders: List<ModelProvider>,
+  val localProviders: List<ModelProvider>,
 )
 

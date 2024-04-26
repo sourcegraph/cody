@@ -3,16 +3,17 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    CLAUDE3_USER_CONTEXT_TOKEN_BUDGET,
     type ContextItem,
     type ContextItemFile,
-    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
     ignores,
+    ps,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
-import { fillInContextItemContent, filterContextItemFiles, getFileContextFiles } from './editor-context'
+import { filterContextItemFiles, getFileContextFiles, resolveContextItems } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
 
@@ -158,7 +159,7 @@ describe('filterContextItemFiles', () => {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const fsSizeInBytes = EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
+        const fsSizeInBytes = CLAUDE3_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: fsSizeInBytes,
             type: vscode.FileType.File,
@@ -175,7 +176,7 @@ describe('filterContextItemFiles', () => {
     })
 })
 
-describe('fillInContextItemContent', () => {
+describe('resolveContextItems', () => {
     it('omits files that could not be read', async () => {
         // Fixes https://github.com/sourcegraph/cody/issues/2390.
         const mockEditor: Partial<Editor> = {
@@ -186,32 +187,26 @@ describe('fillInContextItemContent', () => {
                 throw new Error('error')
             },
         }
-        const contextItems = await fillInContextItemContent(mockEditor as Editor, [
-            {
-                type: 'file',
-                uri: URI.parse('file:///a.txt'),
-            },
-            {
-                type: 'file',
-                uri: URI.parse('file:///error.txt'),
-            },
-        ])
+        const contextItems = await resolveContextItems(
+            mockEditor as Editor,
+            [
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///a.txt'),
+                },
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///error.txt'),
+                },
+            ],
+            ps``
+        )
         expect(contextItems).toEqual<ContextItem[]>([
             {
                 type: 'file',
                 uri: URI.parse('file:///a.txt'),
                 content: 'a',
                 size: 1,
-                range: {
-                    end: {
-                        character: 0,
-                        line: 1,
-                    },
-                    start: {
-                        character: 0,
-                        line: 0,
-                    },
-                },
             },
         ])
     })

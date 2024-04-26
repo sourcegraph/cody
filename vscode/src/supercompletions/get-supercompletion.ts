@@ -2,6 +2,7 @@ import {
     type ChatClient,
     type Message,
     PromptString,
+    contextFiltersProvider,
     getSimplePreamble,
     isAbortError,
     logDebug,
@@ -37,7 +38,11 @@ export async function* getSupercompletions({
     recentEditsRetriever,
     chat,
 }: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
-    const diff = recentEditsRetriever.getDiff(document.uri)
+    if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+        return null
+    }
+
+    const diff = await recentEditsRetriever.getDiff(document.uri)
     if (diff === null) {
         return null
     }

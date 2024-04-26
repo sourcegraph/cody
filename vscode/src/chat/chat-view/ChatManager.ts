@@ -9,6 +9,7 @@ import {
     type Guardrails,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -16,7 +17,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
