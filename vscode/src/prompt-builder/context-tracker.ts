@@ -4,74 +4,69 @@ import { SHA256 } from 'crypto-js'
 type ContextItemID = string
 
 export class ContextTracker {
-    private fullFileStore = new Map<ContextItemID, ContextItem>()
-    private tracked = new Map<ContextItemID, ContextItem[]>()
-    // The items that were duplicates of previously seen items
+    private store = new Map<ContextItemID, ContextItem[]>()
     private duplicate: ContextItem[] = []
 
     public get usedContextItems(): { used: ContextItem[]; duplicate: ContextItem[] } {
-        // The items that were successfully added
-        const used = [...this.fullFileStore.values()].concat(...this.tracked.values())
-        return { used, duplicate: this.duplicate }
+        return { used: [...this.store.values()].flat(), duplicate: this.duplicate }
     }
 
+    /**
+     * Tracks a context item in the context tracker.
+     *
+     * If the context item's range is contained within an existing tracked range, the item is added to the duplicate list and `false` is returned.
+     * If the context item's range contains an existing tracked range, the existing item is moved to the duplicate list and the new item is tracked.
+     * Otherwise, the new item is added to the tracked items and `true` is returned.
+     *
+     * @param item - The context item to track.
+     * @returns `true` if the item was successfully tracked, `false` otherwise.
+     */
     public track(item: ContextItem): boolean {
         const id = this.getContextItemId(item)
         const range = item?.range
 
-        if (this.fullFileStore.has(id)) {
+        const items = this.store.get(id) || []
+
+        if (range) {
+            for (let i = 0; i < items.length; i++) {
+                const existing = items[i]
+                if (existing.range) {
+                    // If the item is a subset of the tracked range,
+                    // add it to the duplicate list
+                    if (isRangeContained(range, existing.range)) {
+                        this.duplicate.push(item)
+                        return false
+                    }
+                    // If the item is a superset of the tracked range,
+                    // move the tracked item to the duplicate list and update the tracked item
+                    if (isRangeContained(existing.range, range)) {
+                        this.duplicate.push(existing)
+                        items[i] = item
+                        return true
+                    }
+                }
+            }
+        } else if (items.length > 0) {
             this.duplicate.push(item)
             return false
         }
 
-        if (!range) {
-            this.fullFileStore.set(id, item)
-            this.tracked.delete(id)
-            return true
-        }
-
-        const trackedItems = this.tracked.get(id)
-
-        if (!trackedItems) {
-            this.tracked.set(id, [item])
-            return true
-        }
-
-        for (const [index, tracked] of trackedItems.entries()) {
-            const trackedRange = tracked.range!
-            // If the item is a subset of the tracked range, it is a duplicate
-            if (isRangeContained(range, trackedRange)) {
-                this.duplicate.push(item)
-                return false
-            }
-            // If the item is a superset of the tracked range, replace the tracked range
-            // and move the tracked item to the duplicate list
-            if (isRangeContained(trackedRange, range)) {
-                this.duplicate.push(tracked)
-                trackedItems[index] = item
-                return true
-            }
-        }
-
-        trackedItems.push(item)
+        items.push(item)
+        this.store.set(id, items)
         return true
     }
 
     public untrack(contextItem: ContextItem): void {
+        /// If the ContextItem is found in the store, it is removed from the list of items associated with its ID.
+        /// If the list of items becomes empty after removing the ContextItem, the ID is also removed from the store.
         const id = this.getContextItemId(contextItem)
-        const range = contextItem.range
-        if (!range) {
-            this.fullFileStore.delete(id)
-            return
-        }
-
-        const trackedItems = this.tracked.get(id)
-        if (trackedItems) {
-            const index = trackedItems.findIndex(i => isRangeEqual(i.range!, range))
-            if (index !== -1) {
-                trackedItems.splice(index, 1)
-                if (trackedItems.length === 0) {
-                    this.tracked.delete(id)
+        const items = this.store.get(id)
+        if (items) {
+            const index = items.indexOf(contextItem)
+            if (index >= 0) {
+                items.splice(index, 1)
+                if (items.length === 0) {
+                    this.store.delete(id)
                 }
             }
         }
@@ -84,10 +79,6 @@ export class ContextTracker {
 
         return (item.source === 'unified' && item.title) || displayPath(item.uri)
     }
-}
-
-function isRangeEqual(r1: RangeData, r2: RangeData): boolean {
-    return r1.start.line === r2.start.line && r1.end.line === r2.end.line
 }
 
 // Check if r1 is contained in r2

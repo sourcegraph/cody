@@ -12,7 +12,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
             }
             const tracked = tracker.track(item)
             expect(tracked).toBe(true)
@@ -25,14 +24,12 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.User,
             }
             const unified: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.Unified,
                 title: 'my/file/path',
             }
@@ -47,7 +44,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
             }
             expect(tracker.track(item)).toBeTruthy()
             expect(tracker.track(item)).toBeFalsy()
@@ -80,19 +76,18 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
             const item2: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 15, character: 0 }, end: { line: 20, character: 0 } },
             }
 
             expect(tracker.track(item1)).toBeTruthy()
             expect(tracker.track(item2)).toBeTruthy()
+
             expect(tracker.usedContextItems).toStrictEqual({ used: [item1, item2], duplicate: [] })
         })
 
@@ -102,7 +97,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
                 source: ContextItemSource.User,
             }
@@ -110,7 +104,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 15, character: 0 }, end: { line: 20, character: 0 } },
                 source: ContextItemSource.Search,
             }
@@ -118,16 +111,17 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 1, character: 0 }, end: { line: 10, character: 0 } },
                 source: ContextItemSource.Embeddings,
             }
             expect(tracker.track(item1)).toBeTruthy()
             expect(tracker.track(item2)).toBeTruthy()
             expect(tracker.track(overlap)).toBeFalsy()
+            expect(tracker.track(item2)).toBeFalsy()
+
             expect(tracker.usedContextItems).toStrictEqual({
                 used: [item1, item2],
-                duplicate: [overlap],
+                duplicate: [overlap, item2],
             })
         })
 
@@ -148,11 +142,11 @@ describe('ContextTracker', () => {
                 * It is related to the implementation of precise code navigation in Sourcegraph.
                 */
                export interface Squirrel {}`,
-                size: 100,
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
             expect(tracker.track(multiLine)).toBeTruthy()
             expect(tracker.track(singleLine)).toBeFalsy()
+
             expect(tracker.usedContextItems).toStrictEqual({
                 used: [multiLine],
                 duplicate: [singleLine],
@@ -176,12 +170,12 @@ describe('ContextTracker', () => {
                 * It is related to the implementation of precise code navigation in Sourcegraph.
                 */
                export interface Squirrel {}`,
-                size: 100,
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
             expect(tracker.track(singleLine)).toBeTruthy()
             expect(tracker.track(multiLine)).toBeTruthy()
+
             expect(tracker.usedContextItems).toStrictEqual({
                 used: [multiLine],
                 duplicate: [singleLine],
@@ -196,7 +190,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.User,
             }
             expect(tracker.track(item)).toBeTruthy()
@@ -211,7 +204,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
             expect(tracker.track(item)).toBeTruthy()
@@ -228,14 +220,12 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.Terminal,
             }
             const item2: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/baz'),
                 content: 'foobaz',
-                size: 100,
                 source: ContextItemSource.Uri,
             }
             expect(tracker.getContextItemId(item1)).toBe(
@@ -252,7 +242,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.Unified,
                 title: 'my/file/path',
             }
@@ -266,7 +255,6 @@ describe('ContextTracker', () => {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
-                size: 100,
                 source: ContextItemSource.Editor,
             }
             const id = tracker.getContextItemId(item)
