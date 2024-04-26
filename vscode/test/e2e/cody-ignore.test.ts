@@ -38,7 +38,7 @@ test.extend<ExpectedEvents>({
 
     // Cody icon in the status bar should shows that the file is being ignored
     const statusBarButton = page.getByRole('button', {
-        name: 'cody-logo-heavy, Current file is ignored by Cody',
+        name: 'cody-logo-heavy-slash, Cody is ignored in this file',
     })
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()

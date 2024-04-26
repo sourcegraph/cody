@@ -42,6 +42,7 @@ export interface CodyStatusBar {
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash)'
 const DEFAULT_TOOLTIP = 'Cody Settings'
+const DEFAULT_TOOLTIP_DISABLED = 'Cody is ignored in this file'
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
@@ -303,7 +304,7 @@ export function createStatusBar(): CodyStatusBar {
             statusBarItem.text = '$(loading~spin)'
         } else {
             statusBarItem.text = isCodyIgnoredType ? DEFAULT_TEXT_DISABLED : DEFAULT_TEXT
-            statusBarItem.tooltip = DEFAULT_TOOLTIP
+            statusBarItem.tooltip = isCodyIgnoredType ? DEFAULT_TOOLTIP_DISABLED : DEFAULT_TOOLTIP
         }
 
         // Only show this if authStatus is present, otherwise you get a flash of
