@@ -30,6 +30,16 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:file:executed',
         'CodyVSCodeExtension:chatResponse:noCode',
     ],
+    expectedV2Events: [
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:connected',
+        'cody.at-mention:executed',
+        'cody.at-mention.file:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
@@ -208,7 +218,9 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
 })
 
-test('editing a chat message with @-mention', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    
+})('editing a chat message with @-mention', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
