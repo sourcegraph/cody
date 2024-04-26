@@ -42,8 +42,17 @@ export async function executeUsageExamplesCommand(
             return undefined
         }
 
+        const snippetRange = new vscode.Range(
+            symbolRange.start.translate(-4).with({ character: 0 }),
+            symbolRange.end.translate(4).with({ character: 0 })
+        )
+
         const symbolText = PromptString.fromDocumentText(doc, symbolRange)
-        const prompt = ps`Show usage examples for \`${symbolText}\``
+        const prompt = ps`Show usage examples for \`${symbolText}\` in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+            doc.uri
+        )}. For each of the top 3 use cases (rendered as Markdown headers), show a code example. Only use functions and APIs explicitly provided. Where possible, customize the examples to be relevant to the following way the human is using \`${symbolText}\`:\n\n\`\`\`${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+            doc.uri
+        )}\n${PromptString.fromDocumentText(doc, snippetRange)}\n\`\`\``
         const contextFiles: ContextItem[] = []
 
         const symbolPackage = await guessSymbolPackage(doc, symbolRange)
