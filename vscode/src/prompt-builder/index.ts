@@ -99,8 +99,9 @@ export class PromptBuilder {
             }
 
             // Check if the specific context item has already been included
+            const isTrackable = this.contextTracker.track(userContextItem)
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            if (!contextMsg || !this.contextTracker.track(userContextItem)) {
+            if (!isTrackable || !contextMsg) {
                 continue
             }
 
@@ -117,9 +118,9 @@ export class PromptBuilder {
 
             // Skip context items that would exceed the token budget
             if (!withinLimit) {
+                this.contextTracker.untrack(userContextItem)
                 userContextItem.content = undefined
                 result.ignored.push(userContextItem)
-                this.contextTracker.untrack(userContextItem)
                 result.limitReached = true
                 continue
             }
@@ -129,7 +130,7 @@ export class PromptBuilder {
 
         return {
             ...result,
-            ...this.contextTracker.usedContextItems,
+            ...this.contextTracker.getTrackedContextItems,
         }
     }
 }

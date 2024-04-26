@@ -15,7 +15,7 @@ describe('ContextTracker', () => {
             }
             const tracked = tracker.track(item)
             expect(tracked).toBe(true)
-            expect(tracker.usedContextItems).toStrictEqual({ used: [item], duplicate: [] })
+            expect(tracker.getTrackedContextItems).toStrictEqual({ used: [item], duplicate: [] })
         })
 
         it('should track unique context items and differentiate based on source', () => {
@@ -35,7 +35,10 @@ describe('ContextTracker', () => {
             }
             expect(tracker.track(user)).toBeTruthy()
             expect(tracker.track(unified)).toBeTruthy()
-            expect(tracker.usedContextItems).toStrictEqual({ used: [user, unified], duplicate: [] })
+            expect(tracker.getTrackedContextItems).toStrictEqual({
+                used: [user, unified],
+                duplicate: [],
+            })
         })
 
         it('should track a new context item but not a duplicate of the same item', () => {
@@ -47,7 +50,7 @@ describe('ContextTracker', () => {
             }
             expect(tracker.track(item)).toBeTruthy()
             expect(tracker.track(item)).toBeFalsy()
-            expect(tracker.usedContextItems).toStrictEqual({ used: [item], duplicate: [item] })
+            expect(tracker.getTrackedContextItems).toStrictEqual({ used: [item], duplicate: [item] })
         })
 
         it('should track a larger range but not a smaller range contained within it from the same file', () => {
@@ -67,7 +70,7 @@ describe('ContextTracker', () => {
 
             expect(tracker.track(large)).toBeTruthy()
             expect(tracker.track(small)).toBeFalsy()
-            expect(tracker.usedContextItems).toStrictEqual({ used: [large], duplicate: [small] })
+            expect(tracker.getTrackedContextItems).toStrictEqual({ used: [large], duplicate: [small] })
         })
 
         it('should track two non-overlapping ranges from the same filee', () => {
@@ -88,7 +91,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(item1)).toBeTruthy()
             expect(tracker.track(item2)).toBeTruthy()
 
-            expect(tracker.usedContextItems).toStrictEqual({ used: [item1, item2], duplicate: [] })
+            expect(tracker.getTrackedContextItems).toStrictEqual({ used: [item1, item2], duplicate: [] })
         })
 
         it('should track items from different sources unless their ranges overlap', () => {
@@ -119,7 +122,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(overlap)).toBeFalsy()
             expect(tracker.track(item2)).toBeFalsy()
 
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [item1, item2],
                 duplicate: [overlap, item2],
             })
@@ -147,13 +150,13 @@ describe('ContextTracker', () => {
             expect(tracker.track(multiLine)).toBeTruthy()
             expect(tracker.track(singleLine)).toBeFalsy()
 
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [multiLine],
                 duplicate: [singleLine],
             })
         })
 
-        it('should track both a single line and a multiline range when the single line is within the multiline range', () => {
+        it('should track item with multiline range when the single line is within the multiline range', () => {
             const tracker = new ContextTracker()
             const singleLine: ContextItem = {
                 type: 'file',
@@ -176,7 +179,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(singleLine)).toBeTruthy()
             expect(tracker.track(multiLine)).toBeTruthy()
 
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [multiLine],
                 duplicate: [singleLine],
             })
@@ -194,13 +197,13 @@ describe('ContextTracker', () => {
             }
             // Tracked item is added to the store (used list)
             expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [item],
                 duplicate: [],
             })
             // Untrack item is removed from the store
             tracker.untrack(item)
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [],
                 duplicate: [],
             })
@@ -216,7 +219,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(item)).toBeTruthy()
             tracker.untrack(item)
             expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.usedContextItems).toStrictEqual({
+            expect(tracker.getTrackedContextItems).toStrictEqual({
                 used: [item],
                 duplicate: [],
             })

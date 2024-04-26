@@ -5,24 +5,48 @@ type ContextItemDisplayID = string
 
 export class ContextTracker {
     /**
-     * A map of context items that are currently being tracked.
+     * A list of context items that have been successfully tracked and used.
      */
     private store = new Map<ContextItemDisplayID, ContextItem[]>()
+
+    /**
+     * A map of context items that are currently being tracked.
+     * NOTE: This gets reset after each call to `getTrackedContextItems`.
+     */
+    private tracking = new Map<ContextItemDisplayID, ContextItem[]>()
     /**
      * A list of context items that are duplicates of items already being tracked.
      * This contains items that are subsets of the tracked items.
+     * NOTE: This gets reset after each call to `getTrackedContextItems`.
      */
     private duplicate: ContextItem[] = []
 
     /**
-     * The final list of context items that are being used.
+     * Gets the tracked context items and resets the tracking state.
+     *
+     * This method adds all tracked items to the store, returns the used and duplicate items,
+     * and then resets the tracking and duplicate state.
+     *
+     * @returns An object containing the used and duplicate context items.
      */
-    public get usedContextItems(): { used: ContextItem[]; duplicate: ContextItem[] } {
-        return { used: [...this.store.values()].flat(), duplicate: this.duplicate }
+    public get getTrackedContextItems(): {
+        used: ContextItem[]
+        duplicate: ContextItem[]
+    } {
+        const result = {
+            used: [...this.tracking.values()].flat(),
+            duplicate: this.duplicate,
+        }
+
+        // Reset the current list of tracking and duplicate items for the next round
+        this.tracking = new Map()
+        this.duplicate = []
+
+        return result
     }
 
     /**
-     * Handles tracking a valide context item and updating the store.
+     * Handles tracking a valide context item and updating the stores.
      *
      * An item that is a subset of an existing item will not be tracked.
      *
@@ -61,22 +85,24 @@ export class ContextTracker {
 
         items.push(item)
         this.store.set(id, items)
+        this.tracking.set(id, items)
         return true
     }
 
     /**
-     * Removes a context item from the context tracker store.
+     * Removes a context item from the current tracking state.
      */
     public untrack(contextItem: ContextItem): void {
         const id = this.getContextDisplayID(contextItem)
-        const items = this.store.get(id)
+        const items = this.tracking.get(id)
         if (items) {
             const index = items.indexOf(contextItem)
             if (index >= 0) {
                 items.splice(index, 1)
                 if (items.length === 0) {
                     /// If the list of items becomes empty,
-                    // remove the key from the store
+                    // remove the key from the trackers.
+                    this.tracking.delete(id)
                     this.store.delete(id)
                 }
             }
