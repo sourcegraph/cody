@@ -234,7 +234,14 @@ export function createStatusBar(): CodyStatusBar {
                 'Use local Ollama models for chat and commands when available',
                 'cody.experimental.ollamaChat',
                 c => c.experimentalOllamaChat,
-                false
+                false,
+                [
+                    {
+                        iconPath: new vscode.ThemeIcon('book'),
+                        tooltip: 'Learn more about using local models',
+                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
+                    } as vscode.QuickInputButton,
+                ]
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {

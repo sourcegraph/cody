@@ -110,7 +110,7 @@ const Item: FunctionComponent<{
         item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
 
     const range = getLineRangeInMention(query, item.range)
-    const dir = displayPathDirname(item.uri)
+    const dir = decodeURIComponent(displayPathDirname(item.uri))
     const description = isPackageType
         ? ''
         : isFileType

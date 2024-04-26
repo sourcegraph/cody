@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     type ContextItem,
     type ContextMessage,
+    type ContextTokenUsageType,
     type Message,
     type ModelContextWindow,
     TokenCounter,
@@ -9,7 +10,6 @@ import {
     ps,
     toRangeData,
 } from '@sourcegraph/cody-shared'
-import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { SHA256 } from 'crypto-js'
 import { renderContextItem } from './utils'
 
