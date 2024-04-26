@@ -3778,13 +3778,17 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 336a451ca8952ae40422463e485b1797
+    - _id: 7399dcfe6e08a79f7b3d64aa058745f1
       _order: 0
       cache: {}
       request:
         bodySize: 347
         cookies: []
         headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -3805,7 +3809,7 @@ log:
             value: gzip,deflate
           - name: host
             value: demo.sourcegraph.com
-        headersSize: 318
+        headersSize: 391
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -3836,20 +3840,26 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?RecordTelemetryEvents
       response:
-        bodySize: 38
+        bodySize: 112
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 38
-          text: |
-            Private mode requires authentication.
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSc1JzU0tKaoEcYpSk/OLUlzLUvNKikH8xJzyxMpiv\
+            8wcJau80pyc2traWgAAAAD//wMAhHZ9ajoAAAA=\"]"
+          textDecoded:
+            data:
+              telemetry:
+                recordEvents:
+                  alwaysNil: null
         cookies: []
         headers:
           - name: date
-            value: Thu, 25 Apr 2024 14:22:31 GMT
+            value: Fri, 26 Apr 2024 10:40:46 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "38"
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -3859,7 +3869,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -3868,12 +3879,14 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1217
+          - name: content-encoding
+            value: gzip
+        headersSize: 1248
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-04-25T14:22:30.987Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-26T10:40:45.829Z
       time: 0
       timings:
         blocked: -1

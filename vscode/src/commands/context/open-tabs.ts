@@ -1,9 +1,4 @@
-import {
-    type ContextItem,
-    contextFiltersProvider,
-    logError,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 
