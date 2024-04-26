@@ -4,6 +4,7 @@ import {
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     PromptString,
     logDebug,
+    logError,
     ps,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -81,40 +82,14 @@ export async function executeUsageExamplesCommand(
             source: ContextItemSource.Editor,
         })
 
-        if (symbolPackage) {
-            const packages = (
-                await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
-                    `${symbolPackage.ecosystem}:${symbolPackage.name}`
-                )
-            ).filter(item => item.title === symbolPackage.name)
-            logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
-            const resolvedItems = (
-                await Promise.all(
-                    packages.map(item =>
-                        PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText)
-                    )
-                )
-            ).flat()
-            logDebug('executeUsageExampleCommand', 'resolved items', JSON.stringify({ resolvedItems }))
-            const filteredItems = resolvedItems.filter(resolvedItem => includeContextItem(resolvedItem))
-            logDebug('executeUsageExampleCommand', 'filtered items', JSON.stringify({ filteredItems }))
-            if (filteredItems.length === 0) {
-                vscode.window.showErrorMessage(
-                    `Unable to find enough usages of ${symbolText} to generate good usage examples.`
-                )
-                return undefined
-            }
-            try {
-                const expandedItems = filteredItems.map(item => ({
-                    ...item,
-                    range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
-                }))
-                contextFiles.push(...expandedItems)
-            } catch (error) {
-                vscode.window.showErrorMessage(`Unable to get usage examples for ${symbolText}.`)
-                console.error(error)
-                return undefined
-            }
+        try {
+            contextFiles.push(...(await symbolContextItems(symbolText, symbolPackage)))
+        } catch (error) {
+            void vscode.window.showErrorMessage(
+                `Unable to get usage examples for ${symbolText}. ${error}`
+            )
+            logError('executeUsageExampleCommand', 'error finding usage examples', error)
+            return undefined
         }
 
         return {
@@ -130,10 +105,57 @@ export async function executeUsageExamplesCommand(
     })
 }
 
+/**
+ * for a symbol `symbolText` in `symbolPackage` this function returns context items composed from:
+ * - symbolPackage repository
+ * - current repository
+ * - organization repositories (dirname(current repository)) which import symbolPackage.
+ * - dotcom repositories which import symbolPackage.
+ *
+ * We will mix context between the sources. Currently 5 context items from
+ * each. Hackily only focussed on npm ecosystem.
+ */
+async function symbolContextItems(
+    symbolText: PromptString,
+    symbolPackage: SymbolPackage | null
+): Promise<ContextItem[]> {
+    if (!symbolPackage) {
+        return []
+    }
+
+    const packages = (
+        await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
+            `${symbolPackage.ecosystem}:${symbolPackage.name}`
+        )
+    ).filter(item => item.title === symbolPackage.name)
+    logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
+    const resolvedItems = (
+        await Promise.all(
+            packages.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText))
+        )
+    ).flat()
+    logDebug('executeUsageExampleCommand', 'resolved items', JSON.stringify({ resolvedItems }))
+    const filteredItems = resolvedItems.filter(resolvedItem => includeContextItem(resolvedItem))
+    logDebug('executeUsageExampleCommand', 'filtered items', JSON.stringify({ filteredItems }))
+    if (filteredItems.length === 0) {
+        throw new Error(`Unable to find enough usages of ${symbolText} to generate good usage examples.`)
+    }
+
+    return filteredItems.map(item => ({
+        ...item,
+        range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
+    }))
+}
+
+interface SymbolPackage {
+    name: string
+    ecosystem: string
+}
+
 async function guessSymbolPackage(
     doc: vscode.TextDocument,
     symbolRange: vscode.Range
-): Promise<{ ecosystem: string; name: string } | null> {
+): Promise<SymbolPackage | null> {
     const defs: (vscode.Location | vscode.LocationLink)[] = await vscode.commands.executeCommand(
         'vscode.executeDefinitionProvider',
         doc.uri,
