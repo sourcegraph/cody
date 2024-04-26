@@ -341,7 +341,7 @@
       {
         "command": "cody.command.usageExamples",
         "category": "Cody Command",
-        "title": "Find Usage Examples",
+        "title": "Usage Examples",
         "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
       },
       {
@@ -713,11 +713,6 @@
           "command": "cody.chat.context.add",
           "group": "0_cody",
           "when": "cody.activated && editorTextFocus && editorHasSelection"
-        },
-        {
-          "command": "cody.command.usageExamples",
-          "group": "0_cody",
-          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
         }
       ],
       "cody.submenu": [
@@ -725,6 +720,11 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
+        },
+        {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle",
+          "group": "command"
         },
         {
           "command": "cody.command.explain-code",

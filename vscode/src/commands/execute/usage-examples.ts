@@ -1,5 +1,6 @@
 import {
     type ContextItem,
+    ContextItemSource,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     PromptString,
     logDebug,
@@ -9,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
+import { getSmartSelection } from '../../editor/utils'
 import type { ChatCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 import { executeChat } from './ask'
@@ -22,7 +24,7 @@ export async function executeUsageExamplesCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.usageExamples', async span => {
         span.setAttribute('sampled', true)
-        logDebug('executeDocCommand', 'executing', { args })
+        logDebug('executeUsageExampleCommand', 'executing', { args })
         telemetryRecorder.recordEvent('cody.command.usageExamples', 'executed', {
             interactionID: args?.requestID,
             privateMetadata: {
@@ -42,28 +44,49 @@ export async function executeUsageExamplesCommand(
             return undefined
         }
 
-        const snippetRange = new vscode.Range(
-            symbolRange.start.translate(-4).with({ character: 0 }),
-            symbolRange.end.translate(4).with({ character: 0 })
+        const symbolText = PromptString.fromDocumentText(doc, symbolRange)
+        logDebug(
+            'executeUsageExampleCommand',
+            'symbol text at cursor',
+            JSON.stringify(symbolText.toString())
         )
 
-        const symbolText = PromptString.fromDocumentText(doc, symbolRange)
-        const prompt = ps`Show usage examples for \`${symbolText}\` in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+        const prompt = ps`Show usage examples for \`${symbolText}\`. <!-- Use ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
             doc.uri
-        )}. For each of the top 3 use cases (rendered as Markdown headers), show a code example. Only use functions and APIs explicitly provided. Where possible, customize the examples to be relevant to the following way the human is using \`${symbolText}\`:\n\n\`\`\`${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
-            doc.uri
-        )}\n${PromptString.fromDocumentText(doc, snippetRange)}\n\`\`\``
+        )}. Show 2 concise examples, each with a Markdown header, a 1-sentence description, and then a code snippet. -->`
         const contextFiles: ContextItem[] = []
 
+        const snippetRange = expandRangeByLines(
+            (await getSmartSelection(doc, symbolRange.start)) ?? symbolRange,
+            10
+        )
+        contextFiles.push({
+            type: 'file',
+            uri: doc.uri,
+            range: snippetRange,
+            source: ContextItemSource.Editor,
+        })
+
         const symbolPackage = await guessSymbolPackage(doc, symbolRange)
+        logDebug('executeUsageExampleCommand', 'symbol package at cursor', JSON.stringify(symbolPackage))
         if (symbolPackage) {
-            const items = await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
-                `${symbolPackage.ecosystem}:${symbolPackage.name}`
-            )
-            const resolvedItems = await Promise.all(
-                items.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText))
-            )
-            contextFiles.push(...resolvedItems.flat())
+            const packages = (
+                await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
+                    `${symbolPackage.ecosystem}:${symbolPackage.name}`
+                )
+            ).filter(item => item.title === symbolPackage.name)
+            logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
+            const resolvedItems = (
+                await Promise.all(
+                    packages.map(item =>
+                        PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText)
+                    )
+                )
+            ).flat()
+            logDebug('executeUsageExampleCommand', 'resolved items', JSON.stringify({ resolvedItems }))
+            const filteredItems = resolvedItems.filter(resolvedItem => includeContextItem(resolvedItem))
+            logDebug('executeUsageExampleCommand', 'filtered items', JSON.stringify({ filteredItems }))
+            contextFiles.push(...filteredItems)
         }
 
         return {
@@ -101,4 +124,19 @@ async function guessSymbolPackage(
     }
 
     return null
+}
+
+function includeContextItem(item: ContextItem): boolean {
+    return (
+        !item.uri.path.endsWith('.map') &&
+        !item.uri.path.endsWith('.tsbuildinfo') &&
+        !item.uri.path.includes('/dist/')
+    )
+}
+
+function expandRangeByLines(range: vscode.Range, lines: number): vscode.Range {
+    return new vscode.Range(
+        range.start.translate(-1 * lines).with({ character: 0 }),
+        range.end.translate(lines).with({ character: 0 })
+    )
 }
