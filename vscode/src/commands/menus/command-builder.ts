@@ -146,10 +146,10 @@ export class CustomCommandsBuilderMenu {
                     case 'openTabs':
                     case 'none':
                         newPrompt.context[context.id] = context.picked
-                        continue
+                        break
                     case 'command': {
                         newPrompt.context.command = (await showPromptCreationInputBox()) ?? undefined
-                        continue
+                        break
                     }
                 }
             }
