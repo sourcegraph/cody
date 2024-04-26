@@ -61,16 +61,7 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type {
-    ContextItemFile,
-    ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import {
-    CHAT_INPUT_TOKEN_BUDGET,
-    CHAT_OUTPUT_TOKEN_BUDGET,
-} from '@sourcegraph/cody-shared/src/token/constants'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
