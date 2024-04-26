@@ -48,9 +48,6 @@ export enum FeatureFlag {
 
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
-
-    /** Apply a higher context window for user context items (e.g., @-mentions). */
-    CodyChatContextBudget = 'cody-chat-context-budget',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

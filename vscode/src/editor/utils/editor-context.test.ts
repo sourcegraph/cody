@@ -3,9 +3,9 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    CLAUDE3_USER_CONTEXT_TOKEN_BUDGET,
     type ContextItem,
     type ContextItemFile,
-    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
     ignores,
     ps,
@@ -159,7 +159,7 @@ describe('filterContextItemFiles', () => {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const fsSizeInBytes = EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
+        const fsSizeInBytes = CLAUDE3_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: fsSizeInBytes,
             type: vscode.FileType.File,
