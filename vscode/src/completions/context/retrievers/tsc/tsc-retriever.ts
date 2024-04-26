@@ -7,11 +7,12 @@ import {
     logError,
 } from '@sourcegraph/cody-shared'
 import { defaultPathFunctions } from '@sourcegraph/cody-shared/src/common/path'
-import * as ts from 'typescript'
+import ts from 'typescript'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { SymbolFormatter, declarationName } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
+import { relevantTypeIdentifiers } from './relevantTypeIdentifiers'
 
 interface LoadedCompiler {
     service: ts.LanguageService
@@ -21,14 +22,6 @@ interface LoadedCompiler {
 }
 
 const path = defaultPathFunctions()
-
-function currentDirectory(): string | undefined {
-    const uri = vscode.workspace.workspaceFolders?.[0]?.uri
-    if (uri && isFileURI(uri)) {
-        return uri.fsPath
-    }
-    return undefined
-}
 
 const MAX_SYMBOL_RESULTS = vscode.workspace
     .getConfiguration('sourcegraph')
@@ -93,7 +86,14 @@ export class TscRetriever implements ContextRetriever {
                 return currentDirectory
             },
             getDefaultLibFileName: options => {
-                // TODO: the fact we need this hints thats why `ts.getDefaultLibFilePath` doesn't work
+                // TODO(olafurpg): figure out why we need to hardcode
+                // `node_modules` here.  I wasn't able to find examples from
+                // sourcegraph.com/search that do the same but I wasn't able to
+                // get ts.LanguageService working without it. My theory is that
+                // we need it because the working directory of the process does
+                // not match the workspace directory in VS Code, while most
+                // examples from online are language servers where the working
+                // directory is the same as the workspace root folder.
                 const fileName = ts.getDefaultLibFileName(options)
                 const result = path.resolve(
                     currentDirectory,
@@ -230,7 +230,7 @@ export class TscRetriever implements ContextRetriever {
                 return
             }
 
-            for (const identifier of typeIdentifiers(compiler.checker, n)) {
+            for (const identifier of relevantTypeIdentifiers(compiler.checker, n)) {
                 const symbol = getTSSymbolAtLocation(compiler.checker, identifier)
                 if (symbol && !isAdded.has(symbol)) {
                     addSymbol(symbol)
@@ -268,6 +268,7 @@ export class TscRetriever implements ContextRetriever {
     }
 }
 
+// Copy-pasted and adapted code from scip-typescript
 function loadConfigFile(file: string | undefined): ts.ParsedCommandLine {
     const readResult = file ? ts.readConfigFile(file, path => ts.sys.readFile(path)) : { config: {} }
 
@@ -328,61 +329,10 @@ function defaultCompilerOptions(configFileName?: string): ts.CompilerOptions {
     return options
 }
 
-function typeIdentifiers(checker: ts.TypeChecker, node: ts.Node): ts.Node[] {
-    const result: ts.Node[] = []
-    pushTypeIdentifiers(result, checker, node)
-    return result
-}
-function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, node: ts.Node): void {
-    if (ts.isSourceFile(node)) {
-        ts.forEachChild(node, child => {
-            if (ts.isImportDeclaration(child)) {
-                pushDescendentIdentifiers(result, child)
-            }
-        })
-    } else if (
-        ts.isSetAccessorDeclaration(node) ||
-        ts.isGetAccessorDeclaration(node) ||
-        ts.isConstructorDeclaration(node) ||
-        ts.isFunctionDeclaration(node) ||
-        ts.isCallSignatureDeclaration(node) ||
-        ts.isMethodDeclaration(node)
-    ) {
-        for (const parameter of node.parameters) {
-            if (parameter.type) {
-                pushDescendentIdentifiers(result, parameter.type)
-            }
-        }
-        if (node.type) {
-            pushDescendentIdentifiers(result, node.type)
-        }
-    } else if (ts.isCallExpression(node)) {
-        const symbol = getTSSymbolAtLocation(checker, node.expression)
-        for (const declaration of symbol?.declarations ?? []) {
-            pushTypeIdentifiers(result, checker, declaration)
-        }
-    } else if (ts.isVariableDeclaration(node)) {
-        if (node.type) {
-            pushTypeIdentifiers(result, checker, node.type)
-        }
-    } else if (ts.isTypeLiteralNode(node)) {
-        for (const member of node.members) {
-            pushTypeIdentifiers(result, checker, member)
-        }
+function currentDirectory(): string | undefined {
+    const uri = vscode.workspace.workspaceFolders?.[0]?.uri
+    if (uri && isFileURI(uri)) {
+        return uri.fsPath
     }
-}
-
-function walk(node: ts.Node, handler: (node: ts.Node) => void): void {
-    ts.forEachChild(node, child => {
-        handler(child)
-        walk(child, handler)
-    })
-}
-
-function pushDescendentIdentifiers(result: ts.Node[], node: ts.Node): void {
-    walk(node, child => {
-        if (ts.isIdentifier(child)) {
-            result.push(child)
-        }
-    })
+    return undefined
 }

@@ -1,3 +1,4 @@
+// Copy-pasted code from scip-typescript
 import * as ts from 'typescript'
 
 // Functions in this file are based directly off corresponding functions

@@ -1,3 +1,4 @@
+/** Utility class to pretty-print code. */
 export class CodePrinter {
     public out: string[] = []
     public indent = 0

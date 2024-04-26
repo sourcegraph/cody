@@ -1,3 +1,4 @@
+// Copy-pasted code from scip-typescript
 import * as ts from 'typescript'
 import * as ts_internals from './ts-internals'
 

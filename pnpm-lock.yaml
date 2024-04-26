@@ -448,9 +448,6 @@ importers:
       socks-proxy-agent:
         specifier: ^8.0.1
         version: 8.0.1
-      typescript:
-        specifier: ^5.4.2
-        version: 5.4.2
       unzipper:
         specifier: ^0.10.14
         version: 0.10.14

@@ -12,21 +12,19 @@ import { PollyYamlWriter } from './pollyapi'
  * that we can correctly replay HTTP responses based on the access token.
  */
 export function redactAuthorizationHeader(header: string): string {
-    if (header.startsWith('Bearer REDACTED_')) {
-        return header
+    if (!header.startsWith('token')) {
+        // NOTE(olafurpg) When using fastpath, this header has the format
+        // `Bearer TOKEN`. We currently disable fastpath in the agent tests so
+        // we should not hit on this case. If fastpath gets enabled for some
+        // reason then the tests should fail quickly with a helpful error
+        // message. I spent almost 2h tracking down why tests were failing in
+        // replay mode when using fastpath and it was not at all obvious what
+        // the root cause was.
+        throw new Error(`Unexpected access token format: ${header}`)
     }
+
     if (header.startsWith('token REDACTED_')) {
         return header
-    }
-
-    if (header.startsWith('Bearer ')) {
-        console.log({ token: header })
-        // Return the same redacted token as non-bearer tokens.
-        return `Bearer REDACTED_${process.env.REDACTED_SRC_ACCESS_TOKEN}`
-    }
-
-    if (!header.startsWith('token')) {
-        throw new Error(`Unexpected access token format: ${header}`)
     }
 
     return `token REDACTED_${sha256(`prefix${header}`)}`

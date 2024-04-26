@@ -1,3 +1,4 @@
+// Copy-pasted and adapted code from scip-typescript
 import * as ts from 'typescript'
 import { CodePrinter } from './CodePrinter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
