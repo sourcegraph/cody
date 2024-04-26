@@ -157,6 +157,54 @@ interface SearchResponse {
     }
 }
 
+export async function searchForRepos(
+    query: string,
+    signal: AbortSignal | undefined
+): Promise<{ repoID: string; name: string }[] | Error> {
+    const results = await graphqlClient
+        .fetchSourcegraphAPI<APIResponse<SearchReposResponse>>(SEARCH_REPOS_QUERY, {
+            query,
+        })
+        .then(response =>
+            extractDataOrError(response, data => {
+                return data.search.results.results.flatMap(result => {
+                    if (result.__typename !== 'Repository') {
+                        return []
+                    }
+                    return [{ repoID: result.id, name: result.name }]
+                })
+            })
+        )
+    return results
+}
+
+const SEARCH_REPOS_QUERY = `
+query CodyMentionProviderSearchRepos($query: String!) {
+  search(query: $query, version: V3, patternType: literal) {
+    results {
+      results {
+        __typename
+        ... on Repository {
+          id
+          name
+        }
+      }
+    }
+  }
+}`
+
+interface SearchReposResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                id: string
+                name: string
+            }[]
+        }
+    }
+}
+
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
