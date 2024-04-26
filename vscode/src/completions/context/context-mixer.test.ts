@@ -299,9 +299,9 @@ describe('ContextMixer', () => {
                 vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
                     async (uri: vscode.Uri) => {
                         if (uri.path.includes('foo.ts')) {
-                            return true
+                            return 'repo:foo'
                         }
-                        return false
+                        return false as const
                     }
                 )
             })

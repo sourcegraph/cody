@@ -1,7 +1,7 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../LocalStorageProvider'
 import { telemetryService } from '../telemetry'
-import { telemetryRecorder } from '../telemetry-v2'
 
 /**
  * Logs the enrollment event for the given feature flag ONCE in user's lifetime
@@ -27,7 +27,7 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
     const args = { variant: isEnabled ? 'treatment' : 'control' }
     const hasV2Event = { hasV2Event: true }
     telemetryService.log(`CodyVSCodeExtension:experiment:${eventName}:enrolled`, args, hasV2Event)
-    telemetryRecorder.recordEvent('cody.experiment.hoverCommands', 'enrolled', {
+    telemetryRecorder.recordEvent(`cody.experiment.${eventName}`, 'enrolled', {
         privateMetadata: args,
     })
     return true
@@ -40,8 +40,6 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
  */
 function getFeatureFlagEventName(key: FeatureFlag): string | undefined {
     switch (key) {
-        case FeatureFlag.CodyHoverCommands:
-            return 'hoverCommands'
         default:
             return undefined
     }

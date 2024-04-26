@@ -3,8 +3,8 @@ import { type QuickPickItem, window } from 'vscode'
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { type CodyCommandMode, CustomCommandType } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { fromSlashCommand } from '../utils/common'
 import { CommandModeMenuOptions, customPromptsContextOptions } from './items/menu'
 

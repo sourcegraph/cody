@@ -15,17 +15,22 @@ import {
     isDotCom,
     newPromptMixin,
     setLogger,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    CODY_FEEDBACK_URL,
+    CODY_OLLAMA_DOCS_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
-import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -64,7 +69,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
@@ -326,7 +331,6 @@ const register = async (
         }
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
-        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
@@ -530,6 +534,13 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
+
+        // StatusBar Commands
+        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
+            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
+            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
+        }),
+
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
@@ -568,10 +579,6 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
-
-    // Experimental features: Hover Commands
-    disposables.push(hoverCommandsProvider)
-    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

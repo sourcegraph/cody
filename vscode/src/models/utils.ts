@@ -1,13 +1,13 @@
 import {
     ANSWER_TOKENS,
     type AuthStatus,
+    CHAT_INPUT_TOKEN_BUDGET,
     FeatureFlag,
     ModelProvider,
     ModelUsage,
     featureFlagProvider,
+    getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
-import { getDotComDefaultModels } from '@sourcegraph/cody-shared/src/models/dotcom'
-import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import * as vscode from 'vscode'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 

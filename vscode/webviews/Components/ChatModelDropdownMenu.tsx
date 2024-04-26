@@ -115,7 +115,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                     : undefined
                             }
                         >
-                            <span className={styles.title}>{capitalize(option.title)}</span>
+                            <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${capitalize(
                                 option.provider
                             )}`}</span>
@@ -134,7 +134,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 <div slot="selected-value" className={styles.selectedValue}>
                     <ChatModelIcon model={currentModel.model} />
                     <span>
-                        <span className={styles.title}>{capitalize(currentModel.title)}</span>
+                        <span className={styles.title}>{currentModel.title}</span>
                     </span>
                 </div>
             </VSCodeDropdown>
