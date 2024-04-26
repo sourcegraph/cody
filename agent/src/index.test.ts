@@ -1135,7 +1135,7 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the codebase context you provided, the file names are:
+              "Based on the context you provided, the file names are:
 
               1. \`src/trickyLogic.ts\`
               2. \`src/animal.ts\`
@@ -1228,10 +1228,7 @@ describe('Agent', () => {
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
-                `
-                "You have shared codebase context from 9 different files."
-            `,
-                explainPollyError
+                `"You have shared codebase context from 9 different files."`
             )
         }, 30_000)
 
