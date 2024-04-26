@@ -25,7 +25,7 @@ let proxyAgent: ProxyAgent
 let httpAgent: http.Agent
 let httpsAgent: https.Agent
 // WE should add back the Socks proxy agent logic from the before the 
-// chris's PR then this would all wokr
+// chris's PR then this would all work properly - stephens recommednations
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
 
