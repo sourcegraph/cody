@@ -1,28 +1,36 @@
 import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
 import { SHA256 } from 'crypto-js'
 
-type ContextItemID = string
+type ContextItemDisplayID = string
 
 export class ContextTracker {
-    private store = new Map<ContextItemID, ContextItem[]>()
+    /**
+     * A map of context items that are currently being tracked.
+     */
+    private store = new Map<ContextItemDisplayID, ContextItem[]>()
+    /**
+     * A list of context items that are duplicates of items already being tracked.
+     * This contains items that are subsets of the tracked items.
+     */
     private duplicate: ContextItem[] = []
 
+    /**
+     * The final list of context items that are being used.
+     */
     public get usedContextItems(): { used: ContextItem[]; duplicate: ContextItem[] } {
         return { used: [...this.store.values()].flat(), duplicate: this.duplicate }
     }
 
     /**
-     * Tracks a context item in the context tracker.
+     * Handles tracking a valide context item and updating the store.
      *
-     * If the context item's range is contained within an existing tracked range, the item is added to the duplicate list and `false` is returned.
-     * If the context item's range contains an existing tracked range, the existing item is moved to the duplicate list and the new item is tracked.
-     * Otherwise, the new item is added to the tracked items and `true` is returned.
+     * An item that is a subset of an existing item will not be tracked.
      *
      * @param item - The context item to track.
      * @returns `true` if the item was successfully tracked, `false` otherwise.
      */
     public track(item: ContextItem): boolean {
-        const id = this.getContextItemId(item)
+        const id = this.getContextDisplayID(item)
         const range = item?.range
 
         const items = this.store.get(id) || []
@@ -33,13 +41,13 @@ export class ContextTracker {
                 if (existing.range) {
                     // If the item is a subset of the tracked range,
                     // add it to the duplicate list
-                    if (isRangeContained(range, existing.range)) {
+                    if (isRangeContain(range, existing.range)) {
                         this.duplicate.push(item)
                         return false
                     }
                     // If the item is a superset of the tracked range,
                     // move the tracked item to the duplicate list and update the tracked item
-                    if (isRangeContained(existing.range, range)) {
+                    if (isRangeContain(existing.range, range)) {
                         this.duplicate.push(existing)
                         items[i] = item
                         return true
@@ -56,23 +64,29 @@ export class ContextTracker {
         return true
     }
 
+    /**
+     * Removes a context item from the context tracker store.
+     */
     public untrack(contextItem: ContextItem): void {
-        /// If the ContextItem is found in the store, it is removed from the list of items associated with its ID.
-        /// If the list of items becomes empty after removing the ContextItem, the ID is also removed from the store.
-        const id = this.getContextItemId(contextItem)
+        const id = this.getContextDisplayID(contextItem)
         const items = this.store.get(id)
         if (items) {
             const index = items.indexOf(contextItem)
             if (index >= 0) {
                 items.splice(index, 1)
                 if (items.length === 0) {
+                    /// If the list of items becomes empty,
+                    // remove the key from the store
                     this.store.delete(id)
                 }
             }
         }
     }
 
-    public getContextItemId(item: ContextItem): ContextItemID {
+    /**
+     * Generates an idenifier for a context item based on its source and content.
+     */
+    public getContextDisplayID(item: ContextItem): ContextItemDisplayID {
         if (item.source === 'terminal' || item.source === 'uri') {
             return `${displayPath(item.uri)}#${SHA256(item.content ?? '').toString()}`
         }
@@ -81,7 +95,9 @@ export class ContextTracker {
     }
 }
 
-// Check if r1 is contained in r2
-function isRangeContained(r1: RangeData, r2: RangeData): boolean {
+/**
+ * Compare two ranges to determine if the first range is contained in the second range.
+ */
+function isRangeContain(r1: RangeData, r2: RangeData): boolean {
     return r1.start.line >= r2.start.line && r1.end.line <= r2.end.line
 }

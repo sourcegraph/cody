@@ -6,7 +6,7 @@ import { ContextTracker } from './context-tracker'
 
 describe('ContextTracker', () => {
     describe('track', () => {
-        it('should track a context item', () => {
+        it('should add a new context item to the tracker and verify no duplicates are recorded', () => {
             const tracker = new ContextTracker()
             const item: ContextItem = {
                 type: 'file',
@@ -18,7 +18,7 @@ describe('ContextTracker', () => {
             expect(tracker.usedContextItems).toStrictEqual({ used: [item], duplicate: [] })
         })
 
-        it('should track different context items', () => {
+        it('should track unique context items and differentiate based on source', () => {
             const tracker = new ContextTracker()
             const user: ContextItem = {
                 type: 'file',
@@ -38,7 +38,7 @@ describe('ContextTracker', () => {
             expect(tracker.usedContextItems).toStrictEqual({ used: [user, unified], duplicate: [] })
         })
 
-        it('should not track duplicated context item', () => {
+        it('should track a new context item but not a duplicate of the same item', () => {
             const tracker = new ContextTracker()
             const item: ContextItem = {
                 type: 'file',
@@ -50,7 +50,7 @@ describe('ContextTracker', () => {
             expect(tracker.usedContextItems).toStrictEqual({ used: [item], duplicate: [item] })
         })
 
-        it('should not track a context item with a range contained within an existing tracked range from the same file ', () => {
+        it('should track a larger range but not a smaller range contained within it from the same file', () => {
             const tracker = new ContextTracker()
             const large: ContextItem = {
                 type: 'file',
@@ -70,7 +70,7 @@ describe('ContextTracker', () => {
             expect(tracker.usedContextItems).toStrictEqual({ used: [large], duplicate: [small] })
         })
 
-        it('should track a context item with a range not contained within any existing tracked range', () => {
+        it('should track two non-overlapping ranges from the same filee', () => {
             const tracker = new ContextTracker()
             const item1: ContextItem = {
                 type: 'file',
@@ -91,7 +91,7 @@ describe('ContextTracker', () => {
             expect(tracker.usedContextItems).toStrictEqual({ used: [item1, item2], duplicate: [] })
         })
 
-        it('should not track the same context item with overlapping ranges from different sources', () => {
+        it('should track items from different sources unless their ranges overlap', () => {
             const tracker = new ContextTracker()
             const item1: ContextItem = {
                 type: 'file',
@@ -125,7 +125,7 @@ describe('ContextTracker', () => {
             })
         })
 
-        it('should not track a context item with single line that also overlapping with exisiting ranges', () => {
+        it('should track context from file with multiline range but not a single line range that overlaps with it', () => {
             const tracker = new ContextTracker()
             const singleLine: ContextItem = {
                 type: 'file',
@@ -153,7 +153,7 @@ describe('ContextTracker', () => {
             })
         })
 
-        it('should track context item that contains an exisiting context item with single line range within its range', () => {
+        it('should track both a single line and a multiline range when the single line is within the multiline range', () => {
             const tracker = new ContextTracker()
             const singleLine: ContextItem = {
                 type: 'file',
@@ -184,21 +184,7 @@ describe('ContextTracker', () => {
     })
 
     describe('untrack', () => {
-        it('should not track context item  for  ', () => {
-            const tracker = new ContextTracker()
-            const item: ContextItem = {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
-                content: 'foobar',
-                source: ContextItemSource.User,
-            }
-            expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.track(item)).toBeFalsy()
-            tracker.untrack(item)
-            expect(tracker.track(item)).toBeTruthy()
-        })
-
-        it('should remove a context item when untrack ', () => {
+        it('should remove untracked item from store', () => {
             const tracker = new ContextTracker()
             const item: ContextItem = {
                 type: 'file',
@@ -206,32 +192,54 @@ describe('ContextTracker', () => {
                 content: 'foobar',
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
+            // Tracked item is added to the store (used list)
             expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.track(item)).toBeFalsy()
+            expect(tracker.usedContextItems).toStrictEqual({
+                used: [item],
+                duplicate: [],
+            })
+            // Untrack item is removed from the store
+            tracker.untrack(item)
+            expect(tracker.usedContextItems).toStrictEqual({
+                used: [],
+                duplicate: [],
+            })
+        })
+
+        it('should be able to re-add untracked item as used', () => {
+            const tracker = new ContextTracker()
+            const item: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar'),
+                source: ContextItemSource.User,
+            }
+            expect(tracker.track(item)).toBeTruthy()
             tracker.untrack(item)
             expect(tracker.track(item)).toBeTruthy()
+            expect(tracker.usedContextItems).toStrictEqual({
+                used: [item],
+                duplicate: [],
+            })
         })
     })
 
-    describe('getContextItemId', () => {
+    describe('getContextDisplayID', () => {
         it('should generate correct ID for non-codebase context items', () => {
             const tracker = new ContextTracker()
             const item1: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
-                content: 'foobar',
                 source: ContextItemSource.Terminal,
             }
             const item2: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/baz'),
-                content: 'foobaz',
                 source: ContextItemSource.Uri,
             }
-            expect(tracker.getContextItemId(item1)).toBe(
+            expect(tracker.getContextDisplayID(item1)).toBe(
                 `${displayPath(item1.uri)}#${SHA256(item1.content ?? '').toString()}`
             )
-            expect(tracker.getContextItemId(item2)).toBe(
+            expect(tracker.getContextDisplayID(item2)).toBe(
                 `${displayPath(item2.uri)}#${SHA256(item2.content ?? '').toString()}`
             )
         })
@@ -240,12 +248,12 @@ describe('ContextTracker', () => {
             const tracker = new ContextTracker()
             const item: ContextItem = {
                 type: 'file',
-                uri: URI.file('/foo/bar'),
+                uri: URI.file('my/file/path'),
                 content: 'foobar',
                 source: ContextItemSource.Unified,
                 title: 'my/file/path',
             }
-            const id = tracker.getContextItemId(item)
+            const id = tracker.getContextDisplayID(item)
             expect(id).toBe('my/file/path')
         })
 
@@ -254,10 +262,9 @@ describe('ContextTracker', () => {
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
-                content: 'foobar',
                 source: ContextItemSource.Editor,
             }
-            const id = tracker.getContextItemId(item)
+            const id = tracker.getContextDisplayID(item)
             expect(id).toBe(displayPath(item.uri))
         })
     })
