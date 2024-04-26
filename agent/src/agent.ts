@@ -19,7 +19,6 @@ import {
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
-    isCodyIgnoredFile,
     isError,
     isRateLimitError,
     logDebug,
@@ -1039,24 +1038,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        let isIgnorePolicyOverrideDisabled = true
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-
-            // Use experimental Cody Ignore version for PLG users for now.
-            const isUriIgnored =
-                authStatus.isDotCom && isIgnorePolicyOverrideDisabled
-                    ? isCodyIgnoredFile(uri)
-                    : await contextFiltersProvider.isUriIgnored(uri)
-
+            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
             return {
-                policy: isUriIgnored ? 'ignore' : 'use',
+                policy: isIgnored ? 'ignore' : 'use',
             } as const
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
-            isIgnorePolicyOverrideDisabled = !!contextFilters
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
