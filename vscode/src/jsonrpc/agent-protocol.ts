@@ -2,6 +2,7 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    ContextFilters,
     CurrentUserCodySubscription,
     ModelProvider,
     ModelUsage,
@@ -123,10 +124,6 @@ export type ClientRequests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
-    /**
-     * Checks if a given set of URLs includes a Cody ignored file.
-     */
-    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -179,6 +176,20 @@ export type ClientRequests = {
             limitHit: boolean
         },
     ]
+
+    // Gets whether the specified URI is sensitive and should not be sent to
+    // LLM providers.
+    'ignore/test': [
+        { uri: string },
+        {
+            policy: 'ignore' | 'use'
+        },
+    ]
+
+    // For testing. Overrides any ignore policy to ignore repositories and URIs
+    // which match the specified regular expressions. Pass `undefined` to remove
+    // the override.
+    'testing/ignore/overridePolicy': [ContextFilters | null, null]
 
     // Gets whether the specific repo name is known on the remote.
     'remoteRepo/has': [{ repoName: string }, { result: boolean }]
@@ -313,6 +324,10 @@ export type ServerNotifications = {
 
     'codeLenses/display': [DisplayCodeLensParams]
 
+    // The set of ignored files/repositories has changed. The client should
+    // re-query using ignore/test.
+    'ignore/didChange': [null]
+
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
@@ -329,8 +344,7 @@ export type ServerNotifications = {
 
     // The list of remote repositories changed. Results from remoteRepo/list
     // may be stale and should be requeried.
-    // biome-ignore lint/complexity/noBannedTypes: May add details about the change later.
-    'remoteRepo/didChange': [{}]
+    'remoteRepo/didChange': [null]
     // Reflects the state of fetching the repository list. After fetching is
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.
@@ -395,6 +409,7 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
+// The capability should match the name of the JSON-RPC methods.
 interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
@@ -409,6 +424,7 @@ interface ClientCapabilities {
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
+    ignore?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {

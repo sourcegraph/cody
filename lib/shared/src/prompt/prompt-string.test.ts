@@ -62,15 +62,17 @@ describe('PromptString', () => {
         const promptString = PromptString.fromDocumentText(document)
 
         const allowPolicy = {
-            isUriIgnored: () => Promise.resolve(false),
+            isUriIgnored: () => Promise.resolve(false as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
         }
         const denyPolicy = {
-            isUriIgnored: () => Promise.resolve(true),
+            isUriIgnored: () => Promise.resolve('repo:foo' as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
         }
 
         expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')
         expect(async () => await promptString.toFilteredString(denyPolicy)).rejects.toThrowError(
-            'The prompt string contains a reference to a file that is not allowed by the context filters.'
+            'The prompt contains a reference to a file that is not allowed by your current Cody policy.'
         )
     })
 

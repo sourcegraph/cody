@@ -15,7 +15,6 @@ jobs:
       - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
         id: pnpm-install
         with:
-          version: 8.6.7
           run_install: false
       - name: Get pnpm store directory
         id: pnpm-cache

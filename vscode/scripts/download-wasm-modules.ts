@@ -15,9 +15,6 @@ const TREE_SITTER_WASM_PATH = require.resolve(`web-tree-sitter/${TREE_SITTER_WAS
 const JS_GRAMMAR_PATH = require.resolve('@sourcegraph/tree-sitter-wasms/out/tree-sitter-javascript.wasm')
 const GRAMMARS_PATH = path.dirname(JS_GRAMMAR_PATH)
 
-const RE2_WASM_FILE = 're2.wasm'
-const RE2_WASM_PATH = require.resolve(`re2-wasm/build/wasm/${RE2_WASM_FILE}`)
-
 export async function main(): Promise<void> {
     const hasStoreDir = existsSync(WASM_DIRECTORY)
 
@@ -53,5 +50,4 @@ function copyFilesToDistDir(): void {
     }
 
     copyFileSync(TREE_SITTER_WASM_PATH, path.join(DIST_DIRECTORY, TREE_SITTER_WASM_FILE))
-    copyFileSync(RE2_WASM_PATH, path.join(DIST_DIRECTORY, RE2_WASM_FILE))
 }

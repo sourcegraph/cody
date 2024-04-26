@@ -1,12 +1,7 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
-import {
-    convertGitCloneURLToCodebaseName,
-    graphqlClient,
-    isDefined,
-    isFileURI,
-} from '@sourcegraph/cody-shared'
+import { graphqlClient, isDefined, isFileURI } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
@@ -16,11 +11,12 @@ import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
 type RepoName = string
 type RemoteUrl = string
+type UriFsPath = string
 
-export class RepoNameResolver {
+export class EnterpriseRepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    private fsPathToRepoNameCache = new LRUCache<RepoName, string[]>({ max: 1000 })
-    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<string | null>>({ max: 1000 })
+    private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
+    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
 
     /**
      * Currently is used to set node specific remote url getters on the extension init.
@@ -78,7 +74,6 @@ export class RepoNameResolver {
                 return definedRepoNames
             }
         } catch (error) {
-            console.error(error)
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
 
@@ -90,12 +85,7 @@ export class RepoNameResolver {
             return this.remoteUrlToRepoNameCache.get(remoteUrl)!
         }
 
-        const repoNameRequest = graphqlClient.getRepoName(remoteUrl).then(repoName => {
-            if (repoName === null) {
-                return convertGitCloneURLToCodebaseName(remoteUrl)
-            }
-            return repoName
-        })
+        const repoNameRequest = graphqlClient.getRepoName(remoteUrl)
         this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
 
         return repoNameRequest
@@ -155,7 +145,7 @@ async function gitRemoteUrlsFromTreeWalkRecursive(uri: vscode.Uri): Promise<stri
 
         return remoteUrls.size ? Array.from(remoteUrls) : undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
@@ -185,7 +175,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 
         return undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
@@ -194,7 +184,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 }
 
 /**
- * A a singleton instance of the RepoNameResolver class.
- * `repoNameResolver.init` is called on extension activation to set platform specific remote url getters.
+ * A a singleton instance of the `EnterpriseRepoNameResolver` class.
+ * `enterpriseRepoNameResolver.init` is called on extension activation to set platform specific remote url getters.
  */
-export const repoNameResolver = new RepoNameResolver()
+export const enterpriseRepoNameResolver = new EnterpriseRepoNameResolver()

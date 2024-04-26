@@ -11,6 +11,8 @@ import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
+import { logDebug } from '../logger'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 
 // This module is designed to encourage, and to some degree enforce, safe
 // handling of file content that gets constructed into prompts. It works this
@@ -55,16 +57,39 @@ export class PromptString {
      * Returns a string that is safe to use in a prompt that is sent to an LLM.
      */
     public async toFilteredString(
-        contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored'>
+        contextFilter: Pick<ContextFiltersProvider, 'isUriIgnored' | 'toDebugObject'>
     ): Promise<string> {
         const references = internal_toReferences(this)
-        const checks = references.map(reference => contextFilter.isUriIgnored(reference))
+        const checks = references.map(
+            async reference => [reference, await contextFilter.isUriIgnored(reference)] as const
+        )
         const resolved = await Promise.all(checks)
-        if (!resolved.every(value => value === false)) {
+
+        let shouldThrow = false
+        for (const [reference, reason] of resolved) {
+            if (reason) {
+                shouldThrow = true
+                logDebug(
+                    'PromptString',
+                    'toFilteredString',
+                    `${reference} is ignored by the current context filters. Reason: ${reason}`,
+                    { verbose: contextFilter.toDebugObject() }
+                )
+                telemetryRecorder.recordEvent('contextFilters.promptString', 'illegalReference', {
+                    privateMetadata: {
+                        scheme: reference.scheme,
+                        reason,
+                    },
+                })
+            }
+        }
+
+        if (shouldThrow) {
             throw new Error(
-                'The prompt string contains a reference to a file that is not allowed by the context filters.'
+                'The prompt contains a reference to a file that is not allowed by your current Cody policy.'
             )
         }
+
         return internal_toString(this)
     }
 

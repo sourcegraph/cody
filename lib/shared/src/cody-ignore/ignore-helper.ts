@@ -116,6 +116,10 @@ export class IgnoreHelper {
             return false
         }
 
+        if (uri.scheme === 'http') {
+            return false
+        }
+
         // Ignore all other non-file URIs
         if (uri.scheme !== 'file') {
             return true

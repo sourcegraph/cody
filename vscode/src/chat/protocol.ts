@@ -236,6 +236,9 @@ export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
+export const CODY_OLLAMA_DOCS_URL = new URL(
+    'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-local-ollama-models-with-cody'
+)
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')

@@ -1,4 +1,7 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
+import type { PromptString } from '../prompt/prompt-string'
+import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
+import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 
 /**
@@ -13,7 +16,11 @@ export type ContextMentionProviderID = string
  *
  * In VS Code, use {@link getEnabledContextMentionProviders} instead of this.
  */
-export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [URL_CONTEXT_MENTION_PROVIDER]
+export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
+    URL_CONTEXT_MENTION_PROVIDER,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
+]
 
 /**
  * A provider that can supply context for users to @-mention in chat.
@@ -44,11 +51,12 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
      */
     resolveContextItem?(
         item: ContextItemFromProvider<ID>,
+        input: PromptString,
         signal?: AbortSignal
     ): Promise<ContextItemWithContent[]>
 }
 
-type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {
+export type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {
     /**
      * The ID of the {@link ContextMentionProvider} that supplied this context item.
      */

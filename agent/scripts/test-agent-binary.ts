@@ -30,13 +30,11 @@ async function main() {
 
     const osArch = getOSArch()
 
-    const client = new TestClient(
-        {
-            name: 'defaultClient',
-            accessToken,
-        },
-        './dist/agent-' + osArch
-    )
+    const client = TestClient.create({
+        name: 'defaultClient',
+        bin: './dist/agent-' + osArch,
+        accessToken,
+    })
 
     await client.initialize({
         serverEndpoint: serverEndpoint,

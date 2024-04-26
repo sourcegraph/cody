@@ -46,12 +46,12 @@ export function parseMentionQuery(
     return { provider: 'file', text: query }
 }
 
-const PUNCTUATION = ',\\+\\*\\$\\@\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
+const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
 
 const TRIGGERS = '@'
 
 /** Chars we expect to see in a mention (non-space, non-punctuation). */
-const VALID_CHARS = '[^' + TRIGGERS + PUNCTUATION + '\\s]'
+const VALID_CHARS = '[^' + PUNCTUATION + '\\s]'
 
 const MAX_LENGTH = 250
 

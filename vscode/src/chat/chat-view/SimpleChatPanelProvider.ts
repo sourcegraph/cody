@@ -4,17 +4,22 @@ import * as vscode from 'vscode'
 import {
     type BillingCategory,
     type BillingProduct,
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type ContextItemFile,
     ContextItemSource,
+    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
     type Message,
     ModelProvider,
+    ModelUsage,
     PromptString,
     type RangeData,
     type SerializedChatInteraction,
@@ -25,11 +30,14 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    tracer,
     truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -41,7 +49,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -476,7 +483,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    userContextFiles || []
+                    userContextFiles || [],
+                    inputText
                 )
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
