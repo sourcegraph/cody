@@ -20,6 +20,8 @@
     - [ ] [Organize multiple chats](#organize-multiple-chats)
     - [ ] [Isolate multiple chats](#isolate-multiple-chats)
     - [ ] [Up Down Arrow Keys](#up-down-arrow-keys)
+- Inline Edit
+    - [ ] [Instructions dialog](#instructions-dialog)
 - Multi-repo context
     - [ ] [Free/pro accounts:](#freepro-accounts)
     - [ ] [Enterprise accounts:](#enterprise-accounts)
@@ -313,6 +315,104 @@ Note: It's important to test performance on large repos here.
 3. Press `Up` arrow. Confirm that the chat input is populated with the message "Hello".
 4. Empty chat input and type multiline message "A\n\nB"
 5. Press `Up` arrow. Confirm that the caret is positioned in the empty line between A and B.
+
+## Inline Edit
+
+### Instructions Dialog
+
+Unless otherwise specified, all tests for the dialog begin with
+
+1. Open any source file.
+2. Right-click in the file to bring up the code context menu.
+   - alternatively, position your caret in the editor and type ctrl+shift+enter
+3. Choose Cody, then Edit Code. Confirm that the dialog appears.
+
+All tests involving prompt history should end with
+
+1. Close and reopen the current Project to clear prompt history.
+
+#### Appearance and behavior
+
+1. Open the dialog and check its position.
+  -  Dialog should always appear beneath the line you chose/clicked on.
+  -  The horizontal position of the dialog is always the same, indented a bit from the left edge.
+  -  Dialog always remains floating on top of the IDE and is not obsured by other IDE windows.
+2. Observe the dialog's appearance.
+  -  Dialog has rounded corners.
+3. Switch IDE themes by going to Settings and choosing a new theme.
+  -  Dialog's colors should change to match the new theme.
+4. Check the dialog's mouse interaction and modality:
+  -  Dialog is non-modal and you can put the focus back into the IDE without closing it.
+  -  Dialog can be dragged by clicking and dragging in the "title bar" area.
+  -  Dialog can be resized by carefully positioning the cursor at the corners and dragging.
+5. Close the dialog, and press Ctrl+Shift+Enter (Command+Shift+Enter on Mac)
+  - Dialog should appear, just as if it had been opened with the context menu
+
+#### Layout
+
+1. Open the dialog and check the layout.
+  - The file path suffix is displayed, truncated with ellipsis if needed.
+  - The instructions field is empty and is displaying the "ghost text" help.
+  - The history widget is not shown in the bottom center.
+  - The Edit Code button is initially disabled.
+2. Type some non-whitespace text into the text field.
+   - The Edit Code button is enabled.
+3. Delete all the text in the text field.
+   - The Edit Code button is disabled.
+4. Click the expansion icon at the right of the text field.
+  - The text field expands to allow more of your instructions to be visible.
+  - You can collapse it to return to the regular view.
+
+#### File Path
+
+1. Open a project file with a pathname of 80+ characters, then the Instructions dialog.
+   - The tail end of the path should be displayed, with the first part replaced with "…".
+2. Hover over the truncated file path.
+   - It should pop up a tooltip with the full/absolute file path.
+
+#### Closing
+
+1. Press the ESC key while the dialog has the focus.
+   - Dialog should always close, no matter which component in the dialog has the focus.
+2. Mouse-click the "[esc] to cancel" label in the lower left.
+   - Dialog should close.
+3. Close the editor tab from which the dialog was opened.
+   - Dialog should close along with the tab.
+4. With text in the instructions field, press the OS-specific hotkey shown next to Edit Code.
+  - The dialog should close and initiate an Edit request.
+
+#### History
+
+1. Type "one" into the text field (or anything you like as the first history item).
+2. Click Edit Code to submit the edit command, which closes the dialog.
+   - Then cancel the running command with the Cancel code lens.
+3. Reopen the instructions dialog anywhere in the document (or even another tab).
+   - The text field should now contain the text "one".
+   - The `↑↓ for history` label should now appear at the bottom of the dialog.
+   - Typing the up/down the arrows at this point only moves the cursor.
+4. Replace the text with "two", then oncce again Edit Code, cancel op, and reopen dialog.
+   - Text field contents should now be "two".
+   - Up/down arrows should cycle between "one" and "two".
+5. Type "my long instruction" into the text field. (Anything longer than 10 characters.)
+   - Up-arrow should take you to the most recent history item.
+   - Cycling the arrows, you should now also find "my long instruction" in the history.
+
+#### Model dropdown
+
+1. Click the model dropdown.
+  - Ensure that it shows the same models as the dropdown in the Chat window.
+  
+### Code Lenses
+
+1. Open Inline Edit, enter a valid instruction such as "add comment", and press Edit Code.
+2. While the Cancel lens group is showing, hover over the lens.
+3. While the Accept group is showing, hover over Accept, Retry, Undo, and Diff.
+4. Go through each lens above and, with a fresh instruction, type the key sequence.
+
+#### Expected behavior
+
+1. Each Action should have a valid tooltip.
+2. Typing that action's advertised key sequence activates the lens.
 
 ## Multi-repo context
 

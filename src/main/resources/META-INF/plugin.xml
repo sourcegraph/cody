@@ -240,9 +240,11 @@
             <reference ref="cody.newChat"/>
         </group>
 
-        <!-- Inline editor actions -->
+        <!-- Inline editing actions -->
         <action id="cody.editCodeAction"
-                class="com.sourcegraph.cody.edit.actions.EditCodeAction">
+                class="com.sourcegraph.cody.edit.actions.EditCodeAction"
+                text="Edit Code"
+                description="Opens the Edit Code dialog">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
         </action>
 
@@ -259,9 +261,70 @@
         <action id="cody.enableInlineEditsActions"
                 class="com.sourcegraph.cody.edit.EnableInlineEditsAction"/>
 
+        <!-- Lens widget actions -->
+        <action id="cody.inlineEditAcceptAction"
+                class="com.sourcegraph.cody.edit.actions.EditAcceptAction"
+                text="Accept Edit"
+                description="Accept the fixup">
+          <!-- Intended as ctrl shift PLUS but that is not recognized by IntelliJ. -->
+          <keyboard-shortcut first-keystroke="ctrl shift EQUALS" keymap="$default"/>
+          <keyboard-shortcut first-keystroke="ctrl shift EQUALS" keymap="Mac OS X 10.5+"/>
+        </action>
+
+        <action id="cody.inlineEditCancelAction"
+                class="com.sourcegraph.cody.edit.actions.EditCancelAction"
+                text="Cancel Edit"
+                description="Cancel the fixup">
+        </action>
+
+        <action id="cody.inlineEditRetryAction"
+                class="com.sourcegraph.cody.edit.actions.EditRetryAction"
+                text="Retry Edit"
+                description="Retry the fixup">
+        </action>
+
+        <action id="cody.inlineEditUndoAction"
+                class="com.sourcegraph.cody.edit.actions.EditUndoAction"
+                text="Undo Edit"
+                description="Undo the fixup">
+        </action>
 
         <action id="cody.editShowDiffAction"
-                class="com.sourcegraph.cody.edit.EditShowDiffAction">
+                class="com.sourcegraph.cody.edit.EditShowDiffAction"
+                text="Show Diff"
+                description="Show a diff view of the fixup">
+          <keyboard-shortcut first-keystroke="ctrl shift QUOTE" keymap="$default"/>
+          <keyboard-shortcut first-keystroke="ctrl shift QUOTE" keymap="Mac OS X 10.5+"/>
+        </action>
+
+        <action id="cody.inlineEditDismissAction"
+                class="com.sourcegraph.cody.edit.actions.EditDismissAction"
+                text="Dismiss"
+                description="Dismisses the inline error message">
+        </action>
+
+        <action id="cody.openLogAction"
+                class="com.sourcegraph.cody.statusbar.OpenLogAction"
+                text="Open Log"
+                description="Opens Cody log">
+          <keyboard-shortcut first-keystroke="ctrl shift L" keymap="$default"/>
+          <keyboard-shortcut first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
+        </action>
+
+        <action id="cody.editOpenOrRetryAction"
+                class="com.sourcegraph.cody.edit.actions.EditOpenOrRetryAction"
+                text="Edit Code or Retry Edit"
+                description="Opens the Edit Code dialog">
+            <keyboard-shortcut first-keystroke="ctrl shift ENTER" keymap="$default"/>
+            <keyboard-shortcut first-keystroke="ctrl shift ENTER" keymap="Mac OS X 10.5+"/>
+        </action>
+
+        <action id="cody.editCancelOrUndoAction"
+                class="com.sourcegraph.cody.edit.actions.EditCancelOrUndoAction"
+                text="Cancel or Undo Current Edit"
+                description="Activates the cancel or undo lens, whichever is showing.">
+            <keyboard-shortcut first-keystroke="ctrl shift BACK_SPACE" keymap="$default"/>
+            <keyboard-shortcut first-keystroke="ctrl shift BACK_SPACE" keymap="Mac OS X 10.5+"/>
         </action>
 
         <group id="SourcegraphEditor" popup="true" searchable="false">

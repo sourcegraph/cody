@@ -24,16 +24,10 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.AutocompleteItem
-import com.sourcegraph.cody.agent.protocol.AutocompleteParams
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
-import com.sourcegraph.cody.agent.protocol.ErrorCode
+import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
-import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -43,9 +37,7 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
-import com.sourcegraph.cody.vscode.CancellationToken
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
-import com.sourcegraph.cody.vscode.IntelliJTextDocument
+import com.sourcegraph.cody.vscode.*
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.CodyBundle
@@ -415,6 +407,27 @@ class CodyAutocompleteManager {
               /* renderer = */ renderer)
       if (inlay == null) {
         inlay = inlay2
+      }
+    }
+
+    if (inlay?.bounds?.location != null) {
+      val gotit =
+          GotItTooltip(
+                  "cody.autocomplete.gotIt",
+                  CodyBundle.getString("gotit.autocomplete.message")
+                      .fmt(
+                          KeymapUtil.getShortcutText("cody.acceptAutocompleteAction"),
+                          KeymapUtil.getShortcutText("cody.cycleForwardAutocompleteAction"),
+                          KeymapUtil.getShortcutText("cody.cycleBackAutocompleteAction")),
+                  inlay /* dispose tooltip alongside inlay */)
+              .withHeader(CodyBundle.getString("gotit.autocomplete.header"))
+              .withPosition(Balloon.Position.above)
+              .withIcon(Icons.CodyLogo)
+              .andShowCloseShortcut()
+      try {
+        gotit.show(editor.contentComponent) { _, _ -> inlay.bounds!!.location }
+      } catch (e: Exception) {
+        logger.info("Failed to display gotit tooltip", e)
       }
     }
 

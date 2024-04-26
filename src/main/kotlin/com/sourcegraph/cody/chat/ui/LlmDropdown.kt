@@ -12,6 +12,7 @@ import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.config.AccountTier
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.ui.LlmComboBoxRenderer
@@ -23,6 +24,7 @@ class LlmDropdown(
     private val modelUsage: ModelUsage,
     private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
+    val parentDialog: EditCommandPrompt?,
     chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
 
@@ -31,6 +33,7 @@ class LlmDropdown(
   init {
     renderer = LlmComboBoxRenderer(this)
     isVisible = false
+    isOpaque = false
 
     if (chatModelProviderFromState != null) {
       updateModelsInUI(listOf(chatModelProviderFromState))

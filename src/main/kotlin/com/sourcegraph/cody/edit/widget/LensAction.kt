@@ -1,24 +1,48 @@
 package com.sourcegraph.cody.edit.widget
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.EditorMouseEvent
-import com.intellij.ui.JBColor
+import com.sourcegraph.cody.edit.EditCommandPrompt
+import com.sourcegraph.cody.edit.EditUtil
 import com.sourcegraph.cody.edit.sessions.FixupSession
+import java.awt.Color
 import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.Graphics2D
+import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
 import java.awt.geom.Rectangle2D
+import javax.swing.UIManager
 
+@Suppress("UseJBColor")
 class LensAction(
-    group: LensWidgetGroup,
+    val group: LensWidgetGroup,
     private val text: String,
-    private val command: String,
-    private val onClick: () -> Unit
+    private val actionId: String
 ) : LensWidget(group) {
 
   private val underline = mapOf(TextAttribute.UNDERLINE to TextAttribute.UNDERLINE_ON)
 
-  override fun calcWidthInPixels(fontMetrics: FontMetrics): Int = fontMetrics.stringWidth(text)
+  // TODO: Put in resources
+  private val actionColor = Color(44, 45, 50)
+  private val acceptColor = Color(37, 92, 53)
+  private val undoColor = Color(114, 38, 38)
+
+  private val highlight =
+      LabelHighlight(
+          when (actionId) {
+            FixupSession.ACTION_ACCEPT -> acceptColor
+            FixupSession.ACTION_UNDO -> undoColor
+            else -> actionColor
+          })
+
+  override fun calcWidthInPixels(fontMetrics: FontMetrics): Int {
+    return fontMetrics.stringWidth(text) + 2 * SIDE_MARGIN
+  }
 
   override fun calcHeightInPixels(fontMetrics: FontMetrics): Int = fontMetrics.height
 
@@ -26,37 +50,72 @@ class LensAction(
     val originalFont = g.font
     val originalColor = g.color
     try {
-      if (mouseInBounds) {
-        g.font = originalFont.deriveFont(underline)
-      } else {
-        g.font = originalFont.deriveFont(Font.PLAIN)
-      }
-      if (mouseInBounds) g.color = JBColor.BLUE // TODO: use theme link rollover color
-      g.drawString(text, x, y + g.fontMetrics.ascent)
-
-      // After drawing, update lastPaintedBounds with the area we just used.
+      g.background = EditUtil.getEnhancedThemeColor("Panel.background")
       val metrics = g.fontMetrics
-      val width = metrics.stringWidth(text)
-      val height = metrics.height
+      val width = calcWidthInPixels(metrics)
+      val textHeight = metrics.height
+      highlight.drawHighlight(g, x, y, width, textHeight)
+
+      if (mouseInBounds) {
+        g.font = g.font.deriveFont(underline)
+        g.color = UIManager.getColor("Link.hoverForeground")
+      } else {
+        g.font = g.font.deriveFont(Font.PLAIN)
+        g.color = baseTextColor
+      }
+      g.drawString(text, x + SIDE_MARGIN, y + g.fontMetrics.ascent)
+
       lastPaintedBounds =
-          Rectangle2D.Float(x, y - metrics.ascent, width.toFloat(), height.toFloat())
+          Rectangle2D.Float(x, y - metrics.ascent, width.toFloat(), textHeight.toFloat())
     } finally {
+      // Other lenses are using the same Graphics2D.
       g.font = originalFont
       g.color = originalColor
     }
   }
 
-  override fun onClick(x: Int, y: Int): Boolean {
-    onClick.invoke()
+  override fun onClick(e: EditorMouseEvent): Boolean {
+    triggerAction(actionId, e.editor, e.mouseEvent)
     return true
   }
 
   override fun onMouseEnter(e: EditorMouseEvent) {
     mouseInBounds = true
-    showTooltip(FixupSession.getHotKey(command), e.mouseEvent)
+    showTooltip(EditCommandPrompt.getShortcutText(actionId) ?: return, e.mouseEvent)
+  }
+
+  private fun triggerAction(actionId: String, editor: Editor, mouseEvent: MouseEvent) {
+    val action = ActionManager.getInstance().getAction(actionId)
+    if (action != null) {
+      val dataContext = createDataContext(editor, mouseEvent)
+      val actionEvent =
+          AnActionEvent(
+              null,
+              dataContext,
+              "",
+              action.templatePresentation.clone(),
+              ActionManager.getInstance(),
+              0)
+      action.actionPerformed(actionEvent)
+    }
+  }
+
+  private fun createDataContext(editor: Editor, mouseEvent: MouseEvent): DataContext {
+    return DataContext { dataId ->
+      when (dataId) {
+        PlatformDataKeys.CONTEXT_COMPONENT.name -> mouseEvent.component
+        PlatformDataKeys.EDITOR.name -> editor
+        PlatformDataKeys.PROJECT.name -> editor.project
+        else -> null
+      }
+    }
   }
 
   override fun toString(): String {
     return "LensAction(text=$text)"
+  }
+
+  companion object {
+    const val SIDE_MARGIN = 5
   }
 }

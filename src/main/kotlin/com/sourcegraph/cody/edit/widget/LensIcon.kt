@@ -36,11 +36,11 @@ class LensIcon(group: LensWidgetGroup, val icon: Icon) : LensWidget(group) {
 
     if (scaledImage != null) {
       val iconHeight = scaledImage!!.getHeight(null)
-      val iconY = textCenterLine - (iconHeight / 2.0f)
+      val iconY = textCenterLine - iconHeight / 2.0f
       g.drawImage(scaledImage, x.toInt(), iconY.toInt(), null)
     } else {
       // If for some reason the image is null, still attempt to center the icon.
-      val iconY = textCenterLine - (icon.iconHeight / 2.0f)
+      val iconY = textCenterLine - icon.iconHeight / 2.0f
       icon.paintIcon(null, g, x.toInt(), iconY.toInt())
     }
   }
@@ -50,8 +50,9 @@ class LensIcon(group: LensWidgetGroup, val icon: Icon) : LensWidget(group) {
         if (icon is ImageIcon) {
           icon.image
         } else {
-          // Note that hovering over this shows "Please use UIUtil.createImage() instead".
-          // And that is also deprecated. If you know the right way, please fix this.
+          // We get a "Please use UIUtil.createImage() instead" warning here. But that
+          // method is also deprecated, which just makes a new warning.
+          @Suppress("WARNINGS")
           val bufferedImage =
               BufferedImage(icon.iconWidth, icon.iconHeight, BufferedImage.TYPE_INT_ARGB)
           val g = bufferedImage.createGraphics()

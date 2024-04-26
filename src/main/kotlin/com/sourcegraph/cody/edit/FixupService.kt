@@ -6,38 +6,36 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.protocol.EditTask
+import com.intellij.openapi.util.Disposer
 import com.sourcegraph.cody.edit.sessions.DocumentCodeSession
 import com.sourcegraph.cody.edit.sessions.FixupSession
 import com.sourcegraph.cody.edit.sessions.TestCodeSession
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
+import java.util.concurrent.atomic.AtomicReference
 
 /** Controller for commands that allow the LLM to edit the code directly. */
 @Service(Service.Level.PROJECT)
 class FixupService(val project: Project) : Disposable {
   private val logger = Logger.getInstance(FixupService::class.java)
 
-  // We only use this for multiplexing task updates from the Agent to concurrent sessions.
-  // TODO: Consider doing the multiplexing in CodyAgentClient instead.
-  private var activeSessions: MutableMap<String, FixupSession> = mutableMapOf()
+  private var activeSession: FixupSession? = null
 
-  // Sessions for which we have not yet received a task ID, but may receive an edit anyway.
-  private var pendingSessions: MutableSet<FixupSession> = mutableSetOf()
-
-  // The last text the user typed in without saving it, for continuity.
-  private var lastPrompt: String = ""
+  // We only have one editing session at a time in JetBrains, for now.
+  // This reference ensures we only have one inline-edit dialog active at a time.
+  val currentEditPrompt: AtomicReference<EditCommandPrompt?> = AtomicReference(null)
 
   /** Entry point for the inline edit command, called by the action handler. */
   fun startCodeEdit(editor: Editor) {
-    if (isEligibleForInlineEdit(editor)) {
-      EditCommandPrompt(this, editor, "Edit Code with Cody").displayPromptUI()
-    }
+    if (!isEligibleForInlineEdit(editor)) return
+    cancelActiveSession()
+    currentEditPrompt.set(EditCommandPrompt(this, editor, "Edit Code with Cody"))
   }
 
   /** Entry point for the document code command, called by the action handler. */
   fun startDocumentCode(editor: Editor) {
     if (!isEligibleForInlineEdit(editor)) return
+    activeSession?.finish()
     DocumentCodeSession(this, editor, editor.project ?: return)
   }
 
@@ -59,43 +57,38 @@ class FixupService(val project: Project) : Disposable {
     return true
   }
 
-  fun getLastPrompt(): String = lastPrompt
+  fun getActiveSession(): FixupSession? = activeSession
 
-  fun getActiveSession(): FixupSession? {
-    val session: FixupSession? =
-        pendingSessions.firstOrNull() ?: activeSessions.values.firstOrNull()
-    if (session == null) {
-      logger.warn("No sessions found for performing inline edits")
-    }
-    return session
+  fun setActiveSession(session: FixupSession) {
+    if (session == activeSession) return
+    cancelActiveSession()
+    activeSession = session
   }
 
-  fun getSessionForTask(task: EditTask): FixupSession? {
-    val session = activeSessions[task.id]
-    if (session == null) {
-      logger.warn("No session found for task ${task.id}")
+  // Fully cancels/retracts any current session.
+  fun cancelActiveSession() {
+    try {
+      activeSession?.finish()
+    } catch (x: Exception) {
+      logger.warn("Error while disposing session", x)
     }
-    return session
+    clearActiveSession()
   }
 
-  fun addSession(session: FixupSession) {
-    val taskId = session.taskId
-    if (taskId == null) {
-      pendingSessions.add(session)
-    } else {
-      pendingSessions.remove(session)
-      activeSessions[session.taskId!!] = session
-    }
-  }
-
-  fun removeSession(session: FixupSession) {
-    pendingSessions.remove(session)
-    activeSessions.remove(session.taskId)
+  // Just clear the service's reference to an active session.
+  fun clearActiveSession() {
+    // N.B. This cannot call back into the activeSession, or it will recurse.
+    activeSession = null
   }
 
   override fun dispose() {
-    activeSessions.values.forEach { it.dispose() }
-    pendingSessions.forEach { it.dispose() }
+    activeSession?.let {
+      try {
+        Disposer.dispose(it)
+      } catch (x: Exception) {
+        logger.warn("Error disposing session", x)
+      }
+    }
   }
 
   companion object {

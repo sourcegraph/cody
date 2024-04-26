@@ -1,9 +1,11 @@
 package com.sourcegraph.cody.ui
 
 import com.intellij.ui.CellRendererPanel
+import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.chat.ui.LlmDropdown
+import com.sourcegraph.cody.edit.EditCommandPrompt
 import java.awt.BorderLayout
 import java.awt.Component
 import javax.swing.BorderFactory
@@ -26,7 +28,6 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
     if (chatModelProvider !is ChatModelsResponse.ChatModelProvider) {
       return this
     }
-
     val panel = CellRendererPanel(BorderLayout())
     val iconLabel = JLabel(chatModelProvider.getIcon())
     panel.add(iconLabel, BorderLayout.WEST)
@@ -38,10 +39,14 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
     if (chatModelProvider.codyProOnly && llmDropdown.isCurrentUserFree) {
       textBadgePanel.add(JLabel(Icons.LLM.ProSticker), BorderLayout.EAST)
     }
-
+    val isInline = llmDropdown.parentDialog != null
+    if (isInline) {
+      background = EditCommandPrompt.textFieldBackground()
+      iconLabel.border = JBUI.Borders.empty()
+    }
     if (llmDropdown.isEnabled) {
-      textBadgePanel.background = component.background
-      textBadgePanel.foreground = component.foreground
+      textBadgePanel.background = if (isInline) background else component.background
+      textBadgePanel.foreground = if (isInline) background else component.foreground
     }
     listOf(displayNameLabel, textBadgePanel, panel).forEach { it.isEnabled = llmDropdown.isEnabled }
 
