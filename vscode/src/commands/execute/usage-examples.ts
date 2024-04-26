@@ -1,8 +1,15 @@
-import { PromptString, logDebug, ps, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    PromptString,
+    logDebug,
+    ps,
+    telemetryRecorder,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 import type { ChatCommandResult } from '../../main'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { CodyCommandArgs } from '../types'
 import { executeChat } from './ask'
 
@@ -35,13 +42,19 @@ export async function executeUsageExamplesCommand(
             return undefined
         }
 
-        let prompt = ps`Show usage examples for \`${PromptString.fromDocumentText(doc, symbolRange)}\``
+        const symbolText = PromptString.fromDocumentText(doc, symbolRange)
+        const prompt = ps`Show usage examples for \`${symbolText}\``
+        const contextFiles: ContextItem[] = []
 
         const symbolPackage = await guessSymbolPackage(doc, symbolRange)
         if (symbolPackage) {
-            prompt = ps`${prompt} from @${PromptString.unsafe_fromUserQuery(
+            const items = await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
                 `${symbolPackage.ecosystem}:${symbolPackage.name}`
-            )}`
+            )
+            const resolvedItems = await Promise.all(
+                items.map(item => PACKAGE_CONTEXT_MENTION_PROVIDER.resolveContextItem!(item, symbolText))
+            )
+            contextFiles.push(...resolvedItems.flat())
         }
 
         return {
@@ -50,6 +63,7 @@ export async function executeUsageExamplesCommand(
                 text: prompt,
                 submitType: 'user-newchat',
                 addEnhancedContext: false,
+                contextFiles,
                 source: args?.source,
             }),
         }
