@@ -6,4 +6,9 @@ data class IgnoreTestResponse(
     val policy: String // "use" or "ignore"
 )
 
-data class TestingIgnoreOverridePolicy(val uriRe: String, val repoRe: String)
+data class IgnorePolicyPattern(val repoNamePattern: String, val filePathPatterns: List<String>?)
+
+data class IgnorePolicySpec(
+    val exclude: List<IgnorePolicyPattern>?,
+    val include: List<IgnorePolicyPattern>?,
+)

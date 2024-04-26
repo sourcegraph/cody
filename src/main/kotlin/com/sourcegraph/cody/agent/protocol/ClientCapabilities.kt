@@ -8,5 +8,6 @@ data class ClientCapabilities(
     var edit: String? = null,
     var editWorkspace: String? = null,
     var codeLenses: String? = null,
-    val showDocument: String? = null
+    val showDocument: String? = null,
+    val ignore: String? = null
 )
