@@ -226,10 +226,7 @@ export {
     type ContextMentionProvider,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
-export {
-    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
-    ENHANCED_CONTEXT_ALLOCATION,
-} from './token/constants'
+export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'

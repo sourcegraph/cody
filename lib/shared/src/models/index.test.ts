@@ -16,18 +16,19 @@ describe('Model Provider', () => {
             expect(max).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET })
         })
 
-        it('returns max token limit for known chat model', () => {
-            const models = getDotComDefaultModels('default')
+        it('returns max token limit for known DotCom chat model ', () => {
+            const models = getDotComDefaultModels()
+            ModelProvider.setProviders(models)
+            expect(models[0].model).toBeDefined()
             const cw = ModelProvider.getContextWindowByID(models[0].model)
-            expect(cw.input).toEqual(models[0].contextWindow.input)
-            expect(models[0].contextWindow.context?.user).toEqual(undefined)
+            expect(cw).toStrictEqual(models[0].contextWindow)
         })
 
-        it('returns max token limit for dot com chat model with user context feature flag', () => {
-            const models = getDotComDefaultModels('experimental')
+        it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
+            const models = getDotComDefaultModels()
             ModelProvider.setProviders(models)
             const claude3SonnetModelID = 'anthropic/claude-3-sonnet-20240229'
-            const claude3SonnetModel = models.find(m => m.model === claude3SonnetModelID)
+            const claude3SonnetModel = ModelProvider.getProviderByModel(claude3SonnetModelID)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
             expect(claude3SonnetModel).toBeDefined()
             const cw = ModelProvider.getContextWindowByID(claude3SonnetModelID)
@@ -60,7 +61,7 @@ describe('Model Provider', () => {
         })
 
         it('returns max token limit for known chat model', () => {
-            const knownModel = getDotComDefaultModels('default')[0]
+            const knownModel = getDotComDefaultModels()[0]
             const { output } = ModelProvider.getContextWindowByID(knownModel.model)
             expect(output).toEqual(knownModel.contextWindow.output)
         })
