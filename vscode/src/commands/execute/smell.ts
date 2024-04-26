@@ -101,7 +101,7 @@ export async function executeSmellCommand(
         const chatArguments = await smellCommand(span, args)
         if (chatArguments === null) {
             vscode.window.showInformationMessage(
-                'Please select text before running the "Explain" command.'
+                'Please select text before running the "Smell" command.'
             )
             return
         }
