@@ -65,7 +65,9 @@ export async function executeUsageExamplesCommand(
             symbolPackage.name
         )}\`.\n(No preamble, 2 concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
             doc.uri
-        )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
+        )}, each with a Markdown header, a 1-sentence description, and then a code snippet. Use conventions but not data from code in ${PromptString.fromDisplayPath(
+            doc.uri
+        )}.)`
         const contextFiles: ContextItem[] = []
 
         const snippetRange = expandRangeByLines(
