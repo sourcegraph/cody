@@ -1460,7 +1460,7 @@ describe('Agent', () => {
         }, 20_000)
 
         checkDocumentCommand(
-            enterpriseClient,
+            demoEnterpriseClient,
             'editCommands/document (enterprise client)',
             'example.test.ts',
             obtained =>
