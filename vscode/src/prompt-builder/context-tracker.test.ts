@@ -15,7 +15,7 @@ describe('ContextTracker', () => {
             }
             const tracked = tracker.track(item)
             expect(tracked).toBe(true)
-            expect(tracker.getTrackedContextItems).toStrictEqual([item])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item])
         })
 
         it('should track unique context items and differentiate based on source', () => {
@@ -35,7 +35,7 @@ describe('ContextTracker', () => {
             }
             expect(tracker.track(user)).toBeTruthy()
             expect(tracker.track(unified)).toBeTruthy()
-            expect(tracker.getTrackedContextItems).toStrictEqual([user, unified])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([user, unified])
         })
 
         it('should not track the same context item twice', () => {
@@ -47,7 +47,7 @@ describe('ContextTracker', () => {
             }
             expect(tracker.track(item)).toBeTruthy()
             expect(tracker.track(item)).toBeFalsy()
-            expect(tracker.getTrackedContextItems).toStrictEqual([item])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item])
         })
 
         it('should track a larger range but not a smaller range contained within it from the same file', () => {
@@ -67,7 +67,7 @@ describe('ContextTracker', () => {
 
             expect(tracker.track(large)).toBeTruthy()
             expect(tracker.track(small)).toBeFalsy()
-            expect(tracker.getTrackedContextItems).toStrictEqual([large])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([large])
         })
 
         it('should track two non-overlapping ranges from the same filee', () => {
@@ -88,7 +88,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(item1)).toBeTruthy()
             expect(tracker.track(item2)).toBeTruthy()
 
-            expect(tracker.getTrackedContextItems).toStrictEqual([item1, item2])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item1, item2])
         })
 
         it('should track items from different sources unless their ranges overlap', () => {
@@ -119,7 +119,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(overlap)).toBeFalsy()
             expect(tracker.track(item2)).toBeFalsy()
 
-            expect(tracker.getTrackedContextItems).toStrictEqual([item1, item2])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item1, item2])
         })
 
         it('should track context from file with multiline range but not a single line range that overlaps with it', () => {
@@ -144,7 +144,7 @@ describe('ContextTracker', () => {
             expect(tracker.track(multiLine)).toBeTruthy()
             expect(tracker.track(singleLine)).toBeFalsy()
 
-            expect(tracker.getTrackedContextItems).toStrictEqual([multiLine])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([multiLine])
         })
 
         it('should track item with multiline range when the single line is within the multiline range', () => {
@@ -170,7 +170,35 @@ describe('ContextTracker', () => {
             expect(tracker.track(singleLine)).toBeTruthy()
             expect(tracker.track(multiLine)).toBeTruthy()
 
-            expect(tracker.getTrackedContextItems).toStrictEqual([multiLine])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([multiLine])
+        })
+
+        it('should track items across sessions', () => {
+            const tracker = new ContextTracker()
+            const singleLine: ContextItem = {
+                type: 'file',
+                uri: URI.file('/src/squirrel.ts'),
+                content: 'export interface Squirrel {}',
+                size: 10,
+                range: { start: { line: 5, character: 0 }, end: { line: 5, character: 0 } },
+            }
+            const multiLine: ContextItem = {
+                type: 'file',
+                uri: URI.file('/src/squirrel.ts'),
+                content: `/**
+                * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                * It is related to the implementation of precise code navigation in Sourcegraph.
+                */
+               export interface Squirrel {}`,
+                range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
+            }
+
+            expect(tracker.track(singleLine)).toBeTruthy()
+            expect(tracker.track(multiLine)).toBeTruthy()
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([multiLine])
+
+            expect(tracker.track(singleLine)).toBeFalsy()
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([])
         })
     })
 
@@ -185,10 +213,10 @@ describe('ContextTracker', () => {
             }
             // Tracked item is added to the tracking list
             expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.getTrackedContextItems).toStrictEqual([item])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item])
             // Untrack item is removed from the store
             tracker.untrack(item)
-            expect(tracker.getTrackedContextItems).toStrictEqual([])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([])
         })
 
         it('should be able to re-track untracked item', () => {
@@ -201,11 +229,11 @@ describe('ContextTracker', () => {
             expect(tracker.track(item)).toBeTruthy()
             tracker.untrack(item)
             expect(tracker.track(item)).toBeTruthy()
-            expect(tracker.getTrackedContextItems).toStrictEqual([item])
+            expect(tracker.getAndResetTrackedItems).toStrictEqual([item])
         })
     })
 
-    describe('getContextDisplayID', () => {
+    describe('getID', () => {
         it('should generate correct ID for non-codebase context items', () => {
             const tracker = new ContextTracker()
             const item1: ContextItem = {
@@ -218,10 +246,10 @@ describe('ContextTracker', () => {
                 uri: URI.file('/foo/baz'),
                 source: ContextItemSource.Uri,
             }
-            expect(tracker.getContextDisplayID(item1)).toBe(
+            expect(tracker.getID(item1)).toBe(
                 `${displayPath(item1.uri)}#${SHA256(item1.content ?? '').toString()}`
             )
-            expect(tracker.getContextDisplayID(item2)).toBe(
+            expect(tracker.getID(item2)).toBe(
                 `${displayPath(item2.uri)}#${SHA256(item2.content ?? '').toString()}`
             )
         })
@@ -235,7 +263,7 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Unified,
                 title: 'my/file/path',
             }
-            const id = tracker.getContextDisplayID(item)
+            const id = tracker.getID(item)
             expect(id).toBe('my/file/path')
         })
 
@@ -246,7 +274,7 @@ describe('ContextTracker', () => {
                 uri: URI.file('/foo/bar'),
                 source: ContextItemSource.Editor,
             }
-            const id = tracker.getContextDisplayID(item)
+            const id = tracker.getID(item)
             expect(id).toBe(displayPath(item.uri))
         })
     })

@@ -30,8 +30,8 @@ export class PromptBuilder {
 
     private processedContextType = new Set<ContextTokenUsageType>()
 
-    private contextTracker = new ContextTracker()
     private tokenCounter: TokenCounter
+    private contextTracker = new ContextTracker()
 
     constructor(contextWindow: ModelContextWindow) {
         this.tokenCounter = new TokenCounter(contextWindow)
@@ -129,7 +129,7 @@ export class PromptBuilder {
 
         return {
             ...result,
-            used: this.contextTracker.getTrackedContextItems,
+            used: this.contextTracker.getAndResetTrackedItems,
         }
     }
 }
