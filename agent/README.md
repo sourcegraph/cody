@@ -77,7 +77,7 @@ The following commands assume you are in the root directory of this repository:
 - You can also use VS Code or another Node debugger to connect to the agent,
   set breakpoints, and single-step through the code. This is detailed in
   [`CONTRIBUTING.md`](https://github.com/sourcegraph/jetbrains/blob/main/CONTRIBUTING.md).
-  
+
 
 ## Client implementations
 
