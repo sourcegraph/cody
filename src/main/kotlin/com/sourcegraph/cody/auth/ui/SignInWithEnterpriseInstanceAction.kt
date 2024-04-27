@@ -8,6 +8,7 @@ import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.signInWithSourcegrapDialog
 import com.sourcegraph.common.ui.DumbAwareBGTAction
 import com.sourcegraph.config.ConfigUtil
+import java.awt.Dimension
 
 class SignInWithEnterpriseInstanceAction(
     private val defaultServer: String = ConfigUtil.DOTCOM_URL
@@ -17,11 +18,13 @@ class SignInWithEnterpriseInstanceAction(
     val accountsHost = CodyPersistentAccountsHost(project)
     val dialog =
         signInWithSourcegrapDialog(
-            project,
-            e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT),
-            accountsHost::isAccountUnique)
-
-    dialog.setServer(defaultServer)
+                project,
+                e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT),
+                accountsHost::isAccountUnique)
+            .apply {
+              contentPane.minimumSize = Dimension(MIN_DIALOG_WIDTH, MIN_DIALOG_HEIGHT)
+              setServer(defaultServer)
+            }
     if (dialog.showAndGet()) {
       accountsHost.addAccount(
           dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
@@ -33,5 +36,11 @@ class SignInWithEnterpriseInstanceAction(
         toolWindow?.activate {}
       }
     }
+  }
+
+  companion object {
+    // Make it wide enough to see a reasonable servername and token
+    const val MIN_DIALOG_WIDTH = 600
+    const val MIN_DIALOG_HEIGHT = 200
   }
 }

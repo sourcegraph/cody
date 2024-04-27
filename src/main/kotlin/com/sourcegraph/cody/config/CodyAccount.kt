@@ -6,6 +6,7 @@ import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.auth.ServerAccount
 import com.sourcegraph.config.ConfigUtil
+import java.io.File
 
 @Tag("account")
 data class CodyAccount(
@@ -21,7 +22,7 @@ data class CodyAccount(
 
   fun isEnterpriseAccount(): Boolean = isDotcomAccount().not()
 
-  override fun toString(): String = "$server/$name"
+  override fun toString(): String = File(server.toString(), name).path
 }
 
 fun Collection<CodyAccount>.getFirstAccountOrNull() =

@@ -173,7 +173,7 @@ abstract class FixupSession(
   // which may require switching to the EDT. This is primarily to help smooth
   // integration testing, but also because there's no real harm blocking pool threads.
   private fun showLensGroup(group: LensWidgetGroup) {
-    // lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
+    lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
     lensGroup = group
     var range = selectionRange
     if (range == null) {
