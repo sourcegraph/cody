@@ -30,7 +30,6 @@ console.log(lines.join('\n'))
     --vscode-dropdown-background: #313131;
     --vscode-dropdown-border: #3c3c3c;
     --vscode-dropdown-foreground: #cccccc;
-    --vscode-dropdown-listBackground: #1f1f1f;
     --vscode-editor-background: #1f1f1f;
     --vscode-editor-findMatchBackground: #9e6a03;
     --vscode-editor-findMatchHighlightBackground: rgba(234, 92, 0, 0.33);
