@@ -259,7 +259,11 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return lock
     }
 
-    private async unsafeRunQuery(userQuery: PromptString, keywordQuery: string, scopeDir: FileURI): Promise<string> {
+    private async unsafeRunQuery(
+        userQuery: PromptString,
+        keywordQuery: string,
+        scopeDir: FileURI
+    ): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
         try {
