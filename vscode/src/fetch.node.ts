@@ -3,11 +3,12 @@ import https from 'node:https'
 import { parse as parseUrl } from 'url';
 import { agent } from '@sourcegraph/cody-shared'
 import { type Configuration } from '@sourcegraph/cody-shared'
-
 import { getConfiguration } from './configuration'
 import { ProxyAgent } from 'proxy-agent'
-import { HttpProxyAgent } from 'http-proxy-agent' 
+import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import { SocksProxyAgent } from 'socks-proxy-agent';
+
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -20,44 +21,56 @@ const pacProxyAgent = 'PacProxyAgent'
  * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
  */
 let proxyAgent: ProxyAgent
-
-
 let httpAgent: http.Agent
 let httpsAgent: https.Agent
-// WE should add back the Socks proxy agent logic from the before the 
+let socksProxyAgent: SocksProxyAgent
+// WE should add back the Socks proxy agent logic from the before the
 // chris's PR then this would all work properly - stephens recommednations
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
-
+    console.log("this is a car")
     return ({ protocol }) => {
+        if (proxy?.startsWith('socks') && !socksProxyAgent) {
+            socksProxyAgent = new SocksProxyAgent(proxy, {
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+            })
+            return socksProxyAgent
+        }
+        if (proxy?.startsWith('socks')) {
+            return socksProxyAgent
+        }
+
         const optionProxyUrl = undefined
         const optionStrictSSL = undefined
-	 
 
         const proxyURL = optionProxyUrl || getSystemProxyURI(protocol, process.env);
         if (!proxyURL) {
+            // return proxyAgent
+            console.log("we found no proxies", protocol)
             if (protocol === 'http:') {
                 return httpAgent
             }
             return httpsAgent
         }
-    
+        console.log("before proxy url", proxyURL)
+
         const proxyEndpoint = parseUrl(proxyURL);
-    
+
         if (!/^https?:$/.test(proxyEndpoint.protocol || '')) {
             if (protocol === 'http:') {
                 return httpAgent
             }
             return httpsAgent
         }
-    
+
         const opts = {
             host: proxyEndpoint.hostname || '',
             port: (proxyEndpoint.port ? +proxyEndpoint.port : 0) || (proxyEndpoint.protocol === 'https' ? 443 : 80),
             auth: proxyEndpoint.auth,
             rejectUnauthorized: !!(optionStrictSSL) ? optionStrictSSL : true,
         };
-    
+
         return protocol === 'http:'
             ? new HttpProxyAgent(proxyURL, opts)
             : new HttpsProxyAgent(proxyURL, opts);
@@ -76,12 +89,12 @@ function getSystemProxyURI( protocol: string, env: typeof process.env): string |
 		return env.HTTP_PROXY || env.http_proxy || null;
 	} else if (protocol === 'https:') {
 		return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null;
-	}
+	} else if (protocol === 'socks5:') {
+        return env.SOCKS_PROXY || env.socks_proxy || null;
+    }
 
 	return null;
 }
-
-
 
 export function initializeNetworkAgent(): void {
     proxyAgent = new ProxyAgent({
@@ -95,14 +108,8 @@ export function initializeNetworkAgent(): void {
         keepAlive: true,
         keepAliveMsecs: 60000,
     })
+    console.log(httpAgent, httpsAgent)
     proxyAgent.keepAlive = true
-    // httpsAgent = new https.Agent({
-    //     ...https.globalAgent.options,
-    //     keepAlive: true,
-    //     keepAliveMsecs: 60000,
-    // })
-
-    
     const customAgent = setCustomAgent(getConfiguration())
 
     /**
