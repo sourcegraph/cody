@@ -40,7 +40,7 @@ export interface CodyStatusBar {
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
-const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash)'
+const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash) File Ignored'
 const DEFAULT_TOOLTIP = 'Cody Settings'
 const DEFAULT_TOOLTIP_DISABLED = 'Cody is ignored in this file'
 
