@@ -16,7 +16,7 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
     async queryContextItems(query, signal) {
         const searchQuery = query.startsWith('src:') ? query.slice(4) : query
         const uri = URI.parse(graphqlClient.endpoint).with({
-            query: 'q=' + encodeURIComponent(searchQuery),
+            query: 'q=' + encodeURIComponent(searchQuery) + '&patternType=literal',
         })
         return [
             {
@@ -34,8 +34,7 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
             return [item as ContextItemWithContent]
         }
 
-        // Sneaking in the search query via the title
-        const rawQuery = item.title
+        const rawQuery = new URLSearchParams(item.uri.query).get('q')
         if (!rawQuery) {
             return []
         }
