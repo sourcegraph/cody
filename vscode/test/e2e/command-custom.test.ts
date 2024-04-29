@@ -27,14 +27,40 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:sidebar:custom:clicked',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
         'CodyVSCodeExtension:command:custom:build:executed',
         'CodyVSCodeExtension:command:custom:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:sidebar:custom:clicked',
+        'CodyVSCodeExtension:menu:command:custom:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.menu.custom.build:clicked',
+        'cody.command.custom.build:executed',
+        'cody.command.custom:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
     ],
 })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -147,6 +173,23 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.command.custom:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.ghostText:visible',
+    ],
 })('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -243,6 +286,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:command:config:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.menu:command:config:clicked',
     ],
 })('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

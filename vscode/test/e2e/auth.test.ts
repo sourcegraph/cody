@@ -25,13 +25,9 @@ test.extend<ExpectedEvents>({
     ],
     // list of V2 telemetry events we expect this test to log, add to this list as needed
     expectedV2Events: [
-        // 'cody.extension:installed',
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.signin.token:clicked',
         'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -39,7 +35,6 @@ test.extend<ExpectedEvents>({
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
         'cody.auth.logout:clicked',
-        'cody.auth:failed',
         'cody.auth:disconnected',
         'cody.statusbarIcon:clicked',
     ],

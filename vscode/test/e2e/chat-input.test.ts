@@ -23,6 +23,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:chatResponse:noCode',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
@@ -55,7 +69,36 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
 })
 
-test('chat input focus', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:default:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.menu:command:default:clicked',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:hasCode',
+    ],
+})('chat input focus', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -115,29 +158,79 @@ test('chat input focus', async ({ page, sidebar }) => {
     await expect(chatInput).toBeFocused()
 })
 
-test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
-    'chat model selector',
-    async ({ page, sidebar }) => {
-        await sidebarSignin(page, sidebar)
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('chat model selector', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
 
-        const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-        const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
 
-        // Model selector is initially enabled.
-        await expect(modelSelect).toBeEnabled()
+    // Model selector is initially enabled.
+    await expect(modelSelect).toBeEnabled()
 
-        // Immediately after submitting the first message, the model selector is disabled.
-        await chatInput.fill('Hello')
-        await chatInput.press('Enter')
-        await expect(modelSelect).toBeDisabled()
-    }
-)
+    // Immediately after submitting the first message, the model selector is disabled.
+    await chatInput.fill('Hello')
+    await chatInput.press('Enter')
+    await expect(modelSelect).toBeDisabled()
+})
 
-test('chat readability: long text are wrapped and scrollable in chat views', async ({
-    page,
-    sidebar,
-}) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:hasCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:hasCode',
+    ],
+})('chat readability: long text are wrapped and scrollable in chat views', async ({ page, sidebar }) => {
     // Open a file before starting a new chat to make sure chat will be opened on the side
     await sidebarSignin(page, sidebar)
     await openFile(page, 'buzz.test.ts')
