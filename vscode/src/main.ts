@@ -12,7 +12,6 @@ import {
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
-    isDotCom,
     newPromptMixin,
     setLogger,
     telemetryRecorder,
@@ -545,15 +544,17 @@ const register = async (
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
-            const endpoint = authStatus.endpoint
-            if (ws.focused && endpoint && isDotCom(endpoint) && authStatus.isLoggedIn) {
+            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     console.error(res)
                     return
                 }
-                authStatus.userCanUpgrade = !res.codyProEnabled
-                void chatManager.syncAuthStatus(authStatus)
+                // Re-auth if user's cody pro status has changed
+                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                    authProvider.reloadAuthStatus()
+                }
             }
         }),
         new CodyProExpirationNotifications(
