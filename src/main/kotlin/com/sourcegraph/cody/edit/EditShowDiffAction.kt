@@ -14,7 +14,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 
 class EditShowDiffAction : CompareFileWithEditorAction() {
-
   override fun isAvailable(e: AnActionEvent): Boolean {
     e.dataContext.getData(DIFF_SESSION_DATA_KEY) ?: return false
     e.dataContext.getData(EDITOR_DATA_KEY) ?: return false
@@ -22,9 +21,12 @@ class EditShowDiffAction : CompareFileWithEditorAction() {
   }
 
   override fun getDiffRequestChain(e: AnActionEvent): DiffRequestChain {
-    val project = e.project
-    val documentAfter = e.dataContext.getData(EDITOR_DATA_KEY)!!.document
-    val diffSessionDocument = e.dataContext.getData(DIFF_SESSION_DATA_KEY)!!
+    val project = e.project ?: throw IllegalStateException("Project cannot be null")
+
+    val activeSession = FixupService.getInstance(project).getActiveSession()
+    val documentAfter =
+        activeSession?.editor?.document ?: throw IllegalStateException("Editor cannot be null")
+    val diffSessionDocument = activeSession.createDiffDocument()
 
     val rhsContent = DiffContentFactory.getInstance().create(project, documentAfter)
     val fileType = (rhsContent as? FileContent)?.file?.fileType

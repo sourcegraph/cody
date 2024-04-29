@@ -1,11 +1,6 @@
 package com.sourcegraph.cody.edit.sessions
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -36,8 +31,6 @@ import com.sourcegraph.cody.agent.protocol.TaskIdParam
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
 import com.sourcegraph.cody.edit.EditCommandPrompt
-import com.sourcegraph.cody.edit.EditShowDiffAction
-import com.sourcegraph.cody.edit.EditShowDiffAction.Companion.DIFF_SESSION_DATA_KEY
 import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.cody.edit.exception.EditCreationException
 import com.sourcegraph.cody.edit.exception.EditExecutionException
@@ -255,26 +248,6 @@ abstract class FixupSession(
     controller.cancelActiveSession()
   }
 
-  fun diff() {
-    val editShowDiffAction = ActionManager.getInstance().getAction("cody.editShowDiffAction")
-
-    editShowDiffAction.actionPerformed(
-        AnActionEvent(
-            /* inputEvent = */ null,
-            /* dataContext = */ { dataId ->
-              when (dataId) {
-                CommonDataKeys.PROJECT.name -> project
-                EditShowDiffAction.EDITOR_DATA_KEY.name -> editor
-                DIFF_SESSION_DATA_KEY.name -> createDiffDocument()
-                else -> null
-              }
-            },
-            /* place = */ ActionPlaces.UNKNOWN,
-            /* presentation = */ Presentation(),
-            /* actionManager = */ ActionManager.getInstance(),
-            /* modifiers = */ 0))
-  }
-
   // Action handler for FixupSession.ACTION_UNDO.
   fun undo() {
     CodyAgentService.withAgent(project) { agent ->
@@ -395,7 +368,7 @@ abstract class FixupSession(
     }
   }
 
-  private fun createDiffDocument(): Document {
+  fun createDiffDocument(): Document {
     val document = EditorFactory.getInstance().createDocument(document.text)
     val diffActions = performedActions.map { it.copyForDocument(document) }
     WriteCommandAction.runWriteCommandAction(project) {
