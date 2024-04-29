@@ -26,6 +26,9 @@ importers:
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
+      vscode-jsonrpc:
+        specifier: ^8.2.0
+        version: 8.2.0
     devDependencies:
       '@biomejs/biome':
         specifier: 1.5.2
@@ -260,9 +263,9 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.0.16
-      re2-wasm:
-        specifier: ^1.0.2
-        version: 1.0.2
+      re2js:
+        specifier: ^0.4.1
+        version: 0.4.1
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -426,9 +429,6 @@ importers:
       proxy-agent:
         specifier: ^6.4.0
         version: 6.4.0
-      re2-wasm:
-        specifier: ^1.0.2
-        version: 1.0.2
       semver:
         specifier: ^7.5.4
         version: 7.6.0
@@ -11627,9 +11627,8 @@ packages:
       strip-json-comments: 2.0.1
     dev: true
 
-  /re2-wasm@1.0.2:
-    resolution: {integrity: sha512-VXUdgSiUrE/WZXn6gUIVVIsg0+Hp6VPZPOaHCay+OuFKy6u/8ktmeNEf+U5qSA8jzGGFsg8jrDNu1BeHpz2pJA==}
-    engines: {node: '>=10'}
+  /re2js@0.4.1:
+    resolution: {integrity: sha512-Kxb+OKXrEPowP4bXAF07NDXtgYX07S8HeVGgadx5/D/R41LzWg1kgTD2szIv2iHJM3vrAPnDKaBzfUE/7QWX9w==}
     dev: false
 
   /react-colorful@5.6.1(react-dom@18.2.0)(react@18.2.0):
@@ -13668,6 +13667,11 @@ packages:
   /vlq@0.2.3:
     resolution: {integrity: sha512-DRibZL6DsNhIgYQ+wNdWDL2SL3bKPlVrRiBqV5yuMm++op8W4kGFtaQfCs4KEJn0wBZcHVHJ3eoywX8983k1ow==}
     dev: true
+
+  /vscode-jsonrpc@8.2.0:
+    resolution: {integrity: sha512-C+r0eKJUIfiDIfwJhria30+TYWPtuHJXHtI7J0YlOmKAo7ogxP20T0zxB7HZQIFhIyvoBPwWskjxrvAtfjyZfA==}
+    engines: {node: '>=14.0.0'}
+    dev: false
 
   /vscode-languageserver-textdocument@1.0.8:
     resolution: {integrity: sha512-1bonkGqQs5/fxGT5UchTgjGVnfysL0O8v1AYMBjqTbWQTFn721zaPGDYFkOKtfDgFiSgXM3KwaG3FMGfW4Ed9Q==}

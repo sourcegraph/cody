@@ -7,7 +7,7 @@ data class SerializedChatMessage(
   val contextFiles: List<ContextItem>? = null,
   val error: ChatError? = null,
   val editorState: Any? = null,
-  val speaker: SpeakerEnum? = null, // Oneof: human, assistant, system
+  val speaker: SpeakerEnum, // Oneof: human, assistant, system
   val text: String? = null,
 ) {
 

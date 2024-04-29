@@ -1,4 +1,4 @@
-import { testFileUri } from '@sourcegraph/cody-shared'
+import { contextFiltersProvider, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
@@ -17,6 +17,7 @@ describe('RecentEditsRetriever', () => {
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
     beforeEach(() => {
         vi.useFakeTimers()
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
 
         retriever = new RecentEditsRetriever(FIVE_MINUTES, {
             onDidChangeTextDocument(listener) {
@@ -89,16 +90,15 @@ describe('RecentEditsRetriever', () => {
         })
     }
 
-    it('tracks document changes and creates a git diff', () => {
+    it('tracks document changes and creates a git diff', async () => {
         replaceFooLogWithNumber()
 
         deleteBarLog()
 
         addNumberLog()
 
-        expect(
-            retriever.getDiff(testDocument.uri)!.toString().split('\n').slice(2).join('\n')
-        ).toMatchInlineSnapshot(`
+        const diff = await retriever.getDiff(testDocument.uri)
+        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
           "@@ -1,7 +1,7 @@
            function foo() {
           -    console.log('foo')
@@ -114,7 +114,19 @@ describe('RecentEditsRetriever', () => {
         `)
     })
 
-    it('does not yield changes that are older than the configured timeout', () => {
+    it('no-ops for blocked files due to the context filter', async () => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+
+        replaceFooLogWithNumber()
+
+        deleteBarLog()
+
+        addNumberLog()
+
+        expect(await retriever.getDiff(testDocument.uri)).toBe(null)
+    })
+
+    it('does not yield changes that are older than the configured timeout', async () => {
         replaceFooLogWithNumber()
 
         vi.advanceTimersByTime(3 * 60 * 1000)
@@ -123,9 +135,8 @@ describe('RecentEditsRetriever', () => {
         vi.advanceTimersByTime(3 * 60 * 1000)
         addNumberLog()
 
-        expect(
-            retriever.getDiff(testDocument.uri)!.toString().split('\n').slice(2).join('\n')
-        ).toMatchInlineSnapshot(`
+        const diff = await retriever.getDiff(testDocument.uri)
+        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
           "@@ -2,6 +2,6 @@
                console.log(1337)
            }
@@ -139,7 +150,7 @@ describe('RecentEditsRetriever', () => {
         `)
     })
 
-    it('handles renames', () => {
+    it('handles renames', async () => {
         replaceFooLogWithNumber()
 
         vi.advanceTimersByTime(3 * 60 * 1000)
@@ -159,9 +170,8 @@ describe('RecentEditsRetriever', () => {
         vi.advanceTimersByTime(3 * 60 * 1000)
         addNumberLog(renamedDoc)
 
-        expect(
-            retriever.getDiff(newUri)!.toString().split('\n').slice(2).join('\n')
-        ).toMatchInlineSnapshot(`
+        const diff = await retriever.getDiff(newUri)
+        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
           "@@ -2,6 +2,6 @@
                console.log(1337)
            }
@@ -175,9 +185,9 @@ describe('RecentEditsRetriever', () => {
         `)
     })
 
-    it('handles deletions', () => {
+    it('handles deletions', async () => {
         replaceFooLogWithNumber()
         onDidDeleteFiles({ files: [testDocument.uri] })
-        expect(retriever.getDiff(testDocument.uri)).toBe(null)
+        expect(await retriever.getDiff(testDocument.uri)).toBe(null)
     })
 })

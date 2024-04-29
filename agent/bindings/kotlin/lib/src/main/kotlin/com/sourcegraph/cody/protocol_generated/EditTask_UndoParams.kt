@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class EditTask_UndoParams(
-  val id: FixupTaskID? = null,
+  val id: FixupTaskID,
 )
 

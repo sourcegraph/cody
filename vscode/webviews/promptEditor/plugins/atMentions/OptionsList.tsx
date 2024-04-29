@@ -1,5 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    type MentionQuery,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -15,8 +16,10 @@ import {
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
+    NO_PACKAGE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
+    PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
@@ -41,20 +44,7 @@ export const OptionsList: FunctionComponent<
     return (
         <div className={styles.container}>
             <h3 className={classNames(styles.item, styles.helpItem)}>
-                <span>
-                    {mentionQuery.provider === 'default'
-                        ? GENERAL_HELP_LABEL
-                        : mentionQuery.provider === 'symbol'
-                          ? options.length > 0 || !mentionQuery.text.length
-                                ? SYMBOL_HELP_LABEL
-                                : NO_SYMBOL_MATCHES_LABEL +
-                                  (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
-                          : options.length > 0
-                              ? isValidLineRangeQuery(query)
-                                    ? FILE_RANGE_TOOLTIP_LABEL
-                                    : FILE_HELP_LABEL
-                              : NO_FILE_MATCHES_LABEL}
-                </span>
+                <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
             {options.length > 0 && (
@@ -81,6 +71,28 @@ export const OptionsList: FunctionComponent<
     )
 }
 
+function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption[]): string {
+    switch (mentionQuery.provider) {
+        case 'default':
+            return GENERAL_HELP_LABEL
+        case 'package':
+            return options.length > 0 || mentionQuery.text.length < 3
+                ? PACKAGE_HELP_LABEL
+                : NO_PACKAGE_MATCHES_LABEL
+        case 'symbol':
+            return options.length > 0 || !mentionQuery.text.length
+                ? SYMBOL_HELP_LABEL
+                : NO_SYMBOL_MATCHES_LABEL +
+                      (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
+        default:
+            return options.length > 0
+                ? isValidLineRangeQuery(mentionQuery.text)
+                    ? FILE_RANGE_TOOLTIP_LABEL
+                    : FILE_HELP_LABEL
+                : NO_FILE_MATCHES_LABEL
+    }
+}
+
 const Item: FunctionComponent<{
     query: string
     isSelected: boolean
@@ -91,14 +103,19 @@ const Item: FunctionComponent<{
 }> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const isFileType = item.type === 'file'
-    const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
+    const isPackageType = item.type === 'package'
+    const icon =
+        isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+    const title =
+        item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
 
     const range = getLineRangeInMention(query, item.range)
-    const dir = displayPathDirname(item.uri)
-    const description = isFileType
-        ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-        : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+    const dir = decodeURIComponent(displayPathDirname(item.uri))
+    const description = isPackageType
+        ? ''
+        : isFileType
+          ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+          : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
 
     const isLargeFile = isFileType && item.isTooLarge
     const warning =

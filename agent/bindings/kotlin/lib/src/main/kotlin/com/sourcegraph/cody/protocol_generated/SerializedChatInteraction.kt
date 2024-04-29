@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class SerializedChatInteraction(
-  val humanMessage: SerializedChatMessage? = null,
+  val humanMessage: SerializedChatMessage,
   val assistantMessage: SerializedChatMessage? = null,
 )
 

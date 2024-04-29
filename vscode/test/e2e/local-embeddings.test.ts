@@ -64,6 +64,8 @@ const test = helpers.test
                 use({
                     'cody.testing.localEmbeddings.model': 'stub/stub',
                     'cody.testing.localEmbeddings.indexLibraryPath': dir,
+                    'cody.testing.localEmbeddings.endpoint': SERVER_URL + '/v1/embeddings',
+                    'cody.testing.localEmbeddings.dimension': 1536,
                 })
             )
         },

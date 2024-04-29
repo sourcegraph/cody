@@ -1,21 +1,22 @@
 import ini from 'ini'
 import * as vscode from 'vscode'
 
-import { graphqlClient, isFileURI } from '@sourcegraph/cody-shared'
+import { graphqlClient, isDefined, isFileURI } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
 import { LRUCache } from 'lru-cache'
-import { gitRemoteUrlFromGitExtension } from './git-extension-api'
+import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 
-export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string | undefined>
-type RepoName = string | typeof nullCacheValue
+export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
+type RepoName = string
 type RemoteUrl = string
+type UriFsPath = string
 
-export class RepoNameResolver {
+export class EnterpriseRepoNameResolver {
     private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
-    private fsPathToRepoNameCache = new LRUCacheWithNullValues()
-    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<string | null>>({ max: 1000 })
+    private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
+    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
 
     /**
      * Currently is used to set node specific remote url getters on the extension init.
@@ -25,51 +26,58 @@ export class RepoNameResolver {
     }
 
     /**
-     * Gets the codebase name from a workspace / file URI.
+     * Gets the repo names for a file URI.
      *
      * Checks if the Git API is initialized, initializes it if not.
-     * If found, gets the codebase name from the repository.
-     * If not found, attempts to use Git CLI to get the codebase name (in node.js environment only).
+     * If found, gets repo names from the repository.
      * if not found, walks the file system upwards until it finds a `.git` folder.
+     * If not found, attempts to use Git CLI to get the repo names (in node.js environment only).
      * If not found, returns `undefined`.
      */
-    public async getRepoNameFromWorkspaceUri(uri: vscode.Uri): Promise<string | null> {
+    public async getRepoNamesFromWorkspaceUri(uri: vscode.Uri): Promise<string[]> {
         if (!isFileURI(uri)) {
-            return null
+            return []
         }
 
         if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
-            return this.fsPathToRepoNameCache.get(uri.fsPath)
+            return this.fsPathToRepoNameCache.get(uri.fsPath)!
         }
 
         try {
-            let remoteUrl = gitRemoteUrlFromGitExtension(uri)
+            let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
-            if (!remoteUrl) {
-                remoteUrl = await gitRemoteUrlFromTreeWalk(uri)
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
+                remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
             }
 
-            if (!remoteUrl) {
+            if (remoteUrls === undefined || remoteUrls.length === 0) {
                 for (const getter of this.platformSpecificGitRemoteGetters) {
-                    remoteUrl = await getter(uri)
+                    remoteUrls = await getter(uri)
 
-                    if (remoteUrl) {
+                    if (remoteUrls?.length !== 0) {
                         break
                     }
                 }
             }
 
-            if (remoteUrl) {
-                const repoName = await this.resolveRepoNameForRemoteUrl(remoteUrl)
-                this.fsPathToRepoNameCache.set(uri.fsPath, repoName)
+            if (remoteUrls) {
+                const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
+                const repoNames = await Promise.all(
+                    uniqueRemoteUrls.map(remoteUrl => {
+                        return this.resolveRepoNameForRemoteUrl(remoteUrl)
+                    })
+                )
 
-                return repoName
+                const definedRepoNames = repoNames.filter(isDefined)
+                this.fsPathToRepoNameCache.set(uri.fsPath, definedRepoNames)
+
+                return definedRepoNames
             }
         } catch (error) {
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
         }
 
-        return null
+        return []
     }
 
     private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
@@ -84,36 +92,13 @@ export class RepoNameResolver {
     }
 }
 
-// Required to store null values in the cache.
-// See https://github.com/isaacs/node-lru-cache#storing-undefined-values
-const nullCacheValue = Symbol('null cache value')
-type UriFsPath = string
-
-class LRUCacheWithNullValues {
-    cache = new LRUCache<UriFsPath, RepoName>({ max: 1000 })
-
-    has(key: string): boolean {
-        return this.cache.has(key)
-    }
-
-    set(key: string, value: string | null): void {
-        this.cache.set(key, value === null ? nullCacheValue : value)
-    }
-
-    get(key: string): string | null {
-        const value = this.cache.get(key) || null
-        return value === nullCacheValue ? null : value
-    }
-}
-
 const textDecoder = new TextDecoder('utf-8')
 
 /**
  * Walks the tree from the current directory to find the `.git` folder and
- * extracts remote URL. Prioritizes `pushurl` over `fetchurl` and `url` defined
- * in `.git/config`.
+ * extracts remote URLs.
  */
-export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string | undefined> {
+export async function gitRemoteUrlsFromTreeWalk(uri: vscode.Uri): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -121,45 +106,46 @@ export async function gitRemoteUrlFromTreeWalk(uri: vscode.Uri): Promise<string 
     const isFile = (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File
     const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
 
-    return gitRemoteUrlFromTreeWalkRecursive(dirUri)
+    return gitRemoteUrlsFromTreeWalkRecursive(dirUri)
 }
 
-async function gitRemoteUrlFromTreeWalkRecursive(uri: vscode.Uri): Promise<string | undefined> {
+async function gitRemoteUrlsFromTreeWalkRecursive(uri: vscode.Uri): Promise<string[] | undefined> {
     const gitConfigUri = await resolveGitConfigUri(uri)
+
     if (!gitConfigUri) {
         const parentUri = vscode.Uri.joinPath(uri, '..')
         if (parentUri.fsPath === uri.fsPath) {
             return undefined
         }
 
-        return gitRemoteUrlFromTreeWalkRecursive(parentUri)
+        return gitRemoteUrlsFromTreeWalkRecursive(parentUri)
     }
 
     try {
         const raw = await vscode.workspace.fs.readFile(gitConfigUri)
         const configContents = textDecoder.decode(raw)
         const config = ini.parse(configContents)
-
-        let remoteFetchUrl: string | undefined = undefined
-        let remoteUrl: string | undefined = undefined
+        const remoteUrls = new Set<string>()
 
         for (const [key, value] of Object.entries(config)) {
             if (key.startsWith('remote ')) {
                 if (value?.pushurl) {
-                    return value.pushurl.trim()
+                    remoteUrls.add(value.pushurl)
                 }
 
-                if (!remoteFetchUrl && value?.fetchurl) {
-                    remoteFetchUrl = value.fetchurl
-                } else if (!remoteUrl && value.url) {
-                    remoteUrl = value.url
+                if (value?.fetchurl) {
+                    remoteUrls.add(value.fetchurl)
+                }
+
+                if (value?.url) {
+                    remoteUrls.add(value.url)
                 }
             }
         }
 
-        return remoteFetchUrl || remoteUrl
+        return remoteUrls.size ? Array.from(remoteUrls) : undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
@@ -189,7 +175,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 
         return undefined
     } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
+        if (error instanceof Error && 'code' in error) {
             return undefined
         }
 
@@ -198,7 +184,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 }
 
 /**
- * A a singleton instance of the RepoNameResolver class.
- * `repoNameResolver.init` is called on extension activation to set platform specific remote url getters.
+ * A a singleton instance of the `EnterpriseRepoNameResolver` class.
+ * `enterpriseRepoNameResolver.init` is called on extension activation to set platform specific remote url getters.
  */
-export const repoNameResolver = new RepoNameResolver()
+export const enterpriseRepoNameResolver = new EnterpriseRepoNameResolver()

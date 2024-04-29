@@ -4,7 +4,7 @@ package com.sourcegraph.cody.protocol_generated
 import com.google.gson.annotations.SerializedName
 
 data class RemoteRepoFetchState(
-  val state: StateEnum? = null, // Oneof: paused, fetching, errored, complete
+  val state: StateEnum, // Oneof: paused, fetching, errored, complete
   val error: CodyError? = null,
 ) {
 

@@ -5,6 +5,6 @@ data class TextDocumentShowOptions(
   val viewColumn: ViewColumn? = null,
   val preserveFocus: Boolean? = null,
   val preview: Boolean? = null,
-  val selection: Selection? = null,
+  val selection: Selection,
 )
 

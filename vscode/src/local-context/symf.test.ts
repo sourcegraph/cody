@@ -1,5 +1,4 @@
 import type { Polly } from '@pollyjs/core'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { startPollyRecording } from '../testutils/polly'
@@ -11,6 +10,7 @@ import { mkdtemp, open, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
+import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({

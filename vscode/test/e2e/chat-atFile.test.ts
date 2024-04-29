@@ -28,6 +28,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:at-mention:executed',
         // Log once on the first character entered for an @-mention query, e.g. "@."
         'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
     ],
 })('@-mention file in chat', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with

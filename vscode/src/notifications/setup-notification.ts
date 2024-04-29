@@ -4,9 +4,9 @@ import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { showActionNotification } from '.'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 
 export const showSetupNotification = async (config: ConfigurationWithAccessToken): Promise<void> => {
     if (config.serverEndpoint && config.accessToken) {

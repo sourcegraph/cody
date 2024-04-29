@@ -81,7 +81,7 @@ export async function configureExternalServices(
         ? platform.createContextRankingController?.(initialConfig)
         : undefined
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
+    const localEmbeddings = await platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
 

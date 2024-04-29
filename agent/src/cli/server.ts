@@ -30,9 +30,10 @@ export const serverCommand = new Command('server')
                         version: '0.1.0',
                         workspaceRootUri: 'file:///tmp/cody-server',
                     })
-                    agent.fallbackHandler = async msg => {
-                        ws.send(JSON.stringify(msg))
-                    }
+                    // TODO(olafurpg/sqs): reimplement with vscode-jsonrpc
+                    // agent.fallbackHandler = async msg => {
+                    //     ws.send(JSON.stringify(msg))
+                    // }
                     const initialized = await agent.request('extensionConfiguration/change', {
                         accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalidtoken',
                         serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalidendpoint',
@@ -41,7 +42,8 @@ export const serverCommand = new Command('server')
                     console.log({ initialized })
                 }
 
-                agent.messageEncoder.send(JSON.parse(String(data)))
+                // TODO(olafurpg/sqs): reimplement with vscode-jsonrpc
+                // agent.messageEncoder.send(JSON.parse(String(data)))
             })
         })
     })

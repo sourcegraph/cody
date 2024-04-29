@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -11,7 +12,6 @@ import {
 } from '../chat/protocol'
 import { releaseNotesURL } from '../release'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { version } from '../version'
 
 export function registerSidebarCommands(): vscode.Disposable[] {
