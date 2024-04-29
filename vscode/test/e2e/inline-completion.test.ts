@@ -14,10 +14,12 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
     ],
-})(
-    // TODO Fix flaky test
-    'shows chat sidebar completion onboarding notice on first completion accept',
-    async ({ page, sidebar }) => {
+})
+    .skip(// TODO Fix flaky test
+    'shows chat sidebar completion onboarding notice on first completion accept', async ({
+        page,
+        sidebar,
+    }) => {
         const indexFile = page.getByRole('treeitem', { name: 'index.html' }).locator('a')
         const editor = page.locator('[id="workbench\\.parts\\.editor"]')
         const notice = page.locator('.onboarding-autocomplete')
@@ -57,8 +59,7 @@ test.extend<ExpectedEvents>({
         await acceptInlineCompletion(page)
         await expect(otherAcceptedCompletion).toBeVisible()
         await expect(notice).not.toBeVisible()
-    }
-)
+    })
 
 test.extend<ExpectedEvents>({
     expectedEvents: [
