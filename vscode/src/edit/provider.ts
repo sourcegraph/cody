@@ -269,7 +269,7 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
-        if (task.state !== CodyTaskState.pending) {
+        if (task.state !== CodyTaskState.Pending) {
             return
         }
 

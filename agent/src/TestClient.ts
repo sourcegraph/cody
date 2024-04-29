@@ -389,10 +389,10 @@ export class TestClient extends MessageHandler {
      */
     public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
         switch (params.state) {
-            case CodyTaskState.applied:
+            case CodyTaskState.Applied:
                 return Promise.resolve()
-            case CodyTaskState.finished:
-            case CodyTaskState.error:
+            case CodyTaskState.Finished:
+            case CodyTaskState.Error:
                 return Promise.reject(
                     new Error(`Task reached terminal state before being applied ${params}`)
                 )
@@ -404,10 +404,10 @@ export class TestClient extends MessageHandler {
                 this.onDidUpdateTask(({ id, state, error }) => {
                     if (id === params.id) {
                         switch (state) {
-                            case CodyTaskState.applied:
+                            case CodyTaskState.Applied:
                                 return resolve()
-                            case CodyTaskState.error:
-                            case CodyTaskState.finished:
+                            case CodyTaskState.Error:
+                            case CodyTaskState.Finished:
                                 return reject(
                                     new Error(
                                         `Task reached terminal state before being applied ${JSON.stringify(
