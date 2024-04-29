@@ -47,7 +47,7 @@ export const registerEditTutorialCommand = (
 
         // Poll for task.state being applied
         const interval = setInterval(async () => {
-            if (task.state === CodyTaskState.applied) {
+            if (task.state === CodyTaskState.Applied) {
                 clearInterval(interval)
                 onComplete()
             }
