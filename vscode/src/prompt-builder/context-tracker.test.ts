@@ -6,19 +6,18 @@ import { ContextTracker } from './context-tracker'
 describe('ContextTracker', () => {
     describe('add', () => {
         it('should add a new context item to the tracker', () => {
-            const tracker = new ContextTracker([])
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
             }
-            const tracked = tracker.add(item)
-            expect(tracked).toBe(true)
+
+            const tracker = new ContextTracker([])
+            expect(tracker.add(item)).toBe(true)
             expect(tracker.added).toStrictEqual([item])
         })
 
-        it('should track unique context items and differentiate based on source', () => {
-            const tracker = new ContextTracker([])
+        it('should add an unique context items and differentiate based on source', () => {
             const user: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -32,25 +31,27 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Unified,
                 title: 'my/file/path',
             }
+
+            const tracker = new ContextTracker([])
             expect(tracker.add(user)).toBeTruthy()
             expect(tracker.add(unified)).toBeTruthy()
             expect(tracker.added).toStrictEqual([user, unified])
         })
 
-        it('should not track the same context item twice', () => {
-            const tracker = new ContextTracker([])
+        it('should not add the same context item twice', () => {
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
             }
+
+            const tracker = new ContextTracker([])
             expect(tracker.add(item)).toBeTruthy()
             expect(tracker.add(item)).toBeFalsy()
             expect(tracker.added).toStrictEqual([item])
         })
 
-        it('should track a larger range but not a smaller range contained within it from the same file', () => {
-            const tracker = new ContextTracker([])
+        it('should add a larger range but not a smaller range contained within it from the same file', () => {
             const large: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -64,13 +65,13 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Embeddings,
             }
 
+            const tracker = new ContextTracker([])
             expect(tracker.add(large)).toBeTruthy()
             expect(tracker.add(small)).toBeFalsy()
             expect(tracker.added).toStrictEqual([large])
         })
 
-        it('should track two non-overlapping ranges from the same filee', () => {
-            const tracker = new ContextTracker([])
+        it('should add context to tracker for two non-overlapping ranges from the same filee', () => {
             const item1: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -84,14 +85,14 @@ describe('ContextTracker', () => {
                 range: { start: { line: 15, character: 0 }, end: { line: 20, character: 0 } },
             }
 
+            const tracker = new ContextTracker([])
             expect(tracker.add(item1)).toBeTruthy()
             expect(tracker.add(item2)).toBeTruthy()
 
             expect(tracker.added).toStrictEqual([item1, item2])
         })
 
-        it('should not track selection if item with full range is included', () => {
-            const tracker = new ContextTracker([])
+        it('should not add selection if item with full range is included', () => {
             const fullFile: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -107,6 +108,7 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Selection,
             }
 
+            const tracker = new ContextTracker([])
             expect(tracker.add(selection)).toBeTruthy()
             expect(tracker.add(fullFile)).toBeTruthy()
             expect(tracker.add(selection)).toBeFalsy()
@@ -114,8 +116,7 @@ describe('ContextTracker', () => {
             expect(tracker.added).toStrictEqual([fullFile])
         })
 
-        it('should track items from different sources unless their ranges overlap', () => {
-            const tracker = new ContextTracker([])
+        it('should add items from different sources unless their ranges overlap', () => {
             const item1: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -137,6 +138,8 @@ describe('ContextTracker', () => {
                 range: { start: { line: 1, character: 0 }, end: { line: 10, character: 0 } },
                 source: ContextItemSource.Embeddings,
             }
+
+            const tracker = new ContextTracker([])
             expect(tracker.add(item1)).toBeTruthy()
             expect(tracker.add(item2)).toBeTruthy()
             expect(tracker.add(overlap)).toBeFalsy()
@@ -145,8 +148,7 @@ describe('ContextTracker', () => {
             expect(tracker.added).toStrictEqual([item1, item2])
         })
 
-        it('should track context from file with multiline range but not a single line range that overlaps with it', () => {
-            const tracker = new ContextTracker([])
+        it('should add context from file with multiline range but not a single line range that overlaps with it', () => {
             const singleLine: ContextItem = {
                 type: 'file',
                 uri: URI.file('/src/squirrel.ts'),
@@ -164,14 +166,15 @@ describe('ContextTracker', () => {
                export interface Squirrel {}`,
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
+
+            const tracker = new ContextTracker([])
             expect(tracker.add(multiLine)).toBeTruthy()
             expect(tracker.add(singleLine)).toBeFalsy()
 
             expect(tracker.added).toStrictEqual([multiLine])
         })
 
-        it('should track item with multiline range when the single line is within the multiline range', () => {
-            const tracker = new ContextTracker([])
+        it('should add item with multiline range when the single line is within the multiline range', () => {
             const singleLine: ContextItem = {
                 type: 'file',
                 uri: URI.file('/src/squirrel.ts'),
@@ -190,14 +193,39 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
+            const tracker = new ContextTracker([])
             expect(tracker.add(singleLine)).toBeTruthy()
             expect(tracker.add(multiLine)).toBeTruthy()
 
             expect(tracker.added).toStrictEqual([multiLine])
         })
 
-        it('should track items from previous sessions when provided at init', () => {
+        it('should replace exisiting of context with the same range', () => {
+            const fullFile: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar'),
+                content: 'foobar',
+                range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
+                source: ContextItemSource.Editor,
+            }
+            const selection: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/bar'),
+                content: 'foobar',
+                range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
+                source: ContextItemSource.Selection,
+            }
+
             const tracker = new ContextTracker([])
+            expect(tracker.add(selection)).toBeTruthy()
+            expect(tracker.added).toStrictEqual([selection])
+            expect(tracker.add(fullFile)).toBeTruthy()
+            expect(tracker.added).toStrictEqual([fullFile])
+            expect(tracker.add(selection)).toBeTruthy()
+            expect(tracker.added).toStrictEqual([selection])
+        })
+
+        it('should track items from previous sessions when provided at init', () => {
             const singleLine: ContextItem = {
                 type: 'file',
                 uri: URI.file('/src/squirrel.ts'),
@@ -216,45 +244,60 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
-            expect(tracker.add(singleLine)).toBeTruthy()
-            expect(tracker.add(multiLine)).toBeTruthy()
+            const sessionOneTracker = new ContextTracker([])
+            expect(sessionOneTracker.add(singleLine)).toBeTruthy()
+            expect(sessionOneTracker.add(multiLine)).toBeTruthy()
 
-            const used = tracker.added
-            expect(used).toStrictEqual([multiLine])
+            // Used items from session one
+            const usedInSessionOne = sessionOneTracker.added
+            expect(usedInSessionOne).toStrictEqual([multiLine])
 
-            // Create a new tracker with the used items from the previous tracker
-            const tracker2 = new ContextTracker(used)
-            expect(tracker2.add(singleLine)).toBeFalsy()
-            expect(tracker.added).toStrictEqual(used)
+            // Create a new tracker with the used items from the previous session
+            const sessionTwoTracker = new ContextTracker(usedInSessionOne)
+            expect(sessionTwoTracker.add(singleLine)).toBeFalsy()
+            expect(sessionTwoTracker.added).not.toStrictEqual(usedInSessionOne)
+            expect(sessionTwoTracker.added).toStrictEqual([])
         })
     })
 
     describe('remove', () => {
-        it('should remove untracked item from store', () => {
-            const tracker = new ContextTracker([])
+        it('should remove item from added', () => {
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
-            // Tracked item is added to the tracking list
+
+            // Context item is added to the tracking list
+            const tracker = new ContextTracker([])
             expect(tracker.add(item)).toBeTruthy()
             expect(tracker.added).toStrictEqual([item])
-            // Untrack item is removed from the store
+
+            // Remove item from the tracking list
             tracker.remove(item)
             expect(tracker.added).toStrictEqual([])
         })
 
-        it('should be able to re-track untracked item', () => {
-            const tracker = new ContextTracker([])
+        it('should be able to re-add removed item to added list', () => {
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 source: ContextItemSource.User,
             }
+
+            const tracker = new ContextTracker([])
+            // Confirm that the item is added to the tracking list
             expect(tracker.add(item)).toBeTruthy()
+            // and adding it again should return false
+            expect(tracker.add(item)).toBeFalsy()
+            expect(tracker.added).toStrictEqual([item])
+
+            // Remove the item from the tracking list
             tracker.remove(item)
+            expect(tracker.added).toStrictEqual([])
+
+            // Confirm that the item can be re-added to the tracking list
             expect(tracker.add(item)).toBeTruthy()
             expect(tracker.added).toStrictEqual([item])
         })
