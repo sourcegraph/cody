@@ -17,6 +17,13 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
+        requireUpgradeAvailable: true,
+    },
+    {
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.sidebar.account' },
+        requirePaid: false,
     },
     {
         title: 'Settings',
@@ -60,10 +67,5 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         title: 'Discord',
         icon: 'discord-logo',
         command: { command: 'cody.sidebar.discord' },
-    },
-    {
-        title: 'Account',
-        icon: 'account',
-        command: { command: 'cody.sidebar.account' },
     },
 ]

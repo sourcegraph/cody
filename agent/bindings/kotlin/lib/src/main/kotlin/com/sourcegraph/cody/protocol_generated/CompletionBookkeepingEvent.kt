@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class CompletionBookkeepingEvent(
-  val id: CompletionLogID? = null,
-  val startedAt: Int? = null,
+  val id: CompletionLogID,
+  val startedAt: Int,
   val networkRequestStartedAt: Int? = null,
   val startLoggedAt: Int? = null,
   val loadedAt: Int? = null,
@@ -11,7 +11,7 @@ data class CompletionBookkeepingEvent(
   val suggestionLoggedAt: Int? = null,
   val suggestionAnalyticsLoggedAt: Int? = null,
   val acceptedAt: Int? = null,
-  val items: List<CompletionItemInfo>? = null,
-  val loggedPartialAcceptedLength: Int? = null,
+  val items: List<CompletionItemInfo>,
+  val loggedPartialAcceptedLength: Int,
 )
 

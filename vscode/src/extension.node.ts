@@ -1,12 +1,12 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import * as vscode from 'vscode'
 
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
+import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'

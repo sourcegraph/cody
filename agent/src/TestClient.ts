@@ -2,7 +2,7 @@ import assert from 'node:assert'
 
 import { createPatch } from 'diff'
 
-import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -11,6 +11,12 @@ import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 import { Uri } from 'vscode'
+import {
+    type MessageConnection,
+    StreamMessageReader,
+    StreamMessageWriter,
+    createMessageConnection,
+} from 'vscode-jsonrpc/node'
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -54,9 +60,63 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
+export function getAgentDir(): string {
+    const cwd = process.cwd()
+    return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
+}
+
+interface TestClientParams {
+    readonly name: string
+    readonly accessToken?: string
+    bin?: string
+    serverEndpoint?: string
+    telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
+    areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
+    logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
+    onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
+}
+
 export class TestClient extends MessageHandler {
+    public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
+        const agentDir = getAgentDir()
+        const recordingDirectory = path.join(agentDir, 'recordings')
+        const agentScript = path.join(agentDir, 'dist', 'index.js')
+
+        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
+
+        const child = spawn(bin, args, {
+            stdio: 'pipe',
+            cwd: agentDir,
+            env: {
+                CODY_SHIM_TESTING: 'true',
+                CODY_TEMPERATURE_ZERO: 'true',
+                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
+                CODY_RECORDING_DIRECTORY: recordingDirectory,
+                CODY_RECORDING_NAME: params.name,
+                SRC_ACCESS_TOKEN: params.accessToken,
+                CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
+                DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
+                CODY_LOG_EVENT_MODE: params.logEventMode,
+                ...process.env,
+            },
+        })
+        child.on('error', error => console.error('TestClient spawn error:', error))
+        child.on('exit', code => {
+            if (code !== 0) {
+                console.error(`TestClient spawn exit code ${code}`)
+            }
+        })
+        child.stderr.on('data', data => {
+            console.error(`----stderr----\n${data}--------------`)
+        })
+        const conn = createMessageConnection(
+            new StreamMessageReader(child.stdout),
+            new StreamMessageWriter(child.stdin)
+        )
+        return new TestClient(conn, params)
+    }
+
     public info: ClientInfo
-    public agentProcess?: ChildProcessWithoutNullStreams
     // Array of all raw `progress/*` notification. Typed as `any` because
     // start/end/report have different types.
     public progressMessages: ProgressMessage[] = []
@@ -68,19 +128,14 @@ export class TestClient extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments()
     public workspaceEditParams: WorkspaceEditParams[] = []
 
-    constructor(
-        private readonly params: {
-            readonly name: string
-            readonly accessToken?: string
-            serverEndpoint?: string
-            telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
-            areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
-            logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
-            onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
-        },
-        private bin = 'node'
+    private constructor(
+        conn: MessageConnection,
+        public readonly params: Pick<
+            TestClientParams,
+            'name' | 'serverEndpoint' | 'accessToken' | 'onWindowRequest'
+        >
     ) {
-        super()
+        super(conn)
         this.serverEndpoint = params.serverEndpoint ?? 'https://sourcegraph.com'
 
         this.name = params.name
@@ -334,10 +389,10 @@ export class TestClient extends MessageHandler {
      */
     public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
         switch (params.state) {
-            case CodyTaskState.applied:
+            case CodyTaskState.Applied:
                 return Promise.resolve()
-            case CodyTaskState.finished:
-            case CodyTaskState.error:
+            case CodyTaskState.Finished:
+            case CodyTaskState.Error:
                 return Promise.reject(
                     new Error(`Task reached terminal state before being applied ${params}`)
                 )
@@ -349,10 +404,10 @@ export class TestClient extends MessageHandler {
                 this.onDidUpdateTask(({ id, state, error }) => {
                     if (id === params.id) {
                         switch (state) {
-                            case CodyTaskState.applied:
+                            case CodyTaskState.Applied:
                                 return resolve()
-                            case CodyTaskState.error:
-                            case CodyTaskState.finished:
+                            case CodyTaskState.Error:
+                            case CodyTaskState.Finished:
                                 return reject(
                                     new Error(
                                         `Task reached terminal state before being applied ${JSON.stringify(
@@ -430,11 +485,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.agentProcess = this.spawnAgentProcess()
-
-        this.connectProcess(this.agentProcess, error => {
-            console.error(error)
-        })
         this.registerNotification('editTask/didUpdate', params => {
             this.taskUpdate.fire(params)
         })
@@ -446,6 +496,8 @@ export class TestClient extends MessageHandler {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
         })
+
+        this.conn.listen()
 
         try {
             const serverInfo = await this.handshake(this.info, additionalConfig)
@@ -615,13 +667,8 @@ ${patch}`
             await this.request('shutdown', null)
             this.notify('exit', null)
         } else {
-            console.log('Agent has already exited')
+            console.error('Agent has already exited')
         }
-    }
-
-    public getAgentDir(): string {
-        const cwd = process.cwd()
-        return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
     }
 
     private async handshake(
@@ -659,32 +706,6 @@ ${patch}`
         })
     }
 
-    private spawnAgentProcess() {
-        const agentDir = this.getAgentDir()
-        const recordingDirectory = path.join(agentDir, 'recordings')
-        const agentScript = path.join(agentDir, 'dist', 'index.js')
-
-        const bin = this.bin
-        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
-
-        return spawn(bin, args, {
-            stdio: 'pipe',
-            cwd: agentDir,
-            env: {
-                CODY_SHIM_TESTING: 'true',
-                CODY_TEMPERATURE_ZERO: 'true',
-                CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
-                CODY_RECORDING_DIRECTORY: recordingDirectory,
-                CODY_RECORDING_NAME: this.name,
-                SRC_ACCESS_TOKEN: this.accessToken,
-                CODY_TELEMETRY_EXPORTER: this.params.telemetryExporter ?? 'testing',
-                DISABLE_FEATURE_FLAGS: this.params.areFeatureFlagsEnabled ? undefined : 'true',
-                CODY_LOG_EVENT_MODE: this.params.logEventMode,
-                ...process.env,
-            },
-        })
-    }
-
     private getClientInfo(): ClientInfo {
         const workspaceRootUri = Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
 
@@ -701,6 +722,7 @@ ${patch}`
                 showDocument: 'enabled',
                 codeLenses: 'enabled',
                 showWindowMessage: 'request',
+                ignore: 'enabled',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,

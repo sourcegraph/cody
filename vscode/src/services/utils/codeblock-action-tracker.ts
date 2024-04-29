@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../telemetry'
-import { telemetryRecorder } from '../telemetry-v2'
 
 import { countCode, matchCodeSnippets } from './code-count'
 

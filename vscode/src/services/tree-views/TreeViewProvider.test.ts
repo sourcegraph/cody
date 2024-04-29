@@ -18,7 +18,7 @@ describe('TreeViewProvider', () => {
     const verifiedEmail = true
     const codyEnabled = true
     const validUser = true
-    const username = 'cody'
+    const username = 'someuser'
     const primaryEmail = 'me@domain.test'
     const displayName = 'Test Name'
     const avatarURL = 'https://domain.test/avatar.png'
@@ -77,18 +77,35 @@ describe('TreeViewProvider', () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: DOTCOM_URL })
             expect(await findTreeItem('Upgrade')).not.toBeUndefined()
+            expect(await findTreeItem('Usage')).not.toBeUndefined()
         })
 
         it('is not shown when user cannot upgrade', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: false, endpoint: DOTCOM_URL })
             expect(await findTreeItem('Upgrade')).toBeUndefined()
+            expect(await findTreeItem('Usage')).toBeUndefined()
         })
 
         it('is not shown when not dotCom regardless of GA or upgrade flags', async () => {
             tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
             await updateTree({ upgradeAvailable: true, endpoint: new URL('https://example.org') })
             expect(await findTreeItem('Upgrade')).toBeUndefined()
+            expect(await findTreeItem('Usage')).toBeUndefined()
+        })
+    })
+
+    describe('Account link', () => {
+        it('is shown when user is pro', async () => {
+            tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
+            await updateTree({ upgradeAvailable: false, endpoint: DOTCOM_URL })
+            const accountTreeItem = await findTreeItem('Account')
+            expect(accountTreeItem).not.toBeUndefined()
+        })
+        it('is shown when user is Enterprise', async () => {
+            tree = new TreeViewProvider('support', emptyMockFeatureFlagProvider)
+            await updateTree({ upgradeAvailable: true, endpoint: new URL('https://example.org') })
+            expect(await findTreeItem('Account')).not.toBeUndefined()
         })
     })
 })

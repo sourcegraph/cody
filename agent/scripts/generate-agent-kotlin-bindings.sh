@@ -4,10 +4,12 @@ INDEXER_DIR=${SCIP_TYPESCRIPT_DIR:-../scip-typescript-cody-bindings}
 
 if [ ! -d $INDEXER_DIR ]; then
   git clone https://github.com/sourcegraph/scip-typescript.git $INDEXER_DIR
+  git pull origin
 fi
 
 pushd $INDEXER_DIR
 git checkout olafurpg/signatures
+git pull origin olafurpg/signatures
 yarn install
 popd
 

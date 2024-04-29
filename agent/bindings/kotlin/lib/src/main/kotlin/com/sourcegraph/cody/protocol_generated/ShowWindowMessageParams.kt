@@ -4,8 +4,8 @@ package com.sourcegraph.cody.protocol_generated
 import com.google.gson.annotations.SerializedName
 
 data class ShowWindowMessageParams(
-  val severity: SeverityEnum? = null, // Oneof: error, warning, information
-  val message: String? = null,
+  val severity: SeverityEnum, // Oneof: error, warning, information
+  val message: String,
   val options: MessageOptions? = null,
   val items: List<String>? = null,
 ) {

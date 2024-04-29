@@ -32,7 +32,7 @@
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "marked": "^4.0.16",
-    "re2-wasm": "^1.0.2",
+    "re2js": "^0.4.1",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {

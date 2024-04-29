@@ -115,21 +115,26 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                                     : undefined
                             }
                         >
-                            <span className={styles.title}>{capitalize(option.title)}</span>
+                            <span className={styles.title}>{option.title}</span>
                             <span className={styles.provider}>{` by ${capitalize(
                                 option.provider
                             )}`}</span>
                         </span>
-                        {isModelDisabled(option.codyProOnly) && (
-                            <span className={styles.badge}>Pro</span>
-                        )}
+                        <span className={styles.badge}>
+                            {isModelDisabled(option.codyProOnly) && (
+                                <span className={styles.codyProBadge}>Pro</span>
+                            )}
+                            {option.provider === 'Ollama' && (
+                                <span className={styles.experimentalBadge}>Experimental</span>
+                            )}
+                        </span>
                     </VSCodeOption>
                 ))}
 
                 <div slot="selected-value" className={styles.selectedValue}>
                     <ChatModelIcon model={currentModel.model} />
                     <span>
-                        <span className={styles.title}>{capitalize(currentModel.title)}</span>
+                        <span className={styles.title}>{currentModel.title}</span>
                     </span>
                 </div>
             </VSCodeDropdown>

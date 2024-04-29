@@ -2,10 +2,10 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ExtensionConfiguration(
-  val serverEndpoint: String? = null,
+  val serverEndpoint: String,
   val proxy: String? = null,
-  val accessToken: String? = null,
-  val customHeaders: Map<String, String>? = null,
+  val accessToken: String,
+  val customHeaders: Map<String, String>,
   val anonymousUserID: String? = null,
   val autocompleteAdvancedProvider: String? = null,
   val autocompleteAdvancedModel: String? = null,

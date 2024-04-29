@@ -2,9 +2,9 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class RemoteRepo_ListResult(
-  val startIndex: Int? = null,
-  val count: Int? = null,
-  val repos: List<ReposParams>? = null,
-  val state: RemoteRepoFetchState? = null,
+  val startIndex: Int,
+  val count: Int,
+  val repos: List<ReposParams>,
+  val state: RemoteRepoFetchState,
 )
 

@@ -78,14 +78,20 @@ export const customPromptsContextOptions: ContextOption[] = [
         picked: true,
     },
     {
+        id: 'currentFile',
+        label: 'Current File',
+        detail: 'Content of the text file in your active editor.',
+        picked: false,
+    },
+    {
         id: 'currentDir',
         label: 'Current Directory',
-        detail: 'First 10 text files in the current directory. If the prompt includes the words "test" or "tests", only test files will be included.',
+        detail: 'First 10 text files in the current directory.',
         picked: false,
     },
     {
         id: 'openTabs',
-        label: 'Current Open Tabs',
+        label: 'Open Tabs',
         detail: 'First 10 text files in current open tabs',
         picked: false,
     },
