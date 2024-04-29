@@ -13,8 +13,28 @@ import type {
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
+import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
+
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
+
+/**
+ * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
+ * createWebviewTelemetryRecorder instead in webviews.
+ *
+ * V2 telemetry RPC parameter type for webviews.
+ */
+export type WebviewRecordEventParameters = TelemetryEventParameters<
+    // 👷 HACK:  We use looser string types instead of the actual SDK at
+    // '@sourcegraph/cody-shared/src/telemetry-v2' because this defines a
+    // wire protocol where the stricter type-checking is pointless. Do not
+    // do this elsewhere!
+    { [key: string]: number },
+    BillingProduct,
+    BillingCategory
+>
 
 /**
  * A message sent from the webview to the extension host.
@@ -23,10 +43,29 @@ export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
     | {
+          /**
+             * @deprecated v1 telemetry RPC - use 'recordEvent' instead
+             */
           command: 'event'
           eventName: string
           properties: TelemetryEventProperties | undefined
-      } // new event log internal API (use createWebviewTelemetryService wrapper)
+      }
+    | {
+          /**
+             * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
+             * createWebviewTelemetryRecorder instead for webviews.
+             *
+             * V2 telemetry RPC for the webview.
+             */
+          command: 'recordEvent'
+          // 👷 HACK: WARNING: We use looser string types instead of the actual SDK at
+          // '@sourcegraph/cody-shared/src/telemetry-v2' because this defines a
+          // wire protocol where the stricter type-checking is pointless. Do not
+          // do this elsewhere!
+          feature: string
+          action: string
+          parameters: WebviewRecordEventParameters
+      }
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }

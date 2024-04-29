@@ -1,15 +1,15 @@
 import { CodyTaskState } from '../utils'
 
 export const ACTIVE_TASK_STATES = [
-    CodyTaskState.pending,
-    CodyTaskState.working,
-    CodyTaskState.inserting,
-    CodyTaskState.applying,
+    CodyTaskState.Pending,
+    CodyTaskState.Working,
+    CodyTaskState.Inserting,
+    CodyTaskState.Applying,
 ]
 
 export const ACTIONABLE_TASK_STATES = [
     // User can Accept, Undo, Retry, etc
-    CodyTaskState.applied,
+    CodyTaskState.Applied,
 ]
 
 /**

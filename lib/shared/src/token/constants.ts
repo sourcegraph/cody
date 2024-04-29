@@ -1,5 +1,5 @@
 /**
- * The default context window for chat models.
+ * The default context window for chat models that are NOT Claude-3 Sonnet or Opus.
  */
 export const CHAT_INPUT_TOKEN_BUDGET = 7000
 
@@ -20,20 +20,15 @@ export const CHAT_OUTPUT_TOKEN_BUDGET = 4000
 export const ENHANCED_CONTEXT_ALLOCATION = 0.6
 
 /**
- * NOTE: DotCom users with FeatureFlag.CodyChatContextBudget enabled for A/B testing only.
+ * NOTE: Reserved for Claude-3 Sonnet and Opus only.
  *
  * The total context window reserved for user added context (@-mention, right-click, etc.)
- *
- * This is only being used for Claude-3 Sonnet and Opus when feature flag is enabled.
- * For those models, this is added on top of the chat context window.
- * For other models, this number is not used. Instead, they will share
- * the token budget for user-context with the chat context window.
  */
-export const EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET = 30000
+export const CLAUDE3_USER_CONTEXT_TOKEN_BUDGET = 30000
 
 /**
- * NOTE: DotCom users with FeatureFlag.CodyChatContextBudget enabled for A/B testing only.
+ * NOTE: Reserved for Claude-3 Sonnet and Opus only.
  *
  * The total context window reserved for chat input.
  */
-export const EXPERIMENTAL_CHAT_INPUT_TOKEN_BUDGET = 15000
+export const CLAUDE3_CHAT_INPUT_TOKEN_BUDGET = 15000
