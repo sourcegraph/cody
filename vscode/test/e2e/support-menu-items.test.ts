@@ -28,7 +28,7 @@ test.extend<ExpectedEvents>({
     await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
 
     const supportLocator = page.getByRole('treeitem', { name: 'Support' }).locator('a')
-    expect(supportLocator).toBeAttached()
+    expect(supportLocator).toBeVisible()
 
     // Check it's in settings quickpick
 
@@ -66,7 +66,6 @@ test.extend<ExpectedEvents>({
     await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
 
     const supportLocator = page.getByRole('treeitem', { name: 'Support' }).locator('a')
-    await supportLocator.scrollIntoViewIfNeeded()
     expect(supportLocator).toBeVisible()
 
     // Check it's in settings quickpick
