@@ -37,7 +37,7 @@ export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSessi
         return undefined
     }
     if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
-        activeNotification(editor.active.document.uri, 'context-filter')
+        activeNotification('command', 'context-filter')
         return
     }
 

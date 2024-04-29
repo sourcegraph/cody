@@ -72,7 +72,7 @@ export async function executeTestChatCommand(
 
         const editor = getEditor()
         if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
-            activeNotification(editor.active.document.uri, 'context-filter')
+            activeNotification('test', 'context-filter')
             return
         }
 

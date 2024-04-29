@@ -85,7 +85,7 @@ export async function executeTestEditCommand(
         }
 
         if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-            activeNotification(document.uri, 'context-filter')
+            activeNotification('test', 'context-filter')
             return
         }
 

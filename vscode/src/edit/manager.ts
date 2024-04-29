@@ -102,7 +102,7 @@ export class EditManager implements vscode.Disposable {
 
         const editor = getEditor()
         if (editor.ignored) {
-            activeNotification(editor.active?.document.uri, 'cody-ignore')
+            activeNotification('edit', 'cody-ignore')
             return
         }
 
@@ -113,7 +113,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-            activeNotification(document.uri, 'cody-ignore')
+            activeNotification('edit', 'cody-ignore')
             return
         }
 

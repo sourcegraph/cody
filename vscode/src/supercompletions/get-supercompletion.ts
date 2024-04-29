@@ -40,7 +40,7 @@ export async function* getSupercompletions({
     chat,
 }: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
     if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-        passiveNotification(document.uri, 'context-filter')
+        passiveNotification('supercompletion', 'context-filter')
         return null
     }
 

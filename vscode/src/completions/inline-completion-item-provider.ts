@@ -814,5 +814,5 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType) {
         'CodyCompletionProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
-    passiveNotification(uri, reason)
+    passiveNotification('autocomplete', reason)
 }
