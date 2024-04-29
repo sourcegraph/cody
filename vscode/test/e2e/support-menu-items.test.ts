@@ -20,8 +20,14 @@ test.extend<ExpectedEvents>({
 })('shows support link for free users', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
+    // VS Code treeviews create DOM nodes lazily, and support is offscreen, so
+    // we need to emulate mouse wheeling down to reveal it.
+    const treeviewLocator = page.getByRole('tree', { name: 'Settings & Support' })
+    await treeviewLocator.hover()
+    await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
+
     const supportLocator = page.getByRole('treeitem', { name: 'Support' }).locator('a')
-    expect(supportLocator).toBeVisible()
+    expect(supportLocator).toBeAttached()
 
     // Check it's in settings quickpick
 
@@ -51,9 +57,14 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
 
-    // Check it's in treeview
+    // VS Code treeviews create DOM nodes lazily, and support is offscreen, so
+    // we need to emulate mouse wheeling down to reveal it.
+    const treeviewLocator = page.getByRole('tree', { name: 'Settings & Support' })
+    await treeviewLocator.hover()
+    await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
 
     const supportLocator = page.getByRole('treeitem', { name: 'Support' }).locator('a')
+    await supportLocator.scrollIntoViewIfNeeded()
     expect(supportLocator).toBeVisible()
 
     // Check it's in settings quickpick
