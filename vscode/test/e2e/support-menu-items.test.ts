@@ -20,8 +20,9 @@ test.extend<ExpectedEvents>({
 })('shows support link for free users', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    // VS Code treeviews create DOM nodes lazily, and support is offscreen, so
-    // we need to emulate mouse wheeling down to reveal it.
+    // The treeitem we need is offscreen, and locator.scrollIntoViewIfNeeded
+    // doesn't work as because VS Code's treeview lazily creates DOM nodes. So
+    // we need to emulate mouse wheeling down, just as a user would have to do.
     const treeviewLocator = page.getByRole('tree', { name: 'Settings & Support' })
     await treeviewLocator.hover()
     await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
@@ -57,8 +58,9 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
 
-    // VS Code treeviews create DOM nodes lazily, and support is offscreen, so
-    // we need to emulate mouse wheeling down to reveal it.
+    // The treeitem we need is offscreen, and locator.scrollIntoViewIfNeeded
+    // doesn't work as because VS Code's treeview lazily creates DOM nodes. So
+    // we need to emulate mouse wheeling down, just as a user would have to do.
     const treeviewLocator = page.getByRole('tree', { name: 'Settings & Support' })
     await treeviewLocator.hover()
     await page.mouse.wheel(0, 1000) // arbitrarily large deltaY px
