@@ -1,20 +1,20 @@
 import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
-import { ContextTracker } from './context-tracker'
+import { ContextSet } from './context-set'
 
-describe('ContextTracker', () => {
+describe('ContextSet', () => {
     describe('add', () => {
-        it('should add a new context item to the tracker', () => {
+        it('should add a new context item to the set', () => {
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
                 content: 'foobar',
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(item)).toBe(true)
-            expect(tracker.added).toStrictEqual([item])
+            const set = new ContextSet([])
+            expect(set.add(item)).toBe(true)
+            expect(set.values).toStrictEqual([item])
         })
 
         it('should add an unique context items and differentiate based on source', () => {
@@ -32,10 +32,10 @@ describe('ContextTracker', () => {
                 title: 'my/file/path',
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(user)).toBeTruthy()
-            expect(tracker.add(unified)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([user, unified])
+            const set = new ContextSet([])
+            expect(set.add(user)).toBeTruthy()
+            expect(set.add(unified)).toBeTruthy()
+            expect(set.values).toStrictEqual([user, unified])
         })
 
         it('should not add the same context item twice', () => {
@@ -45,10 +45,10 @@ describe('ContextTracker', () => {
                 content: 'foobar',
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(item)).toBeTruthy()
-            expect(tracker.add(item)).toBeFalsy()
-            expect(tracker.added).toStrictEqual([item])
+            const set = new ContextSet([])
+            expect(set.add(item)).toBeTruthy()
+            expect(set.add(item)).toBeFalsy()
+            expect(set.values).toStrictEqual([item])
         })
 
         it('should add a larger range but not a smaller range contained within it from the same file', () => {
@@ -65,13 +65,13 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Embeddings,
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(large)).toBeTruthy()
-            expect(tracker.add(small)).toBeFalsy()
-            expect(tracker.added).toStrictEqual([large])
+            const set = new ContextSet([])
+            expect(set.add(large)).toBeTruthy()
+            expect(set.add(small)).toBeFalsy()
+            expect(set.values).toStrictEqual([large])
         })
 
-        it('should add context to tracker for two non-overlapping ranges from the same filee', () => {
+        it('should add context to set for two non-overlapping ranges from the same filee', () => {
             const item1: ContextItem = {
                 type: 'file',
                 uri: URI.file('/foo/bar'),
@@ -85,11 +85,11 @@ describe('ContextTracker', () => {
                 range: { start: { line: 15, character: 0 }, end: { line: 20, character: 0 } },
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(item1)).toBeTruthy()
-            expect(tracker.add(item2)).toBeTruthy()
+            const set = new ContextSet([])
+            expect(set.add(item1)).toBeTruthy()
+            expect(set.add(item2)).toBeTruthy()
 
-            expect(tracker.added).toStrictEqual([item1, item2])
+            expect(set.values).toStrictEqual([item1, item2])
         })
 
         it('should not add selection if item with full range is included', () => {
@@ -108,12 +108,12 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Selection,
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(selection)).toBeTruthy()
-            expect(tracker.add(fullFile)).toBeTruthy()
-            expect(tracker.add(selection)).toBeFalsy()
+            const set = new ContextSet([])
+            expect(set.add(selection)).toBeTruthy()
+            expect(set.add(fullFile)).toBeTruthy()
+            expect(set.add(selection)).toBeFalsy()
 
-            expect(tracker.added).toStrictEqual([fullFile])
+            expect(set.values).toStrictEqual([fullFile])
         })
 
         it('should add items from different sources unless their ranges overlap', () => {
@@ -139,13 +139,13 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Embeddings,
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(item1)).toBeTruthy()
-            expect(tracker.add(item2)).toBeTruthy()
-            expect(tracker.add(overlap)).toBeFalsy()
-            expect(tracker.add(item2)).toBeFalsy()
+            const set = new ContextSet([])
+            expect(set.add(item1)).toBeTruthy()
+            expect(set.add(item2)).toBeTruthy()
+            expect(set.add(overlap)).toBeFalsy()
+            expect(set.add(item2)).toBeFalsy()
 
-            expect(tracker.added).toStrictEqual([item1, item2])
+            expect(set.values).toStrictEqual([item1, item2])
         })
 
         it('should add context from file with multiline range but not a single line range that overlaps with it', () => {
@@ -167,11 +167,11 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(multiLine)).toBeTruthy()
-            expect(tracker.add(singleLine)).toBeFalsy()
+            const set = new ContextSet([])
+            expect(set.add(multiLine)).toBeTruthy()
+            expect(set.add(singleLine)).toBeFalsy()
 
-            expect(tracker.added).toStrictEqual([multiLine])
+            expect(set.values).toStrictEqual([multiLine])
         })
 
         it('should add item with multiline range when the single line is within the multiline range', () => {
@@ -193,11 +193,11 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(singleLine)).toBeTruthy()
-            expect(tracker.add(multiLine)).toBeTruthy()
+            const set = new ContextSet([])
+            expect(set.add(singleLine)).toBeTruthy()
+            expect(set.add(multiLine)).toBeTruthy()
 
-            expect(tracker.added).toStrictEqual([multiLine])
+            expect(set.values).toStrictEqual([multiLine])
         })
 
         it('should replace exisiting of context with the same range', () => {
@@ -216,13 +216,13 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.Selection,
             }
 
-            const tracker = new ContextTracker([])
-            expect(tracker.add(selection)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([selection])
-            expect(tracker.add(fullFile)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([fullFile])
-            expect(tracker.add(selection)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([selection])
+            const set = new ContextSet([])
+            expect(set.add(selection)).toBeTruthy()
+            expect(set.values).toStrictEqual([selection])
+            expect(set.add(fullFile)).toBeTruthy()
+            expect(set.values).toStrictEqual([fullFile])
+            expect(set.add(selection)).toBeTruthy()
+            expect(set.values).toStrictEqual([selection])
         })
 
         it('should track items from previous sessions when provided at init', () => {
@@ -244,19 +244,19 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 5, character: 0 } },
             }
 
-            const sessionOneTracker = new ContextTracker([])
-            expect(sessionOneTracker.add(singleLine)).toBeTruthy()
-            expect(sessionOneTracker.add(multiLine)).toBeTruthy()
+            const sessionOneSet = new ContextSet([])
+            expect(sessionOneSet.add(singleLine)).toBeTruthy()
+            expect(sessionOneSet.add(multiLine)).toBeTruthy()
 
             // Used items from session one
-            const usedInSessionOne = sessionOneTracker.added
+            const usedInSessionOne = sessionOneSet.values
             expect(usedInSessionOne).toStrictEqual([multiLine])
 
-            // Create a new tracker with the used items from the previous session
-            const sessionTwoTracker = new ContextTracker(usedInSessionOne)
-            expect(sessionTwoTracker.add(singleLine)).toBeFalsy()
-            expect(sessionTwoTracker.added).not.toStrictEqual(usedInSessionOne)
-            expect(sessionTwoTracker.added).toStrictEqual([])
+            // Create a new set with the used items from the previous session
+            const sessionTwoSet = new ContextSet(usedInSessionOne)
+            expect(sessionTwoSet.add(singleLine)).toBeFalsy()
+            expect(sessionTwoSet.values).not.toStrictEqual(usedInSessionOne)
+            expect(sessionTwoSet.values).toStrictEqual([])
         })
     })
 
@@ -269,14 +269,14 @@ describe('ContextTracker', () => {
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
             }
 
-            // Context item is added to the tracking list
-            const tracker = new ContextTracker([])
-            expect(tracker.add(item)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([item])
+            // Context item is added to the set
+            const set = new ContextSet([])
+            expect(set.add(item)).toBeTruthy()
+            expect(set.values).toStrictEqual([item])
 
-            // Remove item from the tracking list
-            tracker.remove(item)
-            expect(tracker.added).toStrictEqual([])
+            // Remove item from the set
+            set.remove(item)
+            expect(set.values).toStrictEqual([])
         })
 
         it('should be able to re-add removed item to added list', () => {
@@ -286,20 +286,20 @@ describe('ContextTracker', () => {
                 source: ContextItemSource.User,
             }
 
-            const tracker = new ContextTracker([])
-            // Confirm that the item is added to the tracking list
-            expect(tracker.add(item)).toBeTruthy()
+            const set = new ContextSet([])
+            // Confirm that the item is added
+            expect(set.add(item)).toBeTruthy()
             // and adding it again should return false
-            expect(tracker.add(item)).toBeFalsy()
-            expect(tracker.added).toStrictEqual([item])
+            expect(set.add(item)).toBeFalsy()
+            expect(set.values).toStrictEqual([item])
 
-            // Remove the item from the tracking list
-            tracker.remove(item)
-            expect(tracker.added).toStrictEqual([])
+            // Remove the item from the set
+            set.remove(item)
+            expect(set.values).toStrictEqual([])
 
-            // Confirm that the item can be re-added to the tracking list
-            expect(tracker.add(item)).toBeTruthy()
-            expect(tracker.added).toStrictEqual([item])
+            // Confirm that the item can be re-added
+            expect(set.add(item)).toBeTruthy()
+            expect(set.values).toStrictEqual([item])
         })
     })
 })

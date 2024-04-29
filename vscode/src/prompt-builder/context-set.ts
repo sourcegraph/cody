@@ -1,13 +1,21 @@
 import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
 
-export class ContextTracker {
+/**
+ * Represents a set of context items that can be added and removed.
+ * The set ensures that only valid context items are added, based on a set of rules:
+ * - No duplicate items
+ * - No items that contain or are contained within an added item with the same display path
+ * - Existing user-added items without a range take precedence over new items with the same display path
+ * - New items can replace added items with the same display path if the new item's range contains lines in added items
+ */
+export class ContextSet {
     /**
-     * Ccontext items that are currently being tracked.
+     * A set of context items that were added.
      */
-    private tracking = new Set<ContextItem>()
+    private items = new Set<ContextItem>()
 
     /**
-     * Context items that were previously tracked and added successfully.
+     * Context items that were previously added successfully.
      */
     private readonly history: Set<ContextItem>
 
@@ -15,32 +23,32 @@ export class ContextTracker {
         this.history = new Set(lastAddedContext)
     }
 
-    /**
-     * Retrieves the context items that were tracked and added successfully.
-     */
-    public get added(): ContextItem[] {
-        return [...this.tracking]
+    public get values(): ContextItem[] {
+        return [...this.items]
     }
 
     /**
-     * Adds a context item to the tracking list only if it is not a subset of an used items.
+     * Adds valid context items to the set.
      *
-     * @param item - The context item to track.
-     * @returns `true` if the item was successfully tracked, `false` otherwise.
+     * @param item - The context item to add.
+     * @returns `true` if the item was successfully added, `false` otherwise.
      */
     public add(item: ContextItem): boolean {
-        return this.isTrackable(item) && Boolean(this.tracking.add(item))
+        return this.isValidItem(item) && Boolean(this.items.add(item))
     }
 
     /**
-     * Helper method to checks if a context item is trackable or not.
+     * Helper method to checks if a context item is a valid item to add.
+     * A context item is valid if:
+     * - It is not a duplicate of an existing item.
+     * - It does not contain or is contained in an existing item with the same display path.
      *
      * @param item - The context item to check.
-     * @returns `true` if the item is trackable, `false` otherwise.
+     * @returns `true` if the item is valid, `false` otherwise.
      */
-    private isTrackable(item: ContextItem): boolean {
+    private isValidItem(item: ContextItem): boolean {
         // Skip duplicate items.
-        if (this.tracking.has(item) || this.history.has(item)) {
+        if (this.items.has(item) || this.history.has(item)) {
             return false
         }
 
@@ -48,11 +56,11 @@ export class ContextTracker {
         const itemDisplayPath = source === 'unified' ? title : displayPath(uri)
 
         // Get a list of existing item with the same display path as the new item.
-        const existing = [...this.tracking, ...this.history].filter(i =>
+        const existing = [...this.items, ...this.history].filter(i =>
             i.source === 'unified' ? i.title === itemDisplayPath : displayPath(i.uri) === itemDisplayPath
         )
 
-        // If there are no existing items with the same display path, the item is trackable.
+        // If there are no existing items with the same display path, we can add the new item.
         if (!itemDisplayPath || !existing.length) {
             return true
         }
@@ -62,7 +70,6 @@ export class ContextTracker {
             return false
         }
 
-        // If the item has no range, it means we are adding content from the entire file.
         if (!range) {
             if (source === 'user') {
                 // Remove existing items with the same display path.
@@ -83,19 +90,19 @@ export class ContextTracker {
     }
 
     /**
-     * Removes context item from the tracking list if it is present.
+     * Removes context item from the added list if it is present.
      */
     public remove(contextItem: ContextItem): void {
-        this.tracking.delete(contextItem)
+        this.items.delete(contextItem)
     }
 
     /**
-     * Removes all context items with the given display path from the tracking list.
+     * Removes all context items with the given display path from the added list.
      */
     private removeItemByDisplayPath(path: string): void {
-        for (const item of this.tracking) {
+        for (const item of this.items) {
             if (item.source === 'unified' ? item.title === path : displayPath(item.uri) === path) {
-                this.tracking.delete(item)
+                this.items.delete(item)
             }
         }
     }

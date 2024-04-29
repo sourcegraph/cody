@@ -9,7 +9,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
-import { ContextTracker } from './context-tracker'
+import { ContextSet } from './context-set'
 import { renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
@@ -83,7 +83,7 @@ export class PromptBuilder {
         contextMessages: (ContextItem | ContextMessage)[]
     ): PromptBuilderContextResult {
         this.processedContextType.add(tokenType)
-        const contextTracker = new ContextTracker(this.addedContextItems)
+        const contextSet = new ContextSet(this.addedContextItems)
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             ignored: [] as ContextItem[], // The items that were ignored
@@ -100,9 +100,9 @@ export class PromptBuilder {
             }
 
             // Skip duplicated or invalid items before updating the token usage.
-            const isTrackable = contextTracker.add(userContextItem)
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            if (!contextMsg || !isTrackable) {
+            const isValidItem = contextSet.add(userContextItem)
+            if (!contextMsg || !isValidItem) {
                 continue
             }
 
@@ -117,10 +117,10 @@ export class PromptBuilder {
                 userContextItem.isTooLarge = !withinLimit
             }
 
-            // Skip context items that would exceed the token budget.
-            // Also remove them from the context tracker,  and add them to the ignored list.
+            // Skip context item that would exceed the token budget.
+            // Remove it from the context set and add to the ignored list.
             if (!withinLimit) {
-                contextTracker.remove(userContextItem)
+                contextSet.remove(userContextItem)
                 userContextItem.content = undefined
                 result.ignored.push(userContextItem)
                 result.limitReached = true
@@ -130,7 +130,7 @@ export class PromptBuilder {
             this.reverseMessages.push(assistantMsg, contextMsg)
         }
 
-        const used = contextTracker.added
+        const used = contextSet.values
         this.addedContextItems.push(...used)
 
         return { ...result, used }
