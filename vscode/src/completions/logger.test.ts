@@ -1,7 +1,7 @@
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import type { ContextSummary } from './context/context-mixer'

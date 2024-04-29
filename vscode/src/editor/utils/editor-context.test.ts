@@ -3,11 +3,12 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    CLAUDE3_USER_CONTEXT_TOKEN_BUDGET,
     type ContextItem,
     type ContextItemFile,
-    EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
     ignores,
+    ps,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
@@ -158,7 +159,7 @@ describe('filterContextItemFiles', () => {
             uri: vscode.Uri.file('/large-text.txt'),
             type: 'file',
         }
-        const fsSizeInBytes = EXPERIMENTAL_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
+        const fsSizeInBytes = CLAUDE3_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
             size: fsSizeInBytes,
             type: vscode.FileType.File,
@@ -186,16 +187,20 @@ describe('resolveContextItems', () => {
                 throw new Error('error')
             },
         }
-        const contextItems = await resolveContextItems(mockEditor as Editor, [
-            {
-                type: 'file',
-                uri: URI.parse('file:///a.txt'),
-            },
-            {
-                type: 'file',
-                uri: URI.parse('file:///error.txt'),
-            },
-        ])
+        const contextItems = await resolveContextItems(
+            mockEditor as Editor,
+            [
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///a.txt'),
+                },
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///error.txt'),
+                },
+            ],
+            ps``
+        )
         expect(contextItems).toEqual<ContextItem[]>([
             {
                 type: 'file',

@@ -2,11 +2,9 @@ import cp from 'node:child_process'
 import util from 'node:util'
 import type * as vscode from 'vscode'
 
-import { isFileURI } from '@sourcegraph/cody-shared'
+import { isFileURI, pathFunctionsForURI } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-
-import { pathFunctionsForURI } from '@sourcegraph/cody-shared/src/common/path'
 
 export async function gitRemoteUrlsFromGitCli(uri: vscode.Uri): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {

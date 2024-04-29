@@ -28,6 +28,7 @@ import {
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    PACKAGE_LIST_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -111,11 +112,29 @@ interface CurrentUserCodySubscriptionResponse {
 }
 
 interface CodyLLMSiteConfigurationResponse {
-    site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
 }
 
 interface CodyLLMSiteConfigurationProviderResponse {
-    site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
+}
+
+export interface PackageListResponse {
+    packageRepoReferences: {
+        nodes: {
+            id: string
+            name: string
+            kind: string
+            repository: { id: string; name: string; url: string }
+        }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
 }
 
 export interface RepoListResponse {
@@ -498,6 +517,20 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider }
     }
 
+    public async getPackageList(
+        kind: string,
+        name: string,
+        first: number,
+        after?: string
+    ): Promise<PackageListResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<PackageListResponse>>(PACKAGE_LIST_QUERY, {
+            kind,
+            name,
+            first,
+            after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     /**
      * Gets a subset of the list of repositories from the Sourcegraph instance.
      * @param first the number of repositories to retrieve.
@@ -557,7 +590,7 @@ export class SourcegraphGraphQLAPIClient {
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
                     uri: URI.parse(
-                        `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
+                        `${this.endpoint}${item.blob.repository.name}/-/blob/${item.blob.path}?L${
                             item.startLine + 1
                         }-${item.endLine}`
                     ),

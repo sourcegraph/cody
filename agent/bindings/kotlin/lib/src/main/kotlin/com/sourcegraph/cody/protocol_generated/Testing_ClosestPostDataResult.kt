@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Testing_ClosestPostDataResult(
-  val closestBody: String? = null,
+  val closestBody: String,
 )
 

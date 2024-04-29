@@ -6,6 +6,7 @@ import type {
     ContextStatusProvider,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getFullConfig } from '../configuration'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { ContextStatusAggregator } from '../local-context/enhanced-context-status'
@@ -13,7 +14,6 @@ import type { LocalEmbeddingsController } from '../local-context/local-embedding
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import { logPrefix, telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { AgentEventEmitter } from '../testutils/AgentEventEmitter'
 
 import type { RemoteSearch } from '../context/remote-search'

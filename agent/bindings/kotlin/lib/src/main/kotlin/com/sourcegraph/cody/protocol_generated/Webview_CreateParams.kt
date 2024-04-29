@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class Webview_CreateParams(
-  val id: String? = null,
-  val data: Any? = null,
+  val id: String,
+  val data: Any,
 )
 

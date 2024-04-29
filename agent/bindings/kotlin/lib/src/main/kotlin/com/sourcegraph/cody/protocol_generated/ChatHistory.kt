@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ChatHistory(
-  val chatID: String? = null,
+  val chatID: String,
 )
 

@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ExecuteCommandParams(
-  val command: String? = null,
+  val command: String,
   val arguments: List<Any>? = null,
 )
 

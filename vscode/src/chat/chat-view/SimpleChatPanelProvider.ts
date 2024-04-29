@@ -2,17 +2,24 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type BillingCategory,
+    type BillingProduct,
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
+    type ContextItemFile,
     ContextItemSource,
+    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
     type Message,
     ModelProvider,
+    ModelUsage,
     PromptString,
     type RangeData,
     type SerializedChatInteraction,
@@ -23,11 +30,14 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    tracer,
     truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -39,7 +49,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -52,16 +61,8 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type {
-    ContextItemFile,
-    ContextItemWithContent,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
-import {
-    CHAT_INPUT_TOKEN_BUDGET,
-    CHAT_OUTPUT_TOKEN_BUDGET,
-} from '@sourcegraph/cody-shared/src/token/constants'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
+
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -340,6 +341,26 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'event':
                 telemetryService.log(message.eventName, message.properties)
                 break
+            case 'recordEvent':
+                telemetryRecorder.recordEvent(
+                    // 👷 HACK: We have no control over what gets sent over JSON RPC,
+                    // so we depend on client implementations to give type guidance
+                    // to ensure that we don't accidentally share arbitrary,
+                    // potentially sensitive string values. In this RPC handler,
+                    // when passing the provided event to the TelemetryRecorder
+                    // implementation, we forcibly cast all the inputs below
+                    // (feature, action, parameters) into known types (strings
+                    // 'feature', 'action', 'key') so that the recorder will accept
+                    // it. DO NOT do this elsewhere!
+                    message.feature as 'feature',
+                    message.action as 'action',
+                    message.parameters as TelemetryEventParameters<
+                        { key: number },
+                        BillingProduct,
+                        BillingCategory
+                    >
+                )
+                break
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
@@ -453,7 +474,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    userContextFiles || []
+                    userContextFiles || [],
+                    inputText
                 )
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(

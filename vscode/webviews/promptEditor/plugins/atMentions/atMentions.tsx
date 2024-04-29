@@ -14,11 +14,11 @@ import styles from './atMentions.module.css'
 import {
     type ContextItem,
     ContextItemSource,
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
     type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import { FAST_CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import classNames from 'classnames'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'

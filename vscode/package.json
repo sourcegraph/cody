@@ -152,6 +152,14 @@
             "media": {
               "markdown": "walkthroughs/keyboard.md"
             }
+          },
+          {
+            "id": "ollama",
+            "title": "Ollama (Experimental)",
+            "description": "Learn how to use your local models with Cody.",
+            "media": {
+              "markdown": "walkthroughs/ollama.md"
+            }
           }
         ]
       }
@@ -1065,13 +1073,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.experimental.hoverCommands": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Display commands in hover tooltips for code elements.",
-          "description": "%config.experimental.hoverCommands%",
-          "tags": ["experimental", "feature-flag"]
-        },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
           "default": false,
@@ -1277,7 +1278,6 @@
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
-    "re2-wasm": "^1.0.2",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",

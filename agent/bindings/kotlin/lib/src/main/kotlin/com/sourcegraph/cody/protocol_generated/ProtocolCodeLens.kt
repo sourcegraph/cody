@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ProtocolCodeLens(
-  val range: Range? = null,
+  val range: Range,
   val command: ProtocolCommand? = null,
-  val isResolved: Boolean? = null,
+  val isResolved: Boolean,
 )
 

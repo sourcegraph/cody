@@ -15,10 +15,10 @@ import {
     ModelProvider,
     NoOpTelemetryRecorderProvider,
     PromptString,
+    contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
-    isCodyIgnoredFile,
     isError,
     isRateLimitError,
     logDebug,
@@ -302,6 +302,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
                     this.codeLenses.remove(codeLensProvider)
                 )
+            }
+            if (clientInfo.capabilities?.ignore === 'enabled') {
+                contextFiltersProvider.onContextFiltersChanged(() => {
+                    // Forward policy change notifications to the client.
+                    this.notify('ignore/didChange', null)
+                })
             }
             if (process.env.CODY_DEBUG === 'true') {
                 console.error(
@@ -756,11 +762,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(typeof result === 'string' ? result : null)
         })
 
-        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
-            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
-            return Promise.resolve(result.length > 0)
-        })
-
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
@@ -1020,25 +1021,35 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest(
-            'remoteRepo/list',
-            async ({ query, first, afterId }, cancelToken) => {
-                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                    query,
-                    first,
-                    afterId
-                )
-                return {
-                    repos: result.repos,
-                    startIndex: result.startIndex,
-                    count: result.count,
-                    state: {
-                        state: result.state,
-                        error: errorToCodyError(result.lastError),
-                    },
-                }
+        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
+            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                query,
+                first,
+                afterId
+            )
+            return {
+                repos: result.repos,
+                startIndex: result.startIndex,
+                count: result.count,
+                state: {
+                    state: result.state,
+                    error: errorToCodyError(result.lastError),
+                },
             }
-        )
+        })
+
+        this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
+            const uri = vscode.Uri.parse(uriString)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
+            return {
+                policy: isIgnored ? 'ignore' : 'use',
+            } as const
+        })
+
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
+            contextFiltersProvider.setTestingContextFilters(contextFilters)
+            return null
+        })
     }
 
     // ExtensionClient callbacks.
@@ -1068,7 +1079,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             }),
             repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', {})
+                this.notify('remoteRepo/didChange', null)
             }),
             {
                 dispose: () => {
