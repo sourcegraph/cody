@@ -29,9 +29,9 @@ export class PromptBuilder {
     private reverseMessages: Message[] = []
 
     private processedContextType = new Set<ContextTokenUsageType>()
+    private addedContextItems: ContextItem[] = []
 
     private tokenCounter: TokenCounter
-    private contextTracker = new ContextTracker()
 
     constructor(contextWindow: ModelContextWindow) {
         this.tokenCounter = new TokenCounter(contextWindow)
@@ -82,11 +82,13 @@ export class PromptBuilder {
         tokenType: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
     ): PromptBuilderContextResult {
+        this.processedContextType.add(tokenType)
+        const contextTracker = new ContextTracker(this.addedContextItems)
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             ignored: [] as ContextItem[], // The items that were ignored
         }
-        this.processedContextType.add(tokenType)
+
         // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
         const reversedContextItems = contextMessages.slice().reverse()
         for (const item of reversedContextItems) {
@@ -98,7 +100,7 @@ export class PromptBuilder {
             }
 
             // Skip duplicated or invalid items before updating the token usage.
-            const isTrackable = this.contextTracker.track(userContextItem)
+            const isTrackable = contextTracker.add(userContextItem)
             const contextMsg = isContextItem(item) ? renderContextItem(item) : item
             if (!contextMsg || !isTrackable) {
                 continue
@@ -115,9 +117,10 @@ export class PromptBuilder {
                 userContextItem.isTooLarge = !withinLimit
             }
 
-            // Skip context items that would exceed the token budget
+            // Skip context items that would exceed the token budget.
+            // Also remove them from the context tracker,  and add them to the ignored list.
             if (!withinLimit) {
-                this.contextTracker.untrack(userContextItem)
+                contextTracker.remove(userContextItem)
                 userContextItem.content = undefined
                 result.ignored.push(userContextItem)
                 result.limitReached = true
@@ -127,10 +130,10 @@ export class PromptBuilder {
             this.reverseMessages.push(assistantMsg, contextMsg)
         }
 
-        return {
-            ...result,
-            used: this.contextTracker.getAndResetTrackedItems,
-        }
+        const used = contextTracker.added
+        this.addedContextItems.push(...used)
+
+        return { ...result, used }
     }
 }
 

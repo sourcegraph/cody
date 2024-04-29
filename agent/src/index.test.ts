@@ -795,33 +795,23 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The code you provided is an interface declaration in TypeScript called \`Animal\`. An interface in TypeScript is a way to define the shape of an object, specifying the properties and methods that an object should have. The purpose of this interface is to create a blueprint or contract for objects that represent animals.
+              "The \`Animal\` interface in \`src/animal.ts\`:
 
-              The \`Animal\` interface has three properties:
+              The purpose of this code is to define a contract or a blueprint for objects representing different types of animals. It specifies the properties and methods that any object conforming to this \`Animal\` interface must have.
 
-              1. \`name\`: This is a string property that represents the name of the animal.
-              2. \`makeAnimalSound()\`: This is a method that returns a string. It is meant to represent the sound that the animal makes.
-              3. \`isMammal\`: This is a boolean property that indicates whether the animal is a mammal or not.
+              The \`Animal\` interface does not take any direct input. Instead, it serves as a template for creating objects that represent animals.
 
-              When you define an object that implements this \`Animal\` interface, you must provide values for the \`name\` property (a string) and the \`isMammal\` property (a boolean). Additionally, you must define a \`makeAnimalSound()\` method that returns a string.
+              The output of this code is not a value or a function result. Instead, it defines the structure or shape that objects implementing this interface should have.
 
-              The interface itself does not take any inputs or produce any outputs directly. Instead, it serves as a contract or blueprint for creating objects that represent animals. Once an object is created that implements this interface, you can access its properties and call its methods.
+              To achieve its purpose, the \`Animal\` interface declares three members:
 
-              For example, you could create an object representing a dog like this:
+              1. \`name\`: This is a property of type \`string\` that represents the name of the animal.
+              2. \`makeAnimalSound()\`: This is a method that returns a \`string\`. It is intended to represent the sound that the animal makes.
+              3. \`isMammal\`: This is a property of type \`boolean\` that indicates whether the animal is a mammal or not.
 
-              \`\`\`typescript
-              const dog: Animal = {
-                name: 'Buddy',
-                makeAnimalSound(): string {
-                  return 'Woof!';
-                },
-                isMammal: true
-              };
-              \`\`\`
+              Objects conforming to this \`Animal\` interface must have these three members defined. For example, an object representing a dog might have the \`name\` property set to "Buddy", the \`makeAnimalSound()\` method returning "Woof!", and the \`isMammal\` property set to \`true\`.
 
-              Now, you can access the properties and methods of the \`dog\` object, like \`dog.name\` or \`dog.makeAnimalSound()\`.
-
-              The purpose of this interface is to ensure consistency and maintain a certain structure for objects representing animals. By defining the \`Animal\` interface, you can create multiple animal objects that share the same properties and methods, making it easier to work with and reason about these objects in your codebase."
+              The \`Animal\` interface does not define any specific logic or algorithms. It merely serves as a contract or a blueprint for creating objects that represent animals, ensuring that they have the required properties and methods."
             `,
                 explainPollyError
             )

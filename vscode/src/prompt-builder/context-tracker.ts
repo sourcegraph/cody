@@ -1,98 +1,94 @@
 import { type ContextItem, type RangeData, displayPath } from '@sourcegraph/cody-shared'
-import { SHA256 } from 'crypto-js'
-
-type ContextTrackerID = string
 
 export class ContextTracker {
     /**
-     * A map to store the history of tracked context items, keyed by a unique identifier.
+     * Ccontext items that are currently being tracked.
      */
-    private history = new Map<ContextTrackerID, ContextItem[]>()
+    private tracking = new Set<ContextItem>()
 
     /**
-     * A temporary list to store the context items being tracked in the current iteration.
+     * Context items that were previously tracked and added successfully.
      */
-    private current: ContextItem[] = []
+    private readonly history: Set<ContextItem>
 
-    /**
-     * Retrieves the context items tracked in the current iteration and resets the current state.
-     */
-    public get getAndResetTrackedItems(): ContextItem[] {
-        const tracked = this.current
-        this.current = [] // Reset the current state for the next iteration
-        return tracked
+    constructor(lastAddedContext: ContextItem[]) {
+        this.history = new Set(lastAddedContext)
     }
 
     /**
-     * Tracks a context item if it is not a subset of an existing tracked item.
-     *
-     * If the new item's range contains any existing item's range, it replaces the existing item(s).
+     * Retrieves the context items that were tracked and added successfully.
+     */
+    public get added(): ContextItem[] {
+        return [...this.tracking]
+    }
+
+    /**
+     * Removes a context item from the tracking list.
+     */
+    public remove(contextItem: ContextItem): void {
+        this.tracking.delete(contextItem)
+    }
+
+    /**
+     * Adds a context item to the tracking list only if it is not a subset of an used items.
      *
      * @param item - The context item to track.
      * @returns `true` if the item was successfully tracked, `false` otherwise.
      */
-    public track(item: ContextItem): boolean {
-        const id = this.getID(item)
-        const range = item?.range
+    public add(item: ContextItem): boolean {
+        const isItemTrackable = this.isTrackable(item)
+        if (isItemTrackable) {
+            this.tracking.add(item)
+        }
 
-        const items = this.history.get(id) || []
+        return isItemTrackable
+    }
 
-        if (range) {
-            // Filter the existing items to get only those with ranges.
-            const existingRanges = items.filter(i => i.range).map(i => i.range)
-            // Check if the new range is contained within any of the existing ranges.
-            const isContainedInExisting = existingRanges.some(r => r && isRangeContain(range, r))
-            // Check if the new range contains any of the existing ranges.
-            const isContainingExisting = existingRanges.some(r => r && isRangeContain(r, range))
-
-            if (isContainedInExisting) {
-                return false
-            }
-            // If the new range contains any existing range, replace the tracked items with the new item.
-            if (isContainingExisting) {
-                this.history.set(id, [item])
-                this.current = [item]
-                return true
-            }
-        } else if (items.length > 0) {
+    /**
+     * Helper method to checks if a context item is trackable or not.
+     *
+     * @param item - The context item to check.
+     * @returns `true` if the item is trackable, `false` otherwise.
+     */
+    private isTrackable(item: ContextItem): boolean {
+        if (this.tracking.has(item) || this.history.has(item)) {
             return false
         }
 
-        items.push(item)
-        this.history.set(id, items)
-        this.current.push(item)
-        return true
-    }
+        // Range of the new item.
+        const range = item.range
+        // Display path of the new item.
+        const itemDisplayPath = item.source === 'unified' ? item.title : displayPath(item.uri)
+        // Filter the existing items to get only those with the same display path as the new item.
+        const existing = [...this.history, ...this.tracking].filter(i =>
+            i.source === 'unified' ? i.title === itemDisplayPath : displayPath(i.uri) === itemDisplayPath
+        )
 
-    /**
-     * Removes a context item from the tracked items.
-     */
-    public untrack(contextItem: ContextItem): void {
-        const id = this.getID(contextItem)
-        const items = this.history.get(id) || []
-        const index = items.indexOf(contextItem)
-        if (index !== -1) {
-            items.splice(index, 1)
-            this.history.set(id, items)
-            this.current = this.current.filter(item => item !== contextItem)
-        }
-    }
-
-    /**
-     * Generates a unique identifier for a context item based on its source and content.
-     */
-    public getID(item: ContextItem): ContextTrackerID {
-        if (item.source === 'terminal' || item.source === 'uri') {
-            return `${displayPath(item.uri)}#${SHA256(item.content ?? '').toString()}`
+        // No existing items are found with the same display path, so the new item is trackable.
+        if (!range) {
+            return !existing.length
         }
 
-        return (item.source === 'unified' && item.title) || displayPath(item.uri)
+        // Check if the new range contains an existing range.
+        const isContainingExisting = existing.some(i => i.range && rangeContainsLines(range, i.range))
+        if (isContainingExisting) {
+            // If new range contains a range of an tracking item, remove the item from the tracking list.
+            const itemToRemove = existing.find(i => i.range && rangeContainsLines(range, i.range))
+            if (itemToRemove) {
+                this.remove(itemToRemove)
+            }
+            return true
+        }
+
+        // Check if exisiting items contain the new range.
+        const isContainedInExisting = existing.some(i => i.range && rangeContainsLines(i.range, range))
+        return !isContainedInExisting
     }
 }
 
 /**
- * Checks if the first range is fully contained within the second range.
+ * Checks if the haystack range contains the lines in the needle range.
  */
-function isRangeContain(r1: RangeData, r2: RangeData): boolean {
-    return r1.start.line >= r2.start.line && r1.end.line <= r2.end.line
+function rangeContainsLines(haystack: RangeData, needle: RangeData): boolean {
+    return haystack.start.line <= needle.start.line && haystack.end.line >= needle.end.line
 }
