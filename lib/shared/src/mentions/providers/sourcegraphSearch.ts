@@ -8,13 +8,14 @@ import type { ContextMentionProvider } from '../api'
 
 export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'src-search'> = {
     id: 'src-search',
-    // TODO the prefix '!' seems to not trigger the @ mention code path. I am
-    // assuming there is parsing logic somewhere which only calls the @
-    // mentions if they look like a path or start with # (for symbols)
-    triggerPrefixes: ['src:'],
+    triggerPrefixes: ['src:', '?'],
 
     async queryContextItems(query, signal) {
-        const searchQuery = query.startsWith('src:') ? query.slice(4) : query
+        const searchQuery = query.startsWith('?')
+            ? query.slice(1)
+            : query.startsWith('src:')
+              ? query.slice(4)
+              : query
         const uri = URI.parse(graphqlClient.endpoint).with({
             query: 'q=' + encodeURIComponent(searchQuery) + '&patternType=literal',
         })
