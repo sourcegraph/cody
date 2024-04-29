@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { isWindows } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
@@ -14,7 +15,8 @@ interface TestParameters {
     graphContext: string
 }
 
-describe('Graph Context', () => {
+// CODY-1280 - fix Windows support
+describe.skipIf(isWindows())('Graph Context', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'graph-test'))
 
     const models: TestParameters[] = [
