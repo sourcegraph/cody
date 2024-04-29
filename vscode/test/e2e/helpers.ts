@@ -400,7 +400,7 @@ export function withPlatformSlashes(input: string) {
 }
 
 const isPlatform = (platform: string) => process.platform === platform
-export function getMetaKeyByOS(): string {
+export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
 }
 

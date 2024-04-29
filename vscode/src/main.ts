@@ -79,6 +79,7 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { registerInteractiveTutorial } from './tutorial'
 import { version } from './version'
 
 /**
@@ -648,6 +649,10 @@ const register = async (
             })
         )
     }
+
+    registerInteractiveTutorial(context).then(disposable => {
+        disposables.push(...disposable)
+    })
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the
