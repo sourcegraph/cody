@@ -23,25 +23,13 @@ export class ContextTracker {
     }
 
     /**
-     * Removes a context item from the tracking list.
-     */
-    public remove(contextItem: ContextItem): void {
-        this.tracking.delete(contextItem)
-    }
-
-    /**
      * Adds a context item to the tracking list only if it is not a subset of an used items.
      *
      * @param item - The context item to track.
      * @returns `true` if the item was successfully tracked, `false` otherwise.
      */
     public add(item: ContextItem): boolean {
-        const isItemTrackable = this.isTrackable(item)
-        if (isItemTrackable) {
-            this.tracking.add(item)
-        }
-
-        return isItemTrackable
+        return this.isTrackable(item) && Boolean(this.tracking.add(item))
     }
 
     /**
@@ -51,38 +39,65 @@ export class ContextTracker {
      * @returns `true` if the item is trackable, `false` otherwise.
      */
     private isTrackable(item: ContextItem): boolean {
+        // Skip duplicate items.
         if (this.tracking.has(item) || this.history.has(item)) {
             return false
         }
 
-        // Range of the new item.
-        const range = item.range
-        // Display path of the new item.
-        const itemDisplayPath = item.source === 'unified' ? item.title : displayPath(item.uri)
-        // Filter the existing items to get only those with the same display path as the new item.
-        const existing = [...this.history, ...this.tracking].filter(i =>
+        const { range, source, title, uri } = item
+        const itemDisplayPath = source === 'unified' ? title : displayPath(uri)
+
+        // Get a list of existing item with the same display path as the new item.
+        const existing = [...this.tracking, ...this.history].filter(i =>
             i.source === 'unified' ? i.title === itemDisplayPath : displayPath(i.uri) === itemDisplayPath
         )
 
-        // No existing items are found with the same display path, so the new item is trackable.
-        if (!range) {
-            return !existing.length
+        // If there are no existing items with the same display path, the item is trackable.
+        if (!itemDisplayPath || !existing.length) {
+            return true
         }
 
-        // Check if the new range contains an existing range.
-        const isContainingExisting = existing.some(i => i.range && rangeContainsLines(range, i.range))
-        if (isContainingExisting) {
-            // If new range contains a range of an tracking item, remove the item from the tracking list.
-            const itemToRemove = existing.find(i => i.range && rangeContainsLines(range, i.range))
-            if (itemToRemove) {
-                this.remove(itemToRemove)
+        // If there's an existing user-added item without a range, it means content from the entire file was added.
+        if (existing.some(i => !i.range && i.source === 'user')) {
+            return false
+        }
+
+        // If the item has no range, it means we are adding content from the entire file.
+        if (!range) {
+            if (source === 'user') {
+                // Remove existing items with the same display path.
+                this.removeItemByDisplayPath(itemDisplayPath)
             }
             return true
         }
 
-        // Check if exisiting items contain the new range.
-        const isContainedInExisting = existing.some(i => i.range && rangeContainsLines(i.range, range))
-        return !isContainedInExisting
+        // Check if the new range contains or is contained in an existing range
+        const containsExisting = existing.some(i => i.range && rangeContainsLines(range, i.range))
+        if (containsExisting) {
+            this.removeItemByDisplayPath(itemDisplayPath)
+            return true
+        }
+
+        // Check if range is contained in exisiting items.
+        return !existing.some(i => i.range && rangeContainsLines(i.range, range))
+    }
+
+    /**
+     * Removes context item from the tracking list if it is present.
+     */
+    public remove(contextItem: ContextItem): void {
+        this.tracking.delete(contextItem)
+    }
+
+    /**
+     * Removes all context items with the given display path from the tracking list.
+     */
+    private removeItemByDisplayPath(path: string): void {
+        for (const item of this.tracking) {
+            if (item.source === 'unified' ? item.title === path : displayPath(item.uri) === path) {
+                this.tracking.delete(item)
+            }
+        }
     }
 }
 
