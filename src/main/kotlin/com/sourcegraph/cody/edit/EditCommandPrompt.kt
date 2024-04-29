@@ -29,7 +29,11 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.chat.ui.LlmDropdown
+import com.sourcegraph.cody.edit.EditUtil.namedButton
+import com.sourcegraph.cody.edit.EditUtil.namedLabel
+import com.sourcegraph.cody.edit.EditUtil.namedPanel
 import com.sourcegraph.cody.edit.sessions.EditCodeSession
+import com.sourcegraph.cody.ui.FrameMover
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -48,7 +52,6 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.awt.event.MouseMotionAdapter
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import java.awt.geom.RoundRectangle2D
@@ -58,7 +61,6 @@ import javax.swing.AbstractAction
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
-import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JFrame
 import javax.swing.JLabel
@@ -87,13 +89,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
 
   private val isDisposed: AtomicBoolean = AtomicBoolean(false)
 
-  private val escapeAction =
-      object : AbstractAction() {
-        override fun actionPerformed(e: ActionEvent?) {
-          clearActivePrompt()
-        }
-      }
-
   // Key for activating the OK button. It's not a globally registered action.
   // We use a local action and just wire it up manually.
   private val enterKeyStroke =
@@ -106,14 +101,27 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
         KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK)
       }
 
-  private var okButton =
-      JButton().apply {
+  private val okButton =
+      namedButton("ok-button").apply {
         text = "Edit Code"
         foreground = boldLabelColor()
 
         addActionListener { performOKAction() }
         registerKeyboardAction(
             { performOKAction() }, enterKeyStroke, JComponent.WHEN_IN_FOCUSED_WINDOW)
+      }
+
+  private val cancelLabel =
+      namedLabel("esc-cancel-label").apply {
+        text = "[esc] to cancel"
+        foreground = mutedLabelColor()
+        cursor = Cursor(Cursor.HAND_CURSOR)
+        addMouseListener( // Make it work like ESC key if you click it.
+            object : MouseAdapter() {
+              override fun mouseClicked(e: MouseEvent) {
+                clearActivePrompt()
+              }
+            })
       }
 
   private val instructionsField =
@@ -165,26 +173,20 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
                 }
           }
 
+  private lateinit var titleBar: JComponent
+
   private var titleLabel =
-      JLabel(dialogTitle).apply {
+      namedLabel("title-label").apply {
+        text = dialogTitle
         setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 10))
         foreground = boldLabelColor()
       }
 
   private var filePathLabel =
-      object : JLabel() {
-            override fun processMouseEvent(e: MouseEvent) {
-              parent.dispatchEvent(SwingUtilities.convertMouseEvent(this, e, parent))
-            }
-
-            override fun processMouseMotionEvent(e: MouseEvent) {
-              parent.dispatchEvent(SwingUtilities.convertMouseEvent(this, e, parent))
-            }
-          }
-          .apply {
-            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
-            foreground = mutedLabelColor()
-          }
+      namedLabel("file-path-label").apply {
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
+        foreground = mutedLabelColor()
+      }
 
   private val documentListener =
       object : BulkAwareDocumentListener {
@@ -230,10 +232,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
         }
       }
 
-  private var resizeDirection: ResizeDirection? = null
-  private var lastMouseX = 0
-  private var lastMouseY = 0
-
   // Note: Must be created on EDT, although we can't annotate it as such.
   init {
     connection = ApplicationManager.getApplication().messageBus.connect(this)
@@ -244,7 +242,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     setupTextField()
     setupKeyListener()
     connection!!.subscribe(UISettingsListener.TOPIC, UISettingsListener { onThemeChange() })
-    addFrameDragListeners()
 
     isUndecorated = true
     isAlwaysOnTop = true
@@ -255,6 +252,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     contentPane = DoubleBufferedRootPane()
     generatePromptUI()
     updateOkButtonState()
+    FrameMover(this, titleBar)
     pack()
 
     shape = makeCornerShape(width, height)
@@ -293,118 +291,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     addFocusListener(focusListener)
   }
 
-  private fun addFrameDragListeners() {
-    addMouseListener(
-        object : MouseAdapter() {
-          override fun mousePressed(e: MouseEvent) {
-            resizeDirection = getResizeDirection(e.point)
-            lastMouseX = e.xOnScreen
-            lastMouseY = e.yOnScreen
-            updateCursor()
-          }
-
-          override fun mouseReleased(e: MouseEvent) {
-            resizeDirection = null
-            cursor = Cursor.getDefaultCursor()
-          }
-
-          override fun mouseEntered(e: MouseEvent) {
-            updateCursor()
-          }
-
-          override fun mouseExited(e: MouseEvent) {
-            updateCursor()
-          }
-
-          override fun mouseMoved(e: MouseEvent) {
-            updateCursor()
-          }
-        })
-
-    addMouseMotionListener(
-        // TODO: This can make the window larger, but not smaller after that.
-        object : MouseMotionAdapter() {
-          override fun mouseDragged(e: MouseEvent) {
-            val border = RESIZE_BORDER
-            val x = e.x
-            val y = e.y
-
-            val resizeDirection =
-                when {
-                  x < border && y < border -> ResizeDirection.NORTH_WEST
-                  x < border && y > height - border -> ResizeDirection.SOUTH_WEST
-                  x > width - border && y < border -> ResizeDirection.NORTH_EAST
-                  x > width - border && y > height - border -> ResizeDirection.SOUTH_EAST
-                  x < border -> ResizeDirection.WEST
-                  x > width - border -> ResizeDirection.EAST
-                  y < border -> ResizeDirection.NORTH
-                  y > height - border -> ResizeDirection.SOUTH
-                  else -> null
-                }
-
-            if (resizeDirection != null) {
-              val newX = e.xOnScreen
-              val newY = e.yOnScreen
-              val deltaX = newX - lastMouseX
-              val deltaY = newY - lastMouseY
-
-              var newWidth = width
-              var newHeight = height
-
-              when (resizeDirection) {
-                ResizeDirection.EAST,
-                ResizeDirection.NORTH_EAST,
-                ResizeDirection.SOUTH_EAST -> {
-                  newWidth = minimumSize.width.coerceAtLeast(width + deltaX)
-                }
-                ResizeDirection.WEST,
-                ResizeDirection.NORTH_WEST,
-                ResizeDirection.SOUTH_WEST -> {
-                  newWidth = minimumSize.width.coerceAtLeast(width - deltaX)
-                  setLocation(x + deltaX, y)
-                }
-                else -> {}
-              }
-
-              when (resizeDirection) {
-                ResizeDirection.SOUTH,
-                ResizeDirection.SOUTH_EAST,
-                ResizeDirection.SOUTH_WEST -> {
-                  newHeight = minimumSize.height.coerceAtLeast(height + deltaY)
-                }
-                ResizeDirection.NORTH,
-                ResizeDirection.NORTH_EAST,
-                ResizeDirection.NORTH_WEST -> {
-                  newHeight = minimumSize.height.coerceAtLeast(height - deltaY)
-                  setLocation(x, y + deltaY)
-                }
-                else -> {}
-              }
-
-              setSize(newWidth, newHeight)
-              lastMouseX = newX
-              lastMouseY = newY
-            }
-            this@EditCommandPrompt.updateCursor()
-          }
-        })
-  }
-
-  private fun updateCursor() {
-    cursor =
-        when (resizeDirection) {
-          ResizeDirection.NORTH_WEST -> Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR)
-          ResizeDirection.NORTH -> Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR)
-          ResizeDirection.NORTH_EAST -> Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR)
-          ResizeDirection.WEST -> Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR)
-          ResizeDirection.EAST -> Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)
-          ResizeDirection.SOUTH_WEST -> Cursor.getPredefinedCursor(Cursor.SW_RESIZE_CURSOR)
-          ResizeDirection.SOUTH -> Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR)
-          ResizeDirection.SOUTH_EAST -> Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR)
-          else -> Cursor.getDefaultCursor()
-        }
-  }
-
   override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
     super.setBounds(x, y, width, height)
     if (isUndecorated) {
@@ -415,9 +301,11 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   private fun unregisterListeners() {
     try {
       editor.document.removeDocumentListener(documentListener)
+
       removeWindowFocusListener(windowFocusListener)
       removeFocusListener(focusListener)
-      // tab focus listener will unregister when we disconnect from the message bus.
+
+      okButton.actionListeners.forEach { okButton.removeActionListener(it) }
     } catch (x: Exception) {
       logger.warn("Error removing listeners", x)
     }
@@ -491,7 +379,13 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     val actionMap = rootPane.actionMap
 
     inputMap.put(escapeKeyStroke, "ESCAPE")
-    actionMap.put("ESCAPE", escapeAction)
+    actionMap.put(
+        "ESCAPE",
+        object : AbstractAction() {
+          override fun actionPerformed(e: ActionEvent?) {
+            clearActivePrompt()
+          }
+        })
 
     return rootPane
   }
@@ -519,7 +413,9 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   }
 
   private fun createTopRow(): JPanel {
-    return JPanel(BorderLayout()).apply {
+    return namedPanel("top-row").apply {
+      layout = BorderLayout()
+      isFocusable = false
       add(titleLabel, BorderLayout.WEST)
       val (line, col) = editor.offsetToLogicalPosition(offset).let { Pair(it.line, it.column) }
       val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
@@ -527,38 +423,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
       filePathLabel.text = "$file at $line:$col"
       filePathLabel.toolTipText = virtualFile?.path
       add(filePathLabel, BorderLayout.CENTER)
-      // Listen for mouse-drag in the title bar, and move the window.
-      object : MouseAdapter() {
-            var lastX: Int = 0
-            var lastY: Int = 0
-
-            // Debounce to mitigate jitter while dragging.
-            var lastUpdateTime = System.currentTimeMillis()
-
-            override fun mousePressed(e: MouseEvent) {
-              lastX = e.xOnScreen
-              lastY = e.yOnScreen
-            }
-
-            override fun mouseDragged(e: MouseEvent) {
-              val currentTime = System.currentTimeMillis()
-              if (currentTime - lastUpdateTime > 16) { // about 60 fps
-                val x: Int = e.xOnScreen
-                val y: Int = e.yOnScreen
-                SwingUtilities.invokeLater {
-                  val loc = UIUtil.getLocationOnScreen(rootPane)!!
-                  this@EditCommandPrompt.setLocation(loc.x + x - lastX, loc.y + y - lastY)
-                  lastX = x
-                  lastY = y
-                }
-                lastUpdateTime = currentTime
-              }
-            }
-          }
-          .let {
-            addMouseListener(it)
-            addMouseMotionListener(it)
-          }
+      titleBar = this
     }
   }
 
@@ -593,7 +458,11 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   }
 
   private fun createCenterPanel(): JPanel {
-    return TextAreaPanel().apply {
+    return namedPanel("center-panel").apply {
+      isOpaque = true
+      background = textFieldBackground()
+      layout = BorderLayout()
+
       add(
           JScrollPane().apply {
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
@@ -604,13 +473,14 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
           },
           BorderLayout.CENTER)
       add(
-          JPanel().apply {
+          namedPanel("llmDropdown-horizontal-positioner").apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             isOpaque = false
             border = JBUI.Borders.empty()
             add(Box.createHorizontalStrut(15))
             add(
-                Box.createVerticalBox().apply {
+                namedPanel("llmDropdown-vertical-positioner").apply {
+                  layout = BoxLayout(this, BoxLayout.Y_AXIS)
                   isOpaque = false
                   border = JBUI.Borders.empty()
                   add(llmDropdown)
@@ -624,25 +494,15 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   }
 
   private fun createBottomRow(): JPanel {
-    return JPanel().apply {
+    return namedPanel("bottom-row-outer").apply {
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       border = BorderFactory.createEmptyBorder(0, 20, 0, 12)
-      add(
-          JLabel("[esc] to cancel").apply {
-            foreground = mutedLabelColor()
-            cursor = Cursor(Cursor.HAND_CURSOR)
-            addMouseListener(
-                object : MouseAdapter() {
-                  override fun mouseClicked(e: MouseEvent) {
-                    clearActivePrompt()
-                  }
-                })
-          })
+      add(cancelLabel)
 
       add(Box.createHorizontalGlue())
 
       add(
-          JLabel().apply {
+          namedLabel("history-label").apply {
             text = if (promptHistory.isNotEmpty()) "↑↓ for history" else ""
             horizontalAlignment = JLabel.CENTER
           })
@@ -653,13 +513,13 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   }
 
   private fun createOKButtonGroup(): JPanel {
-    return JPanel().apply {
+    return namedPanel("ok-button-group").apply {
       border = BorderFactory.createEmptyBorder(4, 0, 4, 4)
       isOpaque = false
       background = textFieldBackground()
       layout = BoxLayout(this, BoxLayout.X_AXIS)
       add(
-          JLabel().apply {
+          namedLabel("ok-keyboard-shortcut-label").apply {
             text = KeymapUtil.getShortcutText(KeyboardShortcut(enterKeyStroke, null))
             // Spacing between key shortcut and button.
             border = BorderFactory.createEmptyBorder(0, 0, 0, 12)
@@ -771,8 +631,11 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
 
   override fun dispose() {
     if (!isDisposed.get()) {
-      unregisterListeners()
-      isDisposed.set(true)
+      try {
+        unregisterListeners()
+      } finally {
+        isDisposed.set(true)
+      }
     }
   }
 
@@ -782,48 +645,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
       revalidate()
       repaint()
     }
-  }
-
-  // Background for the panel containing the text field and the dropdown.
-  inner class TextAreaPanel : JPanel() {
-    init {
-      isOpaque = true
-      background = textFieldBackground()
-      layout = BorderLayout()
-    }
-
-    override fun paintComponent(g: Graphics) {
-      g.color = background
-      (g as Graphics2D).background = background
-      super.paintComponent(g)
-    }
-  }
-
-  private fun getResizeDirection(point: Point): ResizeDirection? {
-    val border = RESIZE_BORDER
-    if (point.x < border) {
-      return if (point.y < border) ResizeDirection.NORTH_WEST
-      else if (point.y >= height - border) ResizeDirection.SOUTH_WEST else ResizeDirection.WEST
-    } else if (point.x >= width - border) {
-      return if (point.y < border) ResizeDirection.NORTH_EAST
-      else if (point.y >= height - border) ResizeDirection.SOUTH_EAST else ResizeDirection.EAST
-    } else if (point.y < border) {
-      return ResizeDirection.NORTH
-    } else if (point.y >= height - border) {
-      return ResizeDirection.SOUTH
-    }
-    return null
-  }
-
-  private enum class ResizeDirection(val isHorizontal: Boolean, val isVertical: Boolean) {
-    NORTH_WEST(false, true),
-    NORTH(false, true),
-    NORTH_EAST(true, true),
-    WEST(false, true),
-    EAST(true, true),
-    SOUTH_WEST(false, false),
-    SOUTH(false, true),
-    SOUTH_EAST(true, true)
   }
 
   // TODO: Was hoping this would help avoid flicker while resizing.
@@ -860,8 +681,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
 
     // Used when the Editor/Document does not have an associated filename.
     private const val FILE_PATH_404 = "unknown file"
-
-    private const val RESIZE_BORDER = 5
 
     private const val HISTORY_CAPACITY = 100
     val promptHistory = HistoryManager<String>(HISTORY_CAPACITY)
