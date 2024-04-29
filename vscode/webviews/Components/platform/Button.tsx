@@ -101,6 +101,7 @@ export const PopoverButton: FunctionComponent<
                 className={styles.popoverButton}
                 disabled={disabled}
                 role="combobox"
+                aria-expanded={isOpen}
                 {...props}
             >
                 {children}

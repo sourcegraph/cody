@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { type FunctionComponent, type ReactNode, useCallback, useState } from 'react'
+import { type FunctionComponent, type ReactNode, useCallback, useEffect, useRef } from 'react'
 import { FLOATING_WIDGET_CLASS_NAME } from './FloatingWidget'
 import styles from './SelectList.module.css'
 
@@ -17,11 +17,18 @@ export const SelectList: FunctionComponent<{
     onChange: (value: Value | undefined, close: boolean) => void
     className?: string
 }> = ({ options, value, onChange, className }) => {
-    const [isKeyDown, setIsKeyDown] = useState(false)
+    const isKeyDown = useRef(false)
 
     const suppressBlur = useCallback((e: React.MouseEvent<HTMLElement>): void => {
         e.stopPropagation()
         e.preventDefault()
+    }, [])
+
+    const ulRef = useRef<HTMLUListElement>(null)
+    useEffect(() => {
+        const checked = ulRef.current?.querySelector<HTMLInputElement>('label:has(input[checked])')
+        const first = ulRef.current?.querySelector<HTMLInputElement>('label:first-child')
+        setTimeout(() => (checked || first)?.focus())
     }, [])
 
     return (
@@ -30,14 +37,17 @@ export const SelectList: FunctionComponent<{
                 className={styles.list}
                 role="radiogroup"
                 onKeyDown={e => {
-                    setIsKeyDown(true)
-                    if (e.key === 'Enter') {
+                    isKeyDown.current = true
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
                         onChange(value, true)
                         e.stopPropagation()
                         e.preventDefault()
                     }
                 }}
-                onKeyUp={() => setIsKeyDown(false)}
+                onKeyUp={() => {
+                    isKeyDown.current = false
+                }}
+                ref={ulRef}
             >
                 {options.map(({ value: optionValue, title }, i) => (
                     <li key={optionValue ?? 'none'}>
@@ -55,15 +65,11 @@ export const SelectList: FunctionComponent<{
                                 value={optionValue}
                                 checked={value === optionValue}
                                 aria-checked={value === optionValue}
-                                ref={el => {
-                                    // Make arrow keys work correctly.
-                                    if (el?.checked || (value === undefined && i === 0)) {
-                                        // TODO!(sqs): the up/down arrows are broken if value === undefined, they should start at the 0'th element and down should go to the 1st
-                                        setTimeout(() => el?.focus())
-                                    }
-                                }}
                                 onChange={() => {
-                                    const close = !isKeyDown
+                                    // If onChange is called during keydown, then the user pressed
+                                    // an arrow key. We want to keep the list open during arrow key
+                                    // selection.
+                                    const close = !isKeyDown.current
                                     onChange(optionValue, close)
                                 }}
                             />
