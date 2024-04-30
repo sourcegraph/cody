@@ -1,0 +1,68 @@
+{
+    "features": [
+        {
+        "name": "NotebookBasedChatUI",
+        "editors": {
+          "jetbrains": {
+            "status": "planned",
+          }
+        }
+      },
+      {
+        "name": "Mixtral8x22BPreview",
+        "editors": {
+          "jetbrains": {
+            "status": "planned",
+          }
+        }
+      },
+      {
+        "name": "ToggleEnhancedContextButtons",
+        "editors": {
+          "jetbrains": {
+            "status": "stable",
+          }
+        }
+      },
+      {
+        "name": "GenerateUnitTestCodeAction",
+        "editors": {
+          "jetbrains": {
+            "status": "planned",
+          }
+        },
+      },
+      {
+        "name": "EditPreInstructions",
+        "editors": {
+          "jetbrains": {
+            "status": "planned",
+          }
+        }
+      },
+      {
+        "name": "EditShowWarningsOnLargeFiles",
+        "editors": {
+          "jetbrains": {
+            "status": "stable",
+          }
+        }
+      },
+      {
+        "name": "RightClickAddContext",
+        "editors": {
+          "jetbrains": {
+            "status": "planned",
+          }
+        }
+      },
+      {
+        "name": "ContextTokenCounter",
+        "editors": {
+          "jetbrains": {
+            "status": "stable"
+          }
+        }
+      },
+    ],
+  }
