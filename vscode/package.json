@@ -138,14 +138,6 @@
             }
           },
           {
-            "id": "search",
-            "title": "Natural Language Search (Beta)",
-            "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
-            "media": {
-              "markdown": "walkthroughs/search.md"
-            }
-          },
-          {
             "id": "keyboard",
             "title": "Keyboard Shortcuts",
             "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
@@ -239,13 +231,6 @@
         {
           "id": "cody.chat.tree.view",
           "name": "Chats",
-          "when": "cody.activated"
-        },
-        {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Natural Language Search (Beta)",
-          "visibility": "visible",
           "when": "cody.activated"
         },
         {
@@ -485,27 +470,11 @@
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
-        "command": "cody.search.index-update",
-        "category": "Cody",
-        "group": "Cody",
-        "title": "Update search index for current workspace folder",
-        "icon": "$(refresh)",
-        "when": "cody.activated"
-      },
-      {
         "command": "cody.chat.context.add",
         "group": "Chat",
         "title": "Cody Chat: Add context",
         "icon": "$(new-file)",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.search.index-update-all",
-        "category": "Cody",
-        "group": "Cody",
-        "title": "Update search indices for all workspace folders",
-        "icon": "$(sync)",
-        "when": "cody.activated"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -551,6 +520,14 @@
         "group": "Debug",
         "icon": "$(copy)",
         "title": "Copy Cody Extension Version"
+      },
+      {
+        "command": "cody.symf.search",
+        "category": "Cody",
+        "group": "Search",
+        "icon": "$(search)",
+        "title": "Natural Language Search (Beta)",
+        "when": "cody.activated"
       }
     ],
     "keybindings": [
@@ -819,16 +796,6 @@
           "command": "cody.debug.reportIssue",
           "when": "view == cody.support.tree.view",
           "group": "9_cody@1"
-        },
-        {
-          "command": "cody.search.index-update",
-          "when": "view == cody.search && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.search.index-update-all",
-          "when": "view == cody.search && cody.activated",
-          "group": "navigation@2"
         }
       ],
       "editor/title": [

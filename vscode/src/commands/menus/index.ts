@@ -125,6 +125,7 @@ export async function showCommandMenu(
                     quickPick.items = [
                         CommandMenuOption.chat,
                         CommandMenuOption.edit,
+                        CommandMenuOption.search,
                         ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
                     ]
                 } else {
@@ -147,6 +148,13 @@ export async function showCommandMenu(
             const commandOptions = [addOption.command, configOption.command]
             if (selection?.command && commandOptions.includes(selection.command)) {
                 void commands.executeCommand(selection.command)
+                quickPick.hide()
+                return
+            }
+
+            // Check if it's an edit command
+            if (selection.key === 'search') {
+                void commands.executeCommand('cody.symf.search', value)
                 quickPick.hide()
                 return
             }

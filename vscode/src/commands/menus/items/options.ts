@@ -39,9 +39,18 @@ const addOption: CommandMenuItem = {
     command: 'cody.menu.custom.build',
 }
 
+const searchOption: CommandMenuItem = {
+    label: '$(search) Search (Beta)',
+    alwaysShow: true,
+    description: 'Start a new Natural Language Search',
+    key: 'search',
+    command: 'cody.symf.search',
+}
+
 export const CommandMenuOption = {
     chat: chatOption,
     edit: fixOption,
     config: configOption,
     add: addOption,
+    search: searchOption,
 }

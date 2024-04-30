@@ -7,20 +7,16 @@ import {
     type SearchPanelFile,
     type SearchPanelSnippet,
     displayPath,
-    hydrateAfterPostMessage,
     isDefined,
     isFileURI,
     uriBasename,
 } from '@sourcegraph/cody-shared'
-
-import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import { getEditor } from '../editor/active-editor'
 import type { IndexStartEvent, SymfRunner } from '../local-context/symf'
 
-const searchDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('searchEditor.findMatchBackground'),
-    borderColor: new vscode.ThemeColor('searchEditor.findMatchBorder'),
-})
+interface SymfResultQuickPickItem extends vscode.QuickPickItem {
+    onSelect: () => void
+}
 
 class CancellationManager implements vscode.Disposable {
     private tokenSource?: vscode.CancellationTokenSource
@@ -133,19 +129,21 @@ class IndexManager implements vscode.Disposable {
     }
 }
 
-export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class SearchViewProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private webview?: vscode.Webview
     private cancellationManager = new CancellationManager()
     private indexManager: IndexManager
 
-    constructor(
-        private extensionUri: vscode.Uri,
-        private symfRunner: SymfRunner
-    ) {
+    constructor(private symfRunner: SymfRunner) {
         this.indexManager = new IndexManager(this.symfRunner)
         this.disposables.push(this.indexManager)
         this.disposables.push(this.cancellationManager)
+
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.symf.search', query =>
+                this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(query ?? ''))
+            )
+        )
     }
 
     public dispose(): void {
@@ -201,89 +199,31 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
                 }
             })
         )
-        this.disposables.push(
-            this.symfRunner.onIndexEnd(({ scopeDir }) => {
-                void this.webview?.postMessage({ type: 'index-updated', scopeDir })
+    }
+
+    public async showInputBox(): Promise<void> {
+        await vscode.window
+            .showInputBox({
+                title: 'Natural Language Search (Beta)',
+                prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
             })
-        )
-    }
-
-    public async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
-        this.webview = webviewView.webview
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-
-        webviewView.webview.options = {
-            enableScripts: true,
-            enableCommandUris: true,
-            localResourceRoots: [webviewPath],
-        }
-
-        // Create Webview using vscode/index.html
-        const root = vscode.Uri.joinPath(webviewPath, 'search.html')
-        const bytes = await vscode.workspace.fs.readFile(root)
-        const decoded = new TextDecoder('utf-8').decode(bytes)
-        const resources = webviewView.webview.asWebviewUri(webviewPath)
-
-        // Set HTML for webview
-        // This replace variables from the vscode/dist/index.html with webview info
-        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-        // 2. Update URIs for content security policy to only allow specific scripts to be run
-        webviewView.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replaceAll('{cspSource}', webviewView.webview.cspSource)
-
-        // Register to receive messages from webview
-        this.disposables.push(
-            webviewView.webview.onDidReceiveMessage(message =>
-                this.onDidReceiveMessage(
-                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                )
-            )
-        )
-    }
-
-    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        switch (message.command) {
-            case 'search': {
-                await this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(message.query))
-                break
-            }
-            case 'show-search-result': {
-                const { range, uri } = message
-                const vscodeRange = new vscode.Range(
-                    range.start.line,
-                    range.start.character,
-                    range.end.line,
-                    range.end.character
-                )
-
-                // show file and range in editor
-                const doc = await vscode.workspace.openTextDocument(uri)
-                const editor = await vscode.window.showTextDocument(doc, {
-                    selection: vscodeRange,
-                    preserveFocus: true,
-                })
-                const isWholeFile =
-                    vscodeRange.start.line === 0 && vscodeRange.end.line === doc.lineCount - 1
-                if (!isWholeFile) {
-                    editor.setDecorations(searchDecorationType, [vscodeRange])
-                    editor.revealRange(
-                        vscodeRange,
-                        vscode.TextEditorRevealType.InCenterIfOutsideViewport
-                    )
+            .then(query => {
+                if (query) {
+                    this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(query))
                 }
-                break
-            }
-        }
+            })
     }
 
     // TODO(beyang): support cancellation through symf
-    private async onDidReceiveQuery(query: PromptString): Promise<void> {
+    public async onDidReceiveQuery(queryPromptString: PromptString): Promise<void> {
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
-
-        if (query.trim().length === 0) {
-            await this.webview?.postMessage({ type: 'update-search-results', results: [] })
+        if (cancellationToken.isCancellationRequested) {
             return
+        }
+
+        const query = queryPromptString.toString()?.trim()
+        if (query.length === 0) {
+            return this.showInputBox()
         }
 
         const symf = this.symfRunner
@@ -297,44 +237,73 @@ export class SearchViewProvider implements vscode.WebviewViewProvider, vscode.Di
             return
         }
 
-        // Check cancellation after index is ready
-        if (cancellationToken.isCancellationRequested) {
-            return
-        }
-
-        // Update the config. We could do this on a smarter schedule, but this suffices for when the
-        // webview needs it for now.
-        this.webview?.postMessage({
-            type: 'search:config',
-            workspaceFolderUris:
-                vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? [],
-        } satisfies ExtensionMessage)
-
-        await vscode.window.withProgress({ location: { viewId: 'cody.search' } }, async () => {
-            const cumulativeResults: SearchPanelFile[] = []
-            this.indexManager.showMessageIfIndexingInProgress(scopeDirs)
-            const resultSets = await symf.getResults(query, scopeDirs)
-            for (const resultSet of resultSets) {
-                try {
-                    cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
-                    await this.webview?.postMessage({
-                        type: 'update-search-results',
-                        results: cumulativeResults,
-                        query,
-                    })
-                } catch (error) {
-                    if (error instanceof vscode.CancellationError) {
-                        void vscode.window.showErrorMessage(
-                            'No search results because indexing was canceled'
-                        )
-                    } else {
-                        void vscode.window.showErrorMessage(
-                            `Error fetching results for query "${query}": ${error}`
-                        )
-                    }
-                }
-            }
+        const quickPick = vscode.window.createQuickPick()
+        quickPick.items = []
+        quickPick.busy = true
+        quickPick.title = `Search Results for "${query}" - Loading...`
+        quickPick.placeholder = 'Searching...'
+        quickPick.matchOnDescription = true
+        quickPick.matchOnDetail = true
+        quickPick.ignoreFocusOut = true
+        quickPick.onDidAccept(() => {
+            const selected = quickPick.selectedItems[0] as SymfResultQuickPickItem
+            selected?.onSelect()
         })
+        quickPick.buttons = [
+            {
+                iconPath: new vscode.ThemeIcon('refresh'),
+                tooltip: 'Update search index for current workspace folder',
+            },
+            {
+                iconPath: new vscode.ThemeIcon('sync'),
+                tooltip: 'Update search indices for all workspace folders',
+            },
+        ]
+        quickPick.show()
+
+        try {
+            const cumulativeResults: SearchPanelFile[] = []
+            for (const resultSet of await symf.getResults(queryPromptString, scopeDirs)) {
+                cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
+            }
+
+            quickPick.items = cumulativeResults.flatMap(file =>
+                file.snippets.map(s => ({
+                    label: uriBasename(file.uri),
+                    description: `L${s.range.start.line}:L${s.range.end.line}`,
+                    detail: s.contents.replace(/\n/g, ' '),
+                    file,
+                    onSelect: () => {
+                        vscode.workspace.openTextDocument(file.uri).then(async doc => {
+                            await vscode.window.showTextDocument(doc, {
+                                preserveFocus: true,
+                                selection: new vscode.Range(
+                                    s.range.start.line,
+                                    s.range.start.character,
+                                    s.range.end.line,
+                                    s.range.end.character
+                                ),
+                            })
+                        })
+                    },
+                }))
+            )
+
+            quickPick.title = `Search Results for "${query}"`
+            quickPick.placeholder = 'Press ESC to close'
+        } catch (error) {
+            if (error instanceof vscode.CancellationError) {
+                console.info('No search results because indexing was canceled')
+            } else {
+                void vscode.window.showErrorMessage(
+                    `Error fetching results for query "${query}": ${error}`
+                )
+            }
+
+            quickPick.hide()
+        } finally {
+            quickPick.busy = false
+        }
     }
 }
 

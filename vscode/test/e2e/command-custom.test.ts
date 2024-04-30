@@ -42,7 +42,6 @@ test.extend<ExpectedEvents>({
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
@@ -158,7 +157,6 @@ test.extend<ExpectedEvents>({
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
@@ -255,7 +253,6 @@ test.extend<ExpectedEvents>({
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
