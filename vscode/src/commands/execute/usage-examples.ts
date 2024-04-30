@@ -6,14 +6,12 @@ import {
     logDebug,
     logError,
     ps,
+    searchForFileChunks,
+    searchForRepos,
     telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import {
-    searchForFileChunks,
-    searchForRepos,
-} from '@sourcegraph/cody-shared/src/mentions/providers/sourcegraphSearch'
 import * as vscode from 'vscode'
 import { toVSCodeRange } from '../../common/range'
 import { getEditor } from '../../editor/active-editor'
