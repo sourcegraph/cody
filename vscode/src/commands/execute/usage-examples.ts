@@ -238,7 +238,7 @@ async function guessSymbolPackage(
             .replace(/^@types\//, '')
         if (npmPackage) {
             return {
-                ecosystem: PromptString.unsafe_fromUserQuery('npm'),
+                ecosystem: ps`npm`,
                 name: PromptString.unsafe_fromUserQuery(npmPackage),
             }
         }
