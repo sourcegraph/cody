@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 
 export function migrateAndNotifyForOutdatedModels(model: string | null): string | null {
-    if (!model) {
+    if (!model || isRunningInsideAgent()) {
         model
     }
 
