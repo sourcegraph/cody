@@ -151,7 +151,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
             export const message = 'Hello'
             `
             )
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('firstName:')
+            expect(text).includes('isEligible:')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -212,7 +215,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
             export const message = 'Hello'
             `
             )
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('firstName:')
+            expect(text).includes('isEligible:')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -274,7 +280,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('isNewCar')
+            expect(text).includes('minimumYear:')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -389,7 +398,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('a1:')
+            expect(text).includes('a2:')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -486,12 +498,9 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            // TODO: add non-snapshot assertion that the autocomplete result has
-            // `validDogSled`. If you look at the raw HTTP recordings, the model
-            // is returning the expected completion `{ validDogSled: true }` but
-            // our autocomplete post-processing pipeline is filtering out the
-            // result.
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('validDogSled')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -548,6 +557,9 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
+            // TODO: add .includes assertion for a non-empty result. It looks
+            // like starcoder-16b doesn't have strong enough reasoning skills to
+            // make use of the context.
             expect(await autocompletes()).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -717,12 +729,9 @@ describe.skipIf(isWindows())('Graph Context', () => {
             modelFilter = { model: 'starcoder-16b' }
             await openFile(tsxUri)
 
-            // TODO: add non-snapshot assertion that the autocomplete result has
-            // `validDogSled`. If you look at the raw HTTP recordings, the model
-            // is returning the expected completion `{ validDogSled: true }` but
-            // our autocomplete post-processing pipeline is filtering out the
-            // result.
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('props.languageKind')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -785,12 +794,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
             modelFilter = { model: 'starcoder-16b' }
             await openFile(jsUri)
 
-            // TODO: add non-snapshot assertion that the autocomplete result has
-            // `validDogSled`. If you look at the raw HTTP recordings, the model
-            // is returning the expected completion `{ validDogSled: true }` but
-            // our autocomplete post-processing pipeline is filtering out the
-            // result.
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('helper')
+            expect(text).includes('{ b:')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
@@ -826,12 +833,9 @@ describe.skipIf(isWindows())('Graph Context', () => {
             modelFilter = { model: 'starcoder-16b' }
             await openFile(jsxUri)
 
-            // TODO: add non-snapshot assertion that the autocomplete result has
-            // `validDogSled`. If you look at the raw HTTP recordings, the model
-            // is returning the expected completion `{ validDogSled: true }` but
-            // our autocomplete post-processing pipeline is filtering out the
-            // result.
-            expect(await autocompletes()).toMatchInlineSnapshot(
+            const text = await autocompletes()
+            expect(text).includes('fruitKind={fruit}')
+            expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
                 - name: starcoder-16b
