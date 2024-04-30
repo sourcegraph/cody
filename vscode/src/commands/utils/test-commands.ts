@@ -56,3 +56,24 @@ export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
 
     return strippedFile === strippedTestFile
 }
+
+export interface TestableLanguage {
+    // map to vscode language ids and file extensions
+    languageId: string
+    fileConventions: {
+        // e.g. .test, _test
+        suffix: string,
+        // e.g. ./ vs ./tests or ./__tests__
+        location: 'sameFolder' | 'testFolder'
+    },
+    // e.g. jest, sinon, react-testing-library, etc.
+    // Note: inspect import statements in discovered tests and any specific dep files (e.g. package.json)
+    commonDependencies: string[]
+}
+
+/**
+ * Given a function, return the signature for it so it can be used as context
+ */
+export const getFunctionSignature = (): string => {
+    return 'function signature'
+}
