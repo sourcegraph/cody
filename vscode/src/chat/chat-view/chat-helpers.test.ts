@@ -43,4 +43,8 @@ describe('getChatPanelTitle', () => {
         const result = getChatPanelTitle(title)
         expect(result).toEqual('Explain the relationship....')
     })
+
+    test('title should be trimed', () => {
+        expect(getChatPanelTitle('\n\nExplain\n\n')).toEqual('Explain')
+    })
 })

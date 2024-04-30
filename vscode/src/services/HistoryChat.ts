@@ -45,7 +45,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
         }
 
         if (lastHumanMessage?.text) {
-            const lastHumanText = lastHumanMessage.text?.toString().split('\n')[0]
+            const lastHumanText = lastHumanMessage.text?.toString()
             const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
             const timestamp = new Date(entry.lastInteractionTimestamp)
             const timeUnit = getRelativeChatPeriod(timestamp)
