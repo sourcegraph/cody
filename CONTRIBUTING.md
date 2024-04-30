@@ -58,6 +58,8 @@ Few tips and tricks regarding versioning of the tooling:
   Otherwise you won't see effects of your changes.
 - Running `./gradlew -PplatformRuntimeVersion=X.Y :runIde` for the first time might fail due to missing IntelliJ installation. You
   can fix it by running `./gradlew -PplatformVersion=X.Y :runIde` once - even if compilation fails it fixes your caches.
+- IF you get error 134 while building different things with jetbrains its because java process doesn't have enough memory to build so you might need to get into your activity monitor to close other processes.
+
 
 ## Using Nightly channel releases
 
