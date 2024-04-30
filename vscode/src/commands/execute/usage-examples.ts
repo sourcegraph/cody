@@ -89,7 +89,7 @@ export async function executeUsageExamplesCommand(
             type: 'file',
             uri: doc.uri,
             range: snippetRange,
-            source: ContextItemSource.Editor,
+            source: ContextItemSource.Unified,
         })
 
         try {
@@ -207,7 +207,7 @@ async function symbolContextItems(
                     ...use,
                     type: 'file',
                     title: uriBasename(use.uri),
-                    source: ContextItemSource.Search,
+                    source: ContextItemSource.Unified,
                 }) satisfies ContextItem
         ),
     ]
