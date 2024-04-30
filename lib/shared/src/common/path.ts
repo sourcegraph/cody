@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import { isWindows as _isWindows } from './platform'
+import { isMacOS, isWindows as _isWindows } from './platform'
 
 interface PathFunctions {
     /**
@@ -23,6 +23,8 @@ interface PathFunctions {
      */
     relative: (from: string, to: string) => string
 
+    resolve: (...paths: string[]) => string
+
     /** Path separator. */
     separator: PathSeparator
 }
@@ -43,6 +45,11 @@ export function pathFunctionsForURI(uri: URI, isWindows = _isWindows()): PathFun
         ? // Like windowsFilePaths but with forward slashes.
           pathFunctions(true, sep, false)
         : posixFilePaths
+}
+
+export function defaultPathFunctions(): PathFunctions {
+    const isWindows = _isWindows()
+    return pathFunctions(isWindows, isWindows ? '\\' : '/', isMacOS())
 }
 
 // I don't like reimplementing this here, but it's the best option because: (1) using Node's `path`
@@ -113,6 +120,9 @@ function pathFunctions(isWindows: boolean, sep: '\\' | '/', caseSensitive: boole
             // For relative paths, output separator is always based on platform, even
             // if the input (sep) is forward slash/URI.
             return relative(from, to, sep, isWindows ? '\\' : '/', caseSensitive)
+        },
+        resolve(...paths) {
+            return paths.join(sep)
         },
         separator: sep,
     }

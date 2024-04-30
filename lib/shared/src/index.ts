@@ -79,7 +79,7 @@ export {
     extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths, pathFunctionsForURI } from './common/path'
+export { posixFilePaths, pathFunctionsForURI, defaultPathFunctions } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,

@@ -1111,7 +1111,7 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "bfg", "bfg-mixed"],
+          "enum": [null, "bfg", "bfg-mixed", "tsc", "tsc-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
