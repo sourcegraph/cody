@@ -165,6 +165,9 @@ export class FixupController
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
+
+        this.setTaskState(task, editOk ? CodyTaskState.Finished : CodyTaskState.Error)
+
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
@@ -177,21 +180,18 @@ export class FixupController
                     model: task.model,
                 },
             })
-            return
+        } else {
+            telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
         }
-
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
-            hasV2Event: true,
-        })
-        telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata,
-            privateMetadata: {
-                ...privateMetadata,
-                model: task.model,
-            },
-        })
-
-        this.setTaskState(task, CodyTaskState.Finished)
     }
 
     // Undo the specified task, then prompt for a new set of instructions near

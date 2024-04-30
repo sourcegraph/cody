@@ -44,19 +44,19 @@ export type WebviewMessage =
     | { command: 'initialized' }
     | {
           /**
-             * @deprecated v1 telemetry RPC - use 'recordEvent' instead
-             */
+           * @deprecated v1 telemetry RPC - use 'recordEvent' instead
+           */
           command: 'event'
           eventName: string
           properties: TelemetryEventProperties | undefined
       }
     | {
           /**
-             * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
-             * createWebviewTelemetryRecorder instead for webviews.
-             *
-             * V2 telemetry RPC for the webview.
-             */
+           * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
+           * createWebviewTelemetryRecorder instead for webviews.
+           *
+           * V2 telemetry RPC for the webview.
+           */
           command: 'recordEvent'
           // 👷 HACK: WARNING: We use looser string types instead of the actual SDK at
           // '@sourcegraph/cody-shared/src/telemetry-v2' because this defines a

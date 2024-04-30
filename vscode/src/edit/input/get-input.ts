@@ -414,11 +414,11 @@ export const getInput = async (
                                         : NO_PACKAGE_MATCHES_LABEL
                                     : mentionQuery.provider === 'symbol'
                                       ? mentionQuery.text.length === 0
-                                            ? SYMBOL_HELP_LABEL
-                                            : NO_SYMBOL_MATCHES_LABEL
+                                          ? SYMBOL_HELP_LABEL
+                                          : NO_SYMBOL_MATCHES_LABEL
                                       : mentionQuery.text.length === 0
-                                          ? FILE_HELP_LABEL
-                                          : NO_FILE_MATCHES_LABEL,
+                                        ? FILE_HELP_LABEL
+                                        : NO_FILE_MATCHES_LABEL,
                         },
                     ]
                     return
@@ -466,8 +466,8 @@ export const getInput = async (
                                 : mentionQuery?.provider === 'symbol'
                                   ? SYMBOL_HELP_LABEL
                                   : mentionQuery?.provider === 'file'
-                                      ? FILE_HELP_LABEL
-                                      : GENERAL_HELP_LABEL,
+                                    ? FILE_HELP_LABEL
+                                    : GENERAL_HELP_LABEL,
                     },
                 ]
             },

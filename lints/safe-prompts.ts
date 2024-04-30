@@ -123,7 +123,7 @@ for (const row of fileNames) {
             if (ranges === null) {
                 ranges = []
             }
-            ranges.push({ start: parseInt(start), end: parseInt(end) })
+            ranges.push({ start: Number.parseInt(start), end: Number.parseInt(end) })
         }
 
         // Parse a file

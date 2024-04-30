@@ -1,17 +1,17 @@
 import * as child_process from 'node:child_process'
 import {
+    promises as fs,
     type PathLike,
     type RmOptions,
     mkdir,
     mkdtempSync,
-    promises as fs,
     rmSync,
     writeFile,
 } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
+import { type Frame, type FrameLocator, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 

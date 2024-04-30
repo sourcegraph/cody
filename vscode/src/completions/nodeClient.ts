@@ -158,7 +158,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 'chat messages and commands',
                                 e.message,
                                 upgradeIsAvailable,
-                                limit ? parseInt(limit, 10) : undefined,
+                                limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
                             onErrorOnce(error, res.statusCode)

@@ -56,8 +56,8 @@ export class SymbolFormatter {
                 : ts.isFunctionDeclaration(declaration)
                   ? declaration
                   : ts.isMethodDeclaration(declaration)
-                      ? declaration
-                      : undefined
+                    ? declaration
+                    : undefined
         }
         const signature = (): string | undefined => {
             const signatureDeclaration = asSignatureDeclaration(identifier, sym)
