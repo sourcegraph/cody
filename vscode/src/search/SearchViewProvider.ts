@@ -9,6 +9,7 @@ import {
     displayPath,
     isDefined,
     isFileURI,
+    ps,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../editor/active-editor'
@@ -140,7 +141,9 @@ export class SearchViewProvider implements vscode.Disposable {
         this.disposables.push(this.cancellationManager)
 
         this.disposables.push(
-            vscode.commands.registerCommand('cody.symf.search', query => this.onDidReceiveQuery(query))
+            vscode.commands.registerCommand('cody.symf.search', query =>
+                this.onDidReceiveQuery(query ?? ps``)
+            )
         )
     }
 
@@ -204,7 +207,7 @@ export class SearchViewProvider implements vscode.Disposable {
             title: 'Natural Language Search (Beta)',
             prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
         })
-        if (input?.trim().length) {
+        if (input) {
             const query = PromptString.unsafe_fromUserQuery(input.trim())
             this.onDidReceiveQuery(query)
         }
@@ -212,10 +215,6 @@ export class SearchViewProvider implements vscode.Disposable {
 
     // TODO(beyang): support cancellation through symf
     private async onDidReceiveQuery(queryPromptString: PromptString): Promise<void> {
-        if (queryPromptString.length === 0) {
-            return this.showInputBox()
-        }
-
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
         if (cancellationToken.isCancellationRequested) {
             return
@@ -232,8 +231,11 @@ export class SearchViewProvider implements vscode.Disposable {
             return
         }
 
-        const query = queryPromptString.toString()?.trim()
+        if (queryPromptString.trim().length === 0) {
+            return this.showInputBox()
+        }
 
+        const query = queryPromptString.toString()?.trim()
         const quickPick = vscode.window.createQuickPick()
         quickPick.items = []
         quickPick.busy = true
@@ -242,10 +244,6 @@ export class SearchViewProvider implements vscode.Disposable {
         quickPick.matchOnDescription = true
         quickPick.matchOnDetail = true
         quickPick.ignoreFocusOut = true
-        quickPick.onDidAccept(() => {
-            const selected = quickPick.selectedItems[0] as SymfResultQuickPickItem
-            selected?.onSelect()
-        })
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('refresh'),
@@ -256,6 +254,7 @@ export class SearchViewProvider implements vscode.Disposable {
                 tooltip: 'Update search indices for all workspace folders',
             },
         ]
+        quickPick.onDidAccept(() => (quickPick.selectedItems[0] as SymfResultQuickPickItem)?.onSelect())
         quickPick.show()
 
         try {
