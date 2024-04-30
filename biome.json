@@ -8,7 +8,18 @@
     "rules": {
       "recommended": true,
       "nursery": {
-        "noDuplicateJsonKeys": "error"
+        "noDuplicateJsonKeys": "error",
+        "noRestrictedImports": {
+          "options": {
+            "paths": {
+              "./telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../../services/telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "../../../services/telemetry": "Telemetry V1 is deprecated - use 'services/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry",
+              "@sourcegraph/cody-shared/src/telemetry": "Telemetry V1 is deprecated - use 'src/telemetry-v2' instead. Refer to https://github.com/sourcegraph/cody/blob/main/ARCHITECTURE.md#telemetry"
+            }
+          }
+        }
       },
       "suspicious": {
         "noExplicitAny": "off"
