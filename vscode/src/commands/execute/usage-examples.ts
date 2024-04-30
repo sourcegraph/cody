@@ -155,7 +155,7 @@ async function symbolContextItems(
         await Promise.all(
             packages.map(item =>
                 searchForRepos(
-                    'file:^package\\.json$ select:repo content:' +
+                    'file:^package\\.json$ select:repo count:20 content:' +
                         JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
                     undefined
                 )
