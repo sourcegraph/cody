@@ -23,7 +23,6 @@ export default defineProjectWithDefaults(__dirname, {
             },
             input: {
                 index: resolve(__dirname, 'index.html'),
-                search: resolve(__dirname, 'search.html'),
             },
             output: {
                 entryFileNames: '[name].js',

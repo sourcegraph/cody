@@ -140,9 +140,7 @@ export class SearchViewProvider implements vscode.Disposable {
         this.disposables.push(this.cancellationManager)
 
         this.disposables.push(
-            vscode.commands.registerCommand('cody.symf.search', query =>
-                this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(query ?? ''))
-            )
+            vscode.commands.registerCommand('cody.symf.search', query => this.onDidReceiveQuery(query))
         )
     }
 
@@ -201,29 +199,26 @@ export class SearchViewProvider implements vscode.Disposable {
         )
     }
 
-    public async showInputBox(): Promise<void> {
-        await vscode.window
-            .showInputBox({
-                title: 'Natural Language Search (Beta)',
-                prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
-            })
-            .then(query => {
-                if (query) {
-                    this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(query))
-                }
-            })
+    private async showInputBox(): Promise<void> {
+        const input = await vscode.window.showInputBox({
+            title: 'Natural Language Search (Beta)',
+            prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
+        })
+        if (input?.trim().length) {
+            const query = PromptString.unsafe_fromUserQuery(input.trim())
+            this.onDidReceiveQuery(query)
+        }
     }
 
     // TODO(beyang): support cancellation through symf
-    public async onDidReceiveQuery(queryPromptString: PromptString): Promise<void> {
+    private async onDidReceiveQuery(queryPromptString: PromptString): Promise<void> {
+        if (queryPromptString.length === 0) {
+            return this.showInputBox()
+        }
+
         const cancellationToken = this.cancellationManager.cancelExistingAndStartNew()
         if (cancellationToken.isCancellationRequested) {
             return
-        }
-
-        const query = queryPromptString.toString()?.trim()
-        if (query.length === 0) {
-            return this.showInputBox()
         }
 
         const symf = this.symfRunner
@@ -237,10 +232,12 @@ export class SearchViewProvider implements vscode.Disposable {
             return
         }
 
+        const query = queryPromptString.toString()?.trim()
+
         const quickPick = vscode.window.createQuickPick()
         quickPick.items = []
         quickPick.busy = true
-        quickPick.title = `Search Results for "${query}" - Loading...`
+        quickPick.title = `Search Results for "${query}"`
         quickPick.placeholder = 'Searching...'
         quickPick.matchOnDescription = true
         quickPick.matchOnDetail = true
@@ -270,7 +267,7 @@ export class SearchViewProvider implements vscode.Disposable {
             quickPick.items = cumulativeResults.flatMap(file =>
                 file.snippets.map(s => ({
                     label: uriBasename(file.uri),
-                    description: `L${s.range.start.line}:L${s.range.end.line}`,
+                    description: `Lines ${s.range.start.line}-${s.range.end.line}`,
                     detail: s.contents.replace(/\n/g, ' '),
                     file,
                     onSelect: () => {
@@ -289,7 +286,6 @@ export class SearchViewProvider implements vscode.Disposable {
                 }))
             )
 
-            quickPick.title = `Search Results for "${query}"`
             quickPick.placeholder = 'Press ESC to close'
         } catch (error) {
             if (error instanceof vscode.CancellationError) {
