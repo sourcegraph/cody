@@ -53,7 +53,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
     // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
     await page.getByText('Custom Commands', { exact: true }).click()
 
@@ -126,7 +126,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText(commandName)).toBeVisible()
 
     // Show the new command in the menu and execute it
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
     await openCustomCommandMenu(page)
     await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
@@ -168,7 +168,7 @@ test.extend<ExpectedEvents>({
 
     // Open the chat sidebar to click on the Custom Command option
     // Search for the command defined in cody.json and execute it
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
     await openCustomCommandMenu(page)
 
     /* Test: context.currentDir with currentDir command */
@@ -263,7 +263,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
 
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
     await openCustomCommandMenu(page)
 
     // Able to open the cody.json file in the editor from the command menu
@@ -299,7 +299,7 @@ test.extend<ExpectedEvents>({
 
     // NOTE: This is expected to fail locally if you currently have User commands configured
     await page.waitForTimeout(100)
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
     await openCustomCommandMenu(page)
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
