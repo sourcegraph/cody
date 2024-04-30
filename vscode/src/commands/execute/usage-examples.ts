@@ -74,11 +74,11 @@ export async function executeUsageExamplesCommand(
             return undefined
         }
 
-        const prompt = ps`Show usage examples for \`${symbolText}\` from the ${PromptString.unsafe_fromUserQuery(
+        const prompt = ps`Show usage examples for \`${symbolText}\` from the ${
             symbolPackage.ecosystem
-        )} package \`${PromptString.unsafe_fromUserQuery(
+        } package \`${
             symbolPackage.name
-        )}\`.\n(No preamble, 2 idiomatic distinct concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+        }\`.\n(No preamble, 2 idiomatic distinct concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
             doc.uri
         )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
         const contextFiles: ContextItem[] = []
@@ -148,7 +148,7 @@ async function symbolContextItems(
         await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
             `${symbolPackage.ecosystem}:${symbolPackage.name}`
         )
-    ).filter(item => item.title === symbolPackage.name)
+    ).filter(item => item.title === symbolPackage.name.toString())
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
 
     const globalRepos = (
@@ -216,8 +216,8 @@ async function symbolContextItems(
 }
 
 interface SymbolPackage {
-    name: string
-    ecosystem: string
+    name: PromptString
+    ecosystem: PromptString
 }
 
 async function guessSymbolPackage(
@@ -237,7 +237,10 @@ async function guessSymbolPackage(
             .match(/.*\/node_modules\/((?:[^@/]+)|(?:@[^/]+\/[^/]+))\//)?.[1]
             .replace(/^@types\//, '')
         if (npmPackage) {
-            return { ecosystem: 'npm', name: npmPackage }
+            return {
+                ecosystem: PromptString.unsafe_fromUserQuery('npm'),
+                name: PromptString.unsafe_fromUserQuery(npmPackage),
+            }
         }
     }
 
