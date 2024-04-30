@@ -16,6 +16,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Fixed an issue where an Edit task would not correctly respin when an irresolvable conflict is encountered. [pull/3872](https://github.com/sourcegraph/cody/pull/3872)
 - Chat: Fixed an issue where older chats were displaying as 'N months ago' instead of the number in the Chat History sidebar. [pull/3864](https://github.com/sourcegraph/cody/pull/3864)
 - Custom Commands: Fixed an issue where the "selection" option was not being toggled correctly based on the user's selection in the Custom Command menu. [pull/3960](https://github.com/sourcegraph/cody/pull/3960)
+- Chat: Fixed an issue where the chat title showed up as "New Chat" when the question started with a new line. [pull/3977](https://github.com/sourcegraph/cody/pull/3977)
 
 ### Changed
 
