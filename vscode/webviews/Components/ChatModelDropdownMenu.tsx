@@ -1,5 +1,12 @@
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useCallback, useRef, useState } from 'react'
+import {
+    type ComponentProps,
+    type FunctionComponent,
+    useCallback,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import { VSCodeDropdown, VSCodeOption } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -26,7 +33,10 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
     onCurrentChatModelChange,
     userInfo,
 }) => {
-    const [currentModel, setCurrentModel] = useState(models.find(m => m.default) || models[0])
+    const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
+    const [currentModel, setCurrentModel] = useState(
+        usableModels.find(m => m.default) || usableModels[0]
+    )
     const dropdownRef = useRef<DropdownProps>(null)
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
@@ -35,7 +45,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
 
     const onChange = useCallback(
         (event: any): void => {
-            const selectedModel = models[event.target?.selectedIndex]
+            const selectedModel = usableModels[event.target?.selectedIndex]
             if (showCodyProBadge && selectedModel.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
@@ -56,14 +66,14 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
             onCurrentChatModelChange(selectedModel)
             setCurrentModel(selectedModel)
         },
-        [models, onCurrentChatModelChange, showCodyProBadge]
+        [usableModels, onCurrentChatModelChange, showCodyProBadge]
     )
 
     function isModelDisabled(codyProOnly: boolean): boolean {
         return codyProOnly ? codyProOnly && showCodyProBadge : false
     }
 
-    if (!models.length || models.length < 1) {
+    if (!usableModels.length || usableModels.length < 1) {
         return null
     }
 
@@ -92,7 +102,7 @@ export const ChatModelDropdownMenu: React.FunctionComponent<ChatModelDropdownMen
                 aria-label="Choose a model"
                 {...(!disabled && enabledDropdownProps)}
             >
-                {models?.map((option, index) => (
+                {usableModels?.map((option, index) => (
                     <VSCodeOption
                         className={styles.option}
                         key={option.model}
