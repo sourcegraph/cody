@@ -711,6 +711,180 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
         }, 10_000)
+
+        const tsxUri = workspace.file('src', 'Calculator.tsx')
+        it('tsx', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await openFile(tsxUri)
+
+            // TODO: add non-snapshot assertion that the autocomplete result has
+            // `validDogSled`. If you look at the raw HTTP recordings, the model
+            // is returning the expected completion `{ validDogSled: true }` but
+            // our autocomplete post-processing pipeline is filtering out the
+            // result.
+            expect(await autocompletes()).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "    return <h1>My favorite calculator comes from
+                      {props.languageKind}</h1>"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/Calculator.tsx<fim_prefix>// Additional documentation
+                        for \`CalculatorProps\`:
+
+                        //
+
+                        // interface CalculatorProps {
+
+                        //   languageKind: "arabic" | "japanese" | "roman"
+
+                        // }
+
+                        //
+
+                        //
+
+                        // Here is a reference snippet of code from src/main.ts:
+
+                        //
+
+                        // import makeWebAuthn from 'webauthn4js';
+
+                        //
+
+                        // function main() {
+
+                        //     makeWebAuthn({})
+
+                        // }
+
+                        import { FunctionComponent } from 'react'
+
+                        import { CalculatorProps } from './CalculatorProps'
+
+                        import * as React from 'react'
+
+
+                        export const Calculator: FunctionComponent<CalculatorProps> = props => {
+                            return <h1>My favorite calculator comes from {<fim_suffix>
+                        }
+
+                        <fim_middle>
+              "
+            `
+            )
+        }, 10_000)
+
+        const jsUri = workspace.file('src', 'typeless2.js')
+        it('js', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await openFile(jsUri)
+
+            // TODO: add non-snapshot assertion that the autocomplete result has
+            // `validDogSled`. If you look at the raw HTTP recordings, the model
+            // is returning the expected completion `{ validDogSled: true }` but
+            // our autocomplete post-processing pipeline is filtering out the
+            // result.
+            expect(await autocompletes()).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "    return helper(1, { b: 2 }, 3)"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/typeless2.js<fim_prefix>// Additional documentation for
+                        \`helper\`:
+
+                        //
+
+                        // function helper(a: any, { b }: { b: any; }, c: any): any
+
+                        import { helper } from './typeless'
+
+
+                        export function render() {
+                            return helper(<fim_suffix>
+                        }
+
+                        <fim_middle>
+              "
+            `
+            )
+        }, 10_000)
+
+        const jsxUri = workspace.file('src', 'FruitsList.jsx')
+        it('jsx', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await openFile(jsxUri)
+
+            // TODO: add non-snapshot assertion that the autocomplete result has
+            // `validDogSled`. If you look at the raw HTTP recordings, the model
+            // is returning the expected completion `{ validDogSled: true }` but
+            // our autocomplete post-processing pipeline is filtering out the
+            // result.
+            expect(await autocompletes()).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "                <Fruits fruitKind={fruit} />"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/FruitsList.jsx<fim_prefix>// Additional documentation
+                        for \`Fruits\`:
+
+                        //
+
+                        // var Fruits: ({ fruitKind }: { fruitKind: any; }) => any
+
+                        //
+
+                        // Here is a reference snippet of code from src/typeless2.js:
+
+                        //
+
+                        // import { helper } from './typeless'
+
+                        //
+
+                        // export function render() {
+
+                        //     return helper()
+
+                        // }
+
+                        //
+
+                        import { Fruits } from './Fruits'
+
+
+                        export const FruitsList = () => {
+                            return (
+                                <ul>
+                                    {['apple', 'orange'].map(fruit => (
+                                        <Fruits <fim_suffix>
+                                    ))}
+                                </ul>
+                            )
+                        }
+
+                        <fim_middle>
+              "
+            `
+            )
+        }, 10_000)
     })
 
     afterAll(async () => {

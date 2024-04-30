@@ -10725,6 +10725,7 @@ log:
 
 
 
+
                       
                   </selected>
               - speaker: assistant
@@ -22091,11 +22092,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cd45eb5bd66b4c8aed1ac8c1f881e1a6
+    - _id: 4a2315cba4e9a573fe89dda851c01569
       _order: 0
       cache: {}
       request:
-        bodySize: 4702
+        bodySize: 2893
         cookies: []
         headers:
           - name: content-type
@@ -22156,88 +22157,6 @@ log:
                       name: string
                       makeAnimalSound(): string
                       isMammal: boolean
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/graph/ComplexType.ts:
-                  ```typescript
-                      constructor(
-                          public a: Record<string, number>,
-                          public b: string,
-                          public c: (c: string, d: string) => string,
-                          private d: {
-                              a: string
-                              b: number
-                          }
-                      ) {
-                          // This is a command
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/graph/ComplexType.ts:
-                  ```typescript
-                      public static create(): ComplexClass {
-                          return new ComplexClass(
-                              {
-                                  a: 1,
-                                  b: 2,
-                              },
-                              'a',
-                              (c, d) => c + d,
-                              {
-                                  a: '',
-                                  b: 2,
-                              }
-                          )
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/graph/ComplexType.ts:
-                  ```typescript
-                  export class ComplexClass {
-                      constructor(
-                          public a: Record<string, number>,
-                          public b: string,
-                          public c: (c: string, d: string) => string,
-                          private d: {
-                              a: string
-                              b: number
-                          }
-                      ) {
-                          // This is a command
-                      }
-
-                      public static create(): ComplexClass {
-                          return new ComplexClass(
-                              {
-                                  a: 1,
-                                  b: 2,
-                              },
-                              'a',
-                              (c, d) => c + d,
-                              {
-                                  a: '',
-                                  b: 2,
-                              }
-                          )
-                      }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/graph/ComplexType.ts:
-
-                  ```typescript
-
-                  export interface ComplexInterface extends Omit<A & C, 'c2'>, AliasD {
-                      complex: Record<string, number>
                   ```
               - speaker: assistant
                 text: Ok.
@@ -22648,15 +22567,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:46:56 GMT
+            value: Tue, 30 Apr 2024 11:54:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "373"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -22674,12 +22591,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:46:54.710Z
+      startedDateTime: 2024-04-30T11:54:17.823Z
       time: 0
       timings:
         blocked: -1
