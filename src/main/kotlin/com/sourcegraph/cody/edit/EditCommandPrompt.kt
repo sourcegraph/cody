@@ -17,6 +17,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -185,6 +186,28 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
         foreground = mutedLabelColor()
       }
 
+  private val textFieldListener =
+      object : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent?) {
+          handleDocumentChange()
+        }
+
+        override fun removeUpdate(e: DocumentEvent?) {
+          handleDocumentChange()
+        }
+
+        override fun changedUpdate(e: DocumentEvent?) {
+          handleDocumentChange()
+        }
+
+        private fun handleDocumentChange() {
+          ApplicationManager.getApplication().invokeLater {
+            updateOkButtonState()
+            checkForInterruptions()
+          }
+        }
+      }
+
   private val documentListener =
       object : BulkAwareDocumentListener {
         override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent) {
@@ -231,6 +254,9 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
 
   // Note: Must be created on EDT, although we can't annotate it as such.
   init {
+    // Register with FixupService as a failsafe if the project closes. Normally we're disposed
+    // sooner, when the dialog is closed or focus is lost.
+    Disposer.register(controller, this)
     connection = ApplicationManager.getApplication().messageBus.connect(this)
     registerListeners()
     // Don't reset the session, just any previous instructions dialog.
@@ -298,6 +324,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   private fun unregisterListeners() {
     try {
       editor.document.removeDocumentListener(documentListener)
+      instructionsField.document.removeDocumentListener(textFieldListener)
 
       removeWindowFocusListener(windowFocusListener)
       removeFocusListener(focusListener)
@@ -318,27 +345,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
 
   @RequiresEdt
   private fun setupTextField() {
-    instructionsField.document.addDocumentListener(
-        object : DocumentListener {
-          override fun insertUpdate(e: DocumentEvent?) {
-            handleDocumentChange()
-          }
-
-          override fun removeUpdate(e: DocumentEvent?) {
-            handleDocumentChange()
-          }
-
-          override fun changedUpdate(e: DocumentEvent?) {
-            handleDocumentChange()
-          }
-
-          private fun handleDocumentChange() {
-            ApplicationManager.getApplication().invokeLater {
-              updateOkButtonState()
-              checkForInterruptions()
-            }
-          }
-        })
+    instructionsField.document.addDocumentListener(textFieldListener)
   }
 
   @RequiresEdt
@@ -393,9 +400,10 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
       instructionsField.text?.let { lastPrompt = it } // Save last thing they typed.
       connection?.disconnect()
       connection = null
-      dispose()
     } catch (x: Exception) {
       logger.warn("Error cancelling edit command prompt", x)
+    } finally {
+      dispose()
     }
   }
 

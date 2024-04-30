@@ -11,8 +11,8 @@ class LensIcon(group: LensWidgetGroup, val icon: Icon) : LensWidget(group) {
 
   private var scaledImage: Image? = null
 
-  // Squish the icon down to make it better fit the text. Eyeballed based on logo image.
-  private val scaleFactor = 0.6
+  // Squish the icon down to make it better fit the text.
+  private val scaleFactor = 0.9
 
   private fun getScaleFactor(fontMetrics: FontMetrics) = (fontMetrics.height * scaleFactor).toInt()
 

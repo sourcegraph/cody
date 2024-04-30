@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.sessions.FixupSession
+import javax.swing.Icon
 
 /** Handles assembling standard groups of lenses. */
 class LensGroupFactory(val session: FixupSession) {
@@ -66,8 +67,7 @@ class LensGroupFactory(val session: FixupSession) {
   }
 
   private fun addLogo(group: LensWidgetGroup) {
-    group.addWidget(LensIcon(group, Icons.StatusBar.CodyAvailable))
-    addSpacer(group)
+    addIcon(group, Icons.StatusBar.CodyAvailable)
   }
 
   private fun addSpacer(group: LensWidgetGroup) {
@@ -84,7 +84,11 @@ class LensGroupFactory(val session: FixupSession) {
   }
 
   private fun addErrorIcon(group: LensWidgetGroup) {
-    addLabel(group, " ! ") // TODO: Change to LensIcon when we get SVG
+    addIcon(group, Icons.Edit.Error)
+  }
+
+  private fun addIcon(group: LensWidgetGroup, icon: Icon) {
+    group.addWidget(LensIcon(group, icon))
     addSpacer(group)
   }
 

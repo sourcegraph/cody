@@ -89,6 +89,13 @@ class FixupService(val project: Project) : Disposable {
         logger.warn("Error disposing session", x)
       }
     }
+    currentEditPrompt.get()?.let {
+      try {
+        Disposer.dispose(it)
+      } catch (x: Exception) {
+        logger.warn("Error disposing prompt", x)
+      }
+    }
   }
 
   companion object {

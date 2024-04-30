@@ -71,8 +71,7 @@ abstract class FixupSession(
   private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
 
   init {
-    triggerDocumentCodeAsync()
-    // Kotlin doesn't like leaking 'this' before constructors are finished.
+    triggerFixupAsync()
     ApplicationManager.getApplication().invokeLater { Disposer.register(controller, this) }
   }
 
@@ -80,7 +79,7 @@ abstract class FixupSession(
     get() = editor.document
 
   @RequiresEdt
-  private fun triggerDocumentCodeAsync() {
+  private fun triggerFixupAsync() {
     // Those lookups require us to be on the EDT.
     val file = FileDocumentManager.getInstance().getFile(document)
     val textFile = file?.let { ProtocolTextDocument.fromVirtualFile(editor, it) } ?: return
@@ -88,8 +87,9 @@ abstract class FixupSession(
     CodyAgentService.withAgent(project) { agent ->
       workAroundUninitializedCodebase()
 
-      // Force a round-trip to get folding ranges before showing lenses.
+      // Spend a turn to get folding ranges before showing lenses.
       ensureSelectionRange(agent, textFile)
+
       showWorkingGroup()
 
       // All this because we can get the workspace/edit before the request returns!
@@ -108,7 +108,7 @@ abstract class FixupSession(
           }
           .exceptionally { error: Throwable? ->
             if (!(error is CancellationException || error is CompletionException)) {
-              logger.warn("Error while generating doc string: $error")
+              showErrorGroup("Error while generating code: ${error?.localizedMessage}")
             }
             finish()
             null
@@ -208,10 +208,12 @@ abstract class FixupSession(
     } catch (x: Exception) {
       logger.debug("Session cleanup error", x)
     }
-    try {
-      Disposer.dispose(this)
-    } catch (x: Exception) {
-      logger.warn("Error disposing fixup session $this", x)
+    ApplicationManager.getApplication().invokeLater {
+      try { // Disposing inlay requires EDT.
+        Disposer.dispose(this)
+      } catch (x: Exception) {
+        logger.warn("Error disposing fixup session $this", x)
+      }
     }
   }
 

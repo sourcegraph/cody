@@ -133,6 +133,9 @@ class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : 
   }
 
   private fun resizeDialog(e: MouseEvent) {
+    val currentTime = System.currentTimeMillis()
+    if (currentTime - lastUpdateTime <= 16) return
+
     val newX = e.xOnScreen
     val newY = e.yOnScreen
     val deltaX = newX - lastMouseX
@@ -173,9 +176,10 @@ class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : 
       else -> {}
     }
 
-    frame.setSize(newWidth, newHeight)
+    SwingUtilities.invokeLater { frame.setSize(newWidth, newHeight) }
     lastMouseX = newX
     lastMouseY = newY
+    lastUpdateTime = currentTime
   }
 
   private fun moveDialog(e: MouseEvent) {

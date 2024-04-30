@@ -49,6 +49,10 @@ public interface Icons {
     Icon Download = IconLoader.getIcon("/icons/chat/download.svg", Icons.class);
   }
 
+  interface Edit {
+    Icon Error = IconLoader.getIcon("/icons/edit/error.svg", Icons.class);
+  }
+
   interface LLM {
     Icon Anthropic = IconLoader.getIcon("/icons/chat/llm/anthropic.svg", Icons.class);
     Icon OpenAI = IconLoader.getIcon("/icons/chat/llm/openai.svg", Icons.class);
