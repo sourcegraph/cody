@@ -203,6 +203,10 @@ importers:
   agent/src/__tests__/example-ts: {}
 
   agent/src/__tests__/graph-test:
+    dependencies:
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
     devDependencies:
       '@types/node':
         specifier: 20.4.0

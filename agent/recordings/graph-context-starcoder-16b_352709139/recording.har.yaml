@@ -1301,6 +1301,458 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 914d3b7478a6951c4f38d9763af6deb5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 456
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "456"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/typeless2.js<fim_prefix>// Additional
+                  documentation for `helper`:
+
+                  // 
+
+                  // function helper(a: any, { b }: { b: any; }, c: any): any
+
+                  import { helper } from './typeless'
+
+
+                  export function render() {
+                      return helper(<fim_suffix>
+                  }
+
+                  <fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 374
+        content:
+          mimeType: text/event-stream
+          size: 374
+          text: |+
+            event: completion
+            data: {"completion":"1","stopReason":""}
+
+            event: completion
+            data: {"completion":"1, { b: ","stopReason":""}
+
+            event: completion
+            data: {"completion":"1, { b: 2 }, 3","stopReason":""}
+
+            event: completion
+            data: {"completion":"1, { b: 2 }, 3)","stopReason":""}
+
+            event: completion
+            data: {"completion":"1, { b: 2 }, 3)","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 30 Apr 2024 11:54:19 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-30T11:54:18.835Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 89d07944f6239ccf840545bc0f304e18
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 846
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "846"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/Calculator.tsx<fim_prefix>// Additional
+                  documentation for `CalculatorProps`:
+
+                  // 
+
+                  // interface CalculatorProps {
+
+                  //   languageKind: "arabic" | "japanese" | "roman"
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Here is a reference snippet of code from src/main.ts:
+
+                  // 
+
+                  // import makeWebAuthn from 'webauthn4js';
+
+                  // 
+
+                  // function main() {
+
+                  //     makeWebAuthn({})
+
+                  // }
+
+                  import { FunctionComponent } from 'react'
+
+                  import { CalculatorProps } from './CalculatorProps'
+
+                  import * as React from 'react'
+
+
+                  export const Calculator: FunctionComponent<CalculatorProps> = props => {
+                      return <h1>My favorite calculator comes from {<fim_suffix>
+                  }
+
+                  <fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 363
+        content:
+          mimeType: text/event-stream
+          size: 363
+          text: >+
+            event: completion
+
+            data: {"completion":"props","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"props.languageKind}\u003c/h1","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 30 Apr 2024 11:57:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-30T11:57:14.987Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 081abdd5d121fcd48fbafd692ffb701e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 768
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "768"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/FruitsList.jsx<fim_prefix>// Additional
+                  documentation for `Fruits`:
+
+                  // 
+
+                  // var Fruits: ({ fruitKind }: { fruitKind: any; }) => any
+
+                  // 
+
+                  // Here is a reference snippet of code from src/typeless2.js:
+
+                  // 
+
+                  // import { helper } from './typeless'
+
+                  // 
+
+                  // export function render() {
+
+                  //     return helper()
+
+                  // }
+
+                  // 
+
+                  import { Fruits } from './Fruits'
+
+
+                  export const FruitsList = () => {
+                      return (
+                          <ul>
+                              {['apple', 'orange'].map(fruit => (
+                                  <Fruits <fim_suffix>
+                              ))}
+                          </ul>
+                      )
+                  }
+
+                  <fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 342
+        content:
+          mimeType: text/event-stream
+          size: 342
+          text: |+
+            event: completion
+            data: {"completion":"fruit","stopReason":""}
+
+            event: completion
+            data: {"completion":"fruitKind={fruit} /\u003e","stopReason":""}
+
+            event: completion
+            data: {"completion":"fruitKind={fruit} /\u003e","stopReason":""}
+
+            event: completion
+            data: {"completion":"fruitKind={fruit} /\u003e","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 30 Apr 2024 12:00:27 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-30T12:00:26.880Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: e2ae0ab84c1239bc6be31f736d44652b
       _order: 0
       cache: {}
