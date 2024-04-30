@@ -4,6 +4,8 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
@@ -33,6 +35,8 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
+    | Omit<ContextItemGithubIssue, 'uri' | 'content'>
+    | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -191,6 +195,12 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     }
     if (contextItem.type === 'package') {
         return `@${contextItem.ecosystem}:${contextItem.name}`
+    }
+    if (contextItem.type === 'github_pull_request') {
+        return `@github:pulls${contextItem.pullNumber} ${contextItem.title}`
+    }
+    if (contextItem.type === 'github_issue') {
+        return `@github:pulls${contextItem.issueNumber} ${contextItem.title}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)

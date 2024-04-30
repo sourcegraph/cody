@@ -300,6 +300,9 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7
     devDependencies:
+      '@octokit/types':
+        specifier: ^13.5.0
+        version: 13.5.0
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -3198,7 +3201,6 @@ packages:
 
   /@octokit/openapi-types@22.2.0:
     resolution: {integrity: sha512-QBhVjcUa9W7Wwhm6DBFu6ZZ+1/t/oYxqc2tp81Pi41YNuJinbFRx8B133qVOrAaBbF7D/m0Et6f9/pZt9Rc+tg==}
-    dev: false
 
   /@octokit/request-error@6.1.1:
     resolution: {integrity: sha512-1mw1gqT3fR/WFvnoVpY/zUM2o/XkMs/2AszUUG9I69xn0JFLv6PGkPhNk5lbfvROs79wiS0bqiJNxfCZcRJJdg==}
@@ -3221,7 +3223,6 @@ packages:
     resolution: {integrity: sha512-HdqWTf5Z3qwDVlzCrP8UJquMwunpDiMPt5er+QjGzL4hqr/vBVY/MauQgS1xWxCDT1oMx1EULyqxncdCY/NVSQ==}
     dependencies:
       '@octokit/openapi-types': 22.2.0
-    dev: false
 
   /@openctx/client@0.0.8:
     resolution: {integrity: sha512-CJ1jUbbNpbySfYG2fBVyaa8w56eLGjfiUIKR/OtF7BnBjK9OHneV4SzBi3UBrZ0mTHOzr92bUKbehsk86YrZmw==}

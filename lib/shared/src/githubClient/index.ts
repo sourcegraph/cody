@@ -1,14 +1,16 @@
 import { Octokit } from '@octokit/core'
-import { i } from 'vitest/dist/reporters-LqC_WI4d'
+import type { Endpoints, RequestParameters } from '@octokit/types'
 
-type GithubClientConfig {
+export interface GithubClientConfig {
     authToken: string
 }
+
+export type GithubEndpoints = Endpoints
 
 export class GithubClient {
     private octokit: Octokit
 
-    constructor(config:  GithubClientConfig) {
+    constructor(config: GithubClientConfig) {
         this.octokit = new Octokit({ auth: config.authToken })
     }
 
@@ -16,29 +18,16 @@ export class GithubClient {
         this.octokit = new Octokit({ auth: config.authToken })
     }
 
-    getIssueOrPullRequest(variables: {owner: string, repository: string, number: number}) {
-       this.octokit.graphql(`
-        query ($owner: String!, $repository: String!, $number: Int!) {
-            repository(name: $repository, owner: $owner) {
-                issueOrPullRequest(number: $number) {
-                   ... on PullRequest {
-                        number
-                        title
-                        url
-                        body
-                    }
-                   ... on Issue {
-                        number
-                        title
-                        url
-                        body
-                    }
-                }
-            }
-        }
-       `, variables)
+    async request<E extends keyof Endpoints>(
+        req: E,
+        params: E extends keyof Endpoints
+            ? Endpoints[E]['parameters'] & RequestParameters
+            : RequestParameters
+    ): Promise<Endpoints[E]['response']['data']> {
+        const response = await this.octokit.request(req, params)
+
+        return response?.data
     }
 }
 
-
-export const githubClient = new GithubClient({authToken: ""})
+export const githubClient = new GithubClient({ authToken: 'ghp_***' })

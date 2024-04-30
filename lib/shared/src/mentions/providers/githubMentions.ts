@@ -4,71 +4,113 @@ import {
     ContextItemSource,
     type ContextItemWithContent,
 } from '../../codebase-context/messages'
+import { githubClient } from '../../githubClient'
 import type { PromptString } from '../../prompt/prompt-string'
 import { graphqlClient } from '../../sourcegraph-api/graphql'
 import { isError } from '../../utils'
-import type { ContextItemFromProvider, ContextMentionProvider } from '../api'
+import type { ContextItemFromProvider, ContextMentionProvider, ContextMentionProviderID } from '../api'
 
-export const GITHUB_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'github'> = {
-    id: 'github',
-    triggerPrefixes: ['github:', 'gh:'],
+const GithubContextId: ContextMentionProviderID = 'github'
 
-    async queryContextItems(query, signal) {
-        const issueOrPullRequestNumber = Number(query.split(':')[1])
-        if (!issueOrPullRequestNumber) {
+class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
+    public id = GithubContextId
+    public triggerPrefixes = ['github:', 'gh:']
+
+    async queryContextItems(query: string) {
+        const [_, arg1, arg2] = query.split(':')
+
+        const number = Number(arg2)
+        if (!number) {
             return []
         }
 
+        switch (arg1) {
+            case 'pull':
+                return this.getPullRequestItems(number)
+
+            case 'issue':
+                return this.getIssueItems(number)
+            // todo: add support for issues
+
+            default:
+                return []
+        }
+    }
+
+    private async getPullRequestItems(
+        pullNumber: number
+    ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
+        const owner = 'sourcegraph'
+        const repoName = 'cody'
         try {
-            const dataOrError = await graphqlClient.getPackageList(
-                toPackageKind(ecosystem),
-                name,
-                MAX_PAKCAGE_LIST_CANDIDATES
+            const pullRequest = await githubClient.request(
+                'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+                {
+                    owner,
+                    repo: repoName,
+                    pull_number: pullNumber,
+                }
             )
 
-            if (signal) {
-                signal.throwIfAborted()
-            }
-
-            if (isError(dataOrError)) {
+            if (!pullRequest) {
                 return []
             }
 
-            const packages = dataOrError.packageRepoReferences.nodes
-
-            return packages
-                .map(node =>
-                    node.repository
-                        ? ({
-                              type: 'package',
-                              uri: URI.parse(`${graphqlClient.endpoint}${node.repository.name}`),
-                              title: node.name,
-                              content: undefined,
-                              source: ContextItemSource.Package,
-                              repoID: node.repository.id,
-                              provider: 'github',
-                              name: node.name,
-                              ecosystem,
-                          } as ContextItemPackage)
-                        : null
-                )
-                .filter(item => item !== null) as ContextItemFromProvider<'package'>[]
+            return [
+                {
+                    type: 'github_pull_request',
+                    uri: URI.parse(pullRequest.url),
+                    title: pullRequest.title,
+                    content: `Title: "${pullRequest.title}\nBody:  \`\`\`${pullRequest.body}\`\`\`"`,
+                    source: ContextItemSource.Github,
+                    owner,
+                    repoName,
+                    pullNumber,
+                    provider: 'github',
+                },
+            ]
         } catch (error) {
             return []
         }
-    },
+    }
 
-    async resolveContextItem(item, query, signal) {
-        if (item.content !== undefined) {
-            return [item as ContextItemWithContent]
-        }
+    private async getIssueItems(
+        issueNumber: number
+    ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
+        const owner = 'sourcegraph'
+        const repoName = 'cody'
+        try {
+            const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+                owner,
+                repo: repoName,
+                issue_number: issueNumber,
+            })
 
-        if (item.type !== ContextItemSource.Package) {
+            if (!issue) {
+                return []
+            }
+
+            return [
+                {
+                    type: 'github_issue',
+                    uri: URI.parse(issue.url),
+                    title: issue.title,
+                    content: `Title: "${issue.title}"\nBody:  \`\`\`${issue.body}\`\`\`"`,
+                    source: ContextItemSource.Github,
+                    owner,
+                    repoName,
+                    issueNumber,
+                    provider: 'github',
+                },
+            ]
+        } catch {
             return []
         }
+    }
 
-        return findContextItemsWithContentForPackage(item as ContextItemPackage, query)
-    },
+    async resolveContextItem(item: ContextItemFromProvider<typeof GithubContextId>) {
+        return [item as ContextItemWithContent]
+    }
 }
 
 export async function findContextItemsWithContentForPackage(
@@ -97,3 +139,5 @@ export async function findContextItemsWithContentForPackage(
         source: ContextItemSource.Package,
     }))
 }
+
+export const GITHUB_CONTEXT_MENTION_PROVIDER = new GithubContextMentionProvider()

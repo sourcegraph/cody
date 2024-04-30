@@ -262,6 +262,8 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        // TODO: Get cody.github.accessToken from config and update githubClient
+        // githubClient.onConfigurationChange(newConfig)
         promises.push(
             contextFiltersProvider
                 .init(bindedRepoNamesResolver)

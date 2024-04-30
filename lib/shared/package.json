@@ -43,6 +43,7 @@
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
+    "@octokit/types": "^13.5.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",

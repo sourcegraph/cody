@@ -104,10 +104,9 @@ const Item: FunctionComponent<{
     const item = option.item
     const isFileType = item.type === 'file'
     const isPackageType = item.type === 'package'
-    const icon =
-        isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title =
-        item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
+    const isSymbol = item.type === 'symbol'
+    const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
+    const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
 
     const range = getLineRangeInMention(query, item.range)
     const dir = decodeURIComponent(displayPathDirname(item.uri))
