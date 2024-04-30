@@ -1,9 +1,12 @@
 package com.sourcegraph.cody.chat.actions
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.chat.AgentChatSession
@@ -11,6 +14,7 @@ import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.context.ui.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
+import java.util.concurrent.Callable
 
 abstract class BaseCommandAction : BaseChatAction() {
 
@@ -22,16 +26,27 @@ abstract class BaseCommandAction : BaseChatAction() {
       val file = FileDocumentManager.getInstance().getFile(editor.document)
       val protocolFile = file?.let { ProtocolTextDocument.fromVirtualFile(editor, it) } ?: return
 
-      // If this file is ignored, display an error and stop.
-      if (IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() !=
-          IgnorePolicy.USE) {
-        ActionInIgnoredFileNotification().notify(project)
-        return
-      }
-
-      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-        switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId))
-      }
+      ReadAction.nonBlocking(
+              Callable { IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() })
+          .expireWith(project)
+          .finishOnUiThread(ModalityState.NON_MODAL) {
+            when (it) {
+              IgnorePolicy.USE -> {
+                CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+                  // Race: The selected text editor could change before IgnoreOracle completes, and
+                  // the command runs on the wrong document. Ignore rules will still be enforced by
+                  // prompt construction so this is a correctness issue but not a safety issue.
+                  // TODO: Fix this race by giving commands an explicit document to act on.
+                  switchToChatSession(AgentChatSession.createFromCommand(project, myCommandId))
+                }
+              }
+              else -> {
+                // This file is ignored. Display an error and stop.
+                ActionInIgnoredFileNotification().notify(project)
+              }
+            }
+          }
+          .submit(AppExecutorUtil.getAppExecutorService())
     }
   }
 }
