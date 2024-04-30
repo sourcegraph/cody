@@ -311,7 +311,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it.only('chat/restore (multiple) & export', async () => {
+        it('chat/restore (multiple) & export', async () => {
             const date = new Date(1997, 7, 2, 12, 0, 0, 0)
 
             // Step 1: Restore multiple chats
