@@ -1,6 +1,6 @@
 import type { ModelProvider } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'

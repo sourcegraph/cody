@@ -1,5 +1,4 @@
 import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
