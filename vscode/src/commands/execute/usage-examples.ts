@@ -89,7 +89,7 @@ export async function executeUsageExamplesCommand(
             type: 'file',
             uri: doc.uri,
             range: snippetRange,
-            source: ContextItemSource.Unified,
+            source: ContextItemSource.Editor,
         })
 
         try {
