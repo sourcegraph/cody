@@ -24,18 +24,17 @@ jobs:
           platforms: all
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1.1.0
-      - run: ./scripts/install-ldid.sh
       - run: yarn global add pnpm@8.6.7
       - run: |
           echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
       - run: echo "Publishing version $RELEASE_VERSION"
-      - run: ./gradlew "-PldidSign=true" "-PpluginVersion=$RELEASE_VERSION" publishPlugin
+      - run: ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
       - name: Publish nightly version
         if: "!endsWith(env.RELEASE_VERSION, '-nightly')"
         run: |
           echo "Publishing nightly version ${RELEASE_VERSION}-nightly"
-          ./gradlew "-PldidSign=true" "-PpluginVersion=${RELEASE_VERSION}-nightly" publishPlugin
+          ./gradlew "-PpluginVersion=${RELEASE_VERSION}-nightly" publishPlugin
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}

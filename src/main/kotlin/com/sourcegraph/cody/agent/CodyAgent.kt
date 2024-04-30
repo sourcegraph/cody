@@ -88,6 +88,7 @@ private constructor(
     private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
+
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
@@ -135,19 +136,23 @@ private constructor(
         return connectToDebugAgent()
       }
       val token = CancellationToken()
+
+      val binaryPath = nodeBinary(token).absolutePath
       val command: List<String> =
           if (System.getenv("CODY_DIR") != null) {
             val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
             logger.info("using Cody agent script " + script.absolutePath)
             if (shouldSpawnDebuggableAgent()) {
-              listOf("node", "--inspect-brk", "--enable-source-maps", script.absolutePath)
+              listOf(binaryPath, "--inspect-brk", "--enable-source-maps", script.absolutePath)
             } else {
-              listOf("node", "--enable-source-maps", script.absolutePath)
+              listOf(binaryPath, "--enable-source-maps", script.absolutePath)
             }
           } else {
-            val binary = agentBinary(token)
-            logger.info("starting Cody agent " + binary.absolutePath)
-            listOf(binary.absolutePath)
+            val script =
+                agentDirectory()?.resolve("index.js")
+                    ?: throw CodyAgentException(
+                        "Sourcegraph Cody + Code Search plugin path not found")
+            listOf(binaryPath, script.toFile().absolutePath)
           }
 
       val processBuilder = ProcessBuilder(command)
@@ -160,6 +165,7 @@ private constructor(
         processBuilder.environment()["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
       }
 
+      logger.info("starting Cody agent ${command.joinToString(" ")}")
       val process =
           processBuilder
               .redirectErrorStream(false)
@@ -216,33 +222,30 @@ private constructor(
       return if (SystemInfoRt.isWindows) ".exe" else ""
     }
 
-    private fun agentBinaryName(): String {
+    private fun nodeBinaryName(): String {
       val os = if (SystemInfoRt.isMac) "macos" else if (SystemInfoRt.isWindows) "win" else "linux"
-      // Only use x86 for macOS because of this issue here https://github.com/vercel/pkg/issues/2004
-      // TLDR; we're not able to run macos-arm64 binaries when they're created on ubuntu-latest
       val arch = if (CpuArch.isArm64()) "arm64" else "x64"
-      return "cody-agent-" + os + "-" + arch + binarySuffix()
+      return "node-" + os + "-" + arch + binarySuffix()
     }
 
     private fun agentDirectory(): Path? {
       // N.B. this is the default/production setting. CODY_DIR overrides it locally.
       val fromProperty = System.getProperty("cody-agent.directory", "")
       if (fromProperty.isNotEmpty()) {
-        return Paths.get(fromProperty)
+        return Paths.get(fromProperty).resolve("agent")
       }
       val plugin = PluginManagerCore.getPlugin(PLUGIN_ID) ?: return null
-      return plugin.pluginPath
+      return plugin.pluginPath.resolve("agent")
     }
 
     @Throws(CodyAgentException::class)
-    private fun agentBinary(token: CancellationToken): File {
+    private fun nodeBinary(token: CancellationToken): File {
       val pluginPath =
           agentDirectory()
               ?: throw CodyAgentException("Sourcegraph Cody + Code Search plugin path not found")
-      val binarySource = pluginPath.resolve("agent").resolve(agentBinaryName())
+      val binarySource = pluginPath.resolve(nodeBinaryName())
       if (!Files.isRegularFile(binarySource)) {
-        throw CodyAgentException(
-            "Cody agent binary not found at path " + binarySource.toAbsolutePath())
+        throw CodyAgentException("Node binary not found at path " + binarySource.toAbsolutePath())
       }
       val binaryTarget = Files.createTempFile("cody-agent", binarySuffix())
       return try {
@@ -253,7 +256,7 @@ private constructor(
           // in the plugin directory.
           Files.deleteIfExists(binaryTarget)
         }
-        logger.info("extracting Cody agent binary to " + binaryTarget.toAbsolutePath())
+        logger.info("extracting Node binary to " + binaryTarget.toAbsolutePath())
         Files.copy(binarySource, binaryTarget, StandardCopyOption.REPLACE_EXISTING)
         val binary = binaryTarget.toFile()
         if (binary.setExecutable(true)) {
@@ -263,7 +266,7 @@ private constructor(
         }
       } catch (e: IOException) {
         Files.deleteIfExists(binaryTarget)
-        throw CodyAgentException("failed to create agent binary", e)
+        throw CodyAgentException("failed to create Node binary", e)
       }
     }
 

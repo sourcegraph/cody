@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun properties(key: String) = project.findProperty(key).toString()
 
-val isLdidSign = properties("ldidSign") == "true"
 val isForceBuild = properties("forceBuild") == "true"
 val isForceAgentBuild =
     isForceBuild ||
@@ -205,15 +204,19 @@ tasks {
     return destinationDir
   }
 
-  val codyCommit = properties("cody.commit")
-  fun downloadCody(): File {
-    val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
-    val destination = githubArchiveCache.resolve("$codyCommit.zip")
-    download(url, destination)
-    return destination
+  fun downloadNodeBinaries(): File {
+    val nodeCommit = properties("nodeBinaries.commit")
+    val nodeVersion = properties("nodeBinaries.version")
+    val url = "https://github.com/sourcegraph/node-binaries/archive/$nodeCommit.zip"
+    val zipFile = githubArchiveCache.resolve("$nodeCommit.zip")
+    download(url, zipFile)
+    val destination = githubArchiveCache.resolve("node").resolve("node-binaries-$nodeCommit")
+    unzip(zipFile, destination.parentFile)
+    return destination.resolve(nodeVersion)
   }
 
-  fun unzipCody(): File {
+  fun downloadCody(): File {
+    val codyCommit = properties("cody.commit")
     val fromEnvironmentVariable = System.getenv("CODY_DIR")
     if (!fromEnvironmentVariable.isNullOrEmpty()) {
       // "~" works fine from the terminal, however it breaks IntelliJ's run configurations
@@ -225,7 +228,9 @@ tasks {
           }
       return Paths.get(pathString).toFile()
     }
-    val zipFile = downloadCody()
+    val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
+    val zipFile = githubArchiveCache.resolve("$codyCommit.zip")
+    download(url, zipFile)
     val destination = githubArchiveCache.resolve("cody").resolve("cody-$codyCommit")
     unzip(zipFile, destination.parentFile)
     return destination
@@ -237,26 +242,26 @@ tasks {
       println("Cached $buildCodyDir")
       return buildCodyDir
     }
-    val codyDir = unzipCody()
+    val codyDir = downloadCody()
     println("Using cody from codyDir=$codyDir")
     exec {
       workingDir(codyDir)
       commandLine("pnpm", "install", "--frozen-lockfile")
     }
-    val agentDir = codyDir.resolve("agent").toString()
+    val agentDir = codyDir.resolve("agent")
     exec {
       workingDir(agentDir)
-      commandLine("pnpm", "run", "build-agent-binaries")
-      environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", buildCodyDir.toString())
+      commandLine("pnpm", "run", "build:agent")
     }
-    // If running on Linux in CI, run ldid -S on the macos-arm64 binary so that it can be run on
-    // Apple M1 computers. This is required to prevent the following issue
-    // https://github.com/vercel/pkg/issues/2004
-    if (isLdidSign) {
-      val arm64Binary = buildCodyDir.resolve("cody-agent-macos-arm64").toString()
-      println("Signing ldid -S $arm64Binary")
-      exec { commandLine("ldid", "-S", arm64Binary) }
+    copy {
+      from(agentDir.resolve("dist")) {
+        include("index.js")
+        include("index.js.map")
+        include("*.wasm")
+      }
+      into(buildCodyDir)
     }
+
     return buildCodyDir
   }
 
@@ -316,6 +321,8 @@ tasks {
       into("agent/")
     }
 
+    from(fileTree(downloadNodeBinaries())) { into("agent/") }
+
     doLast {
       // Assert that agent binaries are included in the plugin
       val pluginPath = buildPlugin.get().outputs.files.first()
@@ -326,11 +333,11 @@ tasks {
             throw Error("Agent binary '$path' not found in plugin zip $pluginPath")
           }
         }
-        assertExists("cody-agent-macos-arm64")
-        assertExists("cody-agent-macos-x64")
-        assertExists("cody-agent-linux-arm64")
-        assertExists("cody-agent-linux-x64")
-        assertExists("cody-agent-win-x64.exe")
+        assertExists("node-macos-arm64")
+        assertExists("node-macos-x64")
+        assertExists("node-linux-arm64")
+        assertExists("node-linux-x64")
+        assertExists("node-win-x64.exe")
       }
     }
   }
