@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -20,6 +24,7 @@
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
     "@openctx/client": "^0.0.8",
+    "@octokit/core": "^6.1.2",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
     "crypto-js": "^4.2.0",
