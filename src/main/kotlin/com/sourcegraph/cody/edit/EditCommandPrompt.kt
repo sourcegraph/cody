@@ -17,7 +17,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -42,7 +41,6 @@ import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Point
-import java.awt.RenderingHints
 import java.awt.Toolkit
 import java.awt.event.ActionEvent
 import java.awt.event.FocusEvent
@@ -68,7 +66,6 @@ import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JRootPane
 import javax.swing.JScrollPane
-import javax.swing.JTextArea
 import javax.swing.KeyStroke
 import javax.swing.ListCellRenderer
 import javax.swing.SwingUtilities
@@ -125,7 +122,7 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
       }
 
   private val instructionsField =
-      GhostTextField().apply {
+      InstructionsInputTextArea(this).apply {
         text = lastPrompt
         if (text.isBlank() && promptHistory.isNotEmpty()) {
           text = promptHistory.getPrevious()
@@ -449,7 +446,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
   private fun getProjectRootPath(project: Project, file: VirtualFile?): String? {
     val projectRootManager = ProjectRootManager.getInstance(project)
     val contentRoots = projectRootManager.contentRoots
-    // Find the content root that contains the given file
     val contentRoot =
         file?.let { nonNullFile ->
           contentRoots.firstOrNull { VfsUtilCore.isAncestor(it, nonNullFile, false) }
@@ -545,85 +541,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     clearActivePrompt()
   }
 
-  // TODO: Refactor this into a standalone class.
-  private inner class GhostTextField : JTextArea(), FocusListener, Disposable {
-
-    private inner class GhostTextDocumentListener : DocumentListener {
-      private var previousTextEmpty = true
-
-      override fun insertUpdate(e: DocumentEvent) {
-        handleDocumentChange(e)
-      }
-
-      override fun removeUpdate(e: DocumentEvent) {
-        handleDocumentChange(e)
-      }
-
-      override fun changedUpdate(e: DocumentEvent) {
-        // Ignore changedUpdate events
-      }
-
-      private fun handleDocumentChange(e: DocumentEvent) {
-        val currentTextEmpty = e.document.getText(0, e.document.length).isNullOrBlank()
-        if (currentTextEmpty != previousTextEmpty) {
-          previousTextEmpty = currentTextEmpty
-          repaint()
-        }
-      }
-    }
-
-    private val ghostTextDocumentListener = GhostTextDocumentListener()
-
-    init {
-      Disposer.register(this@EditCommandPrompt, this@GhostTextField)
-
-      addFocusListener(this)
-      document.addDocumentListener(ghostTextDocumentListener)
-
-      lineWrap = true
-      wrapStyleWord = true
-      border = JBUI.Borders.empty(JBUI.insets(5))
-    }
-
-    override fun paintComponent(g: Graphics) {
-      background = textFieldBackground()
-      (g as Graphics2D).background = textFieldBackground()
-      super.paintComponent(g)
-
-      if (text.isNullOrBlank()) {
-        g.apply {
-          setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-          color = EditUtil.getThemeColor("Component.infoForeground")
-          val leftMargin = 15
-          drawString(GHOST_TEXT, leftMargin, (fontMetrics.height * 1.5).toInt())
-        }
-      }
-    }
-
-    // This is used by the up/down arrow keys to insert a history item.
-    fun setTextAndSelectAll(newContents: String?) {
-      if (newContents != null) {
-        text = newContents
-        selectAll()
-      }
-    }
-
-    // Focus tracking ensures the ghost text is hidden or shown on focus change.
-    // The superclass has a tendency to hide the text when we lose the focus.
-    override fun focusGained(e: FocusEvent?) {
-      repaint()
-    }
-
-    override fun focusLost(e: FocusEvent?) {
-      repaint()
-    }
-
-    override fun dispose() {
-      removeFocusListener(this)
-      document.removeDocumentListener(ghostTextDocumentListener)
-    }
-  } // GhostTextField
-
   private fun makeCornerShape(width: Int, height: Int): RoundRectangle2D {
     return RoundRectangle2D.Double(
         0.0, 0.0, width.toDouble(), height.toDouble(), CORNER_RADIUS, CORNER_RADIUS)
@@ -672,10 +589,6 @@ class EditCommandPrompt(val controller: FixupService, val editor: Editor, dialog
     const val DEFAULT_TEXT_FIELD_WIDTH: Int = 700
 
     const val DIALOG_MINIMUM_HEIGHT = 200
-
-    // TODO: Put this back when @-includes are in
-    // const val GHOST_TEXT = "Instructions (@ to include code)"
-    const val GHOST_TEXT = "Type what changes you want to make to this file..."
 
     private const val CORNER_RADIUS = 16.0
 
