@@ -1364,7 +1364,6 @@ describe('Agent', () => {
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseClient',
             token: TESTING_TOKENS.enterprise,
-            telemetryExporter: 'graphql',
             logEventMode: 'connected-instance-only',
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1530,7 +1529,6 @@ describe('Agent', () => {
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseMainBranchClient',
             token: TESTING_TOKENS.s2,
-            telemetryExporter: 'graphql',
             logEventMode: 'connected-instance-only',
         })
 
