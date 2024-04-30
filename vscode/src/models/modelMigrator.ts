@@ -4,7 +4,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 
 export function migrateAndNotifyForOutdatedModels(model: string | null): string | null {
     if (!model || isRunningInsideAgent()) {
-        model
+        return model
     }
 
     // Claude 2 to Claude 3 migration
