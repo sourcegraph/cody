@@ -5,9 +5,15 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    DOTCOM_URL,
+    type SerializedChatMessage,
+    logError,
+} from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
+import { expect } from 'vitest'
 import * as vscode from 'vscode'
 import type { Uri } from 'vscode'
 import {
@@ -94,6 +100,23 @@ function buildAgentBinary(): void {
         cwd: getAgentDir(),
         stdio: 'inherit',
     })
+
+    const mayRecord =
+        process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+    if (mayRecord) {
+        try {
+            // Fail fast if we're trying to record without being authenticated.
+            // Without this check, the error message can be cryptic if you try
+            // to record without being authenticated.
+            execSync('src login', { stdio: 'inherit' })
+        } catch {
+            throw new Error(
+                "Can't record HTTP requests without being authenticated. " +
+                    'To fix this problem, run:\n  source agent/scripts/export-cody-http-recording-tokens.sh'
+            )
+        }
+        expect(new URL(process.env.SRC_ENDPOINT ?? '')).toStrictEqual(DOTCOM_URL)
+    }
 }
 
 export class TestClient extends MessageHandler {

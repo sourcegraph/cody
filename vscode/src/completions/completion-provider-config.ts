@@ -57,31 +57,26 @@ class CompletionProviderConfig {
     }
 
     public get contextStrategy(): ContextStrategy {
-        const { config } = this
-
-        const bfgMixedContextFlag = this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-
-        const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'tsc-mixed'
-                ? 'tsc-mixed'
-                : config.autocompleteExperimentalGraphContext === 'tsc'
-                  ? 'tsc'
-                  : config.autocompleteExperimentalGraphContext === 'bfg'
-                      ? 'bfg'
-                      : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                          ? 'bfg-mixed'
-                          : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                              ? 'local-mixed'
-                              : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                                  ? 'jaccard-similarity'
-                                  : config.autocompleteExperimentalGraphContext ===
-                                          'new-jaccard-similarity'
-                                      ? 'new-jaccard-similarity'
-                                      : bfgMixedContextFlag
-                                          ? 'bfg-mixed'
-                                          : 'jaccard-similarity'
-
-        return contextStrategy
+        switch (this.config.autocompleteExperimentalGraphContext as string) {
+            case 'tsc-mixed':
+                return 'tsc-mixed'
+            case 'tsc':
+                return 'tsc'
+            case 'bfg':
+                return 'bfg'
+            case 'bfg-mixed':
+                return 'bfg-mixed'
+            case 'local-mixed':
+                return 'local-mixed'
+            case 'jaccard-similarity':
+                return 'jaccard-similarity'
+            case 'new-jaccard-similarity':
+                return 'new-jaccard-similarity'
+            default:
+                return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
+                    ? 'bfg-mixed'
+                    : 'jaccard-similarity'
+        }
     }
 
     public get smartThrottle(): boolean {

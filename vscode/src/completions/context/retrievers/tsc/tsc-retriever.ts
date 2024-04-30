@@ -1,12 +1,13 @@
 import {
     type AutocompleteContextSnippet,
     type FileURI,
+    defaultPathFunctions,
     isFileURI,
     isMacOS,
     isWindows,
     logError,
+    tracer,
 } from '@sourcegraph/cody-shared'
-import { defaultPathFunctions } from '@sourcegraph/cody-shared/src/common/path'
 import ts from 'typescript'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
@@ -246,12 +247,15 @@ export class TscRetriever implements ContextRetriever {
 
     public retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         return new Promise<AutocompleteContextSnippet[]>(resolve => {
-            try {
-                resolve(this.doBlockingRetrieve(options))
-            } catch (error) {
-                logError('tsc-retriever', String(error))
-                resolve([])
-            }
+            tracer.startActiveSpan('graph-context.tsc', span => {
+                span.setAttribute('sampled', true)
+                try {
+                    resolve(this.doBlockingRetrieve(options))
+                } catch (error) {
+                    logError('tsc-retriever', String(error))
+                    resolve([])
+                }
+            })
         })
     }
 

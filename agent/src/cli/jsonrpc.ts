@@ -129,11 +129,6 @@ export const jsonrpcCommand = new Command('jsonrpc')
                 recordingExpiryStrategy: options.recordingExpiryStrategy,
             })
             polly.server.any().on('request', req => {
-                // console.log('Request intercepted', req.url)
-                // if (req.body?.startsWith('{')) {
-                //     console.log(JSON.stringify(JSON.parse(req.body ?? '{}'), null, 2))
-                // }
-                // console.log(new Error().stack)
                 networkRequests.push(req)
             })
             polly.server.any().on('error', (request, error) => {
