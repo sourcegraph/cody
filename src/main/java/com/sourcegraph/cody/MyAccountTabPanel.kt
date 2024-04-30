@@ -15,6 +15,7 @@ import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.ThemeUtil
 import java.awt.BorderLayout
+import java.net.URLEncoder
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
@@ -79,7 +80,16 @@ class MyAccountTabPanel(val project: Project) : JPanel() {
             button("Upgrade") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/subscription") }
         upgradeButton.component.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
       }
-      button("Check Usage") { BrowserUtil.browse(ConfigUtil.DOTCOM_URL + "cody/manage") }
+      button("Manage Account") {
+        val manageUrl = "${ConfigUtil.DOTCOM_URL}" + "cody/manage"
+        val account = CodyAuthenticationManager.getInstance(project).getActiveAccount()
+        if (account != null) {
+          BrowserUtil.browse(
+              manageUrl + "?cody_client_user=" + URLEncoder.encode(account.name, "UTF-8"))
+        } else {
+          BrowserUtil.browse(manageUrl)
+        }
+      }
     }
     if (accountTier == AccountTier.DOTCOM_FREE) {
       row { text(CodyBundle.getString("my-account-tab.already-pro")) }
