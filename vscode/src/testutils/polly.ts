@@ -5,7 +5,7 @@ import jsonStableStringify from 'fast-json-stable-stringify'
 import { type EXPIRY_STRATEGY, type Headers, type MODE, Polly } from '@pollyjs/core'
 
 import { CodyNodeHttpAdapter } from './CodyNodeHttpAdapter'
-import { CodyPersister, redactAccessToken } from './CodyPersister'
+import { CodyPersister, redactAuthorizationHeader } from './CodyPersister'
 
 interface PollyOptions {
     recordingName: string
@@ -59,10 +59,10 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
             // below. To better understand what's going on, it's helpful to read
             // the implementation of Polly here:
             //   https://sourcegraph.com/github.com/Netflix/pollyjs@9b6bede12b7ee998472b8883c9dd01e2159e00a8/-/blob/packages/@pollyjs/core/src/-private/request.js?L281
-            headers(headers: Headers): Headers {
+            headers(headers): Headers {
                 // Get the authorization token.
                 const { authorization } = headers
-                let token =
+                let header =
                     typeof authorization === 'string'
                         ? authorization
                         : Array.isArray(authorization)
@@ -71,12 +71,12 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
 
                 // Redact it so that the ID is the same regardless if we're in record or replay
                 // mode.
-                if (token) {
-                    token = redactAccessToken(token)
+                if (header) {
+                    header = redactAuthorizationHeader(header)
                 }
 
                 // Normalize to always be a single header value (not an array).
-                return token ? { authorization: token } : {}
+                return header ? { authorization: header } : {}
             },
         },
     })

@@ -79,7 +79,7 @@ export {
     extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths, pathFunctionsForURI } from './common/path'
+export { posixFilePaths, pathFunctionsForURI, defaultPathFunctions } from './common/path'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -241,3 +241,5 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
+export * from './mentions/providers/packageMentions'
+export * from './mentions/providers/sourcegraphSearch'

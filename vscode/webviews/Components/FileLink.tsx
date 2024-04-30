@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import type React from 'react'
 
 import {
+    ContextItemSource,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -46,12 +47,15 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     let pathWithRange: string
     let href: string
     let target: string | undefined
-    if (source === 'unified') {
+    if (source === 'unified' || source === ContextItemSource.Search) {
         // Remote search result.
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
+        tooltip =
+            source === 'unified'
+                ? `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
+                : ''
         // We can skip encoding when the uri path already contains '@'.
         href = uri.toString(uri.path.includes('@'))
         target = '_blank'

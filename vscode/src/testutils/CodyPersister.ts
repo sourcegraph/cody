@@ -11,11 +11,23 @@ import { PollyYamlWriter } from './pollyapi'
  * remains uniquely identifyable. The token needs to be uniquely identifiable so
  * that we can correctly replay HTTP responses based on the access token.
  */
-export function redactAccessToken(token: string): string {
-    if (token.startsWith('token REDACTED_')) {
-        return token
+export function redactAuthorizationHeader(header: string): string {
+    if (!header.startsWith('token')) {
+        // NOTE(olafurpg) When using fastpath, this header has the format
+        // `Bearer TOKEN`. We currently disable fastpath in the agent tests so
+        // we should not hit on this case. If fastpath gets enabled for some
+        // reason then the tests should fail quickly with a helpful error
+        // message. I spent almost 2h tracking down why tests were failing in
+        // replay mode when using fastpath and it was not at all obvious what
+        // the root cause was.
+        throw new Error(`Unexpected access token format: ${header}`)
     }
-    return `token REDACTED_${sha256(`prefix${token}`)}`
+
+    if (header.startsWith('token REDACTED_')) {
+        return header
+    }
+
+    return `token REDACTED_${sha256(`prefix${header}`)}`
 }
 
 function sha256(input: string): string {
@@ -87,7 +99,7 @@ export class CodyPersister extends FSPersister {
             for (const header of headers) {
                 switch (header.name) {
                     case 'authorization':
-                        header.value = redactAccessToken(header.value)
+                        header.value = redactAuthorizationHeader(header.value)
                         break
                     // We should not harcode the dates to minimize diffs because
                     // that breaks the expiration feature in Polly.
