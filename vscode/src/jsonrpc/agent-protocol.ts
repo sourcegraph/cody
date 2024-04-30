@@ -543,6 +543,12 @@ export interface ProtocolTextDocument {
     filePath?: string
     content?: string
     selection?: Range
+    contentChanges?: ProtocolTextDocumentContentChangeEvent[]
+}
+
+export interface ProtocolTextDocumentContentChangeEvent {
+    range: Range
+    text: string
 }
 
 interface ExecuteCommandParams {
