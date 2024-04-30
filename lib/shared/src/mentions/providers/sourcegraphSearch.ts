@@ -8,15 +8,16 @@ import type { ContextMentionProvider } from '../api'
 
 export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'src-search'> = {
     id: 'src-search',
-    // TODO the prefix '!' seems to not trigger the @ mention code path. I am
-    // assuming there is parsing logic somewhere which only calls the @
-    // mentions if they look like a path or start with # (for symbols)
-    triggerPrefixes: ['src:'],
+    triggerPrefixes: ['src:', '?'],
 
     async queryContextItems(query, signal) {
-        const searchQuery = query.startsWith('src:') ? query.slice(4) : query
+        const searchQuery = query.startsWith('?')
+            ? query.slice(1)
+            : query.startsWith('src:')
+              ? query.slice(4)
+              : query
         const uri = URI.parse(graphqlClient.endpoint).with({
-            query: 'q=' + encodeURIComponent(searchQuery),
+            query: 'q=' + encodeURIComponent(searchQuery) + '&patternType=literal',
         })
         return [
             {
@@ -34,8 +35,7 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
             return [item as ContextItemWithContent]
         }
 
-        // Sneaking in the search query via the title
-        const rawQuery = item.title
+        const rawQuery = new URLSearchParams(item.uri.query).get('q')
         if (!rawQuery) {
             return []
         }
@@ -60,7 +60,7 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
 
 type Chunk = Pick<ContextItemWithContent, 'uri' | 'range' | 'content' | 'repoName' | 'revision'>
 
-async function searchForFileChunks(
+export async function searchForFileChunks(
     query: string,
     signal: AbortSignal | undefined
 ): Promise<Chunk[] | Error> {
@@ -75,7 +75,11 @@ async function searchForFileChunks(
                         return []
                     }
                     const fileContext = {
-                        uri: URI.parse(result.file.url),
+                        uri: URI.parse(
+                            `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}?L${
+                                result.chunkMatches[0].contentStart.line
+                            }`
+                        ),
                         repoName: result.repository.name,
                         revision: result.file.commit.oid,
                     }
@@ -152,6 +156,54 @@ interface SearchResponse {
                         line: number
                     }
                 }[]
+            }[]
+        }
+    }
+}
+
+export async function searchForRepos(
+    query: string,
+    signal: AbortSignal | undefined
+): Promise<{ repoID: string; name: string }[] | Error> {
+    const results = await graphqlClient
+        .fetchSourcegraphAPI<APIResponse<SearchReposResponse>>(SEARCH_REPOS_QUERY, {
+            query,
+        })
+        .then(response =>
+            extractDataOrError(response, data => {
+                return data.search.results.results.flatMap(result => {
+                    if (result.__typename !== 'Repository') {
+                        return []
+                    }
+                    return [{ repoID: result.id, name: result.name }]
+                })
+            })
+        )
+    return results
+}
+
+const SEARCH_REPOS_QUERY = `
+query CodyMentionProviderSearchRepos($query: String!) {
+  search(query: $query, version: V3, patternType: literal) {
+    results {
+      results {
+        __typename
+        ... on Repository {
+          id
+          name
+        }
+      }
+    }
+  }
+}`
+
+interface SearchReposResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                id: string
+                name: string
             }[]
         }
     }

@@ -48,6 +48,9 @@ export enum FeatureFlag {
 
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
+
+    /** Interactive tutorial, primarily for onboarding */
+    CodyInteractiveTutorial = 'cody-interactive-tutorial',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -1,3 +1,4 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { releaseType } from '../../release'
 import { version } from '../../version'
 import type { CodySidebarTreeItem } from './treeViewItems'
@@ -16,6 +17,13 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         icon: 'pulse',
         command: { command: 'cody.show-page', args: ['usage'] },
         requireDotCom: true,
+        requireUpgradeAvailable: true,
+    },
+    {
+        title: 'Account',
+        icon: 'account',
+        command: { command: 'cody.sidebar.account' },
+        requirePaid: false,
     },
     {
         title: 'Settings',
@@ -33,6 +41,12 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         icon: 'github',
         command: { command: 'cody.sidebar.releaseNotes' },
         contextValue: 'cody.version',
+    },
+    {
+        title: 'Tutorial',
+        icon: 'tasklist',
+        command: { command: 'cody.tutorial.start' },
+        requireFeature: FeatureFlag.CodyInteractiveTutorial,
     },
     {
         title: 'Documentation',
@@ -53,10 +67,5 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         title: 'Discord',
         icon: 'discord-logo',
         command: { command: 'cody.sidebar.discord' },
-    },
-    {
-        title: 'Account',
-        icon: 'account',
-        command: { command: 'cody.sidebar.account' },
     },
 ]

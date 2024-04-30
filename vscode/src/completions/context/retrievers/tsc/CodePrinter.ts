@@ -1,3 +1,4 @@
+/** Utility class to pretty-print code. */
 export class CodePrinter {
     public out: string[] = []
     public indent = 0
@@ -29,6 +30,9 @@ export class CodePrinter {
         this.line(`// ${header}`)
     }
 
+    public text(text: string): void {
+        this.out.push(text)
+    }
     public line(text?: string): void {
         if (text) {
             this.printIndent()

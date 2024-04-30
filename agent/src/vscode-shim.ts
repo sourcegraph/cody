@@ -175,6 +175,7 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
+export const workspaceTextDocuments: vscode.TextDocument[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: typeof vscode.workspace = {
@@ -204,7 +205,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: [], // Cody uses `vscode.window.tabGroups.all` instead of this API
+    textDocuments: workspaceTextDocuments,
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,

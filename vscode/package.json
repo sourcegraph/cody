@@ -339,6 +339,12 @@
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
+        "command": "cody.command.usageExamples",
+        "category": "Cody Command",
+        "title": "Usage Examples",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -574,9 +580,19 @@
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
+        "command": "cody.tutorial.chat",
+        "key": "alt+l",
+        "when": "cody.activated && cody.tutorialActive"
+      },
+      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.tutorial.edit",
+        "key": "alt+k",
+        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",
@@ -669,6 +685,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -710,6 +730,11 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
+        },
+        {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)",
+          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
@@ -1086,7 +1111,7 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "bfg", "bfg-mixed"],
+          "enum": [null, "bfg", "bfg-mixed", "tsc", "tsc-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
@@ -1238,6 +1263,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@floating-ui/react": "^0.26.9",
+    "@heroicons/react": "^2.1.3",
     "@lexical/code": "^0.13.1",
     "@lexical/html": "^0.13.1",
     "@lexical/react": "^0.13.1",

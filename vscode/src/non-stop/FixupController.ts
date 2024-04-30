@@ -113,17 +113,17 @@ export class FixupController
     // FixupActor
 
     public accept(task: FixupTask): void {
-        if (!task || task.state !== CodyTaskState.applied) {
+        if (!task || task.state !== CodyTaskState.Applied) {
             return
         }
-        this.setTaskState(task, CodyTaskState.finished)
+        this.setTaskState(task, CodyTaskState.Finished)
         this.discard(task)
     }
 
     public cancel(task: FixupTask): void {
         this.setTaskState(
             task,
-            task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.finished
+            task.state === CodyTaskState.Error ? CodyTaskState.Error : CodyTaskState.Finished
         )
         this.discard(task)
     }
@@ -135,7 +135,7 @@ export class FixupController
      * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
      */
     public async undo(task: FixupTask): Promise<void> {
-        if (task.state !== CodyTaskState.applied) {
+        if (task.state !== CodyTaskState.Applied) {
             return
         }
 
@@ -191,7 +191,7 @@ export class FixupController
             },
         })
 
-        this.setTaskState(task, CodyTaskState.finished)
+        this.setTaskState(task, CodyTaskState.Finished)
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -274,6 +274,7 @@ export class FixupController
     }
 
     public async promptUserForTask(
+        preInstruction: PromptString | undefined,
         document: vscode.TextDocument,
         range: vscode.Range,
         expandedRange: vscode.Range | undefined,
@@ -291,6 +292,7 @@ export class FixupController
                 initialExpandedRange: expandedRange,
                 initialModel: model,
                 initialIntent: intent,
+                initialInputValue: preInstruction,
             },
             source
         )
@@ -353,7 +355,7 @@ export class FixupController
      * Starts a Fixup task by moving the task state from "idle" to "working"
      */
     public startTask(task: FixupTask): FixupTask {
-        const state = task.intent === 'test' ? CodyTaskState.pending : CodyTaskState.working
+        const state = task.intent === 'test' ? CodyTaskState.Pending : CodyTaskState.Working
         this.setTaskState(task, state)
         return task
     }
@@ -373,7 +375,7 @@ export class FixupController
     // will return undefined. This may update the task with the newly computed
     // diff.
     private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
-        if (task.state !== CodyTaskState.applying && task.state !== CodyTaskState.applied) {
+        if (task.state !== CodyTaskState.Applying && task.state !== CodyTaskState.Applied) {
             // We haven't received a response from the LLM yet, so there is
             // no diff.
             console.warn('no response cached from LLM so no applicable diff')
@@ -581,7 +583,7 @@ export class FixupController
     }
 
     private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
-        if (task.state !== CodyTaskState.inserting) {
+        if (task.state !== CodyTaskState.Inserting) {
             return
         }
 
@@ -629,7 +631,7 @@ export class FixupController
                 undoStopBefore: false,
                 undoStopAfter: true,
             }
-            this.setTaskState(task, CodyTaskState.formatting)
+            this.setTaskState(task, CodyTaskState.Formatting)
             await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
 
@@ -647,7 +649,7 @@ export class FixupController
             })
 
             // TODO: See if we can discard a FixupFile now.
-            this.setTaskState(task, CodyTaskState.applied)
+            this.setTaskState(task, CodyTaskState.Applied)
             this.logTaskCompletion(task, document, editOk)
 
             // Inform the user about the change if it happened in the background
@@ -697,7 +699,7 @@ export class FixupController
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
-        if (task.state !== CodyTaskState.applying) {
+        if (task.state !== CodyTaskState.Applying) {
             return
         }
 
@@ -740,7 +742,7 @@ export class FixupController
             undoStopBefore: false,
             undoStopAfter: true,
         }
-        this.setTaskState(task, CodyTaskState.formatting)
+        this.setTaskState(task, CodyTaskState.Formatting)
         await new Promise((resolve, reject) => {
             task.formattingResolver = resolve
             this.formatEdit(
@@ -757,7 +759,7 @@ export class FixupController
         })
 
         // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.applied)
+        this.setTaskState(task, CodyTaskState.Applied)
         this.logTaskCompletion(task, document, editOk)
 
         // Inform the user about the change if it happened in the background
@@ -914,7 +916,7 @@ export class FixupController
         }
 
         task.error = error
-        this.setTaskState(task, CodyTaskState.error)
+        this.setTaskState(task, CodyTaskState.Error)
     }
 
     private discard(task: FixupTask): void {
@@ -934,8 +936,8 @@ export class FixupController
             return
         }
 
-        if (task.state !== CodyTaskState.inserting) {
-            this.setTaskState(task, CodyTaskState.inserting)
+        if (task.state !== CodyTaskState.Inserting) {
+            this.setTaskState(task, CodyTaskState.Inserting)
         }
 
         const trimmedReplacement = state === 'complete' ? text : text.replace(/\n[^\n]*$/, '')
@@ -970,7 +972,7 @@ export class FixupController
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.working) {
+        if (task.state !== CodyTaskState.Working) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
@@ -984,7 +986,7 @@ export class FixupController
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                this.setTaskState(task, CodyTaskState.applying)
+                this.setTaskState(task, CodyTaskState.Applying)
                 break
         }
         this.textDidChange(task)
@@ -1004,7 +1006,7 @@ export class FixupController
         }
 
         if (task.fixupFile.uri.toString() === newFileUri.toString()) {
-            return this.setTaskState(task, CodyTaskState.working)
+            return this.setTaskState(task, CodyTaskState.Working)
         }
 
         // append response to new file
@@ -1025,24 +1027,24 @@ export class FixupController
         })
 
         // lift the pending state from the task so it can proceed to the next stage
-        this.setTaskState(task, CodyTaskState.working)
+        this.setTaskState(task, CodyTaskState.Working)
     }
 
     // Handles changes to the source document in the fixup selection, or the
     // replacement text generated by Cody.
     public textDidChange(task: FixupTask): void {
         // Do not make any changes when task is in pending
-        if (task.state === CodyTaskState.pending) {
+        if (task.state === CodyTaskState.Pending) {
             return
         }
         // User has changed an applied task, so we assume the user has accepted the change and wants to take control.
         // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
         // Note: This will also apply if the user attempts to undo the applied change.
-        if (task.state === CodyTaskState.applied) {
+        if (task.state === CodyTaskState.Applied) {
             this.accept(task)
             return
         }
-        if (task.state === CodyTaskState.finished) {
+        if (task.state === CodyTaskState.Finished) {
             this.needsDiffUpdate_.delete(task)
         }
         if (this.needsDiffUpdate_.size === 0) {
@@ -1159,25 +1161,25 @@ export class FixupController
 
         task.state = state
 
-        if (oldState !== CodyTaskState.working && task.state === CodyTaskState.working) {
+        if (oldState !== CodyTaskState.Working && task.state === CodyTaskState.Working) {
             task.spinCount++
         }
 
-        if (task.state === CodyTaskState.finished) {
+        if (task.state === CodyTaskState.Finished) {
             this.discard(task)
             return
         }
         // Save states of the task
         this.controlApplicator.didUpdateTask(task)
 
-        if (task.state === CodyTaskState.applying) {
+        if (task.state === CodyTaskState.Applying) {
             void this.apply(task.id)
         }
 
         // We currently remove the decorations when the task is applied as they
         // currently do not always show the correct positions for edits.
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
-        if (task.state === CodyTaskState.applied) {
+        if (task.state === CodyTaskState.Applied) {
             this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didCompleteTask(task)
         }
