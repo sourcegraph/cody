@@ -2,6 +2,7 @@ import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shar
 import * as vscode from 'vscode'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
+import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
 
 async function setModel(modelID: EditModel, storageKey: string) {
     // Store the selected model in local storage to retrieve later
@@ -26,23 +27,18 @@ function getModel<T extends string>(
     }
 
     // Check for the last selected model
-    let lastSelectedModelID = localStorage.get(storageKey)
-    if (
-        lastSelectedModelID === 'anthropic/claude-instant-1.2' ||
-        lastSelectedModelID === 'anthropic/claude-2.0' ||
-        lastSelectedModelID === 'anthropic/claude-2.1'
-    ) {
-        vscode.window.showInformationMessage(
-            'Claude 2 is going away. We automatically upgraded you to Claude 3. [Learn more]'
-        )
-        lastSelectedModelID = 'anthropic/claude-3-sonnet-20240229'
-        void setModel('anthropic/claude-3-sonnet-20240229', storageKey)
+    const lastSelectedModelID = localStorage.get(storageKey)
+    const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
+
+    if (migratedModelID && migratedModelID !== lastSelectedModelID) {
+        void setModel(migratedModelID, storageKey)
     }
-    if (lastSelectedModelID) {
+
+    if (migratedModelID) {
         // If the last selected model exists in the list of models then we return it
-        const model = models.find(m => m.model === lastSelectedModelID)
+        const model = models.find(m => m.model === migratedModelID)
         if (model) {
-            return lastSelectedModelID as T
+            return migratedModelID as T
         }
     }
     // If the user has not selected a model before then we return the default model
