@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import { isMacOS, isWindows as _isWindows } from './platform'
+import { isWindows as _isWindows, isMacOS } from './platform'
 
 interface PathFunctions {
     /**

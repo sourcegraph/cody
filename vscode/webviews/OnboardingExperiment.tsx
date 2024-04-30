@@ -40,7 +40,6 @@ const WebLogin: React.FunctionComponent<
                 </a>
             </li>
             <li>
-                {/* biome-ignore lint/a11y/useValidAnchor: can fix with a lot of CSS but not a priority */}
                 <a
                     href="about:blank"
                     onClick={event => {

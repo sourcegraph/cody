@@ -11,8 +11,8 @@ import {
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
-    openCustomCommandMenu,
     test as baseTest,
+    openCustomCommandMenu,
     withPlatformSlashes,
 } from './helpers'
 import { testGitWorkspace } from './utils/gitWorkspace'
