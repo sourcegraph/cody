@@ -262,6 +262,11 @@ tasks {
       into(buildCodyDir)
     }
 
+    copy {
+      from(downloadNodeBinaries())
+      into(buildCodyDir)
+    }
+
     return buildCodyDir
   }
 
@@ -320,8 +325,6 @@ tasks {
     ) {
       into("agent/")
     }
-
-    from(fileTree(downloadNodeBinaries())) { into("agent/") }
 
     doLast {
       // Assert that agent binaries are included in the plugin
