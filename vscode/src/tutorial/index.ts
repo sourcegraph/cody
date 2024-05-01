@@ -16,6 +16,7 @@ import {
     getStepContent,
     getStepData,
     initTutorialDocument,
+    resetDocument,
 } from './content'
 import { setTutorialUri } from './helpers'
 import { ChatLinkProvider, ResetLensProvider } from './providers'
@@ -195,7 +196,7 @@ export const registerInteractiveTutorial = async (
 ): Promise<vscode.Disposable[]> => {
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
-    const document = await initTutorialDocument(documentUri)
+    let document = await initTutorialDocument(documentUri)
 
     let status: 'stopped' | 'started' | 'starting' = 'stopped'
 
@@ -255,8 +256,7 @@ export const registerInteractiveTutorial = async (
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {
             stop()
-            // We need to close the tutorial to ensure we get a full reset of the editor
-            await vscode.commands.executeCommand('workbench.action.closeActiveEditor', documentUri)
+            document = await resetDocument(documentUri)
             return start()
         })
     )
