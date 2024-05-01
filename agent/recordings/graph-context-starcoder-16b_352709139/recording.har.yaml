@@ -5,151 +5,6 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: b168934c2a8caf5ddd974d8d8cda2445
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 569
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-16b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "569"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: >-
-                  <filename>src/main.ts<fim_prefix>// Additional documentation
-                  for `doSomething`:
-
-                  // 
-
-                  // function doSomething(argument: Something): void
-
-                  // 
-
-                  // Additional documentation for `Something`:
-
-                  // 
-
-                  // interface Something {
-
-                  //   validDogSled: boolean
-
-                  // }
-
-                  // 
-
-                  import { doSomething } from './functions'
-
-
-
-                  function main(): void {
-                      doSomething(<fim_suffix>
-                  }<fim_middle>
-            model: fireworks/starcoder-16b
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 15000
-            topK: 0
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/code
-      response:
-        bodySize: 323
-        content:
-          mimeType: text/event-stream
-          size: 323
-          text: |+
-            event: completion
-            data: {"completion":"{","stopReason":""}
-
-            event: completion
-            data: {"completion":"{ validDogSled","stopReason":""}
-
-            event: completion
-            data: {"completion":"{ validDogSled: true })","stopReason":""}
-
-            event: completion
-            data: {"completion":"{ validDogSled: true })","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 26 Apr 2024 12:51:35 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "94"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-26T12:51:34.482Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 01e2c7ddfff73ec21c6c6dd91da8b453
       _order: 0
       cache: {}
@@ -230,26 +85,6 @@ log:
           mimeType: text/event-stream
           size: 480
           text: >+
-            event: completion
-
-            data: {"completion":"{","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n  firstName: 'John',","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n  firstName: 'John',\n  isEligible: true","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n  firstName: 'John',\n  isEligible: true\n}","stopReason":""}
-
-
             event: completion
 
             data: {"completion":"{\n  firstName: 'John',\n  isEligible: true\n}","stopReason":"stop"}
@@ -381,26 +216,6 @@ log:
           mimeType: text/event-stream
           size: 483
           text: >+
-            event: completion
-
-            data: {"completion":"\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n  firstName: 'John',\n ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n  firstName: 'John',\n  isEligible: true\n","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n  firstName: 'John',\n  isEligible: true\n}","stopReason":""}
-
-
             event: completion
 
             data: {"completion":"\n  firstName: 'John',\n  isEligible: true\n}","stopReason":"stop"}
@@ -595,31 +410,6 @@ log:
           text: >+
             event: completion
 
-            data: {"completion":"return","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"return cars.find(car =\u003e","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"return cars.find(car =\u003e isNewCar(car,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"return cars.find(car =\u003e isNewCar(car, { minimumYear: 2","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"return cars.find(car =\u003e isNewCar(car, { minimumYear: 2018 }))","stopReason":""}
-
-
-            event: completion
-
             data: {"completion":"return cars.find(car =\u003e isNewCar(car, { minimumYear: 2018 }))","stopReason":"stop"}
 
 
@@ -782,66 +572,6 @@ log:
           mimeType: text/event-stream
           size: 1830
           text: >+
-            event: completion
-
-            data: {"completion":"{","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n     ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d)","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n    d: {\n      a:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n    d: {\n      a: 'a',\n      b:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n    d: {\n      a: 'a',\n      b: 1,\n    },","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n    d: {\n      a: 'a',\n      b: 1,\n    },\n  }","stopReason":""}
-
-
             event: completion
 
             data: {"completion":"{\n    a: {\n      a1: 1,\n      a2: 2,\n    },\n    b: 'b',\n    c: (c, d) =\u003e c + d,\n    d: {\n      a: 'a',\n      b: 1,\n    },\n  }","stopReason":"stop"}
@@ -1102,156 +832,6 @@ log:
           text: >+
             event: completion
 
-            data: {"completion":"\n       ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n       ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug:","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n       ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        web","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log('Exited with code","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log('Exited with code', code);\n        });\n   ","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log('Exited with code', code);\n        });\n    });","stopReason":""}
-
-
-            event: completion
-
             data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log('Exited with code', code);\n        });\n    });","stopReason":"stop"}
 
 
@@ -1374,18 +954,6 @@ log:
           mimeType: text/event-stream
           size: 374
           text: |+
-            event: completion
-            data: {"completion":"1","stopReason":""}
-
-            event: completion
-            data: {"completion":"1, { b: ","stopReason":""}
-
-            event: completion
-            data: {"completion":"1, { b: 2 }, 3","stopReason":""}
-
-            event: completion
-            data: {"completion":"1, { b: 2 }, 3)","stopReason":""}
-
             event: completion
             data: {"completion":"1, { b: 2 }, 3)","stopReason":"stop"}
 
@@ -1535,21 +1103,6 @@ log:
           text: >+
             event: completion
 
-            data: {"completion":"props","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"props.languageKind}\u003c/h1","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":""}
-
-
-            event: completion
-
             data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
 
 
@@ -1697,15 +1250,6 @@ log:
           size: 342
           text: |+
             event: completion
-            data: {"completion":"fruit","stopReason":""}
-
-            event: completion
-            data: {"completion":"fruitKind={fruit} /\u003e","stopReason":""}
-
-            event: completion
-            data: {"completion":"fruitKind={fruit} /\u003e","stopReason":""}
-
-            event: completion
             data: {"completion":"fruitKind={fruit} /\u003e","stopReason":"stop"}
 
             event: done
@@ -1744,6 +1288,142 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-04-30T12:00:26.880Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 440a6c32db7b50e2f53bdf2ceea56124
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 567
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "567"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `doSomething`:
+
+                  // 
+
+                  // function doSomething(argument: Something): void
+
+                  // 
+
+                  // Additional documentation for `Something`:
+
+                  // 
+
+                  // interface Something {
+
+                  //   validDogSled: boolean
+
+                  // }
+
+                  // 
+
+                  import { doSomething } from './functions'
+
+
+                  function main(): void {
+                      doSomething(<fim_suffix>
+                  }<fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 361
+        content:
+          mimeType: text/event-stream
+          size: 361
+          text: >+
+            event: completion
+
+            data: {"completion":"{\n        validDogSled: true\n    })","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 01 May 2024 10:58:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-01T10:58:15.018Z
       time: 0
       timings:
         blocked: -1
