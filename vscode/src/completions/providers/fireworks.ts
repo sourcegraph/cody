@@ -323,7 +323,7 @@ class FireworksProvider extends Provider {
                 Your goal is to perform code completion for the following code, keeping in mind the rest of the code and the file meta data.
                 Metadata details: filename: ${filename}. The code of the file until where you have to start completion:
             `
-            return ps`${intro} \n ${suffix} \n ${fixedPrompt} \n ${prefix}`
+            return ps`${intro} \n ${fixedPrompt}\n${prefix}`
         }
         console.error('Could not generate infilling prompt for', this.model)
         return ps`${intro}${prefix}`
