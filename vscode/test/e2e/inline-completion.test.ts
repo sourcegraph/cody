@@ -66,7 +66,6 @@ test.extend<ExpectedEvents>({
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
-        // Second suggest/accept
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
     ],

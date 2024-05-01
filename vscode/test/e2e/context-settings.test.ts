@@ -15,6 +15,17 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+    ],
 })('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
@@ -55,7 +66,29 @@ test.extend<ExpectedEvents>({
     await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
 })
 
-test('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+    ],
+})('enterprise context selector can pick repos', async ({ page, sidebar, server, expectedEvents }) => {
     const repos1: RepoListResponse = {
         repositories: {
             nodes: [
