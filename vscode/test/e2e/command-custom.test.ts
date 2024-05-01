@@ -336,7 +336,5 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     const chatContext = panel.locator('details').last()
-    await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('/terminal-output') })
-    ).toBeVisible()
+    await expect(chatContext.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
 })
