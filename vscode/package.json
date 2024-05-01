@@ -1022,6 +1022,12 @@
           "markdownDescription": "Path to symf binary",
           "default": ""
         },
+        "cody.experimental.openctx": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable support for [OpenCtx](https://openctx.org).",
+          "default": false
+        },
         "cody.experimental.tracing": {
           "order": 99,
           "type": "boolean",

@@ -72,6 +72,9 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"]
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }

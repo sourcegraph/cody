@@ -62,6 +62,7 @@ export interface Configuration {
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
+    experimentalOpenCtx: boolean
 
     /**
      * Unstable Features for internal testing only

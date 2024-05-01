@@ -53,6 +53,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.symfContext':
                         return true
+                    case 'cody.experimental.openctx':
+                        return true
                     case 'cody.experimental.tracing':
                         return true
                     case 'cody.debug.verbose':
@@ -126,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalSupercompletions: false,
             experimentalSymfContext: true,
             experimentalTracing: true,
+            experimentalOpenCtx: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             codeActions: true,

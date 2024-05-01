@@ -146,6 +146,8 @@ export function getConfiguration(
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
+        experimentalOpenCtx: getHiddenSetting('experimental.openctx', false),
+
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
