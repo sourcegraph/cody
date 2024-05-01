@@ -265,7 +265,7 @@ export const registerInteractiveTutorial = async (
         editor => editor.document.uri.toString() === documentUri.toString()
     )
     if (tutorialVisible) {
-        start()
+        await start()
     }
 
     return disposables
