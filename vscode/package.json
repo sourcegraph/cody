@@ -318,12 +318,6 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.command.context-search",
-        "category": "Cody",
-        "title": "Codebase Context Search",
-        "when": "cody.activated && workspaceFolderCount > 0"
-      },
-      {
         "command": "cody.command.usageExamples",
         "category": "Cody Command",
         "title": "Usage Examples",
@@ -526,8 +520,8 @@
         "category": "Cody",
         "group": "Search",
         "icon": "$(search)",
-        "title": "Natural Language Search (Beta)",
-        "when": "cody.activated"
+        "title": "Natural Language Search Code (Beta)",
+        "when": "cody.activated && workspaceFolderCount > 0"
       }
     ],
     "keybindings": [
@@ -643,10 +637,6 @@
         },
         {
           "command": "cody.command.explain-code",
-          "when": "cody.activated && editorIsOpen"
-        },
-        {
-          "command": "cody.command.context-search",
           "when": "cody.activated && editorIsOpen"
         },
         {

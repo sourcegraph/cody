@@ -152,13 +152,6 @@ export async function showCommandMenu(
                 return
             }
 
-            // Check if it's an edit command
-            if (selection.key === 'search') {
-                void commands.executeCommand('cody.symf.search', value)
-                quickPick.hide()
-                return
-            }
-
             // On selecting a default command
             if (selection.type === 'default' && selection.command) {
                 // Check if it's an ask command

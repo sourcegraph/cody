@@ -60,6 +60,15 @@ export const CodyCommandMenuItems = [
         type: 'default',
     },
     {
+        key: 'search',
+        prompt: 'Start a new natural language search',
+        description: 'Search Code (Beta)',
+        icon: 'search',
+        command: { command: 'cody.symf.search' },
+        keybinding: '',
+        type: 'default',
+    },
+    {
         key: 'custom',
         description: 'Custom Commands',
         icon: 'tools',

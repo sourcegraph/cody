@@ -9,7 +9,6 @@ import {
     displayPath,
     isDefined,
     isFileURI,
-    ps,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../editor/active-editor'
@@ -137,13 +136,12 @@ export class SearchViewProvider implements vscode.Disposable {
 
     constructor(private symfRunner: SymfRunner) {
         this.indexManager = new IndexManager(this.symfRunner)
-        this.disposables.push(this.indexManager)
-        this.disposables.push(this.cancellationManager)
-
         this.disposables.push(
-            vscode.commands.registerCommand('cody.symf.search', query =>
-                this.onDidReceiveQuery(query ?? ps``)
-            )
+            this.indexManager,
+            this.cancellationManager,
+            vscode.commands.registerCommand('cody.symf.search', q => {
+                q ? this.onDidReceiveQuery(q) : this.getSearchQueryInput()
+            })
         )
     }
 
@@ -202,14 +200,13 @@ export class SearchViewProvider implements vscode.Disposable {
         )
     }
 
-    private async showInputBox(): Promise<void> {
+    private async getSearchQueryInput(): Promise<void> {
         const input = await vscode.window.showInputBox({
-            title: 'Natural Language Search (Beta)',
+            title: 'Natural Language Code Search (Beta)',
             prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
         })
-        if (input) {
-            const query = PromptString.unsafe_fromUserQuery(input.trim())
-            this.onDidReceiveQuery(query)
+        if (input?.trim()) {
+            this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(input.trim()))
         }
     }
 
@@ -231,11 +228,11 @@ export class SearchViewProvider implements vscode.Disposable {
             return
         }
 
-        if (queryPromptString.trim().length === 0) {
-            return this.showInputBox()
+        if (!(queryPromptString instanceof PromptString)) {
+            return this.getSearchQueryInput()
         }
 
-        const query = queryPromptString.toString()?.trim()
+        const query = queryPromptString?.toString()?.trim()
         const quickPick = vscode.window.createQuickPick()
         quickPick.items = []
         quickPick.busy = true
@@ -255,6 +252,7 @@ export class SearchViewProvider implements vscode.Disposable {
             },
         ]
         quickPick.onDidAccept(() => (quickPick.selectedItems[0] as SymfResultQuickPickItem)?.onSelect())
+
         quickPick.show()
 
         try {
@@ -263,11 +261,11 @@ export class SearchViewProvider implements vscode.Disposable {
                 cumulativeResults.push(...(await resultsToDisplayResults(await resultSet)))
             }
 
-            quickPick.items = cumulativeResults.flatMap(file =>
+            const items = cumulativeResults.flatMap(file =>
                 file.snippets.map(s => ({
                     label: uriBasename(file.uri),
                     description: `Lines ${s.range.start.line}-${s.range.end.line}`,
-                    detail: s.contents.replace(/\n/g, ' '),
+                    detail: s.contents.trim()?.split('/n')?.[0],
                     file,
                     onSelect: () => {
                         vscode.workspace.openTextDocument(file.uri).then(async doc => {
@@ -285,7 +283,26 @@ export class SearchViewProvider implements vscode.Disposable {
                 }))
             )
 
-            quickPick.placeholder = 'Press ESC to close'
+            quickPick.items = items
+            quickPick.placeholder = 'Filter search results. Press ESC to close."'
+
+            quickPick.onDidChangeValue(_value => {
+                if (_value && !quickPick.activeItems.length) {
+                    // Add new item to display warning about no matches
+                    quickPick.items = [
+                        {
+                            label: `No results for "${_value}"`,
+                            detail: 'Try a different query',
+                        },
+                    ]
+                    return
+                }
+
+                // Reset items to original list of results
+                if (quickPick.items.length !== items.length) {
+                    quickPick.items = items
+                }
+            })
         } catch (error) {
             if (error instanceof vscode.CancellationError) {
                 console.info('No search results because indexing was canceled')

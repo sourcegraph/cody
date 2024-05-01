@@ -2,13 +2,13 @@ import { CodyCommandMenuItems } from '../..'
 import type { CommandMenuItem } from '../types'
 
 const ASK_QUESTION_COMMAND = CodyCommandMenuItems[0]
-
 const EDIT_COMMAND = CodyCommandMenuItems[1]
+const SEARCH_COMMAND = CodyCommandMenuItems.find(i => i.key === 'search')
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {
     label: `$(${ASK_QUESTION_COMMAND.icon}) ${ASK_QUESTION_COMMAND.description}`,
-    description: ASK_QUESTION_COMMAND.prompt,
+    description: 'Start a new chat with this message',
     key: ASK_QUESTION_COMMAND.key,
     alwaysShow: true,
     type: 'default',
@@ -17,11 +17,20 @@ const chatOption: CommandMenuItem = {
 
 const fixOption: CommandMenuItem = {
     label: `$(${EDIT_COMMAND.icon}) ${EDIT_COMMAND.description}`,
-    description: EDIT_COMMAND.prompt,
+    description: 'Start a new code edit with these instructions',
     key: EDIT_COMMAND.key,
     alwaysShow: true,
     type: 'default',
     command: ASK_QUESTION_COMMAND.command.command,
+}
+
+const searchOption: CommandMenuItem = {
+    label: `$(${SEARCH_COMMAND?.icon}) ${SEARCH_COMMAND?.description}`,
+    description: 'Start a new natural language search with this text',
+    key: SEARCH_COMMAND?.key,
+    alwaysShow: true,
+    type: 'default',
+    command: SEARCH_COMMAND?.command.command,
 }
 
 const configOption: CommandMenuItem = {
@@ -37,14 +46,6 @@ const addOption: CommandMenuItem = {
     description: 'Create a new reusable command',
     key: '',
     command: 'cody.menu.custom.build',
-}
-
-const searchOption: CommandMenuItem = {
-    label: '$(search) Search (Beta)',
-    alwaysShow: true,
-    description: 'Start a new Natural Language Search',
-    key: 'search',
-    command: 'cody.symf.search',
 }
 
 export const CommandMenuOption = {
