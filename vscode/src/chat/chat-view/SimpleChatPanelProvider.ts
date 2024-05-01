@@ -70,6 +70,7 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
 import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api'
+import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -414,6 +415,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
+    private async getRepoGiturlIfPublic(): Promise<string> {
+        const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (vscodeUri) {
+            const gitRemoteUrl = gitRemoteUrlFromGitExtension(vscodeUri)
+            if (gitRemoteUrl) {
+                const instance = RepoMetadatafromGitApi.getInstance()
+                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(gitRemoteUrl)
+                if (gitMetaData?.repoVisibility === 'public') {
+                    return gitRemoteUrl
+                }
+            }
+        }
+        return ''
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -429,15 +445,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-
-            let gitUrl = ''
-            const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
-            if (vscodeUri) {
-                const gitRemoteUrl = gitRemoteUrlFromGitExtension(vscodeUri)
-                if (gitRemoteUrl) {
-                    gitUrl = gitRemoteUrl
-                }
-            }
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -461,7 +468,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitUrl: gitUrl,
+                    gitRemoteUrl: await this.getRepoGiturlIfPublic(),
                 },
             })
 
