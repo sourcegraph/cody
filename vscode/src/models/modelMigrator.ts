@@ -18,7 +18,7 @@ export function migrateAndNotifyForOutdatedModels(model: string | null): string 
     // Verify that the new model is available before migrating.
     if (ModelProvider.getProviderByModel(newModel)) {
         showNotificationIfNotShownYet(
-            'We upgraded you to Claude 3! The Claude 2 family of models is no longer available but you have access to the better Claude 3 model instead.',
+            'Claude 2 model support has been removed in favor of the newer Claude 3 models. All chats that used Claude 2 have been upgraded to Claude 3.',
             'claude2-migration-notification-shown'
         ).catch(console.error)
         return newModel
