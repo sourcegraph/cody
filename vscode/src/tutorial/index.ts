@@ -243,6 +243,12 @@ export const registerInteractiveTutorial = async (
             const tutorialIsActive = editor && editor.document.uri.toString() === documentUri.toString()
             return vscode.commands.executeCommand('setContext', 'cody.tutorialActive', tutorialIsActive)
         }),
+        vscode.workspace.onDidCloseTextDocument(document => {
+            if (document.uri !== documentUri) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'closed')
+        }),
         vscode.commands.registerCommand('cody.tutorial.start', async () => {
             if (status === 'started') {
                 return vscode.window.showTextDocument(documentUri)
@@ -255,6 +261,7 @@ export const registerInteractiveTutorial = async (
             return start()
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'reset')
             stop()
             document = await resetDocument(documentUri)
             return start()

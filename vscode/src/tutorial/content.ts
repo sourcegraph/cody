@@ -181,6 +181,6 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  */
 export const resetDocument = async (uri: vscode.Uri): Promise<vscode.TextDocument> => {
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor', uri)
-    await sleep(100)
+    await sleep(250)
     return initTutorialDocument(uri)
 }
