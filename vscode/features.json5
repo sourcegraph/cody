@@ -98,5 +98,44 @@
         },
           tags: ['context']
       },
+      {
+        "name": "NoContextChatSubmissionHotkey",
+        "description": "Alt/Opt+Enter to submit chat without context",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "https://github.com/sourcegraph/cody/pull/3996"
+          }
+        },
+          tags: ['chat','context']
+      },
+      {
+        "name": "EnableOllamaByDefault",
+        "description": "Ollama models are now available by default if they are installed on the user's machine",
+        "productLine": "consumer",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "https://github.com/sourcegraph/cody/pull/3914"
+          }
+        },
+          tags: ['chat']
+      },
+      {
+        "name": "Claude3DefaultModel",
+        "description": "Removed Claude 2, 2.1, and Claude Instant. Users are now updated to use Claude 3 by default.",
+        "productLine": "consumer",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+            "notes": "https://github.com/sourcegraph/cody/pull/3914"
+          }
+        },
+          tags: ['chat', 'models']
+      },
     ],
   }
