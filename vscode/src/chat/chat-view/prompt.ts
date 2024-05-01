@@ -1,5 +1,3 @@
-import * as vscode from 'vscode'
-
 import {
     type ChatMessage,
     type ContextItem,
@@ -7,8 +5,12 @@ import {
     type Message,
     PromptString,
     getSimplePreamble,
+    isDefined,
+    ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import _ from 'lodash'
+import * as vscode from 'vscode'
 
 import { logDebug } from '../../log'
 
@@ -52,7 +54,29 @@ export class DefaultPrompter implements IPrompter {
                 undefined
             )
 
-            const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
+            sortContextItems(this.explicitContext)
+            // We now filter out any mixins from the user contet and add those as preamble messages as well
+            const [preambleMixins, filteredExplicitContext] = _.partition(
+                this.explicitContext,
+                i => i.type === 'mixin' && i.injectAt === 'preamble'
+            )
+            //TODO(rnauta): handle injectAt: mentions
+
+            const preambleMixinStrings = preambleMixins
+                .map(mixin => {
+                    return PromptString.fromContextItem(mixin).content
+                })
+                .filter(isDefined)
+            const preInstructionWithMixins = PromptString.join(
+                [...(preInstruction ? [preInstruction] : []), ...preambleMixinStrings],
+                ps`\n\n`
+            )
+
+            const preambleMessages = getSimplePreamble(
+                chat.modelID,
+                codyApiVersion,
+                preInstructionWithMixins
+            )
             const preambleSucceeded = promptBuilder.tryAddToPrefix(preambleMessages)
             if (!preambleSucceeded) {
                 throw new Error(
@@ -75,12 +99,11 @@ export class DefaultPrompter implements IPrompter {
             const newContextUsed: ContextItem[] = []
 
             // Add context from new user-specified context items, e.g. @-mentions, @-uri
-            sortContextItems(this.explicitContext)
             const {
                 limitReached: userLimitReached,
                 used,
                 ignored,
-            } = promptBuilder.tryAddContext('user', this.explicitContext)
+            } = promptBuilder.tryAddContext('user', filteredExplicitContext)
             newContextUsed.push(...used.map(c => ({ ...c, isTooLarge: false })))
             newContextIgnored.push(...ignored.map(c => ({ ...c, isTooLarge: true })))
             if (userLimitReached) {
