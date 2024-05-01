@@ -9,7 +9,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Sets a variable that is used to determine the matrix to run e2e tests on.
+  # Only commits to main run on Windows and macOS.
+  main_commit_matrix_prep:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            echo 'matrix=["ubuntu","windows","macos"]' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=["ubuntu"]' >> $GITHUB_OUTPUT
+          fi
+
   test-unit:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -46,10 +62,12 @@ jobs:
           CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
+    needs: [build, main_commit_matrix_prep]
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows, macos]
+        # Only run on Windows and macOS for main CI
+        runner: ${{ fromJson(needs.main_commit_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     steps:
@@ -71,9 +89,10 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:integration
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:integration
-        if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows' || matrix.runner == 'macos')
+        if: matrix.runner == 'windows' || matrix.runner == 'macos'
 
   test-e2e:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +156,7 @@ jobs:
   # updating the required status checks for merging PRs. Ideally it would just
   # be https://github.com/sourcegraph/cody/blob/21a40be7297da70f310350e2557a069ea06326ce/.github/workflows/ci.yml#L76
   test-e2e-macos:
+    needs: build
     runs-on: macos-latest-large
     name: 'test-e2e (macos)'
     timeout-minutes: 15
