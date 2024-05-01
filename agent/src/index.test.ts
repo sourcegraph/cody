@@ -5,7 +5,13 @@ import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DOTCOM_URL, ModelUsage, isWindows } from '@sourcegraph/cody-shared'
+import {
+    DOTCOM_URL,
+    ModelProvider,
+    ModelUsage,
+    getDotComDefaultModels,
+    isWindows,
+} from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
@@ -56,6 +62,7 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
+        ModelProvider.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the tree-walk repo-name resolver work for Cody Ignore tests.
@@ -963,14 +970,59 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(
                         `
-                  "export function sum(c: number, b: number): number {
-                      /* CURSOR */
-                  }
-                  "
-                `,
+                    "export function sum(c: number, b: number): number {
+                        /* CURSOR */
+                    }
+                    "
+                    `,
                         explainPollyError
                     )
             )
+
+            it('editCommand/code (add prop types)', async () => {
+                const uri = workspace.file('src', 'ChatColumn.tsx')
+                await client.openFile(uri)
+                const task = await client.request('editCommands/code', {
+                    instruction:
+                        'Add types to these props. If you have to create types, add them to the file',
+                    model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
+                        .model,
+                })
+                await client.acceptEditTask(uri, task)
+                expect(client.documentText(uri)).toMatchInlineSnapshot(`
+                  "import { useEffect } from "react";
+                  import React = require("react");
+
+                  export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }: ChatColumnProps) {
+
+                  export interface ChatColumnProps {
+                  	messages: Message[];
+                  	setChatID: (chatID: string) => void;
+                  	isLoading: boolean;
+                  }
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>
+                  				))}
+                  			</ul>
+                  		</>
+                  	);
+                  }
+                  "
+                `)
+            }, 20_000)
         })
 
         describe('Document code', () => {
@@ -1102,16 +1154,17 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the provided code snippets, the file names you have shared so far are:
+              "Based on the code snippets you've shared, the file names are:
 
-              1. \`trickyLogic.ts\`
-              2. \`animal.ts\`
-              3. \`example.test.ts\`
-              4. \`multiple-selections.ts\`
-              5. \`squirrel.ts\`
-              6. \`sum.ts\`
-              7. \`TestClass.ts\`
-              8. \`TestLogger.ts\`"
+              1. \`src/trickyLogic.ts\`
+              2. \`src/animal.ts\`
+              3. \`src/ChatColumn.tsx\`
+              4. \`src/example.test.ts\`
+              5. \`src/multiple-selections.ts\`
+              6. \`src/squirrel.ts\`
+              7. \`src/sum.ts\`
+              8. \`src/TestClass.ts\`
+              9. \`src/TestLogger.ts\`"
             `,
                 explainPollyError
             )
