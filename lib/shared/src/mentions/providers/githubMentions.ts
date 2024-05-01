@@ -1,13 +1,6 @@
 import { URI } from 'vscode-uri'
-import {
-    type ContextItemPackage,
-    ContextItemSource,
-    type ContextItemWithContent,
-} from '../../codebase-context/messages'
+import { ContextItemSource, type ContextItemWithContent } from '../../codebase-context/messages'
 import { githubClient } from '../../githubClient'
-import type { PromptString } from '../../prompt/prompt-string'
-import { graphqlClient } from '../../sourcegraph-api/graphql'
-import { isError } from '../../utils'
 import type { ContextItemFromProvider, ContextMentionProvider, ContextMentionProviderID } from '../api'
 
 const GithubContextId: ContextMentionProviderID = 'github'
@@ -16,7 +9,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
     public id = GithubContextId
     public triggerPrefixes = ['github:', 'gh:']
 
-    async queryContextItems(query: string) {
+    async queryContextItems(query: string, signal?: AbortSignal) {
         const [_, arg1, arg2] = query.split(':')
 
         const number = Number(arg2)
@@ -24,13 +17,29 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
             return []
         }
 
+        const owner = 'sourcegraph'
+        const repoName = 'cody'
+
         switch (arg1) {
             case 'pull':
-                return this.getPullRequestItems(number)
+            case 'pr':
+                return this.getPullRequestItems({ owner, repoName, pullNumber: number }, signal)
 
             case 'issue':
-                return this.getIssueItems(number)
-            // todo: add support for issues
+                return this.getIssueItems({ owner, repoName, issueNumber: number }, signal)
+
+            default:
+                return []
+        }
+    }
+
+    async resolveContextItem(item: ContextItemFromProvider<typeof GithubContextId>) {
+        switch (item.type) {
+            case 'github_pull_request':
+                return this.getPullRequestItemsWithContent(item)
+
+            case 'github_issue':
+                return this.getIssueItemsWithContent(item)
 
             default:
                 return []
@@ -38,19 +47,20 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
     }
 
     private async getPullRequestItems(
-        pullNumber: number
+        details: { owner: string; repoName: string; pullNumber: number },
+        signal?: AbortSignal
     ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
-        const owner = 'sourcegraph'
-        const repoName = 'cody'
         try {
             const pullRequest = await githubClient.request(
                 'GET /repos/{owner}/{repo}/pulls/{pull_number}',
                 {
-                    owner,
-                    repo: repoName,
-                    pull_number: pullNumber,
+                    owner: details.owner,
+                    repo: details.repoName,
+                    pull_number: details.pullNumber,
                 }
             )
+
+            signal?.throwIfAborted?.()
 
             if (!pullRequest) {
                 return []
@@ -58,14 +68,11 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
 
             return [
                 {
+                    ...details,
                     type: 'github_pull_request',
-                    uri: URI.parse(pullRequest.url),
+                    uri: URI.parse(pullRequest.html_url),
                     title: pullRequest.title,
-                    content: `Title: "${pullRequest.title}\nBody:  \`\`\`${pullRequest.body}\`\`\`"`,
                     source: ContextItemSource.Github,
-                    owner,
-                    repoName,
-                    pullNumber,
                     provider: 'github',
                 },
             ]
@@ -75,16 +82,17 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
     }
 
     private async getIssueItems(
-        issueNumber: number
+        details: { owner: string; repoName: string; issueNumber: number },
+        signal?: AbortSignal
     ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
-        const owner = 'sourcegraph'
-        const repoName = 'cody'
         try {
             const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
-                owner,
-                repo: repoName,
-                issue_number: issueNumber,
+                owner: details.owner,
+                repo: details.repoName,
+                issue_number: details.issueNumber,
             })
+
+            signal?.throwIfAborted?.()
 
             if (!issue) {
                 return []
@@ -92,14 +100,11 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
 
             return [
                 {
+                    ...details,
                     type: 'github_issue',
-                    uri: URI.parse(issue.url),
+                    uri: URI.parse(issue.html_url),
                     title: issue.title,
-                    content: `Title: "${issue.title}"\nBody:  \`\`\`${issue.body}\`\`\`"`,
                     source: ContextItemSource.Github,
-                    owner,
-                    repoName,
-                    issueNumber,
                     provider: 'github',
                 },
             ]
@@ -107,37 +112,88 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
             return []
         }
     }
+    private async getPullRequestItemsWithContent(
+        details: { owner: string; repoName: string; pullNumber: number },
+        signal?: AbortSignal
+    ): Promise<ContextItemWithContent[]> {
+        try {
+            const pullRequest = await githubClient.request(
+                'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+                {
+                    owner: details.owner,
+                    repo: details.repoName,
+                    pull_number: details.pullNumber,
+                }
+            )
 
-    async resolveContextItem(item: ContextItemFromProvider<typeof GithubContextId>) {
-        return [item as ContextItemWithContent]
+            signal?.throwIfAborted?.()
+
+            if (!pullRequest) {
+                return []
+            }
+
+            // TODO: fetch additional context from github (comments, diff, reviews, build status, closing issues etc.)
+            const content = `<pull_request>
+    <title>${pullRequest.title}</title>
+    <status>${pullRequest.state}</status>
+    <body>${pullRequest.body}</body>
+</pull_request>`
+
+            return [
+                {
+                    ...details,
+                    content,
+                    type: 'github_pull_request',
+                    uri: URI.parse(pullRequest.html_url),
+                    title: pullRequest.title,
+                    source: ContextItemSource.Github,
+                    provider: 'github',
+                },
+            ]
+        } catch (error) {
+            return []
+        }
     }
-}
 
-export async function findContextItemsWithContentForPackage(
-    packageContextItem: ContextItemPackage,
-    query: PromptString
-): Promise<ContextItemWithContent[]> {
-    // Sending prompt strings to the Sourcegraph search backend is fine.
-    const result = await graphqlClient.contextSearch(
-        new Set([packageContextItem.repoID]),
-        query.toString()
-    )
-    if (isError(result) || result === null) {
-        return []
+    private async getIssueItemsWithContent(
+        details: { owner: string; repoName: string; issueNumber: number },
+        signal?: AbortSignal
+    ): Promise<ContextItemWithContent[]> {
+        try {
+            const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+                owner: details.owner,
+                repo: details.repoName,
+                issue_number: details.issueNumber,
+            })
+
+            signal?.throwIfAborted?.()
+
+            if (!issue) {
+                return []
+            }
+
+            // TODO: fetch additional context from github (comments etc.)
+            const content = `<issue>
+    <title>${issue.title}</title>
+    <status>${issue.state}</status>
+    <body>${issue.body}</body>
+</issue>`
+
+            return [
+                {
+                    ...details,
+                    content,
+                    type: 'github_issue',
+                    uri: URI.parse(issue.html_url),
+                    title: issue.title,
+                    source: ContextItemSource.Github,
+                    provider: 'github',
+                },
+            ]
+        } catch {
+            return []
+        }
     }
-
-    return result.map(node => ({
-        type: 'file',
-        uri: node.uri,
-        title: node.path,
-        repoName: node.repoName,
-        content: node.content,
-        range: {
-            start: { line: node.startLine, character: 0 },
-            end: { line: node.endLine, character: 0 },
-        },
-        source: ContextItemSource.Package,
-    }))
 }
 
 export const GITHUB_CONTEXT_MENTION_PROVIDER = new GithubContextMentionProvider()

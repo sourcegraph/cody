@@ -30,4 +30,5 @@ export class GithubClient {
     }
 }
 
+// https://github.com/settings/tokens/new?scopes=repo
 export const githubClient = new GithubClient({ authToken: 'ghp_***' })
