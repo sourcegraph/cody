@@ -1,9 +1,14 @@
-import type { EmbeddingsProvider } from './codebase-context/context-status'
-import type { FileURI } from './common/uri'
+import type { EmbeddingsProvider } from "./codebase-context/context-status"
+import type { FileURI } from "./common/uri"
 
-import type { PromptString } from './prompt/prompt-string'
+import type { PromptString } from "./prompt/prompt-string"
 
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
+export type ConfigurationUseContext =
+    | "embeddings"
+    | "keyword"
+    | "none"
+    | "blended"
+    | "unified"
 
 /**
  * Get the numeric ID corresponding to the ConfigurationUseContext mode.
@@ -26,7 +31,7 @@ export interface Configuration {
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
-    telemetryLevel: 'all' | 'off' | 'agent'
+    telemetryLevel: "all" | "off" | "agent"
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: PromptString
@@ -41,12 +46,12 @@ export interface Configuration {
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
     autocompleteAdvancedProvider:
-        | 'anthropic'
-        | 'fireworks'
-        | 'unstable-openai'
-        | 'experimental-openaicompatible'
-        | 'experimental-ollama'
-        | null
+    | "anthropic"
+    | "fireworks"
+    | "unstable-openai"
+    | "experimental-openaicompatible"
+    | "experimental-ollama"
+    | null
     autocompleteAdvancedModel: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
@@ -62,6 +67,7 @@ export interface Configuration {
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
+    experimentalGithubAccessToken: string
 
     /**
      * Unstable Features for internal testing only
@@ -72,7 +78,12 @@ export interface Configuration {
      * Experimental autocomplete
      */
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
+    autocompleteExperimentalGraphContext:
+    | "bfg"
+    | "bfg-mixed"
+    | "tsc"
+    | "tsc-mixed"
+    | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean
@@ -81,7 +92,7 @@ export interface Configuration {
      * Hidden settings
      */
     isRunningInsideAgent?: boolean
-    agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    agentIDE?: "VSCode" | "JetBrains" | "Neovim" | "Emacs"
     autocompleteTimeouts: AutocompleteTimeouts
 
     testingModelConfig: EmbeddingsModelConfig | undefined

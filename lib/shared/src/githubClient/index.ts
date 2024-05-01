@@ -1,5 +1,5 @@
-import { Octokit } from '@octokit/core'
-import type { Endpoints, RequestParameters } from '@octokit/types'
+import { Octokit } from "@octokit/core"
+import type { Endpoints, RequestParameters } from "@octokit/types"
 
 export interface GithubClientConfig {
     authToken: string
@@ -21,9 +21,9 @@ export class GithubClient {
     async request<E extends keyof Endpoints>(
         req: E,
         params: E extends keyof Endpoints
-            ? Endpoints[E]['parameters'] & RequestParameters
-            : RequestParameters
-    ): Promise<Endpoints[E]['response']['data']> {
+            ? Endpoints[E]["parameters"] & RequestParameters
+            : RequestParameters,
+    ): Promise<Endpoints[E]["response"]["data"]> {
         const response = await this.octokit.request(req, params)
 
         return response?.data
@@ -31,4 +31,6 @@ export class GithubClient {
 }
 
 // https://github.com/settings/tokens/new?scopes=repo
-export const githubClient = new GithubClient({ authToken: 'ghp_***' })
+export const githubClient = new GithubClient({
+    authToken: "",
+})

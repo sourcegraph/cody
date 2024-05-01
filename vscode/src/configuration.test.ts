@@ -128,6 +128,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

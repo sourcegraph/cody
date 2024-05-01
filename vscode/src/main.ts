@@ -11,6 +11,7 @@ import {
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
+    githubClient,
     graphqlClient,
     newPromptMixin,
     setLogger,
@@ -183,6 +184,7 @@ const register = async (
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
+    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -262,8 +264,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
-        // TODO: Get cody.github.accessToken from config and update githubClient
-        // githubClient.onConfigurationChange(newConfig)
+        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(bindedRepoNamesResolver)
@@ -277,7 +278,7 @@ const register = async (
         enterpriseContextFactory.clientConfigurationDidChange()
         promises.push(
             localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ??
-                Promise.resolve()
+            Promise.resolve()
         )
         promises.push(setupAutocomplete())
         await Promise.all(promises)
@@ -327,7 +328,7 @@ const register = async (
             parallelPromises.push(
                 getAccessToken()
                     .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
-                    .catch(() => {})
+                    .catch(() => { })
             )
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
@@ -643,7 +644,7 @@ const register = async (
                     if (config.isRunningInsideAgent) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                            'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                         )
                     }
                     return
@@ -677,7 +678,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const autocompleteSetup = setupAutocomplete().catch(() => {})
+    const autocompleteSetup = setupAutocomplete().catch(() => { })
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
