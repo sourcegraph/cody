@@ -4,5 +4,6 @@ package com.sourcegraph.cody.protocol_generated;
 data class WorkspaceEditParams(
   val operations: List<WorkspaceEditOperation>,
   val metadata: WorkspaceEditMetadata? = null,
+  val instruction: String? = null,
 )
 

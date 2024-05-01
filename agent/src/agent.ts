@@ -991,6 +991,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest('editTask/retry', async ({ id, source }) => {
+            this.fixups?.retry(id, source)
+            return null
+        })
+
         this.registerAuthenticatedRequest('editTask/cancel', async ({ id }) => {
             this.fixups?.cancel(id)
             return null

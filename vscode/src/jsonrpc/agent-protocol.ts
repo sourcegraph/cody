@@ -108,6 +108,8 @@ export type ClientRequests = {
     'editTask/undo': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
     'editTask/cancel': [{ id: FixupTaskID }, null]
+    // Undoes the task and retries displaying the old prompt.
+    'editTask/retry': [{ id: FixupTaskID, source: EventSource }, null]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
@@ -700,6 +702,7 @@ export interface WebviewPostMessageParams {
 export interface WorkspaceEditParams {
     operations: WorkspaceEditOperation[]
     metadata?: vscode.WorkspaceEditMetadata | undefined | null
+    instruction?: String
 }
 
 export type WorkspaceEditOperation =

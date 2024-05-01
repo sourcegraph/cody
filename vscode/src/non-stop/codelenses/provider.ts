@@ -59,7 +59,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff')
                 return this.diff(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
+            vscode.commands.registerCommand('cody.fixup.codelens.retry', id => {
                 telemetryService.log(
                     'CodyVSCodeExtension:fixup:codeLens:clicked',
                     {
@@ -135,7 +135,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 if (!nearestTask) {
                     return
                 }
-                return vscode.commands.executeCommand('cody.fixup.codelens.retry', nearestTask.id)
+                return vscode.commands.executeCommand(
+                    'cody.fixup.codelens.retry',
+                    nearestTask.id,
+                    'code-lens'
+                )
             }),
             vscode.commands.registerCommand('cody.fixup.undoNearest', () => {
                 const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })

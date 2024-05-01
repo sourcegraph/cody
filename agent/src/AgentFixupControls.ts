@@ -2,6 +2,7 @@ import type { FixupFile } from '../../vscode/src/non-stop/FixupFile'
 import type { FixupTask, FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
+import type { EventSource } from '@sourcegraph/cody-shared'
 import { type Agent, errorToCodyError } from './agent'
 import type { EditTask } from './protocol-alias'
 
@@ -29,6 +30,13 @@ export class AgentFixupControls implements FixupControlApplicator {
         const task = this.fixups.taskForId(id)
         if (task) {
             this.fixups.cancel(task)
+        }
+    }
+
+    public retry(id: FixupTaskID, source: EventSource): void {
+        const task = this.fixups.taskForId(id)
+        if (task) {
+            this.fixups.retry(task, source)
         }
     }
 
