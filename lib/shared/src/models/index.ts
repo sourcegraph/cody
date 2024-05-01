@@ -133,4 +133,19 @@ export class ModelProvider {
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
         return ModelProvider.providers.find(m => m.model === modelID)
     }
+
+    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
+        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+        if (models.length === 1) {
+            return models[0]
+        }
+        if (models.length === 0) {
+            throw new Error(`No model found for substring ${modelSubstring}`)
+        }
+        throw new Error(
+            `Multiple models found for substring ${modelSubstring}: ${models
+                .map(m => m.model)
+                .join(', ')}`
+        )
+    }
 }
