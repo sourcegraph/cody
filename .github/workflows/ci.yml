@@ -18,7 +18,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          if [ "$GITHUB_REF" == "refs/heads/main" ]; then
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
             echo 'matrix=["ubuntu","windows","macos"]' >> $GITHUB_OUTPUT
           else
             echo 'matrix=["ubuntu"]' >> $GITHUB_OUTPUT
