@@ -1,6 +1,7 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import {
     registerAutocompleteListener,
     registerChatTutorialCommand,
@@ -24,6 +25,7 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
     const editor = await vscode.window.showTextDocument(document)
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
     disposables.push(diagnosticCollection)
+    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'started')
 
     let activeStep: TutorialStep | null = null
 
@@ -63,8 +65,13 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
     const progressToNextStep = async () => {
         const nextStep = activeStep?.key ? getNextStep(activeStep.key) : 'autocomplete'
 
+        if (activeStep?.key) {
+            telemetryRecorder.recordEvent('cody.interactiveTutorial.stepComplete', activeStep.key)
+        }
+
         if (nextStep === null) {
             editor.setDecorations(TODO_DECORATION, [])
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'finished')
             return
         }
 
@@ -186,11 +193,6 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
 export const registerInteractiveTutorial = async (
     context: vscode.ExtensionContext
 ): Promise<vscode.Disposable[]> => {
-    const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
-    if (!enabled) {
-        return []
-    }
-
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
     const document = await initTutorialDocument(documentUri)
@@ -199,6 +201,14 @@ export const registerInteractiveTutorial = async (
 
     let cleanup: vscode.Disposable | undefined
     const start = async () => {
+        const enabled = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyInteractiveTutorial
+        )
+        logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
+        if (!enabled) {
+            return
+        }
+
         status = 'starting'
         cleanup = await startTutorial(document)
         disposables.push(cleanup)
@@ -232,10 +242,15 @@ export const registerInteractiveTutorial = async (
             const tutorialIsActive = editor && editor.document.uri.toString() === documentUri.toString()
             return vscode.commands.executeCommand('setContext', 'cody.tutorialActive', tutorialIsActive)
         }),
-        vscode.commands.registerCommand('cody.tutorial.start', () => {
+        vscode.commands.registerCommand('cody.tutorial.start', async () => {
             if (status === 'started') {
                 return vscode.window.showTextDocument(documentUri)
             }
+            // Refresh any flags when a manual start is triggered
+            // This is primarily so, when a user authenticates for the first time,
+            // We ensure we use the correct feature flag value before determining if they should
+            // see the tutorial.
+            await featureFlagProvider.refreshFeatureFlags()
             return start()
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {
