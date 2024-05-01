@@ -1,6 +1,7 @@
 import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
+import { logSidebarClick } from '../services/SidebarCommands'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import {
     registerAutocompleteListener,
@@ -20,7 +21,6 @@ import {
 } from './content'
 import { setTutorialUri } from './helpers'
 import { ChatLinkProvider, ResetLensProvider } from './providers'
-import { logSidebarClick } from '../services/SidebarCommands'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
@@ -270,7 +270,7 @@ export const registerInteractiveTutorial = async (
         vscode.commands.registerCommand('cody.sidebar.tutorial', () => {
             logSidebarClick('tutorial')
             void vscode.commands.executeCommand('cody.tutorial.start')
-        }),
+        })
     )
 
     const tutorialVisible = vscode.window.visibleTextEditors.some(
