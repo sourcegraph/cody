@@ -9,6 +9,7 @@ import {
     displayPath,
     isDefined,
     isFileURI,
+    logDebug,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../editor/active-editor'
@@ -240,7 +241,7 @@ export class SearchViewProvider implements vscode.Disposable {
         quickPick.placeholder = 'Searching...'
         quickPick.matchOnDescription = true
         quickPick.matchOnDetail = true
-        quickPick.ignoreFocusOut = true
+        quickPick.ignoreFocusOut = false
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('refresh'),
@@ -284,16 +285,13 @@ export class SearchViewProvider implements vscode.Disposable {
             )
 
             quickPick.items = items
-            quickPick.placeholder = 'Filter search results. Press ESC to close."'
+            quickPick.placeholder = 'Filter search results. Press ESC to close.'
 
             quickPick.onDidChangeValue(_value => {
                 if (_value && !quickPick.activeItems.length) {
                     // Add new item to display warning about no matches
                     quickPick.items = [
-                        {
-                            label: `No results for "${_value}"`,
-                            detail: 'Try a different query',
-                        },
+                        { label: `No results for "${_value}"`, detail: 'Try a different query' },
                     ]
                     return
                 }
@@ -303,18 +301,15 @@ export class SearchViewProvider implements vscode.Disposable {
                     quickPick.items = items
                 }
             })
+            quickPick.busy = false
         } catch (error) {
             if (error instanceof vscode.CancellationError) {
-                console.info('No search results because indexing was canceled')
+                logDebug('SearchViewProvider', 'No search results because indexing was canceled')
             } else {
-                void vscode.window.showErrorMessage(
-                    `Error fetching results for query "${query}": ${error}`
-                )
+                logDebug('SearchViewProvider', `Error fetching results for "${query}": ${error}`)
             }
-
-            quickPick.hide()
-        } finally {
             quickPick.busy = false
+            quickPick.items = [{ label: `No results for "${query}"`, detail: `${error}` }]
         }
     }
 }

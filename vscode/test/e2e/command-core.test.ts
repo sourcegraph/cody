@@ -34,7 +34,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()
@@ -152,7 +152,7 @@ test.extend<ExpectedEvents>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Bring the cody sidebar to the foreground
-    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Trigger the documentaton command
     await page.getByText('Document Code').hover()

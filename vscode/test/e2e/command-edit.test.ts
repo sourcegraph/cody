@@ -81,7 +81,7 @@ test.extend<ExpectedEvents>({
 
     // create another edit from the sidebar Edit button
     await page.getByText('7', { exact: true }).click()
-    await page.getByRole('tab', { name: 'Cody' }).locator('a').click()
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await page.getByText('Edit Code').click()
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()

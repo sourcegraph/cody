@@ -25,10 +25,12 @@ test('Start a new chat from Cody Command Menu', async ({ page, sidebar }) => {
     await expect(commandInputBox).toBeVisible()
     await commandInputBox.fill('new chat submitted from command menu')
     // this will fail if more than 1 New Chat item in the menu is found
-    await page.getByLabel('comment  New Chat, Start a new chat', { exact: true }).hover()
-    await expect(page.getByLabel('comment  New Chat, Start a new chat', { exact: true })).toBeVisible()
-    await page.getByLabel('wand  Edit Code, Start a code edit', { exact: true }).hover()
-    await expect(page.getByLabel('wand  Edit Code, Start a code edit', { exact: true })).toBeVisible()
+    await page.getByLabel('comment  New Chat, Start a new chat with this message').hover()
+    await expect(page.getByLabel('comment  New Chat, Start a new chat with this message')).toBeVisible()
+    await page.getByLabel('wand  Edit Code, Start a new code edit with these instructions').hover()
+    await expect(
+        page.getByLabel('wand  Edit Code, Start a new code edit with these instructions')
+    ).toBeVisible()
     await page.getByLabel('Start a new chat').locator('a').click()
 
     // the question should show up in the chat panel on submit
