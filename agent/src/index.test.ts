@@ -245,7 +245,7 @@ describe('Agent', () => {
                     id: id1,
                     message: {
                         command: 'submit',
-                        text: 'My name is Lars Monsen',
+                        text: 'My name is Lars Monsen.',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -275,7 +275,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You said your name is Lars Monsen."`,
+                `"You introduced yourself as Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
@@ -983,8 +983,7 @@ describe('Agent', () => {
                 const uri = workspace.file('src', 'ChatColumn.tsx')
                 await client.openFile(uri)
                 const task = await client.request('editCommands/code', {
-                    instruction:
-                        'Add types to these props. If you have to create types, add them to the file',
+                    instruction: 'Add types to these props. If you have to create types, add them',
                     model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
                         .model,
                 })
@@ -997,13 +996,11 @@ describe('Agent', () => {
                   	messages,
                   	setChatID,
                   	isLoading,
-                  }: ChatColumnProps) {
-
-                  export interface ChatColumnProps {
-                  	messages: Message[];
+                  }: {
+                  	messages: string[];
                   	setChatID: (chatID: string) => void;
                   	isLoading: boolean;
-                  }
+                  }) {
                   	useEffect(() => {
                   		if (!isLoading) {
                   			setChatID(messages[0].chatID);
