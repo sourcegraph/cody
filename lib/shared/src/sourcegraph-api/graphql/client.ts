@@ -9,7 +9,6 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-import { MockServerTelemetryExporter } from '../telemetry/MockServerTelemetryExporter'
 import {
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -652,12 +651,6 @@ export class SourcegraphGraphQLAPIClient {
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<unknown | Error> {
         for (const event of events) {
             this.anonymizeTelemetryEventInput(event)
-        }
-
-        if (process.env.CODY_TESTING === 'true') {
-            return new MockServerTelemetryExporter(
-                this.anonymousUserID || 'AnonymousTestUserId'
-            ).exportEvents(events)
         }
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
             RECORD_TELEMETRY_EVENTS_MUTATION,

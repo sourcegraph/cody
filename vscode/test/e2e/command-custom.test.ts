@@ -34,14 +34,9 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:auth:selectSigninMenu',
         'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:custom:build:clicked',
-        'CodyVSCodeExtension:command:custom:build:executed',
-        'CodyVSCodeExtension:command:custom:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
         'CodyVSCodeExtension:sidebar:custom:clicked',
         'CodyVSCodeExtension:menu:command:custom:clicked',
+        'CodyVSCodeExtension:menu:custom:build:clicked',
     ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
