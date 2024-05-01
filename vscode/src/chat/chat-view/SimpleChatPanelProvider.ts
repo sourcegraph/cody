@@ -69,7 +69,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
-import { gitRemoteUrlFromGitExtension } from '../../repository/git-extension-api'
+import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
@@ -418,12 +418,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async getRepoGiturlIfPublic(): Promise<string> {
         const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (vscodeUri) {
-            const gitRemoteUrl = gitRemoteUrlFromGitExtension(vscodeUri)
-            if (gitRemoteUrl) {
+            const gitRemoteUrlList = gitRemoteUrlsFromGitExtension(vscodeUri)
+            if (gitRemoteUrlList && gitRemoteUrlList.length === 1) {
                 const instance = RepoMetadatafromGitApi.getInstance()
-                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(gitRemoteUrl)
+                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(gitRemoteUrlList[0])
                 if (gitMetaData?.repoVisibility === 'public') {
-                    return gitRemoteUrl
+                    return gitRemoteUrlList[0]
                 }
             }
         }
