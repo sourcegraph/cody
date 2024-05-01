@@ -9,6 +9,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: The context window for the `Claude 3 Sonnet` and `Claude 3 Opus` models is now increased by default for all non-Enterprise users, without requiring a feature flag. [pull/3953](https://github.com/sourcegraph/cody/pull/3953)
 - Custom Commands: Added the ability to create new custom Edit commands via the Custom Command Menu. [pull/3862](https://github.com/sourcegraph/cody/pull/3862)
 - Custom Commands: Added 'currentFile' option to include the full file content in the Custom Commands menu. [pull/3960](https://github.com/sourcegraph/cody/pull/3960)
+- Chat: Pressing <kbd>Alt+Enter</kbd> or <kbd>Opt+Enter</kbd> will submit a chat message without enhanced context (only @-mentions). [pull/3996](https://github.com/sourcegraph/cody/pull/3996)
 
 ### Fixed
 
