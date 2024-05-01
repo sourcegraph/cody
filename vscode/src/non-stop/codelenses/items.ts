@@ -12,29 +12,29 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
-        case CodyTaskState.pending:
-        case CodyTaskState.working: {
+        case CodyTaskState.Pending:
+        case CodyTaskState.Working: {
             const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.inserting: {
+        case CodyTaskState.Inserting: {
             if (isTest) {
                 return [getUnitTestLens(codeLensRange)]
             }
             return [getInsertingLens(codeLensRange), getCancelLens(codeLensRange, task.id)]
         }
-        case CodyTaskState.applying: {
+        case CodyTaskState.Applying: {
             const title = getApplyingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.formatting: {
+        case CodyTaskState.Formatting: {
             const title = getFormattingLens(codeLensRange)
             const skip = getFormattingSkipLens(codeLensRange, task.id)
             return [title, skip]
         }
-        case CodyTaskState.applied: {
+        case CodyTaskState.Applied: {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
@@ -47,7 +47,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             }
             return [accept, retry, undo]
         }
-        case CodyTaskState.error: {
+        case CodyTaskState.Error: {
             const title = getErrorLens(codeLensRange, task)
             const discard = getDiscardLens(codeLensRange, task.id)
             return [title, discard]

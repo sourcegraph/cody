@@ -146,6 +146,7 @@ class FireworksProvider extends Provider {
             config.accessToken &&
             // Require the upstream to be dotcom
             (this.authStatus.isDotCom || this.isLocalInstance) &&
+            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
@@ -541,8 +542,8 @@ export function createProviderConfig({
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                  ? (model as keyof typeof MODEL_MAP)
-                  : null
+                ? (model as keyof typeof MODEL_MAP)
+                : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

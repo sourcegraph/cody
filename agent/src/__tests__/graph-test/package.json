@@ -1,0 +1,20 @@
+{
+  "name": "example-ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "20.4.0",
+    "typescript": "^5.4.2",
+    "webauthn4js": "^3.0.0"
+  },
+  "dependencies": {
+    "react": "18.2.0"
+  }
+}

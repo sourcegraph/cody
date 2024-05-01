@@ -103,8 +103,15 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
 
     const isURLProviderEnabled =
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
-    if (isURLProviderEnabled) {
-        return CONTEXT_MENTION_PROVIDERS.filter(provider => provider.id === 'url')
+    const isPackageProviderEnabled =
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
+
+    if (isURLProviderEnabled || isPackageProviderEnabled) {
+        return CONTEXT_MENTION_PROVIDERS.filter(
+            provider =>
+                (isURLProviderEnabled && provider.id === 'url') ||
+                (isPackageProviderEnabled && provider.id === 'package')
+        )
     }
 
     //TODO(rnauta): const isMentionProviderEnabled

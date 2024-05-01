@@ -26,7 +26,7 @@ export type FixupTelemetryMetadata = {
 
 export class FixupTask {
     public id: FixupTaskID
-    public state_: CodyTaskState = CodyTaskState.idle
+    public state_: CodyTaskState = CodyTaskState.Idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
     /**
@@ -91,7 +91,7 @@ export class FixupTask {
      * Sets the task state. Checks the state transition is valid.
      */
     public set state(state: CodyTaskState) {
-        if (state === CodyTaskState.error) {
+        if (state === CodyTaskState.Error) {
             console.log(new Error().stack)
         }
         this.state_ = state

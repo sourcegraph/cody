@@ -1,17 +1,17 @@
 import * as child_process from 'node:child_process'
 import {
+    promises as fs,
     type PathLike,
     type RmOptions,
     mkdir,
     mkdtempSync,
-    promises as fs,
     rmSync,
     writeFile,
 } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
+import { type Frame, type FrameLocator, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -334,7 +334,8 @@ export async function signOut(page: Page): Promise<void> {
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
+    await page.getByPlaceholder('Type the name of a command to run.').click()
+    await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 
@@ -399,7 +400,7 @@ export function withPlatformSlashes(input: string) {
 }
 
 const isPlatform = (platform: string) => process.platform === platform
-export function getMetaKeyByOS(): string {
+export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
 }
 

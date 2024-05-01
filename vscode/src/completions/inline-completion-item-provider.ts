@@ -16,6 +16,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
@@ -292,8 +293,8 @@ export class InlineCompletionItemProvider
                     : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
                       ? TriggerKind.Automatic
                       : takeSuggestWidgetSelectionIntoAccount
-                          ? TriggerKind.SuggestWidget
-                          : TriggerKind.Hover
+                        ? TriggerKind.SuggestWidget
+                        : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
@@ -521,6 +522,11 @@ export class InlineCompletionItemProvider
 
         // Mark as seen, so we don't show again after this.
         void localStorage.set(key, 'true')
+
+        if (isInTutorial(request.document)) {
+            // Do nothing, the user is already working through the tutorial
+            return
+        }
 
         if (!this.isProbablyNewInstall) {
             // Only trigger for new installs for now, to avoid existing users from

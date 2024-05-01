@@ -3,8 +3,8 @@ import { type QuickPickItem, window } from 'vscode'
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { type CodyCommandMode, CustomCommandType } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { fromSlashCommand } from '../utils/common'
 import { CommandModeMenuOptions, customPromptsContextOptions } from './items/menu'
 
@@ -126,7 +126,6 @@ export class CustomCommandsBuilderMenu {
      * @returns The new Cody command with the selected context options, or null if no prompt was provided.
      */
     private async addContext(newPrompt: Partial<CodyCommand>): Promise<CodyCommand | null> {
-        newPrompt.context = {}
         const promptContext = await window.showQuickPick(customPromptsContextOptions, {
             title: 'New Custom Cody Command: Context Options',
             placeHolder: 'For accurate responses, choose only the necessary options.',
@@ -138,9 +137,11 @@ export class CustomCommandsBuilderMenu {
         })
 
         if (promptContext !== undefined) {
+            newPrompt.context = { selection: false }
             for (const context of promptContext) {
                 switch (context.id) {
                     case 'selection':
+                    case 'currentFile':
                     case 'currentDir':
                     case 'openTabs':
                     case 'none':

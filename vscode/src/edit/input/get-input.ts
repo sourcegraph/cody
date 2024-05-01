@@ -10,13 +10,16 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import {
     FILE_HELP_LABEL,
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
+    NO_PACKAGE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
+    PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
@@ -26,7 +29,6 @@ import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
@@ -406,13 +408,17 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.provider === 'symbol'
-                                    ? mentionQuery.text.length === 0
-                                        ? SYMBOL_HELP_LABEL
-                                        : NO_SYMBOL_MATCHES_LABEL
-                                    : mentionQuery.text.length === 0
-                                      ? FILE_HELP_LABEL
-                                      : NO_FILE_MATCHES_LABEL,
+                                mentionQuery.provider === 'package'
+                                    ? mentionQuery.text.length < 3
+                                        ? PACKAGE_HELP_LABEL
+                                        : NO_PACKAGE_MATCHES_LABEL
+                                    : mentionQuery.provider === 'symbol'
+                                      ? mentionQuery.text.length === 0
+                                          ? SYMBOL_HELP_LABEL
+                                          : NO_SYMBOL_MATCHES_LABEL
+                                      : mentionQuery.text.length === 0
+                                        ? FILE_HELP_LABEL
+                                        : NO_FILE_MATCHES_LABEL,
                         },
                     ]
                     return
@@ -455,11 +461,13 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.provider === 'symbol'
-                                ? SYMBOL_HELP_LABEL
-                                : mentionQuery?.provider === 'file'
-                                  ? FILE_HELP_LABEL
-                                  : GENERAL_HELP_LABEL,
+                            mentionQuery?.provider === 'package'
+                                ? PACKAGE_HELP_LABEL
+                                : mentionQuery?.provider === 'symbol'
+                                  ? SYMBOL_HELP_LABEL
+                                  : mentionQuery?.provider === 'file'
+                                    ? FILE_HELP_LABEL
+                                    : GENERAL_HELP_LABEL,
                     },
                 ]
             },
@@ -485,6 +493,7 @@ export const getInput = async (
                     case FILE_HELP_LABEL:
                     case LARGE_FILE_WARNING_LABEL:
                     case SYMBOL_HELP_LABEL:
+                    case PACKAGE_HELP_LABEL:
                     case NO_FILE_MATCHES_LABEL:
                     case NO_SYMBOL_MATCHES_LABEL:
                     case GENERAL_HELP_LABEL:
@@ -524,7 +533,13 @@ export const getInput = async (
             },
         })
 
-        editInput.render(activeTitle, initialValues.initialInputValue?.toString() || '')
-        editInput.input.activeItems = []
+        const initialInput = initialValues.initialInputValue?.toString() || ''
+        editInput.render(activeTitle, initialInput)
+
+        if (initialInput.length === 0) {
+            // If we have no initial input, we want to ensure we don't auto-select anything
+            // This helps ensure the input does not feel like a menu.
+            editInput.input.activeItems = []
+        }
     })
 }

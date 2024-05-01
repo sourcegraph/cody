@@ -11,8 +11,8 @@ import {
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
-    openCustomCommandMenu,
     test as baseTest,
+    openCustomCommandMenu,
     withPlatformSlashes,
 } from './helpers'
 import { testGitWorkspace } from './utils/gitWorkspace'
@@ -100,8 +100,13 @@ test.extend<ExpectedEvents>({
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
     // The new command shows up in the sidebar and works on clicks
-    await expect(page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a')).toBeVisible()
-    await page.getByRole('treeitem', { name: 'ATestCommand' }).locator('a').click()
+    await expect(page.getByText('New Custom Cody Command: Save To…')).not.toBeVisible()
+    await page.getByText('Custom Commands', { exact: true }).hover()
+    const treeItem = page.getByRole('treeitem', { name: 'ATestCommand' }).getByLabel('ATestCommand')
+    await treeItem.scrollIntoViewIfNeeded()
+    await expect(treeItem).toBeVisible()
+    await treeItem.click()
+
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     await expect(chatPanel.getByText(prompt)).toBeVisible()

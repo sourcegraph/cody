@@ -5,6 +5,7 @@ import {
     type ChatClient,
     ConfigFeaturesSingleton,
     type ModelProvider,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -19,7 +20,7 @@ import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
@@ -148,6 +149,7 @@ export class EditManager implements vscode.Disposable {
             )
         } else {
             task = await this.controller.promptUserForTask(
+                configuration.preInstruction,
                 document,
                 range,
                 expandedRange,

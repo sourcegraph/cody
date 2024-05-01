@@ -7,6 +7,7 @@ import {
     isAbortError,
     isDotCom,
     posixFilePaths,
+    telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -20,7 +21,7 @@ import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
@@ -268,7 +269,7 @@ export class EditProvider {
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
-        if (task.state !== CodyTaskState.pending) {
+        if (task.state !== CodyTaskState.Pending) {
             return
         }
 

@@ -38,7 +38,7 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
         }
     },
 
-    async resolveContextItem(item, signal) {
+    async resolveContextItem(item, _, signal) {
         if (item.content !== undefined) {
             return [item as ContextItemWithContent]
         }

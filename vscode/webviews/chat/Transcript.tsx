@@ -9,7 +9,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
+import { ModelSelectField } from '../Components/modelSelectField/ModelSelectField'
 import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
@@ -190,12 +190,14 @@ export const Transcript: React.FunctionComponent<{
                     onCurrentChatModelChange &&
                     userInfo &&
                     userInfo.isDotComUser && (
-                        <ChatModelDropdownMenu
-                            models={chatModels}
-                            disabled={transcript.length > 0}
-                            onCurrentChatModelChange={onCurrentChatModelChange}
-                            userInfo={userInfo}
-                        />
+                        <div className={styles.modelSelectFieldContainer}>
+                            <ModelSelectField
+                                models={chatModels}
+                                disabled={transcript.length > 0}
+                                onModelSelect={onCurrentChatModelChange}
+                                userInfo={userInfo}
+                            />
+                        </div>
                     )}
                 {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
                 {earlierMessages.map(messageToTranscriptItem(0))}

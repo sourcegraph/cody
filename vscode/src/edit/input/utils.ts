@@ -23,6 +23,10 @@ export function removeAfterLastAt(str: string): string {
  * Includes the file path and an optional range or symbol specifier.
  */
 export function getLabelForContextItem(item: ContextItem): string {
+    if (item.type === 'package') {
+        return `${item.ecosystem}:${item.name}`
+    }
+
     const isFileType = item.type === 'file'
     const isMixinType = item.type === 'mixin'
     if (isMixinType) {

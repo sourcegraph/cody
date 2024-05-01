@@ -509,8 +509,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             : stat.isDirectory()
               ? FileType.Directory
               : stat.isSymbolicLink()
-                  ? FileType.SymbolicLink
-                  : FileType.Unknown
+                ? FileType.SymbolicLink
+                : FileType.Unknown
 
         return {
             type,
@@ -530,8 +530,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
                 : entry.isDirectory()
                   ? FileType.Directory
                   : entry.isSymbolicLink()
-                      ? FileType.SymbolicLink
-                      : FileType.Unknown
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -686,7 +686,9 @@ export enum UIKind {
     Web = 2,
 }
 
-export class FileSystemError extends Error {}
+export class FileSystemError extends Error {
+    public code = 'FileSystemError'
+}
 
 export const vsCodeMocks = {
     FileSystemError,

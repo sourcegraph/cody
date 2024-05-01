@@ -230,7 +230,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     it('no-ops on files that are ignored by the context filter policy', async () => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce(true)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
         const fn = vi.fn()
         const provider = new MockableInlineCompletionItemProvider(fn)

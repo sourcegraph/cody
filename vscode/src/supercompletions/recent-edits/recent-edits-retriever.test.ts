@@ -115,7 +115,7 @@ describe('RecentEditsRetriever', () => {
     })
 
     it('no-ops for blocked files due to the context filter', async () => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce(true)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
 
         replaceFooLogWithNumber()
 

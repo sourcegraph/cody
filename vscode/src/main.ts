@@ -12,20 +12,24 @@ import {
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
-    isDotCom,
     newPromptMixin,
     setLogger,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
-import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    CODY_FEEDBACK_URL,
+    CODY_OLLAMA_DOCS_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
-import { hoverCommandsProvider } from './commands/HoverCommandsProvider'
 import {
     executeDocCommand,
     executeExplainCommand,
@@ -35,6 +39,7 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -64,7 +69,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
-import { createOrUpdateTelemetryRecorderProvider, telemetryRecorder } from './services/telemetry-v2'
+import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
@@ -74,6 +79,7 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { registerInteractiveTutorial } from './tutorial'
 import { version } from './version'
 
 /**
@@ -326,7 +332,6 @@ const register = async (
         }
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
-        hoverCommandsProvider.syncAuthStatus(authStatus)
         statusBar.syncAuthStatus(authStatus)
     })
 
@@ -381,7 +386,10 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        vscode.commands.registerCommand('cody.command.usageExamples', a =>
+            executeUsageExamplesCommand(a)
+        )
     )
 
     disposables.push(
@@ -530,18 +538,27 @@ const register = async (
             telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
             await chatManager.setWebviewView('chat')
         }),
+
+        // StatusBar Commands
+        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
+            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
+            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
+        }),
+
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
-            const endpoint = authStatus.endpoint
-            if (ws.focused && endpoint && isDotCom(endpoint) && authStatus.isLoggedIn) {
+            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     console.error(res)
                     return
                 }
-                authStatus.userCanUpgrade = !res.codyProEnabled
-                void chatManager.syncAuthStatus(authStatus)
+                // Re-auth if user's cody pro status has changed
+                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                    authProvider.reloadAuthStatus()
+                }
             }
         }),
         new CodyProExpirationNotifications(
@@ -568,10 +585,6 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger()
     )
-
-    // Experimental features: Hover Commands
-    disposables.push(hoverCommandsProvider)
-    hoverCommandsProvider.syncAuthStatus(authProvider.getAuthStatus())
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
@@ -641,6 +654,10 @@ const register = async (
             })
         )
     }
+
+    registerInteractiveTutorial(context).then(disposable => {
+        disposables.push(...disposable)
+    })
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

@@ -9,11 +9,11 @@ import {
     PromptString,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 
 import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
 import { getEditor } from '../../editor/active-editor'

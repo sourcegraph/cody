@@ -1,8 +1,8 @@
 import {
+    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     NoOpTelemetryExporter,
     type TelemetryEventInput,
     type TelemetryProcessor,
-    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     TestTelemetryExporter,
     TimestampTelemetryProcessor,
     defaultEventRecordingOptions,
@@ -88,8 +88,10 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
 }
-
-const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
+/**
+ * noOpTelemetryRecorder should ONLY be used in tests - it discards all recorded events and does nothing with them.
+ */
+export const noOpTelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder()
 
 /**
  * MockServerTelemetryRecorderProvider uses MockServerTelemetryExporter to export
