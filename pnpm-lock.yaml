@@ -245,6 +245,9 @@ importers:
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
+      '@openctx/client':
+        specifier: ^0.0.8
+        version: 0.0.8
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3148,6 +3151,35 @@ packages:
     dependencies:
       which: 4.0.0
     dev: true
+
+  /@openctx/client@0.0.8:
+    resolution: {integrity: sha512-CJ1jUbbNpbySfYG2fBVyaa8w56eLGjfiUIKR/OtF7BnBjK9OHneV4SzBi3UBrZ0mTHOzr92bUKbehsk86YrZmw==}
+    dependencies:
+      '@openctx/protocol': 0.0.7
+      '@openctx/provider': 0.0.7
+      '@openctx/schema': 0.0.6
+      lru-cache: 10.2.2
+      picomatch: 3.0.1
+      rxjs: 7.8.1
+    dev: false
+
+  /@openctx/protocol@0.0.7:
+    resolution: {integrity: sha512-hUgRrTJk0ixbFZitqI2VLaYh/lG7lEteTZE9u8vLJjVE/R7S9UpaLHVzcMPVRUl6vnyfgODxpMdlNRcCgEa0eg==}
+    dependencies:
+      '@openctx/schema': 0.0.6
+    dev: false
+
+  /@openctx/provider@0.0.7:
+    resolution: {integrity: sha512-3dP77AD0REW37bw2Ou+g1Nk7FmIgj7/T8dvofBKY408LVMrA4gCc/UCoXvmRb2bHDza7Zm3CNXjkUynv1tBgVg==}
+    dependencies:
+      '@openctx/protocol': 0.0.7
+      '@openctx/schema': 0.0.6
+      picomatch: 3.0.1
+    dev: false
+
+  /@openctx/schema@0.0.6:
+    resolution: {integrity: sha512-kmX6dyuKDiJwX0KASv9Yu3hPg9Vm/IYB0MLfDUFORC0IRvs9YWzMgmyVQYF0HoaJ/l8bxmMoyi/0Ks4lCpkpQw==}
+    dev: false
 
   /@opentelemetry/api-logs@0.45.1:
     resolution: {integrity: sha512-zVGq/k70l+kB/Wuv3O/zhptP2hvDhEbhDu9EtHde1iWZJf3FedeYS/nWVcMBkkyPAjS/JKNk86WN4CBQLGUuOw==}
@@ -9539,7 +9571,6 @@ packages:
   /lru-cache@10.2.2:
     resolution: {integrity: sha512-9hp3Vp2/hFQUiIwKo8XCeFVnrg8Pk3TYNPIR7tJADKi5YfcF7vEaK7avFHTlSy3kOKYaJQaalfEo6YuXdceBOQ==}
     engines: {node: 14 || >=16.14}
-    dev: true
 
   /lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -10788,6 +10819,11 @@ packages:
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+
+  /picomatch@3.0.1:
+    resolution: {integrity: sha512-I3EurrIQMlRc9IaAZnqRR044Phh2DXY+55o7uJ0V+hYZAcQYSuFWsc9q5PvyDHUSCe1Qxn/iBz+78s86zWnGag==}
+    engines: {node: '>=10'}
+    dev: false
 
   /pify@3.0.0:
     resolution: {integrity: sha512-C3FsVNH1udSEX48gGX1xfvwTWfsYWj5U+8/uK15BGzIGrKoUpghX8hWZwa/OFnakBiiVNmBvemTJR5mcy7iPcg==}
@@ -12953,6 +12989,7 @@ packages:
     resolution: {integrity: sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==}
     engines: {node: '>=0.8.0'}
     hasBin: true
+    requiresBuild: true
     dev: true
 
   /underscore@1.13.6:
