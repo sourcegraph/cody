@@ -29,7 +29,7 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
  */
-export type SerializedContextItem = { uri: string; content?: undefined } & (
+export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
@@ -181,6 +181,9 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // display ranges are 1-indexed.
     const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
     if (contextItem.type === 'file') {
+        if (contextItem.provider && contextItem.title) {
+            return `@${contextItem.title}`
+        }
         return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
     }
     if (contextItem.type === 'symbol') {
