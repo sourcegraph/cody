@@ -1,0 +1,201 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`logger > logs basic messages 1`] = `
+[
+  {
+    "_type": "MessageLogItem",
+    "data": {},
+    "id": "000000019S0",
+    "level": "alert",
+    "message": {
+      "level": "debug",
+      "template": [
+        "This is a message without data",
+      ],
+      "vars": [],
+    },
+    "origin": {
+      "callsite": {
+        "column": 9,
+        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
+        "line": 19,
+        "methodName": "<unknown>",
+        "relativeFilePath": undefined,
+      },
+      "id": "test",
+      "session": "test",
+    },
+    "tags": undefined,
+    "timestamp": {
+      "datetime": 2024-05-01T00:00:00.000Z,
+      "timezoneOffset": 0,
+    },
+    "trace": undefined,
+    "verbose": undefined,
+    "visibility": {
+      "privateExcept": [],
+    },
+  },
+  {
+    "_type": "MessageLogItem",
+    "data": {},
+    "id": "000000019S1",
+    "level": "alert",
+    "message": {
+      "level": "info",
+      "template": [
+        "This is a message with message data ",
+        "",
+      ],
+      "vars": [
+        3,
+      ],
+    },
+    "origin": {
+      "callsite": {
+        "column": 9,
+        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
+        "line": 20,
+        "methodName": "<unknown>",
+        "relativeFilePath": undefined,
+      },
+      "id": "test",
+      "session": "test",
+    },
+    "tags": undefined,
+    "timestamp": {
+      "datetime": 2024-05-01T00:00:00.000Z,
+      "timezoneOffset": 0,
+    },
+    "trace": undefined,
+    "verbose": undefined,
+    "visibility": {
+      "privateExcept": [],
+    },
+  },
+  {
+    "_type": "MessageLogItem",
+    "data": {
+      "value": 3,
+    },
+    "id": "000000019S2",
+    "level": "alert",
+    "message": {
+      "level": "warn",
+      "template": [
+        "This is a message with only data",
+      ],
+      "vars": [],
+    },
+    "origin": {
+      "callsite": {
+        "column": 9,
+        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
+        "line": 21,
+        "methodName": "<unknown>",
+        "relativeFilePath": undefined,
+      },
+      "id": "test",
+      "session": "test",
+    },
+    "tags": undefined,
+    "timestamp": {
+      "datetime": 2024-05-01T00:00:00.000Z,
+      "timezoneOffset": 0,
+    },
+    "trace": undefined,
+    "verbose": undefined,
+    "visibility": {
+      "privateExcept": [],
+    },
+  },
+  {
+    "_type": "MessageLogItem",
+    "data": {
+      "value": 5,
+    },
+    "id": "000000019S3",
+    "level": "alert",
+    "message": {
+      "level": "alert",
+      "template": [
+        "This is a message with both ",
+        " data and data",
+      ],
+      "vars": [
+        "message",
+      ],
+    },
+    "origin": {
+      "callsite": {
+        "column": 9,
+        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
+        "line": 22,
+        "methodName": "<unknown>",
+        "relativeFilePath": undefined,
+      },
+      "id": "test",
+      "session": "test",
+    },
+    "tags": undefined,
+    "timestamp": {
+      "datetime": 2024-05-01T00:00:00.000Z,
+      "timezoneOffset": 0,
+    },
+    "trace": undefined,
+    "verbose": undefined,
+    "visibility": {
+      "privateExcept": [],
+    },
+  },
+  {
+    "_type": "MessageLogItem",
+    "data": {
+      "array": [
+        {
+          "sheldon": 3,
+        },
+        {
+          "cooper": "hello",
+        },
+      ],
+      "user": {
+        "jsonName": "json:Bert",
+      },
+    },
+    "id": "000000019S4",
+    "level": "alert",
+    "message": {
+      "level": "panic",
+      "template": [
+        "This is a complex message ",
+        "",
+      ],
+      "vars": [
+        "Bert",
+      ],
+    },
+    "origin": {
+      "callsite": {
+        "column": 9,
+        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
+        "line": 35,
+        "methodName": "<unknown>",
+        "relativeFilePath": undefined,
+      },
+      "id": "test",
+      "session": "test",
+    },
+    "tags": undefined,
+    "timestamp": {
+      "datetime": 2024-05-01T00:00:00.000Z,
+      "timezoneOffset": 0,
+    },
+    "trace": undefined,
+    "verbose": undefined,
+    "visibility": {
+      "privateExcept": [],
+    },
+  },
+]
+`;

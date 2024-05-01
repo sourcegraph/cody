@@ -219,6 +219,61 @@ importers:
         specifier: ^3.23.1
         version: 3.23.1
 
+  lib/logtrace:
+    dependencies:
+      '@opentelemetry/api':
+        specifier: ^1.7.0
+        version: 1.7.0
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
+      dedent:
+        specifier: ^0.7.0
+        version: 0.7.0
+      diff:
+        specifier: ^5.2.0
+        version: 5.2.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      source-map-support:
+        specifier: ^0.5.21
+        version: 0.5.21
+      ulidx:
+        specifier: ^2.3.0
+        version: 2.3.0
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
+    devDependencies:
+      '@types/crypto-js':
+        specifier: ^4.2.2
+        version: 4.2.2
+      '@types/dedent':
+        specifier: ^0.7.0
+        version: 0.7.0
+      '@types/diff':
+        specifier: ^5.0.9
+        version: 5.0.9
+      '@types/isomorphic-fetch':
+        specifier: ^0.0.39
+        version: 0.0.39
+      '@types/lodash':
+        specifier: ^4.14.195
+        version: 4.14.195
+      '@types/marked':
+        specifier: ^5.0.0
+        version: 5.0.0
+      '@types/node-fetch':
+        specifier: ^2.6.4
+        version: 2.6.4
+      type-fest:
+        specifier: ^4.17.0
+        version: 4.17.0
+
   lib/shared:
     dependencies:
       '@microsoft/fetch-event-source':
@@ -6247,7 +6302,6 @@ packages:
 
   /buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
-    dev: true
 
   /buffer-indexof-polyfill@1.0.2:
     resolution: {integrity: sha512-I7wzHwA3t1/lwXQh+A5PbNvJxgfo5r3xulgpYDB5zckTu/Z9oUK9biouBKQUjEqzaz3HnAT6TYoovmE+GqSf7A==}
@@ -9736,6 +9790,10 @@ packages:
       - supports-color
     dev: true
 
+  /layerr@2.1.0:
+    resolution: {integrity: sha512-xDD9suWxfBYeXgqffRVH/Wqh+mqZrQcqPRn0I0ijl7iJQ7vu8gMGPt1Qop59pEW/jaIDNUN7+PX1Qk40+vuflg==}
+    dev: false
+
   /lazy-universal-dotenv@4.0.0:
     resolution: {integrity: sha512-aXpZJRnTkpK6gQ/z4nk+ZBLd/Qdp118cvPruLSIQzQNRhKwEcdXCOzXuF55VDqIiuAaY3UGZ10DJtvZzDcvsxg==}
     engines: {node: '>=14.0.0'}
@@ -12441,7 +12499,6 @@ packages:
     dependencies:
       buffer-from: 1.1.2
       source-map: 0.6.1
-    dev: true
 
   /source-map-url@0.4.1:
     resolution: {integrity: sha512-cPiFOTLUKvJFIg4SKVScy4ilPPW6rFgMgfuZJPNoDuMs3nC1HbMUycBoJw77xFIp6z1UJQJOfx6C9GMH80DiTw==}
@@ -13258,6 +13315,11 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
+  /type-fest@4.17.0:
+    resolution: {integrity: sha512-9flrz1zkfLRH3jO3bLflmTxryzKMxVa7841VeMgBaNQGY6vH4RCcpN/sQLB7mQQYh1GZ5utT2deypMuCy4yicw==}
+    engines: {node: '>=16'}
+    dev: true
+
   /type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
@@ -13297,6 +13359,13 @@ packages:
     hasBin: true
     requiresBuild: true
     dev: true
+
+  /ulidx@2.3.0:
+    resolution: {integrity: sha512-36piWNqcdp9hKlQewyeehCaALy4lyx3FodsCxHuV6i0YdexSkjDOubwxEVr2yi4kh62L/0MgyrxqG4K+qtovnw==}
+    engines: {node: '>=16'}
+    dependencies:
+      layerr: 2.1.0
+    dev: false
 
   /underscore@1.13.6:
     resolution: {integrity: sha512-+A5Sja4HP1M08MaXya7p5LvjuM7K6q/2EaC0+iovj/wOcMsTzMvDFbasi/oSapiwOlt252IqsKqPjCl7huKS0A==}
