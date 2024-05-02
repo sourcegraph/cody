@@ -43,16 +43,16 @@ jobs:
             const repo = context.repo.repo;
             const body = '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.';
 
-            const { data: pullRequest } = await github.rest.pulls.get({
+            const {data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
-              pull_number,
+              issue_number: pull_number,
             });
 
-            console.log(pullRequest.comments);
+            console.log(comments);
             console.log(pullRequest);
 
-            if (pullRequest.comments === 0) {
+            // if (pullRequest.comments === 0) {
               // Post a comment and tag @sourcegraph/cody-security as reviewers
               // github.rest.issues.createComment({
               //  issue_number: pull_number,
@@ -66,4 +66,4 @@ jobs:
                 pull_number,
                 team_reviewers: ['cody-security']
               });
-            }
+            // }
