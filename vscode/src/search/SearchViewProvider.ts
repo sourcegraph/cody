@@ -264,7 +264,7 @@ export class SearchViewProvider implements vscode.Disposable {
                 file.snippets.map(s => ({
                     label: uriBasename(file.uri),
                     description: `Lines ${s.range.start.line}-${s.range.end.line}`,
-                    detail: s.contents.trim()?.split('/n')?.[0],
+                    detail: s.contents.trim()?.split('\n')?.[0],
                     file,
                     onSelect: () => {
                         vscode.workspace.openTextDocument(file.uri).then(async doc => {
@@ -312,7 +312,6 @@ export class SearchViewProvider implements vscode.Disposable {
         }
     }
 }
-logDebug('SearchViewProvider', 'No search results because indexing was canceled')
 
 /**
  * @returns the list of workspace folders to search. The first folder is the active file's folder.
