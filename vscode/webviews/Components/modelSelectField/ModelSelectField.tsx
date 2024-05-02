@@ -28,7 +28,8 @@ export const ModelSelectField: React.FunctionComponent<{
     className,
     __storybook__open,
 }) => {
-    const selectedModel = models.find(m => m.default) ?? models[0]
+    const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
+    const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -67,7 +68,7 @@ export const ModelSelectField: React.FunctionComponent<{
         })
     }, [])
 
-    if (!models.length || models.length < 1) {
+    if (!usableModels.length || usableModels.length < 1) {
         return null
     }
 
@@ -76,7 +77,7 @@ export const ModelSelectField: React.FunctionComponent<{
             popoverContent={close => (
                 <ModelSelectList
                     value={selectedModel}
-                    options={models}
+                    options={usableModels}
                     userInfo={userInfo}
                     onChange={(value, shouldClose) => {
                         onModelSelect(value)

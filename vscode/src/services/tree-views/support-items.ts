@@ -45,7 +45,7 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
     {
         title: 'Tutorial',
         icon: 'tasklist',
-        command: { command: 'cody.tutorial.start' },
+        command: { command: 'cody.sidebar.tutorial' },
         requireFeature: FeatureFlag.CodyInteractiveTutorial,
     },
     {

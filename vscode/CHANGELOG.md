@@ -6,6 +6,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+- Fixed a bug where old Sourcegraph instances' error messages caused Cody to ignore all context files [pull/4024](https://github.com/sourcegraph/cody/pull/4024)
+
+### Changed
+
+## [1.16.0]
+
+### Added
+
 - Chat: The context window for the `Claude 3 Sonnet` and `Claude 3 Opus` models is now increased by default for all non-Enterprise users, without requiring a feature flag. [pull/3953](https://github.com/sourcegraph/cody/pull/3953)
 - Custom Commands: Added the ability to create new custom Edit commands via the Custom Command Menu. [pull/3862](https://github.com/sourcegraph/cody/pull/3862)
 - Custom Commands: Added 'currentFile' option to include the full file content in the Custom Commands menu. [pull/3960](https://github.com/sourcegraph/cody/pull/3960)
@@ -24,6 +34,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Sidebar (Settings & Support): For Pro & Enterprise, moved 'Account' up to the top. For Pro only, removed 'Usage' as it can be accessed via 'Account' → 'Manage Account'. [pull/3868](https://github.com/sourcegraph/cody/pull/3868)
 - Debug: Removed the `cody.debug.enabled` setting. Baseline debugging is now enabled by default [pull/3873](https://github.com/sourcegraph/cody/pull/3873)
 - Chat: The experimental Ollama Chat feature, which allows using local Ollama models for chat and commands, is now enabled by default. [pull/3914](https://github.com/sourcegraph/cody/pull/3914)
+- Removed Claude 2, Claude 2.1 and Claude Instant from Cody Free and Cody Pro. All users are now upgraded to use Claude 3 by default [pull/3971](https://github.com/sourcegraph/cody/pull/3971)
 
 ## [1.14.0]
 

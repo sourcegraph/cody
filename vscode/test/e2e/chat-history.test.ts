@@ -18,6 +18,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:Auth:connected',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)

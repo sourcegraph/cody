@@ -1,0 +1,102 @@
+{
+    "editors": ["vscode", "jetbrains"],
+    "features": [
+        {
+        "name": "NotebookChatUI",
+        "description": "Chat UI that resembles a Jupyter notebook instead of a chat session",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ["chat"]
+      },
+      {
+        "name": "Mixtral8x22BPreview",
+        "description": "Mixtral 8x22B Preview chat model",
+        "productLine": "pro",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ['chat']
+      },
+      {
+        "name": "ToggleEnhancedContextButtons",
+        "description": "Added buttons in the chat input box for enabling/disabling Enhanced Context.",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ['chat']
+      },
+       {
+        "name": "GenerateUnitTestCodeAction",
+        "description": "Generate unit test now shows on any function symbol in code actions",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ['commands', 'unitTest']
+      },
+      {
+        "name": "EditPreInstructions",
+        "description": "New cody.edit.preInstruction configuration option for adding custom instruction at the end of all your requests.",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ['commands', 'edit']
+      },
+      {
+        "name": "EditShowWarningsOnLargeFiles",
+        "description": "Display warnings for large @-mentioned files during selection",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+        tags: ['commands', 'edit']
+      },
+      {
+        "name": "RightClickAddContext",
+        "description": "right click to add add highlighted code to the chat context",
+        "productLine": "all",
+        "documentation": [],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+          }
+        },
+          tags: ['chat','context']
+      },
+      {
+        "name": "ContextTokenCounter",
+        "description": "introduces token counting during prompt and context building",
+        "productLine": "all",
+        "documentation": ["https://docs.google.com/document/d/1_rg8j4yfz1Ot-lQle8v_K_y8V3JDzpKYxO134X7MItc/edit"],
+        "editors": {
+          "vscode": {
+            "status": "stable",
+              "notes": "expanded context window in v1.14.0 and above"
+          }
+        },
+          tags: ['context']
+      },
+    ],
+  }

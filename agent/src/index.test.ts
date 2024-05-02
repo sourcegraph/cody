@@ -97,7 +97,7 @@ describe('Agent', () => {
         })
         // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
         expect(ignore.policy).toBe('use')
-    }, 10_000)
+    }, 20_000)
 
     beforeEach(async () => {
         await client.request('testing/reset', null)

@@ -9,7 +9,6 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-
 import {
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -1030,5 +1029,11 @@ export type LogEventMode =
     | 'all' // log to both dotcom AND the connected instance
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
-    return error.message.includes('Cannot query field')
+    // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message
+    // when querying non-existent codyContextFilters; this produces
+    // 'Unexpected end of JSON input'
+    return (
+        error.message.includes('Cannot query field') ||
+        error.message.includes('Unexpected end of JSON input')
+    )
 }
