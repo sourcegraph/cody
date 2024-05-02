@@ -1,5 +1,6 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
+import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
 import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
@@ -20,6 +21,7 @@ export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
     URL_CONTEXT_MENTION_PROVIDER,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
+    OPENCTX_CONTEXT_MENTION_PROVIDER,
 ]
 
 /**

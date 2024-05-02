@@ -244,3 +244,8 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export {
+    setOpenCtxExtensionAPI,
+    getOpenCtxExtensionAPI,
+    type OpenCtxExtensionAPI,
+} from './context/openctx/api'
