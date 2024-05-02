@@ -12,6 +12,7 @@ import {
     RateLimitError,
     type SerializedCompletionParameters,
     SourcegraphCompletionsClient,
+    addClientInfoParams,
     contextFiltersProvider,
     customUserAgent,
     getTraceparentHeaders,
@@ -40,6 +41,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
+        addClientInfoParams(url.searchParams)
 
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
