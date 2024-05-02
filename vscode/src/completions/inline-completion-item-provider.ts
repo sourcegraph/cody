@@ -15,7 +15,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { type CodyIgnoreType, passiveNotification } from '../context-filters/notification'
+import { type CodyIgnoreType, activeNotification } from '../context-filters/notification'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
@@ -203,15 +203,19 @@ export class InlineCompletionItemProvider
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        const isManualCompletion = Boolean(
+            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+        )
+
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
-            logIgnored(document.uri, 'cody-ignore')
+            logIgnored(document.uri, 'cody-ignore', isManualCompletion)
             return null
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-                logIgnored(document.uri, 'context-filter')
+                logIgnored(document.uri, 'context-filter', isManualCompletion)
                 return null
             }
 
@@ -287,15 +291,13 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount = true
             }
 
-            const triggerKind =
-                this.lastManualCompletionTimestamp &&
-                this.lastManualCompletionTimestamp > Date.now() - 500
-                    ? TriggerKind.Manual
-                    : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
-                      ? TriggerKind.Automatic
-                      : takeSuggestWidgetSelectionIntoAccount
-                        ? TriggerKind.SuggestWidget
-                        : TriggerKind.Hover
+            const triggerKind = isManualCompletion
+                ? TriggerKind.Manual
+                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                  ? TriggerKind.Automatic
+                  : takeSuggestWidgetSelectionIntoAccount
+                    ? TriggerKind.SuggestWidget
+                    : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
@@ -810,7 +812,7 @@ function onlyCompletionWidgetSelectionChanged(
 }
 
 let lasIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType) {
+function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
     const string = uri.toString()
     if (lasIgnoredUriLogged === string) {
         return
@@ -820,5 +822,8 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType) {
         'CodyCompletionProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
-    passiveNotification('autocomplete', reason)
+    // Only show a notification for actively triggered autocomplete requests.
+    if (isManualCompletion) {
+        activeNotification('autocomplete', reason)
+    }
 }
