@@ -606,7 +606,8 @@ export class SourcegraphGraphQLAPIClient {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
-        const isValidVersion = version.length < 12 && semver.gte(version, minimumVersion)
+        const insiderBuild = version.length > 12 || version.includes('dev')
+        const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
             return INCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
@@ -659,7 +660,6 @@ export class SourcegraphGraphQLAPIClient {
         // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
-            console.log(siteVersion)
             return { enabled: false, version: 'unknown' }
         }
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
