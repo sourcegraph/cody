@@ -287,6 +287,9 @@ importers:
       re2js:
         specifier: ^0.4.1
         version: 0.4.1
+      semver:
+        specifier: ^7.5.4
+        version: 7.5.4
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -318,6 +321,9 @@ importers:
       '@types/node-fetch':
         specifier: ^2.6.4
         version: 2.6.4
+      '@types/semver':
+        specifier: ^7.5.0
+        version: 7.5.0
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
@@ -3246,7 +3252,7 @@ packages:
       '@opentelemetry/core': 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/instrumentation': 0.45.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/semantic-conventions': 1.18.1
-      semver: 7.5.4
+      semver: 7.6.0
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -3261,7 +3267,7 @@ packages:
       '@types/shimmer': 1.0.5
       import-in-the-middle: 1.4.2
       require-in-the-middle: 7.3.0
-      semver: 7.5.4
+      semver: 7.6.0
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -3421,7 +3427,7 @@ packages:
       '@opentelemetry/propagator-b3': 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/propagator-jaeger': 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/sdk-trace-base': 1.18.1(@opentelemetry/api@1.7.0)
-      semver: 7.5.4
+      semver: 7.6.0
     dev: false
 
   /@opentelemetry/semantic-conventions@1.18.1:
@@ -5235,7 +5241,7 @@ packages:
       http-proxy-agent: 4.0.1
       https-proxy-agent: 5.0.1
       jszip: 3.10.1
-      semver: 7.5.4
+      semver: 7.6.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5281,7 +5287,7 @@ packages:
       minimatch: 3.1.2
       parse-semver: 1.1.1
       read: 1.0.7
-      semver: 7.5.4
+      semver: 7.6.0
       tmp: 0.2.3
       typed-rest-client: 1.8.11
       url-join: 4.0.1
@@ -10527,7 +10533,7 @@ packages:
       follow-redirects: 1.15.6
       is-ci: 2.0.0
       leven: 3.1.0
-      semver: 7.5.4
+      semver: 7.6.0
       tmp: 0.2.3
     transitivePeerDependencies:
       - debug
@@ -11116,7 +11122,7 @@ packages:
       jsdoc: 4.0.2
       minimist: 1.2.8
       protobufjs: 7.2.4
-      semver: 7.5.4
+      semver: 7.6.0
       tmp: 0.2.3
       uglify-js: 3.17.4
     dev: true
@@ -11816,6 +11822,7 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+    dev: false
 
   /semver@7.6.0:
     resolution: {integrity: sha512-EnwXhrlwXMk9gKu5/flx5sv/an57AkRplG3hTK68W7FRDN+k+OWBj65M7719OkA82XLBxrcX0KSHj+X5COhOVg==}

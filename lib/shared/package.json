@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -33,6 +37,7 @@
     "lru-cache": "^10.0.0",
     "marked": "^4.0.16",
     "re2js": "^0.4.1",
+    "semver": "^7.5.4",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
@@ -45,6 +50,7 @@
     "@types/lodash": "^4.14.195",
     "@types/marked": "^5.0.0",
     "@types/node-fetch": "^2.6.4",
+    "@types/semver": "^7.5.0",
     "@types/vscode": "^1.80.0"
   }
 }

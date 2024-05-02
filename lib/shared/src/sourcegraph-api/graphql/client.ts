@@ -4,6 +4,7 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import semver from 'semver'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -602,9 +603,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<ContextFilters> {
-        const { enabled, version } = await this.isCodyEnabled()
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
-        if (!enabled || version < '5.3.3') {
+        const minimumVersion = '5.3.3'
+        const { enabled, version } = await this.isCodyEnabled()
+        if (!enabled || !semver.gte(version, minimumVersion)) {
             return INCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
 
