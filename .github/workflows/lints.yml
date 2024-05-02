@@ -38,9 +38,24 @@ jobs:
         if: ${{ failure() }}
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
-            })
+            const pull_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number,
+            });
+
+            console.log(pullRequest.comments)
+
+            if (pullRequest.comments === 0) {
+              // Create a comment if there are no comments
+              github.rest.issues.createComment({
+                issue_number,
+                owner,
+                repo,
+                body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.'
+              });
+            }
