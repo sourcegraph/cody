@@ -535,7 +535,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
               "autocompletes:
                 - name: starcoder-16b
                   value:
-                    - "    makeWebAuthn({}).then(console.log);"
+                    - |2-
+                          makeWebAuthn({}).then(webauthn => {
+                              console.log(webauthn);
+                          });
               prompts:
                 - name: fireworks
                   value:

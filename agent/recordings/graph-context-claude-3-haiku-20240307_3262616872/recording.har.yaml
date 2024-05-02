@@ -1162,18 +1162,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 142
+        bodySize: 139
         content:
           encoding: base64
           mimeType: application/json
-          size: 142
+          size: 139
           text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRobG\
-            5vFGBkYmugamugZG8aZ6xrpJSUmJZmZpluZpxkZKtbW1AAAAAP//\",\"AwAUo7FzSQ\
-            AAAA==\"]"
+            5vFGBkYmugamugZG8aZ6xrpJSUmJZmZpluZpxkZKtbW1AAAAAP//AwAUo7FzSQAAAA==\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 17:18:36 GMT
+            value: Thu, 02 May 2024 17:29:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1204,7 +1204,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T17:18:36.632Z
+      startedDateTime: 2024-05-02T17:29:29.814Z
       time: 0
       timings:
         blocked: -1
