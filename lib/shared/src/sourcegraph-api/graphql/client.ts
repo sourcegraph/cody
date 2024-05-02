@@ -216,8 +216,8 @@ export interface ContextFiltersResponse {
 }
 
 export interface ContextFilters {
-    include?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
-    exclude?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
+    include?: CodyContextFilterItem[] | null
+    exclude?: CodyContextFilterItem[] | null
 }
 
 export interface CodyContextFilterItem {
