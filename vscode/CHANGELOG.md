@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Fixed a bug where old Sourcegraph instances' error messages caused Cody to ignore all context files [pull/4024](https://github.com/sourcegraph/cody/pull/4024)
+
 ### Changed
 
 ## [1.16.0]
