@@ -41,6 +41,8 @@ jobs:
             const pull_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            console.log({pull_number, owner, repo});
+            console.log({context});
 
             const { data: pullRequest } = await github.rest.pulls.get({
               owner,
@@ -57,5 +59,11 @@ jobs:
                 owner,
                 repo,
                 body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.'
+              });
+              github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number,
+                team_reviewers: ['cody-security']
               });
             }
