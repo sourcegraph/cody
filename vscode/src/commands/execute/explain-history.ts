@@ -82,9 +82,22 @@ function getLogArguments(args: Pick<CodyCommandArgs, 'range'>): LogArguments | u
 
     const symbolText = PromptString.fromDocumentText(doc, symbolRange)
 
+    const logArgs = [
+        // -L:<funcname>:<file> traces the evolution of the function name regex
+        // <funcname>, within the <file>. This relies on reasonable heuristics
+        // built into git to find function bodies. However, the heuristics often
+        // fail so we should switch to computing the line region ourselves.
+        // https://git-scm.com/docs/git-log#Documentation/git-log.txt--Lltfuncnamegtltfilegt
+        '-L:' + symbolText.toString() + ':' + doc.uri.fsPath,
+        // Limit output due to context window size. This was unscientifically
+        // picked, a better implementation would parse the output and truncate
+        // to the context window size.
+        '--max-count=15',
+    ]
+
     return {
         symbolText,
-        logArgs: [`-L:${symbolText.toString()}:${doc.uri.fsPath}`],
+        logArgs,
         cwd: path.dirname(doc.uri.fsPath),
     }
 }
