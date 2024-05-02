@@ -515,7 +515,190 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
         }, 10_000)
 
-        it.skip('function-parameter2', async () => {
+        it('member-selection', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await changeFile(
+                mainUri,
+                dedent`
+            import { selector, All } from './members'
+
+            function run(all: All): void {
+                selector./* CURSOR */
+            }
+            `
+            )
+
+            const text = await autocompletes()
+            // expect(text).includes('validDogSled')
+            expect(text).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "    selector.query({ isMammal: true, animalName: 'Dog' })"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/main.ts<fim_prefix>// Additional documentation for
+                        \`selector\`:
+
+                        //
+
+                        // var selector: Selector
+
+                        //
+
+                        // Additional documentation for \`Selector\`:
+
+                        //
+
+                        // interface Selector {
+
+                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
+
+                        // }
+
+                        //
+
+                        import { selector, All } from './members'
+
+
+                        function run(all: All): void {
+                            selector.<fim_suffix>
+                        }<fim_middle>
+              "
+            `
+            )
+        }, 10_000)
+
+        it('member-selection-expression', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await changeFile(
+                mainUri,
+                dedent`
+            import { getter } from './members-indirection'
+
+            function run(): void {
+                getter.indirect()./* CURSOR */
+            }
+            `
+            )
+
+            const text = await autocompletes()
+            // expect(text).includes('validDogSled')
+            expect(text).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "    getter.indirect().query({ isMammal: true, animalName: 'Dog' })"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/main.ts<fim_prefix>// Additional documentation for
+                        \`getter\`:
+
+                        //
+
+                        // var getter: { a: A; b: B; c: C; indirect(): Selector; }
+
+                        //
+
+                        // Additional documentation for \`Selector\`:
+
+                        //
+
+                        // interface Selector {
+
+                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
+
+                        // }
+
+                        //
+
+                        import { getter } from './members-indirection'
+
+
+                        function run(): void {
+                            getter.indirect().<fim_suffix>
+                        }<fim_middle>
+              "
+            `
+            )
+        }, 10_000)
+
+        it('member-selection-expression-this', async () => {
+            modelFilter = { model: 'starcoder-16b' }
+            await changeFile(
+                mainUri,
+                dedent`
+            import { getter } from './members-indirection'
+
+            class Runner {
+
+                foobar = getter
+                run(): void {
+                    this.foobar.indirect()./* CURSOR */
+                }
+            }
+            `
+            )
+
+            const text = await autocompletes()
+            // expect(text).includes('validDogSled')
+            expect(text).toMatchInlineSnapshot(
+                `
+              "autocompletes:
+                - name: starcoder-16b
+                  value:
+                    - "        this.foobar.indirect().query({ isMammal: true, animalName:
+                      'Dog' })"
+              prompts:
+                - name: fireworks
+                  value:
+                    - speaker: human
+                      text: >-
+                        <filename>src/main.ts<fim_prefix>// Additional documentation for
+                        \`getter\`:
+
+                        //
+
+                        // var getter: { a: A; b: B; c: C; indirect(): Selector; }
+
+                        //
+
+                        // Additional documentation for \`Selector\`:
+
+                        //
+
+                        // interface Selector {
+
+                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
+
+                        // }
+
+                        //
+
+                        import { getter } from './members-indirection'
+
+
+                        class Runner {
+
+                            foobar = getter
+                            run(): void {
+                                this.foobar.indirect().<fim_suffix>
+                            }
+                        }<fim_middle>
+              "
+            `
+            )
+        }, 10_000)
+
+        it('function-parameter2', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
