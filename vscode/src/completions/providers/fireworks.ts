@@ -80,6 +80,10 @@ const MODEL_MAP = {
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
+
+    // Fine-tuned model mapping
+    'fireworks-completions-fine-tuned':
+        'fireworks/accounts/sourcegraph/models/codecompletion-m-mixtral-rb-rs-m-go-400k-25e',
 }
 
 type FireworksModel =
@@ -105,6 +109,8 @@ function getMaxContextTokens(model: FireworksModel): number {
         case 'llama-code-13b':
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
+            return 2048
+        case 'fireworks-completions-fine-tuned':
             return 2048
         default:
             return 1200
@@ -146,6 +152,7 @@ class FireworksProvider extends Provider {
             config.accessToken &&
             // Require the upstream to be dotcom
             (this.authStatus.isDotCom || this.isLocalInstance) &&
+            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
@@ -172,7 +179,7 @@ class FireworksProvider extends Provider {
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoderFamily(this.model)) {
+        if (!isStarCoderFamily(this.model) && this.model !== 'fireworks-completions-fine-tuned') {
             intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
@@ -312,7 +319,13 @@ class FireworksProvider extends Provider {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
-
+        if (this.model === 'fireworks-completions-fine-tuned') {
+            const fixedPrompt = ps`You are an expert in writing code in many different languages.
+                Your goal is to perform code completion for the following code, keeping in mind the rest of the code and the file meta data.
+                Metadata details: filename: ${filename}. The code of the file until where you have to start completion:
+            `
+            return ps`${intro} \n ${fixedPrompt}\n${prefix}`
+        }
         console.error('Could not generate infilling prompt for', this.model)
         return ps`${intro}${prefix}`
     }
@@ -541,8 +554,8 @@ export function createProviderConfig({
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                  ? (model as keyof typeof MODEL_MAP)
-                  : null
+                ? (model as keyof typeof MODEL_MAP)
+                : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

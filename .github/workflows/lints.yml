@@ -38,9 +38,34 @@ jobs:
         if: ${{ failure() }}
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of \`unsafe_\` functions or abuses PromptString.'
-            })
+            const pull_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces the usage of an `unsafe_` function or abuses PromptString.';
+
+            const {data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+            });
+
+            const previousCommentIndex = comments.findIndex(comment => comment.body === body);
+            if (previousCommentIndex < 0) {
+              // Post a comment and tag @sourcegraph/cody-security as reviewers
+              github.rest.issues.createComment({
+                issue_number: pull_number,
+                owner,
+                repo,
+                body,
+              });
+
+              // For this to work we need a different access_token, see:
+              // https://github.com/peter-evans/create-pull-request/issues/155#issuecomment-611904487
+              //
+              // github.rest.pulls.requestReviewers({
+              //  owner,
+              //  repo,
+              //  pull_number,
+              //  team_reviewers: ['cody-security']
+              // });
+            }

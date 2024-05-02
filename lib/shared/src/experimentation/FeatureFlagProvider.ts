@@ -17,6 +17,8 @@ export enum FeatureFlag {
     CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enable StarCoder2 7b and 15b as the default model via Fireworks
     CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
+    // Enable the FineTuned model as the default model via Fireworks
+    CodyAutocompleteFineTunedModel = 'cody-autocomplete-finetuned-model',
     // Enables Claude 3 if the user is in our holdout group
     CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
     // Enables the bfg-mixed context retriever that will combine BFG with the default local editor
@@ -48,6 +50,9 @@ export enum FeatureFlag {
 
     /** Support @-mentioning URLs in chat to add context from web pages. */
     URLContext = 'cody-url-context',
+
+    /** Interactive tutorial, primarily for onboarding */
+    CodyInteractiveTutorial = 'cody-interactive-tutorial',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

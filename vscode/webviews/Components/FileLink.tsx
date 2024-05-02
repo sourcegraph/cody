@@ -51,7 +51,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Enterprise Search)`
+        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Remote Search)`
         // We can skip encoding when the uri path already contains '@'.
         href = uri.toString(uri.path.includes('@'))
         target = '_blank'
@@ -67,7 +67,6 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     return (
         <div className={classNames(styles.linkContainer, className)}>
             {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
-            {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
                 className={styles.linkButton}
                 title={tooltip}

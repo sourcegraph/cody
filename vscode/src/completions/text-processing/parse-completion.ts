@@ -1,5 +1,5 @@
 import type { TextDocument } from 'vscode'
-import type { Point, Tree, default as Parser } from 'web-tree-sitter'
+import type { default as Parser, Point, Tree } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
@@ -111,7 +111,6 @@ function pasteCompletion(params: PasteCompletionParams): PasteCompletionResult {
         docContext: {
             position,
             currentLineSuffix,
-            // biome-ignore lint/nursery/noInvalidUseBeforeDeclaration: it's actually correct
             positionWithoutInjectedCompletionText = position,
             injectedCompletionText = '',
         },

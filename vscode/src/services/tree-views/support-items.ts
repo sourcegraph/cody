@@ -1,3 +1,4 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { releaseType } from '../../release'
 import { version } from '../../version'
 import type { CodySidebarTreeItem } from './treeViewItems'
@@ -40,6 +41,12 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         icon: 'github',
         command: { command: 'cody.sidebar.releaseNotes' },
         contextValue: 'cody.version',
+    },
+    {
+        title: 'Tutorial',
+        icon: 'tasklist',
+        command: { command: 'cody.sidebar.tutorial' },
+        requireFeature: FeatureFlag.CodyInteractiveTutorial,
     },
     {
         title: 'Documentation',
