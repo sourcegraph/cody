@@ -2275,6 +2275,110 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 17f22b691dce4ef4834480b439e4fd1b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 185
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "185"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 335
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query ResolveRepoName($cloneURL: String!) {
+                  repository(cloneURL: $cloneURL) {
+                      name
+                  }
+              }
+            variables:
+              cloneURL: git@github.com:sourcegraph/cody.git
+        queryString:
+          - name: ResolveRepoName
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ResolveRepoName
+      response:
+        bodySize: 120
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 120
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPHyEnNTlayU0jNLMkqT9JLzc/WL8\
+            0uLklPTixILMvST81MqlWprawEAAAD//wMAbAMm/T4AAAA=\"]"
+          textDecoded:
+            data:
+              repository:
+                name: github.com/sourcegraph/cody
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 02 May 2024 17:33:30 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-02T17:33:30.223Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 8d297306aeea324b87ef494954016fba
       _order: 0
       cache: {}
