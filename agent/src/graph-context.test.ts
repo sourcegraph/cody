@@ -561,8 +561,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
             const text = await autocompletes()
             expect(text).includes('props.languageKind')
-            expect(text).toMatchInlineSnapshot(
-                `
+            expect(text).toMatchInlineSnapshot(`
               "autocompletes:
                 - name: starcoder-16b
                   value:
@@ -592,13 +591,13 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
                         //
 
-                        // import makeWebAuthn from 'webauthn4js';
+                        // import { doSomething } from './functions'
 
                         //
 
-                        // function main() {
+                        // function main(): void {
 
-                        //     makeWebAuthn({})
+                        //     doSomething()
 
                         // }
 
@@ -615,8 +614,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
                         <fim_middle>
               "
-            `
-            )
+            `)
         }, 10_000)
 
         const jsUri = workspace.file('src', 'typeless2.js')

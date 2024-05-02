@@ -552,156 +552,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 89d07944f6239ccf840545bc0f304e18
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 846
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-16b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "846"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: >-
-                  <filename>src/Calculator.tsx<fim_prefix>// Additional
-                  documentation for `CalculatorProps`:
-
-                  // 
-
-                  // interface CalculatorProps {
-
-                  //   languageKind: "arabic" | "japanese" | "roman"
-
-                  // }
-
-                  // 
-
-                  // 
-
-                  // Here is a reference snippet of code from src/main.ts:
-
-                  // 
-
-                  // import makeWebAuthn from 'webauthn4js';
-
-                  // 
-
-                  // function main() {
-
-                  //     makeWebAuthn({})
-
-                  // }
-
-                  import { FunctionComponent } from 'react'
-
-                  import { CalculatorProps } from './CalculatorProps'
-
-                  import * as React from 'react'
-
-
-                  export const Calculator: FunctionComponent<CalculatorProps> = props => {
-                      return <h1>My favorite calculator comes from {<fim_suffix>
-                  }
-
-                  <fim_middle>
-            model: fireworks/starcoder-16b
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 15000
-            topK: 0
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/code
-      response:
-        bodySize: 363
-        content:
-          mimeType: text/event-stream
-          size: 363
-          text: >+
-            event: completion
-
-            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 30 Apr 2024 11:57:15 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-30T11:57:14.987Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 081abdd5d121fcd48fbafd692ffb701e
       _order: 0
       cache: {}
@@ -983,11 +833,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9312a5cd487c8312babcc42a2fcef720
+    - _id: a40af776f9d0ea79b91a9c2cb6da8743
       _order: 0
       cache: {}
       request:
-        bodySize: 913
+        bodySize: 851
         cookies: []
         headers:
           - _fromType: array
@@ -1011,7 +861,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "913"
+            value: "851"
           - name: host
             value: sourcegraph.com
         headersSize: 348
@@ -1025,24 +875,14 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  <filename>src/main.ts<fim_prefix>// Additional documentation
-                  for `isNewCar`:
+                  <filename>src/Calculator.tsx<fim_prefix>// Additional
+                  documentation for `CalculatorProps`:
 
                   // 
 
-                  // function isNewCar(car: Car, params: { minimumYear: number; }): boolean
+                  // interface CalculatorProps {
 
-                  // 
-
-                  // Additional documentation for `User`:
-
-                  // 
-
-                  // interface User {
-
-                  //   firstName: string
-
-                  //   isEligible: boolean
+                  //   languageKind: "arabic" | "japanese" | "roman"
 
                   // }
 
@@ -1050,40 +890,32 @@ log:
 
                   // 
 
-                  // Additional documentation for `Car`:
+                  // Here is a reference snippet of code from src/main.ts:
 
                   // 
 
-                  // interface Car {
+                  // import { doSomething } from './functions'
 
-                  //   modelYear: number
+                  // 
 
-                  //   vanityItem: boolean
+                  // function main(): void {
 
-                  //   user: User
+                  //     doSomething()
 
                   // }
 
-                  // 
+                  import { FunctionComponent } from 'react'
 
-                  import path from 'node:path'
+                  import { CalculatorProps } from './CalculatorProps'
 
-                  import os from 'os'
-
-                  import { readFileSync } from 'node:fs'
-
-                  import { User } from './user'
-
-                  import { Car, isNewCar } from './car'
+                  import * as React from 'react'
 
 
-                  function getDriverWithNewCar(cars: Car[]): User {
-                    <fim_suffix>
-
+                  export const Calculator: FunctionComponent<CalculatorProps> = props => {
+                      return <h1>My favorite calculator comes from {<fim_suffix>
                   }
 
-
-                  export const message = 'Hello'<fim_middle>
+                  <fim_middle>
             model: fireworks/starcoder-16b
             stopSequences:
               - "\n\n"
@@ -1095,14 +927,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/code
       response:
-        bodySize: 616
+        bodySize: 363
         content:
           mimeType: text/event-stream
-          size: 616
+          size: 363
           text: >+
             event: completion
 
-            data: {"completion":"  return cars.filter(isNewCar).map(car =\u003e car.user)[0]","stopReason":"stop"}
+            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
 
 
             event: done
@@ -1112,7 +944,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 17:29:32 GMT
+            value: Thu, 02 May 2024 17:56:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1141,122 +973,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T17:29:31.423Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 727e722ed754ae44a7f64375081eb1c4
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 340
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-16b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "340"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 348
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: |-
-                  <filename>src/main.ts<fim_prefix>// 
-                  import makeWebAuthn from 'webauthn4js';
-
-                  function main() {
-                      makeWebAuthn({<fim_suffix>
-                  }<fim_middle>
-            model: fireworks/starcoder-16b
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 15000
-            topK: 0
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/code
-      response:
-        bodySize: 632
-        content:
-          mimeType: text/event-stream
-          size: 632
-          text: >+
-            event: completion
-
-            data: {"completion":"}).then(webauthn =\u003e {\n        console.log(webauthn);\n    });","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 02 May 2024 17:29:33 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-02T17:29:32.681Z
+      startedDateTime: 2024-05-02T17:56:55.635Z
       time: 0
       timings:
         blocked: -1
@@ -2166,210 +1883,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-04-26T12:51:32.789Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: f559f1f7e8e7e6ae5c2315065abcfacd
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 189
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-16b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "189"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 335
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query ResolveRepoName($cloneURL: String!) {
-                  repository(cloneURL: $cloneURL) {
-                      name
-                  }
-              }
-            variables:
-              cloneURL: https://github.com/sourcegraph/cody.git
-        queryString:
-          - name: ResolveRepoName
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ResolveRepoName
-      response:
-        bodySize: 123
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 123
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqSi3IL84syS+qBPHyEnNTlayU0jNLMkqT9JLz\
-            c/WL80uLklPTixILMvST81MqlWprawEAAAD//wMAbAMm/T4AAAA=\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 02 May 2024 17:29:31 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-02T17:29:31.290Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 17f22b691dce4ef4834480b439e4fd1b
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 185
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-16b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "185"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 335
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query ResolveRepoName($cloneURL: String!) {
-                  repository(cloneURL: $cloneURL) {
-                      name
-                  }
-              }
-            variables:
-              cloneURL: git@github.com:sourcegraph/cody.git
-        queryString:
-          - name: ResolveRepoName
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ResolveRepoName
-      response:
-        bodySize: 120
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 120
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPHyEnNTlayU0jNLMkqT9JLzc/WL8\
-            0uLklPTixILMvST81MqlWprawEAAAD//wMAbAMm/T4AAAA=\"]"
-          textDecoded:
-            data:
-              repository:
-                name: github.com/sourcegraph/cody
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 02 May 2024 17:33:30 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-02T17:33:30.223Z
       time: 0
       timings:
         blocked: -1
