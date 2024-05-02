@@ -389,7 +389,7 @@ const register = async (
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.explain-history', a =>
-            executeExplainHistoryCommand(a)
+            executeExplainHistoryCommand(commandsManager, a)
         ),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
