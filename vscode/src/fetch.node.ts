@@ -9,7 +9,6 @@ import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent';
 
-
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
 const nodeModules = '_VSCODE_NODE_MODULES'
@@ -53,7 +52,7 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
             }
             return httpsAgent
         }
-        console.log("before proxy url", proxyURL)
+        // console.log("before proxy url", proxyURL)
 
         const proxyEndpoint = parseUrl(proxyURL);
 
@@ -69,6 +68,7 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
             port: (proxyEndpoint.port ? +proxyEndpoint.port : 0) || (proxyEndpoint.protocol === 'https' ? 443 : 80),
             auth: proxyEndpoint.auth,
             rejectUnauthorized: !!(optionStrictSSL) ? optionStrictSSL : true,
+            ...https.globalAgent.options,
         };
 
         return protocol === 'http:'
@@ -97,6 +97,7 @@ function getSystemProxyURI( protocol: string, env: typeof process.env): string |
 }
 
 export function initializeNetworkAgent(): void {
+    require('mac-ca').addToGlobalAgent({ excludeBundled: false })
     proxyAgent = new ProxyAgent({
         keepAlive: true,
         keepAliveMsecs: 60000,
