@@ -102,8 +102,8 @@ const _mixins = [
         template: `For any solution or answer that you provide you must include a brief pro's and con's list. Start the list with a "**Pro/Con**" title. Don't use normal list bullets like * instead prefix each item with either a 🔴 (con), 🟡 (not necessarily a con but important consideration), 🟢 (pro).`,
     },
     {
-        id: '5yo',
-        desc: "Explain like I'm 5",
+        id: 'eli5',
+        desc: "Explain it to me like I'm 5 years old",
         emoji: '👶',
         keywords: ['5yo', '5-year-old', '5 year old', 'basic'],
 
@@ -132,14 +132,23 @@ const _mixins = [
         emoji: '♻️',
         keywords: ["don't reinvent the wheel", 'giant', 'stand on the shoulders of giants', 'reuse'],
         template:
-            'When providing an answer avoid writing as much code as possible and instead try to re-use existing code or recommend existing solutions, libraries or SaaS products.',
+            'In your answer don\'t write any new code or solutions. Copy existing code or solutions from the context and make minor tweaks. When tweaking existing code also explain what code you have copied including something like "We can re-use [reference] by making the following adjustments" in your answer. If no code or solution is available in the context try and suggest libraries or SaaS products that already solve the problem. In that case include something like "I wasn\'t able to find an existing solution in your codebase but [library/product] seems to be a good fit for the problem" in your answer.',
+    },
+    {
+        id: 'pseudo',
+        desc: 'Pseudo code',
+        emoji: '🧩',
+        keywords: ['high-level', 'pseudo code', 'pseudo', 'pseudo-code', 'pseudocode'],
+        template:
+            'Any code provided in your answer must be written as pseudo code. The pseudocode should convey the high-level mechanics of the solution and not the exact syntax.',
     },
     {
         id: 'visual',
-        desc: 'Generate visuals (TODO)',
-        emoji: '🎨',
-        keywords: ['visuals', 'visualize', 'visualise', 'visualisation'],
-        template: 'TODO',
+        desc: 'Include some mermaid graphs',
+        emoji: '🧜‍♀️',
+        keywords: ['visuals', 'visualize', 'visualise', 'visualisation', 'mermaid'],
+        template:
+            'Whenever useful include a mermaid graph to help visualize the problem or your answer.',
     },
 ]
 const mixins: PromptMixinTemplate<(typeof _mixins)[number]['id']>[] = _mixins

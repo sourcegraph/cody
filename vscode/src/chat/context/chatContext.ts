@@ -89,8 +89,15 @@ export function getMentionProvidersForMention(
         if (!icon || !description) {
             continue
         }
+        if (
+            mentionQuery.text &&
+            !triggerPrefixes.some(trigger => trigger.startsWith(mentionQuery.text))
+        ) {
+            continue
+        }
         providerInformation.push({ id, icon, description, triggerPrefixes })
     }
+    console.log(mentionQuery)
     return providerInformation
 }
 
