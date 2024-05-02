@@ -42,7 +42,7 @@ export interface CodyStatusBar {
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash) File Ignored'
 const DEFAULT_TOOLTIP = 'Cody Settings'
-const DEFAULT_TOOLTIP_DISABLED = 'Cody is ignored in this file'
+const DEFAULT_TOOLTIP_DISABLED = 'The current file is ignored by Cody'
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
