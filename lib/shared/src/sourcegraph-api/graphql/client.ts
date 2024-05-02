@@ -1030,5 +1030,11 @@ export type LogEventMode =
     | 'all' // log to both dotcom AND the connected instance
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
-    return error.message.includes('Cannot query field')
+    // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message
+    // when querying non-existent codyContextFilters; this produces
+    // 'Unexpected end of JSON input'
+    return (
+        error.message.includes('Cannot query field') ||
+        error.message.includes('Unexpected end of JSON input')
+    )
 }
