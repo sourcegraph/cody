@@ -6,7 +6,6 @@ import {
     PromptString,
     displayLineRange,
     parseMentionQuery,
-    ps,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
