@@ -197,10 +197,10 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         return `@${contextItem.ecosystem}:${contextItem.name}`
     }
     if (contextItem.type === 'github_pull_request') {
-        return `@github:pull:${contextItem.pullNumber} ${contextItem.title}`
+        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
     }
     if (contextItem.type === 'github_issue') {
-        return `@github:issue:${contextItem.issueNumber} ${contextItem.title}`
+        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)

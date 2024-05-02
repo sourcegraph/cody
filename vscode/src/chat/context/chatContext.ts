@@ -5,6 +5,7 @@ import {
     type MentionQuery,
     type RangeData,
     parseMentionQuery,
+    ContextItemProps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -12,6 +13,7 @@ import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
+    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
@@ -58,10 +60,13 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
+            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
+
             for (const provider of getEnabledContextMentionProviders()) {
                 if (provider.id === mentionQuery.provider) {
                     return provider.queryContextItems(
                         mentionQuery.text,
+                        props,
                         convertCancellationTokenToAbortSignal(cancellationToken)
                     )
                 }

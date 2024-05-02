@@ -228,6 +228,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'

@@ -7,6 +7,7 @@ import {
 import { githubClient } from '../../githubClient'
 import type {
     ContextItemFromProvider,
+    ContextItemProps,
     ContextMentionProvider,
     ContextMentionProviderID
 } from '../api'
@@ -22,34 +23,51 @@ class GithubContextMentionProvider
     public id = GithubContextId;
     public triggerPrefixes = ['github:', 'gh:'];
 
-    async queryContextItems(query: string, signal?: AbortSignal) {
-        const [_, arg1, arg2] = query.split(':')
+    async queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal) {
+        /* supported query formats:
+         * - github:issue:1234
+         * - github:issue:sourcegraph/cody/1234
+         */
+        const [_, kind, id] = query.split(':')
 
-        const number = Number(arg2)
+        if (!kind || !id) {
+            return []
+        }
+        const [ownerOrNumber = '', repoName = '', numberText = ''] = id.split('/')
+
+        const number = ownerOrNumber && repoName ? Number(numberText) : Number(ownerOrNumber)
         if (!number) {
             return []
         }
 
-        const owner = 'sourcegraph'
-        const repoName = 'cody'
+        let codebases: { owner: string, repoName: string }[] = []
 
-        switch (arg1) {
-            case 'pull':
-            case 'pr':
-                return this.getPullRequestItems(
-                    { owner, repoName, pullNumber: number },
-                    signal
-                )
-
-            case 'issue':
-                return this.getIssueItems(
-                    { owner, repoName, issueNumber: number },
-                    signal
-                )
-
-            default:
-                return []
+        if (ownerOrNumber && repoName) {
+            codebases = [{ owner: ownerOrNumber, repoName }]
+        } else {
+            codebases = props.gitRemotes.filter(remote => remote.hostname === 'github.com')
         }
+
+
+        return (await Promise.all(codebases.map(async (codebase) => {
+            switch (kind) {
+                case 'pull':
+                case 'pr':
+                    return this.getPullRequestItems(
+                        { ...codebase, pullNumber: number },
+                        signal
+                    )
+
+                case 'issue':
+                    return this.getIssueItems(
+                        { ...codebase, issueNumber: number },
+                        signal
+                    )
+
+                default:
+                    return []
+            }
+        }))).flat() as ContextItemFromProvider<typeof GithubContextId>[]
     }
 
     async resolveContextItem(
@@ -92,7 +110,7 @@ class GithubContextMentionProvider
                     ...details,
                     type: 'github_pull_request',
                     uri: URI.parse(pullRequest.html_url),
-                    title: pullRequest.title,
+                    title: `#${pullRequest.number} ${pullRequest.title}`,
                     source: ContextItemSource.Github,
                     provider: 'github'
                 }
@@ -127,7 +145,7 @@ class GithubContextMentionProvider
                     ...details,
                     type: 'github_issue',
                     uri: URI.parse(issue.html_url),
-                    title: issue.title,
+                    title: `#${issue.number} ${issue.title}`,
                     source: ContextItemSource.Github,
                     provider: 'github'
                 }
@@ -201,6 +219,9 @@ class GithubContextMentionProvider
                     branch: pullRequest.head.ref,
                     author: pullRequest.user.login,
                     created_at: pullRequest.created_at,
+                    merged: pullRequest.merged,
+                    merged_at: pullRequest.merged_at,
+                    mergeable: pullRequest.mergeable,
                     status: pullRequest.state,
                     body: pullRequest.body,
                     diff: diff,

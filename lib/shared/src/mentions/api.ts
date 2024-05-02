@@ -46,7 +46,7 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
      *
      * {@link query} omits the `@` but includes the trigger prefix from {@link triggerPrefixes}.
      */
-    queryContextItems(query: string, signal?: AbortSignal): Promise<ContextItemFromProvider<ID>[]>
+    queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal): Promise<ContextItemFromProvider<ID>[]>
 
     /**
      * Resolve a context item to one or more items that have the {@link ContextItem.content} field
@@ -58,6 +58,13 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
         input: PromptString,
         signal?: AbortSignal
     ): Promise<ContextItemWithContent[]>
+}
+
+/**
+ * Props required by context item providers to return possible context items.
+ */
+export interface ContextItemProps {
+    gitRemotes: { hostname: string; owner: string; repoName: string; url: string }[]
 }
 
 export type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {

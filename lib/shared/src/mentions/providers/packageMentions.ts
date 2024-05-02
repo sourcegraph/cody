@@ -39,7 +39,7 @@ export const PACKAGE_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'package'>
     id: 'package',
     triggerPrefixes: Object.values(PackageEcosystem).map(prefix => prefix + ':'),
 
-    async queryContextItems(query, signal) {
+    async queryContextItems(query, _, signal) {
         const [ecosystemName = '', name = ''] = query.split(':')
         const ecosystem = toPackageEcosystem(ecosystemName)
         if (!ecosystem || name.length < 3) {
@@ -67,16 +67,16 @@ export const PACKAGE_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'package'>
                 .map(node =>
                     node.repository
                         ? ({
-                              type: 'package',
-                              uri: URI.parse(`${graphqlClient.endpoint}${node.repository.name}`),
-                              title: node.name,
-                              content: undefined,
-                              source: ContextItemSource.Package,
-                              repoID: node.repository.id,
-                              provider: 'package',
-                              name: node.name,
-                              ecosystem,
-                          } as ContextItemPackage)
+                            type: 'package',
+                            uri: URI.parse(`${graphqlClient.endpoint}${node.repository.name}`),
+                            title: node.name,
+                            content: undefined,
+                            source: ContextItemSource.Package,
+                            repoID: node.repository.id,
+                            provider: 'package',
+                            name: node.name,
+                            ecosystem,
+                        } as ContextItemPackage)
                         : null
                 )
                 .filter(item => item !== null) as ContextItemFromProvider<'package'>[]

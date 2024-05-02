@@ -1,6 +1,7 @@
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
+import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 
 import {
     type ContextFileType,
@@ -12,11 +13,13 @@ import {
     type Editor,
     type PromptString,
     type SymbolKind,
+    type ContextItemProps,
     TokenCounter,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
     isWindows,
+    convertGitCloneURLToCodebaseName
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
@@ -212,19 +215,19 @@ function createContextFileFromUri(
     return [
         type === 'file'
             ? {
-                  type,
-                  uri,
-                  range,
-                  source,
-              }
+                type,
+                uri,
+                range,
+                source,
+            }
             : {
-                  type,
-                  symbolName: symbolName!,
-                  uri,
-                  range,
-                  source,
-                  kind: kind!,
-              },
+                type,
+                symbolName: symbolName!,
+                uri,
+                range,
+                source,
+                kind: kind!,
+            },
     ]
 }
 
@@ -336,4 +339,25 @@ async function resolveFileOrSymbolContextItem(
         content,
         size: contextItem.size ?? TokenCounter.countTokens(content),
     }
+}
+
+export function getWorkspaceGitRemotes(): ContextItemProps['gitRemotes'] {
+    return vscode.workspace.workspaceFolders?.map((folder) => {
+        const remoteUrls = gitRemoteUrlsFromGitExtension(folder.uri)
+
+        if (remoteUrls?.length) {
+            return remoteUrls.map((url) => {
+                const codebaseName = convertGitCloneURLToCodebaseName(url)
+                if (!codebaseName) {
+                    return null
+                }
+
+                const [hostname, owner, repoName] = codebaseName.split('/')
+
+                return { hostname, owner, repoName, url }
+            }).filter(remote => remote !== null) as ContextItemProps['gitRemotes']
+        }
+
+        return []
+    }).flat() || []
 }
