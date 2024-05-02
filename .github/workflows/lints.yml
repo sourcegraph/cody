@@ -49,11 +49,8 @@ jobs:
               issue_number: pull_number,
             });
 
-            const alreadyCommented = comments.findIndex(comment => comment.body === body);
-
-            console.log({comments, alreadyCommented});
-
-            if (alreadyCommented < 0) {
+            const previousCommentIndex = comments.findIndex(comment => comment.body === body);
+            if (previousCommentIndex < 0) {
               // Post a comment and tag @sourcegraph/cody-security as reviewers
               github.rest.issues.createComment({
                 issue_number: pull_number,

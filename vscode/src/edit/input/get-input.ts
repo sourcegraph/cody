@@ -473,7 +473,7 @@ export const getInput = async (
             },
             onDidAccept: () => {
                 const input = editInput.input
-                const instruction = PromptString.unsafe_fromUserQuery(input.value.trim() + '')
+                const instruction = PromptString.unsafe_fromUserQuery(input.value.trim())
 
                 // Selected item flow, update the input and store it for submission
                 const selectedItem = input.selectedItems[0]
