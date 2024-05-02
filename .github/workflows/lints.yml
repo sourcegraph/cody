@@ -41,11 +41,7 @@ jobs:
             const pull_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            console.log({
-              owner,
-              repo,
-              pull_number,
-            });
+            const body = '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.';
 
             const { data: pullRequest } = await github.rest.pulls.get({
               owner,
@@ -53,17 +49,17 @@ jobs:
               pull_number,
             });
 
-            console.log(pullRequest.comments)
-            console.log(pullRequest)
+            console.log(pullRequest.comments);
+            console.log(pullRequest);
 
             if (pullRequest.comments === 0) {
-              // Create a comment if there are no comments
-              github.rest.issues.createComment({
-                issue_number: pull_number,
-                owner,
-                repo,
-                body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.'
-              });
+              // Post a comment and tag @sourcegraph/cody-security as reviewers
+              // github.rest.issues.createComment({
+              //  issue_number: pull_number,
+              //  owner,
+              //  repo,
+              //  body,
+              //});
               github.rest.pulls.requestReviewers({
                 owner,
                 repo,
