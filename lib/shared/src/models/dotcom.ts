@@ -101,7 +101,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
-        deprecated: true
+        deprecated: true,
     },
     {
         title: 'Claude 2.1',

@@ -216,7 +216,8 @@ jobs:
       # successful CI run (exit code 0) but that will ripple down to errors in
       # the Biome VS Code extension. This ensures that we don't accidentally
       # break Biome.
-      - run: |
+      - name: Biome
+        run: |
           set +e
           output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
           status=$?
@@ -229,7 +230,6 @@ jobs:
             exit 1
           fi
         shell: bash
-      - run: pnpm exec biome ci --error-on-warnings .
       - run: pnpm run build
       - run: pnpm -C vscode run build
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run
