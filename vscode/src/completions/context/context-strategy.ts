@@ -1,11 +1,9 @@
 import * as vscode from 'vscode'
-
 import type { ContextRetriever } from '../types'
-
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
-import { TscRetriever } from './retrievers/tsc/tsc-retriever'
+import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
     | 'bfg'
@@ -37,12 +35,12 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'tsc-mixed':
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
-                this.graphRetriever = new TscRetriever()
-                this.disposables.push(this.graphRetriever)
+                this.graphRetriever = loadTscRetriever()
+                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
                 break
             case 'tsc':
-                this.graphRetriever = new TscRetriever()
-                this.disposables.push(this.graphRetriever)
+                this.graphRetriever = loadTscRetriever()
+                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
                 break
             case 'bfg-mixed':
             case 'bfg':
