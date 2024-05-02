@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     TokenCounter,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -19,9 +20,8 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
             if (!content) {
                 throw new Error('No file content')
             }
-
-            const startLine = range?.start?.line ?? 0
-            range = new vscode.Range(startLine, 0, startLine + content.split('\n').length, 0)
+            const endLine = Math.max(doc.lineCount - 1, 0)
+            range = range ?? new vscode.Range(0, 0, endLine, 0)
             const size = TokenCounter.countTokens(content)
 
             return [
@@ -30,7 +30,7 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
                     content,
                     uri: file,
                     source: ContextItemSource.Editor,
-                    range,
+                    range: toRangeData(range),
                     size,
                 },
             ] satisfies ContextItem[]

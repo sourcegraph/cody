@@ -6,9 +6,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Context Menu: Added commands to send file to chat as @-mention from the explorer context menu. [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add File to Chat`: Add file to the current opened chat, or start a new chat if no panel is opened.
+  - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
+
 ### Fixed
 
 ### Changed
+
+- Editor Context Menu: Updated the existing `Cody Chat: Add context` command to handle selected code from the editor as @-mention . [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
+  - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
 
 ## [1.16.1]
 
