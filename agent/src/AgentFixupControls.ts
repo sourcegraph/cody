@@ -51,6 +51,7 @@ export class AgentFixupControls implements FixupControlApplicator {
             state: task.state,
             error: errorToCodyError(task.error),
             selectionRange: task.selectionRange,
+            instruction: task.instruction.toString().trim()
         }
     }
 }
