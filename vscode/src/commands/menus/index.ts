@@ -1,4 +1,4 @@
-import { type CodyCommand, PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
 import { commands, window } from 'vscode'
 import { CommandMenuOption, CustomCommandConfigMenuItems } from './items/menu'
 
@@ -6,7 +6,6 @@ import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
-import { getEditor } from '../../editor/active-editor'
 import { telemetryService } from '../../services/telemetry'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
@@ -23,11 +22,6 @@ export async function showCommandMenu(
     const items: CommandMenuItem[] = []
     const configOption = CommandMenuOption.config
     const addOption = CommandMenuOption.add
-
-    const editor = getEditor()
-    const isIgnored = editor.active
-        ? await contextFiltersProvider.isUriIgnored(editor.active.document.uri)
-        : false
 
     // Log Command Menu opened event
     const source = args?.source
@@ -55,10 +49,6 @@ export async function showCommandMenu(
                 if (_command.key === 'custom') {
                     continue
                 }
-                // Only show the New Chat command when the current file is ignored
-                if (isIgnored && _command.key !== 'ask') {
-                    continue
-                }
                 const key = _command.key
                 const label = `$(${_command.icon}) ${_command.description}`
                 const command = _command.command.command
@@ -70,7 +60,7 @@ export async function showCommandMenu(
         }
 
         // Add Custom Commands
-        if (customCommands?.length && !isIgnored) {
+        if (customCommands?.length) {
             items.push(CommandMenuSeperator.custom)
             for (const customCommand of customCommands) {
                 const label = `$(tools) ${customCommand.key}`
