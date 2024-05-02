@@ -18,6 +18,7 @@ describe('ContextFiltersProvider', () => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
         getRepoNamesFromWorkspaceUri = vi.fn()
+        vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({ enabled: true, version: '6.0.0' })
     })
 
     afterEach(() => {
@@ -263,6 +264,20 @@ describe('ContextFiltersProvider', () => {
 
             return URI.file(`/${repoName}/${filePath}`)
         }
+
+        it('should handle the case when version is older than the supported version', async () => {
+            vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({
+                enabled: true,
+                version: '5.3.2',
+            })
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
+            })
+
+            const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(includedURI)).toBe(false)
+        })
 
         it('applies context filters correctly', async () => {
             await initProviderWithContextFilters({
