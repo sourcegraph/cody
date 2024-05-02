@@ -14,6 +14,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
 
+## [1.16.1]
+
+### Added
+
+### Fixed
+
+- Fixed a bug where old Sourcegraph instances' error messages caused Cody to ignore all context files. [pull/4024](https://github.com/sourcegraph/cody/pull/4024)
+- Fixed a visually distracting drop shadow on some text labels in the model selection dropdown menu. [pull/4026](https://github.com/sourcegraph/cody/pull/4026)
+
+### Changed
+
 ## [1.16.0]
 
 ### Added
