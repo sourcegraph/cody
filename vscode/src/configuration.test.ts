@@ -102,6 +102,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.github.accessToken':
+                        return ''
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
