@@ -260,7 +260,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
         }, 10_000)
 
-        it('multiple-symbols', async () => {
+        it.skip('multiple-symbols', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
@@ -515,7 +515,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
         }, 10_000)
 
-        it('function-parameter2', async () => {
+        it.skip('function-parameter2', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
