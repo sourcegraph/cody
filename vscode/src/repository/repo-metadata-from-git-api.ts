@@ -38,14 +38,23 @@ export class RepoMetadatafromGitApi {
         }
         const owner = ownerAndRepoName.owner
         const repoName = ownerAndRepoName.repoName
-        const repoMetaData = await this.queryGitApi(owner, repoName)
+        const repoMetaData = await this.queryGitHubApi(owner, repoName)
         return repoMetaData
     }
 
-    private async queryGitApi(owner: string, repoName: string): Promise<RepoMetaData | undefined> {
+    private async queryGitHubApi(owner: string, repoName: string): Promise<RepoMetaData | undefined> {
         const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
         try {
             const response = await fetch(apiUrl)
+            // For private repos without token the api returns 404
+            // Return the private repo visibility
+            if(response.status === 404) {
+                return {
+                    owner,
+                    repoName,
+                    repoVisibility: 'private',
+                }
+            }
             if (!response.ok) {
                 return undefined
             }

@@ -468,7 +468,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitRemoteUrl: await this.getRepoGiturlIfPublic(),
+                    gitRemoteUrl: authStatus.isDotCom ? await this.getRepoGiturlIfPublic() : "",
                 },
             })
 
