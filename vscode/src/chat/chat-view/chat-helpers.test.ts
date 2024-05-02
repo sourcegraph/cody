@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -42,5 +42,13 @@ describe('getChatPanelTitle', () => {
         const title = 'Explain the relationship...'
         const result = getChatPanelTitle(title)
         expect(result).toEqual('Explain the relationship....')
+    })
+
+    it('should trim leading and trailing whitespace from the input string', () => {
+        expect(getChatPanelTitle('\n\nExplain\n\n')).toEqual('Explain')
+    })
+
+    it('should return the first non-empty line from the input string', () => {
+        expect(getChatPanelTitle('\nInclude this\nExclude this\n')).toEqual('Include this')
     })
 })

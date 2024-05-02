@@ -1,8 +1,8 @@
 import {
+    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     NoOpTelemetryExporter,
     type TelemetryEventInput,
     type TelemetryProcessor,
-    TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     TestTelemetryExporter,
     TimestampTelemetryProcessor,
     defaultEventRecordingOptions,

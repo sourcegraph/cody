@@ -16,13 +16,16 @@ export class ModelProvider {
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
-    // The title of the model, e.g. "Claude 2.0"
+    // The title of the model, e.g. "Claude 3 Sonnet"
     public readonly title: string
+    // A deprecated model can be used (to not break agent) but won't be rendered
+    // in the UI
+    public deprecated = false
 
     constructor(
         /**
          * The model id that includes the provider name & the model name,
-         * e.g. "anthropic/claude-2.0"
+         * e.g. "anthropic/claude-3-sonnet-20240229"
          */
         public readonly model: string,
         /**
@@ -132,5 +135,20 @@ export class ModelProvider {
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
         return ModelProvider.providers.find(m => m.model === modelID)
+    }
+
+    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
+        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+        if (models.length === 1) {
+            return models[0]
+        }
+        if (models.length === 0) {
+            throw new Error(`No model found for substring ${modelSubstring}`)
+        }
+        throw new Error(
+            `Multiple models found for substring ${modelSubstring}: ${models
+                .map(m => m.model)
+                .join(', ')}`
+        )
     }
 }

@@ -269,6 +269,7 @@ export const SearchPanel: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> 
             <div className={styles.searchResultsContainer}>
                 {results.map((result, fileIndex) => (
                     <>
+                        {/* biome-ignore lint/correctness/useJsxKeyInIterable: Each of the possible divs below have an appropriate key. */}
                         {/* File result */}
                         <div
                             key={`${result.uri.toString()}`}

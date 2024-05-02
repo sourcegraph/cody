@@ -1,6 +1,7 @@
 import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shared'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
+import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
 
 async function setModel(modelID: EditModel, storageKey: string) {
     // Store the selected model in local storage to retrieve later
@@ -26,11 +27,17 @@ function getModel<T extends string>(
 
     // Check for the last selected model
     const lastSelectedModelID = localStorage.get(storageKey)
-    if (lastSelectedModelID) {
+    const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
+
+    if (migratedModelID && migratedModelID !== lastSelectedModelID) {
+        void setModel(migratedModelID, storageKey)
+    }
+
+    if (migratedModelID) {
         // If the last selected model exists in the list of models then we return it
-        const model = models.find(m => m.model === lastSelectedModelID)
+        const model = models.find(m => m.model === migratedModelID)
         if (model) {
-            return lastSelectedModelID as T
+            return migratedModelID as T
         }
     }
     // If the user has not selected a model before then we return the default model

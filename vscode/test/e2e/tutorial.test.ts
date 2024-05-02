@@ -3,9 +3,9 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
+    test as baseTest,
     executeCommandInPalette,
     getMetaKeyByOS,
-    test as baseTest,
 } from './helpers'
 import { acceptInlineCompletion, triggerInlineCompletion } from './utils/completions'
 import { triggerFix } from './utils/edit'

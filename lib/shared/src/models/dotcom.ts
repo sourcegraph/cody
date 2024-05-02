@@ -24,6 +24,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
             output: CHAT_OUTPUT_TOKEN_BUDGET,
             context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
         },
+        deprecated: false,
     },
     {
         title: 'Claude 3 Opus',
@@ -38,6 +39,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
             output: CHAT_OUTPUT_TOKEN_BUDGET,
             context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
         },
+        deprecated: false,
     },
     {
         title: 'Claude 3 Haiku',
@@ -47,6 +49,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
     },
     {
         title: 'GPT-4 Turbo',
@@ -56,6 +59,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -65,6 +69,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -75,6 +80,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
     },
     {
         title: 'Mixtral 8x22B',
@@ -84,6 +90,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
     },
     // NOTE: Models soon to be deprecated.
     {
@@ -94,6 +101,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: true,
     },
     {
         title: 'Claude 2.1',
@@ -103,6 +111,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: true,
     },
     {
         title: 'Claude Instant',
@@ -112,6 +121,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: true,
     },
 ]
 

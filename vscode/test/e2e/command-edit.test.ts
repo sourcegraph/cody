@@ -16,6 +16,27 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
         'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.menu:command:default:clicked',
+        'cody.menu:edit:clicked',
+        'cody.command.edit:executed',
+        'cody.fixup.response:hasCode',
+        'cody.fixup.apply:succeeded',
+        'cody.fixup.codeLens:diff',
+        'cody.fixup.user:rejected',
+        'cody.fixup.codeLens:undo',
+        'cody.fixup.reverted:clicked',
+        'cody.sidebar.edit:clicked',
+    ],
 })('code lenses for edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)

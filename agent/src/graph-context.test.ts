@@ -126,14 +126,14 @@ describe.skipIf(isWindows())('Graph Context', () => {
               "autocompletes:
                 - name: starcoder-7b
                   value:
-                    - "// TODO: Add tests"
+                    - "// TODO: Write tests"
               prompts:
                 - name: fireworks
                   value:
                     - speaker: human
                       text: |-
                         <filename>src/main.ts<fim_prefix>//
-                        // TODO: <fim_suffix>
+                        // TODO: Write <fim_suffix>
                         <fim_middle>
               "
             `)
@@ -491,7 +491,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 dedent`
             import { doSomething } from './functions'
 
-
             function main(): void {
                 doSomething(/* CURSOR */)
             }
@@ -504,8 +503,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 `
               "autocompletes:
                 - name: starcoder-16b
-                  value:
-                    - "    doSomething({ validDogSled: true })"
+                  value: []
               prompts:
                 - name: fireworks
                   value:
@@ -533,7 +531,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
                         //
 
                         import { doSomething } from './functions'
-
 
 
                         function main(): void {

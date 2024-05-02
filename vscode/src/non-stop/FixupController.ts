@@ -22,6 +22,7 @@ import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
+import { isInTutorial } from '../tutorial/helpers'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
@@ -165,6 +166,9 @@ export class FixupController
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
+
+        this.setTaskState(task, editOk ? CodyTaskState.Finished : CodyTaskState.Error)
+
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
             telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
@@ -177,21 +181,18 @@ export class FixupController
                     model: task.model,
                 },
             })
-            return
+        } else {
+            telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
+                hasV2Event: true,
+            })
+            telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
         }
-
-        telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
-            hasV2Event: true,
-        })
-        telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
-            metadata,
-            privateMetadata: {
-                ...privateMetadata,
-                model: task.model,
-            },
-        })
-
-        this.setTaskState(task, CodyTaskState.Finished)
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -846,6 +847,13 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
+        if (isInTutorial(document)) {
+            // Skip formatting in tutorial files,
+            // This is an additional enhancement that doesn't add much value to the tutorial
+            // and makes the tutorial UX more error-prone
+            return false
+        }
+
         // Expand the range to include full lines to reduce the likelihood of formatting issues
         const rangeToFormat = new vscode.Range(
             task.selectionRange.start.line,
