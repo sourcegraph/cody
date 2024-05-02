@@ -1,12 +1,16 @@
 package com.sourcegraph.cody.ignore
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.SLRUMap
+import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -32,6 +36,21 @@ class IgnoreOracle(private val project: Project) {
   private val cache = SLRUMap<String, IgnorePolicy>(100, 100)
   @Volatile private var focusedPolicy: IgnorePolicy? = null
   @Volatile private var willFocusUri: String? = null
+  private val fileListeners: MutableList<FocusedFileIgnorePolicyListener> = mutableListOf()
+
+  init {
+    // Synthesize a focus event for the current editor, if any, to fetch and cache ignore state for
+    // it.
+    runInEdt {
+      val editor = FileEditorManager.getInstance(project).selectedTextEditor
+      if (willFocusUri == null && editor != null) {
+        val uri = ProtocolTextDocument.fromEditor(editor)?.uri
+        if (uri != null) {
+          focusedFileDidChange(uri)
+        }
+      }
+    }
+  }
 
   val isEditingIgnoredFile: Boolean
     get() {
@@ -44,9 +63,26 @@ class IgnoreOracle(private val project: Project) {
       val policy = policyForUri(uri).get()
       if (focusedPolicy != policy && willFocusUri == uri) {
         focusedPolicy = policy
+
+        // Update the status bar.
         CodyStatusService.resetApplication(project)
+
+        val listeners = synchronized(fileListeners) { fileListeners.toList() }
+        for (listener in listeners) {
+          listener.focusedFileIgnorePolicyChanged(policy)
+        }
       }
     }
+  }
+
+  fun addListener(listener: FocusedFileIgnorePolicyListener) {
+    synchronized(fileListeners) { fileListeners.add(listener) }
+    // Invoke the listener with the focused file policy to set initial state.
+    listener.focusedFileIgnorePolicyChanged(focusedPolicy ?: IgnorePolicy.USE)
+  }
+
+  fun removeListener(listener: FocusedFileIgnorePolicyListener) {
+    synchronized(fileListeners) { fileListeners.remove(listener) }
   }
 
   /**
@@ -55,8 +91,6 @@ class IgnoreOracle(private val project: Project) {
    */
   fun onIgnoreDidChange() {
     synchronized(cache) { cache.clear() }
-
-    IgnoreNotificationProvider.updateNotifications(project)
 
     // Re-set the focused file URI to update the status bar.
     val uri = willFocusUri
@@ -74,16 +108,23 @@ class IgnoreOracle(private val project: Project) {
       return completable
     }
     CodyAgentService.withAgent(project) { agent ->
+      policyForUri(uri, agent).thenAccept(completable::complete)
+    }
+    return completable
+  }
+
+  /** Like `policyForUri(String)` but reuses the current thread and supplied Agent handle. */
+  fun policyForUri(uri: String, agent: CodyAgent): CompletableFuture<IgnorePolicy> {
+    return agent.server.ignoreTest(IgnoreTestParams(uri)).thenApply {
       val policy =
-          when (agent.server.ignoreTest(IgnoreTestParams(uri)).get().policy) {
+          when (it.policy) {
             "ignore" -> IgnorePolicy.IGNORE
             "use" -> IgnorePolicy.USE
             else -> throw IllegalStateException("invalid ignore policy value")
           }
       synchronized(cache) { cache.put(uri, policy) }
-      completable.complete(policy)
+      policy
     }
-    return completable
   }
 
   /**
@@ -98,5 +139,9 @@ class IgnoreOracle(private val project: Project) {
       ApplicationManager.getApplication().executeOnPooledThread { orElse(completable.get()) }
       return null
     }
+  }
+
+  interface FocusedFileIgnorePolicyListener {
+    fun focusedFileIgnorePolicyChanged(policy: IgnorePolicy)
   }
 }

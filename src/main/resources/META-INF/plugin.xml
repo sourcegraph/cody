@@ -110,9 +110,6 @@
                                 order="first, before commitCompletion"/>
         <annotator language="SourcegraphRemoteRepoList"
                    implementationClass="com.sourcegraph.cody.context.RemoteRepoAnnotator"/>
-
-        <!-- Cody Ignore -->
-        <editorNotificationProvider implementation="com.sourcegraph.cody.ignore.IgnoreNotificationProvider" />
     </extensions>
 
     <applicationListeners>

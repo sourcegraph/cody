@@ -11,7 +11,7 @@ import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.chat.AgentChatSession
 import com.sourcegraph.cody.commands.CommandId
-import com.sourcegraph.cody.context.ui.ActionInIgnoredFileNotification
+import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
 import java.util.concurrent.Callable

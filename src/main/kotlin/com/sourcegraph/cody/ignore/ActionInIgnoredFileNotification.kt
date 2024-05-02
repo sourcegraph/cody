@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.context.ui
+package com.sourcegraph.cody.ignore
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
@@ -7,14 +7,15 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.ignore.CODY_IGNORE_DOCS_URL
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
+
+const val CODY_IGNORE_DOCS_URL = "https://sourcegraph.com/docs/cody/capabilities/ignore-context"
 
 class ActionInIgnoredFileNotification :
     Notification(
         NotificationGroups.SOURCEGRAPH_ERRORS,
-        "",
+        CodyBundle.getString("ignore.action-in-ignored-file.title"),
         CodyBundle.getString("ignore.action-in-ignored-file.detail"),
         NotificationType.INFORMATION),
     NotificationFullContent {
