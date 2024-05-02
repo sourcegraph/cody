@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.auth.ui
 
 import com.intellij.collaboration.messages.CollaborationToolsBundle
+import com.intellij.icons.AllIcons
 import com.intellij.ui.components.labels.LinkLabel
 import com.intellij.util.IconUtil
 import com.intellij.util.ui.GridBag
@@ -34,29 +35,56 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
   private val loadingError = JLabel()
   private val reloginLink = LinkLabel<Any?>(CollaborationToolsBundle.message("login.link"), null)
 
+  private val rightLabel = JLabel()
+
   init {
-    layout = FlowLayout(FlowLayout.LEFT, 0, 0)
+    layout = BorderLayout(0, 0)
     border = JBUI.Borders.empty(5, 8)
 
-    val namesPanel =
+    val accountDetailsPanel =
         JPanel().apply {
-          layout = GridBagLayout()
-          border = JBUI.Borders.empty(0, 6, 4, 6)
+          layout = FlowLayout(FlowLayout.LEFT, 0, 0)
 
-          val bag =
-              GridBag()
-                  .setDefaultInsets(JBUI.insetsRight(UIUtil.DEFAULT_HGAP))
-                  .setDefaultAnchor(GridBagConstraints.WEST)
-                  .setDefaultFill(GridBagConstraints.VERTICAL)
-          add(fullName, bag.nextLine().next())
-          add(accountName, bag.next())
-          add(loadingError, bag.next())
-          add(reloginLink, bag.next())
-          add(serverName, bag.nextLine().coverLine())
+          val namesPanel =
+              JPanel().apply {
+                layout = GridBagLayout()
+                border = JBUI.Borders.empty(0, 6, 4, 6)
+
+                val bag =
+                    GridBag()
+                        .setDefaultInsets(JBUI.insetsRight(UIUtil.DEFAULT_HGAP))
+                        .setDefaultAnchor(GridBagConstraints.WEST)
+                        .setDefaultFill(GridBagConstraints.VERTICAL)
+                add(fullName, bag.nextLine().next())
+                add(accountName, bag.next())
+                add(loadingError, bag.next())
+                add(reloginLink, bag.next())
+                add(serverName, bag.nextLine().coverLine())
+              }
+
+          add(profilePicture)
+          add(namesPanel)
         }
 
-    add(profilePicture)
-    add(namesPanel)
+    val rightLabelPanel =
+        JPanel().apply {
+          layout = FlowLayout(FlowLayout.RIGHT, 0, 0)
+          add(rightLabel)
+        }
+
+    val rightPanelWrapper =
+        JPanel(GridBagLayout()).apply {
+          val constraints =
+              GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                anchor = GridBagConstraints.CENTER
+              }
+          add(rightLabelPanel, constraints)
+        }
+
+    add(accountDetailsPanel, BorderLayout.WEST)
+    add(rightPanelWrapper, BorderLayout.EAST)
   }
 
   override fun getListCellRendererComponent(
@@ -91,6 +119,16 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
       setBold(isDefault(account))
       isVisible = getDetails(account)?.name != null
       foreground = primaryTextColor
+    }
+    rightLabel.apply {
+      if (isDefault(account)) {
+        icon = AllIcons.Actions.Checked_selected
+        text = "Active"
+        iconTextGap = JBUI.scale(4)
+      } else {
+        icon = null
+        text = null
+      }
     }
     loadingError.apply {
       text = getError(account)
