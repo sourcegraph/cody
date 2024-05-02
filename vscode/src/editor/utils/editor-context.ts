@@ -13,7 +13,6 @@ import {
     type PromptString,
     type SymbolKind,
     TokenCounter,
-    contextFiltersProvider,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
@@ -121,23 +120,12 @@ export async function getSymbolContextFiles(
     }
 
     // doesn't support cancellation tokens :(
-    const queryResults = await vscode.commands.executeCommand<vscode.SymbolInformation[] | undefined>(
+    const queryResults = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
         'vscode.executeWorkspaceSymbolProvider',
         query
     )
 
-    const filteredQueryResults = (
-        await Promise.all(
-            queryResults?.map(async result => {
-                if (await contextFiltersProvider.isUriIgnored(result.location.uri)) {
-                    return null
-                }
-                return result
-            }) ?? []
-        )
-    ).filter(isDefined)
-
-    const relevantQueryResults = filteredQueryResults.filter(
+    const relevantQueryResults = queryResults?.filter(
         symbol =>
             (symbol.kind === vscode.SymbolKind.Function ||
                 symbol.kind === vscode.SymbolKind.Method ||
@@ -259,45 +247,30 @@ function createContextFileRange(selectionRange: vscode.Range): ContextItem['rang
 export async function filterContextItemFiles(
     contextFiles: ContextItemFile[]
 ): Promise<ContextItemFile[]> {
-    const filtered = await Promise.all(
-        contextFiles.map(async file => {
-            // Filter cody ignored files
-            if (await contextFiltersProvider.isUriIgnored(file.uri)) {
-                return null
-            }
-
-            // Remove file larger than 1MB and non-text files
-            // NOTE: Sourcegraph search only includes files up to 1MB
-            const fileStat = await vscode.workspace.fs.stat(file.uri)?.then(
-                stat => stat,
-                error => undefined
-            )
-            if (
-                file.type !== 'file' ||
-                fileStat?.type !== vscode.FileType.File ||
-                fileStat?.size > 1_000_000
-            ) {
-                return null
-            }
-            // TODO (bee) consider a better way to estimate the token size of a
-            // file We cannot get the exact token size without parsing the file,
-            // which is expensive. Instead, we divide the file size in bytes by
-            // 4.5 for non-markdown as a rough estimate of the token size. For
-            // markdown files, we divide by 3.5 because they tend to have more
-            // text and fewer code blocks and whitespace.
-            //
-            // NOTE: This provides the frontend with a rough idea of when to
-            // display large files with a warning based on available tokens, so
-            // that it can prompt the user to import the file via '@file-range'
-            // or via 'right-click on a selection' that only involves reading a
-            // single context item, allowing us to read the file content
-            // on-demand instead of in bulk. We would then label the file size
-            // more accurately with the tokenizer.
-            file.size = Math.floor(fileStat.size / (file.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
-            return file
-        })
-    )
-    return filtered.filter(isDefined)
+    const filtered = []
+    for (const cf of contextFiles) {
+        // Remove file larger than 1MB and non-text files
+        // NOTE: Sourcegraph search only includes files up to 1MB
+        const fileStat = await vscode.workspace.fs.stat(cf.uri)?.then(
+            stat => stat,
+            error => undefined
+        )
+        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
+            continue
+        }
+        // TODO (bee) consider a better way to estimate the token size of a file
+        // We cannot get the exact token size without parsing the file, which is expensive.
+        // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
+        // For markdown files, we divide by 3.5 because they tend to have more text and fewer code blocks and whitespaces.
+        //
+        // NOTE: This provides the frontend with a rough idea of when to display large files with a warning based
+        // on available tokens, so that it can prompt the user to import the file via '@file-range' or
+        // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
+        // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
+        cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
+        filtered.push(cf)
+    }
+    return filtered
 }
 
 export async function resolveContextItems(
