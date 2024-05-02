@@ -41,8 +41,11 @@ jobs:
             const pull_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            console.log({pull_number, owner, repo});
-            console.log({context});
+            console.log({
+              owner,
+              repo,
+              pull_number,
+            });
 
             const { data: pullRequest } = await github.rest.pulls.get({
               owner,
@@ -51,6 +54,7 @@ jobs:
             });
 
             console.log(pullRequest.comments)
+            console.log(pullRequest)
 
             if (pullRequest.comments === 0) {
               // Create a comment if there are no comments
