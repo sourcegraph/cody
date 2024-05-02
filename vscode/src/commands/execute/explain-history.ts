@@ -7,6 +7,7 @@ import {
     PromptString,
     isFileURI,
     logDebug,
+    logError,
     ps,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -17,28 +18,43 @@ import type { ChatCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
+/**
+ * Wraps up the reasons why a explain history command fails. This makes it easy
+ * to have consistent telemetry and reporting to the user.
+ */
+interface FailedExplainResult {
+    level: 'error' | 'warn'
+    reason: 'no-file' | 'no-word' | 'git-no-match' | 'git-unknown'
+    message: string
+}
+
 async function explainHistoryCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments | undefined> {
+): Promise<ExecuteChatArguments | FailedExplainResult> {
     // vscode git extension API doesn't offer a way to run git log with trace
     // arguments. So we directly spawn git log to run against the active document.
     const logArguments = getLogArguments(args)
-    if (!logArguments) {
-        return undefined
+    if (isFailure(logArguments)) {
+        return logArguments
     }
 
     logDebug('explainHistoryCommand', 'computed log arguments', JSON.stringify(logArguments))
 
-    const output = await spawnGetStdout('git', ['log', ...logArguments.logArgs], {
+    const logResult = await spawnAsync('git', ['log', ...logArguments.logArgs], {
         cwd: logArguments.cwd,
     })
+
+    if (logResult.code !== 0) {
+        logDebug('explainHistoryCommand', 'git log failed', JSON.stringify(logResult))
+        return parseGitLogFailure(logArguments, logResult)
+    }
 
     const prompt = ps`Explain the history of the function \`${logArguments.symbolText}\`.`
     const contextFiles: ContextItem[] = [
         {
             type: 'file',
-            content: output,
+            content: logResult.stdout,
             title: 'Terminal Output',
             uri: vscode.Uri.file('terminal-output'),
             source: ContextItemSource.Terminal,
@@ -70,9 +86,34 @@ export async function executeExplainHistoryCommand(
         })
 
         const sessionArgs = await explainHistoryCommand(span, args)
-        if (!sessionArgs) {
+
+        if (isFailure(sessionArgs)) {
+            span.setAttribute('failure-reason', sessionArgs.reason)
+            if (sessionArgs.level === 'error') {
+                logError(
+                    'executeExplainHistoryCommand',
+                    'error fetching history context',
+                    sessionArgs.reason,
+                    sessionArgs.message
+                )
+                const errorMessage = `Error fetching history context: ${sessionArgs.reason}: ${sessionArgs.message}`
+                vscode.window.showErrorMessage(errorMessage)
+                // throw an error so that wrapInActiveSpan correctly annotates this trace as failed.
+                throw new Error(errorMessage)
+            }
+
+            logDebug(
+                'executeExplainHistoryCommand',
+                'failed to explaining history context',
+                sessionArgs.reason,
+                sessionArgs.message
+            )
+            vscode.window.showWarningMessage(
+                `Could not compute symbol history: ${sessionArgs.reason}: ${sessionArgs.message}`
+            )
             return undefined
         }
+
         return {
             type: 'chat',
             session: await executeChat(sessionArgs),
@@ -86,16 +127,24 @@ interface LogArguments {
     cwd: string
 }
 
-function getLogArguments(args?: Pick<CodyCommandArgs, 'range'>): LogArguments | undefined {
+function getLogArguments(args?: Pick<CodyCommandArgs, 'range'>): LogArguments | FailedExplainResult {
     const activeEditor = getEditor().active
     const doc = activeEditor?.document
     if (!doc || !isFileURI(doc.uri)) {
-        return undefined
+        return {
+            level: 'warn',
+            reason: 'no-file',
+            message: 'You must be editing a file to use this command.',
+        }
     }
 
     const symbolRange = doc.getWordRangeAtPosition((args?.range ?? activeEditor.selection).start)
     if (!symbolRange) {
-        return undefined
+        return {
+            level: 'warn',
+            reason: 'no-word',
+            message: 'Your cursor must be on a word to use this command.',
+        }
     }
 
     const symbolText = PromptString.fromDocumentText(doc, symbolRange)
@@ -120,31 +169,62 @@ function getLogArguments(args?: Pick<CodyCommandArgs, 'range'>): LogArguments | 
     }
 }
 
-async function spawnGetStdout(
+function isFailure(object: any): object is FailedExplainResult {
+    return 'reason' in object && 'message' in object
+}
+
+function parseGitLogFailure(logArguments: LogArguments, result: SpawnResult): FailedExplainResult {
+    if (result.stderr.includes('no match')) {
+        return {
+            level: 'warn',
+            reason: 'git-no-match',
+            message: `git does support searching for the symbol ${logArguments.symbolText.toString()}`,
+        }
+    }
+    return {
+        level: 'error',
+        reason: 'git-unknown',
+        message: `git log failed with exit code ${result.code}: ${result.stderr}`,
+    }
+}
+
+interface SpawnResult {
+    stdout: string
+    stderr: string
+    code: number
+}
+
+async function spawnAsync(
     command: string,
     args: readonly string[],
     opts: SpawnOptionsWithoutStdio
-): Promise<string> {
+): Promise<SpawnResult> {
     const childProcess = spawn(command, args, opts)
 
-    let output = ''
-    let error = ''
+    let stdout = ''
+    let stderr = ''
     childProcess.stdout.on('data', data => {
-        output += data.toString()
+        stdout += data.toString()
     })
     childProcess.stderr.on('data', data => {
-        error += data.toString()
+        stderr += data.toString()
     })
 
+    let code = -1
     await new Promise<void>((resolve, reject) => {
-        childProcess.on('close', code => {
-            if (code === 0) {
-                resolve()
+        childProcess.on('close', returnCode => {
+            if (returnCode === null) {
+                reject(new Error('Process closed with null return code'))
             } else {
-                reject(new Error(`Command ${command} failed with code ${code}: ${error}`))
+                code = returnCode
+                resolve()
             }
         })
     })
 
-    return output
+    return {
+        stdout,
+        stderr,
+        code,
+    }
 }
