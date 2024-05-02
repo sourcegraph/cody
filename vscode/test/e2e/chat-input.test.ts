@@ -114,9 +114,9 @@ test.extend<ExpectedEvents>({
     // the chat panel is right next to the document. This helps to save loading time
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     const [chatPanel, chatInput] = await createEmptyChatPanel(page)
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
 
     // Submit a new chat question from the command menu.
