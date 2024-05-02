@@ -665,12 +665,12 @@ export class SourcegraphGraphQLAPIClient {
             return { enabled: true, version: siteVersion }
         }
         // NOTE: Cody does not work on versions older than 5.0
-        const versionBeforeCody = siteVersion < '5.0.0'
+        const versionBeforeCody = semver.lt(siteVersion, '5.0.0')
         if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
+        const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
