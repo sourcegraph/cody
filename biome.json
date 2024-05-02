@@ -11,7 +11,8 @@
         "noDuplicateJsonKeys": "error"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noRedeclare": "off"
       },
       "style": {
         "noNonNullAssertion": "off",

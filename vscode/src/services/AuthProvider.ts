@@ -362,7 +362,7 @@ export class AuthProvider {
         if (isExtensionStartup && isLoggedIn) {
             await this.setHasAuthenticatedBefore()
         } else if (isLoggedIn) {
-            this.logFirstEverAuthentication()
+            this.handleFirstEverAuthentication()
         }
 
         await this.storeAuthInfo(url, token)
@@ -492,12 +492,16 @@ export class AuthProvider {
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
-    private logFirstEverAuthentication(): void {
-        if (!localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
-            telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-            this.setHasAuthenticatedBefore()
+    private handleFirstEverAuthentication(): void {
+        if (localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+            // User has authenticated before, noop
+            return
         }
+        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
+        void vscode.commands.executeCommand('cody.tutorial.start')
+        this.setHasAuthenticatedBefore()
     }
+
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }

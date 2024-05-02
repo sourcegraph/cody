@@ -25,6 +25,13 @@ export const setFixDiagnostic = (
     ])
 }
 
+/**
+ * States at which we consider an Edit to be "terminated" for the purposes of the tutorial.
+ * Considers both "Applied" and "Error" to be terminal, so that we can encourage the user along
+ * into the next steps, even when they don't necessarily hit a happy-path
+ */
+const TERMINAL_EDIT_STATES = [CodyTaskState.Applied, CodyTaskState.Finished, CodyTaskState.Error]
+
 export const registerEditTutorialCommand = (
     editor: vscode.TextEditor,
     onComplete: () => void
@@ -47,7 +54,7 @@ export const registerEditTutorialCommand = (
 
         // Poll for task.state being applied
         const interval = setInterval(async () => {
-            if (task.state === CodyTaskState.Applied) {
+            if (TERMINAL_EDIT_STATES.includes(task.state)) {
                 clearInterval(interval)
                 onComplete()
             }
