@@ -1,10 +1,11 @@
+import dedent from 'dedent'
 import { URI } from 'vscode-uri'
 import type { ContextItemWithContent } from '../../codebase-context/messages'
 import type { ContextMentionProvider } from '../api'
 
 export const PROMPT_MIXIN_MENTION_PROVIDER: ContextMentionProvider<'mixin'> = {
     id: 'mixin',
-    triggerPrefixes: ['snip://'],
+    triggerPrefixes: ['snippet://'],
     description: 'Include a prompt snippet to stay DRY',
     icon: 'comment-draft',
     /**
@@ -80,12 +81,20 @@ interface PromptMixinTemplate<ID extends MixinID> {
 
 const _mixins = [
     {
-        id: 'duck',
-        desc: 'Ducking Crazy Answers',
-        emoji: '🦆',
-        keywords: ['duck', 'funny'],
-        template:
-            'You must answer in the style of a smart duck. Inject lots of duck noises in your answer. Also use lots of emojis that are duck, pond or bird related. You must also end all your messages with a "Did you know..." and an interesting duck fact.',
+        id: 'visual',
+        desc: 'Include some mermaid graphs',
+        emoji: '🧜‍♀️',
+        keywords: ['visuals', 'visualize', 'visualise', 'visualisation', 'mermaid'],
+        template: dedent(
+            `
+            Whenever useful include a mermaid graph to help visualize the problem or your answer.
+
+            Wrap the code for the graph in a "\`\`\`mermaid \`\`\`" block so it is rendered correctly in markdown.
+
+            After the image also include a description by writing \`__Image **#**: short description__\`. Here # is the number of the image in the conversation. Use this number to refer to the image in any text.
+
+            In your answers always start by providing the images first before adding any additional text or code.`
+        ),
     },
     {
         id: 'explore',
@@ -106,10 +115,11 @@ const _mixins = [
         desc: "Explain it to me like I'm 5 years old",
         emoji: '👶',
         keywords: ['5yo', '5-year-old', '5 year old', 'basic'],
+        template: dedent(`
+            Provide your answer in a way that it is easy to undertand for someone who only has basic coding skills but no specific prior knowledge on the subject.
 
-        //TODO: This prompt sucks
-        template:
-            "Respond like you're talking to a beginner with no prior technical knowledge. Make sure to introduce terms and technical jargon and provide a list of topics the user should dive further into for more information. Don't assume the user knows everything. Don't assume the user knows what they're looking for.",
+            If there are any acronyms or technical terms make sure to clearly define them.
+            `),
     },
     {
         id: 'tldr',
@@ -141,14 +151,6 @@ const _mixins = [
         keywords: ['high-level', 'pseudo code', 'pseudo', 'pseudo-code', 'pseudocode'],
         template:
             'Any code provided in your answer must be written as pseudo code. The pseudocode should convey the high-level mechanics of the solution and not the exact syntax.',
-    },
-    {
-        id: 'visual',
-        desc: 'Include some mermaid graphs',
-        emoji: '🧜‍♀️',
-        keywords: ['visuals', 'visualize', 'visualise', 'visualisation', 'mermaid'],
-        template:
-            'Whenever useful include a mermaid graph to help visualize the problem or your answer.',
     },
 ]
 const mixins: PromptMixinTemplate<(typeof _mixins)[number]['id']>[] = _mixins

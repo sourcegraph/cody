@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { useMemo } from 'react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
@@ -33,7 +34,18 @@ const meta: Meta<typeof Chat> = {
         userContextFromSelection: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
-    decorators: [VSCodeWebview],
+    decorators: [
+        VSCodeWebview,
+        (Story, context) => {
+            //this is to force a re-mount when the transcript changes. This is because some rendering only happens on initial load.
+            // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+            const key = useMemo(() => {
+                return Math.random()
+            }, [context.args.transcript])
+
+            return <Story key={key} />
+        },
+    ],
 }
 
 export default meta

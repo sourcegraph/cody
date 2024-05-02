@@ -32,6 +32,9 @@ const highlightCodeSafe = (code: string, language?: string): string => {
         if (language === 'sourcegraph') {
             return code
         }
+        if (language === 'mermaid') {
+            return code
+        }
         if (language) {
             return highlight(code, { language, ignoreIllegals: true }).value
         }
