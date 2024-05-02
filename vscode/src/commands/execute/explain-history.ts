@@ -88,29 +88,7 @@ export async function executeExplainHistoryCommand(
         const sessionArgs = await explainHistoryCommand(span, args)
 
         if (isFailure(sessionArgs)) {
-            span.setAttribute('failure-reason', sessionArgs.reason)
-            if (sessionArgs.level === 'error') {
-                logError(
-                    'executeExplainHistoryCommand',
-                    'error fetching history context',
-                    sessionArgs.reason,
-                    sessionArgs.message
-                )
-                const errorMessage = `Error fetching history context: ${sessionArgs.reason}: ${sessionArgs.message}`
-                vscode.window.showErrorMessage(errorMessage)
-                // throw an error so that wrapInActiveSpan correctly annotates this trace as failed.
-                throw new Error(errorMessage)
-            }
-
-            logDebug(
-                'executeExplainHistoryCommand',
-                'failed to explaining history context',
-                sessionArgs.reason,
-                sessionArgs.message
-            )
-            vscode.window.showWarningMessage(
-                `Could not compute symbol history: ${sessionArgs.reason}: ${sessionArgs.message}`
-            )
+            handleFailure(span, sessionArgs)
             return undefined
         }
 
@@ -186,6 +164,32 @@ function parseGitLogFailure(logArguments: LogArguments, result: SpawnResult): Fa
         reason: 'git-unknown',
         message: `git log failed with exit code ${result.code}: ${result.stderr}`,
     }
+}
+
+function handleFailure(span: Span, result: FailedExplainResult) {
+    span.setAttribute('failure-reason', result.reason)
+    if (result.level === 'error') {
+        logError(
+            'executeExplainHistoryCommand',
+            'error fetching history context',
+            result.reason,
+            result.message
+        )
+        const errorMessage = `Error fetching history context: ${result.reason}: ${result.message}`
+        vscode.window.showErrorMessage(errorMessage)
+        // throw an error so that wrapInActiveSpan correctly annotates this trace as failed.
+        throw new Error(errorMessage)
+    }
+
+    logDebug(
+        'executeExplainHistoryCommand',
+        'failed to explaining history context',
+        result.reason,
+        result.message
+    )
+    vscode.window.showWarningMessage(
+        `Could not compute symbol history: ${result.reason}: ${result.message}`
+    )
 }
 
 interface SpawnResult {
