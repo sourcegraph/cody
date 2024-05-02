@@ -8,30 +8,29 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-export async function getContextFileFromGitLog(file: FileURI, options: {
-    /**
-     * Uses git log's -L:<funcname>:<file> traces the evolution of the
-     * function name regex <funcname>, within the <file>. This relies on
-     * reasonable heuristics built into git to find function bodies. However,
-     * the heuristics often fail so we should switch to computing the line
-     * region ourselves.
-     * https://git-scm.com/docs/git-log#Documentation/git-log.txt--Lltfuncnamegtltfilegt
-     */
-    funcname: string,
-    /**
-     * Limit the amount of commits to maxCount.
-     */
-    maxCount: number,
-}): Promise<ContextItem[]> {
+export async function getContextFileFromGitLog(
+    file: FileURI,
+    options: {
+        /**
+         * Uses git log's -L:<funcname>:<file> traces the evolution of the
+         * function name regex <funcname>, within the <file>. This relies on
+         * reasonable heuristics built into git to find function bodies. However,
+         * the heuristics often fail so we should switch to computing the line
+         * region ourselves.
+         * https://git-scm.com/docs/git-log#Documentation/git-log.txt--Lltfuncnamegtltfilegt
+         */
+        funcname: string
+        /**
+         * Limit the amount of commits to maxCount.
+         */
+        maxCount: number
+    }
+): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.git-log', async span => {
         // Run from the directory file is in and let git discover the correct repo
         // to use.
-        const cwd = path.dirname(file.fsPath);
-        const args = [
-            'log',
-            `-L:${options.funcname}:${file.fsPath}`,
-            `--max-count=${options.maxCount}`,
-        ]
+        const cwd = path.dirname(file.fsPath)
+        const args = ['log', `-L:${options.funcname}:${file.fsPath}`, `--max-count=${options.maxCount}`]
         const result = await spawnAsync('git', args, { cwd })
 
         // TODO unsure of the best way to communicate this. Do we update the
@@ -46,13 +45,15 @@ export async function getContextFileFromGitLog(file: FileURI, options: {
             throw new Error(`git log failed with exit code ${result.code}: ${result.stderr}`)
         }
 
-        return [{
-            type: 'file',
-            content: result.stdout,
-            title: 'Terminal Output',
-            uri: vscode.Uri.file('terminal-output'),
-            source: ContextItemSource.Terminal,
-        }]
+        return [
+            {
+                type: 'file',
+                content: result.stdout,
+                title: 'Terminal Output',
+                uri: vscode.Uri.file('terminal-output'),
+                source: ContextItemSource.Terminal,
+            },
+        ]
     })
 }
 

@@ -398,9 +398,9 @@ const register = async (
 
     if (commandsManager !== undefined) {
         disposables.push(
-	        vscode.commands.registerCommand("cody.command.explain-history", (a) =>
-		        executeExplainHistoryCommand(commandsManager, a),
-	        )
+            vscode.commands.registerCommand('cody.command.explain-history', a =>
+                executeExplainHistoryCommand(commandsManager, a)
+            )
         )
     }
 
