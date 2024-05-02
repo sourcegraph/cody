@@ -2,9 +2,9 @@ import { isFileURI } from '@sourcegraph/cody-shared'
 import { diffChars } from 'diff'
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getConfiguration } from '../configuration'
 import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
-import { telemetryRecorder } from './telemetry-v2'
 
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 

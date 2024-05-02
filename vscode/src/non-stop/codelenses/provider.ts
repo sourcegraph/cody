@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'
 import type { FixupTask, FixupTaskID } from '../FixupTask'
@@ -219,7 +219,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
 
     public didUpdateTask(task: FixupTask): void {
         this.updateKeyboardShortcutEnablement([task.fixupFile])
-        if (task.state === CodyTaskState.finished) {
+        if (task.state === CodyTaskState.Finished) {
             this.removeLensesFor(task)
             return
         }

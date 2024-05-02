@@ -13,15 +13,15 @@ interface CodyAgentServer {
   @JsonRequest("initialize")
   fun initialize(params: ClientInfo): CompletableFuture<ServerInfo>
   @JsonRequest("shutdown")
-  fun shutdown(params: Null): CompletableFuture<Null>
+  fun shutdown(params: Null?): CompletableFuture<Null?>
   @JsonRequest("chat/new")
-  fun chat_new(params: Null): CompletableFuture<String>
+  fun chat_new(params: Null?): CompletableFuture<String>
   @JsonRequest("chat/restore")
   fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
-  fun chat_export(params: Null): CompletableFuture<List<ChatExportResult>>
+  fun chat_export(params: Null?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/submitMessage")
@@ -29,25 +29,25 @@ interface CodyAgentServer {
   @JsonRequest("chat/editMessage")
   fun chat_editMessage(params: Chat_EditMessageParams): CompletableFuture<ExtensionMessage>
   @JsonRequest("commands/explain")
-  fun commands_explain(params: Null): CompletableFuture<String>
+  fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/test")
-  fun commands_test(params: Null): CompletableFuture<String>
+  fun commands_test(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/smell")
-  fun commands_smell(params: Null): CompletableFuture<String>
+  fun commands_smell(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/custom")
   fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
   @JsonRequest("editCommands/code")
   fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
   @JsonRequest("editCommands/test")
-  fun editCommands_test(params: Null): CompletableFuture<EditTask>
+  fun editCommands_test(params: Null?): CompletableFuture<EditTask>
   @JsonRequest("editCommands/document")
-  fun editCommands_document(params: Null): CompletableFuture<EditTask>
+  fun editCommands_document(params: Null?): CompletableFuture<EditTask>
   @JsonRequest("editTask/accept")
-  fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null>
+  fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null?>
   @JsonRequest("editTask/undo")
-  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null>
+  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")
-  fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null>
+  fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
   @JsonRequest("editTask/getFoldingRanges")
   fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
@@ -57,47 +57,49 @@ interface CodyAgentServer {
   @JsonRequest("graphql/getRepoIds")
   fun graphql_getRepoIds(params: Graphql_GetRepoIdsParams): CompletableFuture<Graphql_GetRepoIdsResult>
   @JsonRequest("graphql/currentUserId")
-  fun graphql_currentUserId(params: Null): CompletableFuture<String>
+  fun graphql_currentUserId(params: Null?): CompletableFuture<String>
   @JsonRequest("graphql/currentUserIsPro")
-  fun graphql_currentUserIsPro(params: Null): CompletableFuture<Boolean>
+  fun graphql_currentUserIsPro(params: Null?): CompletableFuture<Boolean>
   @JsonRequest("featureFlags/getFeatureFlag")
   fun featureFlags_getFeatureFlag(params: FeatureFlags_GetFeatureFlagParams): CompletableFuture<Boolean?>
   @JsonRequest("graphql/getCurrentUserCodySubscription")
-  fun graphql_getCurrentUserCodySubscription(params: Null): CompletableFuture<CurrentUserCodySubscription?>
+  fun graphql_getCurrentUserCodySubscription(params: Null?): CompletableFuture<CurrentUserCodySubscription?>
   @JsonRequest("graphql/logEvent")
-  fun graphql_logEvent(params: Event): CompletableFuture<Null>
+  fun graphql_logEvent(params: Event): CompletableFuture<Null?>
   @JsonRequest("telemetry/recordEvent")
-  fun telemetry_recordEvent(params: TelemetryEvent): CompletableFuture<Null>
+  fun telemetry_recordEvent(params: TelemetryEvent): CompletableFuture<Null?>
   @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
   fun graphql_getRepoIdIfEmbeddingExists(params: Graphql_GetRepoIdIfEmbeddingExistsParams): CompletableFuture<String?>
   @JsonRequest("graphql/getRepoId")
   fun graphql_getRepoId(params: Graphql_GetRepoIdParams): CompletableFuture<String?>
-  @JsonRequest("check/isCodyIgnoredFile")
-  fun check_isCodyIgnoredFile(params: Check_IsCodyIgnoredFileParams): CompletableFuture<Boolean>
   @JsonRequest("git/codebaseName")
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
-  fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null>
+  fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessage")
-  fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null>
+  fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
   @JsonRequest("testing/progress")
   fun testing_progress(params: Testing_ProgressParams): CompletableFuture<Testing_ProgressResult>
   @JsonRequest("testing/networkRequests")
-  fun testing_networkRequests(params: Null): CompletableFuture<Testing_NetworkRequestsResult>
+  fun testing_networkRequests(params: Null?): CompletableFuture<Testing_NetworkRequestsResult>
   @JsonRequest("testing/requestErrors")
-  fun testing_requestErrors(params: Null): CompletableFuture<Testing_RequestErrorsResult>
+  fun testing_requestErrors(params: Null?): CompletableFuture<Testing_RequestErrorsResult>
   @JsonRequest("testing/closestPostData")
   fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
   @JsonRequest("testing/progressCancelation")
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
-  fun testing_reset(params: Null): CompletableFuture<Null>
+  fun testing_reset(params: Null?): CompletableFuture<Null?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")
-  fun extensionConfiguration_status(params: Null): CompletableFuture<AuthStatus?>
+  fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
+  @JsonRequest("ignore/test")
+  fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
+  @JsonRequest("testing/ignore/overridePolicy")
+  fun testing_ignore_overridePolicy(params: Testing_Ignore_OverridePolicyParams?): CompletableFuture<Null?>
   @JsonRequest("remoteRepo/has")
   fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
   @JsonRequest("remoteRepo/list")
@@ -107,9 +109,9 @@ interface CodyAgentServer {
   // Notifications
   // =============
   @JsonNotification("initialized")
-  fun initialized(params: Null)
+  fun initialized(params: Null?)
   @JsonNotification("exit")
-  fun exit(params: Null)
+  fun exit(params: Null?)
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
   @JsonNotification("textDocument/didOpen")
@@ -131,7 +133,7 @@ interface CodyAgentServer {
   @JsonNotification("$/cancelRequest")
   fun cancelRequest(params: CancelParams)
   @JsonNotification("autocomplete/clearLastCandidate")
-  fun autocomplete_clearLastCandidate(params: Null)
+  fun autocomplete_clearLastCandidate(params: Null?)
   @JsonNotification("autocomplete/completionSuggested")
   fun autocomplete_completionSuggested(params: CompletionItemParams)
   @JsonNotification("autocomplete/completionAccepted")

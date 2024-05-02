@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class AttributionParams(
-  val repositoryNames: List<String>? = null,
-  val limitHit: Boolean? = null,
+  val repositoryNames: List<String>,
+  val limitHit: Boolean,
 )
 

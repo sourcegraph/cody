@@ -56,6 +56,26 @@ describe('PromptString', () => {
         expect(outer.getReferences()).toEqual([uri])
     })
 
+    it('implements toFilteredString()', async () => {
+        const uri = testFileUri('/foo/bar.ts')
+        const document = createFakeDocument(uri, 'i am from a file')
+        const promptString = PromptString.fromDocumentText(document)
+
+        const allowPolicy = {
+            isUriIgnored: () => Promise.resolve(false as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
+        }
+        const denyPolicy = {
+            isUriIgnored: () => Promise.resolve('repo:foo' as const),
+            toDebugObject: () => ({ lastContextFiltersResponse: null }),
+        }
+
+        expect(await promptString.toFilteredString(allowPolicy)).toEqual('i am from a file')
+        expect(async () => await promptString.toFilteredString(denyPolicy)).rejects.toThrowError(
+            'The prompt contains a reference to a file that is not allowed by your current Cody policy.'
+        )
+    })
+
     it('behaves like a string', () => {
         const s = ps`  Foo${ps`bar`}baz  `
         expect(s.toString()).toBe('  Foobarbaz  ')

@@ -66,5 +66,6 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.menu.custom-commands' },
         keybinding: `${osIcon}⇧C`,
         type: 'default',
+        contextValue: 'cody.sidebar.custom-commands',
     },
 ]

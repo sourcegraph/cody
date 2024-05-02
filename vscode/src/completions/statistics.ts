@@ -1,4 +1,4 @@
-import { createSubscriber } from './utils'
+import { createSubscriber } from '@sourcegraph/cody-shared'
 
 const subscriber = createSubscriber<void>()
 

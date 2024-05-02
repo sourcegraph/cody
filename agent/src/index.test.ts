@@ -1,26 +1,34 @@
 import assert from 'node:assert'
-import { execSync } from 'node:child_process'
-import fspromises from 'node:fs/promises'
-import os from 'node:os'
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import * as vscode from 'vscode'
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ModelUsage, isWindows } from '@sourcegraph/cody-shared'
+import {
+    DOTCOM_URL,
+    ModelProvider,
+    ModelUsage,
+    getDotComDefaultModels,
+    isWindows,
+} from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
+import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TestClient, asTranscriptMessage } from './TestClient'
+import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
-import { isNode16 } from './isNode16'
 import type {
     CustomChatCommandResult,
     CustomEditCommandResult,
     EditTask,
     Requests,
 } from './protocol-alias'
+import { TESTING_TOKENS } from './testing-tokens'
+import { trimEndOfLine } from './trimEndOfLine'
 
 const explainPollyError = `
+                console.error(error)
 
     ===================================================[ NOTICE ]=======================================================
     If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
@@ -40,57 +48,30 @@ const explainPollyError = `
 
     `
 
-const prototypePath = path.join(__dirname, '__tests__', 'example-ts')
-const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
-const workspaceRootPath = workspaceRootUri.fsPath
+const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
 describe('Agent', () => {
-    const dotcom = 'https://sourcegraph.com'
-    if (mayRecord) {
-        execSync('src login', { stdio: 'inherit' })
-        assert.strictEqual(
-            process.env.SRC_ENDPOINT,
-            dotcom,
-            'SRC_ENDPOINT must be https://sourcegraph.com'
-        )
-    }
-
-    if (process.env.VITEST_ONLY && !process.env.VITEST_ONLY.includes('Agent')) {
-        it('Agent tests are skipped due to VITEST_ONLY environment variable', () => {})
-        return
-    }
-
-    const client = new TestClient({
+    const client = TestClient.create({
+        workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        // The redacted ID below is copy-pasted from the recording file and
-        // needs to be updated whenever we change the underlying access token.
-        // We can't return a random string here because then Polly won't be able
-        // to associate the HTTP requests between record mode and replay mode.
-        accessToken:
-            process.env.SRC_ACCESS_TOKEN ??
-            'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
-    })
-
-    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    //
-    // ⚠️ If this line fails when running unit tests, chances are that the error is being swallowed.
-    // To see the full error, run this file in isolation:
-    //
-    //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', {
-        cwd: client.getAgentDir(),
-        stdio: 'inherit',
+        token: TESTING_TOKENS.dotcom,
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        await fspromises.mkdir(workspaceRootPath, { recursive: true })
-        await fspromises.cp(prototypePath, workspaceRootPath, {
-            recursive: true,
+        ModelProvider.setProviders(getDotComDefaultModels())
+        await workspace.beforeAll()
+
+        // Init a repo in the workspace to make the tree-walk repo-name resolver work for Cody Ignore tests.
+        spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
+        spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
+            cwd: workspace.rootPath,
+            stdio: 'inherit',
         })
+
         const serverInfo = await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
@@ -105,34 +86,30 @@ describe('Agent', () => {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
-            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Confirm .cody/ignore is active at start up
-        const codyIgnore = await client.request('check/isCodyIgnoredFile', {
-            urls: [ignoredPath],
+        const ignore = await client.request('ignore/test', {
+            uri: URI.file(ignoredUri.fsPath).toString(),
         })
-        expect(codyIgnore).toBeTruthy()
+        // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
+        expect(ignore.policy).toBe('use')
     }, 10_000)
 
     beforeEach(async () => {
         await client.request('testing/reset', null)
     })
 
-    const sumPath = path.join(workspaceRootPath, 'src', 'sum.ts')
-    const sumUri = vscode.Uri.file(sumPath)
-    const animalPath = path.join(workspaceRootPath, 'src', 'animal.ts')
-    const animalUri = vscode.Uri.file(animalPath)
-    const squirrelPath = path.join(workspaceRootPath, 'src', 'squirrel.ts')
-    const squirrelUri = vscode.Uri.file(squirrelPath)
-    const multipleSelections = path.join(workspaceRootPath, 'src', 'multiple-selections.ts')
-    const multipleSelectionsUri = vscode.Uri.file(multipleSelections)
+    const sumUri = workspace.file('src', 'sum.ts')
+    const animalUri = workspace.file('src', 'animal.ts')
+    const squirrelUri = workspace.file('src', 'squirrel.ts')
+    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-    const ignoredPath = path.join(workspaceRootPath, 'src', 'isIgnored.ts')
-    const ignoredUri = vscode.Uri.file(ignoredPath)
+    const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
     it('extensionConfiguration/change (handle errors)', async () => {
         // Send two config change notifications because this is what the
@@ -153,7 +130,7 @@ describe('Agent', () => {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
-            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? dotcom,
+            serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
@@ -182,10 +159,10 @@ describe('Agent', () => {
             expect(completions.items.length).toBeGreaterThan(0)
             expect(texts).toMatchInlineSnapshot(
                 `
-          [
-            "   return a + b;",
-          ]
-        `
+              [
+                "   return a + b;",
+              ]
+            `
             )
             client.notify('autocomplete/completionAccepted', {
                 completionID: completions.items[0].id,
@@ -268,7 +245,7 @@ describe('Agent', () => {
                     id: id1,
                     message: {
                         command: 'submit',
-                        text: 'My name is Lars Monsen',
+                        text: 'My name is Lars Monsen.',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -298,7 +275,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You told me your name is Lars Monsen."`,
+                `"You introduced yourself as Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
@@ -467,8 +444,7 @@ describe('Agent', () => {
             }
         })
 
-        // Tests for edits would fail on Node 16 (ubuntu16) possibly due to an API that is not supported
-        describe.skipIf(isNode16())('chat/editMessage', () => {
+        describe('chat/editMessage', () => {
             it(
                 'edits the last human chat message',
                 async () => {
@@ -533,18 +509,19 @@ describe('Agent', () => {
         })
     })
 
-    describe('Cody Ignore', () => {
+    // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
+    describe.skip('Cody Ignore', () => {
         beforeAll(async () => {
             // Make sure Cody ignore config exists and works
-            const codyIgnoreConfig = vscode.Uri.file(path.join(workspaceRootPath, '.cody/ignore'))
+            const codyIgnoreConfig = workspace.file('.cody', 'ignore')
             await client.openFile(codyIgnoreConfig)
             const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
             expect(codyIgnoreConfigFile?.content).toBeDefined()
 
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [ignoredPath],
+            const result = await client.request('ignore/test', {
+                uri: ignoredUri.toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
         }, 10_000)
 
         it('autocomplete/execute on ignored file', async () => {
@@ -577,11 +554,13 @@ describe('Agent', () => {
             // Current file which is ignored, should not be included in context files
             expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
             // Ignored file should not be included in context files
-            const contextFilesUrls = contextFiles.map(f => f.uri?.path)
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: contextFilesUrls,
-            })
-            expect(result).toBeFalsy()
+            const contextFilesUrls = contextFiles.map(f => f.uri).filter(uri => uri)
+            const result = await Promise.all(
+                contextFilesUrls.map(uri => client.request('ignore/test', { uri: uri.toString() }))
+            )
+            for (const r of result) {
+                expect(r.policy).toBe('use')
+            }
             // Files that are not ignored should be used as context files
             expect(contextFiles.length).toBeGreaterThan(0)
         }, 30_000)
@@ -603,10 +582,14 @@ describe('Agent', () => {
             // Since no enhanced context is requested, no context files should be included
             expect(contextFiles.length).toBe(0)
             // Ignored file should not be included in context files
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: contextUrls,
-            })
-            expect(result).toBeFalsy()
+            const result = await Promise.all(
+                contextUrls.map(uri =>
+                    client.request('ignore/test', {
+                        uri,
+                    })
+                )
+            )
+            expect(result.every(entry => entry.policy === 'use')).toBe(true)
         }, 30_000)
 
         it('chat command on an ignored file', async () => {
@@ -631,20 +614,20 @@ describe('Agent', () => {
         })
 
         it('ignore rule is not case sensitive', async () => {
-            const alsoIgnoredPath = path.join(workspaceRootPath, 'src/is_ignored.ts')
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [alsoIgnoredPath],
+            const alsoIgnored = workspace.file('src', 'is_ignored.ts')
+            const result = await client.request('ignore/test', {
+                uri: URI.file(alsoIgnored.fsPath).toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
         })
 
         afterAll(async () => {
             // Makes sure cody ignore is still active after tests
             // as it should stay active for each workspace session.
-            const result = await client.request('check/isCodyIgnoredFile', {
-                urls: [ignoredPath],
+            const result = await client.request('ignore/test', {
+                uri: ignoredUri.toString(),
             })
-            expect(result).toBeTruthy()
+            expect(result.policy).toBe('ignore')
 
             // Check the network requests to ensure no requests include context from ignored files
             const { requests } = await client.request('testing/networkRequests', null)
@@ -703,10 +686,12 @@ describe('Agent', () => {
         }, 20_000)
     })
 
-    function checkDocumentCommand(
+    function checkEditCommand(
         documentClient: TestClient,
+        command: RequestMethodName,
         name: string,
         filename: string,
+        param: any,
         assertion: (obtained: string) => void
     ): void {
         it(
@@ -715,9 +700,9 @@ describe('Agent', () => {
                 await documentClient.request('command/execute', {
                     command: 'cody.search.index-update',
                 })
-                const uri = vscode.Uri.file(path.join(workspaceRootPath, 'src', filename))
+                const uri = workspace.file('src', filename)
                 await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request('editCommands/document', null)
+                const task = await documentClient.request(command, param)
                 await documentClient.taskHasReachedAppliedPhase(task)
                 const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
                 expect(lenses).toHaveLength(0) // Code lenses are now handled client side
@@ -728,6 +713,32 @@ describe('Agent', () => {
             },
             20_000
         )
+    }
+
+    function checkEditCodeCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        instruction: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(
+            documentClient,
+            'editCommands/code',
+            name,
+            filename,
+            { instruction: instruction },
+            assertion
+        )
+    }
+
+    function checkDocumentCommand(
+        documentClient: TestClient,
+        name: string,
+        filename: string,
+        assertion: (obtained: string) => void
+    ): void {
+        checkEditCommand(documentClient, 'editCommands/document', name, filename, null, assertion)
     }
 
     describe('Commands', () => {
@@ -770,7 +781,7 @@ describe('Agent', () => {
         }, 30_000)
 
         // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isNode16() || isWindows())(
+        it.skipIf(isWindows())(
             'commands/test',
             async () => {
                 await client.request('command/execute', {
@@ -882,18 +893,15 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        // Skipped because it's timing out for some reason and the functionality
-        // is still not working 100% correctly. Keeping the test so we can fix
-        // the test later.
-        it.skip('editCommand/test', async () => {
-            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
-            const uri = vscode.Uri.file(trickyLogicPath)
+        it('editCommand/test', async () => {
+            const uri = workspace.file('src', 'trickyLogic.ts')
 
             await client.openFile(uri)
             const id = await client.request('editCommands/test', null)
             await client.taskHasReachedAppliedPhase(id)
             const originalDocument = client.workspace.getDocument(uri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
+                `
               "export function trickyLogic(a: number, b: number): number {
                   if (a === 0) {
                       return 1
@@ -907,31 +915,42 @@ describe('Agent', () => {
 
 
               "
-            `)
+            `,
+                explainPollyError
+            )
 
             const untitledDocuments = client.workspace
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(1)
             const [untitledDocument] = untitledDocuments
-            const testDocment = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
-            expect(trimEndOfLine(testDocment?.getText())).toMatchInlineSnapshot(
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
-              "import { trickyLogic } from './trickyLogic';
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
+              import { trickyLogic } from './trickyLogic'
 
               describe('trickyLogic', () => {
-                it('should return 1 if a is 0', () => {
-                  expect(trickyLogic(0, 1)).toBe(1);
-                });
+                  it('should return 1 when a is 0', () => {
+                      expect(trickyLogic(0, 10)).toBe(1)
+                  })
 
-                it('should return 1 if b is 2', () => {
-                  expect(trickyLogic(1, 2)).toBe(1);
-                });
+                  it('should return 1 when b is 2', () => {
+                      expect(trickyLogic(10, 2)).toBe(1)
+                  })
 
-                it('should return a - b if neither a is 0 nor b is 2', () => {
-                  expect(trickyLogic(3, 1)).toBe(2);
-                });
-              });
+                  it('should return a - b when a is not 0 and b is not 2', () => {
+                      expect(trickyLogic(5, 3)).toBe(2)
+                      expect(trickyLogic(10, 5)).toBe(5)
+                  })
+
+                  it('should handle negative numbers', () => {
+                      expect(trickyLogic(-5, 3)).toBe(-8)
+                      expect(trickyLogic(5, -3)).toBe(8)
+                  })
+              })
               "
             `,
                 explainPollyError
@@ -942,8 +961,69 @@ describe('Agent', () => {
             expect(client.workspaceEditParams).toHaveLength(1)
         }, 30_000)
 
+        describe('Edit code', () => {
+            checkEditCodeCommand(
+                client,
+                'editCommands/code (basic function)',
+                'sum.ts',
+                'Rename `a` parameter to `c`',
+                obtained =>
+                    expect(obtained).toMatchInlineSnapshot(
+                        `
+                    "export function sum(c: number, b: number): number {
+                        /* CURSOR */
+                    }
+                    "
+                    `,
+                        explainPollyError
+                    )
+            )
+
+            it('editCommand/code (add prop types)', async () => {
+                const uri = workspace.file('src', 'ChatColumn.tsx')
+                await client.openFile(uri)
+                const task = await client.request('editCommands/code', {
+                    instruction: 'Add types to these props. If you have to create types, add them',
+                    model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
+                        .model,
+                })
+                await client.acceptEditTask(uri, task)
+                expect(client.documentText(uri)).toMatchInlineSnapshot(`
+                  "import { useEffect } from "react";
+                  import React = require("react");
+
+                  export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }: {
+                  	messages: string[];
+                  	setChatID: (chatID: string) => void;
+                  	isLoading: boolean;
+                  }) {
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>
+                  				))}
+                  			</ul>
+                  		</>
+                  	);
+                  }
+                  "
+                `)
+            }, 20_000)
+        })
+
         describe('Document code', () => {
-            checkDocumentCommand(client, 'commands/document (basic function)', 'sum.ts', obtained =>
+            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
                 expect(obtained).toMatchInlineSnapshot(
                     `
                   "/**
@@ -968,22 +1048,22 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(
                         `
-                  "const foo = 42
+                      "const foo = 42
 
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
+                      export class TestClass {
+                          constructor(private shouldGreet: boolean) {}
 
-                          /**
-                       * Logs a "Hello World!" message to the console if the \`shouldGreet\` property is true.
-                       */
-                  public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
+                              /**
+                           * Logs a "Hello World!" message to the console if the \`shouldGreet\` property is true.
+                           */
+                      public functionName() {
+                              if (this.shouldGreet) {
+                                  console.log(/* CURSOR */ 'Hello World!')
+                              }
                           }
                       }
-                  }
-                  "
-                `,
+                      "
+                    `,
                         explainPollyError
                     )
             )
@@ -1023,30 +1103,30 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(
                         `
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+                      "import { expect } from 'vitest'
+                      import { it } from 'vitest'
+                      import { describe } from 'vitest'
 
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
+                      describe('test block', () => {
+                          it('does 1', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
+                          it('does 2', () => {
+                              expect(true).toBe(true)
+                          })
 
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                                  /**
-                           * Retrieves the current time in milliseconds since the page was loaded.
-                           * This can be used to measure the duration of an operation.
-                           */
-                  const startTime = performance.now(/* CURSOR */)
+                          it('does something else', () => {
+                              // This line will error due to incorrect usage of \`performance.now\`
+                                      /**
+                               * Retrieves the current time in milliseconds since the page was loaded.
+                               * This can be used to measure the duration of an operation.
+                               */
+                      const startTime = performance.now(/* CURSOR */)
+                          })
                       })
-                  })
-                  "
-                `,
+                      "
+                    `,
                         explainPollyError
                     )
             )
@@ -1061,8 +1141,7 @@ describe('Agent', () => {
             // Note: The test editor has all the files opened from previous tests as open tabs,
             // so we will need to open a new file that has not been opened before,
             // to make sure this context type is working.
-            const trickyLogicPath = path.join(workspaceRootPath, 'src', 'trickyLogic.ts')
-            const trickyLogicUri = vscode.Uri.file(trickyLogicPath)
+            const trickyLogicUri = workspace.file('src', 'trickyLogic.ts')
             await client.openFile(trickyLogicUri)
 
             const result = (await client.request('commands/custom', {
@@ -1072,17 +1151,17 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the codebase context you provided, the file names are:
+              "Based on the code snippets you've shared, the file names are:
 
               1. \`src/trickyLogic.ts\`
               2. \`src/animal.ts\`
-              3. \`src/example.test.ts\`
-              4. \`src/multiple-selections.ts\`
-              5. \`src/squirrel.ts\`
-              6. \`src/sum.ts\`
-              7. \`src/TestClass.ts\`
-              8. \`src/TestLogger.ts\`
-              9. \`src/trickyLogic.ts\` (repeated)"
+              3. \`src/ChatColumn.tsx\`
+              4. \`src/example.test.ts\`
+              5. \`src/multiple-selections.ts\`
+              6. \`src/squirrel.ts\`
+              7. \`src/sum.ts\`
+              8. \`src/TestClass.ts\`
+              9. \`src/TestLogger.ts\`"
             `,
                 explainPollyError
             )
@@ -1165,9 +1244,7 @@ describe('Agent', () => {
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
-                `
-                "You have shared codebase context from 9 different files."
-            `,
+                `"You have shared codebase context from 9 different files."`,
                 explainPollyError
             )
         }, 30_000)
@@ -1306,12 +1383,10 @@ describe('Agent', () => {
     })
 
     describe('RateLimitedAgent', () => {
-        const rateLimitedClient = new TestClient({
+        const rateLimitedClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
-            accessToken:
-                process.env.SRC_ACCESS_TOKEN_WITH_RATE_LIMIT ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5',
+            token: TESTING_TOKENS.dotcomProUserRateLimited,
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
@@ -1335,62 +1410,60 @@ describe('Agent', () => {
     })
 
     describe('Enterprise', () => {
-        const enterpriseClient = new TestClient({
+        const demoEnterpriseClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'enterpriseClient',
-            accessToken:
-                process.env.SRC_ENTERPRISE_ACCESS_TOKEN ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
-            serverEndpoint: 'https://demo.sourcegraph.com',
-            telemetryExporter: 'graphql',
+            token: TESTING_TOKENS.enterprise,
             logEventMode: 'connected-instance-only',
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            const serverInfo = await enterpriseClient.initialize()
+            const serverInfo = await demoEnterpriseClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
             expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
         it('chat/submitMessage', async () => {
-            const lastMessage = await enterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
+            const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
         checkDocumentCommand(
-            enterpriseClient,
+            demoEnterpriseClient,
             'commands/document (enterprise client)',
             'example.test.ts',
             obtained =>
                 expect(obtained).toMatchInlineSnapshot(
                     `
-              "import { expect } from 'vitest'
-              import { it } from 'vitest'
-              import { describe } from 'vitest'
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-              /**
-               * A test block that contains:
-               * - A test to assert true is true
-               * - A second test to assert true is true
-               * - A test expecting an error due to incorrect usage of performance.now
-              */
-              describe('test block', () => {
-                  it('does 1', () => {
-                      expect(true).toBe(true)
-                  })
+                  /**
+                   * Test block for example tests
+                   *
+                   * Contains individual test cases for various scenarios:
+                   * - does 1: checks if true equals true
+                   * - does 2: checks if true equals true
+                   * - does something else: (incomplete test case)
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does 2', () => {
-                      expect(true).toBe(true)
-                  })
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does something else', () => {
-                      // This line will error due to incorrect usage of \`performance.now\`
-                      const startTime = performance.now(/* CURSOR */)
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
                   })
-              })
-              "
-            `,
+                  "
+                `,
                     explainPollyError
                 )
         )
@@ -1402,12 +1475,12 @@ describe('Agent', () => {
         it.skipIf(isWindows())(
             'chat/submitMessage (addEnhancedContext: true, multi-repo test)',
             async () => {
-                const id = await enterpriseClient.request('chat/new', null)
-                const { repos } = await enterpriseClient.request('graphql/getRepoIds', {
+                const id = await demoEnterpriseClient.request('chat/new', null)
+                const { repos } = await demoEnterpriseClient.request('graphql/getRepoIds', {
                     names: ['github.com/sourcegraph/sourcegraph'],
                     first: 1,
                 })
-                await enterpriseClient.request('webview/receiveMessage', {
+                await demoEnterpriseClient.request('webview/receiveMessage', {
                     id,
                     message: {
                         command: 'context/choose-remote-search-repo',
@@ -1415,7 +1488,7 @@ describe('Agent', () => {
                     },
                 })
                 const { lastMessage, transcript } =
-                    await enterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
+                    await demoEnterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
                         'What is Squirrel?',
                         {
                             id,
@@ -1438,7 +1511,7 @@ describe('Agent', () => {
                 const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
                 expect(paths).includes('cmd/symbols/squirrel/README.md')
 
-                const { remoteRepos } = await enterpriseClient.request('chat/remoteRepos', { id })
+                const { remoteRepos } = await demoEnterpriseClient.request('chat/remoteRepos', { id })
                 expect(remoteRepos).toStrictEqual(repos)
             },
             30_000
@@ -1448,7 +1521,7 @@ describe('Agent', () => {
             // List a repo without a query
             let repos: Requests['remoteRepo/list'][1]
             do {
-                repos = await enterpriseClient.request('remoteRepo/list', {
+                repos = await demoEnterpriseClient.request('remoteRepo/list', {
                     query: undefined,
                     first: 10,
                 })
@@ -1457,7 +1530,7 @@ describe('Agent', () => {
 
             // Make a paginated query.
             const secondLastRepo = repos.repos.at(-2)
-            const moreRepos = await enterpriseClient.request('remoteRepo/list', {
+            const moreRepos = await demoEnterpriseClient.request('remoteRepo/list', {
                 query: undefined,
                 first: 2,
                 afterId: secondLastRepo?.id,
@@ -1465,7 +1538,7 @@ describe('Agent', () => {
             expect(moreRepos.repos[0].id).toBe(repos.repos.at(-1)?.id)
 
             // Make a query.
-            const filteredRepos = await enterpriseClient.request('remoteRepo/list', {
+            const filteredRepos = await demoEnterpriseClient.request('remoteRepo/list', {
                 query: 'sourceco',
                 first: 1000,
             })
@@ -1476,25 +1549,25 @@ describe('Agent', () => {
 
         it('remoteRepo/has', async () => {
             // Query a repo that does exist.
-            const codyRepoExists = await enterpriseClient.request('remoteRepo/has', {
+            const codyRepoExists = await demoEnterpriseClient.request('remoteRepo/has', {
                 repoName: 'github.com/sourcegraph/cody',
             })
             expect(codyRepoExists.result).toBe(true)
 
             // Query a repo that does not exist.
-            const codyForDos = await enterpriseClient.request('remoteRepo/has', {
+            const codyForDos = await demoEnterpriseClient.request('remoteRepo/has', {
                 repoName: 'github.com/sourcegraph/cody-edlin',
             })
             expect(codyForDos.result).toBe(false)
         })
 
         afterAll(async () => {
-            const { requests } = await enterpriseClient.request('testing/networkRequests', null)
+            const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)
             const nonServerInstanceRequests = requests
-                .filter(({ url }) => !url.startsWith(enterpriseClient.serverEndpoint))
+                .filter(({ url }) => !url.startsWith(demoEnterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
             expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
-            await enterpriseClient.shutdownAndExit()
+            await demoEnterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })
@@ -1502,28 +1575,28 @@ describe('Agent', () => {
     // Enterprise tests are run at demo instance, which is at a recent release version.
     // Use this section if you need to run against S2 which is released continuously.
     describe('Enterprise - close main branch', () => {
-        const enterpriseClient = new TestClient({
+        const s2EnterpriseClient = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
             name: 'enterpriseMainBranchClient',
-            accessToken:
-                process.env.SRC_S2_ACCESS_TOKEN ??
-                // See comment above `const client =` about how this value is derived.
-                'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
-            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
-            telemetryExporter: 'graphql',
+            token: TESTING_TOKENS.s2,
             logEventMode: 'connected-instance-only',
         })
 
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            const serverInfo = await enterpriseClient.initialize()
+            const serverInfo = await s2EnterpriseClient.initialize({
+                autocompleteAdvancedProvider: 'fireworks',
+            })
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
             expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
         }, 10_000)
 
-        it('attribution/found', async () => {
-            const id = await enterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+        // Disabled because `attribution/search` GraphQL does not work on S2
+        // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
+        it.skip('attribution/found', async () => {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new URL',
             })
@@ -1532,8 +1605,8 @@ describe('Agent', () => {
         }, 20_000)
 
         it('attribution/not found', async () => {
-            const id = await enterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await enterpriseClient.request('attribution/search', {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new LRU',
             })
@@ -1541,28 +1614,92 @@ describe('Agent', () => {
             expect(error).null
         }, 20_000)
 
+        // Use S2 instance for Cody Ignore enterprise tests
+        describe('Cody Ignore for enterprise', () => {
+            it('testing/ignore/overridePolicy', async () => {
+                const onChangeCallback = vi.fn()
+
+                // `sumUri` is located inside of the github.com/sourcegraph/cody repo.
+                const ignoreTest = () =>
+                    s2EnterpriseClient.request('ignore/test', { uri: sumUri.toString() })
+                s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
+
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/cody.*' }],
+                })
+
+                expect(onChangeCallback).toBeCalledTimes(1)
+                expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
+                })
+
+                expect(onChangeCallback).toBeCalledTimes(2)
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
+
+                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
+                    include: [{ repoNamePattern: '' }],
+                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
+                })
+
+                // onChangeCallback is not called again because filters are the same
+                expect(onChangeCallback).toBeCalledTimes(2)
+            })
+
+            // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
+            // should include `sourcegraph/cody` repo for this test to pass.
+            it('autocomplete/execute (with Cody Ignore filters)', async () => {
+                // Documents to be used as context sources.
+                await s2EnterpriseClient.openFile(animalUri)
+                await s2EnterpriseClient.openFile(squirrelUri)
+
+                // Document to generate a completion from.
+                await s2EnterpriseClient.openFile(sumUri)
+
+                const { items, completionEvent } = await s2EnterpriseClient.request(
+                    'autocomplete/execute',
+                    {
+                        uri: sumUri.toString(),
+                        position: { line: 1, character: 3 },
+                        triggerKind: 'Invoke',
+                    }
+                )
+
+                expect(items.length).toBeGreaterThan(0)
+                expect(items.map(item => item.insertText)).toMatchInlineSnapshot(
+                    `
+              [
+                "   return a + b",
+              ]
+            `
+                )
+
+                // Two documents will be checked against context filters set in site-config on S2.
+                expect(
+                    completionEvent?.params.contextSummary?.retrieverStats['jaccard-similarity']
+                        .suggestedItems
+                ).toEqual(2)
+
+                s2EnterpriseClient.notify('autocomplete/completionAccepted', {
+                    completionID: items[0].id,
+                })
+            }, 10_000)
+        })
+
         afterAll(async () => {
-            await enterpriseClient.shutdownAndExit()
+            await s2EnterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })
 
     afterAll(async () => {
-        await fspromises.rm(workspaceRootPath, {
-            recursive: true,
-            force: true,
-        })
+        await workspace.afterAll()
         await client.shutdownAndExit()
         // Long timeout because to allow Polly.js to persist HTTP recordings
     }, 30_000)
 })
-
-function trimEndOfLine(text: string | undefined): string {
-    if (text === undefined) {
-        return ''
-    }
-    return text
-        .split('\n')
-        .map(line => line.trimEnd())
-        .join('\n')
-}

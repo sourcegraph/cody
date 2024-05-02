@@ -5,7 +5,6 @@ import './App.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type Configuration,
     type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
@@ -32,10 +31,10 @@ import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { createWebviewTelemetryService } from './utils/telemetry'
+import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable'> & LocalEnv) | null>(null)
+    const [config, setConfig] = useState<LocalEnv | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -202,7 +201,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
+    // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+    // V2 telemetry recorder
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+
+    // Is this user a new installation?
     const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
 
     const onCurrentChatModelChange = useCallback(
@@ -237,6 +241,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <ConnectionIssuesPage
                     configuredEndpoint={authStatus.endpoint}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     vscodeAPI={vscodeAPI}
                 />
             </div>
@@ -249,6 +254,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     uiKindIsWeb={config?.uiKindIsWeb}
                     vscodeAPI={vscodeAPI}
                 />
@@ -284,6 +290,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     isTranscriptError={isTranscriptError}
                                     welcomeMessage={welcomeMessageMarkdown}
                                     guardrails={attributionEnabled ? guardrails : undefined}

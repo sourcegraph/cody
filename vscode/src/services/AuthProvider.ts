@@ -23,13 +23,13 @@ import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
-import { telemetryRecorder } from './telemetry-v2'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
@@ -71,7 +71,11 @@ export class AuthProvider {
         }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
 
-        await this.auth({ endpoint: lastEndpoint, token: token || null, isExtensionStartup: true })
+        await this.auth({
+            endpoint: lastEndpoint,
+            token: token || null,
+            isExtensionStartup: true,
+        })
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
@@ -123,13 +127,19 @@ export class AuthProvider {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
                 const token = await secretStorage.get(selectedEndpoint)
-                let authStatus = await this.auth({ endpoint: selectedEndpoint, token: token || null })
+                let authStatus = await this.auth({
+                    endpoint: selectedEndpoint,
+                    token: token || null,
+                })
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
                     if (!newToken) {
                         return
                     }
-                    authStatus = await this.auth({ endpoint: selectedEndpoint, token: newToken || null })
+                    authStatus = await this.auth({
+                        endpoint: selectedEndpoint,
+                        token: newToken || null,
+                    })
                 }
                 await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -142,7 +152,10 @@ export class AuthProvider {
         if (!accessToken) {
             return
         }
-        const authState = await this.auth({ endpoint: instanceUrl, token: accessToken })
+        const authState = await this.auth({
+            endpoint: instanceUrl,
+            token: accessToken,
+        })
         telemetryService.log(
             'CodyVSCodeExtension:auth:fromToken',
             {
@@ -206,9 +219,14 @@ export class AuthProvider {
             ...options
         )
         switch (option) {
-            case 'Manage Account':
-                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()))
+            case 'Manage Account': {
+                // Add the username to the web can warn if the logged in session on web is different from VS Code
+                const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
+                    query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
+                })
+                void vscode.env.openExternal(uri)
                 break
+            }
             case 'Switch Account...':
                 await this.signinMenu()
                 break
@@ -243,15 +261,15 @@ export class AuthProvider {
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const [{ enabled, version }, codyLLMConfiguration] = await Promise.all([
+        const [{ enabled, version }, codyLLMConfiguration, userInfo] = await Promise.all([
             this.client.isCodyEnabled(),
             this.client.getCodyLLMConfiguration(),
+            this.client.getCurrentUserInfo(),
         ])
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
-        const userInfo = await this.client.getCurrentUserInfo()
 
         if (!isDotCom) {
             const hasVerifiedEmail = false
@@ -344,7 +362,7 @@ export class AuthProvider {
         if (isExtensionStartup && isLoggedIn) {
             await this.setHasAuthenticatedBefore()
         } else if (isLoggedIn) {
-            this.logFirstEverAuthentication()
+            this.handleFirstEverAuthentication()
         }
 
         await this.storeAuthInfo(url, token)
@@ -474,12 +492,16 @@ export class AuthProvider {
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
-    private logFirstEverAuthentication(): void {
-        if (!localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
-            telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-            this.setHasAuthenticatedBefore()
+    private handleFirstEverAuthentication(): void {
+        if (localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+            // User has authenticated before, noop
+            return
         }
+        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
+        void vscode.commands.executeCommand('cody.tutorial.start')
+        this.setHasAuthenticatedBefore()
     }
+
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }

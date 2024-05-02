@@ -28,6 +28,16 @@ const test = helpers.test
             'CodyVSCodeExtension:auth:fromToken',
             'CodyVSCodeExtension:Auth:connected',
         ],
+        expectedV2Events: [
+            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+            'cody.extension:savedLogin',
+            'cody.auth:failed',
+            'cody.auth.login:clicked',
+            'cody.auth.signin.menu:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.signin.token:clicked',
+            'cody.auth:connected',
+        ],
     })
     .extend<helpers.WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
@@ -64,6 +74,8 @@ const test = helpers.test
                 use({
                     'cody.testing.localEmbeddings.model': 'stub/stub',
                     'cody.testing.localEmbeddings.indexLibraryPath': dir,
+                    'cody.testing.localEmbeddings.endpoint': SERVER_URL + '/v1/embeddings',
+                    'cody.testing.localEmbeddings.dimension': 1536,
                 })
             )
         },
@@ -136,6 +148,21 @@ test
             'CodyVSCodeExtension:chat-question:submitted',
             'CodyVSCodeExtension:chat-question:executed',
         ],
+        expectedV2Events: [
+            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+            'cody.extension:savedLogin',
+            'cody.auth:failed',
+            'cody.auth.login:clicked',
+            'cody.auth.signin.menu:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.signin.token:clicked',
+            'cody.auth:connected',
+            'cody.auth:connected',
+            'cody.auth:connected',
+            'cody.chat-question:submitted',
+            'cody.chat-question:executed',
+            'cody.chatResponse:noCode',
+        ],
     })('should be able to index, then search, a git repository', async ({ page, sidebar }) => {
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
@@ -159,7 +186,6 @@ test
     const contextCell = getContextCell(chatFrame)
     await expectContextCellCounts(contextCell, {
         files: 2,
-        lines: 2,
         timeout: 10000,
     })
 })

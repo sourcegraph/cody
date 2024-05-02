@@ -1,6 +1,6 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import type { TelemetryService } from '@sourcegraph/cody-shared'
+import type { TelemetryRecorder, TelemetryService } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import { useCallback, useState } from 'react'
 import type { VSCodeWrapper } from '../utils/VSCodeApi'
@@ -9,6 +9,7 @@ import styles from './ConnectionIssuesPage.module.css'
 export const ConnectionIssuesPage: React.FunctionComponent<
     React.PropsWithoutRef<{
         telemetryService: TelemetryService
+        telemetryRecorder: TelemetryRecorder
         vscodeAPI: VSCodeWrapper
         configuredEndpoint: string | undefined | null
     }>

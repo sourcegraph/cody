@@ -9,7 +9,6 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-
 import {
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -28,10 +27,12 @@ import {
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    PACKAGE_LIST_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -110,11 +111,29 @@ interface CurrentUserCodySubscriptionResponse {
 }
 
 interface CodyLLMSiteConfigurationResponse {
-    site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
 }
 
 interface CodyLLMSiteConfigurationProviderResponse {
-    site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
+}
+
+export interface PackageListResponse {
+    packageRepoReferences: {
+        nodes: {
+            id: string
+            name: string
+            kind: string
+            repository: { id: string; name: string; url: string }
+        }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
 }
 
 export interface RepoListResponse {
@@ -128,6 +147,10 @@ export interface RepoListResponse {
 
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryNameResponse {
+    repository: { name: string } | null
 }
 
 interface RepositoryIdsResponse {
@@ -183,9 +206,17 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResult {
-    include: CodyContextFilterItem[]
-    exclude: CodyContextFilterItem[]
+export interface ContextFiltersResponse {
+    site: {
+        codyContextFilters: {
+            raw: ContextFilters | null
+        } | null
+    } | null
+}
+
+export interface ContextFilters {
+    include?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
+    exclude?: null | readonly [CodyContextFilterItem, ...CodyContextFilterItem[]]
 }
 
 export interface CodyContextFilterItem {
@@ -194,15 +225,22 @@ export interface CodyContextFilterItem {
     filePathPatterns?: string[]
 }
 
-const INCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
-    include: [],
-    exclude: [],
-}
+/**
+ * Default value used on the client in case context filters are not set.
+ */
+export const INCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: [{ repoNamePattern: '.*' }],
+    exclude: null,
+} satisfies ContextFilters
 
-const EXCLUDE_EVERYTHING_CONTEXT_FILTERS: ContextFiltersResult = {
-    include: [],
+/**
+ * Default value used on the client in case client encounters errors
+ * fetching or parsing context filters.
+ */
+export const EXCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: null,
     exclude: [{ repoNamePattern: '.*' }],
-}
+} satisfies ContextFilters
 
 interface SearchAttributionResults {
     limitHit: boolean
@@ -478,6 +516,20 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider }
     }
 
+    public async getPackageList(
+        kind: string,
+        name: string,
+        first: number,
+        after?: string
+    ): Promise<PackageListResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<PackageListResponse>>(PACKAGE_LIST_QUERY, {
+            kind,
+            name,
+            first,
+            after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     /**
      * Gets a subset of the list of repositories from the Sourcegraph instance.
      * @param first the number of repositories to retrieve.
@@ -509,6 +561,18 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
+    public async getRepoName(cloneURL: string): Promise<string | null> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
+            REPO_NAME_QUERY,
+            {
+                cloneURL,
+            }
+        )
+
+        const result = extractDataOrError(response, data => data.repository?.name ?? null)
+        return isError(result) ? null : result
+    }
+
     public async contextSearch(
         repos: Set<string>,
         query: string
@@ -525,7 +589,7 @@ export class SourcegraphGraphQLAPIClient {
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
                     uri: URI.parse(
-                        `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
+                        `${this.endpoint}${item.blob.repository.name}/-/blob/${item.blob.path}?L${
                             item.startLine + 1
                         }-${item.endLine}`
                     ),
@@ -537,13 +601,24 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<ContextFiltersResult | null | Error> {
+    public async contextFilters(): Promise<ContextFilters> {
         const response =
-            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResult | null>>(
+            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
                 CONTEXT_FILTERS_QUERY
             )
 
-        const result = extractDataOrError(response, data => data)
+        const result = extractDataOrError(response, data => {
+            if (data?.site?.codyContextFilters?.raw === null) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            if (data?.site?.codyContextFilters?.raw) {
+                return data.site.codyContextFilters.raw
+            }
+
+            // Exclude everything in case of an unexpected response structure.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
@@ -551,6 +626,7 @@ export class SourcegraphGraphQLAPIClient {
                 return INCLUDE_EVERYTHING_CONTEXT_FILTERS
             }
 
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
             return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
@@ -794,7 +870,7 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    private fetchSourcegraphAPI<T>(
+    public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {}
     ): Promise<T | Error> {

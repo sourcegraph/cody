@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -11,17 +12,16 @@ import {
 } from '../chat/protocol'
 import { releaseNotesURL } from '../release'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { version } from '../version'
 
-export function registerSidebarCommands(): vscode.Disposable[] {
-    function logSidebarClick(feature: string) {
-        telemetryService.log(`CodyVSCodeExtension:sidebar:${feature}:clicked`, undefined, {
-            hasV2Event: true,
-        })
-        telemetryRecorder.recordEvent(`cody.sidebar.${feature}`, 'clicked')
-    }
+export function logSidebarClick(feature: string) {
+    telemetryService.log(`CodyVSCodeExtension:sidebar:${feature}:clicked`, undefined, {
+        hasV2Event: true,
+    })
+    telemetryRecorder.recordEvent(`cody.sidebar.${feature}`, 'clicked')
+}
 
+export function registerSidebarCommands(): vscode.Disposable[] {
     return [
         vscode.commands.registerCommand('cody.sidebar.commands', (feature: string, command: string) => {
             // For Custom Commands

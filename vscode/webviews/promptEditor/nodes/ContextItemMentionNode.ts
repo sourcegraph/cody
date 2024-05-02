@@ -4,6 +4,7 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
     displayPath,
@@ -28,9 +29,10 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
  */
-export type SerializedContextItem = { uri: string; content?: undefined } & (
+export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
+    | Omit<ContextItemPackage, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -179,10 +181,16 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // display ranges are 1-indexed.
     const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
     if (contextItem.type === 'file') {
-        return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}`
+        if (contextItem.provider && contextItem.title) {
+            return `@${contextItem.title}`
+        }
+        return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
     }
     if (contextItem.type === 'symbol') {
         return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+    }
+    if (contextItem.type === 'package') {
+        return `@${contextItem.ecosystem}:${contextItem.name}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)

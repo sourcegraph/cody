@@ -26,7 +26,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         cb({
             type: 'config',
             config: {
-                debugEnable: true,
                 serverEndpoint: 'https://example.com',
                 uiKindIsWeb: false,
                 experimentalGuardrails: false,
@@ -43,7 +42,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             workspaceFolderUris: [],
         })
-        cb({ type: 'chatModels', models: getDotComDefaultModels('default') })
+        cb({ type: 'chatModels', models: getDotComDefaultModels() })
         cb({
             type: 'history',
             localHistory: {

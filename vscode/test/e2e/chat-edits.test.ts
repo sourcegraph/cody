@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
+
 import { createEmptyChatPanel, expectContextCellCounts, getContextCell, sidebarSignin } from './common'
 import { type ExpectedEvents, test, withPlatformSlashes } from './helpers'
 
@@ -17,6 +18,30 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:chatEditButton:clicked',
+        'CodyVSCodeExtension:abortButton:clicked',
+        'CodyVSCodeExtension:at-mention:file:executed',
+        'CodyVSCodeExtension:editChatButton:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.sidebar.abortButton:clicked',
+        'cody.editChatButton:clicked',
+        'cody.at-mention.file:executed',
+        'cody.at-mention:executed',
     ],
 })('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -129,7 +154,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
     // both main.java and var.go should be used
     const contextCell = getContextCell(chatFrame)
-    await expectContextCellCounts(contextCell, { files: 2, lines: 12 })
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     const chatContext = chatFrame.locator('details').last()
     await expect(chatContext.getByRole('link', { name: 'Main.java' })).toBeVisible()

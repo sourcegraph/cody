@@ -16,7 +16,7 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
-import { fillInContextItemContent } from '../../editor/utils/editor-context'
+import { resolveContextItems } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 
 interface GetContextFromIntentOptions {
@@ -149,6 +149,6 @@ export const getContext = async ({
     }
 
     const derivedContext = await getContextFromIntent({ editor, ...options })
-    const userContext = await fillInContextItemContent(editor, userContextItems)
+    const userContext = await resolveContextItems(editor, userContextItems, options.selectedText)
     return [...derivedContext, ...userContext]
 }

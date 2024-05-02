@@ -4,12 +4,11 @@ import { type AuthStatus, type Configuration, isCodyIgnoredFile } from '@sourceg
 
 import { getConfiguration } from '../configuration'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { hoverCommandsProvider, isHoverCommandsEnabled } from '../commands/HoverCommandsProvider'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
-import { telemetryRecorder } from './telemetry-v2'
-import { enableDebugMode } from './utils/export-logs'
+import { enableVerboseDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
     title: string
@@ -166,29 +165,16 @@ export function createStatusBar(): CodyStatusBar {
                 'cody.commandCodeLenses',
                 c => c.commandCodeLenses
             ),
-            ...(hoverCommandsProvider.getEnablement()
-                ? [
-                      await createFeatureToggle(
-                          'Commands on Hover',
-                          'Experimental',
-                          'Enable Cody commands to appear on hover',
-                          'cody.experimental.hoverCommands',
-                          () => isHoverCommandsEnabled()
-                      ),
-                  ]
-                : [
-                      await createFeatureToggle(
-                          'Command Hints',
-                          undefined,
-                          'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
-                          'cody.commandHints.enabled',
-                          async () => {
-                              const enablement = await getGhostHintEnablement()
-                              return enablement.Document || enablement.EditOrChat || enablement.Generate
-                          }
-                      ),
-                  ]),
-
+            await createFeatureToggle(
+                'Command Hints',
+                undefined,
+                'Enable hints for Cody commands such as "Opt+K to Edit" or "Opt+D to Document"',
+                'cody.commandHints.enabled',
+                async () => {
+                    const enablement = await getGhostHintEnablement()
+                    return enablement.Document || enablement.EditOrChat || enablement.Generate
+                }
+            ),
             await createFeatureToggle(
                 'Search Context',
                 'Beta',
@@ -196,6 +182,21 @@ export function createStatusBar(): CodyStatusBar {
                 'cody.experimental.symfContext',
                 c => c.experimentalSymfContext,
                 false
+            ),
+            await createFeatureToggle(
+                'Ollama for Chat',
+                'Experimental',
+                'Use local Ollama models for chat and commands when available',
+                'cody.experimental.ollamaChat',
+                c => c.experimentalOllamaChat,
+                false,
+                [
+                    {
+                        iconPath: new vscode.ThemeIcon('book'),
+                        tooltip: 'Learn more about using local models',
+                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
+                    } as vscode.QuickInputButton,
+                ]
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
@@ -234,8 +235,8 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: config.debugEnable ? 'Check Debug Logs' : 'Turn on Debug Mode',
-                onClick: () => enableDebugMode(),
+                tooltip: config.debugVerbose ? 'Check Debug Logs' : 'Turn on Debug Mode',
+                onClick: () => enableVerboseDebugMode(),
             } as vscode.QuickInputButton,
         ]
         quickPick.onDidTriggerButton(async item => {

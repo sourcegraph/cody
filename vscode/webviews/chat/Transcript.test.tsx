@@ -1,7 +1,7 @@
 import { errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { Transcript } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
@@ -16,6 +16,10 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     postMessage: () => {},
 }
+
+vi.mock('@vscode/webview-ui-toolkit/react', () => ({
+    VSCodeButton: vi.fn(),
+}))
 
 describe('Transcript', () => {
     test('empty', () => {

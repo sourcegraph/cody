@@ -27,6 +27,7 @@ const meta: Meta<typeof Chat> = {
             onMessage: () => () => {},
         },
         telemetryService: null as any,
+        telemetryRecorder: null as any,
         isTranscriptError: false,
         isNewInstall: false,
         userContextFromSelection: [],

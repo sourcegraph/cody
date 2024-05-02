@@ -7,13 +7,14 @@ import {
     type BillingProduct,
     FeatureFlag,
     isNetworkError,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import type { Span } from '@opentelemetry/api'
@@ -22,6 +23,7 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -835,27 +837,25 @@ function completionItemToItemInfo(
 }
 
 const otherCompletionProviders = [
-    'GitHub.copilot',
-    'GitHub.copilot-nightly',
-    'TabNine.tabnine-vscode',
-    'TabNine.tabnine-vscode-self-hosted-updater',
     'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
-    'Codeium.codeium',
-    'Codeium.codeium-enterprise-updater',
-    'CodeComplete.codecomplete-vscode',
-    'Venthe.fauxpilot',
-    'TabbyML.vscode-tabby',
-    'blackboxapp.blackbox',
-    'devsense.intelli-php-vscode',
     'aminer.codegeex',
-    'svipas.code-autocomplete',
+    'AskCodi.askcodi-autocomplete',
+    'Bito.Bito',
+    'Blackboxapp.blackbox',
+    'CodeComplete.codecomplete-vscode',
+    'Codeium.codeium-enterprise-updater',
+    'Codeium.codeium',
+    'Continue.continue',
+    'devsense.intelli-php-vscode',
+    'GitHub.copilot-nightly',
+    'GitHub.copilot',
     'mutable-ai.mutable-ai',
+    'svipas.code-autocomplete',
+    'TabbyML.vscode-tabby',
+    'TabNine.tabnine-vscode-self-hosted-updater',
+    'TabNine.tabnine-vscode',
+    'Venthe.fauxpilot',
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
-}
-
-function isRunningInsideAgent(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return !!config.isRunningInsideAgent
 }

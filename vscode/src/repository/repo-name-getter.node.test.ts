@@ -2,10 +2,10 @@ import child_process from 'node:child_process'
 import { describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 
-import { gitRemoteUrlFromGitCli } from './repo-name-getter.node'
+import { gitRemoteUrlsFromGitCli } from './repo-name-getter.node'
 
 describe('gitRemoteUrlFromGitCli', () => {
-    it('returns the first remote push URL when available', async () => {
+    it('returns all remote URL when available', async () => {
         vi.spyOn(child_process, 'exec').mockImplementation(((
             _cmd: string,
             _config: unknown,
@@ -25,10 +25,13 @@ describe('gitRemoteUrlFromGitCli', () => {
         }) as any)
 
         const uri = URI.file('path/to/file/foo.ts')
-        expect(await gitRemoteUrlFromGitCli(uri)).toBe('https://github.com/sourcegraph/cody')
+        expect(await gitRemoteUrlsFromGitCli(uri)).toEqual([
+            'https://github.com/sourcegraph/cody',
+            'https://github.com/foo/bar',
+        ])
     })
 
-    it('returns the first remote fetch URL if no push URL is available', async () => {
+    it('returns all fetch URLs if no push URL is available', async () => {
         vi.spyOn(child_process, 'exec').mockImplementation(((
             _cmd: string,
             _config: unknown,
@@ -44,7 +47,10 @@ describe('gitRemoteUrlFromGitCli', () => {
         }) as any)
 
         const uri = URI.file('path/to/file/foo.ts')
-        expect(await gitRemoteUrlFromGitCli(uri)).toBe('https://github.com/sourcegraph/cody')
+        expect(await gitRemoteUrlsFromGitCli(uri)).toEqual([
+            'https://github.com/sourcegraph/cody',
+            'https://github.com/foo/bar',
+        ])
     })
 
     it('returns `undefined` when the remote list is empty', async () => {
@@ -60,6 +66,6 @@ describe('gitRemoteUrlFromGitCli', () => {
         }) as any)
 
         const uri = URI.file('path/to/file/foo.ts')
-        expect(await gitRemoteUrlFromGitCli(uri)).toBe(undefined)
+        expect(await gitRemoteUrlsFromGitCli(uri)).toBe(undefined)
     })
 })

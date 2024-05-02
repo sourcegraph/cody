@@ -1,5 +1,4 @@
 import type { Polly } from '@pollyjs/core'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { startPollyRecording } from '../testutils/polly'
@@ -11,6 +10,7 @@ import { mkdtemp, open, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
+import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
@@ -23,7 +23,6 @@ describe('symf', () => {
             'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
         serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
         customHeaders: {},
-        debugEnable: true,
     })
 
     describe('expand-query', () => {

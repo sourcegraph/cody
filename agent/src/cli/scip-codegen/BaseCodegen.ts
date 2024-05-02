@@ -97,7 +97,7 @@ export abstract class BaseCodegen {
         return JSON.stringify(msg.toObject(), null, 2)
     }
 
-    protected isStringType(type: scip.Type): boolean {
+    public isStringType(type: scip.Type): boolean {
         if (type.has_constant_type) {
             return type.constant_type.constant.has_string_constant
         }
@@ -124,7 +124,7 @@ export abstract class BaseCodegen {
         return false
     }
 
-    protected isStringTypeInfo(info: scip.SymbolInformation): boolean {
+    public isStringTypeInfo(info: scip.SymbolInformation): boolean {
         if (info.signature.has_value_signature) {
             return this.isStringType(info.signature.value_signature.tpe)
         }

@@ -21,7 +21,7 @@ import type { ContextRankerConfig, ContextRankingController } from './local-cont
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { RemoteUrlGetter } from './repository/repo-name-resolver'
+import type { RemoteUrlGetter } from './repository/enterprise-repo-name-resolver'
 import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
@@ -36,7 +36,9 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
-    createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
+    createLocalEmbeddingsController?: (
+        config: LocalEmbeddingsConfig
+    ) => Promise<LocalEmbeddingsController>
     createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever

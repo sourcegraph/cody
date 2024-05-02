@@ -46,6 +46,12 @@ interface ContextItemCommon {
      * Whether the content of the item is too large to be included as context.
      */
     isTooLarge?: boolean
+
+    /**
+     * The ID of the {@link ContextMentionProvider} that supplied this context item (or `undefined`
+     * if from a built-in context source such as files and symbols).
+     */
+    provider?: string
 }
 
 /**
@@ -80,12 +86,40 @@ export enum ContextItemSource {
 
     /** From URI */
     Uri = 'uri',
+
+    /** From a package repository */
+    Package = 'package',
 }
 
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem = ContextItemFile | ContextItemSymbol
+export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemPackage
+
+/**
+ * A file (or a subset of a file given by a range) that is included as context in a chat message.
+ */
+export interface ContextItemPackage extends ContextItemCommon {
+    type: 'package'
+
+    /**
+     * the repository id for this package.
+     */
+    repoID: string
+
+    /**
+     * the title for this package.
+     */
+    title: string
+    /**
+     * the ecosystem for this package.
+     */
+    ecosystem: string
+    /**
+     * the name for this package.
+     */
+    name: string
+}
 
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.

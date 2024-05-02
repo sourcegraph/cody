@@ -509,8 +509,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             : stat.isDirectory()
               ? FileType.Directory
               : stat.isSymbolicLink()
-                  ? FileType.SymbolicLink
-                  : FileType.Unknown
+                ? FileType.SymbolicLink
+                : FileType.Unknown
 
         return {
             type,
@@ -530,8 +530,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
                 : entry.isDirectory()
                   ? FileType.Directory
                   : entry.isSymbolicLink()
-                      ? FileType.SymbolicLink
-                      : FileType.Unknown
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -686,7 +686,9 @@ export enum UIKind {
     Web = 2,
 }
 
-export class FileSystemError extends Error {}
+export class FileSystemError extends Error {
+    public code = 'FileSystemError'
+}
 
 export const vsCodeMocks = {
     FileSystemError,
@@ -820,14 +822,13 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,
-    experimentalOllamaChat: false,
+    experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',
@@ -848,8 +849,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
+    testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

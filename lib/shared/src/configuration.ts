@@ -1,3 +1,6 @@
+import type { EmbeddingsProvider } from './codebase-context/context-status'
+import type { FileURI } from './common/uri'
+
 import type { PromptString } from './prompt/prompt-string'
 
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
@@ -21,7 +24,6 @@ export interface ConfigGetter<T> {
 export interface Configuration {
     proxy?: string | null
     codebase?: string
-    debugEnable: boolean
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
@@ -70,7 +72,7 @@ export interface Configuration {
      * Experimental autocomplete
      */
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
+    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean
@@ -82,9 +84,7 @@ export interface Configuration {
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts
 
-    testingLocalEmbeddingsModel: string | undefined
-    testingLocalEmbeddingsEndpoint: string | undefined
-    testingLocalEmbeddingsIndexLibraryPath: string | undefined
+    testingModelConfig: EmbeddingsModelConfig | undefined
 }
 
 export interface AutocompleteTimeouts {
@@ -234,6 +234,14 @@ export interface FireworksOptions {
         top_p?: number
         stop?: string[]
     }
+}
+
+export interface EmbeddingsModelConfig {
+    model: string
+    dimension: number
+    provider: EmbeddingsProvider
+    endpoint: string
+    indexPath: FileURI
 }
 
 /**

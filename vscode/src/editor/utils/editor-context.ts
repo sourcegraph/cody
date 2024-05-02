@@ -10,18 +10,17 @@ import {
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
+    type PromptString,
     type SymbolKind,
     TokenCounter,
     displayPath,
-    fetchContentForURLContextItem,
     isCodyIgnoredFile,
     isDefined,
-    isURLContextItem,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
-import { isURLContextFeatureFlagEnabled } from '../../chat/context/chatContext'
+import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -274,47 +273,67 @@ export async function filterContextItemFiles(
     return filtered
 }
 
-export async function fillInContextItemContent(
+export async function resolveContextItems(
     editor: Editor,
-    items: ContextItem[]
+    items: ContextItem[],
+    input: PromptString
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
-            items.map(async (item: ContextItem): Promise<ContextItemWithContent | null> => {
-                let { content, size, range, uri } = item
-                if (!content) {
-                    try {
-                        if (isURLContextItem(item) && (await isURLContextFeatureFlagEnabled())) {
-                            content = (await fetchContentForURLContextItem(uri.toString())) ?? ''
-                        } else {
-                            content = await editor.getTextEditorContentForFile(uri, toVSCodeRange(range))
-                        }
-                        if (content) {
-                            size = size ?? TokenCounter.countTokens(content)
-                            range = range ?? getRangeByContentLineCount(content)
-                        }
-                    } catch (error) {
-                        void vscode.window.showErrorMessage(
-                            `Cody could not include context from ${item.uri}. (Reason: ${error})`
-                        )
-                        return null
-                    }
+            items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
+                try {
+                    return await resolveContextItem(item, editor, input)
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Cody could not include context from ${item.uri}. (Reason: ${error})`
+                    )
+                    return null
                 }
-                return { ...item, content: content!, size, range }
             })
         )
-    ).filter(isDefined)
+    )
+        .filter(isDefined)
+        .flat()
 }
 
-/**
- * Gets a `vscode.Range` representing the full content of the given string.
- *
- * @param content The string content to get the range for.
- * @returns A `vscode.Range` representing the full content of the given string, or `undefined` if the input is empty.
- */
-function getRangeByContentLineCount(content: string): vscode.Range | undefined {
-    if (!content.trim()) {
-        return undefined
+async function resolveContextItem(
+    item: ContextItem,
+    editor: Editor,
+    input: PromptString
+): Promise<ContextItemWithContent[]> {
+    const resolvedItems = item.provider
+        ? await resolveContextMentionProviderContextItem(item, input)
+        : [await resolveFileOrSymbolContextItem(item, editor)]
+    return resolvedItems.map(resolvedItem => ({
+        ...resolvedItem,
+        size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
+    }))
+}
+
+async function resolveContextMentionProviderContextItem(
+    { provider: itemProvider, ...item }: ContextItem,
+    input: PromptString
+): Promise<ContextItemWithContent[]> {
+    for (const provider of getEnabledContextMentionProviders()) {
+        if (provider.id === itemProvider && provider.resolveContextItem) {
+            return provider.resolveContextItem({ ...item, provider: itemProvider }, input)
+        }
     }
-    return new vscode.Range(0, 0, content?.split('\n')?.length, 0)
+
+    // No resolver, so return the context item as-is if it has content.
+    return item.content !== undefined ? [item as ContextItemWithContent] : []
+}
+
+async function resolveFileOrSymbolContextItem(
+    contextItem: ContextItem,
+    editor: Editor
+): Promise<ContextItemWithContent> {
+    const content =
+        contextItem.content ??
+        (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    return {
+        ...contextItem,
+        content,
+        size: contextItem.size ?? TokenCounter.countTokens(content),
+    }
 }

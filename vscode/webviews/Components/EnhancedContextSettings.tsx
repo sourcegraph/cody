@@ -3,13 +3,14 @@ import * as React from 'react'
 import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import type {
-    ContextGroup,
-    ContextProvider,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
-    LocalSearchProvider,
-    RemoteSearchProvider,
+import {
+    type ContextGroup,
+    type ContextProvider,
+    type EnhancedContextContextT,
+    type LocalEmbeddingsProvider,
+    type LocalSearchProvider,
+    type RemoteSearchProvider,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
 
@@ -243,8 +244,9 @@ const EmbeddingsConsentComponent: React.FunctionComponent<{ provider: LocalEmbed
     return (
         <div>
             <p className={styles.providerExplanatoryText}>
-                The repository&apos;s contents will be uploaded to OpenAI&apos;s Embeddings API and then
-                stored locally.
+                The repository&apos;s contents will be uploaded to{' '}
+                {provider.embeddingsAPIProvider === 'sourcegraph' ? 'Sourcegraph' : 'OpenAI'}
+                &apos;s Embeddings API and then stored locally.
                 {/* To exclude files, set up a <a href="about:blank#TODO">Cody ignore file.</a> */}
             </p>
             <p>
@@ -300,9 +302,9 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
     }
 }
 
-const ContextProviderComponent: React.FunctionComponent<{ provider: ContextProvider }> = ({
-    provider,
-}) => {
+const ContextProviderComponent: React.FunctionComponent<{
+    provider: ContextProvider
+}> = ({ provider }) => {
     let stateIcon: string | React.ReactElement
     switch (provider.state) {
         case 'indeterminate':
@@ -346,14 +348,14 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const context = useEnhancedContextContext()
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
-        (shouldEnable: boolean, source: 'btn' | 'checkbox'): void => {
+        (shouldEnable: boolean, source: 'btn' | 'checkbox' | 'altKey'): void => {
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
                 setEnabled(shouldEnable)
                 // Log when a user clicks on the Enhanced Context toggle. Event names:
                 // Checkbox click: `CodyVSCodeExtension:useEnhancedContextToggler:clicked`
                 // Button click: `CodyVSCodeExtension:useEnhancedContextTogglerBtn:clicked`
-                const eventName = source === 'btn' ? 'Btn' : ''
+                const eventName = source === 'btn' ? 'Btn' : source === 'altKey' ? 'AltKey' : ''
                 getVSCodeAPI().postMessage({
                     command: 'event',
                     eventName: `CodyVSCodeExtension:useEnhancedContextToggler${eventName}:clicked`,
@@ -363,6 +365,29 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         },
         [events, enabled]
     )
+
+    // Holding down the Alt/Opt key unchecks the box if it is checked.
+    const [disabledByAltKeyDown, setDisabledByAltKeyDown] = React.useState(false)
+    React.useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.altKey && enabled) {
+                setDisabledByAltKeyDown(true)
+                enabledChanged(false, 'altKey')
+            }
+        }
+        const onKeyUp = (event: KeyboardEvent) => {
+            if (!event.altKey && disabledByAltKeyDown) {
+                setDisabledByAltKeyDown(false)
+                enabledChanged(true, 'altKey')
+            }
+        }
+        document.addEventListener('keydown', onKeyDown)
+        document.addEventListener('keyup', onKeyUp)
+        return () => {
+            document.removeEventListener('keydown', onKeyDown)
+            document.removeEventListener('keyup', onKeyUp)
+        }
+    }, [enabled, disabledByAltKeyDown, enabledChanged])
 
     // Handles removing a manually added remote search provider.
     const handleRemoveRemoteSearchRepo = React.useCallback(
@@ -472,7 +497,9 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 onClick={() => enabledChanged(!enabled, 'btn')}
                 appearance="icon"
                 type="button"
-                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context`}
+                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context (hold ${
+                    isMacOS() ? 'Opt' : 'Alt'
+                } to disable)`}
             >
                 {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
             </VSCodeButton>

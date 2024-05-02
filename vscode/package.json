@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.14.0",
+  "version": "1.16.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -151,6 +151,14 @@
             "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
             "media": {
               "markdown": "walkthroughs/keyboard.md"
+            }
+          },
+          {
+            "id": "ollama",
+            "title": "Ollama (Experimental)",
+            "description": "Learn how to use your local models with Cody.",
+            "media": {
+              "markdown": "walkthroughs/ollama.md"
             }
           }
         ]
@@ -331,6 +339,12 @@
         "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
+        "command": "cody.command.usageExamples",
+        "category": "Cody Command",
+        "title": "Usage Examples",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -399,7 +413,7 @@
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
-        "when": "cody.activated && config.cody.autocomplete && config.cody.debug.enable && editorHasFocus && !editorReadonly"
+        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
@@ -510,8 +524,7 @@
         "command": "cody.debug.export.logs",
         "category": "Cody Debug",
         "group": "Debug",
-        "title": "Export Logs…",
-        "when": "config.cody.debug.enable"
+        "title": "Export Logs…"
       },
       {
         "command": "cody.debug.outputChannel",
@@ -581,9 +594,19 @@
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
+        "command": "cody.tutorial.chat",
+        "key": "alt+l",
+        "when": "cody.activated && cody.tutorialActive"
+      },
+      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.tutorial.edit",
+        "key": "alt+k",
+        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",
@@ -676,6 +699,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -717,6 +744,11 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
+        },
+        {
+          "command": "cody.command.usageExamples",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)",
+          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
@@ -859,6 +891,11 @@
         {
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
           "group": "inline@1"
         }
       ],
@@ -1017,12 +1054,6 @@
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
         },
-        "cody.debug.enable": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody by Sourcegraph\")",
-          "default": true
-        },
         "cody.debug.verbose": {
           "order": 99,
           "type": "boolean",
@@ -1065,7 +1096,7 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b", "starcoder2-hybrid", "llama-code-13b"],
+          "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1093,13 +1124,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.experimental.hoverCommands": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Display commands in hover tooltips for code elements.",
-          "description": "%config.experimental.hoverCommands%",
-          "tags": ["experimental", "feature-flag"]
-        },
         "cody.autocomplete.experimental.hotStreak": {
           "type": "boolean",
           "default": false,
@@ -1113,7 +1137,7 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "bfg", "bfg-mixed"],
+          "enum": [null, "bfg", "bfg-mixed", "tsc", "tsc-mixed"],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
@@ -1265,6 +1289,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@floating-ui/react": "^0.26.9",
+    "@heroicons/react": "^2.1.3",
     "@lexical/code": "^0.13.1",
     "@lexical/html": "^0.13.1",
     "@lexical/react": "^0.13.1",
@@ -1306,7 +1331,6 @@
     "parse-diff": "^0.11.1",
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
-    "re2-wasm": "^1.0.2",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "unzipper": "^0.10.14",

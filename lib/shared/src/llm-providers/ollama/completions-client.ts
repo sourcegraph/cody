@@ -1,4 +1,5 @@
 import type { OllamaGenerateErrorResponse, OllamaGenerateParams, OllamaGenerateResponse } from '.'
+import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { isDefined } from '../../common'
 import type { OllamaOptions } from '../../configuration'
 import {
@@ -34,7 +35,10 @@ export function createOllamaClient(
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                body: JSON.stringify(params),
+                body: JSON.stringify({
+                    ...params,
+                    prompt: await params.prompt.toFilteredString(contextFiltersProvider),
+                }),
                 headers: {
                     'Content-Type': 'application/json',
                 },

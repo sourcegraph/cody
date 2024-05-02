@@ -8,6 +8,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { AgentTextDocument } from './AgentTextDocument'
+import { clearArray } from './clearArray'
 import * as vscode_shim from './vscode-shim'
 
 type EditFunction = (
@@ -97,10 +98,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             },
         ]
 
-        while (vscode_shim.visibleTextEditors.length > 0) {
-            vscode_shim.visibleTextEditors.pop()
-        }
+        clearArray(vscode_shim.visibleTextEditors)
+        clearArray(vscode_shim.workspaceTextDocuments)
+
         for (const document of this.allDocuments()) {
+            vscode_shim.workspaceTextDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)

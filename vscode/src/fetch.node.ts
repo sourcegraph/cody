@@ -3,9 +3,8 @@ import https from 'node:https'
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { type Configuration, agent } from '@sourcegraph/cody-shared'
 
-import { agent } from '@sourcegraph/cody-shared/src/fetch'
 import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents

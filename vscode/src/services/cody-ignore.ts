@@ -7,9 +7,9 @@ import {
     ignores,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { telemetryService } from './telemetry'
-import { telemetryRecorder } from './telemetry-v2'
 
 const utf8 = new TextDecoder('utf-8')
 

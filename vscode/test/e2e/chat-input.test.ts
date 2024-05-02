@@ -2,7 +2,13 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedEvents,
+    executeCommandInPalette,
+    openFile,
+    test,
+} from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -15,6 +21,21 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
     ],
 })('editing messages in the chat input', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -48,7 +69,36 @@ test.extend<ExpectedEvents>({
     await chatInput.press('Enter')
 })
 
-test('chat input focus', async ({ page, sidebar }) => {
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:menu:command:default:clicked',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.menu:command:default:clicked',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:hasCode',
+    ],
+})('chat input focus', async ({ page, sidebar }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -70,7 +120,6 @@ test('chat input focus', async ({ page, sidebar }) => {
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
 
     // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).hover()
     await page.getByLabel(/Commands \(/).click()
     await page.waitForTimeout(100)
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
@@ -80,6 +129,7 @@ test('chat input focus', async ({ page, sidebar }) => {
     await chatInput.fill('delay')
     await chatInput.press('Enter')
     await expect(chatInput).toBeFocused()
+    await chatInput.click()
 
     // Ensure equal-width columns so we can be sure the code we're about to click is in view (and is
     // not out of the editor's scroll viewport). This became required due to new (undocumented)
@@ -108,21 +158,127 @@ test('chat input focus', async ({ page, sidebar }) => {
     await expect(chatInput).toBeFocused()
 })
 
-test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
-    'chat model selector',
-    async ({ page, sidebar }) => {
-        await sidebarSignin(page, sidebar)
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('chat model selector', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
 
-        const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-        const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
 
-        // Model selector is initially enabled.
-        await expect(modelSelect).toBeEnabled()
+    // Model selector is initially enabled.
+    await expect(modelSelect).toBeEnabled()
 
-        // Immediately after submitting the first message, the model selector is disabled.
-        await chatInput.fill('Hello')
-        await chatInput.press('Enter')
-        await expect(modelSelect).toBeDisabled()
-    }
-)
+    // Immediately after submitting the first message, the model selector is disabled.
+    await chatInput.fill('Hello')
+    await chatInput.press('Enter')
+    await expect(modelSelect).toBeDisabled()
+})
+
+test.extend<ExpectedEvents>({
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:hasCode',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:hasCode',
+    ],
+})('chat readability: long text are wrapped and scrollable in chat views', async ({ page, sidebar }) => {
+    // Open a file before starting a new chat to make sure chat will be opened on the side
+    await sidebarSignin(page, sidebar)
+    await openFile(page, 'buzz.test.ts')
+    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+
+    // Use the width of the welcome chat to determine if the chat messages are wrapped.
+    const welcomeText = chatFrame.getByText('Welcome to Cody')
+    const welcomeTextContainer = await welcomeText.boundingBox()
+    const welcomeTextContainerWidth = welcomeTextContainer?.width || 0
+    expect(welcomeTextContainerWidth).toBeGreaterThan(0)
+
+    await chatInput.fill(
+        `Lorem ipsum Cody.
+        export interface Animal {
+                name: string
+                makeAnimalSound(): string
+                isMammal: boolean
+                printName(): void {
+                    console.log(this.name);
+                }
+            }
+        }
+        `
+    )
+
+    await chatInput.press('Enter')
+
+    // Verify if whitespaces are preserved in the chat view for human messages
+    const humanText = chatFrame.getByText('Lorem ipsum Cody.')
+    await expect(humanText).toHaveText(/\s\s\s\sname: string/)
+
+    const humanTextContainerBox = await humanText.boundingBox()
+    expect(humanTextContainerBox?.width).toBeLessThan(welcomeTextContainerWidth)
+
+    // Code block should be scrollable
+    const codeBlock = chatFrame.locator('pre').last()
+    expect(codeBlock).toBeVisible()
+    const codeBlockElement = await codeBlock.boundingBox()
+    expect(codeBlockElement?.width).toBeLessThan(welcomeTextContainerWidth)
+
+    // Go to the bottom of the chat transcript view
+    await codeBlock.click()
+    await page.keyboard.press('PageDown')
+
+    const botResponseText = chatFrame.getByText('Excepteur')
+    await expect(botResponseText).toBeVisible()
+
+    // The response text element and the code block element should have the same width
+    const botResponseElement = await botResponseText.boundingBox()
+    expect(botResponseElement?.width).toBeLessThan(welcomeTextContainerWidth)
+})

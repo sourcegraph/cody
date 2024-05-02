@@ -21,6 +21,29 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:command:explain:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:chat:context:opened',
+        'CodyVSCodeExtension:chat:context:fileLink:clicked',
+        'CodyVSCodeExtension:sidebar:smell:clicked',
+        'CodyVSCodeExtension:command:smell:executed',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.explain:clicked',
+        'cody.command.explain:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.sidebar.smell:clicked',
+        'cody.command.smell:executed',
     ],
 })('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -47,7 +70,7 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 1, lines: 11 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
 
     // Check if assistant responsed
@@ -66,7 +89,7 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await expectContextCellCounts(contextCell, { files: 1, lines: 20 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
@@ -80,7 +103,7 @@ test.extend<ExpectedEvents>({
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
-    await expectContextCellCounts(contextCell, { files: 1, lines: 9 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(disabledEditButtons).toHaveCount(0)
@@ -99,6 +122,26 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:command:codelens:clicked',
         'CodyVSCodeExtension:menu:command:default:clicked',
+        'CodyVSCodeExtension:command:codelens:clicked',
+        'CodyVSCodeExtension:command:test:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.command.codelens:clicked',
+        'cody.menu:command:default:clicked',
+        'cody.command.test:executed',
+        'cody.fixup.response:hasCode',
+        'cody.fixup.apply:succeeded',
     ],
 })('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -136,6 +179,21 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:command:doc:executed',
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.doc:clicked',
+        'cody.command.doc:executed',
+        'cody.fixup.response:hasCode',
+        'cody.fixup.apply:succeeded',
     ],
 })('Document Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody

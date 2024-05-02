@@ -1,3 +1,4 @@
+import type { SerializedChatMessage } from '../../chat/transcript/messages'
 import type { PromptString } from '../../prompt/prompt-string'
 
 interface DoneEvent {
@@ -35,6 +36,10 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+}
+
+export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
+    messages: SerializedChatMessage[]
 }
 
 export interface CompletionCallbacks {

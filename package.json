@@ -9,7 +9,7 @@
     "url": "https://github.com/sourcegraph/cody"
   },
   "engines": {
-    "node": "^v20.4.0",
+    "node": ">=18",
     "pnpm": "^8.6.7"
   },
   "browser": {
@@ -26,20 +26,20 @@
     "test:integration": "pnpm -C vscode test:integration",
     "test:e2e": "pnpm -C vscode test:e2e",
     "generate-agent-kotlin-bindings": "pnpm build && pnpm dlx ts-node agent/src/cli/scip-codegen/command.ts --output ../jetbrains/src/main/kotlin/com/sourcegraph/cody/protocol_generated",
-    "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
+    "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src",
     "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.5.2",
+    "@biomejs/biome": "1.7.2",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",
     "@storybook/react-vite": "^8.0.5",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.2",
-    "@types/node": "20.4.0",
-    "@types/react": "18.2.42",
-    "@types/react-dom": "18.2.17",
+    "@types/node": "20.12.7",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
     "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
     "happy-dom": "^14.3.10",
@@ -50,13 +50,14 @@
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.2",
-    "vite": "^5.1.6",
-    "vitest": "^1.3.1"
+    "vite": "^5.2.9",
+    "vitest": "^1.5.0"
   },
   "dependencies": {
     "ignore": "^5.3.1",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "vscode-jsonrpc": "^8.2.0"
   },
   "packageManager": "pnpm@8.6.7",
   "resolutions": {

@@ -1,17 +1,17 @@
 import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
 import { commands, window } from 'vscode'
-import { CommandMenuOption, CustomCommandConfigMenuItems } from './items'
+import { CommandMenuOption, CustomCommandConfigMenuItems } from './items/menu'
 
 import { CustomCommandType } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import type { CodyCommandArgs } from '../types'
 import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
-import { type CommandMenuButton, CommandMenuSeperator, CommandMenuTitleItem } from './items'
+import { type CommandMenuButton, CommandMenuSeperator, CommandMenuTitleItem } from './items/menu'
 import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(

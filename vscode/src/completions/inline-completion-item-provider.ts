@@ -5,6 +5,7 @@ import {
     ConfigFeaturesSingleton,
     FeatureFlag,
     RateLimitError,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -15,6 +16,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
@@ -202,10 +204,16 @@ export class InlineCompletionItemProvider
     ): Promise<AutocompleteResult | null> {
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
+            logIgnored(document.uri, 'cody-ignore')
             return null
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                logIgnored(document.uri, 'context-filter')
+                return null
+            }
+
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -285,8 +293,8 @@ export class InlineCompletionItemProvider
                     : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
                       ? TriggerKind.Automatic
                       : takeSuggestWidgetSelectionIntoAccount
-                          ? TriggerKind.SuggestWidget
-                          : TriggerKind.Hover
+                        ? TriggerKind.SuggestWidget
+                        : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
@@ -514,6 +522,11 @@ export class InlineCompletionItemProvider
 
         // Mark as seen, so we don't show again after this.
         void localStorage.set(key, 'true')
+
+        if (isInTutorial(request.document)) {
+            // Do nothing, the user is already working through the tutorial
+            return
+        }
 
         if (!this.isProbablyNewInstall) {
             // Only trigger for new installs for now, to avoid existing users from
@@ -793,4 +806,17 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+let lasIgnoredUriLogged: string | undefined = undefined
+function logIgnored(uri: vscode.Uri, reason: 'cody-ignore' | 'context-filter') {
+    const string = uri.toString()
+    if (lasIgnoredUriLogged === string) {
+        return
+    }
+    lasIgnoredUriLogged = string
+    logDebug(
+        'CodyCompletionProvider:ignored',
+        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
+    )
 }

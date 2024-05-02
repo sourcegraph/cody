@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { Polly, Request } from '@pollyjs/core'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import {
     type AuthStatus,
@@ -14,10 +15,10 @@ import {
     ModelProvider,
     NoOpTelemetryRecorderProvider,
     PromptString,
+    contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
-    isCodyIgnoredFile,
     isError,
     isRateLimitError,
     logDebug,
@@ -34,6 +35,14 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import {
+    AbstractMessageReader,
+    AbstractMessageWriter,
+    type Disposable,
+    type MessageConnection,
+    type MessageReader,
+    type MessageWriter,
+} from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
@@ -127,7 +136,6 @@ export async function newAgentClient(
     clientInfo: ClientInfo & { codyAgentPath?: string }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const serverHandler = new MessageHandler()
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
@@ -135,10 +143,23 @@ export async function newAgentClient(
         const child = spawn(arg0, args, {
             env: { ENABLE_SENTRY: 'false', ...process.env },
         })
-        serverHandler.connectProcess(child, reject)
+        child.on('error', error => reject?.(error))
+        child.on('exit', code => {
+            if (code !== 0) {
+                reject?.(new Error(`exit: ${code}`))
+            }
+        })
+
+        const conn = createMessageConnection(
+            new StreamMessageReader(child.stdout),
+            new StreamMessageWriter(child.stdin)
+        )
+        const serverHandler = new MessageHandler(conn)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
         })
+        conn.listen()
+        serverHandler.conn.onClose(() => reject())
         await serverHandler.request('initialize', clientInfo)
         serverHandler.notify('initialized', null)
         return serverHandler
@@ -153,13 +174,24 @@ export async function newAgentClient(
 
 export async function newEmbeddedAgentClient(clientInfo: ClientInfo): Promise<Agent> {
     process.env.ENABLE_SENTRY = 'false'
-    const agent = new Agent()
-    const debugHandler = new MessageHandler()
-    debugHandler.registerNotification('debug/message', params => {
+
+    // Create noop MessageConnection because we're just using clientForThisInstance.
+    const conn = createMessageConnection(
+        new (class extends AbstractMessageReader implements MessageReader {
+            listen(): Disposable {
+                return { dispose: () => {} }
+            }
+        })(),
+        new (class extends AbstractMessageWriter implements MessageWriter {
+            async write(): Promise<void> {}
+            end(): void {}
+        })()
+    )
+
+    const agent = new Agent({ conn })
+    agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
-    debugHandler.messageEncoder.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(debugHandler.messageDecoder)
     const client = agent.clientForThisInstance()
     await client.request('initialize', clientInfo)
     client.notify('initialized', null)
@@ -236,20 +268,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
         new NoOpTelemetryRecorderProvider([
             {
                 processEvent: event =>
-                    process.stderr.write(
+                    console.error(
                         `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
                     ),
             },
         ])
 
     constructor(
-        private readonly params?: {
+        private readonly params: {
             polly?: Polly | undefined
-            networkRequests: Request[]
-            requestErrors: PollyRequestError[]
+            networkRequests?: Request[]
+            requestErrors?: PollyRequestError[]
+            conn: MessageConnection
         }
     ) {
-        super()
+        super(params.conn)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
@@ -270,8 +303,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.codeLenses.remove(codeLensProvider)
                 )
             }
+            if (clientInfo.capabilities?.ignore === 'enabled') {
+                contextFiltersProvider.onContextFiltersChanged(() => {
+                    // Forward policy change notifications to the client.
+                    this.notify('ignore/didChange', null)
+                })
+            }
             if (process.env.CODY_DEBUG === 'true') {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
                 )
             }
@@ -313,7 +352,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     authStatus,
                 }
             } catch (error) {
-                process.stderr.write(
+                console.error(
                     `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
                 )
                 process.exit(1)
@@ -466,7 +505,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 // @ts-ignore
                 const persister = polly.persister._cache as Map<string, Har>
                 for (const [, har] of persister) {
-                    for (const entry of har.log.entries) {
+                    for (const entry of har?.log?.entries ?? []) {
                         if (entry.request.url !== url) {
                             continue
                         }
@@ -721,11 +760,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('git/codebaseName', ({ url }) => {
             const result = convertGitCloneURLToCodebaseName(url)
             return Promise.resolve(typeof result === 'string' ? result : null)
-        })
-
-        this.registerAuthenticatedRequest('check/isCodyIgnoredFile', ({ urls }) => {
-            const result = urls.filter(url => isCodyIgnoredFile(vscode.Uri.file(url))) ?? []
-            return Promise.resolve(result.length > 0)
         })
 
         this.registerNotification('autocomplete/clearLastCandidate', async () => {
@@ -987,25 +1021,35 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest(
-            'remoteRepo/list',
-            async ({ query, first, afterId }, cancelToken) => {
-                const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                    query,
-                    first,
-                    afterId
-                )
-                return {
-                    repos: result.repos,
-                    startIndex: result.startIndex,
-                    count: result.count,
-                    state: {
-                        state: result.state,
-                        error: errorToCodyError(result.lastError),
-                    },
-                }
+        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
+            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
+                query,
+                first,
+                afterId
+            )
+            return {
+                repos: result.repos,
+                startIndex: result.startIndex,
+                count: result.count,
+                state: {
+                    state: result.state,
+                    error: errorToCodyError(result.lastError),
+                },
             }
-        )
+        })
+
+        this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
+            const uri = vscode.Uri.parse(uriString)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
+            return {
+                policy: isIgnored ? 'ignore' : 'use',
+            } as const
+        })
+
+        this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
+            contextFiltersProvider.setTestingContextFilters(contextFilters)
+            return null
+        })
     }
 
     // ExtensionClient callbacks.
@@ -1035,7 +1079,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             }),
             repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', {})
+                this.notify('remoteRepo/didChange', null)
             }),
             {
                 dispose: () => {

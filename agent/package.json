@@ -34,11 +34,7 @@
     "assets": "dist/*.{wasm,map}"
   },
   "bin": "dist/index.js",
-  "files": [
-    "dist/index.js",
-    "dist/index.js.map",
-    "dist/*.wasm"
-  ],
+  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
   "dependencies": {
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -57,7 +53,8 @@
     "pretty-ms": "^8.0.0",
     "uuid": "^9.0.0",
     "vscode-uri": "^3.0.7",
-    "win-ca": "^3.5.1"
+    "win-ca": "^3.5.1",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/dedent": "^0.7.0",
@@ -66,11 +63,13 @@
     "@types/minimatch": "^5.1.2",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.10",
     "diff": "^5.2.0",
     "esbuild": "^0.18.19",
     "google-protobuf": "^3.21.2",
     "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "yaml": "^2.3.4"
   }
 }

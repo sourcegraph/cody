@@ -14,6 +14,7 @@ interface MockRequest {
     body: {
         messages: {
             text: string
+            speaker?: string
         }[]
     }
 }
@@ -47,6 +48,21 @@ const responses = {
     /**
      * Mocked doc string
      */
+    `,
+    lorem: `\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n
+    \`\`\`
+    // Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean blandit erat egestas, malesuada urna id, congue sem.
+    export interface Animal {
+            name: string
+            makeAnimalSound(): string
+            isMammal: boolean
+            printName(): void {
+                console.log(this.name);
+            }
+        }
+    }
+    \`\`\`
+    \n\n
     `,
 }
 
@@ -203,13 +219,7 @@ export class MockServer {
             const events = req.body as TelemetryEventInput[]
             for (const event of events) {
                 void logTestingData('new', JSON.stringify(event))
-                if (
-                    ![
-                        'cody.extension', // extension setup events can behave differently in test environments
-                    ].includes(event.feature)
-                ) {
-                    loggedV2Events.push(`${event.feature}/${event.action}`)
-                }
+                loggedV2Events.push(`${event.feature}:${event.action}`)
             }
             res.status(200)
         })
@@ -234,8 +244,17 @@ export class MockServer {
             // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
             // or have a method on the server to send a set response the next time it sees a trigger word in the request.
             const request = req as MockRequest
-            const lastHumanMessageIndex = request.body.messages.length - 2
+            let lastHumanMessageIndex = request.body.messages.findLastIndex(
+                msg => msg?.speaker === 'human'
+            )
+            if (lastHumanMessageIndex < 0) {
+                lastHumanMessageIndex = request.body.messages.length - 2
+            }
             let response = responses.chat
+            // Long chat response
+            if (request.body.messages[lastHumanMessageIndex].text.startsWith('Lorem ipsum')) {
+                response = responses.lorem
+            }
             // Doc command
             if (request.body.messages[lastHumanMessageIndex].text.includes('documentation comment')) {
                 response = responses.document
@@ -461,8 +480,16 @@ export class MockServer {
                         break
                     }
                     default:
-                        res.sendStatus(400)
-                        res.statusMessage = `unhandled GraphQL operation ${operation}`
+                        res.status(400).send(
+                            JSON.stringify({
+                                errors: [
+                                    {
+                                        message: `Cannot query field "unknown" on type "${operation}".`,
+                                        locations: [],
+                                    },
+                                ],
+                            })
+                        )
                         break
                 }
             }
@@ -552,7 +579,7 @@ export let loggedEvents: string[] = []
 // Events recorded using the new event recorders
 // Needs to be recorded separately from the legacy events to ensure ordering
 // is stable.
-let loggedV2Events: string[] = []
+export let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
     loggedEvents = []
