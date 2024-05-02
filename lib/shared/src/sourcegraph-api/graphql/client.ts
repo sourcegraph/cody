@@ -602,6 +602,12 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<ContextFilters> {
+        const { enabled, version } = await this.isCodyEnabled()
+        // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
+        if (!enabled || version < '5.3.3') {
+            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
         const response =
             await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
                 CONTEXT_FILTERS_QUERY
