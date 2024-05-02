@@ -1,5 +1,5 @@
+import { XMLBuilder } from 'fast-xml-parser'
 import { URI } from 'vscode-uri'
-import xml2js from 'xml2js'
 import { ContextItemSource, type ContextItemWithContent } from '../../codebase-context/messages'
 import { githubClient } from '../../githubClient'
 import type {
@@ -11,8 +11,8 @@ import type {
 
 const GithubContextId: ContextMentionProviderID = 'github'
 
-const xmlBuilder = new xml2js.Builder({
-    headless: true,
+const xmlBuilder = new XMLBuilder({
+    format: true,
 })
 
 class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
@@ -193,7 +193,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
 
             signal?.throwIfAborted?.()
 
-            const content = xmlBuilder.buildObject({
+            const content = xmlBuilder.build({
                 pull_request: {
                     url: pullRequest.html_url,
                     title: pullRequest.title,
@@ -265,7 +265,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                 })
                 .catch(() => [])
 
-            const content = xmlBuilder.buildObject({
+            const content = xmlBuilder.build({
                 issue: {
                     url: issue.html_url,
                     title: issue.title,
