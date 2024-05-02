@@ -391,13 +391,18 @@ const register = async (
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
-        vscode.commands.registerCommand('cody.command.explain-history', a =>
-            executeExplainHistoryCommand(commandsManager, a)
-        ),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
         )
     )
+
+    if (commandsManager !== undefined) {
+        disposables.push(
+	        vscode.commands.registerCommand("cody.command.explain-history", (a) =>
+		        executeExplainHistoryCommand(commandsManager, a),
+	        )
+        )
+    }
 
     disposables.push(
         // Tests
