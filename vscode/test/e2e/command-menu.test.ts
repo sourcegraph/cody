@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 
+import { CommandMenuOption as menu } from '../../src/commands/menus/items/options'
 import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
@@ -56,13 +57,13 @@ test.extend<ExpectedEvents>({
     const commandInputBox = page.getByPlaceholder(/Search for a command or enter/)
     await expect(commandInputBox).toBeVisible()
     await commandInputBox.fill('new chat submitted from command menu')
+
+    // Verify all the alwaysShow items are visible
+    await expect(page.getByLabel(`comment New Chat, ${menu.chat.description}`)).toBeVisible()
+    await expect(page.getByLabel(`wand Edit Code, ${menu.edit.description}`)).toBeVisible()
+    await expect(page.getByLabel(`search Search Code (Beta), ${menu.search.description}`)).toBeVisible()
+
     // this will fail if more than 1 New Chat item in the menu is found
-    await page.getByLabel('comment  New Chat, Start a new chat with this message').hover()
-    await expect(page.getByLabel('comment  New Chat, Start a new chat with this message')).toBeVisible()
-    await page.getByLabel('wand  Edit Code, Start a new code edit with these instructions').hover()
-    await expect(
-        page.getByLabel('wand  Edit Code, Start a new code edit with these instructions')
-    ).toBeVisible()
     await page.getByLabel('Start a new chat').locator('a').click()
 
     // the question should show up in the chat panel on submit

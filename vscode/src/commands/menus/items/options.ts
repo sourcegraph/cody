@@ -15,7 +15,7 @@ const chatOption: CommandMenuItem = {
     command: ASK_QUESTION_COMMAND.command.command,
 }
 
-const fixOption: CommandMenuItem = {
+const editOption: CommandMenuItem = {
     label: `$(${EDIT_COMMAND.icon}) ${EDIT_COMMAND.description}`,
     description: 'Start a new code edit with these instructions',
     key: EDIT_COMMAND.key,
@@ -50,7 +50,7 @@ const addOption: CommandMenuItem = {
 
 export const CommandMenuOption = {
     chat: chatOption,
-    edit: fixOption,
+    edit: editOption,
     config: configOption,
     add: addOption,
     search: searchOption,

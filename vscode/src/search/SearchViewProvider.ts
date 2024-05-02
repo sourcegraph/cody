@@ -10,6 +10,7 @@ import {
     isDefined,
     isFileURI,
     logDebug,
+    toRangeData,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../editor/active-editor'
@@ -137,13 +138,7 @@ export class SearchViewProvider implements vscode.Disposable {
 
     constructor(private symfRunner: SymfRunner) {
         this.indexManager = new IndexManager(this.symfRunner)
-        this.disposables.push(
-            this.indexManager,
-            this.cancellationManager,
-            vscode.commands.registerCommand('cody.symf.search', q => {
-                q ? this.onDidReceiveQuery(q) : this.getSearchQueryInput()
-            })
-        )
+        this.disposables.push(this.indexManager, this.cancellationManager)
     }
 
     public dispose(): void {
@@ -174,6 +169,9 @@ export class SearchViewProvider implements vscode.Disposable {
                 for (const folder of folders) {
                     await this.indexManager.refreshIndex(folder)
                 }
+            }),
+            vscode.commands.registerCommand('cody.symf.search', q => {
+                q ? this.onDidReceiveQuery(q) : this.getSearchQueryInput()
             })
         )
         // Kick off search index creation for all workspace folders
@@ -220,13 +218,13 @@ export class SearchViewProvider implements vscode.Disposable {
 
         const symf = this.symfRunner
         if (!symf) {
-            throw new Error('this.symfRunner is undefined')
+            logDebug('SearchViewProvider', 'symfRunner is not available')
+            throw new Error('Search is not available')
         }
 
         const scopeDirs = getScopeDirs()
         if (scopeDirs.length === 0) {
-            void vscode.window.showErrorMessage('Open a workspace folder to determine the search scope')
-            return
+            throw new Error('Please open a workspace folder for search')
         }
 
         if (!(queryPromptString instanceof PromptString)) {
@@ -270,7 +268,7 @@ export class SearchViewProvider implements vscode.Disposable {
                     file,
                     onSelect: () => {
                         vscode.workspace.openTextDocument(file.uri).then(async doc => {
-                            await vscode.window.showTextDocument(doc, {
+                            vscode.window.showTextDocument(doc, {
                                 preserveFocus: true,
                                 selection: new vscode.Range(
                                     s.range.start.line,
@@ -303,16 +301,18 @@ export class SearchViewProvider implements vscode.Disposable {
             })
             quickPick.busy = false
         } catch (error) {
-            if (error instanceof vscode.CancellationError) {
-                logDebug('SearchViewProvider', 'No search results because indexing was canceled')
-            } else {
-                logDebug('SearchViewProvider', `Error fetching results for "${query}": ${error}`)
-            }
+            const label = `Error fetching results for "${query}"`
+            const detail =
+                error instanceof vscode.CancellationError
+                    ? 'No search results because indexing was canceled'
+                    : `${error}`
+            logDebug('SearchViewProvider', `${label}: ${detail}`)
+            quickPick.items = [{ label, detail }]
             quickPick.busy = false
-            quickPick.items = [{ label: `No results for "${query}"`, detail: `${error}` }]
         }
     }
 }
+logDebug('SearchViewProvider', 'No search results because indexing was canceled')
 
 /**
  * @returns the list of workspace folders to search. The first folder is the active file's folder.
@@ -369,16 +369,16 @@ async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFi
                                 contents: textDecoder.decode(
                                     contents.subarray(result.range.startByte, result.range.endByte)
                                 ),
-                                range: {
-                                    start: {
+                                range: toRangeData([
+                                    {
                                         line: result.range.startPoint.row,
                                         character: result.range.startPoint.col,
                                     },
-                                    end: {
+                                    {
                                         line: result.range.endPoint.row,
                                         character: result.range.endPoint.col,
                                     },
-                                },
+                                ]),
                             }
                         }),
                     } satisfies SearchPanelFile
