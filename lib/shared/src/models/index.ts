@@ -16,13 +16,16 @@ export class ModelProvider {
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
-    // The title of the model, e.g. "Claude 2.0"
+    // The title of the model, e.g. "Claude 3 Sonnet"
     public readonly title: string
+    // A deprecated model can be used (to not break agent) but won't be rendered
+    // in the UI
+    public deprecated = false
 
     constructor(
         /**
          * The model id that includes the provider name & the model name,
-         * e.g. "anthropic/claude-2.0"
+         * e.g. "anthropic/claude-3-sonnet-20240229"
          */
         public readonly model: string,
         /**

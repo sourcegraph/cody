@@ -71,6 +71,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import { chatModel } from '../../models'
 import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
+import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -1292,7 +1293,7 @@ function newChatModelFromSerializedChatTranscript(
     modelID: string
 ): SimpleChatModel {
     return new SimpleChatModel(
-        json.chatModel || modelID,
+        migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
