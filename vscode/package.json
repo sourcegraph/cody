@@ -403,7 +403,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "New Chat Panel",
+        "title": "New Chat",
         "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -464,11 +464,44 @@
         "when": "cody.activated && cody.hasChatHistory"
       },
       {
-        "command": "cody.chat.context.add",
+        "command": "cody.search.index-update",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Update search index for current workspace folder",
+        "icon": "$(refresh)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.mention.selection",
+        "category": "Cody",
         "group": "Chat",
-        "title": "Cody Chat: Add context",
-        "icon": "$(new-file)",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
+        "title": "Add Selection to Cody Chat",
+        "icon": "$(mention)",
+        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
+      },
+      {
+        "command": "cody.mention.selection.new",
+        "category": "Cody",
+        "group": "Chat",
+        "title": "New Chat with Selection",
+        "icon": "$(mention)",
+        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
+      },
+      {
+        "command": "cody.mention.file",
+        "category": "Cody",
+        "group": "Chat",
+        "title": "Add File to Cody Chat",
+        "icon": "$(mention)",
+        "when": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
+      },
+      {
+        "command": "cody.mention.file.new",
+        "category": "Cody",
+        "group": "Chat",
+        "title": "New Chat with File",
+        "icon": "$(mention)",
+        "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -546,7 +579,7 @@
         "when": "cody.activated && !editorHasSelection"
       },
       {
-        "command": "cody.chat.context.add",
+        "command": "cody.mention.selection",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
@@ -685,14 +718,29 @@
         {
           "submenu": "cody.submenu",
           "group": "0_cody"
-        },
-        {
-          "command": "cody.chat.context.add",
-          "group": "0_cody",
-          "when": "cody.activated && editorTextFocus && editorHasSelection"
         }
       ],
       "cody.submenu": [
+        {
+          "command": "cody.mention.selection",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && editorHasSelection && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.selection.new",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && editorHasSelection && !cody.hasNewChatOpened"
+        },
+        {
+          "command": "cody.mention.file",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.file.new",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && !editorHasSelection && !cody.hasNewChatOpened"
+        },
         {
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
@@ -847,6 +895,18 @@
           "command": "cody.command.explain-output",
           "group": "0_cody",
           "when": "cody.activated"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cody.mention.file",
+          "group": "0_cody",
+          "when": "cody.activated && resourceScheme == file && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.file.new",
+          "group": "0_cody",
+          "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
         }
       ]
     },

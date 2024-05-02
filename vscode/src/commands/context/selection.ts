@@ -1,4 +1,10 @@
-import { type ContextItem, TokenCounter, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    TokenCounter,
+    logError,
+    toRangeData,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import { type ContextItemFile, ContextItemSource } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
@@ -39,7 +45,7 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     uri: document.uri,
                     content,
                     source: ContextItemSource.Selection,
-                    range: selection,
+                    range: toRangeData(selection),
                     size,
                 } satisfies ContextItemFile,
             ]
