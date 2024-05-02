@@ -206,20 +206,24 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     status: pullRequest.state,
                     body: pullRequest.body,
                     diff: diff,
-                    comments: comments.map(comment => ({
-                        url: comment.html_url,
-                        author: comment.user?.login,
-                        body: comment.body,
-                        created_at: comment.created_at,
-                    })),
-                    reviews: reviewComments.map(review => ({
-                        url: review.html_url,
-                        author: review.user.login,
-                        body: review.body,
-                        created_at: review.created_at,
-                        file_path: review.path,
-                        diff: review.diff_hunk,
-                    })),
+                    comments: {
+                        comment: comments.map(comment => ({
+                            url: comment.html_url,
+                            author: comment.user?.login,
+                            body: comment.body,
+                            created_at: comment.created_at,
+                        })),
+                    },
+                    reviews: {
+                        review: reviewComments.map(review => ({
+                            url: review.html_url,
+                            author: review.user.login,
+                            body: review.body,
+                            created_at: review.created_at,
+                            file_path: review.path,
+                            diff: review.diff_hunk,
+                        })),
+                    },
                 },
             })
 
@@ -273,12 +277,14 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     created_at: issue.created_at,
                     status: issue.state,
                     body: issue.body,
-                    comments: comments.map(comment => ({
-                        url: comment.html_url,
-                        author: comment.user?.login,
-                        body: comment.body,
-                        created_at: comment.created_at,
-                    })),
+                    comments: {
+                        comment: comments.map(comment => ({
+                            url: comment.html_url,
+                            author: comment.user?.login,
+                            body: comment.body,
+                            created_at: comment.created_at,
+                        })),
+                    },
                 },
             })
 
