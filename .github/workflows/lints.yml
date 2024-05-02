@@ -49,8 +49,9 @@ jobs:
               issue_number: pull_number,
             });
 
-            console.log(comments);
-            // console.log(pullRequest);
+            const alreadyCommented = comments.find(comment => comment.body === body);
+
+            console.log({comments, alreadyCommented});
 
             // if (pullRequest.comments === 0) {
               // Post a comment and tag @sourcegraph/cody-security as reviewers
@@ -60,10 +61,22 @@ jobs:
               //  repo,
               //  body,
               //});
+
+              // For this to work we need a different access_token, see:
+              // https://github.com/peter-evans/create-pull-request/issues/155#issuecomment-611904487
+              //
+              // github.rest.pulls.requestReviewers({
+              //  owner,
+              //  repo,
+              //  pull_number,
+              //  team_reviewers: ['cody-security']
+              // });
+
+
               github.rest.pulls.requestReviewers({
-                owner,
-                repo,
-                pull_number,
-                team_reviewers: ['cody-security']
+               owner,
+               repo,
+               pull_number,
+               reviewers: ['dominiccooney', 'philipp-spiess', 'willdollman']
               });
             // }
