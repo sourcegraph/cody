@@ -90,7 +90,10 @@ export function delint(sourceFile: ts.SourceFile, ranges: Range[] | null) {
         // When ranges are set, only error if the reported violation is within one
         // of the changed ranges.
         if (ranges !== null) {
-            const overlappingRange = ranges.find(range => range.start <= line && range.end >= endLine)
+            const overlappingRange = ranges.find(
+                // line and endLine start with 0, the supplied ranges with 1
+                range => range.start <= line + 1 && range.end >= endLine + 1
+            )
             if (overlappingRange === undefined) {
                 return
             }
