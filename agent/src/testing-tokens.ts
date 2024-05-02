@@ -6,6 +6,8 @@ export interface TestingToken {
     readonly serverEndpoint: string
 }
 
+// See instructions in agent/scripts/export-cody-http-recording-tokens.sh for
+// how to update the `redacted` tokens when the access token changes.
 export const TESTING_TOKENS = {
     dotcom: {
         production: process.env.SRC_ACCESS_TOKEN,
@@ -24,7 +26,7 @@ export const TESTING_TOKENS = {
     } satisfies TestingToken,
     s2: {
         production: process.env.SRC_S2_ACCESS_TOKEN,
-        redacted: 'REDACTED_ad28238383af71357085701263df7766e6f7f8ad1afc344d71aaf69a07143677',
+        redacted: 'REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364',
         serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
     } satisfies TestingToken,
 }

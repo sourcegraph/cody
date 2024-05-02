@@ -199,6 +199,7 @@ async function symbolContextItems(
                     ...item,
                     type: 'file',
                     range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
+                    source: ContextItemSource.Unified,
                 }) satisfies ContextItem
         ),
         ...uses.map(
@@ -207,7 +208,7 @@ async function symbolContextItems(
                     ...use,
                     type: 'file',
                     title: uriBasename(use.uri),
-                    source: ContextItemSource.Search,
+                    source: ContextItemSource.Unified,
                 }) satisfies ContextItem
         ),
     ]
