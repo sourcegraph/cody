@@ -162,5 +162,5 @@ main().catch(console.error)
 
 function extractPreviousMinor(majorAndMinor: string): string {
     const [major, minor] = majorAndMinor.split('.')
-    return `${major}.${Number.parseInt(minor) - 1}`
+    return `${major}.${parseInt(minor) - 1}`
 }

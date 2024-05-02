@@ -38,7 +38,7 @@ export class RateLimitError extends Error {
         }.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
-                ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)
+                ? new Date(Date.now() + parseInt(retryAfter, 10) * 1000)
                 : new Date(retryAfter)
             : undefined
         this.retryMessage = this.retryAfterDate ? formatRetryAfterDate(this.retryAfterDate) : undefined

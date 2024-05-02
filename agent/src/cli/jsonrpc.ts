@@ -53,7 +53,7 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
 
 const isDebugMode = process.env.CODY_AGENT_DEBUG_REMOTE === 'true'
 const debugPort = process.env.CODY_AGENT_DEBUG_PORT
-    ? Number.parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
+    ? parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
     : 3113
 
 export const jsonrpcCommand = new Command('jsonrpc')

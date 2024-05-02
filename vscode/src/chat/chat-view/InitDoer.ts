@@ -12,17 +12,19 @@ export class InitDoer<R> {
         if (this.isInitialized) {
             return
         }
-        // This block must execute synchronously, because this.isInitialized
-        // and this.onInitTodos must be updated atomically.
-        this.isInitialized = true
-        for (const { todo, onDone, onError } of this.onInitTodos) {
-            try {
-                Promise.resolve(todo()).then(onDone, onError)
-            } catch (error) {
-                onError(isError(error) ? error : new Error(`${error}`))
+        {
+            // This block must execute synchronously, because this.isInitialized
+            // and this.onInitTodos must be updated atomically.
+            this.isInitialized = true
+            for (const { todo, onDone, onError } of this.onInitTodos) {
+                try {
+                    Promise.resolve(todo()).then(onDone, onError)
+                } catch (error) {
+                    onError(isError(error) ? error : new Error(`${error}`))
+                }
             }
+            this.onInitTodos = []
         }
-        this.onInitTodos = []
     }
 
     public do(todo: () => Thenable<R> | R): Thenable<R> {

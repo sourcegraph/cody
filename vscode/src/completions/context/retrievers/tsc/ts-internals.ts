@@ -48,8 +48,8 @@ export function isParameter(sym: ts.Symbol): boolean {
         ts.isParameter(node)
             ? true
             : ts.isBindingElement(node) ||
-                ts.isObjectBindingPattern(node) ||
-                ts.isArrayBindingPattern(node)
+                  ts.isObjectBindingPattern(node) ||
+                  ts.isArrayBindingPattern(node)
               ? false
               : 'quit'
     )

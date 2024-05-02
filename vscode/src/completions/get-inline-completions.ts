@@ -327,7 +327,7 @@ async function doGetInlineCompletions(
         : triggerKind !== TriggerKind.Automatic
           ? 0
           : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
+              (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...

@@ -169,8 +169,8 @@ function getLineRangeInMention(query: string, range?: RangeData): string {
     const queryRange = query.match(RANGE_MATCHES_REGEXP)
     if (query && queryRange?.[1]) {
         const [_, start, end] = queryRange
-        const startLine = Number.parseInt(start)
-        const endLine = end ? Number.parseInt(end) : Number.POSITIVE_INFINITY
+        const startLine = parseInt(start)
+        const endLine = end ? parseInt(end) : Number.POSITIVE_INFINITY
         return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
     }
     // Passed in range string if no line number match.

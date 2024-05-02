@@ -13,8 +13,8 @@ import {
     type DotcomUrlOverride,
     type ExpectedEvents,
     type TestConfiguration,
-    test as baseTest,
     executeCommandInPalette,
+    test as baseTest,
 } from './helpers'
 
 const test = baseTest

@@ -67,6 +67,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     return (
         <div className={classNames(styles.linkContainer, className)}>
             {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
+            {/* biome-ignore lint/a11y/useValidAnchor: The onClick handler is only used for logging */}
             <a
                 className={styles.linkButton}
                 title={tooltip}

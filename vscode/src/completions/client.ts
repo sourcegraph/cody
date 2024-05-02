@@ -243,7 +243,7 @@ export async function createRateLimitErrorFromResponse(
         'autocompletions',
         await response.text(),
         upgradeIsAvailable,
-        limit ? Number.parseInt(limit, 10) : undefined,
+        limit ? parseInt(limit, 10) : undefined,
         retryAfter
     )
 }

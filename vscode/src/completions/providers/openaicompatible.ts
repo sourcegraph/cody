@@ -328,8 +328,8 @@ export function createProviderConfig({
             : model === 'starcoder-hybrid'
               ? 'starcoder-hybrid'
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                ? (model as keyof typeof MODEL_MAP)
-                : null
+                  ? (model as keyof typeof MODEL_MAP)
+                  : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

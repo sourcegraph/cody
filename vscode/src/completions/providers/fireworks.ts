@@ -542,8 +542,8 @@ export function createProviderConfig({
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                ? (model as keyof typeof MODEL_MAP)
-                : null
+                  ? (model as keyof typeof MODEL_MAP)
+                  : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)

@@ -30,7 +30,7 @@
     "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.7.2",
+    "@biomejs/biome": "1.5.2",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",

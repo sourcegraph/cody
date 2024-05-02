@@ -26,8 +26,8 @@ exec('git diff --unified=0 origin/main', (error, stdout, stderr) => {
             // Extract the line numbers for additions
             const match = line.match(/\+([0-9]+),?([0-9]*)/)
             if (match) {
-                const start = Number.parseInt(match[1], 10)
-                const count = Number.parseInt(match[2] || '1', 10)
+                const start = parseInt(match[1], 10)
+                const count = parseInt(match[2] || '1', 10)
                 const end = start + count - 1
                 if (count > 0) {
                     // Ensure we only add ranges where lines were added

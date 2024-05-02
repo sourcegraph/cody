@@ -293,8 +293,8 @@ export class InlineCompletionItemProvider
                     : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
                       ? TriggerKind.Automatic
                       : takeSuggestWidgetSelectionIntoAccount
-                        ? TriggerKind.SuggestWidget
-                        : TriggerKind.Hover
+                          ? TriggerKind.SuggestWidget
+                          : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
