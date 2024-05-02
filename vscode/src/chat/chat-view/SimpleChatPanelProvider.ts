@@ -69,9 +69,9 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
+import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
-import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -469,7 +469,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitRemoteUrl: authStatus.isDotCom ? await this.getRepoGiturlIfPublic() : "",
+                    gitRemoteUrl: authStatus.isDotCom ? await this.getRepoGiturlIfPublic() : '',
                 },
             })
 

@@ -48,7 +48,7 @@ export class RepoMetadatafromGitApi {
             const response = await fetch(apiUrl)
             // For private repos without token the api returns 404
             // Return the private repo visibility
-            if(response.status === 404) {
+            if (response.status === 404) {
                 return {
                     owner,
                     repoName,
