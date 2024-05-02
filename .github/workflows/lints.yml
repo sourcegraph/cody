@@ -53,7 +53,7 @@ jobs:
             if (pullRequest.comments === 0) {
               // Create a comment if there are no comments
               github.rest.issues.createComment({
-                issue_number,
+                pull_number,
                 owner,
                 repo,
                 body: '‼️ Hey @sourcegraph/cody-security, please review this PR carefully as it introduces usage of `unsafe_` functions or abuses PromptString.'
