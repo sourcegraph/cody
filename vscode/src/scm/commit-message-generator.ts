@@ -13,11 +13,12 @@ import {
     getDotComDefaultModels,
     isCodyIgnoredFile,
     isRateLimitError,
+    telemetryRecorder,
     truncateText,
 } from '@sourcegraph/cody-shared'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { gitAPI } from '../repository/git-extension-api'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 
 const execFile = promisify(_execFile)
 
@@ -54,22 +55,10 @@ export class CommitMessageGenerator implements vscode.Disposable {
                             'cody.generating-commit-message',
                             true
                         )
-                        telemetryService.log(
-                            'CodyVSCodeExtension:command:generateCommitMessage:started',
-                            {
-                                hasV2Event: true,
-                            }
-                        )
                         telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'started')
 
                         const commitMessage = await this.provideCommitMessage()
                         if (!commitMessage || commitMessage.length === 0) {
-                            telemetryService.log(
-                                'CodyVSCodeExtension:command:generateCommitMessage:empty',
-                                {
-                                    hasV2Event: true,
-                                }
-                            )
                             telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'empty')
                             return
                         }
@@ -146,9 +135,7 @@ export class CommitMessageGenerator implements vscode.Disposable {
         try {
             const psPrompt = PromptString.unsafe_fromUserQuery(prompt)
             const psPreamble = PromptString.unsafe_fromUserQuery(preamble)
-            const model = getDotComDefaultModels('default').find(
-                model => model.title === 'Claude 3 Haiku'
-            )?.model
+            const model = getDotComDefaultModels().find(model => model.title === 'Claude 3 Haiku')?.model
             const stream = this.options.chatClient.chat(
                 [
                     { speaker: 'human', text: psPrompt },
@@ -204,6 +191,12 @@ export class CommitMessageGenerator implements vscode.Disposable {
         if (!workspaceUri) {
             return null
         }
+
+        const gitApi = gitAPI()
+        const repository = gitApi?.getRepository(workspaceUri)
+        console.log('Got a repository?')
+        console.log(Object.keys(repository || {}))
+
         const diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
 
         if (diffs.length === 0) {
