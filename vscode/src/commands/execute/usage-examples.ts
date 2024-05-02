@@ -72,11 +72,13 @@ export async function executeUsageExamplesCommand(
             return undefined
         }
 
-        const prompt = ps`Show usage examples for \`${symbolText}\` from the ${symbolPackage.ecosystem
-            } package \`${symbolPackage.name
-            }\`.\n(No preamble, 2 idiomatic distinct concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
-                doc.uri
-            )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
+        const prompt = ps`Show usage examples for \`${symbolText}\` from the ${
+            symbolPackage.ecosystem
+        } package \`${
+            symbolPackage.name
+        }\`.\n(No preamble, 2 idiomatic distinct concise examples in ${PromptString.fromMarkdownCodeBlockLanguageIDForFilename(
+            doc.uri
+        )}, each with a Markdown header, a 1-sentence description, and then a code snippet.)`
         const contextFiles: ContextItem[] = []
 
         const snippetRange = expandRangeByLines(
@@ -142,7 +144,8 @@ async function symbolContextItems(
 
     const packages = (
         await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
-            `${symbolPackage.ecosystem}:${symbolPackage.name}`, { gitRemotes: [] }
+            `${symbolPackage.ecosystem}:${symbolPackage.name}`,
+            { gitRemotes: [] }
         )
     ).filter(item => item.title === symbolPackage.name.toString())
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
@@ -152,7 +155,7 @@ async function symbolContextItems(
             packages.map(item =>
                 searchForRepos(
                     'file:^package\\.json$ select:repo count:20 content:' +
-                    JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
+                        JSON.stringify(JSON.stringify(item.title)), // inner stringify to match string in package.json, outer stringify for our query language
                     undefined
                 )
             )
@@ -165,11 +168,11 @@ async function symbolContextItems(
                 repo instanceof Error
                     ? []
                     : await searchForFileChunks(
-                        `repo:${repo.name} count:5 lang:typescript (content:${JSON.stringify(
-                            symbolPackage.name
-                        )} AND content:${JSON.stringify(symbolUse)})`,
-                        signal
-                    )
+                          `repo:${repo.name} count:5 lang:typescript (content:${JSON.stringify(
+                              symbolPackage.name
+                          )} AND content:${JSON.stringify(symbolUse)})`,
+                          signal
+                      )
             )
         )
     ).flatMap(result => (result instanceof Error ? [] : result))

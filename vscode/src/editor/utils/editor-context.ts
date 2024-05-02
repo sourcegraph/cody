@@ -7,19 +7,19 @@ import {
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
+    type ContextItemProps,
     ContextItemSource,
     type ContextItemSymbol,
     type ContextItemWithContent,
     type Editor,
     type PromptString,
     type SymbolKind,
-    type ContextItemProps,
     TokenCounter,
+    convertGitCloneURLToCodebaseName,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
     isWindows,
-    convertGitCloneURLToCodebaseName
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
@@ -215,19 +215,19 @@ function createContextFileFromUri(
     return [
         type === 'file'
             ? {
-                type,
-                uri,
-                range,
-                source,
-            }
+                  type,
+                  uri,
+                  range,
+                  source,
+              }
             : {
-                type,
-                symbolName: symbolName!,
-                uri,
-                range,
-                source,
-                kind: kind!,
-            },
+                  type,
+                  symbolName: symbolName!,
+                  uri,
+                  range,
+                  source,
+                  kind: kind!,
+              },
     ]
 }
 
@@ -342,22 +342,26 @@ async function resolveFileOrSymbolContextItem(
 }
 
 export function getWorkspaceGitRemotes(): ContextItemProps['gitRemotes'] {
-    return vscode.workspace.workspaceFolders?.map((folder) => {
-        const remoteUrls = gitRemoteUrlsFromGitExtension(folder.uri)
+    return (
+        vscode.workspace.workspaceFolders?.flatMap(folder => {
+            const remoteUrls = gitRemoteUrlsFromGitExtension(folder.uri)
 
-        if (remoteUrls?.length) {
-            return remoteUrls.map((url) => {
-                const codebaseName = convertGitCloneURLToCodebaseName(url)
-                if (!codebaseName) {
-                    return null
-                }
+            if (remoteUrls?.length) {
+                return remoteUrls
+                    .map(url => {
+                        const codebaseName = convertGitCloneURLToCodebaseName(url)
+                        if (!codebaseName) {
+                            return null
+                        }
 
-                const [hostname, owner, repoName] = codebaseName.split('/')
+                        const [hostname, owner, repoName] = codebaseName.split('/')
 
-                return { hostname, owner, repoName, url }
-            }).filter(remote => remote !== null) as ContextItemProps['gitRemotes']
-        }
+                        return { hostname, owner, repoName, url }
+                    })
+                    .filter(remote => remote !== null) as ContextItemProps['gitRemotes']
+            }
 
-        return []
-    }).flat() || []
+            return []
+        }) || []
+    )
 }

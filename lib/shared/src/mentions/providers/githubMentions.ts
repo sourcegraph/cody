@@ -1,27 +1,23 @@
 import { URI } from 'vscode-uri'
 import xml2js from 'xml2js'
-import {
-    ContextItemSource,
-    type ContextItemWithContent
-} from '../../codebase-context/messages'
+import { ContextItemSource, type ContextItemWithContent } from '../../codebase-context/messages'
 import { githubClient } from '../../githubClient'
 import type {
     ContextItemFromProvider,
     ContextItemProps,
     ContextMentionProvider,
-    ContextMentionProviderID
+    ContextMentionProviderID,
 } from '../api'
 
 const GithubContextId: ContextMentionProviderID = 'github'
 
 const xmlBuilder = new xml2js.Builder({
-    headless: true
+    headless: true,
 })
 
-class GithubContextMentionProvider
-    implements ContextMentionProvider<typeof GithubContextId> {
-    public id = GithubContextId;
-    public triggerPrefixes = ['github:', 'gh:'];
+class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
+    public id = GithubContextId
+    public triggerPrefixes = ['github:', 'gh:']
 
     async queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal) {
         /* supported query formats:
@@ -40,7 +36,7 @@ class GithubContextMentionProvider
             return []
         }
 
-        let codebases: { owner: string, repoName: string }[] = []
+        let codebases: { owner: string; repoName: string }[] = []
 
         if (ownerOrNumber && repoName) {
             codebases = [{ owner: ownerOrNumber, repoName }]
@@ -48,31 +44,26 @@ class GithubContextMentionProvider
             codebases = props.gitRemotes.filter(remote => remote.hostname === 'github.com')
         }
 
+        return (
+            await Promise.all(
+                codebases.map(async codebase => {
+                    switch (kind) {
+                        case 'pull':
+                        case 'pr':
+                            return this.getPullRequestItems({ ...codebase, pullNumber: number }, signal)
 
-        return (await Promise.all(codebases.map(async (codebase) => {
-            switch (kind) {
-                case 'pull':
-                case 'pr':
-                    return this.getPullRequestItems(
-                        { ...codebase, pullNumber: number },
-                        signal
-                    )
+                        case 'issue':
+                            return this.getIssueItems({ ...codebase, issueNumber: number }, signal)
 
-                case 'issue':
-                    return this.getIssueItems(
-                        { ...codebase, issueNumber: number },
-                        signal
-                    )
-
-                default:
-                    return []
-            }
-        }))).flat() as ContextItemFromProvider<typeof GithubContextId>[]
+                        default:
+                            return []
+                    }
+                })
+            )
+        ).flat() as ContextItemFromProvider<typeof GithubContextId>[]
     }
 
-    async resolveContextItem(
-        item: ContextItemFromProvider<typeof GithubContextId>
-    ) {
+    async resolveContextItem(item: ContextItemFromProvider<typeof GithubContextId>) {
         switch (item.type) {
             case 'github_pull_request':
                 return this.getPullRequestItemsWithContent(item)
@@ -95,7 +86,7 @@ class GithubContextMentionProvider
                 {
                     owner: details.owner,
                     repo: details.repoName,
-                    pull_number: details.pullNumber
+                    pull_number: details.pullNumber,
                 }
             )
 
@@ -112,8 +103,8 @@ class GithubContextMentionProvider
                     uri: URI.parse(pullRequest.html_url),
                     title: `#${pullRequest.number} ${pullRequest.title}`,
                     source: ContextItemSource.Github,
-                    provider: 'github'
-                }
+                    provider: 'github',
+                },
             ]
         } catch (error) {
             return []
@@ -125,14 +116,11 @@ class GithubContextMentionProvider
         signal?: AbortSignal
     ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
         try {
-            const issue = await githubClient.request(
-                'GET /repos/{owner}/{repo}/issues/{issue_number}',
-                {
-                    owner: details.owner,
-                    repo: details.repoName,
-                    issue_number: details.issueNumber
-                }
-            )
+            const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+                owner: details.owner,
+                repo: details.repoName,
+                issue_number: details.issueNumber,
+            })
 
             signal?.throwIfAborted?.()
 
@@ -147,8 +135,8 @@ class GithubContextMentionProvider
                     uri: URI.parse(issue.html_url),
                     title: `#${issue.number} ${issue.title}`,
                     source: ContextItemSource.Github,
-                    provider: 'github'
-                }
+                    provider: 'github',
+                },
             ]
         } catch {
             return []
@@ -164,7 +152,7 @@ class GithubContextMentionProvider
                 {
                     owner: details.owner,
                     repo: details.repoName,
-                    pull_number: details.pullNumber
+                    pull_number: details.pullNumber,
                 }
             )
 
@@ -181,33 +169,26 @@ class GithubContextMentionProvider
                         repo: details.repoName,
                         pull_number: details.pullNumber,
                         mediaType: {
-                            format: 'diff'
-                        }
+                            format: 'diff',
+                        },
                     })
                     .catch(() => ''),
                 githubClient
-                    .request(
-                        'GET /repos/{owner}/{repo}/issues/{issue_number}/comments',
-                        {
-                            owner: details.owner,
-                            repo: details.repoName,
-                            issue_number: details.pullNumber,
-                            per_page: 100
-                        }
-                    )
-                    .catch(() => [])
-                ,
+                    .request('GET /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+                        owner: details.owner,
+                        repo: details.repoName,
+                        issue_number: details.pullNumber,
+                        per_page: 100,
+                    })
+                    .catch(() => []),
                 githubClient
-                    .request(
-                        'GET /repos/{owner}/{repo}/pulls/{pull_number}/comments',
-                        {
-                            owner: details.owner,
-                            repo: details.repoName,
-                            pull_number: details.pullNumber,
-                            per_page: 100
-                        }
-                    )
-                    .catch(() => [])
+                    .request('GET /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
+                        owner: details.owner,
+                        repo: details.repoName,
+                        pull_number: details.pullNumber,
+                        per_page: 100,
+                    })
+                    .catch(() => []),
             ])
 
             signal?.throwIfAborted?.()
@@ -225,21 +206,21 @@ class GithubContextMentionProvider
                     status: pullRequest.state,
                     body: pullRequest.body,
                     diff: diff,
-                    comments: comments.map((comment) => ({
+                    comments: comments.map(comment => ({
                         url: comment.html_url,
                         author: comment.user?.login,
                         body: comment.body,
-                        created_at: comment.created_at
+                        created_at: comment.created_at,
                     })),
-                    reviews: reviewComments.map((review) => ({
+                    reviews: reviewComments.map(review => ({
                         url: review.html_url,
                         author: review.user.login,
                         body: review.body,
                         created_at: review.created_at,
                         file_path: review.path,
                         diff: review.diff_hunk,
-                    }))
-                }
+                    })),
+                },
             })
 
             return [
@@ -250,8 +231,8 @@ class GithubContextMentionProvider
                     uri: URI.parse(pullRequest.html_url),
                     title: pullRequest.title,
                     source: ContextItemSource.Github,
-                    provider: 'github'
-                }
+                    provider: 'github',
+                },
             ]
         } catch (error) {
             return []
@@ -263,14 +244,11 @@ class GithubContextMentionProvider
         signal?: AbortSignal
     ): Promise<ContextItemWithContent[]> {
         try {
-            const issue = await githubClient.request(
-                'GET /repos/{owner}/{repo}/issues/{issue_number}',
-                {
-                    owner: details.owner,
-                    repo: details.repoName,
-                    issue_number: details.issueNumber
-                }
-            )
+            const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+                owner: details.owner,
+                repo: details.repoName,
+                issue_number: details.issueNumber,
+            })
 
             signal?.throwIfAborted?.()
 
@@ -283,7 +261,7 @@ class GithubContextMentionProvider
                     owner: details.owner,
                     repo: details.repoName,
                     issue_number: details.issueNumber,
-                    per_page: 100
+                    per_page: 100,
                 })
                 .catch(() => [])
 
@@ -295,13 +273,13 @@ class GithubContextMentionProvider
                     created_at: issue.created_at,
                     status: issue.state,
                     body: issue.body,
-                    comments: comments.map((comment) => ({
+                    comments: comments.map(comment => ({
                         url: comment.html_url,
                         author: comment.user?.login,
                         body: comment.body,
-                        created_at: comment.created_at
-                    }))
-                }
+                        created_at: comment.created_at,
+                    })),
+                },
             })
 
             return [
@@ -312,8 +290,8 @@ class GithubContextMentionProvider
                     uri: URI.parse(issue.html_url),
                     title: issue.title,
                     source: ContextItemSource.Github,
-                    provider: 'github'
-                }
+                    provider: 'github',
+                },
             ]
         } catch {
             return []
@@ -321,5 +299,4 @@ class GithubContextMentionProvider
     }
 }
 
-export const GITHUB_CONTEXT_MENTION_PROVIDER =
-    new GithubContextMentionProvider()
+export const GITHUB_CONTEXT_MENTION_PROVIDER = new GithubContextMentionProvider()

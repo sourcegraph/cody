@@ -46,7 +46,11 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
      *
      * {@link query} omits the `@` but includes the trigger prefix from {@link triggerPrefixes}.
      */
-    queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal): Promise<ContextItemFromProvider<ID>[]>
+    queryContextItems(
+        query: string,
+        props: ContextItemProps,
+        signal?: AbortSignal
+    ): Promise<ContextItemFromProvider<ID>[]>
 
     /**
      * Resolve a context item to one or more items that have the {@link ContextItem.content} field

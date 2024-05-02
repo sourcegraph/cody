@@ -1,11 +1,11 @@
 import {
     CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
+    type ContextItemProps,
     type ContextMentionProvider,
     type MentionQuery,
     type RangeData,
     parseMentionQuery,
-    ContextItemProps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from '../../commands/context/file-path'

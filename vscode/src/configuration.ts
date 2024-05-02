@@ -187,14 +187,14 @@ export function getConfiguration(
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {
-                    model: getHiddenSetting<string>('testing.localEmbeddings.model'),
-                    dimension: getHiddenSetting<number>('testing.localEmbeddings.dimension'),
-                    endpoint: getHiddenSetting<string>('testing.localEmbeddings.endpoint'),
-                    indexPath: URI.file(
-                        getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
-                    ),
-                    provider: 'openai',
-                }
+                      model: getHiddenSetting<string>('testing.localEmbeddings.model'),
+                      dimension: getHiddenSetting<number>('testing.localEmbeddings.dimension'),
+                      endpoint: getHiddenSetting<string>('testing.localEmbeddings.endpoint'),
+                      indexPath: URI.file(
+                          getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
+                      ),
+                      provider: 'openai',
+                  }
                 : undefined,
     }
 }

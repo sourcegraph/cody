@@ -14,8 +14,8 @@ export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider
         const searchQuery = query.startsWith('?')
             ? query.slice(1)
             : query.startsWith('src:')
-                ? query.slice(4)
-                : query
+              ? query.slice(4)
+              : query
         const uri = URI.parse(graphqlClient.endpoint).with({
             query: 'q=' + encodeURIComponent(searchQuery) + '&patternType=literal',
         })
@@ -76,7 +76,8 @@ export async function searchForFileChunks(
                     }
                     const fileContext = {
                         uri: URI.parse(
-                            `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}?L${result.chunkMatches[0].contentStart.line
+                            `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}?L${
+                                result.chunkMatches[0].contentStart.line
                             }`
                         ),
                         repoName: result.repository.name,

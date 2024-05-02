@@ -278,7 +278,7 @@ const register = async (
         enterpriseContextFactory.clientConfigurationDidChange()
         promises.push(
             localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ??
-            Promise.resolve()
+                Promise.resolve()
         )
         promises.push(setupAutocomplete())
         await Promise.all(promises)
@@ -328,7 +328,7 @@ const register = async (
             parallelPromises.push(
                 getAccessToken()
                     .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
-                    .catch(() => { })
+                    .catch(() => {})
             )
         } else {
             symfRunner?.setSourcegraphAuth(null, null)
@@ -644,7 +644,7 @@ const register = async (
                     if (config.isRunningInsideAgent) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                            'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
                         )
                     }
                     return
@@ -678,7 +678,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const autocompleteSetup = setupAutocomplete().catch(() => { })
+    const autocompleteSetup = setupAutocomplete().catch(() => {})
 
     if (initialConfig.experimentalGuardrails) {
         const guardrailsProvider = new GuardrailsProvider(guardrails, editor)

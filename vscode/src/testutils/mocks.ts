@@ -87,10 +87,10 @@ export class CodeLens {
     constructor(
         public readonly range: Range,
         public readonly command?: vscode_types.Command
-    ) { }
+    ) {}
 }
 export class ThemeColor {
-    constructor(public readonly id: string) { }
+    constructor(public readonly id: string) {}
 }
 
 export class ThemeIcon {
@@ -99,7 +99,7 @@ export class ThemeIcon {
     constructor(
         public readonly id: string,
         public readonly color?: ThemeColor
-    ) { }
+    ) {}
 }
 
 export enum ColorThemeKind {
@@ -110,7 +110,7 @@ export enum ColorThemeKind {
 }
 
 export class MarkdownString implements vscode_types.MarkdownString {
-    constructor(public readonly value: string) { }
+    constructor(public readonly value: string) {}
     isTrusted?: boolean | { readonly enabledCommands: readonly string[] } | undefined
     supportThemeIcons?: boolean | undefined
     supportHtml?: boolean | undefined
@@ -206,7 +206,7 @@ export class CodeAction {
     constructor(
         public readonly title: string,
         public readonly kind?: vscode_types.CodeActionKind
-    ) { }
+    ) {}
 }
 export class CodeActionKind {
     static readonly Empty = new CodeActionKind('Empty')
@@ -221,7 +221,7 @@ export class CodeActionKind {
 
     static readonly SourceFixAll = new CodeActionKind('')
 
-    constructor(public readonly value: string) { }
+    constructor(public readonly value: string) {}
 }
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
@@ -234,7 +234,7 @@ export class TreeItem {
     constructor(
         public readonly resourceUri: vscode_types.Uri,
         public readonly collapsibleState?: TreeItemCollapsibleState
-    ) { }
+    ) {}
 }
 
 export class RelativePattern implements vscode_types.RelativePattern {
@@ -248,8 +248,8 @@ export class RelativePattern implements vscode_types.RelativePattern {
             typeof _base === 'string'
                 ? Uri.file(_base)
                 : 'uri' in _base
-                    ? Uri.from(_base.uri)
-                    : Uri.from(_base)
+                  ? Uri.from(_base.uri)
+                  : Uri.from(_base)
         this.base = _base.toString()
     }
 }
@@ -454,7 +454,7 @@ export class FoldingRange {
         public start: number,
         public end: number,
         public kind?: FoldingRangeKind
-    ) { }
+    ) {}
 }
 
 export class InlineCompletionItem {
@@ -508,10 +508,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         const type = stat.isFile()
             ? FileType.File
             : stat.isDirectory()
-                ? FileType.Directory
-                : stat.isSymbolicLink()
-                    ? FileType.SymbolicLink
-                    : FileType.Unknown
+              ? FileType.Directory
+              : stat.isSymbolicLink()
+                ? FileType.SymbolicLink
+                : FileType.Unknown
 
         return {
             type,
@@ -529,10 +529,10 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             const type = entry.isFile()
                 ? FileType.File
                 : entry.isDirectory()
-                    ? FileType.Directory
-                    : entry.isSymbolicLink()
-                        ? FileType.SymbolicLink
-                        : FileType.Unknown
+                  ? FileType.Directory
+                  : entry.isSymbolicLink()
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -727,16 +727,16 @@ export const vsCodeMocks = {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
         },
-        onDidChangeActiveTextEditor() { },
+        onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({
             key: 'foo',
-            dispose: () => { },
+            dispose: () => {},
         }),
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
     commands: {
-        registerCommand: () => ({ dispose: () => { } }),
+        registerCommand: () => ({ dispose: () => {} }),
     },
     workspace: {
         fs: workspaceFs,
@@ -750,7 +750,7 @@ export const vsCodeMocks = {
                             return ''
                     }
                 },
-                update(): void { },
+                update(): void {},
             }
         },
         openTextDocument: (uri: string) => ({
@@ -762,9 +762,9 @@ export const vsCodeMocks = {
         asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
-        onDidChangeTextDocument() { },
-        onDidRenameFiles() { },
-        onDidDeleteFiles() { },
+        onDidChangeTextDocument() {},
+        onDidRenameFiles() {},
+        onDidDeleteFiles() {},
     },
     ConfigurationTarget: {
         Global: undefined,
