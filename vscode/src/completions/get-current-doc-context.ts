@@ -4,6 +4,7 @@ import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-util
 
 import type { DocumentContext, DocumentDependentContext, LinesContext } from '@sourcegraph/cody-shared'
 import { detectMultiline } from './detect-multiline'
+import type { TriggerKind } from './get-inline-completions'
 import {
     getFirstLine,
     getLastLine,
@@ -22,6 +23,7 @@ interface GetCurrentDocContextParams {
     /* A number representing the maximum length of the suffix to get from the document. */
     maxSuffixLength: number
     context?: vscode.InlineCompletionContext
+    triggerKind?: TriggerKind
 }
 
 /**

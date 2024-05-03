@@ -1,15 +1,15 @@
 log:
-  _recordingName: graph-context-starcoder-7b
+  _recordingName: graph-context-starcoder-hybrid
   creator:
     comment: persister:cody-fs
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 29adbd66a242a493f109e0b6e43adf2c
+    - _id: 4c8d8f3ff5d104b3769549b6e2bd3afd
       _order: 0
       cache: {}
       request:
-        bodySize: 459
+        bodySize: 330
         cookies: []
         headers:
           - _fromType: array
@@ -27,256 +27,16 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "459"
+            value: "330"
           - name: host
             value: sourcegraph.com
-        headersSize: 347
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: >-
-                  <filename>src/main.ts<fim_prefix>// Additional documentation
-                  for `User`:
-
-                  //
-
-                  // interface User {
-
-                  //   firstName: string
-
-                  //   isEligible: boolean
-
-                  // }
-
-                  //
-
-                  import { User } from './user'
-
-
-                  const user = <fim_suffix>
-
-
-                  export const message = 'Hello'<fim_middle>
-            model: fireworks/starcoder-7b
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 15000
-            topK: 0
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/code
-      response:
-        bodySize: 480
-        content:
-          mimeType: text/event-stream
-          size: 480
-          text: >+
-            event: completion
-
-            data: {"completion":"{\n  firstName: 'John',\n  isEligible: true\n}","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 26 Apr 2024 12:53:39 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-26T12:53:39.094Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c47ddc72929603acea87aeefeffc6840
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 273
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-7b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "273"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 347
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: |-
-                  <filename>src/main.ts<fim_prefix>// 
-                  // TODO: Write <fim_suffix>
-                  <fim_middle>
-            model: fireworks/starcoder-7b
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 15000
-            topK: 0
-        queryString: []
-        url: https://sourcegraph.com/.api/completions/code
-      response:
-        bodySize: 218
-        content:
-          mimeType: text/event-stream
-          size: 218
-          text: |+
-            event: completion
-            data: {"completion":"tests","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 01 May 2024 10:58:13 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-01T10:58:13.258Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: d0a53085bb0bc70d644f502cdc0ff3b6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 329
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-7b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "329"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 347
+        headersSize: 351
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -290,7 +50,7 @@ log:
                   <filename>src/main.ts<fim_prefix>// 
 
                   // I have three apples, give you one, how many apples do I have? Answer: <fim_suffix><fim_middle>
-            model: fireworks/starcoder-7b
+            model: fireworks/starcoder-16b
             stopSequences:
               - "\n\n"
               - "\n\r\n"
@@ -301,14 +61,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/code
       response:
-        bodySize: 1674
+        bodySize: 14730
         content:
           mimeType: text/event-stream
-          size: 1674
+          size: 14730
           text: >+
             event: completion
 
-            data: {"completion":"2\n// I have three apples, give you two, how many apples do I have? Answer: 1\n// I have three apples, give you five, how many apples do I have? Answer: 0\n// ","stopReason":"stop"}
+            data: {"completion":"2\n// I have three apples, give you two, how many apples do I have? Answer: 1\n// I have three apples, give you five, how many apples do I have? Answer: 0\n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// \n// ","stopReason":"length"}
 
 
             event: done
@@ -318,7 +78,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 03 May 2024 13:43:23 GMT
+            value: Fri, 03 May 2024 13:54:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -347,7 +107,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-03T13:43:21.791Z
+      startedDateTime: 2024-05-03T13:54:13.451Z
       time: 0
       timings:
         blocked: -1
@@ -373,7 +133,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -385,7 +145,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 349
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -429,15 +189,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:34 GMT
+            value: Fri, 03 May 2024 13:53:38 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "94"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -457,12 +215,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.967Z
+      startedDateTime: 2024-05-03T13:53:38.003Z
       time: 0
       timings:
         blocked: -1
@@ -484,7 +242,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -496,7 +254,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 249
+        headersSize: 253
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -533,7 +291,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 18:58:46 GMT
+            value: Fri, 03 May 2024 13:53:36 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -564,7 +322,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T18:58:46.150Z
+      startedDateTime: 2024-05-03T13:53:36.722Z
       time: 0
       timings:
         blocked: -1
@@ -590,7 +348,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -602,7 +360,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 333
+        headersSize: 337
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -634,7 +392,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 18:58:46 GMT
+            value: Fri, 03 May 2024 13:53:38 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -665,7 +423,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T18:58:46.396Z
+      startedDateTime: 2024-05-03T13:53:38.190Z
       time: 0
       timings:
         blocked: -1
@@ -691,7 +449,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -703,7 +461,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 350
+        headersSize: 354
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -730,27 +488,35 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 219
+        bodySize: 216
         content:
           encoding: base64
           mimeType: application/json
-          size: 219
+          size: 216
           text: "[\"H4sIAAAAAAAAA4zOMQ6DMAwF0Lt4BhqyNSsrbL2AlYQSNbURMRIVyt0rWFplqDp9yfp++\
             js4FASzQwrij7TsXn0/dExjuK8LSmA67xPKwM5HMIAk08JzsBcbcXW+1o2C6lMZcLvx\
-            w1MC02qlVAUjJul+CYGSIEndNhqK+pd2PTHLzzn6Y9ifXPFQgDnn/AYAAP//\",\"Aw\
-            BWfxECCAEAAA==\"]"
+            w1MC02qlVAUjJul+CYGSIEndNhqK+pd2PTHLzzn6Y9ifXPFQgDnn/AYAAP//AwBWfxE\
+            CCAEAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: anthropic/claude-2.0
+                  chatModelMaxTokens: 12000
+                  completionModel: anthropic/claude-instant-1.2
+                  completionModelMaxTokens: 9000
+                  fastChatModel: anthropic/claude-instant-1.2
+                  fastChatModelMaxTokens: 9000
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
+            value: Fri, 03 May 2024 13:53:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -770,12 +536,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.272Z
+      startedDateTime: 2024-05-03T13:53:36.922Z
       time: 0
       timings:
         blocked: -1
@@ -801,7 +567,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -813,7 +579,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 349
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -850,15 +616,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
+            value: Fri, 03 May 2024 13:53:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -878,12 +642,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.273Z
+      startedDateTime: 2024-05-03T13:53:36.923Z
       time: 0
       timings:
         blocked: -1
@@ -909,7 +673,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -921,7 +685,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 330
+        headersSize: 334
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -972,15 +736,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
+            value: Fri, 03 May 2024 13:53:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1000,12 +762,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.305Z
+      startedDateTime: 2024-05-03T13:53:36.949Z
       time: 0
       timings:
         blocked: -1
@@ -1031,7 +793,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1043,7 +805,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 346
+        headersSize: 350
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1069,36 +831,25 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 224
+        bodySize: 227
         content:
           encoding: base64
           mimeType: application/json
-          size: 224
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwttrEu2Ih0EwdJWB7fYZAjUJNzcDKXk3UVBUMfz8\
-            3E2aMUKcsOciIzjSzT0nl6vY7rHmWxg692rRVacIiTaw3S8digQFuUg0Q9nFFAhLGtP\
-            flBsTvZhOUIyJVN8vntD1uuRFXHLkBCVaMqqKetmEkLWtdyJG/505/SX3f/anHN+AgA\
-            A//8DACf5Cw3CAAAA\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codySubscription:
-                  applyProRateLimits: true
-                  currentPeriodEndAt: 2024-05-14T22:11:32Z
-                  currentPeriodStartAt: 2024-04-14T22:11:32Z
-                  plan: PRO
-                  status: ACTIVE
+          size: 227
+          text: "[\"H4sIAAAAAAAAA1zMsQrC\",\"MBSF4Xc5cwttrEu2Ih0EwdJWB7fYZAjUJNzcDKXk3UVB\
+            UMfz83E2aMUKcsOciIzjSzT0nl6vY7rHmWxg692rRVacIiTaw3S8digQFuUg0Q9nFFA\
+            hLGtPflBsTvZhOUIyJVN8vntD1uuRFXHLkBCVaMqqKetmEkLWtdyJG/505/SX3f/anH\
+            N+AgAA//8DACf5Cw3CAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
+            value: Fri, 03 May 2024 13:53:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1118,12 +869,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.559Z
+      startedDateTime: 2024-05-03T13:53:37.473Z
       time: 0
       timings:
         blocked: -1
@@ -1149,7 +900,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1161,7 +912,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 335
+        headersSize: 339
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1205,15 +956,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:34 GMT
+            value: Fri, 03 May 2024 13:53:38 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "26"
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "94"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1231,12 +980,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1407
+        headersSize: 1301
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.967Z
+      startedDateTime: 2024-05-03T13:53:38.004Z
       time: 0
       timings:
         blocked: -1
@@ -1262,7 +1011,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1274,7 +1023,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 335
+        headersSize: 339
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1318,7 +1067,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 03 May 2024 13:43:25 GMT
+            value: Fri, 03 May 2024 13:54:17 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1347,7 +1096,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-03T13:43:25.179Z
+      startedDateTime: 2024-05-03T13:54:17.253Z
       time: 0
       timings:
         blocked: -1
@@ -1369,7 +1118,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1381,7 +1130,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 245
+        headersSize: 249
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1416,15 +1165,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
+            value: Fri, 03 May 2024 13:53:36 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1444,12 +1191,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:32.838Z
+      startedDateTime: 2024-05-03T13:53:36.296Z
       time: 0
       timings:
         blocked: -1
@@ -1471,7 +1218,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1483,115 +1230,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 253
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteIdentification {
-              	site {
-              		siteID
-              		productSubscription {
-              			license {
-              				hashedKey
-              			}
-              		}
-              	}
-              }
-            variables: {}
-        queryString:
-          - name: SiteIdentification
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteIdentification
-      response:
-        bodySize: 219
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 219
-          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
-            xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
-            u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8=\",\"Aw\
-            AY9rt+oAAAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 26 Apr 2024 12:51:33 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "95"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1439
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-04-26T12:51:32.801Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 5f699fc86f3efcac0ab0178c54c03d1f
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 164
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-7b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "164"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 337
+        headersSize: 257
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1635,15 +1274,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 12:51:34 GMT
+            value: Fri, 03 May 2024 13:53:36 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "94"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1663,12 +1300,224 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1439
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T12:51:33.966Z
+      startedDateTime: 2024-05-03T13:53:36.257Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5f699fc86f3efcac0ab0178c54c03d1f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 164
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-hybrid / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "164"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteIdentification {
+              	site {
+              		siteID
+              		productSubscription {
+              			license {
+              				hashedKey
+              			}
+              		}
+              	}
+              }
+            variables: {}
+        queryString:
+          - name: SiteIdentification
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteIdentification
+      response:
+        bodySize: 212
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 212
+          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
+            xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
+            u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DABj2u36\
+            gAAAA\"]"
+          textDecoded:
+            data:
+              site:
+                productSubscription:
+                  license:
+                    hashedKey: 9c71b123f8fdef24486dea4e56674ec32452725c5165d53bd44fb6742a39aaf5
+                siteID: SourcegraphWeb
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 03 May 2024 13:53:38 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-03T13:53:38.003Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 203c1896021c3a09dfe619120ea1b725
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-hybrid / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 257
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 136
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRiaGxvFGB\
+            kYmugamugZG8aZ6xrqphpbJRkYpBomWpkZKtbW1AAAAAP//AwBCmw1HSQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 272413_2024-05-02_5.3-e19c22d0a952
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 03 May 2024 13:53:36 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1333
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-03T13:53:36.534Z
       time: 0
       timings:
         blocked: -1
@@ -1694,7 +1543,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: graph-context-starcoder-7b / v1
+            value: graph-context-starcoder-hybrid / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1706,7 +1555,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 337
+        headersSize: 341
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1731,16 +1580,16 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmhhaGZvFGB\
-            kYmugamugaG8aZ6xrqGKcbmBomphhaWhuZKtbW1AAAAAP//AwAOSsbjSQAAAA==\"]"
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRiaGxvFGB\
+            kYmugamugZG8aZ6xrqphpbJRkYpBomWpkZKtbW1AAAAAP//AwBCmw1HSQAAAA==\"]"
           textDecoded:
             data:
               site:
-                productVersion: 271816_2024-05-01_5.3-1d370ae18917
+                productVersion: 272413_2024-05-02_5.3-e19c22d0a952
         cookies: []
         headers:
           - name: date
-            value: Wed, 01 May 2024 10:58:12 GMT
+            value: Fri, 03 May 2024 13:53:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1771,106 +1620,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-01T10:58:12.672Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 203c1896021c3a09dfe619120ea1b725
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: graph-context-starcoder-7b / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 253
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 136
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRobG5vFGB\
-            kYmugamugZG8aZ6xrpJSUmJZmZpluZpxkZKtbW1AAAAAP//AwAUo7FzSQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                productVersion: 272137_2024-05-02_5.3-bbba66f97f32
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 02 May 2024 17:29:30 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-02T17:29:30.027Z
+      startedDateTime: 2024-05-03T13:53:36.921Z
       time: 0
       timings:
         blocked: -1

@@ -30,6 +30,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
+    AutocompleteParams,
     AutocompleteResult,
     ClientInfo,
     CreateFileOperation,
@@ -430,11 +431,11 @@ export class TestClient extends MessageHandler {
         this.notify(method, protocolDocument)
     }
 
-    public async autocompleteText(): Promise<string[]> {
-        const result = await this.autocomplete()
+    public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
+        const result = await this.autocomplete(params)
         return result.items.map(item => item.insertText)
     }
-    public autocomplete(): Promise<AutocompleteResult> {
+    public autocomplete(params?: Partial<AutocompleteParams>): Promise<AutocompleteResult> {
         if (!this.workspace.activeDocumentFilePath) {
             throw new Error('No active document')
         }
@@ -446,7 +447,7 @@ export class TestClient extends MessageHandler {
         return this.request('autocomplete/execute', {
             uri: this.workspace.activeDocumentFilePath.toString(),
             position,
-            triggerKind: 'Invoke',
+            ...params,
         })
     }
 
@@ -754,6 +755,13 @@ ${patch}`
         }
     }
 
+    public async beforeAll() {
+        const info = await this.initialize()
+        expect(info.authStatus?.isLoggedIn).toBeTruthy()
+    }
+    public async afterAll() {
+        await this.shutdownAndExit()
+    }
     public async shutdownAndExit() {
         if (this.isAlive()) {
             const { errors } = await this.request('testing/requestErrors', null)
@@ -779,6 +787,11 @@ ${patch}`
         } else {
             console.error('Agent has already exited')
         }
+    }
+
+    public async lastCompletionRequest(): Promise<NetworkRequest | undefined> {
+        const { requests } = await this.request('testing/networkRequests', null)
+        return requests.filter(({ url }) => url.includes('/completions/')).at(-1)
     }
 
     private async handshake(

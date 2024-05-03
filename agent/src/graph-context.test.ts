@@ -2,12 +2,10 @@ import path from 'node:path'
 import { isWindows } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type * as vscode from 'vscode'
-import YAML from 'yaml'
+import { ParallelTestClients } from './ParallelTestClients'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { TESTING_TOKENS } from './testing-tokens'
-import { trimEndOfLine } from './trimEndOfLine'
 
 interface TestParameters {
     provider: 'fireworks' | 'anthropic'
@@ -25,104 +23,33 @@ describe.skipIf(isWindows())('Graph Context', () => {
         { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-instant-1.2' },
         { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-3-haiku-20240307' },
     ]
-    const clients: TestClient[] = models.map(({ graphContext, provider, model }) =>
-        TestClient.create({
-            workspaceRootUri: workspace.rootUri,
-            name: `graph-context-${model}`,
-            token: TESTING_TOKENS.dotcom,
-            extraConfiguration: {
-                'cody.autocomplete.experimental.graphContext': graphContext,
-                'cody.autocomplete.advanced.provider': provider,
-                'cody.autocomplete.advanced.model': model,
-                'cody.experimental.symfContext': false,
-            },
-        })
+    const clients = new ParallelTestClients(
+        models.map(({ graphContext, provider, model }) =>
+            TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: `graph-context-${model}`,
+                token: TESTING_TOKENS.dotcom,
+                extraConfiguration: {
+                    'cody.autocomplete.experimental.graphContext': graphContext,
+                    'cody.autocomplete.advanced.provider': provider,
+                    'cody.autocomplete.advanced.model': model,
+                    'cody.experimental.symfContext': false,
+                },
+            })
+        )
     )
-
-    let modelFilter: { provider?: string; model?: string } = {}
-    function matchesFilter(client: TestClient): boolean {
-        if (modelFilter.provider && !client.completionProvider.includes(modelFilter.provider)) {
-            return false
-        }
-        if (modelFilter.model && !client.completionModel.includes(modelFilter.model)) {
-            return false
-        }
-        return true
-    }
 
     beforeAll(async () => {
         await workspace.beforeAll()
-        const serverInfos = await Promise.all(clients.map(client => client.initialize()))
-        for (const info of serverInfos) {
-            expect(info.authStatus?.isLoggedIn).toBeTruthy()
-        }
+        await clients.beforeAll()
     }, 10_000)
-
-    function activeClients(): TestClient[] {
-        return clients.filter(client => matchesFilter(client))
-    }
-
-    async function forEachClient(fn: (client: TestClient) => Promise<void>): Promise<void> {
-        await Promise.all(clients.map(fn))
-    }
-    async function openFile(uri: vscode.Uri): Promise<void> {
-        await forEachClient(client => client.openFile(uri))
-    }
-    async function changeFile(uri: vscode.Uri, text: string): Promise<void> {
-        await forEachClient(client => client.changeFile(uri, { text }))
-    }
-    async function autocompletes(): Promise<any> {
-        const autocompletes: { name: string; value: string[] }[] = []
-        const prompts: { name: string; value: any }[] = []
-        await Promise.all(
-            activeClients().map(async client => {
-                const autocomplete = await client.autocompleteText()
-                const { requests } = await client.request('testing/networkRequests', null)
-                let prompt: any = requests
-                    .filter(({ url }) => url.includes('/completions/'))
-                    .at(-1)?.body
-                if (prompt) {
-                    prompt = JSON.parse(prompt)
-                }
-                const provider =
-                    client?.params?.extraConfiguration?.['cody.autocomplete.advanced.provider'] ?? ''
-                const model =
-                    client?.params?.extraConfiguration?.['cody.autocomplete.advanced.model'] ?? ''
-                if (!provider) {
-                    throw new Error(`Missing provider for client ${client.name}`)
-                }
-                if (!model) {
-                    throw new Error(`Missing model for client ${client.name}`)
-                }
-                if (provider === 'fireworks') {
-                    // Handle `.prompt` when using fastpass, with fallback to non-fastpath.
-                    prompt = prompt?.prompt ?? prompt?.messages
-                } else if (provider === 'anthropic') {
-                    prompt = prompt?.messages
-                } else {
-                    throw new Error(`Unknown provider ${provider}`)
-                }
-                if (prompt?.model) {
-                    prompt.model = undefined
-                }
-                autocompletes.push({ name: model, value: autocomplete })
-
-                if (!prompts.some(p => p.name === provider)) {
-                    prompts.push({ name: provider, value: prompt })
-                }
-            })
-        )
-        autocompletes.sort((a, b) => a.name.localeCompare(b.name))
-        prompts.sort((a, b) => a.name.localeCompare(b.name))
-        return trimEndOfLine(YAML.stringify({ autocompletes, prompts }))
-    }
 
     describe('Autocomplete', () => {
         const mainUri = workspace.file('src', 'main.ts')
         it('empty', async () => {
-            modelFilter = { model: 'starcoder-7b' }
-            await openFile(mainUri)
-            expect(await autocompletes()).toMatchInlineSnapshot(`
+            clients.modelFilter = { model: 'starcoder-7b' }
+            await clients.openFile(mainUri)
+            expect(await clients.autocompletes()).toMatchInlineSnapshot(`
               "autocompletes:
                 - name: starcoder-7b
                   value:
@@ -140,8 +67,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         })
 
         it('single-line', async () => {
-            modelFilter = { provider: 'fireworks' }
-            await changeFile(
+            clients.modelFilter = { provider: 'fireworks' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { User } from './user'
@@ -151,7 +78,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             export const message = 'Hello'
             `
             )
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('firstName:')
             expect(text).includes('isEligible:')
             expect(text).toMatchInlineSnapshot(
@@ -204,8 +131,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         })
 
         it('multiline', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { User } from './user'
@@ -215,7 +142,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             export const message = 'Hello'
             `
             )
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('firstName:')
             expect(text).includes('isEligible:')
             expect(text).toMatchInlineSnapshot(
@@ -261,8 +188,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('multiple-symbols', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import path from 'node:path'
@@ -280,7 +207,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('isNewCar')
             expect(text).includes('minimumYear:')
             expect(text).toMatchInlineSnapshot(`
@@ -383,8 +310,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('complex-types', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { ComplexType, ComplexInterface } from './ComplexType'
@@ -398,7 +325,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('a1:')
             expect(text).includes('a2:')
             expect(text).toMatchInlineSnapshot(
@@ -485,8 +412,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { doSomething } from './functions'
@@ -497,7 +424,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('validDogSled')
             expect(text).toMatchInlineSnapshot(
                 `
@@ -542,8 +469,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter2', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import makeWebAuthn from 'webauthn4js';
@@ -557,7 +484,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             // TODO: add .includes assertion for a non-empty result. It looks
             // like starcoder-16b doesn't have strong enough reasoning skills to
             // make use of the context.
-            expect(await autocompletes()).toMatchInlineSnapshot(`
+            expect(await clients.autocompletes()).toMatchInlineSnapshot(`
               "autocompletes:
                 - name: starcoder-16b
                   value: []
@@ -720,8 +647,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { selector, All } from './members'
@@ -732,7 +659,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -777,8 +704,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection-expression', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { getter } from './members-indirection'
@@ -789,7 +716,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -834,8 +761,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection-expression-this', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import { getter } from './members-indirection'
@@ -850,7 +777,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -900,8 +827,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter2', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.changeFile(
                 mainUri,
                 dedent`
             import makeWebAuthn from 'webauthn4js';
@@ -912,7 +839,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             `
             )
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             // Assert that the context includes types from the webauthn4js
             // package.  If these assertions are failing it could indicate that
             // you have not run `pnpm install`.
@@ -1082,10 +1009,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const tsxUri = workspace.file('src', 'Calculator.tsx')
         it('tsx', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await openFile(tsxUri)
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.openFile(tsxUri)
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('props.languageKind')
             expect(text).toMatchInlineSnapshot(`
               "autocompletes:
@@ -1145,10 +1072,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const jsUri = workspace.file('src', 'typeless2.js')
         it('js', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await openFile(jsUri)
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.openFile(jsUri)
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('helper')
             expect(text).includes('{ b:')
             expect(text).toMatchInlineSnapshot(
@@ -1184,10 +1111,10 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const jsxUri = workspace.file('src', 'FruitsList.jsx')
         it('jsx', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await openFile(jsxUri)
+            clients.modelFilter = { model: 'starcoder-16b' }
+            await clients.openFile(jsxUri)
 
-            const text = await autocompletes()
+            const text = await clients.autocompletes()
             expect(text).includes('fruitKind={fruit}')
             expect(text).toMatchInlineSnapshot(
                 `
@@ -1247,6 +1174,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
     afterAll(async () => {
         await workspace.afterAll()
-        await forEachClient(client => client.shutdownAndExit())
+        await clients.afterAll()
     }, 10_000)
 })
