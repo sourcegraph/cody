@@ -19,6 +19,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Editor Context Menu: Updated the existing `Cody Chat: Add context` command to handle selected code from the editor as @-mention . [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
   - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
   - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
+- Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
 
 ## [1.16.1]
 
