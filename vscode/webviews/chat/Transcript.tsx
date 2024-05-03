@@ -9,7 +9,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { ModelSelectField } from '../Components/modelSelectField/ModelSelectField'
+import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
