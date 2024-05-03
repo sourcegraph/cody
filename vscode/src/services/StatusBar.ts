@@ -77,13 +77,17 @@ export function createStatusBar(): CodyStatusBar {
             return
         }
         isCodyIgnoredType = await isCodyIgnored(editor.document.uri)
-        vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isCodyIgnoredType)
+        if (isCodyIgnoredType !== 'cody-ignore') {
+            vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isCodyIgnoredType)
+        }
         rerender()
     })
     const currentUri = vscode.window.activeTextEditor?.document?.uri
     if (currentUri) {
         isCodyIgnored(currentUri).then(isIgnored => {
-            vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isIgnored)
+            if (isCodyIgnoredType !== 'cody-ignore') {
+                vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isIgnored)
+            }
             isCodyIgnoredType = isIgnored
         })
     }
