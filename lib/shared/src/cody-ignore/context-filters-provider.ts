@@ -143,9 +143,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
-        if (uri.toString().endsWith('Api.ts')) {
-            return 'repo:foo'
-        }
         if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }

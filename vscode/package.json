@@ -253,7 +253,7 @@
       },
       {
         "view": "cody.commands.disabled.view",
-        "contents": "This repo was marked as ignored by an admin, therefore, autocomplete, commands and other Cody features are disabled.\n[About Ignored repos](command:cody.chat.panel.new)",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Ignore](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
         "when": "cody.activated && cody.currentFileIgnored"
       }
     ],
