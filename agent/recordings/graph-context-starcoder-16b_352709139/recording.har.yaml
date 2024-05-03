@@ -431,6 +431,264 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 2eb9af17105e65ab8e7fde45c2a2d895
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3959
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "3959"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 349
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `makeWebAuthn`:
+
+                  // 
+
+                  // var makeWebAuthn: { (config: Config): Promise<WebAuthn4JS>; schemas: any; }
+
+                  // 
+
+                  // Additional documentation for `WebAuthn4JSEvents`:
+
+                  // 
+
+                  // interface WebAuthn4JSEvents {
+
+                  //   error: (err: Error) => void
+
+                  //   exit: (code: number) => void
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Additional documentation for `TypedEmitter`:
+
+                  // 
+
+                  // class TypedEmitter {
+
+                  //   L: L
+
+                  //   addListener<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   prependListener<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   prependOnceListener<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   removeListener<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   removeAllListeners(event?: keyof L): this
+
+                  //   once<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   on<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   off<U extends keyof L>(event: U, listener: L[U]): this
+
+                  //   emit<U extends keyof L>(event: U, ...args: Parameters<L[U]>): boolean
+
+                  //   eventNames<U extends keyof L>(): U[]
+
+                  //   listenerCount(type: keyof L): number
+
+                  //   listeners<U extends keyof L>(type: U): L[U][]
+
+                  //   rawListeners<U extends keyof L>(type: U): L[U][]
+
+                  //   getMaxListeners(): number
+
+                  //   setMaxListeners(n: number): this
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Additional documentation for `WebAuthn4JS`:
+
+                  // 
+
+                  // interface WebAuthn4JS extends TypedEmitter<WebAuthn4JSEvents> {
+
+                  //   beginRegistration(user: User, ...opts: ((cco: PublicKeyCredentialCreationOptions) => PublicKeyCredentialCreationOptions)[]) => Promise<...>
+
+                  //   finishRegistration(user: User, sessionData: SessionData, response: CredentialCreationResponse) => Promise<Credential>
+
+                  //   beginLogin(user: User, ...opts: ((cro: PublicKeyCredentialRequestOptions) => PublicKeyCredentialRequestOptions)[]) => Promise<...>
+
+                  //   finishLogin(user: User, sessionData: SessionData, response: CredentialAssertionResponse) => Promise<Credential>
+
+                  //   exit(code?: number) => void
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Additional documentation for `Config`:
+
+                  // 
+
+                  // export type Config = {
+
+                  //     /** A valid domain that identifies the Relying Party. A credential can only by used  with the same enity (as identified by the `RPID`) it was registered with. */
+
+                  //     RPID: string;
+
+                  //     /** Friendly name for the Relying Party (application). The browser may display this to the user. */
+
+                  //     RPDisplayName: string;
+
+                  //     /** Configures the list of Relying Party Server Origins that are permitted. These should be fully qualified origins. */
+
+                  //     RPOrigins: string[];
+
+                  //     /** Preferred attestation conveyance during credential generation */
+
+                  //     AttestationPreference?: ConveyancePreference | undefined;
+
+                  //     /** Login requirements for authenticator attributes. */
+
+                  //     AuthenticatorSelection?: AuthenticatorSelection | undefined;
+
+                  //     /** Enables various debug options. */
+
+                  //     Debug?: boolean | undefined;
+
+                  //     /** Ensures the user.id value during registrations is encoded as a raw UTF8 string. This is useful when you only use printable ASCII characters for the random user.id but the browser library does not decode the URL Safe Base64 data. */
+
+                  //     EncodeUserIDAsString?: boolean | undefined;
+
+                  //     /** Configures various timeouts. */
+
+                  //     Timeouts?: TimeoutsConfig | undefined;
+
+                  //     /** @deprecated This option has been removed from newer specifications due to security considerations. */
+
+                  //     RPIcon?: string | undefined;
+
+                  //     /** @deprecated Use RPOrigins instead. */
+
+                  //     RPOrigin?: string | undefined;
+
+                  //     /** @deprecated Use Timeouts instead. */
+
+                  //     Timeout?: number | undefined;
+
+                  // };
+
+                  import makeWebAuthn from 'webauthn4js';
+
+
+                  function main() {
+                      makeWebAuthn({<fim_suffix>
+                  }<fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 13916
+        content:
+          mimeType: text/event-stream
+          size: 13916
+          text: >+
+            event: completion
+
+            data: {"completion":"\n        RPID: 'localhost',\n        RPDisplayName: 'localhost',\n        RPOrigins: ['http://localhost:3000'],\n        AttestationPreference: 'none',\n        AuthenticatorSelection: {\n            authenticatorAttachment: 'cross-platform',\n            userVerification:'required'\n        },\n        Debug: true,\n        EncodeUserIDAsString: true,\n        Timeouts: {\n            registration: 10000,\n            authentication: 10000\n        }\n    }).then((webauthn) =\u003e {\n        webauthn.on('error', (err) =\u003e {\n            console.error(err);\n        });\n        webauthn.on('exit', (code) =\u003e {\n            console.log('Exited with code', code);\n        });\n    });","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 26 Apr 2024 12:53:44 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-26T12:53:43.073Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 914d3b7478a6951c4f38d9763af6deb5
       _order: 0
       cache: {}
@@ -543,6 +801,156 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-04-30T11:54:18.835Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 89d07944f6239ccf840545bc0f304e18
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 846
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "846"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/Calculator.tsx<fim_prefix>// Additional
+                  documentation for `CalculatorProps`:
+
+                  // 
+
+                  // interface CalculatorProps {
+
+                  //   languageKind: "arabic" | "japanese" | "roman"
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Here is a reference snippet of code from src/main.ts:
+
+                  // 
+
+                  // import makeWebAuthn from 'webauthn4js';
+
+                  // 
+
+                  // function main() {
+
+                  //     makeWebAuthn({})
+
+                  // }
+
+                  import { FunctionComponent } from 'react'
+
+                  import { CalculatorProps } from './CalculatorProps'
+
+                  import * as React from 'react'
+
+
+                  export const Calculator: FunctionComponent<CalculatorProps> = props => {
+                      return <h1>My favorite calculator comes from {<fim_suffix>
+                  }
+
+                  <fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 363
+        content:
+          mimeType: text/event-stream
+          size: 363
+          text: >+
+            event: completion
+
+            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 30 Apr 2024 11:57:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-04-30T11:57:14.987Z
       time: 0
       timings:
         blocked: -1
@@ -833,11 +1241,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a40af776f9d0ea79b91a9c2cb6da8743
+    - _id: 551f379c3ac57a655f6301281c2fd8fe
       _order: 0
       cache: {}
       request:
-        bodySize: 851
+        bodySize: 640
         cookies: []
         headers:
           - _fromType: array
@@ -861,7 +1269,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "851"
+            value: "640"
           - name: host
             value: sourcegraph.com
         headersSize: 348
@@ -875,47 +1283,33 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  <filename>src/Calculator.tsx<fim_prefix>// Additional
-                  documentation for `CalculatorProps`:
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `getter`:
 
                   // 
 
-                  // interface CalculatorProps {
+                  // var getter: { a: A; b: B; c: C; indirect(): Selector; }
 
-                  //   languageKind: "arabic" | "japanese" | "roman"
+                  // 
+
+                  // Additional documentation for `Selector`:
+
+                  // 
+
+                  // interface Selector {
+
+                  //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
 
                   // }
 
                   // 
 
-                  // 
-
-                  // Here is a reference snippet of code from src/main.ts:
-
-                  // 
-
-                  // import { doSomething } from './functions'
-
-                  // 
-
-                  // function main(): void {
-
-                  //     doSomething()
-
-                  // }
-
-                  import { FunctionComponent } from 'react'
-
-                  import { CalculatorProps } from './CalculatorProps'
-
-                  import * as React from 'react'
+                  import { getter } from './members-indirection'
 
 
-                  export const Calculator: FunctionComponent<CalculatorProps> = props => {
-                      return <h1>My favorite calculator comes from {<fim_suffix>
-                  }
-
-                  <fim_middle>
+                  function run(): void {
+                      getter.indirect().<fim_suffix>
+                  }<fim_middle>
             model: fireworks/starcoder-16b
             stopSequences:
               - "\n\n"
@@ -927,14 +1321,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/code
       response:
-        bodySize: 363
+        bodySize: 465
         content:
           mimeType: text/event-stream
-          size: 363
+          size: 465
           text: >+
             event: completion
 
-            data: {"completion":"props.languageKind}\u003c/h1\u003e","stopReason":"stop"}
+            data: {"completion":"query({ isMammal: true, animalName: 'Dog' })","stopReason":"stop"}
 
 
             event: done
@@ -944,7 +1338,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 17:56:56 GMT
+            value: Thu, 02 May 2024 13:18:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -973,7 +1367,477 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T17:56:55.635Z
+      startedDateTime: 2024-05-02T13:18:39.903Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 91ad5bfd71e473c66a4c389178fe7687
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 603
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "603"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `selector`:
+
+                  // 
+
+                  // var selector: Selector
+
+                  // 
+
+                  // Additional documentation for `Selector`:
+
+                  // 
+
+                  // interface Selector {
+
+                  //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
+
+                  // }
+
+                  // 
+
+                  import { selector, All } from './members'
+
+
+                  function run(all: All): void {
+                      selector.<fim_suffix>
+                  }<fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 546
+        content:
+          mimeType: text/event-stream
+          size: 546
+          text: >+
+            event: completion
+
+            data: {"completion":"query({ isMammal: true, animalName: 'Dog' })","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 02 May 2024 13:21:29 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-02T13:21:29.187Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7a7513a3a63f3760d3cf6373e4442577
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 690
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "690"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 348
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `getter`:
+
+                  // 
+
+                  // var getter: { a: A; b: B; c: C; indirect(): Selector; }
+
+                  // 
+
+                  // Additional documentation for `Selector`:
+
+                  // 
+
+                  // interface Selector {
+
+                  //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
+
+                  // }
+
+                  // 
+
+                  import { getter } from './members-indirection'
+
+
+                  class Runner {
+
+                      foobar = getter
+                      run(): void {
+                          this.foobar.indirect().<fim_suffix>
+                      }
+                  }<fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 468
+        content:
+          mimeType: text/event-stream
+          size: 468
+          text: >+
+            event: completion
+
+            data: {"completion":"query({ isMammal: true, animalName: 'Dog' })","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 02 May 2024 13:24:30 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-02T13:24:30.094Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aa88d847eebe5d6398398678d0314fa2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1417
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: graph-context-starcoder-16b / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "1417"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 349
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  <filename>src/main.ts<fim_prefix>// Additional documentation
+                  for `isNewCar`:
+
+                  // 
+
+                  // function isNewCar(car: Car, params: { minimumYear: number; }): boolean
+
+                  // 
+
+                  // Additional documentation for `readFileSync`:
+
+                  // 
+
+                  // function readFileSync(path: PathOrFileDescriptor, options?: { encoding?: null; flag?: string; }): Buffer
+
+                  // 
+
+                  // Additional documentation for `readFileSync`:
+
+                  // 
+
+                  // function readFileSync(path: PathOrFileDescriptor, options?: { encoding?: null; flag?: string; }): Buffer
+
+                  // 
+
+                  // Additional documentation for `readFileSync`:
+
+                  // 
+
+                  // function readFileSync(path: PathOrFileDescriptor, options?: { encoding?: null; flag?: string; }): Buffer
+
+                  // 
+
+                  // Additional documentation for `User`:
+
+                  // 
+
+                  // interface User {
+
+                  //   firstName: string
+
+                  //   isEligible: boolean
+
+                  // }
+
+                  // 
+
+                  // 
+
+                  // Additional documentation for `Car`:
+
+                  // 
+
+                  // interface Car {
+
+                  //   modelYear: number
+
+                  //   vanityItem: boolean
+
+                  //   user: User
+
+                  // }
+
+                  // 
+
+                  import path from 'node:path'
+
+                  import os from 'os'
+
+                  import { readFileSync } from 'node:fs'
+
+                  import { User } from './user'
+
+                  import { Car, isNewCar } from './car'
+
+
+                  function getDriverWithNewCar(cars: Car[]): User {
+                    <fim_suffix>
+
+                  }
+
+
+                  export const message = 'Hello'<fim_middle>
+            model: fireworks/starcoder-16b
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+            stream: true
+            temperature: 0.2
+            timeoutMs: 15000
+            topK: 0
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/code
+      response:
+        bodySize: 629
+        content:
+          mimeType: text/event-stream
+          size: 629
+          text: >+
+            event: completion
+
+            data: {"completion":"const newCars = cars.filter(isNewCar)\n  return newCars[0].user","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 03 May 2024 08:54:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "478"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1406
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-03T08:54:00.843Z
       time: 0
       timings:
         blocked: -1
@@ -1144,23 +2008,30 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?ContextFilters
       response:
-        bodySize: 107
+        bodySize: 104
         content:
           encoding: base64
           mimeType: application/json
-          size: 107
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
-            ciWrvNKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
+          size: 104
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
+            NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
+          textDecoded:
+            data:
+              site:
+                codyContextFilters:
+                  raw: null
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 18:58:46 GMT
+            value: Fri, 26 Apr 2024 12:51:33 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "95"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1180,12 +2051,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1333
+        headersSize: 1439
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T18:58:46.234Z
+      startedDateTime: 2024-04-26T12:51:33.099Z
       time: 0
       timings:
         blocked: -1
@@ -1260,13 +2131,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 18:58:46 GMT
+            value: Fri, 26 Apr 2024 12:51:34 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "94"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1286,12 +2159,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1333
+        headersSize: 1439
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T18:58:46.430Z
+      startedDateTime: 2024-04-26T12:51:33.964Z
       time: 0
       timings:
         blocked: -1
@@ -2470,24 +3343,29 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRobG\
-            5vFGBkYmugamugZG8aZ6xrpJSUmJZmZpluZpxkZKtbW1AAAAAP//AwAUo7FzSQAAAA==\
-            \"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRiaGxvFGB\
+            kYmugamugZG8aZ6xrqphpbJRkYpBomWpkZKtbW1AAAAAP//AwBCmw1HSQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 272413_2024-05-02_5.3-e19c22d0a952
         cookies: []
         headers:
           - name: date
-            value: Thu, 02 May 2024 17:29:30 GMT
+            value: Fri, 03 May 2024 08:53:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "517"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2507,12 +3385,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1333
+        headersSize: 1440
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-02T17:29:30.080Z
+      startedDateTime: 2024-05-03T08:53:21.371Z
       time: 0
       timings:
         blocked: -1
