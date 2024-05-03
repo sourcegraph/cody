@@ -1,6 +1,8 @@
 # Please post in #team-cody-clients if you need help getting this CI check to pass.
+# Worst-case: feel free to disable this workflow here https://github.com/sourcegraph/cody/actions/workflows/agent-bindings.yml
 name: agent-bindings
 on:
+
   pull_request:
     paths:
       - '**.ts'
