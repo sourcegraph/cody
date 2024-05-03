@@ -86,6 +86,9 @@ export const ContextCell: React.FunctionComponent<{
                                     isTooLarge={
                                         item.type === 'file' && item.isTooLarge && item.source === 'user'
                                     }
+                                    isIgnored={
+                                        item.type === 'file' && item.isIgnored && item.source === 'user'
+                                    }
                                     className={classNames(styles.fileLink, MENTION_CLASS_NAME)}
                                 />
                             </li>

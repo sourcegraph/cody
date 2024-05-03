@@ -20,9 +20,11 @@ interface FileLinkProps {
     range?: RangeData
     title?: string
     isTooLarge?: boolean
+    isIgnored?: boolean
 }
 
-const WARNING = 'Excluded due to context window limit'
+const LIMIT_WARNING = 'Excluded due to context window limit'
+const IGNORE_WARNING = 'File ignored by an admin setting'
 
 export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
     uri,
@@ -32,6 +34,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     title,
     revision,
     isTooLarge,
+    isIgnored,
     className,
 }) => {
     function logFileLinkClicked() {
@@ -59,21 +62,19 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         const pathToDisplay = `${displayPath(uri)}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
-        tooltip = isTooLarge ? WARNING : pathWithRange
+        tooltip = isIgnored ? IGNORE_WARNING : isTooLarge ? LIMIT_WARNING : pathWithRange
         href = openURI.href
         target = openURI.target
     }
 
     return (
         <div className={classNames(styles.linkContainer, className)}>
-            {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
-            <a
-                className={styles.linkButton}
-                title={tooltip}
-                href={href}
-                target={target}
-                onClick={logFileLinkClicked}
-            >
+            {isIgnored ? (
+                <i className="codicon codicon-warning" title={IGNORE_WARNING} />
+            ) : isTooLarge ? (
+                <i className="codicon codicon-warning" title={LIMIT_WARNING} />
+            ) : null}
+            <a className={styles.linkButton} href={href} target={target} onClick={logFileLinkClicked}>
                 <i
                     className={classNames(
                         'codicon',
