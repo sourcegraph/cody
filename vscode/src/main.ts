@@ -396,6 +396,21 @@ const register = async (
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
         ),
+        vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
+            // Prompt the user for the policy
+            const raw = await vscode.window.showInputBox({ title: 'Context Filters Overwrite' })
+            if (!raw) {
+                return
+            }
+            try {
+                const policy = JSON.parse(raw)
+                contextFiltersProvider.setTestingContextFilters(policy)
+            } catch (error) {
+                vscode.window.showErrorMessage(
+                    'Failed to parse context filters policy. Please check your JSON syntax.'
+                )
+            }
+        }),
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),

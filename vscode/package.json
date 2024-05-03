@@ -546,6 +546,13 @@
         "when": "!config.cody.debug.verbose"
       },
       {
+        "command": "cody.test.set-context-filters",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "[Debug] Set Context Filters Overwrite",
+        "when": "cody.enabled && config.cody.debug.verbose"
+      },
+      {
         "command": "cody.debug.reportIssue",
         "category": "Cody Debug",
         "group": "Debug",
