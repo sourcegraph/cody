@@ -21,6 +21,14 @@ jobs:
       - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
         with:
           run_install: true
+      - id: auth
+        uses: google-github-actions/auth@v0
+          # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v0
       - run: pnpm build
       - run: pnpm run test
       - run: xvfb-run -a pnpm -C vscode run test:integration
