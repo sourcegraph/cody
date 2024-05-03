@@ -94,7 +94,7 @@ describe('DefaultPrompter', () => {
             },
         ]
 
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
+        const { limitReached, ignored, duplicate, used } = await promptBuilder.tryAddContext(
             'enhanced',
             contextItems
         )
