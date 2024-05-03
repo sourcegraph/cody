@@ -242,7 +242,6 @@ class FireworksProvider extends Provider {
         })
 
         const { multiline } = this.options
-        this.options.docContext.currentLinePrefix
         const useMultilineModel = multiline || this.options.triggerKind !== TriggerKind.Automatic
         const model: string =
             this.model === 'starcoder2-hybrid'
