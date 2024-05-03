@@ -28,7 +28,10 @@ export function capitalize(text: string): string {
 }
 
 export function isTypescriptKeyword(symbol: string): boolean {
-    return typescriptKeywordSyntax(symbol) !== undefined
+    return (
+        typescriptKeywordSyntax(symbol) !== undefined &&
+        symbol !== 'scip-typescript npm typescript . array#'
+    )
 }
 
 export function typescriptKeyword(keyword: string): string {
