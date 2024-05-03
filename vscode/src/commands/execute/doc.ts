@@ -8,7 +8,10 @@ import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { getEditDefaultProvidedRange, getEditTrimmedSelection } from '../../edit/utils/edit-selection'
+import {
+    getEditAdjustedUserSelection,
+    getEditDefaultProvidedRange,
+} from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
 function getDefaultDocumentableRange(editor: vscode.TextEditor): {
@@ -45,7 +48,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     insertionPoint?: vscode.Position
 } {
     const { document } = editor
-    const trimmedSelection = getEditTrimmedSelection(document, editor.selection)
+    const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a documentable symbol at the current cursor position.
@@ -53,7 +56,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
      */
     const [documentableNode] = execQueryWrapper({
         document,
-        position: trimmedSelection.start,
+        position: adjustedSelection.start,
         queryWrapper: 'getDocumentableNode',
     })
 
@@ -78,8 +81,8 @@ function getDocumentableRange(editor: vscode.TextEditor): {
         endPosition.column
     )
 
-    if (!trimmedSelection.isEqual(range)) {
-        // We found a documentable range, but the users' trimmed selection does not match it.
+    if (!adjustedSelection.isEqual(range)) {
+        // We found a documentable range, but the users' adjusted selection does not match it.
         // We have to use the users' selection here, as it's possible they do not want the documentable node.
         return getDefaultDocumentableRange(editor)
     }

@@ -5,7 +5,10 @@ import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getEditDefaultProvidedRange, getEditTrimmedSelection } from '../../edit/utils/edit-selection'
+import {
+    getEditAdjustedUserSelection,
+    getEditDefaultProvidedRange,
+} from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
@@ -21,7 +24,7 @@ import { isTestFileForOriginal } from '../utils/test-commands'
  */
 function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
     const { document } = editor
-    const trimmedSelection = getEditTrimmedSelection(document, editor.selection)
+    const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a testable symbol at the current cursor position.
@@ -53,9 +56,9 @@ function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
         endPosition.column
     )
 
-    if (!trimmedSelection.isEqual(range)) {
-        // We found a documentable range, but the users' trimmed selection does not match it.
-        // We have to use the users' selection here, as it's possible they do not want the documentable node.
+    if (!adjustedSelection.isEqual(range)) {
+        // We found a testable range, but the users' adjusted selection does not match it.
+        // We have to use the users' selection here, as it's possible they do not want the testable node.
         return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 

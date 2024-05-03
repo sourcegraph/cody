@@ -79,20 +79,32 @@ export function getEditLineSelection(
 }
 
 /**
- * Given a selection, trim that selection down to the nearest non-whitespace characters
- * at the start and end of the selection.
+ * Given a provided user selection, adjust this to match an more optimal, realistic selection.
+ * This helps reduce the chance of user errors where an Edit may be triggered with either:
+ * - Too little text selected (e.g. the user selected all but a few chars of a function)
+ * - Too much text selected (e.g. a user selected a function, and some extra lines of whitespace)
+ *
+ * We expand, and then trim the selection to match only the intended non-whitespace characters
  */
-export function getEditTrimmedSelection(
+export function getEditAdjustedUserSelection(
     document: vscode.TextDocument,
     selection: vscode.Selection
 ): vscode.Range {
-    const text = document.getText(selection)
+    if (selection.isEmpty) {
+        // No selection provided, do nothing
+        return selection
+    }
+
+    // Expand the selection to include all non-whitespace characters from the selected lines
+    const lineSelection = getEditLineSelection(document, selection)
+    const text = document.getText(lineSelection)
+
+    // Trim any additional whitespace characters (e.g. additional lines) from the selection
     const trimmedText = text.trim()
-    const startOffset = text.indexOf(trimmedText)
-    const endOffset = text.length - trimmedText.length - startOffset
-    const start = document.positionAt(document.offsetAt(selection.start) + startOffset)
-    const end = document.positionAt(document.offsetAt(selection.end) - endOffset)
-    return new vscode.Selection(start, end)
+    const startOffset = document.offsetAt(selection.start) + text.indexOf(trimmedText)
+    const endOffset = document.offsetAt(selection.end) - (text.length - trimmedText.length - startOffset)
+
+    return new vscode.Selection(document.positionAt(startOffset), document.positionAt(endOffset))
 }
 
 /**
