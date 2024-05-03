@@ -1,7 +1,7 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
-import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
+import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
 import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
