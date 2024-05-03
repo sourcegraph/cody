@@ -76,7 +76,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
         const prompts: { name: string; value: any }[] = []
         await Promise.all(
             activeClients().map(async client => {
-                const autocomplete = await client.autocompleteText()
+                const autocomplete = await client.autocompleteText({ triggerKind: 'Invoke' })
                 const { requests } = await client.request('testing/networkRequests', null)
                 let prompt: any = requests
                     .filter(({ url }) => url.includes('/completions/'))

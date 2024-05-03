@@ -413,6 +413,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     const { document, position, triggerKind, providerConfig, docContext } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
+        triggerKind,
         docContext,
         document,
         position,

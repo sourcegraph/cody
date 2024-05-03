@@ -34,6 +34,7 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
+import { TriggerKind } from '../get-inline-completions'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -241,17 +242,20 @@ class FireworksProvider extends Provider {
         })
 
         const { multiline } = this.options
+        this.options.docContext.currentLinePrefix
+        const useMultilineModel = multiline || this.options.triggerKind !== TriggerKind.Automatic
+        const model: string =
+            this.model === 'starcoder2-hybrid'
+                ? MODEL_MAP[useMultilineModel ? 'starcoder2-15b' : 'starcoder2-7b']
+                : this.model === 'starcoder-hybrid'
+                  ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
+                  : MODEL_MAP[this.model]
         const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
             topK: 0,
-            model:
-                this.model === 'starcoder2-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder2-15b' : 'starcoder2-7b']
-                    : this.model === 'starcoder-hybrid'
-                      ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                      : MODEL_MAP[this.model],
+            model,
         } satisfies CodeCompletionsParams
 
         if (requestParams.model.includes('starcoder2')) {
