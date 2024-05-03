@@ -5,7 +5,7 @@ import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getEditLineSelection } from '../../edit/utils/edit-selection'
+import { getEditDefaultProvidedRange, getEditTrimmedSelection } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
@@ -20,12 +20,8 @@ import { isTestFileForOriginal } from '../utils/test-commands'
  * using a tree-sitter query. If found, returns the range for the symbol.
  */
 function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
-    const { document, selection } = editor
-    if (!selection.isEmpty) {
-        const lineSelection = getEditLineSelection(editor.document, editor.selection)
-        // The user has made an active selection, use that as the testable range
-        return lineSelection
-    }
+    const { document } = editor
+    const trimmedSelection = getEditTrimmedSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a testable symbol at the current cursor position.
@@ -37,21 +33,33 @@ function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
         queryWrapper: 'getTestableNode',
     })
     if (!testableNode) {
-        return undefined
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 
     const { range: testableRange } = testableNode
     if (!testableRange) {
         // No user-provided selection, no testable range found.
         // Fallback to expanding the range to the nearest block.
-        return undefined
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 
     const {
         node: { startPosition, endPosition },
     } = testableRange
+    const range = new vscode.Range(
+        startPosition.row,
+        startPosition.column,
+        endPosition.row,
+        endPosition.column
+    )
 
-    return new vscode.Range(startPosition.row, startPosition.column, endPosition.row, endPosition.column)
+    if (!trimmedSelection.isEqual(range)) {
+        // We found a documentable range, but the users' trimmed selection does not match it.
+        // We have to use the users' selection here, as it's possible they do not want the documentable node.
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
+    }
+
+    return range
 }
 
 /**

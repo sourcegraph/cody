@@ -77,3 +77,41 @@ export function getEditLineSelection(
     const endChar = document.lineAt(selection.end.line).text.length
     return new vscode.Range(selection.start.line, startChar, selection.end.line, endChar)
 }
+
+/**
+ * Given a selection, trim that selection down to the nearest non-whitespace characters
+ * at the start and end of the selection.
+ */
+export function getEditTrimmedSelection(
+    document: vscode.TextDocument,
+    selection: vscode.Selection
+): vscode.Range {
+    const text = document.getText(selection)
+    const trimmedText = text.trim()
+    const startOffset = text.indexOf(trimmedText)
+    const endOffset = text.length - trimmedText.length - startOffset
+    const start = document.positionAt(document.offsetAt(selection.start) + startOffset)
+    const end = document.positionAt(document.offsetAt(selection.end) - endOffset)
+    return new vscode.Selection(start, end)
+}
+
+/**
+ * Returns a range that represents the default provided range for an edit operation.
+ *
+ * If the user has made an active selection, the function will return the line-expanded
+ * selection range. Otherwise, it will return `undefined`, indicating that no default
+ * range is available.
+ */
+export function getEditDefaultProvidedRange(
+    document: vscode.TextDocument,
+    selection: vscode.Selection
+): vscode.Range | undefined {
+    if (!selection.isEmpty) {
+        // User has made an active selection.
+        // We have to use their selection as the intended range.
+        return getEditLineSelection(document, selection)
+    }
+
+    // No usable selection, fallback to the range expansion behaviour for Edit
+    return
+}

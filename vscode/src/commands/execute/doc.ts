@@ -8,8 +8,25 @@ import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { getEditLineSelection } from '../../edit/utils/edit-selection'
+import { getEditDefaultProvidedRange, getEditTrimmedSelection } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
+
+function getDefaultDocumentableRange(editor: vscode.TextEditor): {
+    range?: vscode.Range
+    insertionPoint?: vscode.Position
+} {
+    const defaultRange = getEditDefaultProvidedRange(editor.document, editor.selection)
+
+    if (defaultRange) {
+        return {
+            range: defaultRange,
+            insertionPoint: defaultRange.start,
+        }
+    }
+
+    // No usable selection, fallback to expanding the range to the nearest block.
+    return {}
+}
 
 /**
  * Gets the symbol range and preferred insertion point for documentation
@@ -27,15 +44,8 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     range?: vscode.Range
     insertionPoint?: vscode.Position
 } {
-    const { document, selection } = editor
-    if (!selection.isEmpty) {
-        const lineSelection = getEditLineSelection(editor.document, editor.selection)
-        // The user has made an active selection, use that as the documentable range
-        return {
-            range: lineSelection,
-            insertionPoint: lineSelection.start,
-        }
-    }
+    const { document } = editor
+    const trimmedSelection = getEditTrimmedSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a documentable symbol at the current cursor position.
@@ -43,23 +53,36 @@ function getDocumentableRange(editor: vscode.TextEditor): {
      */
     const [documentableNode] = execQueryWrapper({
         document,
-        position: editor.selection.active,
+        position: trimmedSelection.start,
         queryWrapper: 'getDocumentableNode',
     })
+
     if (!documentableNode) {
-        return {}
+        return getDefaultDocumentableRange(editor)
     }
 
     const { range: documentableRange, insertionPoint: documentableInsertionPoint } = documentableNode
     if (!documentableRange) {
-        // No user-provided selection, no documentable range found.
+        // No documentable range found.
         // Fallback to expanding the range to the nearest block.
-        return {}
+        return getDefaultDocumentableRange(editor)
     }
 
     const {
         node: { startPosition, endPosition },
     } = documentableRange
+    const range = new vscode.Range(
+        startPosition.row,
+        startPosition.column,
+        endPosition.row,
+        endPosition.column
+    )
+
+    if (!trimmedSelection.isEqual(range)) {
+        // We found a documentable range, but the users' trimmed selection does not match it.
+        // We have to use the users' selection here, as it's possible they do not want the documentable node.
+        return getDefaultDocumentableRange(editor)
+    }
 
     const insertionPoint = documentableInsertionPoint
         ? new vscode.Position(documentableInsertionPoint.node.startPosition.row + 1, 0)
@@ -69,12 +92,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
           )
 
     return {
-        range: new vscode.Range(
-            startPosition.row,
-            startPosition.column,
-            endPosition.row,
-            endPosition.column
-        ),
+        range,
         insertionPoint,
     }
 }
