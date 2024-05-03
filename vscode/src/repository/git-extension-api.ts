@@ -106,3 +106,22 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
 
     return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }
+
+export async function isCodebasPublicGitHubRepo(codebase: string): Promise<boolean> {
+    // codebase format example: github.com/owner/repo or github.com/owner/repo.git
+    const match = codebase?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
+    if (!match) {
+        return false
+    }
+
+    const [, owner, repo] = match
+    const repositoryUrl = `https://api.github.com/repos/${owner}/${repo}`
+
+    try {
+        const response = await fetch(repositoryUrl, { method: 'HEAD' })
+        return response.ok
+    } catch (error) {
+        console.error('Error fetching repository information:', error)
+        return false
+    }
+}

@@ -598,6 +598,7 @@ export class LocalEmbeddingsController
                 return resp.results.map(result => ({
                     ...result,
                     uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+                    repoName: lastRepo.repoName as string,
                 }))
             } catch (error) {
                 logDebug('LocalEmbeddingsController', 'query', captureException(error), error)

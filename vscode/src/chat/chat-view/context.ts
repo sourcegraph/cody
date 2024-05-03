@@ -9,6 +9,7 @@ import {
     NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
+    TokenCounter,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
@@ -21,6 +22,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import { getCodebaseFromWorkspaceUri } from '../../repository/git-extension-api'
 
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
@@ -210,6 +212,7 @@ async function searchSymf(
         // trigger background reindex if the index is stale
         void symf?.reindexIfStale(workspaceRoot)
 
+        const repoName = getCodebaseFromWorkspaceUri(workspaceRoot)
         const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(
                 async (result: Result): Promise<ContextItem[] | ContextItem> => {
@@ -236,6 +239,7 @@ async function searchSymf(
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        repoName,
                     }
                 }
             )
@@ -273,6 +277,8 @@ async function searchEmbeddingsLocal(
                 range,
                 content: result.content,
                 source: ContextItemSource.Embeddings,
+                repoName: result.repoName,
+                size: TokenCounter.countTokens(result.content),
             })
         }
         return contextItems

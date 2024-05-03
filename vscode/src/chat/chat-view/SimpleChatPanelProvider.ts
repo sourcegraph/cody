@@ -497,6 +497,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                               })
                         : undefined
                 )
+
+                // NOTE (bee): Is there a possibility where the current codebase does not match
+                // the codebase used for fetching the enhanced context?
+                const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
+                console.log(currentCodebase?.isPublic, 'is currentCodebase public?')
+
                 const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
                     const properties = {
                         ...sharedProperties,

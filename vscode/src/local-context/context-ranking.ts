@@ -305,6 +305,7 @@ export class ContextRankingController implements ContextRanker {
                     range,
                     content: result.content,
                     source: ContextItemSource.Embeddings,
+                    repoName: result.repoName,
                 })
             }
             return contextItems
