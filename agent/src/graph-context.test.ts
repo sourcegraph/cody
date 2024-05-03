@@ -733,7 +733,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
 
             const text = await autocompletes()
-            // expect(text).includes('validDogSled')
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -791,7 +790,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
 
             const text = await autocompletes()
-            // expect(text).includes('validDogSled')
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
@@ -853,7 +851,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
 
             const text = await autocompletes()
-            // expect(text).includes('validDogSled')
             expect(text).toMatchInlineSnapshot(
                 `
               "autocompletes:
