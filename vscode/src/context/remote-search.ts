@@ -10,6 +10,7 @@ import {
     type Disposable,
     type IRemoteSearch,
     type PromptString,
+    contextFiltersProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -62,6 +63,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
                         state: 'ready',
                         id,
                         inclusion: auto ? 'auto' : 'manual',
+                        isIgnored: contextFiltersProvider.isRepoNameIgnored(id),
                     },
                 ],
             }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { ContextGroup, ContextStatusProvider } from '@sourcegraph/cody-shared'
+import { type ContextGroup, type ContextStatusProvider } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
