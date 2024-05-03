@@ -584,7 +584,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind:
-                            vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                            vscode.InlineCompletionTriggerKind[params.triggerKind ?? 'Automatic'],
                         selectedCompletionInfo:
                             params.selectedCompletionInfo?.text === undefined ||
                             params.selectedCompletionInfo?.text === null
