@@ -514,7 +514,7 @@ export class FixupController
             insertText: task.replacement,
             insertRange: trackedRange,
             document,
-            metadata,
+            metadata: privateMetadata,
         })
 
         const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
