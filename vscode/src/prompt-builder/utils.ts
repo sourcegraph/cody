@@ -32,6 +32,8 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         messageText = populateContextTemplateFromText(templateText, promptContext.content, uri)
     } else if (contextItem.source === ContextItemSource.Terminal) {
         messageText = promptContext.content
+    } else if (contextItem.source === ContextItemSource.History) {
+        messageText = promptContext.content
     } else {
         messageText = populateCodeContextTemplate(promptContext.content, uri, promptContext.repoName)
     }
