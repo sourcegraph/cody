@@ -813,6 +813,11 @@ function onlyCompletionWidgetSelectionChanged(
 
 let lasIgnoredUriLogged: string | undefined = undefined
 function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
+    // Only show a notification for actively triggered autocomplete requests.
+    if (isManualCompletion) {
+        showCodyIgnoreNotification('autocomplete', reason)
+    }
+
     const string = uri.toString()
     if (lasIgnoredUriLogged === string) {
         return
@@ -822,8 +827,4 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
         'CodyCompletionProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
-    // Only show a notification for actively triggered autocomplete requests.
-    if (isManualCompletion) {
-        showCodyIgnoreNotification('autocomplete', reason)
-    }
 }
