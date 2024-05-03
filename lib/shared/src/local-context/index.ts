@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { RangeData } from '..'
 import type { ContextItem, ContextItemFile } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -65,14 +66,5 @@ export interface SearchPanelFile {
  */
 export interface SearchPanelSnippet {
     contents: string
-    range: {
-        start: {
-            line: number
-            character: number
-        }
-        end: {
-            line: number
-            character: number
-        }
-    }
+    range: RangeData
 }

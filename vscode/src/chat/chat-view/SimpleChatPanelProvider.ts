@@ -10,7 +10,6 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextItemFile,
     ContextItemSource,
     type ContextItemWithContent,
     type DefaultChatCommands,
@@ -63,6 +62,8 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { URI } from 'vscode-uri'
+import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
@@ -650,13 +651,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    public async handleGetUserEditorContext(): Promise<void> {
-        const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
+    public async handleGetUserEditorContext(uri?: URI): Promise<void> {
+        const selected = uri ? await getContextFileFromUri(uri) : await getContextFileFromCursor()
         const { input, context } = this.chatModel.contextWindow
-        const contextItems = selectionFiles.map(f => ({
+        const userContextSize = context?.user ?? input
+        const contextItems = selected.map(f => ({
             ...f,
             content: undefined,
-            isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
+            isTooLarge: f.size ? f.size > userContextSize : undefined,
             source: ContextItemSource.User,
         }))
         void this.postMessage({
@@ -1202,12 +1204,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
 
         // Let the webview know if it is active
-        panel.onDidChangeViewState(event =>
+        panel.onDidChangeViewState(event => {
             this.postMessage({
                 type: 'webview-state',
                 isActive: event.webviewPanel.active,
             })
-        )
+        })
 
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
@@ -1259,10 +1261,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
 
     public setChatTitle(title: string): void {
+        const isDefaultChatTitle = title === 'New Chat'
         // Skip storing default chat title
-        if (title !== 'New Chat') {
+        if (!isDefaultChatTitle) {
             this.chatModel.setCustomChatTitle(title)
         }
+
         this.postChatTitle()
     }
 

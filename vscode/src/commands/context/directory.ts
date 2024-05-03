@@ -4,6 +4,7 @@ import {
     TokenCounter,
     contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -69,7 +70,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                     uri: fileUri,
                     content,
                     source: ContextItemSource.Editor,
-                    range,
+                    range: toRangeData(range),
                     size,
                 })
 

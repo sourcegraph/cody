@@ -3,6 +3,7 @@ import {
     TokenCounter,
     contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { type ContextItemFile, ContextItemSource } from '@sourcegraph/cody-shared'
@@ -49,7 +50,7 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     uri: document.uri,
                     content,
                     source: ContextItemSource.Selection,
-                    range: selection,
+                    range: toRangeData(selection),
                     size,
                 } satisfies ContextItemFile,
             ]

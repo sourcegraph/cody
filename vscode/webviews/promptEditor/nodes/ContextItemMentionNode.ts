@@ -179,7 +179,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // A displayed range of `foo.txt:2-4` means "include all of lines 2, 3, and 4", which means the
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
-    const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
+    const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
     if (contextItem.type === 'file') {
         if (contextItem.provider && contextItem.title) {
             return `@${contextItem.title}`

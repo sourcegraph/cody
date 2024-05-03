@@ -6,7 +6,28 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Search: A new `Search Code` command added to the `Commands` sidebar for Cody's Natural Language Search. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
+- Context Menu: Added commands to send file to chat as @-mention from the explorer context menu. [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add File to Chat`: Add file to the current opened chat, or start a new chat if no panel is opened.
+  - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
+
 ### Fixed
+
+### Changed
+
+- Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
+- Editor Context Menu: Updated the existing `Cody Chat: Add context` command to handle selected code from the editor as @-mention . [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
+  - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
+  - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
+
+## [1.16.1]
+
+### Added
+
+### Fixed
+
+- Fixed a bug where old Sourcegraph instances' error messages caused Cody to ignore all context files. [pull/4024](https://github.com/sourcegraph/cody/pull/4024)
+- Fixed a visually distracting drop shadow on some text labels in the model selection dropdown menu. [pull/4026](https://github.com/sourcegraph/cody/pull/4026)
 
 ### Changed
 

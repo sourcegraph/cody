@@ -57,7 +57,7 @@ test.extend<ExpectedEvents>({
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Start new chat
     const [chatPanel, chatInput] = await createEmptyChatPanel(page)

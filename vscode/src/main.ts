@@ -45,6 +45,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -120,6 +121,8 @@ export async function start(
             }
         })
     )
+
+    exposeOpenCtxExtensionAPIHandle()
 
     return vscode.Disposable.from(...disposables)
 }
@@ -295,14 +298,9 @@ const register = async (
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
     if (symfRunner && config.experimentalSymfContext) {
-        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        const searchViewProvider = new SearchViewProvider(symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
-        disposables.push(
-            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
-                webviewOptions: { retainContextWhenHidden: true },
-            })
-        )
     }
 
     if (config.experimentalSupercompletions) {
