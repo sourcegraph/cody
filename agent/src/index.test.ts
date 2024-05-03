@@ -1055,9 +1055,10 @@ describe('Agent', () => {
                 expect(obtained).toMatchInlineSnapshot(
                     `
                   "/**
-                   * Adds two numbers and returns the result.
-                   * @param a - The first number to add.
-                   * @param b - The second number to add.
+                   * Sums two numbers and returns the result.
+                   *
+                   * @param a - The first number to be summed.
+                   * @param b - The second number to be summed.
                    * @returns The sum of \`a\` and \`b\`.
                    */
                   export function sum(a: number, b: number): number {
@@ -1082,7 +1083,7 @@ describe('Agent', () => {
                           constructor(private shouldGreet: boolean) {}
 
                               /**
-                           * Logs a "Hello World!" message to the console if the \`shouldGreet\` property is true.
+                           * Greets the user with a "Hello World!" message if the \`shouldGreet\` flag is set to \`true\`.
                            */
                       public functionName() {
                               if (this.shouldGreet) {
@@ -1109,7 +1110,7 @@ describe('Agent', () => {
                               // Do some stuff
 
                                       /**
-                               * Records a log message.
+                               * Logs a message to the console indicating that a log is being recorded.
                                */
                       function recordLog() {
                                   console.log(/* CURSOR */ 'Recording the log')
@@ -1144,13 +1145,13 @@ describe('Agent', () => {
                               expect(true).toBe(true)
                           })
 
-                          it('does something else', () => {
+                              /**
+                           * This function calls \`performance.now()\` to measure the time elapsed since the start of the script. However, using \`performance.now()\` in tests can lead to flaky or inconsistent results, as the timing can be affected by various factors such as system load or other running processes.
+                           * Instead, consider using a library like \`Date\` or \`process.hrtime()\` to measure time in your tests, as these are more reliable for this purpose.
+                           */
+                      it('does something else', () => {
                               // This line will error due to incorrect usage of \`performance.now\`
-                                      /**
-                               * Retrieves the current time in milliseconds since the page was loaded.
-                               * This can be used to measure the duration of an operation.
-                               */
-                      const startTime = performance.now(/* CURSOR */)
+                              const startTime = performance.now(/* CURSOR */)
                           })
                       })
                       "
