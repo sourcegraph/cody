@@ -10,7 +10,7 @@ import {
 import { getConfiguration } from '../configuration'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { CodyIgnoreType } from '../cody-ignore/notification'
+import type { CodyIgnoreType } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
