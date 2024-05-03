@@ -29,16 +29,11 @@ export class RepoMetadatafromGitApi {
     }
 
     private async metadataFromGit(gitUrl: string): Promise<RepoMetaData | undefined> {
-        if (!this.isValidGitUrl(gitUrl)) {
-            return undefined
-        }
         const ownerAndRepoName = this.parserOwnerAndRepoName(gitUrl)
         if (!ownerAndRepoName) {
             return undefined
         }
-        const owner = ownerAndRepoName.owner
-        const repoName = ownerAndRepoName.repoName
-        const repoMetaData = await this.queryGitHubApi(owner, repoName)
+        const repoMetaData = await this.queryGitHubApi(ownerAndRepoName.owner, ownerAndRepoName.repoName)
         return repoMetaData
     }
 
@@ -70,20 +65,11 @@ export class RepoMetadatafromGitApi {
     }
 
     private parserOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
-        if (!this.isValidGitUrl(gitUrl)) {
+        const match = gitUrl?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
+        if (!match) {
             return undefined
         }
-        const gitUrlParts = gitUrl.split('/')
-        if (gitUrlParts.length < 2) {
-            return undefined
-        }
-        const owner = gitUrlParts[gitUrlParts.length - 2]
-        const repoName = gitUrlParts[gitUrlParts.length - 1].replace('.git', '')
+        const [, owner, repoName] = match
         return { owner, repoName }
-    }
-
-    private isValidGitUrl(gitUrl: string): boolean {
-        const githubUrlPattern: RegExp = /^https?:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+.git$/
-        return githubUrlPattern.test(gitUrl)
     }
 }

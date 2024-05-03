@@ -61,7 +61,6 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
@@ -70,8 +69,7 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
-import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
+import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -416,17 +414,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
-    private async getRepoGiturlIfPublic(): Promise<string> {
-        const vscodeUri = vscode.workspace.workspaceFolders?.[0]?.uri
-        if (vscodeUri) {
-            const gitRemoteUrlList = gitRemoteUrlsFromGitExtension(vscodeUri)
-            if (gitRemoteUrlList && gitRemoteUrlList.length === 1) {
-                const instance = RepoMetadatafromGitApi.getInstance()
-                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(gitRemoteUrlList[0])
-                if (gitMetaData?.repoVisibility === 'public') {
-                    return gitRemoteUrlList[0]
-                }
+    private async getRepoMetadataIfPublic(): Promise<string> {
+        const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
+        if (currentCodebase?.isPublic) {
+            const gitMetadata = {
+                githubUrl: currentCodebase?.remote,
+                commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
             }
+            return JSON.stringify(gitMetadata)
         }
         return ''
     }
@@ -469,7 +464,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitRemoteUrl: authStatus.isDotCom ? await this.getRepoGiturlIfPublic() : '',
+                    gitMetadata:
+                        authStatus.isDotCom && addEnhancedContext
+                            ? await this.getRepoMetadataIfPublic()
+                            : '',
                 },
             })
 
