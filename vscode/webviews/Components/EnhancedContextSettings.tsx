@@ -157,7 +157,7 @@ const CompactProviderComponent: React.FunctionComponent<{
             </span>
             {isIgnored ? (
                 <span className={styles.infoClose}>
-                    <i className="codicon codicon-info" title="File ignored by an admin setting." />
+                    <i className="codicon codicon-info" title="Repo ignored by an admin setting." />
                 </span>
             ) : inclusion === 'auto' ? (
                 <span className={styles.infoClose}>
