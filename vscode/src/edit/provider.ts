@@ -223,6 +223,12 @@ export class EditProvider {
             // as we are running into a blocking issue where this results in duplicate
             // chunks of text from the LLM being inserted into the document.
             // Issue to fix: TODO
+
+            if (isMessageInProgress) {
+                // Response hasn't finished, disable until we have the full response
+                return
+            }
+
             return this.handleFixupInsert(response, isMessageInProgress)
         }
 

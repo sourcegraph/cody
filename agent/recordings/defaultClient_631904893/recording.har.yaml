@@ -8646,6 +8646,143 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 1888737ce3ed47d709945e99fa34fad2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2444
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 277
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in adding new
+                  code by following instructions.
+
+                  - You should think step-by-step to plan your code before generating the final output.
+
+                  - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - You will be provided with code that is above the users' cursor, enclosed in <PRECEDINGCODE3493></PRECEDINGCODE3493> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the code you added. Only respond with the generated code.
+              - speaker: human
+                text: >
+                  Below is the code from file path src/Heading.tsx. Review the
+                  code outside the XML tags to detect the functionality,
+                  formats, style, patterns, and logics in use. Then, use what
+                  you detect and reuse methods/libraries to complete and enclose
+                  completed code only inside XML tags precisely without
+                  duplicating existing implementations. Here is the code:
+
+                  <PRECEDINGCODE3493></PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472></FOLLOWINGCODE2472>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  The user is currently in the file: src/Heading.tsx
+
+                  Provide your generated code using the following instructions:
+                  <INSTRUCTIONS7390>
+                  Generate a component for this file
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-opus-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+      response:
+        bodySize: 24994
+        content:
+          mimeType: text/event-stream
+          size: 24994
+          text: >+
+            event: completion
+
+            data: {"completion":"import React from 'react';\n\ninterface HeadingProps {\n  text: string;\n  level: 1 | 2 | 3 | 4 | 5 | 6;\n}\n\nconst Heading: React.FC\u003cHeadingProps\u003e = ({ text, level }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n\nexport default Heading;\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 03 May 2024 07:47:14 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-03T07:47:11.958Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: e2ae0ab84c1239bc6be31f736d44652b
       _order: 0
       cache: {}
