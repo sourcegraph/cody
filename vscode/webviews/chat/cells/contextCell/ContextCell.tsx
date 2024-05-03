@@ -1,7 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
 import type React from 'react'
-import { FileLink } from '../../../Components/FileLink'
+import { FileLink } from '../../../components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMentionNode'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
