@@ -1,10 +1,13 @@
 .model-title-with-icon {
+    flex: 1;
+
     display: inline-flex;
-    align-items: end;
+    align-items: center;
     gap: 0.45rem;
+    line-height: 1;
 
     .model-text {
-        display: block;
+        margin-bottom: -2px;
     }
     .model-name {
         font-weight: 500;
@@ -25,26 +28,30 @@
 
     & > svg {
         opacity: 0.5;
-        margin-top: -1px
     }
+}
+
+button > .model-title-with-icon .model-provider {
+    /* HACK(sqs): Hide the provider name from the button (show it only in the dropdown). */
+    display: none;
 }
 
 .badge  {
     margin-left: auto;
     line-height: 1;
-    letter-spacing: -0.025rem;
+    letter-spacing: -0.02rem;
+    font-size: 90%;
+    border-radius: 3px;
+    padding: 2px 3px 1px;
+    margin-bottom: -1px;
 }
 
 .cody-pro-badge {
-    background: repeating-conic-gradient(#7048E8 50%, #00CBEC 75%, #A112FF 100%, #FF5543 125%, #7048E8 150%);
-    color: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    padding: 3px 4px;
+    background: repeating-conic-gradient(#7048E888 50%, #00CBEC88 75%, #A112FF88 100%, #FF554388 125%, #7048E888 150%);
+    color: rgba(255, 255, 255, 1);
 }
 
 .experimental-badge {
     background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
-    border-radius: 4px;
-    padding: 3px 4px;
 }

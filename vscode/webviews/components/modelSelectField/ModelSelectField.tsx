@@ -4,8 +4,7 @@ import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { PopoverButton } from '../platform/Button'
-import { SelectList, type SelectListOption } from '../platform/SelectList'
+import { ComboBox, type SelectListOption } from '../shadcn/ui/combobox'
 import styles from './ModelSelectField.module.css'
 
 export const ModelSelectField: React.FunctionComponent<{
@@ -14,7 +13,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
-    disabled?: boolean
+    readOnly?: boolean
 
     className?: string
 
@@ -24,7 +23,7 @@ export const ModelSelectField: React.FunctionComponent<{
     models,
     onModelSelect: parentOnModelSelect,
     userInfo,
-    disabled,
+    readOnly,
     className,
     __storybook__open,
 }) => {
@@ -72,34 +71,46 @@ export const ModelSelectField: React.FunctionComponent<{
         return null
     }
 
+    const options = useMemo<SelectListOption[]>(
+        () =>
+            usableModels.map(
+                m =>
+                    ({
+                        value: m.model,
+                        title: (
+                            <ModelTitleWithIcon
+                                model={m}
+                                showIcon={true}
+                                showProvider={true}
+                                modelAvailability={modelAvailability(userInfo, m)}
+                            />
+                        ),
+                        filterKeywords: [m.title, m.provider],
+                        disabled: modelAvailability(userInfo, m) !== 'available',
+                    }) satisfies SelectListOption
+            ),
+        [usableModels, userInfo]
+    )
+
+    const onChange = useCallback(
+        (value: string | undefined) => {
+            onModelSelect(usableModels.find(m => m.model === value)!)
+        },
+        [onModelSelect, usableModels]
+    )
+
     return (
-        <PopoverButton
-            popoverContent={close => (
-                <ModelSelectList
-                    value={selectedModel}
-                    options={usableModels}
-                    userInfo={userInfo}
-                    onChange={(value, shouldClose) => {
-                        onModelSelect(value)
-                        if (shouldClose) {
-                            close()
-                        }
-                    }}
-                />
-            )}
-            onOpen={onPopoverOpen}
-            disabled={disabled || !userInfo.isDotComUser}
+        <ComboBox
+            options={options}
+            pluralNoun="models"
+            value={selectedModel.model}
+            onChange={onChange}
             className={className}
-            aria-label="Choose a model"
+            readOnly={readOnly || !userInfo.isDotComUser}
+            onOpen={onPopoverOpen}
             __storybook__open={__storybook__open}
-        >
-            <ModelTitleWithIcon
-                model={selectedModel}
-                showIcon={true}
-                showProvider={false}
-                modelAvailability={modelAvailability(userInfo, selectedModel)}
-            />
-        </PopoverButton>
+            aria-label="Choose a model"
+        />
     )
 }
 
@@ -116,42 +127,6 @@ function modelAvailability(
         return 'needs-cody-pro'
     }
     return 'available'
-}
-
-const ModelSelectList: FunctionComponent<{
-    value: ModelProvider
-    options: ModelProvider[]
-    onChange: (model: ModelProvider, shouldClose: boolean) => void
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
-}> = ({ value, options: modelOptions, onChange: parentOnChange, userInfo }) => {
-    const options = useMemo<SelectListOption[]>(
-        () =>
-            modelOptions.map(
-                m =>
-                    ({
-                        value: m.model,
-                        title: (
-                            <ModelTitleWithIcon
-                                model={m}
-                                showIcon={true}
-                                showProvider={true}
-                                modelAvailability={modelAvailability(userInfo, m)}
-                            />
-                        ),
-                        disabled: modelAvailability(userInfo, m) !== 'available',
-                    }) satisfies SelectListOption
-            ),
-        [modelOptions, userInfo]
-    )
-
-    const onChange = useCallback(
-        (value: string | undefined, close: boolean) => {
-            parentOnChange(modelOptions.find(m => m.model === value)!, close)
-        },
-        [parentOnChange, modelOptions]
-    )
-
-    return <SelectList value={value.model} options={options} onChange={onChange} />
 }
 
 const ModelTitleWithIcon: FunctionComponent<{
@@ -179,16 +154,12 @@ const ModelTitleWithIcon: FunctionComponent<{
                 {showProvider && `by ${capitalize(model.provider)}`}
             </span>
         </span>
-        {modelAvailability === 'needs-cody-pro' || model.provider === 'Ollama' ? (
-            <span className={styles.badge}>
-                {modelAvailability === 'needs-cody-pro' && (
-                    <span className={styles.codyProBadge}>Pro</span>
-                )}
-                {model.provider === 'Ollama' && (
-                    <span className={styles.experimentalBadge}>Experimental</span>
-                )}
-            </span>
-        ) : null}
+        {modelAvailability === 'needs-cody-pro' && (
+            <span className={clsx(styles.badge, styles.codyProBadge)}>Cody Pro</span>
+        )}
+        {model.provider === 'Ollama' && (
+            <span className={clsx(styles.badge, styles.experimentalBadge)}>Experimental</span>
+        )}
     </span>
 )
 

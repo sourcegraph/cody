@@ -2,8 +2,23 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
-import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
+
+const MODELS = [
+    ...getDotComDefaultModels(),
+    {
+        title: 'Llama 3 q4_K f16',
+        provider: 'Ollama',
+        model: 'ollama/llama-3',
+        codyProOnly: false,
+        contextWindow: { input: 100, output: 100 },
+        default: false,
+        deprecated: false,
+        usage: [ModelUsage.Chat],
+    },
+]
 
 const meta: Meta<typeof ModelSelectField> = {
     title: 'cody/ModelSelectField',
@@ -13,10 +28,21 @@ const meta: Meta<typeof ModelSelectField> = {
         VSCodeStandaloneComponent,
     ],
     args: {
-        models: getDotComDefaultModels(),
-        onModelSelect: () => {},
-        disabled: false,
+        models: MODELS,
         __storybook__open: true,
+    },
+    render: args => {
+        const [, updateArgs] = useArgs()
+        return (
+            <ModelSelectField
+                {...args}
+                onModelSelect={model => {
+                    updateArgs({
+                        models: MODELS.map(m => ({ ...m, default: m.model === model.model })),
+                    })
+                }}
+            />
+        )
     },
 }
 
