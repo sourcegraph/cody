@@ -244,7 +244,6 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
-export * from './cody-ignore/notification'
 export {
     setOpenCtxExtensionAPI,
     getOpenCtxExtensionAPI,

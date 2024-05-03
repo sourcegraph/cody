@@ -3,12 +3,12 @@ import {
     type DefaultChatCommands,
     type EventSource,
     type PromptString,
-    contextFiltersProvider,
 } from '@sourcegraph/cody-shared'
-import { showCodyIgnoreNotification } from '@sourcegraph/cody-shared/src/cody-ignore/notification'
 import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
+import { showCodyIgnoreNotification } from '../../cody-ignore/notification'
 import { getEditor } from '../../editor/active-editor'
 
 export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'> {
@@ -38,10 +38,7 @@ export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSessi
     }
     if (
         editor.active &&
-        (await contextFiltersProvider.isUriIgnoredWithNotification(
-            editor.active.document.uri,
-            'command'
-        ))
+        (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'command'))
     ) {
         return
     }

@@ -1,15 +1,10 @@
-import {
-    type ContextItem,
-    PromptString,
-    contextFiltersProvider,
-    logError,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
@@ -83,7 +78,7 @@ export async function executeTestEditCommand(
             return
         }
 
-        if (await contextFiltersProvider.isUriIgnoredWithNotification(document.uri, 'test')) {
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
             return
         }
 

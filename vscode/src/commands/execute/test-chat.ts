@@ -1,11 +1,4 @@
-import {
-    type ContextItem,
-    DefaultChatCommands,
-    contextFiltersProvider,
-    logDebug,
-    logError,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, DefaultChatCommands, logDebug, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
@@ -17,6 +10,7 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.
@@ -72,10 +66,7 @@ export async function executeTestChatCommand(
         const editor = getEditor()
         if (
             editor.active &&
-            (await contextFiltersProvider.isUriIgnoredWithNotification(
-                editor.active.document.uri,
-                'test'
-            ))
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'test'))
         ) {
             return
         }

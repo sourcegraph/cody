@@ -13,7 +13,6 @@ import {
 } from '../sourcegraph-api/graphql/client'
 import { wrapInActiveSpan } from '../tracing'
 import { createSubscriber } from '../utils'
-import { type CodyIgnoreFeature, showCodyIgnoreNotification } from './notification'
 
 export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
 
@@ -140,17 +139,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
 
         this.cache.set(repoName, isIgnored)
-        return isIgnored
-    }
-
-    public async isUriIgnoredWithNotification(
-        uri: vscode.Uri,
-        feature: CodyIgnoreFeature
-    ): Promise<IsIgnored> {
-        const isIgnored = await this.isUriIgnored(uri)
-        if (isIgnored) {
-            showCodyIgnoreNotification(feature, 'context-filter')
-        }
         return isIgnored
     }
 

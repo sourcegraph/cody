@@ -15,7 +15,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { type CodyIgnoreType, showCodyIgnoreNotification } from '@sourcegraph/cody-shared'
+import { CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'

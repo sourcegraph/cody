@@ -2,7 +2,6 @@ import {
     type ContextItem,
     DefaultChatCommands,
     PromptString,
-    contextFiltersProvider,
     displayLineRange,
     logDebug,
     ps,
@@ -19,6 +18,7 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
 
 /**
@@ -81,10 +81,7 @@ export async function executeExplainCommand(
         const editor = getEditor()
         if (
             editor.active &&
-            (await contextFiltersProvider.isUriIgnoredWithNotification(
-                editor.active.document.uri,
-                'command'
-            ))
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'command'))
         ) {
             return
         }
