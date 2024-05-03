@@ -30,6 +30,13 @@ interface DisplayRepo {
 
 export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
+    private disposeOnContextFilterChanged: () => void
+
+    constructor() {
+        this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
+            this.statusChangedEmitter.fire(this)
+        })
+    }
 
     private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
 
@@ -41,6 +48,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
 
     public dispose(): void {
         this.statusChangedEmitter.dispose()
+        this.disposeOnContextFilterChanged()
     }
 
     // #region ContextStatusProvider implementation.
