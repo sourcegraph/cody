@@ -1,12 +1,15 @@
-import { ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
+import { ModelProvider, ModelUsage, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import { type ContextItem, type Message, ps } from '@sourcegraph/cody-shared'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
     afterEach(() => {
         vi.restoreAllMocks()
     })
