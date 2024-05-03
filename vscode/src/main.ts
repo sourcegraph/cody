@@ -55,6 +55,7 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
@@ -85,7 +86,6 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { registerInteractiveTutorial } from './tutorial'
 import { version } from './version'
 
 /**
@@ -718,9 +718,14 @@ const register = async (
         )
     }
 
-    registerInteractiveTutorial(context).then(disposable => {
-        disposables.push(...disposable)
-    })
+    if (!isRunningInsideAgent()) {
+        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
+        // Consider opening this up to support dynamic content via Cody Agent.
+        // This would allow us the present the same tutorial but with client-specific steps.
+        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
+        const { registerInteractiveTutorial } = await import('./tutorial')
+        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
+    }
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the
