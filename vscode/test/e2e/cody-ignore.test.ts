@@ -52,7 +52,7 @@ test.extend<ExpectedEvents>({
 
     // Cody icon in the status bar should shows that the file is being ignored
     const statusBarButton = page.getByRole('button', {
-        name: 'cody-logo-heavy, Current file is ignored by Cody',
+        name: 'cody-logo-heavy-slash File Ignored, The current file is ignored by Cody',
     })
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
@@ -90,7 +90,9 @@ test.extend<ExpectedEvents>({
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
-    await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
+    await expect(
+        page.getByText(/^Command failed to run: file is ignored \(due to your cody ignore config\)/)
+    ).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {

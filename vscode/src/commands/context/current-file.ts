@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
+    contextFiltersProvider,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -16,6 +17,10 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
             const document = editor?.active?.document
             if (!document) {
                 throw new Error('No active editor')
+            }
+
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
             }
 
             const selection = new vscode.Selection(

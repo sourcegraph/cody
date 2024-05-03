@@ -226,7 +226,12 @@
         {
           "id": "cody.commands.tree.view",
           "name": "Commands",
-          "when": "cody.activated"
+          "when": "cody.activated && !cody.currentFileIgnored"
+        },
+        {
+          "id": "cody.commands.disabled.view",
+          "name": "Commands",
+          "when": "cody.activated && cody.currentFileIgnored"
         },
         {
           "id": "cody.chat.tree.view",
@@ -245,6 +250,11 @@
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
         "when": "cody.activated"
+      },
+      {
+        "view": "cody.commands.disabled.view",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Ignore](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "when": "cody.activated && cody.currentFileIgnored"
       }
     ],
     "commands": [
@@ -1273,6 +1283,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0049"
+        }
+      },
+      "cody-logo-heavy-slash": {
+        "description": "Cody logo heavy slash",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004A"
         }
       }
     }

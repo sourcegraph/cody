@@ -1470,11 +1470,6 @@ describe('Agent', () => {
 
                   /**
                    * Test block for example tests
-                   *
-                   * Contains individual test cases for various scenarios:
-                   * - does 1: checks if true equals true
-                   * - does 2: checks if true equals true
-                   * - does something else: (incomplete test case)
                    */
                   describe('test block', () => {
                       it('does 1', () => {

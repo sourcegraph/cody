@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     TokenCounter,
+    contextFiltersProvider,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -24,6 +25,10 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
 
             if (!editor?.active || !document) {
                 throw new Error('No active editor')
+            }
+
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
             }
 
             // Use user current selection if any
