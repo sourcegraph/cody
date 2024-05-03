@@ -74,7 +74,13 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
             ) : isTooLarge ? (
                 <i className="codicon codicon-warning" title={LIMIT_WARNING} />
             ) : null}
-            <a className={styles.linkButton} href={href} target={target} onClick={logFileLinkClicked}>
+            <a
+                className={styles.linkButton}
+                title={tooltip}
+                href={href}
+                target={target}
+                onClick={logFileLinkClicked}
+            >
                 <i
                     className={classNames(
                         'codicon',
