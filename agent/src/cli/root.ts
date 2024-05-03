@@ -4,6 +4,7 @@ import { cliCommand } from '../../../cli/src/command'
 import { evaluateAutocompleteCommand } from './evaluate-autocomplete/evaluate-autocomplete'
 import { jsonrpcCommand } from './jsonrpc'
 import { serverCommand } from './server'
+import { simulateAutocomplete } from '../simulate'
 
 export const rootCommand = new Command()
     .name('cody-agent')
@@ -16,3 +17,4 @@ export const rootCommand = new Command()
     .addCommand(jsonrpcCommand)
     .addCommand(evaluateAutocompleteCommand)
     .addCommand(cliCommand)
+    .addCommand(simulateAutocomplete)
