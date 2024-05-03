@@ -105,7 +105,7 @@ const Item: FunctionComponent<{
     const isFileType = item.type === 'file'
     const isPackageType = item.type === 'package'
     const icon =
-        isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
+        item.type === 'symbol' ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
     const title =
         item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
 
