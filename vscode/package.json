@@ -569,7 +569,7 @@
       {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
-        "when": "!cody.devOrTest"
+        "when": "cody.activated && cody.devOrTest"
       }
     ],
     "keybindings": [
