@@ -50,11 +50,7 @@ data class ContextItemSymbol(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-<<<<<<< HEAD
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history
-=======
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
->>>>>>> 5e1724719 (Re-generate Kotlin bindings)
   val size: Int? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
@@ -75,11 +71,7 @@ data class ContextItemPackage(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-<<<<<<< HEAD
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history
-=======
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
->>>>>>> 5e1724719 (Re-generate Kotlin bindings)
   val size: Int? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
