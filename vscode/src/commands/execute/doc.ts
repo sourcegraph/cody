@@ -85,7 +85,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     // It is probable that the user would benefit from expanding to this node completely
     const selectionMatchesNode =
         adjustedSelection.start.isEqual(range.start) && range.contains(adjustedSelection.end)
-    if (!selectionMatchesNode) {
+    if (!selectionMatchesNode && !editor.selection.isEmpty) {
         // We found a documentable range, but the users' adjusted selection does not match it.
         // We have to use the users' selection here, as it's possible they do not want the documentable node.
         return getDefaultDocumentableRange(editor)
