@@ -334,6 +334,12 @@
         "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
       },
       {
+        "command": "cody.command.explain-history",
+        "category": "Cody Command",
+        "title": "Explain Code History",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -704,6 +710,10 @@
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
         },
         {
+          "command": "cody.command.explain-history",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -773,6 +783,11 @@
         {
           "command": "cody.command.explain-code",
           "when": "cody.activated",
+          "group": "command"
+        },
+        {
+          "command": "cody.command.explain-history",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle",
           "group": "command"
         },
         {

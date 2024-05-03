@@ -39,6 +39,7 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -410,6 +411,14 @@ const register = async (
                     )
                 }
             })
+        )
+    }
+
+    if (commandsManager !== undefined) {
+        disposables.push(
+            vscode.commands.registerCommand('cody.command.explain-history', a =>
+                executeExplainHistoryCommand(commandsManager, a)
+            )
         )
     }
 

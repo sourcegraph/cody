@@ -89,6 +89,9 @@ export enum ContextItemSource {
 
     /** From a package repository */
     Package = 'package',
+
+    /** From source control history */
+    History = 'history',
 }
 
 /**
