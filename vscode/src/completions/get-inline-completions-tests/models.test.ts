@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest'
 
 import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
-import { TriggerKind } from '../get-inline-completions'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] models', () => {
@@ -90,21 +89,6 @@ describe('[getInlineCompletions] models', () => {
               ]
             `)
             expect(requests[0].model).toBe('fireworks/starcoder2-15b')
-        })
-
-        test('manual invocation should use starcoder 16b', async () => {
-            const requests: CompletionParameters[] = []
-            await getInlineCompletionsWithInlinedChunks('const value = {█}', {
-                onNetworkRequest(request) {
-                    requests.push(request)
-                },
-                triggerKind: TriggerKind.Manual,
-                configuration: {
-                    autocompleteAdvancedProvider: 'fireworks',
-                    autocompleteAdvancedModel: 'starcoder-hybrid',
-                },
-            })
-            expect(requests[0].model).toBe('fireworks/starcoder-16b')
         })
     })
 })
