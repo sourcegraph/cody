@@ -51,7 +51,7 @@ export async function getContextFileFromGitLog(
                 content: result.stdout,
                 title: 'Terminal Output',
                 uri: vscode.Uri.file('terminal-output'),
-                source: ContextItemSource.Terminal,
+                source: ContextItemSource.History,
             },
         ]
     })
