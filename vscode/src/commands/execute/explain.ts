@@ -19,7 +19,6 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
-import { activeNotification } from '../../context-filters/notification'
 import { getEditor } from '../../editor/active-editor'
 
 /**
@@ -80,8 +79,13 @@ export async function executeExplainCommand(
         logDebug('executeExplainCommand', 'executing', { args })
 
         const editor = getEditor()
-        if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
-            activeNotification('command', 'context-filter')
+        if (
+            editor.active &&
+            (await contextFiltersProvider.isUriIgnoredWithNotification(
+                editor.active.document.uri,
+                'command'
+            ))
+        ) {
             return
         }
 

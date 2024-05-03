@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 
 export type CodyIgnoreType = 'cody-ignore' | 'context-filter'
+export type CodyIgnoreFeature = 'command' | 'edit' | 'test' | 'autocomplete'
 
-export async function activeNotification(
-    feature: 'command' | 'edit' | 'test' | 'autocomplete',
+export async function showCodyIgnoreNotification(
+    feature: CodyIgnoreFeature,
     type: CodyIgnoreType
 ): Promise<void> {
     vscode.window.showErrorMessage(

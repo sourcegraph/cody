@@ -1,7 +1,6 @@
 import { type ContextItem, contextFiltersProvider, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { Range } from 'vscode'
-import { activeNotification } from '../../context-filters/notification'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
@@ -27,8 +26,7 @@ export async function executeTestCaseEditCommand(
             return
         }
 
-        if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-            activeNotification('test', 'context-filter')
+        if (await contextFiltersProvider.isUriIgnoredWithNotification(document.uri, 'test')) {
             return
         }
 

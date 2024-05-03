@@ -17,7 +17,6 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
-import { activeNotification } from '../../context-filters/notification'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.
@@ -71,8 +70,13 @@ export async function executeTestChatCommand(
         span.setAttribute('sampled', true)
 
         const editor = getEditor()
-        if (editor.active && (await contextFiltersProvider.isUriIgnored(editor.active.document.uri))) {
-            activeNotification('test', 'context-filter')
+        if (
+            editor.active &&
+            (await contextFiltersProvider.isUriIgnoredWithNotification(
+                editor.active.document.uri,
+                'test'
+            ))
+        ) {
             return
         }
 

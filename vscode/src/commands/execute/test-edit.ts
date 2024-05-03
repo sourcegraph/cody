@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
-import { activeNotification } from '../../context-filters/notification'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditLineSelection } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
@@ -84,8 +83,7 @@ export async function executeTestEditCommand(
             return
         }
 
-        if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-            activeNotification('test', 'context-filter')
+        if (await contextFiltersProvider.isUriIgnoredWithNotification(document.uri, 'test')) {
             return
         }
 

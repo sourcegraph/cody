@@ -15,7 +15,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { type CodyIgnoreType, activeNotification } from '../context-filters/notification'
+import { type CodyIgnoreType, showCodyIgnoreNotification } from '@sourcegraph/cody-shared'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
@@ -824,6 +824,6 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
     )
     // Only show a notification for actively triggered autocomplete requests.
     if (isManualCompletion) {
-        activeNotification('autocomplete', reason)
+        showCodyIgnoreNotification('autocomplete', reason)
     }
 }
