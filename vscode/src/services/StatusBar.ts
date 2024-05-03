@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    CodyIgnoreType,
     type Configuration,
     contextFiltersProvider,
     isCodyIgnoredFile,
@@ -11,7 +12,6 @@ import { getConfiguration } from '../configuration'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import type { CodyIgnoreType } from '../context-filters/notification'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { telemetryService } from './telemetry'
 import { enableVerboseDebugMode } from './utils/export-logs'
