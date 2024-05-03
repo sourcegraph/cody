@@ -244,7 +244,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         })
     }
 
+    private updateChatPanelContext(): void {
+        const panels = this.panelProviders.some(p => p.webviewPanel?.title === 'New Chat')
+        const current = this.activePanelProvider?.webviewPanel?.title === 'New Chat'
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', panels || current)
+        vscode.commands.executeCommand('setContext', 'cody.chatPanelsOpened', this.panelProviders.length)
+    }
+
     private selectTreeItem(chatID: ChatID): void {
+        this.updateChatPanelContext()
         // no op if tree view is not visible
         if (!this.treeView.visible) {
             return
@@ -259,6 +267,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
+        this.updateChatPanelContext()
         await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
@@ -352,6 +361,8 @@ export class ChatPanelsManager implements vscode.Disposable {
             removedProvider.webviewPanel?.dispose()
             removedProvider.dispose()
         }
+
+        this.updateChatPanelContext()
     }
 
     // Dispose all open panels

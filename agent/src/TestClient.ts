@@ -49,6 +49,7 @@ import type {
     WorkspaceEditParams,
 } from './protocol-alias'
 import type { TestingToken } from './testing-tokens'
+import { trimEndOfLine } from './trimEndOfLine'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -398,13 +399,15 @@ export class TestClient extends MessageHandler {
               ? await fspromises.readFile(uri.fsPath, 'utf8')
               : ''
         const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionEndMarker = `/* ${selectionName}_END */`
         const selectionStart = content.indexOf(selectionStartMarker)
-        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
+        const selectionEnd = content.indexOf(selectionEndMarker)
         const cursor = content.indexOf('/* CURSOR */')
         if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
             throw new Error(`No selection found for name ${params.selectionName}`)
         }
-        if (params?.removeCursor ?? true) {
+
+        if (params?.removeCursor !== undefined ? params.removeCursor : true) {
             content = content.replace('/* CURSOR */', '')
         }
 
@@ -606,10 +609,29 @@ export class TestClient extends MessageHandler {
         })
     }
 
+    public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        expect(lenses).toHaveLength(0) // Code lenses are now handled client side
+        await this.request('editTask/accept', { id: task.id })
+    }
+
+    public documentText(uri: vscode.Uri): string {
+        const document = this.workspace.getDocument(uri)
+        if (document === undefined) {
+            throw new Error(`Document not found: ${uri}`)
+        }
+        return trimEndOfLine(document.getText())
+    }
+
     public async editMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
+        params?: {
+            addEnhancedContext?: boolean
+            contextFiles?: ContextItem[]
+            index?: number
+        }
     ): Promise<SerializedChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
@@ -631,8 +653,12 @@ export class TestClient extends MessageHandler {
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
-        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
-            ?.lastMessage
+        return (
+            await this.sendSingleMessageToNewChatWithFullTranscript(text, {
+                ...params,
+                id,
+            })
+        )?.lastMessage
     }
 
     public async sendSingleMessageToNewChat(
@@ -644,7 +670,11 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
+        params?: {
+            addEnhancedContext?: boolean
+            contextFiles?: ContextItem[]
+            id?: string
+        }
     ): Promise<{
         lastMessage?: SerializedChatMessage
         panelID: string
@@ -663,7 +693,11 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
+        return {
+            panelID: id,
+            transcript: reply,
+            lastMessage: reply.messages.at(-1),
+        }
     }
 
     // Given the following missing recording, tries to find an existing

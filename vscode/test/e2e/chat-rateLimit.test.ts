@@ -20,6 +20,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:upsellUsageLimitCTA:shown',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {
         method: 'POST',
@@ -46,6 +60,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
 })('shows standard rate limit message for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
         method: 'POST',
@@ -71,6 +99,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
     ],
 })('shows standard rate limit message for non-dotCom users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit`, {

@@ -4,12 +4,12 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import semver from 'semver'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-
 import {
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -603,6 +603,15 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<ContextFilters> {
+        // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
+        const minimumVersion = '5.3.3'
+        const { enabled, version } = await this.isCodyEnabled()
+        const insiderBuild = version.length > 12 || version.includes('dev')
+        const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
+        if (!enabled || !isValidVersion) {
+            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
         const response =
             await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
                 CONTEXT_FILTERS_QUERY
@@ -657,13 +666,13 @@ export class SourcegraphGraphQLAPIClient {
         if (insiderBuild) {
             return { enabled: true, version: siteVersion }
         }
-        // NOTE: Cody does not work on versions older than 5.0
-        const versionBeforeCody = siteVersion < '5.0.0'
+        // NOTE: Cody does not work on version later than 5.0
+        const versionBeforeCody = semver.lt(siteVersion, '5.0.0')
         if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
+        const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
@@ -1030,5 +1039,11 @@ export type LogEventMode =
     | 'all' // log to both dotcom AND the connected instance
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
-    return error.message.includes('Cannot query field')
+    // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message
+    // when querying non-existent codyContextFilters; this produces
+    // 'Unexpected end of JSON input'
+    return (
+        error.message.includes('Cannot query field') ||
+        error.message.includes('Unexpected end of JSON input')
+    )
 }

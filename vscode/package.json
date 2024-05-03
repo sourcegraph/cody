@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.14.0",
+  "version": "1.16.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -24,8 +24,8 @@
     "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
-    "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --format=cjs --platform=node --sourcemap",
-    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
@@ -138,14 +138,6 @@
             }
           },
           {
-            "id": "search",
-            "title": "Natural Language Search (Beta)",
-            "description": "Easily find what you're looking for with Cody Natural Language Search.\n[Show Search](command:cody.search.focus)",
-            "media": {
-              "markdown": "walkthroughs/search.md"
-            }
-          },
-          {
             "id": "keyboard",
             "title": "Keyboard Shortcuts",
             "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
@@ -234,18 +226,16 @@
         {
           "id": "cody.commands.tree.view",
           "name": "Commands",
-          "when": "cody.activated"
+          "when": "cody.activated && !cody.currentFileIgnored"
+        },
+        {
+          "id": "cody.commands.disabled.view",
+          "name": "Commands",
+          "when": "cody.activated && cody.currentFileIgnored"
         },
         {
           "id": "cody.chat.tree.view",
           "name": "Chats",
-          "when": "cody.activated"
-        },
-        {
-          "type": "webview",
-          "id": "cody.search",
-          "name": "Natural Language Search (Beta)",
-          "visibility": "visible",
           "when": "cody.activated"
         },
         {
@@ -260,6 +250,11 @@
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
         "when": "cody.activated"
+      },
+      {
+        "view": "cody.commands.disabled.view",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Ignore](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "when": "cody.activated && cody.currentFileIgnored"
       }
     ],
     "commands": [
@@ -331,12 +326,6 @@
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.command.context-search",
-        "category": "Cody",
-        "title": "Codebase Context Search",
-        "when": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.command.usageExamples",
@@ -424,7 +413,7 @@
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
-        "title": "New Chat Panel",
+        "title": "New Chat",
         "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -493,19 +482,36 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.context.add",
+        "command": "cody.mention.selection",
+        "category": "Cody",
         "group": "Chat",
-        "title": "Cody Chat: Add context",
-        "icon": "$(new-file)",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
+        "title": "Add Selection to Cody Chat",
+        "icon": "$(mention)",
+        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
       },
       {
-        "command": "cody.search.index-update-all",
+        "command": "cody.mention.selection.new",
         "category": "Cody",
-        "group": "Cody",
-        "title": "Update search indices for all workspace folders",
-        "icon": "$(sync)",
-        "when": "cody.activated"
+        "group": "Chat",
+        "title": "New Chat with Selection",
+        "icon": "$(mention)",
+        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
+      },
+      {
+        "command": "cody.mention.file",
+        "category": "Cody",
+        "group": "Chat",
+        "title": "Add File to Cody Chat",
+        "icon": "$(mention)",
+        "when": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
+      },
+      {
+        "command": "cody.mention.file.new",
+        "category": "Cody",
+        "group": "Chat",
+        "title": "New Chat with File",
+        "icon": "$(mention)",
+        "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -551,6 +557,14 @@
         "group": "Debug",
         "icon": "$(copy)",
         "title": "Copy Cody Extension Version"
+      },
+      {
+        "command": "cody.symf.search",
+        "category": "Cody",
+        "group": "Search",
+        "icon": "$(search)",
+        "title": "Natural Language Search Code (Beta)",
+        "when": "cody.activated && workspaceFolderCount > 0"
       }
     ],
     "keybindings": [
@@ -575,7 +589,7 @@
         "when": "cody.activated && !editorHasSelection"
       },
       {
-        "command": "cody.chat.context.add",
+        "command": "cody.mention.selection",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
@@ -669,10 +683,6 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
-          "command": "cody.command.context-search",
-          "when": "cody.activated && editorIsOpen"
-        },
-        {
           "command": "cody.command.smell-code",
           "when": "cody.activated && editorIsOpen"
         },
@@ -718,14 +728,29 @@
         {
           "submenu": "cody.submenu",
           "group": "0_cody"
-        },
-        {
-          "command": "cody.chat.context.add",
-          "group": "0_cody",
-          "when": "cody.activated && editorTextFocus && editorHasSelection"
         }
       ],
       "cody.submenu": [
+        {
+          "command": "cody.mention.selection",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && editorHasSelection && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.selection.new",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && editorHasSelection && !cody.hasNewChatOpened"
+        },
+        {
+          "command": "cody.mention.file",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.file.new",
+          "group": "0_cody",
+          "when": "cody.activated && !editorReadonly && !editorHasSelection && !cody.hasNewChatOpened"
+        },
         {
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
@@ -819,16 +844,6 @@
           "command": "cody.debug.reportIssue",
           "when": "view == cody.support.tree.view",
           "group": "9_cody@1"
-        },
-        {
-          "command": "cody.search.index-update",
-          "when": "view == cody.search && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.search.index-update-all",
-          "when": "view == cody.search && cody.activated",
-          "group": "navigation@2"
         }
       ],
       "editor/title": [
@@ -890,6 +905,18 @@
           "command": "cody.command.explain-output",
           "group": "0_cody",
           "when": "cody.activated"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cody.mention.file",
+          "group": "0_cody",
+          "when": "cody.activated && resourceScheme == file && cody.chatPanelsOpened > 0"
+        },
+        {
+          "command": "cody.mention.file.new",
+          "group": "0_cody",
+          "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
         }
       ]
     },
@@ -1256,6 +1283,13 @@
         "default": {
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\0049"
+        }
+      },
+      "cody-logo-heavy-slash": {
+        "description": "Cody logo heavy slash",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004A"
         }
       }
     }

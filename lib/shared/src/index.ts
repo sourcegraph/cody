@@ -80,6 +80,7 @@ export {
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths, pathFunctionsForURI, defaultPathFunctions } from './common/path'
+export { parseEvents } from './sourcegraph-api/completions/parse'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -243,3 +244,8 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export {
+    setOpenCtxExtensionAPI,
+    getOpenCtxExtensionAPI,
+    type OpenCtxExtensionAPI,
+} from './context/openctx/api'

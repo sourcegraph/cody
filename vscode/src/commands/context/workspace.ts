@@ -1,4 +1,10 @@
-import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    contextFiltersProvider,
+    isDefined,
+    logError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import { CancellationTokenSource, workspace } from 'vscode'
 import { createContextFile } from '../utils/create-context-file'
 import { getDocText } from '../utils/workspace-files'
@@ -21,8 +27,6 @@ export async function getWorkspaceFilesContext(
         // the default exclude pattern excludes dotfiles, node_modules, and snap directories
         const excluded = excludePattern || '**/{.*,node_modules,snap*}/**'
 
-        const contextFiles: ContextItem[] = []
-
         // set cancellation token to time out after 20s
         const token = new CancellationTokenSource()
         setTimeout(() => {
@@ -32,20 +36,21 @@ export async function getWorkspaceFilesContext(
         try {
             const results = await workspace.findFiles(globalPattern, excluded, maxResults, token.token)
 
-            for (const result of results) {
-                const decoded = await getDocText(result)
-                const contextFile = await createContextFile(result, decoded)
+            return (
+                await Promise.all(
+                    results.map(async result => {
+                        if (await contextFiltersProvider.isUriIgnored(result)) {
+                            return null
+                        }
 
-                if (contextFile) {
-                    contextFiles.push(contextFile)
-                }
-            }
-
-            return contextFiles
+                        const decoded = await getDocText(result)
+                        return await createContextFile(result, decoded)
+                    })
+                )
+            ).filter(isDefined)
         } catch (error) {
             logError('getWorkspaceFilesContext failed', `${error}`)
-
-            return contextFiles
+            return []
         }
     })
 }

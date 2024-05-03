@@ -27,14 +27,35 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
+        'CodyVSCodeExtension:Auth:failed',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:sidebar:custom:clicked',
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:custom:build:clicked',
-        'CodyVSCodeExtension:command:custom:build:executed',
-        'CodyVSCodeExtension:command:custom:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.menu.custom.build:clicked',
+        'cody.command.custom.build:executed',
+        'cody.command.custom:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
     ],
 })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
@@ -42,7 +63,6 @@ test.extend<ExpectedEvents>({
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
@@ -54,7 +74,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
     await page.getByText('Custom Commands', { exact: true }).click()
 
@@ -127,7 +147,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText(commandName)).toBeVisible()
 
     // Show the new command in the menu and execute it
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await openCustomCommandMenu(page)
     await page.getByText('Cody: Custom Commands (Beta)').hover()
     await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
@@ -152,13 +172,29 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.command.custom:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.ghostText:visible',
+    ],
 })('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
@@ -170,7 +206,7 @@ test.extend<ExpectedEvents>({
 
     // Open the chat sidebar to click on the Custom Command option
     // Search for the command defined in cody.json and execute it
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await openCustomCommandMenu(page)
 
     /* Test: context.currentDir with currentDir command */
@@ -249,13 +285,26 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:menu:command:custom:clicked',
         'CodyVSCodeExtension:menu:command:config:clicked',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.custom:clicked',
+        'cody.menu:command:custom:clicked',
+        'cody.menu:command:config:clicked',
+    ],
 })('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Minimize other sidebar items to make room for the command view,
     // else the test will fail because the Custom Command button is not visible
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Natural Language Search (Beta) Section').click()
     await page.getByLabel('Settings & Support Section').click()
     await page.getByLabel('Chats Section').click()
 
@@ -266,7 +315,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
     await page.getByRole('tab', { name: 'cody.json' }).hover()
 
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await openCustomCommandMenu(page)
 
     // Able to open the cody.json file in the editor from the command menu
@@ -302,7 +351,7 @@ test.extend<ExpectedEvents>({
 
     // NOTE: This is expected to fail locally if you currently have User commands configured
     await page.waitForTimeout(100)
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await openCustomCommandMenu(page)
     await page.locator('a').filter({ hasText: 'Open User Settings (JSON)' }).hover()
     await page.getByRole('button', { name: 'Open or Create Settings File' }).hover()
@@ -336,7 +385,5 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     const chatContext = panel.locator('details').last()
-    await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('/terminal-output') })
-    ).toBeVisible()
+    await expect(chatContext.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
 })
