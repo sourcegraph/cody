@@ -244,13 +244,9 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
-<<<<<<< HEAD
 export * from './cody-ignore/notification'
-||||||| 75accfa42
-=======
 export {
     setOpenCtxExtensionAPI,
     getOpenCtxExtensionAPI,
     type OpenCtxExtensionAPI,
 } from './context/openctx/api'
->>>>>>> origin/main
