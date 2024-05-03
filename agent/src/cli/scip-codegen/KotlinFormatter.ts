@@ -152,9 +152,27 @@ export class KotlinFormatter {
     }
 
     public readonly ignoredProperties = [
-        ' src/jsonrpc/`agent-protocol.ts`/parameters0:',
-        'marketingTracking0:', // Too complicated signature
+        'npm @sourcegraph/telemetry ', // Too many complicated types from this package
     ]
+    private readonly ignoredTypeRefs = [
+        'npm @sourcegraph/telemetry', // Too many complicated types from this package
+        '/TelemetryEventParameters#',
+        ' lib/`lib.es5.d.ts`/Omit#',
+    ]
+
+    public isIgnoredType(tpe: scip.Type): boolean {
+        if (tpe.has_type_ref) {
+            return this.ignoredTypeRefs.some(ref => tpe.type_ref.symbol.includes(ref))
+        }
+
+        if (tpe.has_union_type) {
+            const nonNullableTypes = tpe.union_type.types.filter(tpe => !this.isNullable(tpe))
+            if (nonNullableTypes.length === 1) {
+                return this.isIgnoredType(nonNullableTypes[0])
+            }
+        }
+        return false
+    }
 
     // Hacky workaround: we are exposing a few tricky union types in the
     // protocol that don't have a clean encoding in other languages. We use this

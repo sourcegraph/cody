@@ -191,10 +191,11 @@ export class KotlinCodegen extends BaseCodegen {
         const enums: { name: string; members: string[] }[] = []
         p.line(`data class ${name}(`)
         p.block(() => {
+            let hasMembers = false
             for (const memberSymbol of this.infoProperties(info)) {
                 if (
                     this.f.ignoredProperties.find(ignoredProperty =>
-                        memberSymbol.endsWith(ignoredProperty)
+                        memberSymbol.includes(ignoredProperty)
                     )
                 ) {
                     continue
@@ -232,13 +233,11 @@ export class KotlinCodegen extends BaseCodegen {
                 if (memberType === undefined) {
                     throw new TypeError(`no type: ${JSON.stringify(member.toObject(), null, 2)}`)
                 }
-                if (
-                    memberType.has_type_ref &&
-                    memberType.type_ref.symbol.endsWith(' lib/`lib.es5.d.ts`/Omit#')
-                ) {
-                    // FIXME
+
+                if (this.f.isIgnoredType(memberType)) {
                     continue
                 }
+
                 let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
                 const constants = this.stringConstantsFromInfo(member)
                 for (const constant of constants) {
@@ -258,6 +257,10 @@ export class KotlinCodegen extends BaseCodegen {
                 p.line(
                     `val ${member.display_name}: ${memberTypeSyntax}${defaultValueSyntax},${oneofSyntax}`
                 )
+                hasMembers = true
+            }
+            if (!hasMembers) {
+                p.line('val placeholderField: String? = null // Empty data class')
             }
         })
         if (enums.length === 0) {

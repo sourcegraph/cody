@@ -1,10 +1,8 @@
-# It's OK to disable this CI check if it's causing problems because the
-# JetBrains client team can manually update and maintain the bindings
-# until we fix the automation. This automation should NOT be blocking
-# you from making progress on critical work.
-# Please post in #wg-cody-agent to share feedback about this CI check.
-name: agent-bindings (disable if causing problems)
+# Please post in #team-cody-clients if you need help getting this CI check to pass.
+# Worst-case: feel free to disable this workflow here https://github.com/sourcegraph/cody/actions/workflows/agent-bindings.yml
+name: agent-bindings
 on:
+
   pull_request:
     paths:
       - '**.ts'
