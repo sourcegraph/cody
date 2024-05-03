@@ -31,6 +31,7 @@ data class ContextItemFile(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package
   val size: Int? = null,
+  val isIgnored: IsIgnored? = null, // Oneof: has-ignore-everything-filters, non-file-uri, no-repo-found
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: file
@@ -50,6 +51,7 @@ data class ContextItemSymbol(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package
   val size: Int? = null,
+  val isIgnored: IsIgnored? = null, // Oneof: has-ignore-everything-filters, non-file-uri, no-repo-found
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: symbol
@@ -71,6 +73,7 @@ data class ContextItemPackage(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package
   val size: Int? = null,
+  val isIgnored: IsIgnored? = null, // Oneof: has-ignore-everything-filters, non-file-uri, no-repo-found
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: package

@@ -231,7 +231,7 @@ async function createContextFileFromUri(
                   uri,
                   range,
                   source,
-                  isIgnored: await contextFiltersProvider.isUriIgnored(uri),
+                  isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
               }
             : {
                   type,

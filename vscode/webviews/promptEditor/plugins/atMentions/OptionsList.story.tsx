@@ -93,7 +93,7 @@ export const FileSearchIgnored: StoryObj<typeof OptionsList> = {
             {
                 uri: URI.file('a/b/ddddddd.go'),
                 type: 'file',
-                isIgnored: 'has-ignore-everything-filters',
+                isIgnored: true,
             },
         ]),
     },

@@ -1,6 +1,5 @@
 import type { URI } from 'vscode-uri'
 
-import type { IsIgnored } from '../cody-ignore/context-filters-provider'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
@@ -46,7 +45,7 @@ interface ContextItemCommon {
     /**
      * Whether the item is excluded by Cody Ignore.
      */
-    isIgnored?: IsIgnored
+    isIgnored?: boolean
 
     /**
      * Whether the content of the item is too large to be included as context.
