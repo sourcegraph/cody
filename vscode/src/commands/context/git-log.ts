@@ -2,11 +2,11 @@ import { type SpawnOptionsWithoutStdio, spawn } from 'node:child_process'
 import path from 'node:path'
 import {
     type ContextItem,
+    type ContextItemHistory,
     ContextItemSource,
     type FileURI,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 
 export async function getContextFileFromGitLog(
     file: FileURI,
@@ -45,15 +45,15 @@ export async function getContextFileFromGitLog(
             throw new Error(`git log failed with exit code ${result.code}: ${result.stderr}`)
         }
 
-        return [
-            {
-                type: 'file',
-                content: result.stdout,
-                title: 'Terminal Output',
-                uri: vscode.Uri.file('terminal-output'),
-                source: ContextItemSource.History,
-            },
-        ]
+        const contextItem: ContextItemHistory = {
+            type: 'history',
+            content: result.stdout,
+            title: `history for ${options.funcname}`,
+            uri: file,
+            symbolName: options.funcname,
+            source: ContextItemSource.History,
+        }
+        return [contextItem]
     })
 }
 

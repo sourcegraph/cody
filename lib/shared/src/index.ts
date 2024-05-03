@@ -52,6 +52,7 @@ export type {
 export {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemHistory,
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,

@@ -97,7 +97,7 @@ export enum ContextItemSource {
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemPackage
+export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemPackage | ContextItemHistory
 
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
@@ -146,6 +146,19 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
 /** The valid kinds of a symbol. */
 export type SymbolKind = 'class' | 'function' | 'method'
+
+/**
+ * The output of source control history for a file.
+ *
+ * Note: Currently this is only used for the "Explain History" action which runs
+ * on a symbol.
+ */
+export interface ContextItemHistory extends ContextItemCommon {
+    type: 'history'
+
+    /** The symbol name we asked history for, used for presentation only (not semantically meaningful). */
+    symbolName: string
+}
 
 /** {@link ContextItem} with the `content` field set to the content. */
 export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>

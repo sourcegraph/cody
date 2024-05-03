@@ -4,6 +4,7 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemHistory,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
@@ -33,6 +34,7 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
+    | Omit<ContextItemHistory, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -180,20 +182,19 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
     const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
-    if (contextItem.type === 'file') {
-        if (contextItem.provider && contextItem.title) {
-            return `@${contextItem.title}`
-        }
-        return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+    switch (contextItem.type) {
+        case 'file':
+            if (contextItem.provider && contextItem.title) {
+                return `@${contextItem.title}`
+            }
+            return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+        case 'symbol':
+            return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+        case 'package':
+            return `@${contextItem.ecosystem}:${contextItem.name}`
+        case 'history':
+            return `@history:${contextItem.symbolName}:${displayPath(URI.parse(contextItem.uri))}`
     }
-    if (contextItem.type === 'symbol') {
-        return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
-    }
-    if (contextItem.type === 'package') {
-        return `@${contextItem.ecosystem}:${contextItem.name}`
-    }
-    // @ts-ignore
-    throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
 
 export function $createContextItemMentionNode(
