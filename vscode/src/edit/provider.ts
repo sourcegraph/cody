@@ -215,10 +215,7 @@ export class EditProvider {
             })
         }
 
-        const intentsForInsert = ['add', 'test']
-        const shouldInsert = intentsForInsert.includes(this.config.task.intent)
-
-        if (isRunningInsideAgent() && shouldInsert) {
+        if (isRunningInsideAgent() && this.config.task.intent === 'add') {
             // TODO: We have disabled running `handleStreamedFixupInsert` through Agent
             // as we are running into a blocking issue where this results in duplicate
             // chunks of text from the LLM being inserted into the document.
@@ -232,7 +229,8 @@ export class EditProvider {
             return this.handleFixupInsert(response, isMessageInProgress)
         }
 
-        return shouldInsert
+        const intentsForInsert = ['add', 'test']
+        return intentsForInsert.includes(this.config.task.intent)
             ? this.handleStreamedFixupInsert(response, isMessageInProgress)
             : this.handleFixupEdit(response, isMessageInProgress)
     }
