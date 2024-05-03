@@ -696,6 +696,7 @@ export const vsCodeMocks = {
     FileSystemError,
     FileType,
     Range,
+    Selection,
     Position,
     InlineCompletionItem,
     EventEmitter,

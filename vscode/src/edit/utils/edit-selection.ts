@@ -101,8 +101,8 @@ export function getEditAdjustedUserSelection(
 
     // Trim any additional whitespace characters (e.g. additional lines) from the selection
     const trimmedText = text.trim()
-    const startOffset = document.offsetAt(selection.start) + text.indexOf(trimmedText)
-    const endOffset = document.offsetAt(selection.end) - (text.length - trimmedText.length - startOffset)
+    const startOffset = document.offsetAt(lineSelection.start) + text.indexOf(trimmedText)
+    const endOffset = startOffset + trimmedText.length
 
     return new vscode.Selection(document.positionAt(startOffset), document.positionAt(endOffset))
 }
