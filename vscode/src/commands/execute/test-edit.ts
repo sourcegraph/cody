@@ -56,7 +56,11 @@ function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
         endPosition.column
     )
 
-    if (!adjustedSelection.isEqual(range)) {
+    // If the users' adjusted selection aligns with the start of the node and is contained within the node,
+    // It is probable that the user would benefit from expanding to this node completely
+    const selectionMatchesNode =
+        adjustedSelection.start.isEqual(range.start) && range.contains(adjustedSelection.end)
+    if (!selectionMatchesNode) {
         // We found a testable range, but the users' adjusted selection does not match it.
         // We have to use the users' selection here, as it's possible they do not want the testable node.
         return getEditDefaultProvidedRange(editor.document, editor.selection)
