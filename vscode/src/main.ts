@@ -149,6 +149,9 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
+    if (isExtensionModeDevOrTest) {
+        await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
+    }
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
