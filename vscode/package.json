@@ -571,6 +571,11 @@
         "icon": "$(search)",
         "title": "Natural Language Search Code (Beta)",
         "when": "cody.activated && workspaceFolderCount > 0"
+      },
+      {
+        "command": "cody.test.set-context-filters",
+        "title": "[Internal] Set Context Filters Overwrite",
+        "when": "cody.activated && cody.devOrTest"
       }
     ],
     "keybindings": [
@@ -732,6 +737,10 @@
         {
           "command": "cody.show-rate-limit-modal",
           "when": "false"
+        },
+        {
+          "command": "cody.test.set-context-filters",
+          "when": "cody.activated && cody.devOrTest"
         }
       ],
       "editor/context": [
