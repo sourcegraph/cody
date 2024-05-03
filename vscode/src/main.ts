@@ -392,7 +392,7 @@ const register = async (
     )
 
     // Internal-only test commands
-    if (!isExtensionModeDevOrTest) {
+    if (isExtensionModeDevOrTest) {
         await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
         disposables.push(
             vscode.commands.registerCommand('cody.test.set-context-filters', async () => {

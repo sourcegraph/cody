@@ -727,6 +727,10 @@
         {
           "command": "cody.show-rate-limit-modal",
           "when": "false"
+        },
+        {
+          "command": "cody.test.set-context-filters",
+          "when": "cody.activated && cody.devOrTest"
         }
       ],
       "editor/context": [
