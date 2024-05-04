@@ -8,6 +8,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
 import { telemetryService } from '../../services/telemetry'
@@ -17,6 +18,8 @@ import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
@@ -26,7 +29,7 @@ import type { Span } from '@opentelemetry/api'
 async function explainCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments> {
+): Promise<ExecuteChatArguments | null> {
     const addEnhancedContext = false
     let prompt = PromptString.fromDefaultCommands(defaultCommands, 'explain')
 
@@ -51,6 +54,8 @@ async function explainCommand(
             'the selected code',
             ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
         )
+    } else {
+        return null
     }
 
     return {
@@ -72,6 +77,15 @@ export async function executeExplainCommand(
     return wrapInActiveSpan('command.explain', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeExplainCommand', 'executing', { args })
+
+        const editor = getEditor()
+        if (
+            editor.active &&
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'command'))
+        ) {
+            return
+        }
+
         telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
             useCodebaseContex: false,
             requestID: args?.requestID,
@@ -90,9 +104,18 @@ export async function executeExplainCommand(
             },
         })
 
+        const chatArguments = await explainCommand(span, args)
+
+        if (chatArguments === null) {
+            vscode.window.showInformationMessage(
+                'Please select text before running the "Explain" command.'
+            )
+            return undefined
+        }
+
         return {
             type: 'chat',
-            session: await executeChat(await explainCommand(span, args)),
+            session: await executeChat(chatArguments),
         }
     })
 }

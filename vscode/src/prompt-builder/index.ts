@@ -9,12 +9,12 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
-import { ContextSet } from './context-set'
-import { renderContextItem } from './utils'
+import { sortContextItems } from '../chat/chat-view/agentContextSorting'
+import { isUniqueContextItem } from './unique-context'
+import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
     limitReached: boolean
-    used: ContextItem[]
     ignored: ContextItem[]
 }
 
@@ -28,8 +28,7 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
 
-    private processedContextType = new Set<ContextTokenUsageType>()
-    private addedContextItems: ContextItem[] = []
+    public contextItems: ContextItem[] = []
 
     private tokenCounter: TokenCounter
 
@@ -38,6 +37,13 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
+        const assistantMessage = { speaker: 'assistant', text: ps`Ok.` } as Message
+        for (const item of this.contextItems) {
+            const contextMessage = renderContextItem(item)
+            const messagePair = contextMessage && [assistantMessage, contextMessage]
+            messagePair && this.reverseMessages.push(...messagePair)
+        }
+
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
@@ -79,61 +85,63 @@ export class PromptBuilder {
     }
 
     public tryAddContext(
-        tokenType: ContextTokenUsageType,
+        type: ContextTokenUsageType | 'history',
         contextMessages: (ContextItem | ContextMessage)[]
     ): PromptBuilderContextResult {
-        this.processedContextType.add(tokenType)
-        const contextSet = new ContextSet(this.addedContextItems)
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             ignored: [] as ContextItem[], // The items that were ignored
         }
 
-        // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
+        // Create a new array to avoid modifying the original array,
+        // then reverse it to process the newest context items first.
         const reversedContextItems = contextMessages.slice().reverse()
+
+        // Required by agent tests to ensure the context items are sorted correctly
+        if (type !== 'history') {
+            sortContextItems(reversedContextItems as ContextItem[])
+        }
+
         for (const item of reversedContextItems) {
-            const userContextItem = contextItem(item)
+            const newContextItem = contextItem(item)
             // Skip context items that are in the Cody ignore list
-            if (isCodyIgnoredFile(userContextItem.uri)) {
-                result.ignored.push(userContextItem)
+            if (isCodyIgnoredFile(newContextItem.uri)) {
+                result.ignored.push(newContextItem)
                 continue
             }
 
             // Skip duplicated or invalid items before updating the token usage.
-            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            const isValidItem = contextSet.add(userContextItem)
-            if (!contextMsg || !isValidItem) {
+            if (!isUniqueContextItem(newContextItem, this.contextItems)) {
                 continue
             }
 
-            const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
-            const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
-            // We do not want to update exisiting context items from chat history that's not related to last human message,
-            // unless isTooLarge is undefined, meaning it has not been processed before like new enhanced context.
-            if (
-                (tokenType === 'user' && !this.processedContextType.has(tokenType)) ||
-                userContextItem.isTooLarge === undefined
-            ) {
-                userContextItem.isTooLarge = !withinLimit
+            // Assistant messages come first because the transcript is in reversed order
+            const contextMessage = isContextItem(item) ? renderContextItem(item) : item
+            if (!contextMessage) {
+                continue
             }
 
-            // Skip context item that would exceed the token budget.
-            // Remove it from the context set and add to the ignored list.
-            if (!withinLimit) {
-                contextSet.remove(userContextItem)
-                userContextItem.content = undefined
-                result.ignored.push(userContextItem)
+            const messagePair = [{ speaker: 'assistant', text: ps`Ok.` } as Message, contextMessage]
+            const tokenType = getContextItemTokenUsageType(newContextItem)
+            const isWithinLimit = this.tokenCounter.updateUsage(tokenType, messagePair)
+
+            // Don't update context items from the past
+            if (type !== 'history' || newContextItem.isTooLarge === undefined) {
+                newContextItem.isTooLarge = !isWithinLimit
+            }
+
+            // Skip item that would exceed token limit & add it to the ignored list.
+            if (!isWithinLimit) {
+                newContextItem.content = undefined
+                result.ignored.push(newContextItem)
                 result.limitReached = true
                 continue
             }
 
-            this.reverseMessages.push(assistantMsg, contextMsg)
+            this.contextItems.push(newContextItem)
         }
 
-        const used = contextSet.values
-        this.addedContextItems.push(...used)
-
-        return { ...result, used }
+        return result
     }
 }
 

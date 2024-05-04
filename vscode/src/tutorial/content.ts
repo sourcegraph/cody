@@ -167,3 +167,20 @@ export const initTutorialDocument = async (uri: vscode.Uri): Promise<vscode.Text
     await vscode.workspace.fs.writeFile(uri, Buffer.from(firstStep))
     return vscode.workspace.openTextDocument(uri)
 }
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+
+/**
+ * We need to provide users with an option to reset the document, if incorrectly modified,
+ * but VS Code doesn't provide an easy way to do this, as it doesn't allow an extension to purge
+ * the document from the VS Code internal cache.
+ *
+ * Due to this, it means we can encounter a race condition where VS Code APIs still reference an old
+ * document, whilst we are presenting a new one to the user. This causes issues especially when seeking and
+ * tracking specific ranges in the document.
+ */
+export const resetDocument = async (uri: vscode.Uri): Promise<vscode.TextDocument> => {
+    await vscode.commands.executeCommand('workbench.action.closeActiveEditor', uri)
+    await sleep(250)
+    return initTutorialDocument(uri)
+}

@@ -17,7 +17,9 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
+import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -25,7 +27,6 @@ export { Uri } from './uri'
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 export { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 export { Disposable } from './Disposable'
-import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -509,8 +510,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             : stat.isDirectory()
               ? FileType.Directory
               : stat.isSymbolicLink()
-                  ? FileType.SymbolicLink
-                  : FileType.Unknown
+                ? FileType.SymbolicLink
+                : FileType.Unknown
 
         return {
             type,
@@ -530,8 +531,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
                 : entry.isDirectory()
                   ? FileType.Directory
                   : entry.isSymbolicLink()
-                      ? FileType.SymbolicLink
-                      : FileType.Unknown
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -548,6 +549,7 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         }
     },
     writeFile: async (uri, content) => {
+        await fspromises.mkdir(path.dirname(uri.fsPath), { recursive: true })
         await fspromises.writeFile(uri.fsPath, content)
     },
     delete: async (uri, options) => {
@@ -825,6 +827,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
+    experimentalGithubAccessToken: '',
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

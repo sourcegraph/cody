@@ -23,6 +23,21 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:disconnected',
         'CodyVSCodeExtension:statusBarIcon:clicked',
     ],
+    // list of V2 telemetry events we expect this test to log, add to this list as needed
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.auth.logout:clicked',
+        'cody.auth:disconnected',
+        'cody.statusbarIcon:clicked',
+    ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()

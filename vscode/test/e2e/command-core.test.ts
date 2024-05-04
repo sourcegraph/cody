@@ -21,6 +21,29 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:command:explain:executed',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:chat:context:opened',
+        'CodyVSCodeExtension:chat:context:fileLink:clicked',
+        'CodyVSCodeExtension:sidebar:smell:clicked',
+        'CodyVSCodeExtension:command:smell:executed',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.explain:clicked',
+        'cody.command.explain:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.sidebar.smell:clicked',
+        'cody.command.smell:executed',
     ],
 })('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -34,7 +57,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()
@@ -101,6 +124,26 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:command:codelens:clicked',
         'CodyVSCodeExtension:menu:command:default:clicked',
+        'CodyVSCodeExtension:command:codelens:clicked',
+        'CodyVSCodeExtension:command:test:executed',
+        'CodyVSCodeExtension:fixupResponse:hasCode',
+        'CodyVSCodeExtension:fixup:applied',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.command.codelens:clicked',
+        'cody.menu:command:default:clicked',
+        'cody.command.test:executed',
+        'cody.fixup.response:hasCode',
+        'cody.fixup.apply:succeeded',
     ],
 })('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -139,6 +182,21 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:fixupResponse:hasCode',
         'CodyVSCodeExtension:fixup:applied',
     ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.sidebar.doc:clicked',
+        'cody.command.doc:executed',
+        'cody.fixup.response:hasCode',
+        'cody.fixup.apply:succeeded',
+    ],
 })('Document Command (Edit)', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
@@ -154,7 +212,7 @@ test.extend<ExpectedEvents>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Trigger the documentaton command
     await page.getByText('Document Code').hover()

@@ -1,4 +1,11 @@
-import { type ContextItem, TokenCounter, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    TokenCounter,
+    contextFiltersProvider,
+    logError,
+    toRangeData,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 import { type ContextItemFile, ContextItemSource } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
@@ -20,6 +27,10 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                 throw new Error('No active editor')
             }
 
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
+            }
+
             // Use user current selection if any
             // Else, use smart selection based on cursor position
             // Else, use visible range of the editor that contains the cursor as fallback
@@ -39,7 +50,7 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     uri: document.uri,
                     content,
                     source: ContextItemSource.Selection,
-                    range: selection,
+                    range: toRangeData(selection),
                     size,
                 } satisfies ContextItemFile,
             ]

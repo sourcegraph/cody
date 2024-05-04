@@ -359,7 +359,7 @@ interface CompletionItemParams {
     completionID: string
 }
 
-interface AutocompleteParams {
+export interface AutocompleteParams {
     uri: string
     filePath?: string
     position: Position

@@ -144,7 +144,8 @@ async function symbolContextItems(
 
     const packages = (
         await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
-            `${symbolPackage.ecosystem}:${symbolPackage.name}`
+            `${symbolPackage.ecosystem}:${symbolPackage.name}`,
+            { gitRemotes: [] }
         )
     ).filter(item => item.title === symbolPackage.name.toString())
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))
@@ -199,6 +200,7 @@ async function symbolContextItems(
                     ...item,
                     type: 'file',
                     range: item.range ? expandRangeByLines(toVSCodeRange(item.range)!, 10) : undefined,
+                    source: ContextItemSource.Unified,
                 }) satisfies ContextItem
         ),
         ...uses.map(
@@ -207,7 +209,7 @@ async function symbolContextItems(
                     ...use,
                     type: 'file',
                     title: uriBasename(use.uri),
-                    source: ContextItemSource.Search,
+                    source: ContextItemSource.Unified,
                 }) satisfies ContextItem
         ),
     ]
