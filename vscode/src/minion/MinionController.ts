@@ -6,6 +6,8 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
+import type { Action } from './action'
+import { extractXML } from './util'
 
 /**
  * Message sent from webview
@@ -140,7 +142,7 @@ export class MinionController extends ReactPanelController<
     MinionExtensionMessage
 > {
     private transcript: Interaction[] = []
-    private actions: any[] = []
+    private actions: Action[] = []
 
     private pendingResponseToken?: vscode.CancellationToken
 
@@ -157,7 +159,7 @@ export class MinionController extends ReactPanelController<
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
             case 'start':
-                this.handleStart(message.description)
+                void this.handleStart(message.description)
                 return
         }
     }
@@ -185,20 +187,35 @@ First, restate the task in terms of the following format:
 
         const messagePromise = this.anthropic.messages.create({
             max_tokens: 1024,
-            messages: [{ role: 'user', content: 'Hello, Claude' }],
+            messages: [{ role: 'user', content: text }],
             // model: 'claude-3-opus-20240229',
             model: 'claude-3-haiku-20240307',
         })
 
         const message = await messagePromise
-        console.log('######### got claude message', message)
+        if (message.content.length === 0 || message.content.length > 1) {
+            throw new Error(
+                `expected exactly one text block in claude response, got ${message.content.length})`
+            )
+        }
+        const rawResponse = message.content[0].text
+        const existingBehavior = extractXML(rawResponse, 'existingBehavior')
+        const desiredBehavior = extractXML(rawResponse, 'desiredBehavior')
+        const restatement = `${existingBehavior}\n\n${desiredBehavior}`
+
+        this.actions.push({ level: 0, type: 'restate', output: restatement })
+        this.postUpdateActions()
 
         // post view transcript to view
 
         // on llm request completed, post bot message to transcript and log bot action
     }
 
-    private postView(): void {
-        // TODO: post action log to view, including state of pending responses
+    private postUpdateActions(): void {
+        console.log('#### this.postMessage', { actions: this.actions })
+        this.postMessage({
+            type: 'update-actions',
+            actions: this.actions,
+        })
     }
 }

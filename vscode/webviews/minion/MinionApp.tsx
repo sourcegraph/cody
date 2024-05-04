@@ -1,19 +1,47 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { Action } from '../../src/minion/action'
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
-import type { Action } from './action'
 
 import './MinionApp.css'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
 class AgentRunnerClient {
-    constructor(private vscodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtensionMessage>) {}
+    private disposables: (() => void)[] = []
+    private updateActionHandlers: ((actions: Action[]) => void)[] = []
+
+    constructor(private vscodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtensionMessage>) {
+        this.disposables.push(
+            this.vscodeAPI.onMessage(message => {
+                switch (message.type) {
+                    case 'update-actions':
+                        console.log('#### got update-actions')
+                        for (const updateActionHandler of this.updateActionHandlers) {
+                            updateActionHandler(message.actions)
+                        }
+                }
+            })
+        )
+    }
+
+    public dispose(): void {
+        for (const d of this.disposables) {
+            d()
+        }
+        this.disposables = []
+        for (const updateActionHandler of this.updateActionHandlers) {
+            updateActionHandler([])
+        }
+        this.updateActionHandlers = []
+    }
 
     public start(description: string): void {
         this.vscodeAPI.postMessage({ type: 'start', description } as any)
     }
 
-    public onReceiveAction(handler: (action: any) => void): void {}
-    public onReceiveRequest(handler: (request: any) => any): void {}
+    public onUpdateActions(handler: (actions: Action[]) => void): void {
+        this.updateActionHandlers.push(handler)
+    }
+    // public onReceiveRequest(handler: (request: any) => any): void {}
 }
 
 const DescribeBlock: React.FunctionComponent<{ isActive: boolean; agent: AgentRunnerClient }> = ({
@@ -89,7 +117,7 @@ function renderAction(action: Action, key: string): React.ReactNode {
         case 'restate': {
             return (
                 <ActionBlock level={action.level} codicon="comment-discussion" title="Restate">
-                    <textarea className="action-input" />
+                    <pre>{action.output}</pre>
                 </ActionBlock>
             )
         }
@@ -178,79 +206,85 @@ export const MinionApp: React.FunctionComponent<{
     const [agent] = useState(new AgentRunnerClient(vscodeAPI))
 
     useEffect(() => {
-        setActionLog([
-            {
-                level: 0,
-                type: 'restate',
-                output: 'This is a description of the thing I want to do.',
-            },
-            {
-                level: 0,
-                type: 'contextualize',
-                output: [
-                    {
-                        text: 'This is a description of the thing I want to do.',
-                        source: 'file:///Users/me/foo.ts',
-                        comment: 'This is a comment.',
-                    },
-                ],
-            },
-            {
-                level: 0,
-                type: 'reproduce',
-                bash: 'echo "hello world"',
-            },
-            {
-                level: 0,
-                type: 'plan',
-                steps: [
-                    {
-                        title: 'Step 1',
-                        description: 'This is a description of the thing I want to do.',
-                    },
-                    {
-                        title: 'Step 2',
-                        description: 'This is a description of the thing I want to do.',
-                    },
-                ],
-            },
-            {
-                level: 0,
-                type: 'do-step',
-                subactions: [
-                    {
-                        level: 1,
-                        type: 'search',
-                        query: 'hello',
-                        results: ['hello world', 'hello world 2'],
-                    },
-                    {
-                        level: 1,
-                        type: 'open',
-                        file: 'file:///Users/me/foo.ts',
-                    },
-                    {
-                        level: 1,
-                        type: 'scroll',
-                        direction: 'up',
-                    },
-                    {
-                        level: 1,
-                        type: 'edit',
-                        file: 'file:///Users/me/foo.ts',
-                        start: 123,
-                        end: 456,
-                        replacement: 'hello world',
-                    },
-                    {
-                        level: 1,
-                        type: 'human',
-                        description: "Here's what I did for you",
-                    },
-                ],
-            },
-        ])
-    }, [])
+        agent.onUpdateActions(actions => {
+            setActionLog(actions)
+        })
+    }, [agent])
+
+    // useEffect(() => {
+    //     setActionLog([
+    //         {
+    //             level: 0,
+    //             type: 'restate',
+    //             output: 'This is a description of the thing I want to do.',
+    //         },
+    //         {
+    //             level: 0,
+    //             type: 'contextualize',
+    //             output: [
+    //                 {
+    //                     text: 'This is a description of the thing I want to do.',
+    //                     source: 'file:///Users/me/foo.ts',
+    //                     comment: 'This is a comment.',
+    //                 },
+    //             ],
+    //         },
+    //         {
+    //             level: 0,
+    //             type: 'reproduce',
+    //             bash: 'echo "hello world"',
+    //         },
+    //         {
+    //             level: 0,
+    //             type: 'plan',
+    //             steps: [
+    //                 {
+    //                     title: 'Step 1',
+    //                     description: 'This is a description of the thing I want to do.',
+    //                 },
+    //                 {
+    //                     title: 'Step 2',
+    //                     description: 'This is a description of the thing I want to do.',
+    //                 },
+    //             ],
+    //         },
+    //         {
+    //             level: 0,
+    //             type: 'do-step',
+    //             subactions: [
+    //                 {
+    //                     level: 1,
+    //                     type: 'search',
+    //                     query: 'hello',
+    //                     results: ['hello world', 'hello world 2'],
+    //                 },
+    //                 {
+    //                     level: 1,
+    //                     type: 'open',
+    //                     file: 'file:///Users/me/foo.ts',
+    //                 },
+    //                 {
+    //                     level: 1,
+    //                     type: 'scroll',
+    //                     direction: 'up',
+    //                 },
+    //                 {
+    //                     level: 1,
+    //                     type: 'edit',
+    //                     file: 'file:///Users/me/foo.ts',
+    //                     start: 123,
+    //                     end: 456,
+    //                     replacement: 'hello world',
+    //                 },
+    //                 {
+    //                     level: 1,
+    //                     type: 'human',
+    //                     description: "Here's what I did for you",
+    //                 },
+    //             ],
+    //         },
+    //     ])
+    // }, [])
 
     return (
         <div className="app">

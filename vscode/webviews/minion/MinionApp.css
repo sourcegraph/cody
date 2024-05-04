@@ -44,6 +44,11 @@
     flex-direction: column;
 }
 
+.action-body pre {
+    flex: 1 1;
+    text-wrap: wrap;
+}
+
 .action-body form {
     display: flex;
     flex-direction: column;

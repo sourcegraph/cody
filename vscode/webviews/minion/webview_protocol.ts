@@ -1,4 +1,4 @@
-import type { Action } from './action'
+import type { Action } from '../../src/minion/action'
 
 export type MinionWebviewMessage =
     | {
@@ -10,6 +10,6 @@ export type MinionWebviewMessage =
       }
 
 export type MinionExtensionMessage = {
-    type: 'action'
-    action: Action
+    type: 'update-actions'
+    actions: Action[]
 }
