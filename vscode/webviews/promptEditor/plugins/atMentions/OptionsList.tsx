@@ -8,7 +8,7 @@ import {
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type FunctionComponent, useEffect, useRef } from 'react'
+import { type FunctionComponent, useLayoutEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
@@ -22,6 +22,7 @@ import {
     PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
+import { Command, CommandGroup, CommandItem, CommandList } from '../../../components/shadcn/ui/command'
 import styles from './OptionsList.module.css'
 import type { MentionTypeaheadOption } from './atMentions'
 
@@ -31,44 +32,72 @@ export const OptionsList: FunctionComponent<
         'selectedIndex' | 'setHighlightedIndex' | 'selectOptionAndCleanUp'
     >
 > = ({ query, options, selectedIndex, setHighlightedIndex, selectOptionAndCleanUp }) => {
-    const ref = useRef<HTMLUListElement>(null)
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `options` changes.
-    useEffect(() => {
-        // Scroll to top when options change because the prior `selectedIndex` is invalidated.
-        ref?.current?.scrollTo(0, 0)
-        setHighlightedIndex(0)
-    }, [options])
+    const ref = useRef<HTMLDivElement>(null)
+
+    // Scroll selected into view. Needs `setTimeout` because we need to wait for all DOM mutations.
+    // The `cmdk` package handles this when using its own input, but here we need to use the Lexical
+    // editor's input because the user is still typing into the Lexical editor.
+    useLayoutEffect(() => {
+        setTimeout(() => {
+            if (ref.current && selectedIndex !== null) {
+                const selected = ref.current.querySelector('[aria-selected="true"]')
+
+                if (selected && selected.parentElement?.firstChild === selected) {
+                    // First item in Group, ensure heading is in view
+                    selected
+                        .closest('[cmdk-group=""]')
+                        ?.querySelector('[cmdk-group-heading=""]')
+                        ?.scrollIntoView({ block: 'nearest' })
+                }
+
+                selected?.scrollIntoView({ block: 'nearest' })
+            }
+        })
+    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query, [])
 
     return (
-        <div className={styles.container}>
-            <h3 className={clsx(styles.item, styles.helpItem)}>
-                <span>{getHelpText(mentionQuery, options)}</span>
-                <br />
-            </h3>
-            {options.length > 0 && (
-                <ul ref={ref} className={styles.list}>
+        <Command
+            loop={true}
+            shouldFilter={false}
+            value={options.at(selectedIndex ?? 0)?.key}
+            className={styles.container}
+            label="@-mention context"
+            ref={ref}
+        >
+            <CommandList>
+                <CommandGroup
+                    heading={getHelpText(mentionQuery, options)}
+                    forceMount={true}
+                    ref={unsetAriaHidden}
+                >
                     {options.map((option, i) => (
-                        <Item
-                            query={mentionQuery}
-                            isSelected={selectedIndex === i}
-                            onClick={() => {
+                        <CommandItem
+                            key={option.key}
+                            value={option.key}
+                            onSelect={() => {
                                 setHighlightedIndex(i)
                                 selectOptionAndCleanUp(option)
                             }}
-                            onMouseEnter={() => {
-                                setHighlightedIndex(i)
-                            }}
-                            key={option.key}
-                            option={option}
-                            className={styles.item}
-                        />
+                            onMouseEnter={() => setHighlightedIndex(i)}
+                            className={clsx(styles.item, selectedIndex === i && styles.selected)}
+                        >
+                            <ItemContent query={mentionQuery} option={option} />
+                        </CommandItem>
                     ))}
-                </ul>
-            )}
-        </div>
+                </CommandGroup>
+            </CommandList>
+        </Command>
     )
+}
+
+/**
+ * Needed for Playwright to consider the element visible. It *is* visible, and the `aria-hidden`
+ * attribute is incorrect because the header it's applied to contains important information.
+ */
+function unsetAriaHidden(element: HTMLDivElement | null): void {
+    element?.querySelector('[cmdk-group-heading]')?.removeAttribute('aria-hidden')
 }
 
 function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption[]): string {
@@ -108,14 +137,10 @@ function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuer
     }
 }
 
-const Item: FunctionComponent<{
+const ItemContent: FunctionComponent<{
     query: MentionQuery
-    isSelected: boolean
-    onClick: () => void
-    onMouseEnter: () => void
     option: MentionTypeaheadOption
-    className?: string
-}> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
+}> = ({ query, option }) => {
     const item = option.item
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
@@ -135,23 +160,7 @@ const Item: FunctionComponent<{
     }
 
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents:
-        <li
-            key={option.key}
-            tabIndex={-1}
-            className={clsx(
-                className,
-                styles.optionItem,
-                isSelected && styles.selected,
-                warning && styles.disabled
-            )}
-            ref={option.setRefElement}
-            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
-            role="option"
-            aria-selected={isSelected}
-            onMouseEnter={onMouseEnter}
-            onClick={onClick}
-        >
+        <div className={styles.optionItem}>
             <div className={styles.optionItemRow}>
                 {item.type === 'symbol' && icon && (
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
@@ -167,6 +176,6 @@ const Item: FunctionComponent<{
                 {description && <span className={styles.optionItemDescription}>{description}</span>}
             </div>
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
-        </li>
+        </div>
     )
 }
