@@ -21,6 +21,51 @@ import { createProviderConfig as createOpenAICompatibleProviderConfig } from './
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
+export async function createProviderConfigForModel(
+    client: CodeCompletionsClient,
+    authStatus: AuthStatus,
+    model: string,
+    provider: string,
+    config: ConfigurationWithAccessToken
+): Promise<ProviderConfig | null>  {
+    switch (provider) {
+        case 'fireworks': {
+            return createFireworksProviderConfig({
+                client,
+                model: model,
+                timeouts: config.autocompleteTimeouts,
+                authStatus,
+                config,
+            })
+        }
+        case 'anthropic': {
+            return createAnthropicProviderConfig({ client, model })
+        }
+        case 'experimental-openaicompatible': {
+            return createOpenAICompatibleProviderConfig({
+                client,
+                model: config.autocompleteAdvancedModel ?? model ?? null,
+                timeouts: config.autocompleteTimeouts,
+                authStatus,
+                config,
+            })
+        }
+        case 'experimental-ollama':
+        case 'unstable-ollama': {
+            return createExperimentalOllamaProviderConfig(
+                config.autocompleteExperimentalOllamaOptions
+            )
+        }
+        default:
+            logError(
+                'createProviderConfig',
+                `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
+            )
+            return null
+    }
+}
+
+
 export async function createProviderConfig(
     config: ConfigurationWithAccessToken,
     client: CodeCompletionsClient,

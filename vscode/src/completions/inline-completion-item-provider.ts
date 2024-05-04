@@ -76,6 +76,11 @@ interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Flag to check if the current request is also triggered for multiple providers.
+    // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
+    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
+    isRequestForMultipleModelCompletions?: boolean
 }
 
 interface CompletionRequest {
@@ -132,6 +137,7 @@ export class InlineCompletionItemProvider
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
+            isRequestForMultipleModelCompletions: config.isRequestForMultipleModelCompletions ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -174,15 +180,18 @@ export class InlineCompletionItemProvider
             [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
 
-        this.disposables.push(
-            this.contextMixer,
-            vscode.commands.registerCommand(
-                'cody.autocomplete.inline.accepted',
-                ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    void this.handleDidAcceptCompletionItem(codyCompletion)
-                }
+        if (!this.config.isRequestForMultipleModelCompletions) {
+            // We don't want to accept and log items when we are doing completion comparison from different models.
+            this.disposables.push(
+                this.contextMixer,
+                vscode.commands.registerCommand(
+                    'cody.autocomplete.inline.accepted',
+                    ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
+                        void this.handleDidAcceptCompletionItem(codyCompletion)
+                    }
+                )
             )
-        )
+        }
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
@@ -412,7 +421,10 @@ export class InlineCompletionItemProvider
                     // Returning null will clear any existing suggestions, thus we need to reset the
                     // last candidate.
                     this.lastCandidate = undefined
-                    CompletionLogger.noResponse(result.logId)
+                    if (!this.config.isRequestForMultipleModelCompletions) {
+                        // Don't log event if just want to compare the completion data from multiple providers.
+                        CompletionLogger.noResponse(result.logId)
+                    }
                     return null
                 }
 
@@ -440,10 +452,14 @@ export class InlineCompletionItemProvider
                     span
                 )
 
-                // Store the log ID for each completion item so that we can later map to the selected
-                // item from the ID alone
-                for (const item of autocompleteItems) {
-                    suggestedAutocompleteItemsCache.add(item)
+                if (!this.config.isRequestForMultipleModelCompletions) {
+                    // Don't update the suggestion cache when we only want to compare various model completions output and not log.
+
+                    // Store the log ID for each completion item so that we can later map to the selected
+                    // item from the ID alone
+                    for (const item of autocompleteItems) {
+                        suggestedAutocompleteItemsCache.add(item)
+                    }
                 }
 
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
@@ -453,7 +469,7 @@ export class InlineCompletionItemProvider
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
-                if (!this.config.isRunningInsideAgent) {
+                if (!this.config.isRunningInsideAgent && !this.config.isRequestForMultipleModelCompletions) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
@@ -505,13 +521,16 @@ export class InlineCompletionItemProvider
 
         this.lastAcceptedCompletionItem = completion
 
-        CompletionLogger.accepted(
-            completion.logId,
-            completion.requestParams.document,
-            completion.analyticsItem,
-            completion.trackedRange,
-            this.config.isDotComUser
-        )
+        if (!this.config.isRequestForMultipleModelCompletions) {
+            // Don't log event if just want to compare the completion data from multiple providers.
+            CompletionLogger.accepted(
+                completion.logId,
+                completion.requestParams.document,
+                completion.analyticsItem,
+                completion.trackedRange,
+                this.config.isDotComUser
+            )
+        }
     }
 
     /**
@@ -558,8 +577,9 @@ export class InlineCompletionItemProvider
         if (!completion) {
             return
         }
-
-        CompletionLogger.suggested(completion.logId, completion.span)
+        if (!this.config.isRequestForMultipleModelCompletions) {
+            CompletionLogger.suggested(completion.logId, completion.span)
+        }
     }
 
     /**
@@ -571,12 +591,31 @@ export class InlineCompletionItemProvider
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        CompletionLogger.partiallyAccept(
-            completion.logId,
-            completion.analyticsItem,
-            acceptedLength,
-            this.config.isDotComUser
+        if (!this.config.isRequestForMultipleModelCompletions) {
+            CompletionLogger.partiallyAccept(
+                completion.logId,
+                completion.analyticsItem,
+                acceptedLength,
+                this.config.isDotComUser
+            )
+        }
+    }
+
+    public async manuallyGetCompletionItemsForProvider(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+    ): Promise<string> {
+        const result = await this.provideInlineCompletionItems(
+            document,
+            position,
+            context,
+            new vscode.CancellationTokenSource().token
         )
+        const modelName = this.config.providerConfig.model
+        const providerName = this.config.providerConfig.identifier
+        const res = `Provider: ${providerName} modelName: ${modelName} Completion is:\n ${result?.items[0].insertText}\n`
+        return res
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {

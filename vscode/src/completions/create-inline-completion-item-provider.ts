@@ -16,6 +16,7 @@ import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
+import { createProviderConfigForModel } from './providers/create-provider'
 
 interface InlineCompletionItemProviderArgs {
     config: ConfigurationWithAccessToken
@@ -39,6 +40,106 @@ class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider 
         _token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
         return { items: [] }
+    }
+}
+
+export async function triggerMultiModelAutocompletionsForComparison(allProviders: InlineCompletionItemProvider[]) {
+    const activeEditor = vscode.window.activeTextEditor
+    if (!activeEditor) {
+        return
+    }
+    const document = activeEditor.document;
+    const position = activeEditor.selection.active;
+    const context = {
+        triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+        selectedCompletionInfo: undefined
+    }
+    const allPromises: Promise<string>[] = []
+    for (const provider of allProviders) {
+        allPromises.push(provider.manuallyGetCompletionItemsForProvider(
+            document,
+            position,
+            context
+        ))
+    }
+    const results = await Promise.all(allPromises);
+    const allResults = results.join('\n');
+    logDebug('MultiModelAutoComplete:\n', allResults);
+}
+
+
+export async function createInlineCompletionItemFromMultipleProviders({
+    config,
+    client,
+    statusBar,
+    authProvider,
+    triggerNotice,
+    createBfgRetriever,
+}: InlineCompletionItemProviderArgs) {
+    // Creates multiple providers to get completions from.
+    // The primary purpose of this method is to get the completions generated from multiple providers,
+    // which helps judge the quality of code completions
+    const authStatus = authProvider.getAuthStatus()
+    if (!authStatus.isLoggedIn) {
+        return {
+            dispose: () => {},
+        }
+    }
+
+    const disposables: vscode.Disposable[] = []
+    const allProviderConfigs = [
+        {
+            'provider': 'fireworks',
+            'model': 'starcoder-hybrid',
+        },
+        {
+            'provider': 'fireworks',
+            'model': 'fireworks-completions-fine-tuned',
+        },
+        {
+            'provider': 'anthropic',
+            'model': 'claude-3-haiku-20240307',
+        }
+    ]
+    const allProviders: InlineCompletionItemProvider[] = []
+    for (const curretProviderConfig of allProviderConfigs) {
+        const providerConfig = await createProviderConfigForModel(
+            client,
+            authStatus,
+            curretProviderConfig['model'],
+            curretProviderConfig['provider'],
+            config
+        )
+        if(providerConfig) {
+            const authStatus = authProvider.getAuthStatus()
+            const completionsProvider = new InlineCompletionItemProvider({
+                authStatus,
+                providerConfig,
+                statusBar,
+                completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
+                formatOnAccept: config.autocompleteFormatOnAccept,
+                disableInsideComments: config.autocompleteDisableInsideComments,
+                triggerNotice,
+                isRunningInsideAgent: config.isRunningInsideAgent,
+                createBfgRetriever,
+                isDotComUser: isDotCom(authStatus.endpoint || ''),
+                isRequestForMultipleModelCompletions: true,
+            })
+            allProviders.push(completionsProvider)
+        }
+    }
+    disposables.push(
+        vscode.commands.registerCommand('cody.multi-model-autocomplete.manual-trigger', () =>
+            triggerMultiModelAutocompletionsForComparison(allProviders)
+        )
+    )
+
+    return {
+        dispose: () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        },
     }
 }
 
