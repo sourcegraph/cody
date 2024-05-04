@@ -6,8 +6,8 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
-import type { Action } from './action'
-import { extractXML } from './util'
+import type { Memory } from './statemachine'
+import { RestateNode, StateMachine } from './statemachine'
 
 /**
  * Message sent from webview
@@ -125,26 +125,18 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
     }
 }
 
-interface BotMessage {
-    role: 'bot'
-    text: string
-}
-
-interface UserMessage {
-    role: 'user'
-    text: string
-}
-
-type Interaction = [UserMessage, BotMessage | null]
-
 export class MinionController extends ReactPanelController<
     MinionWebviewMessage,
     MinionExtensionMessage
 > {
-    private transcript: Interaction[] = []
-    private actions: Action[] = []
+    private memory: Memory = {
+        transcript: [],
+        actions: [],
+    }
 
-    private pendingResponseToken?: vscode.CancellationToken
+    private stateMachine: StateMachine | null = null
+
+    // private pendingResponseToken?: vscode.CancellationToken
 
     constructor(
         private anthropic: Anthropic,
@@ -165,57 +157,27 @@ export class MinionController extends ReactPanelController<
     }
 
     private async handleStart(description: string): Promise<void> {
-        const text = `
-I'd like help performing the following task:
-<taskDescription>
-${description}
-</taskDescription>
+        // Harcoded: start with restating the problem in a more structured format
+        this.stateMachine = new StateMachine(new RestateNode(description))
 
-First, restate the task in terms of the following format:
-<existingBehavior>a detailed description of the existing behavior</existingBehavior>
-<desiredBehavior>a detailed description of the new behavior</desiredBehavior>`.trimStart()
-        this.transcript.push([
-            {
-                role: 'user',
-                text,
-            },
-            null,
-        ])
-        // make llm request
+        // TODO(beyang): post view state to indicate loading/in-progress state, support cancellation
 
-        // NEXT: make LLM request and then proceed
+        const isDone = await this.stateMachine.step(this.memory, this.anthropic)
 
-        const messagePromise = this.anthropic.messages.create({
-            max_tokens: 1024,
-            messages: [{ role: 'user', content: text }],
-            // model: 'claude-3-opus-20240229',
-            model: 'claude-3-haiku-20240307',
-        })
-
-        const message = await messagePromise
-        if (message.content.length === 0 || message.content.length > 1) {
-            throw new Error(
-                `expected exactly one text block in claude response, got ${message.content.length})`
-            )
-        }
-        const rawResponse = message.content[0].text
-        const existingBehavior = extractXML(rawResponse, 'existingBehavior')
-        const desiredBehavior = extractXML(rawResponse, 'desiredBehavior')
-        const restatement = `${existingBehavior}\n\n${desiredBehavior}`
-
-        this.actions.push({ level: 0, type: 'restate', output: restatement })
         this.postUpdateActions()
-
-        // post view transcript to view
 
         // on llm request completed, post bot message to transcript and log bot action
     }
 
+    private async handleStep(): Promise<void> {
+        // TODO
+    }
+
     private postUpdateActions(): void {
-        console.log('#### this.postMessage', { actions: this.actions })
+        console.log('#### this.postMessage', { actions: this.memory.actions })
         this.postMessage({
             type: 'update-actions',
-            actions: this.actions,
+            actions: this.memory.actions,
         })
     }
 }
