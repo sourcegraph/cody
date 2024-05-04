@@ -14,10 +14,10 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 
-import { EnhancedContextSettings } from './Components/EnhancedContextSettings'
 import { useEnhancedContextEnabled } from './chat/EnhancedContext'
 import { Transcript } from './chat/Transcript'
 import { ChatActions } from './chat/components/ChatActions'
+import { EnhancedContextSettings } from './components/EnhancedContextSettings'
 import {
     PromptEditor,
     type PromptEditorRefAPI,

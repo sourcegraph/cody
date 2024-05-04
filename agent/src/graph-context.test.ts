@@ -154,7 +154,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
             const text = await autocompletes()
             expect(text).includes('firstName:')
             expect(text).includes('isEligible:')
-            expect(text).toMatchInlineSnapshot(`
+            expect(text).toMatchInlineSnapshot(
+                `
               "autocompletes:
                 - name: starcoder-16b
                   value:
@@ -198,7 +199,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
                         export const message = 'Hello'<fim_middle>
               "
-            `)
+            `
+            )
         })
 
         it('multiline', async () => {
