@@ -6,7 +6,7 @@ import {
     isWindows,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type CSSProperties, useState } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
@@ -49,7 +49,7 @@ export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = 
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
     document.body.dataset.vscodeThemeKind = 'vscode-dark'
     return story => (
-        <div className={classNames(styles.container, className)} style={style}>
+        <div className={clsx(styles.container, className)} style={style}>
             <WithChatContextClient value={dummyChatContextClient}>
                 <ChatModelContextProvider value={useDummyChatModelContext()}>
                     {story()}
