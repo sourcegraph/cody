@@ -1,5 +1,5 @@
 import type { ModelProvider } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -161,7 +161,7 @@ const ModelTitleWithIcon: FunctionComponent<{
     modelAvailability?: ModelAvailability
 }> = ({ model, showIcon, showProvider, modelAvailability }) => (
     <span
-        className={classNames(styles.modelTitleWithIcon, {
+        className={clsx(styles.modelTitleWithIcon, {
             [styles.disabled]: modelAvailability !== 'available',
         })}
         title={

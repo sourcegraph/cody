@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import {
     type AuthStatus,
@@ -490,7 +490,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         : 'Chat has been disabled by your Enterprise instance site administrator'
 
     return (
-        <div className={classNames(styles.innerContainer)}>
+        <div className={clsx(styles.innerContainer)}>
             {
                 <Transcript
                     transcript={transcript}
@@ -508,7 +508,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     guardrails={guardrails}
                 />
             }
-            <form className={classNames(styles.inputRow)}>
+            <form className={clsx(styles.inputRow)}>
                 {/* Don't show chat action buttons on empty chat session unless it's a new cha*/}
 
                 <ChatActions
@@ -593,7 +593,7 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
     onAbortMessageInProgress,
 }) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
+        className={clsx(styles.submitButton, className, disabled && styles.submitButtonDisabled)}
         type="button"
         disabled={disabled}
         onClick={onAbortMessageInProgress ?? onClick}

@@ -1,5 +1,5 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type React from 'react'
 import { FileLink } from '../../../components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
@@ -86,7 +86,7 @@ export const ContextCell: React.FunctionComponent<{
                                     isTooLarge={
                                         item.type === 'file' && item.isTooLarge && item.source === 'user'
                                     }
-                                    className={classNames(styles.fileLink, MENTION_CLASS_NAME)}
+                                    className={clsx(styles.fileLink, MENTION_CLASS_NAME)}
                                 />
                             </li>
                         ))}

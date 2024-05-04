@@ -8,7 +8,7 @@ import {
     displayPathDirname,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
@@ -43,7 +43,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={clsx(styles.item, styles.helpItem)}>
                 <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
@@ -132,7 +132,7 @@ const Item: FunctionComponent<{
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(
+            className={clsx(
                 className,
                 styles.optionItem,
                 isSelected && styles.selected,
@@ -150,7 +150,7 @@ const Item: FunctionComponent<{
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
                 )}
                 <span
-                    className={classNames(
+                    className={clsx(
                         styles.optionItemTitle,
                         warning && styles.optionItemTitleWithWarning
                     )}
