@@ -24,6 +24,7 @@ export default defineProjectWithDefaults(__dirname, {
             input: {
                 index: resolve(__dirname, 'index.html'),
                 search: resolve(__dirname, 'search.html'),
+                minion: resolve(__dirname, 'minion.html'),
             },
             output: {
                 entryFileNames: '[name].js',

@@ -439,6 +439,14 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.minion.panel.new",
+        "category": "Cody",
+        "title": "New Minion Panel",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
@@ -1052,6 +1060,11 @@
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
+        },
+        "cody.experimental.minion.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "default": ""
         },
         "cody.debug.verbose": {
           "order": 99,

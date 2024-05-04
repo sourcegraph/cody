@@ -1,0 +1,62 @@
+.app {
+    background-color: var(--vscode-sideBar-background);
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.transcript {
+    flex: 0 0 100%;
+}
+
+.action {
+    flex: 0 0 5em;
+    background-color: var(--vscode-list-inactiveSelectionBackground);
+
+    border: var(--vscode-sideBarSectionHeader-border);
+    padding: 1em;
+}
+
+.action-l1 {
+    padding-left: 1em;
+}
+
+.action-l2 {
+    padding-left: 2em;
+}
+
+.action-title {
+    font-size: 1em;
+    font-weight: bold;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    display: flex;
+    align-items: center;
+}
+
+.action-title-name {
+    padding-left: 0.5em;
+}
+
+.action-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-body form {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-body form input {
+    margin-top: 0.25em;
+    align-self: flex-start;
+}
+
+.action-input {
+    flex: 1 1 100%;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+}

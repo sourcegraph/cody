@@ -51,6 +51,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import { createNewMinionPanel } from './minion/minion'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
@@ -441,6 +442,11 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.copy.version', () =>
             vscode.env.clipboard.writeText(version)
+        ),
+
+        // Minion
+        vscode.commands.registerCommand('cody.minion.panel.new', () =>
+            createNewMinionPanel(context.extensionUri)
         ),
 
         // Account links
