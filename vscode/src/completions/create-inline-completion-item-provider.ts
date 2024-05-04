@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
-
+import * as path from 'node:path'
+import * as fspromises from 'node:fs/promises'
 import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
@@ -16,6 +17,7 @@ import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
+import { MultiModelCompletionsResults } from './inline-completion-item-provider'
 import { createProviderConfigForModel } from './providers/create-provider'
 
 interface InlineCompletionItemProviderArgs {
@@ -43,28 +45,75 @@ class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider 
     }
 }
 
-export async function triggerMultiModelAutocompletionsForComparison(allProviders: InlineCompletionItemProvider[]) {
-    const activeEditor = vscode.window.activeTextEditor
+export async function createLogsFile(): Promise<string> {
+    const dirPath = "/Users/hiteshsagtani"
+    await fspromises.mkdir(dirPath, { recursive: true })
+    const fileName = 'cody-custom-completions.jsonl'
+    const filePath = path.join(dirPath, fileName)
+    if (
+        !(await fspromises
+            .access(filePath)
+            .then(() => true)
+            .catch(() => false))
+    ) {
+        await fspromises.writeFile(filePath, '')
+    }
+    return filePath
+}
+
+export async function triggerMultiModelAutocompletionsForComparison(
+    allProviders: InlineCompletionItemProvider[],
+) {
+    const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
-        return
+        return;
     }
     const document = activeEditor.document;
     const position = activeEditor.selection.active;
     const context = {
         triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
-        selectedCompletionInfo: undefined
-    }
-    const allPromises: Promise<string>[] = []
+        selectedCompletionInfo: undefined,
+    };
+    const allPromises: Promise<MultiModelCompletionsResults>[] = [];
     for (const provider of allProviders) {
-        allPromises.push(provider.manuallyGetCompletionItemsForProvider(
-            document,
-            position,
-            context
-        ))
+        allPromises.push(
+            provider.manuallyGetCompletionItemsForProvider(
+                document,
+                position,
+                context,
+            ),
+        );
     }
     const results = await Promise.all(allPromises);
-    const allResults = results.join('\n');
-    logDebug('MultiModelAutoComplete:\n', allResults);
+    let completionsOutput = ""
+    for (const result of results) {
+        completionsOutput += `Model: ${result.model}\n${result.completion}\n\n`
+    }
+    logDebug("MultiModelAutoComplete:\n", completionsOutput);
+
+    // Add logs to a local file for analysis
+    const logFilePath = await createLogsFile();
+
+    const prefix = document.getText(
+        new vscode.Range(new vscode.Position(0, 0), position),
+    );
+    const suffix = document.getText(
+        new vscode.Range(
+            position,
+            document.positionAt(document.getText().length),
+        ),
+    );
+    const fileName = path.basename(document.fileName);
+    let dataToLog: { [key: string]: string } = {
+        fileName,
+        prefix,
+        suffix,
+    };
+    for (const result of results) {
+        const modelName = result.model;
+        dataToLog[modelName] = result.completion? result.completion : "";
+    }
+    await fspromises.appendFile(logFilePath, JSON.stringify(dataToLog) + "\n");
 }
 
 

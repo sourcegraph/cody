@@ -83,6 +83,12 @@ interface CodyCompletionItemProviderConfig {
     isRequestForMultipleModelCompletions?: boolean
 }
 
+export interface MultiModelCompletionsResults {
+    provider: string,
+    model: string,
+    completion?: string
+}
+
 interface CompletionRequest {
     document: vscode.TextDocument
     position: vscode.Position
@@ -605,17 +611,21 @@ export class InlineCompletionItemProvider
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
-    ): Promise<string> {
+    ): Promise<MultiModelCompletionsResults> {
         const result = await this.provideInlineCompletionItems(
             document,
             position,
             context,
-            new vscode.CancellationTokenSource().token
-        )
-        const modelName = this.config.providerConfig.model
-        const providerName = this.config.providerConfig.identifier
-        const res = `Provider: ${providerName} modelName: ${modelName} Completion is:\n ${result?.items[0].insertText}\n`
-        return res
+            new vscode.CancellationTokenSource().token,
+        );
+        const model = this.config.providerConfig.model;
+        const provider = this.config.providerConfig.identifier;
+        let completion = result?.items[0].insertText?.toString() || "";
+        return {
+            provider,
+            model,
+            completion,
+        };
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
