@@ -30,3 +30,14 @@ export default meta
 type Story = StoryObj<typeof ComboBox>
 
 export const Default: Story = {}
+
+export const Grouped: Story = {
+    args: {
+        options: [
+            { title: 'apple', value: 'apple', group: 'Fruit' },
+            { title: 'banana', value: 'banana', group: 'Fruit' },
+            { title: 'cod', value: 'cod', group: 'Fish' },
+            { title: 'dolphin', value: 'dates', group: 'Fish' },
+        ],
+    },
+}

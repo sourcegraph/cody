@@ -1,7 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow } from './types'
-import type { ModelUsage } from './types'
+import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -52,7 +51,8 @@ export class ModelProvider {
              * The API endpoint for the model
              */
             apiEndpoint?: string
-        }
+        },
+        public readonly uiGroup?: string
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider

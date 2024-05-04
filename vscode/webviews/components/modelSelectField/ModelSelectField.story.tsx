@@ -2,11 +2,16 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
-import { ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import {
+    type ModelProvider,
+    ModelUIGroup,
+    ModelUsage,
+    getDotComDefaultModels,
+} from '@sourcegraph/cody-shared'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
 
-const MODELS = [
+const MODELS: ModelProvider[] = [
     ...getDotComDefaultModels(),
     {
         title: 'Llama 3 q4_K f16',
@@ -17,6 +22,7 @@ const MODELS = [
         default: false,
         deprecated: false,
         usage: [ModelUsage.Chat],
+        uiGroup: ModelUIGroup.Ollama,
     },
 ]
 

@@ -87,6 +87,7 @@ export const ModelSelectField: React.FunctionComponent<{
                         ),
                         filterKeywords: [m.title, m.provider],
                         disabled: modelAvailability(userInfo, m) !== 'available',
+                        group: m.uiGroup ?? 'Other',
                     }) satisfies SelectListOption
             ),
         [usableModels, userInfo]
@@ -151,7 +152,7 @@ const ModelTitleWithIcon: FunctionComponent<{
         <span className={styles.modelText}>
             <span className={styles.modelName}>{capitalize(model.title)}</span>
             <span className={styles.modelProvider}>
-                {showProvider && `by ${capitalize(model.provider)}`}
+                {showProvider && model.provider !== 'Ollama' && `by ${capitalize(model.provider)}`}
             </span>
         </span>
         {modelAvailability === 'needs-cody-pro' && (

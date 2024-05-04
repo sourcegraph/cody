@@ -1,5 +1,5 @@
 import { ChevronUpDownIcon } from '@heroicons/react/16/solid'
-import { type FunctionComponent, type ReactNode, useCallback, useState } from 'react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import { cn } from '../utils'
 import { Button } from './button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command'
@@ -11,6 +11,7 @@ export interface SelectListOption {
     value: Value | undefined
     title: string | ReactNode
     filterKeywords?: string[]
+    group?: string
     disabled?: boolean
 }
 
@@ -51,6 +52,21 @@ export const ComboBox: FunctionComponent<{
         [parentOnOpen]
     )
 
+    const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
+        const groups = new Map<string, SelectListOption[]>()
+        for (const option of options) {
+            const groupOptions = groups.get(option.group ?? '')
+            if (groupOptions) {
+                groupOptions.push(option)
+            } else {
+                groups.set(option.group ?? '', [option])
+            }
+        }
+        return Array.from(groups.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([group, options]) => ({ group, options }))
+    }, [options])
+
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
@@ -89,22 +105,24 @@ export const ComboBox: FunctionComponent<{
                     <CommandList>
                         <CommandInput placeholder={`Search ${pluralNoun}...`} />
                         <CommandEmpty>No matching {pluralNoun}</CommandEmpty>
-                        <CommandGroup>
-                            {options.map(option => (
-                                <CommandItem
-                                    key={option.value}
-                                    value={option.value}
-                                    keywords={option.filterKeywords}
-                                    onSelect={currentValue => {
-                                        onChange(currentValue)
-                                        setOpen(false)
-                                    }}
-                                    disabled={option.disabled}
-                                >
-                                    {option.title}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
+                        {optionsByGroup.map(({ group, options }) => (
+                            <CommandGroup heading={group} key={group}>
+                                {options.map(option => (
+                                    <CommandItem
+                                        key={option.value}
+                                        value={option.value}
+                                        keywords={option.filterKeywords}
+                                        onSelect={currentValue => {
+                                            onChange(currentValue)
+                                            setOpen(false)
+                                        }}
+                                        disabled={option.disabled}
+                                    >
+                                        {option.title}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        ))}
                     </CommandList>
                 </Command>
             </PopoverContent>

@@ -26,3 +26,10 @@ export function getModelInfo(modelID: string): {
     const title = (rest.at(-1) || '').replace(/-/g, ' ')
     return { provider, title }
 }
+
+/** Common {@link ModelProvider.uiGroup} values. */
+export const ModelUIGroup: Record<string, string> = {
+    Accuracy: 'Optimized for Accuracy',
+    Speed: 'Optimized for Speed',
+    Ollama: 'Runs on Ollama',
+}
