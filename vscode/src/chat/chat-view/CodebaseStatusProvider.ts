@@ -164,7 +164,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
                 )?.id
                 const instance = RepoMetadatafromGitApi.getInstance()
                 const gitMetaData = await instance.getRepoMetadataUsingGitUrl(newCodebase.remote)
-                newCodebase.isPublic = gitMetaData?.repoVisibility === 'public'
+                newCodebase.isPublic = gitMetaData?.isPublic
             }
         }
 

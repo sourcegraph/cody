@@ -1,7 +1,7 @@
 export interface RepoMetaData {
     owner: string
     repoName: string
-    repoVisibility: 'public' | 'private'
+    isPublic: boolean
 }
 
 export class RepoMetadatafromGitApi {
@@ -39,26 +39,12 @@ export class RepoMetadatafromGitApi {
 
     private async queryGitHubApi(owner: string, repoName: string): Promise<RepoMetaData | undefined> {
         const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
+        const metadata = { owner, repoName, isPublic: false }
         try {
-            const response = await fetch(apiUrl)
-            // For private repos without token the api returns 404
-            // Return the private repo visibility
-            if (response.status === 404) {
-                return {
-                    owner,
-                    repoName,
-                    repoVisibility: 'private',
-                }
-            }
-            if (!response.ok) {
-                return undefined
-            }
+            const response = await fetch(apiUrl, { method: 'HEAD' })
             const repoData = await response.json()
-            return {
-                owner,
-                repoName,
-                repoVisibility: repoData.private ? 'private' : 'public',
-            }
+            metadata.isPublic = response.ok && repoData.private === false
+            return metadata
         } catch (error) {
             return undefined
         }
