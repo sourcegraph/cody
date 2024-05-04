@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { Action } from './action'
-import { extractXML } from './util'
+import { generateQueriesSystem, generateQueriesUser } from './prompts'
+import { extractXML, extractXMLFromAnthropicResponse } from './util'
 
 interface BotMessage {
     role: 'bot'
@@ -89,22 +90,15 @@ First, restate the task in terms of the following format:
         // TODO(beyang): postUpdateActions, indicating in-progress action
 
         // make llm request
-        const messagePromise = anthropic.messages.create({
+        const message = await anthropic.messages.create({
             max_tokens: 1024,
             messages: [{ role: 'user', content: text }],
             // model: 'claude-3-opus-20240229',
             model: 'claude-3-haiku-20240307',
         })
 
-        const message = await messagePromise
-        if (message.content.length === 0 || message.content.length > 1) {
-            throw new Error(
-                `expected exactly one text block in claude response, got ${message.content.length})`
-            )
-        }
-        const rawResponse = message.content[0].text
-        const existingBehavior = extractXML(rawResponse, 'existingBehavior')
-        const desiredBehavior = extractXML(rawResponse, 'desiredBehavior')
+        const existingBehavior = extractXMLFromAnthropicResponse(message, 'existingBehavior')
+        const desiredBehavior = extractXMLFromAnthropicResponse(message, 'desiredBehavior')
         const restatement = `${existingBehavior}\n\n${desiredBehavior}`
 
         memory.actions.push({ level: 0, type: 'restate', output: restatement })
@@ -130,6 +124,41 @@ class ContextualizeNode implements Node {
             type: 'contextualize',
             output: [],
         })
+
+        let issueDescription = undefined
+        for (const action of memory.actions.toReversed()) {
+            if (action.type === 'restate') {
+                issueDescription = action.output
+                break
+            }
+        }
+        if (issueDescription === undefined) {
+            throw new Error('could not find Restate in previous actions')
+        }
+
+        // Generate symf search queries
+        const system = generateQueriesSystem
+        const message = await anthropic.messages.create({
+            system,
+            max_tokens: 4096,
+            messages: generateQueriesUser(issueDescription),
+            model: 'claude-3-haiku-20240307',
+        })
+        const rawQueries = extractXMLFromAnthropicResponse(message, 'searcQueries')
+        const queries = rawQueries?.split('\n').map(line => line.split(' ').map(k => k.trim()))
+
+        // Issue searches through symf
+
+        // LLM reranking
+
+        // Memorize most relevant snippets
+
+        // Display relevant snippets with commentary
+
+        // Explain existing behavior
+
+        // Propose what needs to be changed
+
         console.log('# finished Contextualize!')
         return null
     }
