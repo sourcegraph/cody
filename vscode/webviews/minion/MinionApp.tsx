@@ -8,16 +8,22 @@ import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_pro
 class AgentRunnerClient {
     private disposables: (() => void)[] = []
     private updateActionHandlers: ((actions: Action[]) => void)[] = []
+    private proposeActionHandlers: ((proposalID: string, action: Action) => void)[] = []
 
     constructor(private vscodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtensionMessage>) {
         this.disposables.push(
             this.vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'update-actions':
-                        console.log('#### got update-actions')
                         for (const updateActionHandler of this.updateActionHandlers) {
                             updateActionHandler(message.actions)
                         }
+                        break
+                    case 'ask-action':
+                        for (const proposeActionHandler of this.proposeActionHandlers) {
+                            proposeActionHandler(message.id, message.action)
+                        }
+                        break
                 }
             })
         )
@@ -28,26 +34,31 @@ class AgentRunnerClient {
             d()
         }
         this.disposables = []
-        for (const updateActionHandler of this.updateActionHandlers) {
-            updateActionHandler([])
-        }
         this.updateActionHandlers = []
+        this.proposeActionHandlers = []
     }
 
     public start(description: string): void {
         this.vscodeAPI.postMessage({ type: 'start', description } as any)
     }
 
+    public approveAction(id: string, action: Action): void {
+        this.vscodeAPI.postMessage({ type: 'ask-action-reply', id, action })
+    }
+
     public onUpdateActions(handler: (actions: Action[]) => void): void {
         this.updateActionHandlers.push(handler)
     }
-    // public onReceiveRequest(handler: (request: any) => any): void {}
+
+    public onProposeAction(handler: (proposalID: string, action: Action) => void): void {
+        this.proposeActionHandlers.push(handler)
+    }
 }
 
-const DescribeBlock: React.FunctionComponent<{ isActive: boolean; agent: AgentRunnerClient }> = ({
-    isActive,
-    agent,
-}) => {
+const DescribeBlock: React.FunctionComponent<{
+    isActive: boolean
+    agent: AgentRunnerClient
+}> = ({ isActive, agent }) => {
     const [description, setDescription] = useState('')
 
     const start = useCallback(() => agent.start(description), [agent, description])
@@ -84,7 +95,7 @@ const DescribeBlock: React.FunctionComponent<{ isActive: boolean; agent: AgentRu
                         <input type="submit" />
                     </form>
                 ) : (
-                    <>{description}</>
+                    <pre className="action-text">{description}</pre>
                 )}
             </div>
         </div>
@@ -108,28 +119,96 @@ const ActionBlock: React.FunctionComponent<{
     )
 }
 
+const NextActionBlock: React.FunctionComponent<{
+    proposalID: string
+    agent: AgentRunnerClient
+    action: Action
+    children?: React.ReactNode
+}> = ({ proposalID, agent, action, children }) => {
+    const [isInProgress, setIsInProgress] = useState(false)
+
+    const onApprove = useCallback(() => {
+        agent.approveAction(proposalID, action)
+    }, [agent, proposalID, action])
+
+    const { level } = action
+    const { codicon, title } = displayInfoForAction(action)
+
+    return (
+        <div className={`action action-l${level}`}>
+            <div className="action-title">
+                <i className={`codicon codicon-${codicon}`} />
+                <span className="action-title-name">{title}</span>
+            </div>
+            <div className="action-body">
+                {children}
+                {!isInProgress && (
+                    <form>
+                        <label>Waiting for approval</label>
+                        <button onClick={onApprove} type="button">
+                            Approve
+                        </button>
+                    </form>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function capitalize(s: string): string {
     return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+interface ActionInfo {
+    codicon: string
+    title: string
+}
+
+function displayInfoForAction(action: Action): ActionInfo {
+    const hardcoded: Partial<{ [key in Action['type']]: Partial<ActionInfo> }> = {
+        restate: { codicon: 'comment-discussion' },
+        contextualize: { codicon: 'search-fuzzy' },
+        reproduce: { codicon: 'beaker' },
+        plan: { codicon: 'checklist' },
+        'do-step': { codicon: 'pass' },
+        search: { codicon: 'search' },
+        open: { codicon: 'file' },
+        scroll: { codicon: 'eye' },
+        edit: { codicon: 'edit' },
+        bash: { codicon: 'terminal' },
+        human: { codicon: 'robot', title: 'Invoke human' },
+    }
+    const info = hardcoded[action.type] || {}
+    switch (action.type) {
+        case 'open': {
+            info.title = `Open ${action.file}`
+        }
+    }
+    return {
+        codicon: info?.codicon ?? 'circle',
+        title: info?.title ?? capitalize(action.type).replace('-', ' '),
+    }
+}
+
 function renderAction(action: Action, key: string): React.ReactNode {
+    const { codicon, title } = displayInfoForAction(action)
     switch (action.type) {
         case 'restate': {
             return (
-                <ActionBlock level={action.level} codicon="comment-discussion" title="Restate">
-                    <pre>{action.output}</pre>
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
+                    <pre className="action-text">{action.output}</pre>
                 </ActionBlock>
             )
         }
         case 'contextualize': {
-            return <ActionBlock level={action.level} codicon="search-fuzzy" title="Contextualize" />
+            return <ActionBlock level={action.level} codicon={codicon} title={title} />
         }
         case 'reproduce': {
-            return <ActionBlock level={action.level} codicon="beaker" title="Reproduce" />
+            return <ActionBlock level={action.level} codicon={codicon} title={title} />
         }
         case 'plan': {
             return (
-                <ActionBlock level={action.level} codicon="checklist" title="Plan">
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <ol>
                         {action.steps.map(step => (
                             <li key={step.title}>{step.title}</li>
@@ -141,14 +220,14 @@ function renderAction(action: Action, key: string): React.ReactNode {
         case 'do-step': {
             return (
                 <>
-                    <ActionBlock level={action.level} codicon="pass" title="Do step" />
+                    <ActionBlock level={action.level} codicon={codicon} title={title} />
                     {action.subactions.map((subaction, i) => renderAction(subaction, `${key}-${i}`))}
                 </>
             )
         }
         case 'search': {
             return (
-                <ActionBlock level={action.level} codicon="search" title="Search">
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <div>Query: {action.query}</div>
                     <ol>
                         {action.results.map(result => (
@@ -159,38 +238,36 @@ function renderAction(action: Action, key: string): React.ReactNode {
             )
         }
         case 'open': {
-            return <ActionBlock level={action.level} codicon="file" title={`Open ${action.file}`} />
+            return <ActionBlock level={action.level} codicon={codicon} title={title} />
         }
         case 'scroll': {
             return (
-                <ActionBlock level={action.level} codicon="eye" title={`Scroll ${action.direction}`} />
+                <ActionBlock
+                    level={action.level}
+                    codicon={codicon}
+                    title={`Scroll ${action.direction}`}
+                />
             )
         }
         case 'edit': {
             return (
-                <ActionBlock level={action.level} codicon="edit" title="Edit">
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <textarea className="action-input" />
                 </ActionBlock>
             )
         }
         case 'bash': {
             return (
-                <ActionBlock level={action.level} codicon="terminal" title="Terminal">
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <textarea className="action-input" />
                 </ActionBlock>
             )
         }
         case 'human': {
-            return <ActionBlock level={action.level} codicon="robot" title="Invoke human" />
+            return <ActionBlock level={action.level} codicon={codicon} title={title} />
         }
         default: {
-            return (
-                <ActionBlock
-                    level={(action as any).level}
-                    codicon="circle"
-                    title={capitalize((action as any).type)}
-                />
-            )
+            return <ActionBlock level={(action as any).level} codicon={codicon} title={title} />
         }
     }
 }
@@ -203,11 +280,15 @@ export const MinionApp: React.FunctionComponent<{
     }, [vscodeAPI])
 
     const [actionLog, setActionLog] = useState<Action[]>([])
+    const [nextAction, setNextAction] = useState<{ action: Action; id: string } | undefined>(undefined)
     const [agent] = useState(new AgentRunnerClient(vscodeAPI))
 
     useEffect(() => {
         agent.onUpdateActions(actions => {
             setActionLog(actions)
+        })
+        agent.onProposeAction((id, action) => {
+            setNextAction({ id, action })
         })
     }, [agent])
 
@@ -286,12 +367,22 @@ export const MinionApp: React.FunctionComponent<{
     //     ])
     // }, [])
 
+    console.log('### action log', actionLog)
+    const isDescribeBlockActive = actionLog.length === 0
+
+    let nextActionComponent = undefined
+    if (nextAction) {
+        nextActionComponent = (
+            <NextActionBlock agent={agent} proposalID={nextAction.id} action={nextAction.action} />
+        )
+    }
+
     return (
         <div className="app">
             <div className="transcript">
-                <DescribeBlock isActive={true} agent={agent} />
-
+                <DescribeBlock isActive={isDescribeBlockActive} agent={agent} />
                 {actionLog.map((action, i) => renderAction(action, `${i}`))}
+                {nextActionComponent}
             </div>
         </div>
     )

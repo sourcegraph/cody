@@ -44,7 +44,7 @@
     flex-direction: column;
 }
 
-.action-body pre {
+.action-body pre.action-text {
     flex: 1 1;
     text-wrap: wrap;
 }
@@ -54,7 +54,8 @@
     flex-direction: column;
 }
 
-.action-body form input {
+.action-body form input,
+.action-body form button {
     margin-top: 0.25em;
     align-self: flex-start;
 }

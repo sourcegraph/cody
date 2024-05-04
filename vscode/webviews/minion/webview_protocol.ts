@@ -8,8 +8,24 @@ export type MinionWebviewMessage =
           type: 'start'
           description: string
       }
+    | {
+          type: 'ask-action-reply'
+          id: string
+          action: Action
+          error?: string
+      }
 
-export type MinionExtensionMessage = {
-    type: 'update-actions'
-    actions: Action[]
-}
+export type MinionExtensionMessage =
+    | {
+          type: 'update-actions'
+          actions: Action[]
+      }
+    | {
+          type: 'display-error'
+          error: string
+      }
+    | {
+          type: 'ask-action'
+          id: string
+          action: Action
+      }

@@ -1,12 +1,14 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type {
     MinionExtensionMessage,
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
-import type { Memory } from './statemachine'
+import type { Action } from './action'
+import type { Environment, HumanLink, Memory } from './statemachine'
 import { RestateNode, StateMachine } from './statemachine'
 
 /**
@@ -125,10 +127,12 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
     }
 }
 
-export class MinionController extends ReactPanelController<
-    MinionWebviewMessage,
-    MinionExtensionMessage
-> {
+export class MinionController
+    extends ReactPanelController<MinionWebviewMessage, MinionExtensionMessage>
+    implements HumanLink
+{
+    private env: Environment = {}
+
     private memory: Memory = {
         transcript: [],
         actions: [],
@@ -147,12 +151,47 @@ export class MinionController extends ReactPanelController<
         super(panel, assetRoot, onDidDisposePanel)
     }
 
+    private askCallbacks: { [id: string]: (error?: string) => void } = {}
+
+    // Override for HumanLink interface
+    public ask(proposedAction: Action): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this._sendAsk(proposedAction, error => {
+                if (error === undefined) {
+                    resolve()
+                } else {
+                    reject(error)
+                }
+            })
+        })
+    }
+
+    private _sendAsk(action: Action, callback: (error?: string) => void): void {
+        const id = uuid.v4()
+        this.askCallbacks[id] = callback
+        void this.postMessage({ type: 'ask-action', id, action })
+    }
+
     protected handleDidReceiveMessage(message: MinionWebviewMessage): void {
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
-            case 'start':
+            case 'start': {
                 void this.handleStart(message.description)
                 return
+            }
+            case 'ask-action-reply': {
+                if (!(message.id in this.askCallbacks)) {
+                    this.postMessage({
+                        type: 'display-error',
+                        error: `Received answer corresponding to nonexistent or previously proposed action ${JSON.stringify(
+                            message.action
+                        )}.`,
+                    })
+                } else {
+                    this.askCallbacks[message.id](message.error)
+                }
+                delete this.askCallbacks[message.id]
+            }
         }
     }
 
@@ -161,16 +200,25 @@ export class MinionController extends ReactPanelController<
         this.stateMachine = new StateMachine(new RestateNode(description))
 
         // TODO(beyang): post view state to indicate loading/in-progress state, support cancellation
-
-        const isDone = await this.stateMachine.step(this.memory, this.anthropic)
-
-        this.postUpdateActions()
+        let done = false
+        while (!done) {
+            done = await this.stateMachine.step(this, this.env, this.memory, this.anthropic)
+            this.postUpdateActions()
+            const shouldStep = await this.waitForStep()
+            if (!shouldStep) {
+                // cancelled
+                console.error('TODO(beyang): handle cancellation')
+                break
+            }
+        }
 
         // on llm request completed, post bot message to transcript and log bot action
     }
 
-    private async handleStep(): Promise<void> {
-        // TODO
+    private async waitForStep(): Promise<boolean> {
+        // NEXT: implement this functionality on the view side (will need to remember an ID, to correlate the
+        // response to the request)
+        return true
     }
 
     private postUpdateActions(): void {
@@ -178,6 +226,7 @@ export class MinionController extends ReactPanelController<
         this.postMessage({
             type: 'update-actions',
             actions: this.memory.actions,
+            // nextAction: this.memory.
         })
     }
 }

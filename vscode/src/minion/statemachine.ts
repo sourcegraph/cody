@@ -19,6 +19,14 @@ export interface Memory {
     actions: Action[]
 }
 
+export interface Environment {
+    todo?: undefined
+}
+
+export interface HumanLink {
+    ask(proposedAction: Action): Promise<void>
+}
+
 interface NodeArg {
     name: string
     value: string
@@ -29,7 +37,7 @@ interface Node {
      * Executes the node, resulting in an action (side-effect mutation to memory) and returns
      * the next node or null if we are done
      */
-    do(memory: Memory, anthropic: Anthropic): Promise<Node | null>
+    do(human: HumanLink, env: Environment, memory: Memory, anthropic: Anthropic): Promise<Node | null>
 
     getArgs(): NodeArg[]
     updateArgs(args: NodeArg[]): void
@@ -55,7 +63,12 @@ export class RestateNode implements Node {
         }
     }
 
-    public async do(memory: Memory, anthropic: Anthropic): Promise<Node> {
+    public async do(
+        human: HumanLink,
+        env: Environment,
+        memory: Memory,
+        anthropic: Anthropic
+    ): Promise<Node> {
         const text = `
 I'd like help performing the following task:
 <taskDescription>
@@ -105,7 +118,19 @@ class ContextualizeNode implements Node {
         return []
     }
     updateArgs(args: NodeArg[]): void {}
-    public async do(memory: Memory, anthropic: Anthropic): Promise<Node | null> {
+    public async do(
+        human: HumanLink,
+        env: Environment,
+        memory: Memory,
+        anthropic: Anthropic
+    ): Promise<Node | null> {
+        console.log('# waiting approval for Contextualize')
+        await human.ask({
+            level: 0,
+            type: 'contextualize',
+            output: [],
+        })
+        console.log('# finished Contextualize!')
         return null
     }
 }
@@ -117,11 +142,15 @@ export class StateMachine {
     }
 
     /**
-     *
      * @returns true if done, false otherwise
      */
-    public async step(memory: Memory, anthropic: Anthropic): Promise<boolean> {
-        const nextNode = await this.currentNode.do(memory, anthropic)
+    public async step(
+        human: HumanLink,
+        env: Environment,
+        memory: Memory,
+        anthropic: Anthropic
+    ): Promise<boolean> {
+        const nextNode = await this.currentNode.do(human, env, memory, anthropic)
         if (nextNode) {
             this.currentNode = nextNode
             return false
