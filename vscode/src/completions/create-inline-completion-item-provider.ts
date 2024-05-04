@@ -144,6 +144,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
         {
             'provider': 'fireworks',
             'model': 'fireworks-completions-fine-tuned',
+            'overrideFireworks': true
         },
         {
             'provider': 'anthropic',
@@ -151,13 +152,18 @@ export async function createInlineCompletionItemFromMultipleProviders({
         }
     ]
     const allProviders: InlineCompletionItemProvider[] = []
+
     for (const curretProviderConfig of allProviderConfigs) {
+        const newConfig = JSON.parse(JSON.stringify(config))
+        newConfig.autocompleteExperimentalFireworksOptions = curretProviderConfig.overrideFireworks
+            ? config.autocompleteExperimentalFireworksOptions
+            : undefined
         const providerConfig = await createProviderConfigForModel(
             client,
             authStatus,
             curretProviderConfig['model'],
             curretProviderConfig['provider'],
-            config
+            newConfig
         )
         if(providerConfig) {
             const authStatus = authProvider.getAuthStatus()
