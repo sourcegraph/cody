@@ -446,7 +446,7 @@ const register = async (
 
         // Minion
         vscode.commands.registerCommand('cody.minion.panel.new', () =>
-            createNewMinionPanel(context.extensionUri)
+            createNewMinionPanel(context.extensionUri, symfRunner)
         ),
 
         // Account links

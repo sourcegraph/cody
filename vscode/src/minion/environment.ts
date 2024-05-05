@@ -26,13 +26,17 @@ export interface Environment {
 export class LocalVSCodeEnvironment implements Environment {
     constructor(
         public readonly rootURIs: vscode.Uri[],
-        private symf: SymfRunner
+        private symf: SymfRunner | null
     ) {}
 
     terminal(text: string, shouldExecute?: boolean | undefined): Promise<string> {
         throw new Error('Method not implemented.')
     }
     async search(query: string): Promise<TextSnippet[]> {
+        if (!this.symf) {
+            throw new Error("Search requires symf, which wasn't available")
+        }
+
         const queryPromptString = PromptString.unsafe_fromUserQuery(query)
         const resultsAcrossRoots = await this.symf.getResults(queryPromptString, this.rootURIs)
         const results: Result[] = (await Promise.all(resultsAcrossRoots)).flatMap(r => r)

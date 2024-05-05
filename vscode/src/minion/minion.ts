@@ -1,8 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
+import type { SymfRunner } from '../local-context/symf'
 import { MinionController, ReactPanelController } from './MinionController'
 
-export async function createNewMinionPanel(extensionUri: vscode.Uri): Promise<void> {
+export async function createNewMinionPanel(
+    extensionUri: vscode.Uri,
+    symf: SymfRunner | null
+): Promise<void> {
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     const panel = vscode.window.createWebviewPanel(
         'cody.minion.panel',
@@ -26,6 +30,6 @@ export async function createNewMinionPanel(extensionUri: vscode.Uri): Promise<vo
 
     // TODO(beyang): do we need to store this somewhere? maybe need a PanelManager class
     await ReactPanelController.createAndInit<MinionController>((): MinionController => {
-        return new MinionController(anthropic, panel, assetRoot, () => {})
+        return new MinionController(symf, anthropic, panel, assetRoot, () => {})
     })
 }

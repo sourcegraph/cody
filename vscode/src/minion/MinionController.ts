@@ -7,8 +7,9 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
+import { SymfRunner } from '../local-context/symf'
 import type { Action } from './action'
-import type { Environment } from './environment'
+import { type Environment, LocalVSCodeEnvironment } from './environment'
 import type { HumanLink, Memory } from './statemachine'
 import { RestateNode, StateMachine } from './statemachine'
 
@@ -136,24 +137,27 @@ export class MinionController
     extends ReactPanelController<MinionWebviewMessage, MinionExtensionMessage>
     implements HumanLink
 {
-    private env: Environment = {}
-
+    private env: Environment
     private memory: Memory = {
         transcript: [],
         actions: [],
     }
-
     private stateMachine: StateMachine | null = null
 
     // private pendingResponseToken?: vscode.CancellationToken
 
     constructor(
+        symf: SymfRunner | null,
         private anthropic: Anthropic,
         panel: vscode.WebviewPanel,
         assetRoot: vscode.Uri,
         onDidDisposePanel?: () => void
     ) {
         super(panel, assetRoot, onDidDisposePanel)
+        this.env = new LocalVSCodeEnvironment(
+            vscode.workspace.workspaceFolders?.map(f => f.uri) || [],
+            symf
+        )
     }
 
     private askCallbacks: { [id: string]: (error?: string) => void } = {}
