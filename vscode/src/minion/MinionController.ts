@@ -8,7 +8,8 @@ import type {
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
 import type { Action } from './action'
-import type { Environment, HumanLink, Memory } from './statemachine'
+import type { Environment } from './environment'
+import type { HumanLink, Memory } from './statemachine'
 import { RestateNode, StateMachine } from './statemachine'
 
 /**
@@ -26,6 +27,10 @@ type BaseExtensionMessage = {
     isActive: boolean
 }
 
+/**
+ * A generic controller for a React webview panel that handles initialization. Should
+ * be subclassed by an application-specific controller class.
+ */
 export abstract class ReactPanelController<WebviewMessageT extends {}, ExtensionMessageT extends {}>
     implements vscode.Disposable
 {
@@ -173,6 +178,10 @@ export class MinionController
     }
 
     protected handleDidReceiveMessage(message: MinionWebviewMessage): void {
+        // vscode.workspace.workspaceFolders[0].uri
+        const doc = vscode.workspace.openTextDocument(vscode.Uri.parse('file:///foo/bar/baz'))
+        // doc.
+
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
             case 'start': {

@@ -1,7 +1,9 @@
 import type Anthropic from '@anthropic-ai/sdk'
+import type * as vscode from 'vscode'
 import type { Action } from './action'
+import { Environment } from './environment'
 import { generateQueriesSystem, generateQueriesUser } from './prompts'
-import { extractXML, extractXMLFromAnthropicResponse } from './util'
+import { extractXMLFromAnthropicResponse } from './util'
 
 interface BotMessage {
     role: 'bot'
@@ -19,11 +21,7 @@ export interface Memory {
     transcript: Interaction[]
     actions: Action[]
 }
-
-export interface Environment {
-    todo?: undefined
-}
-
+t
 export interface HumanLink {
     ask(proposedAction: Action): Promise<void>
 }
