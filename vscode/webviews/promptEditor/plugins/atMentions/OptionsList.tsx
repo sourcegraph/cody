@@ -1,7 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type MentionQuery,
-    type RangeData,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -24,7 +23,7 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
-import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
+import type { MentionTypeaheadOption } from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -52,7 +51,7 @@ export const OptionsList: FunctionComponent<
                 <ul ref={ref} className={styles.list}>
                     {options.map((option, i) => (
                         <Item
-                            query={query}
+                            query={mentionQuery}
                             isSelected={selectedIndex === i}
                             onClick={() => {
                                 setHighlightedIndex(i)
@@ -87,30 +86,30 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
                       (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
         default:
             return options.length > 0
-                ? isValidLineRangeQuery(mentionQuery.text)
+                ? mentionQuery.maybeHasRangeSuffix
                     ? FILE_RANGE_TOOLTIP_LABEL
                     : FILE_HELP_LABEL
                 : NO_FILE_MATCHES_LABEL
     }
 }
 
-function getDescription(item: MentionTypeaheadOption['item'], query: string): string {
+function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuery): string {
+    const range = query.range ?? item.range
     switch (item.type) {
         case 'github_issue':
         case 'github_pull_request':
             return `${item.owner}/${item.repoName}`
         case 'file': {
-            const range = getLineRangeInMention(query, item.range)
             const dir = decodeURIComponent(displayPathDirname(item.uri))
-            return `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+            return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
         }
         default:
-            return `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+            return `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
     }
 }
 
 const Item: FunctionComponent<{
-    query: string
+    query: MentionQuery
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
@@ -129,7 +128,7 @@ const Item: FunctionComponent<{
     let warning: string
     if (isIgnored) {
         warning = IGNORED_FILE_WARNING_LABEL
-    } else if (isLargeFile && !item.range && !isValidLineRangeQuery(query)) {
+    } else if (isLargeFile && !item.range && !query.maybeHasRangeSuffix) {
         warning = LARGE_FILE_WARNING_LABEL
     } else {
         warning = ''
@@ -170,23 +169,4 @@ const Item: FunctionComponent<{
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
         </li>
     )
-}
-
-const isValidLineRangeQuery = (query: string): boolean =>
-    query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
-
-/**
- * Gets the display line range from the query string.
- */
-function getLineRangeInMention(query: string, range?: RangeData): string {
-    // Parses out the start and end line numbers from the query if it contains a line range match.
-    const queryRange = query.match(RANGE_MATCHES_REGEXP)
-    if (query && queryRange?.[1]) {
-        const [_, start, end] = queryRange
-        const startLine = Number.parseInt(start)
-        const endLine = end ? Number.parseInt(end) : Number.POSITIVE_INFINITY
-        return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
-    }
-    // Passed in range string if no line number match.
-    return range ? displayLineRange(range).toString() : ''
 }

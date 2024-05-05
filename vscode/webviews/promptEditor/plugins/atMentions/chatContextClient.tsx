@@ -1,7 +1,6 @@
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, parseMentionQuery } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
-import { LINE_RANGE_REGEXP, RANGE_MATCHES_REGEXP, parseLineRangeInMention } from './atMentions'
 
 export interface ChatContextClient {
     getChatContextItems(query: string): Promise<ContextItem[]>
@@ -9,13 +8,10 @@ export interface ChatContextClient {
 
 const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
     getChatContextItems(query: string): Promise<ContextItem[]> {
-        // TODO(sqs): Would be best to handle line ranges on the backend, not here.
-        const { textWithoutRange: backendQuery, range } = parseLineRangeInMention(query)
-
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
         return new Promise<ContextItem[]>((resolve, reject) => {
             const vscodeApi = getVSCodeAPI()
-            vscodeApi.postMessage({ command: 'getUserContext', query: backendQuery, range })
+            vscodeApi.postMessage({ command: 'getUserContext', query })
 
             const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
 
@@ -31,10 +27,7 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
             // our call.
             const dispose = vscodeApi.onMessage(message => {
                 if (message.type === RESPONSE_MESSAGE_TYPE) {
-                    const resultsWithRange = message.userContextFiles?.map(item =>
-                        range ? { ...item, range } : item
-                    )
-                    resolve(resultsWithRange ?? [])
+                    resolve(message.userContextFiles ?? [])
                     dispose()
                     clearTimeout(rejectTimeout)
                 }
@@ -66,19 +59,10 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
             return
         }
 
-        // If the query ends with a colon, we will reuse current results but remove the range.
-        if (query.endsWith(':')) {
-            const selected = results?.find(r => displayPath(r.uri) === query.slice(0, -1))
-            setResults(
-                selected
-                    ? [{ ...selected, range: undefined }]
-                    : results?.map(r => ({ ...r, range: undefined }))
-            )
-            return
-        }
-
-        // If user is typing a line range, fetch new chat context items only if there are no results
-        if (results?.length && RANGE_MATCHES_REGEXP.test(query) && !LINE_RANGE_REGEXP.test(query)) {
+        // If user has typed an incomplete range, fetch new chat context items only if there are no
+        // results.
+        const { maybeHasRangeSuffix, range } = parseMentionQuery(query, [])
+        if (results?.length && maybeHasRangeSuffix && !range) {
             return
         }
 

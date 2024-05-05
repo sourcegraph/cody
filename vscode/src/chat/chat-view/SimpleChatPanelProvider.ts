@@ -20,7 +20,6 @@ import {
     ModelProvider,
     ModelUsage,
     PromptString,
-    type RangeData,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -286,7 +285,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query, message.range)
+                await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -597,7 +596,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -625,8 +624,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder,
-                range
+                scopedTelemetryRecorder
             )
             if (cancellation.token.isCancellationRequested) {
                 return
