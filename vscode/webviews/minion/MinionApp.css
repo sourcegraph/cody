@@ -66,3 +66,8 @@
     color: var(--vscode-input-foreground);
     border: 1px solid var(--vscode-input-border);
 }
+
+.action-code-snippet {
+    max-height: 10em;
+    overflow: scroll;
+}

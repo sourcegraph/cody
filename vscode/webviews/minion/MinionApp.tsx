@@ -3,7 +3,12 @@ import type { Action, ActionStatus } from '../../src/minion/action'
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
-import { markdownCodeBlockLanguageIDForFilename, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import {
+    type RangeData,
+    markdownCodeBlockLanguageIDForFilename,
+    renderCodyMarkdown,
+} from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
 class AgentRunnerClient {
@@ -218,6 +223,12 @@ function displayInfoForAction(action: Action): ActionInfo {
     }
 }
 
+function uriRangeString(uri: URI, range: RangeData): string {
+    return `${uri.toString()}${range.start.line + 1}:${range.start.character + 1}-${
+        range.end.line + 1
+    }:${range.end.character + 1}`
+}
+
 function renderAction(action: Action, key: string): React.ReactNode {
     const { codicon, title } = displayInfoForAction(action)
     switch (action.type) {
@@ -238,14 +249,24 @@ function renderAction(action: Action, key: string): React.ReactNode {
                         const html = renderCodyMarkdown(
                             '```' + langID + '\n' + annotatedContext.text + '\n```'
                         )
+
                         return (
-                            <div key={JSON.stringify(annotatedContext)}>
-                                {/* TODO(beyang): better key */}
-                                <pre className="action-text">
-                                    {annotatedContext.source.uri.toString()}
-                                </pre>
+                            <div
+                                key={uriRangeString(
+                                    annotatedContext.source.uri,
+                                    annotatedContext.source.range
+                                )}
+                            >
+                                <div>
+                                    <a
+                                        href={annotatedContext.source.uri.toString()}
+                                        className="action-text"
+                                    >
+                                        {annotatedContext.source.uri.toString()}
+                                    </a>
+                                </div>
                                 <div
-                                    className="action-text"
+                                    className="action-code-snippet"
                                     // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                                     dangerouslySetInnerHTML={{ __html: html }}
                                 />
