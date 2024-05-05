@@ -1,4 +1,4 @@
-import type { Action } from '../../src/minion/action'
+import type { Action, ActionStatus } from '../../src/minion/action'
 
 export type MinionWebviewMessage =
     | {
@@ -9,7 +9,7 @@ export type MinionWebviewMessage =
           description: string
       }
     | {
-          type: 'ask-action-reply'
+          type: 'propose-next-action-reply'
           id: string
           action: Action
           error?: string
@@ -25,7 +25,15 @@ export type MinionExtensionMessage =
           error: string
       }
     | {
-          type: 'ask-action'
+          type: 'propose-next-action'
           id: string
           action: Action
+      }
+    | {
+          type: 'update-next-action'
+          nextAction: {
+              action: Action
+              status: Exclude<ActionStatus, 'pending' | 'completed'>
+              message: string
+          } | null
       }

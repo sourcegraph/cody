@@ -1,8 +1,12 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import type * as vscode from 'vscode'
-import type { Action } from './action'
-import { Environment } from './environment'
-import { generateQueriesSystem, generateQueriesUser } from './prompts'
+import type { Action, ActionStatus } from './action'
+import type { Environment, TextSnippet } from './environment'
+import {
+    generateQueriesSystem,
+    generateQueriesUser,
+    isRelevantSnippetSystem,
+    isRelevantSnippetUser,
+} from './prompts'
 import { extractXMLFromAnthropicResponse } from './util'
 
 interface BotMessage {
@@ -21,9 +25,10 @@ export interface Memory {
     transcript: Interaction[]
     actions: Action[]
 }
-t
+
 export interface HumanLink {
     ask(proposedAction: Action): Promise<void>
+    report(action: Action, status: Exclude<ActionStatus, 'pending'>, message: string): void
 }
 
 interface NodeArg {
@@ -33,7 +38,7 @@ interface NodeArg {
 
 interface Node {
     /**
-     * Executes the node, resulting in an action (side-effect mutation to memory) and returns
+     * Executes the node, resulting-effect mutation to memory) and returns
      * the next node or null if we are done
      */
     do(human: HumanLink, env: Environment, memory: Memory, anthropic: Anthropic): Promise<Node | null>
@@ -91,7 +96,6 @@ First, restate the task in terms of the following format:
         const message = await anthropic.messages.create({
             max_tokens: 1024,
             messages: [{ role: 'user', content: text }],
-            // model: 'claude-3-opus-20240229',
             model: 'claude-3-haiku-20240307',
         })
 
@@ -117,22 +121,25 @@ class ContextualizeNode implements Node {
         anthropic: Anthropic
     ): Promise<Node | null> {
         console.log('# waiting approval for Contextualize')
-        await human.ask({
+        const proposedAction: Action = {
             level: 0,
             type: 'contextualize',
             output: [],
-        })
+        }
+        await human.ask(proposedAction)
+        human.report(proposedAction, 'in-progress', '')
 
-        let issueDescription = undefined
+        let issueDescriptionMaybe = undefined
         for (const action of memory.actions.toReversed()) {
             if (action.type === 'restate') {
-                issueDescription = action.output
+                issueDescriptionMaybe = action.output
                 break
             }
         }
-        if (issueDescription === undefined) {
+        if (issueDescriptionMaybe === undefined) {
             throw new Error('could not find Restate in previous actions')
         }
+        const issueDescription: string = issueDescriptionMaybe
 
         // Generate symf search queries
         const system = generateQueriesSystem
@@ -142,23 +149,79 @@ class ContextualizeNode implements Node {
             messages: generateQueriesUser(issueDescription),
             model: 'claude-3-haiku-20240307',
         })
-        const rawQueries = extractXMLFromAnthropicResponse(message, 'searcQueries')
+        const rawQueries = extractXMLFromAnthropicResponse(message, 'searchQueries')
         const queries = rawQueries?.split('\n').map(line => line.split(' ').map(k => k.trim()))
 
         // Issue searches through symf
+        const allResults = []
+        for (const query of queries) {
+            const results = await env.search(query.join(' '))
+            allResults.push(...results)
+        }
+
+        console.log('# allResults', allResults)
 
         // LLM reranking
+        const allResultsRelevant = await Promise.all(
+            allResults.map(
+                async (result: TextSnippet): Promise<[TextSnippet, boolean]> => [
+                    result,
+                    await ContextualizeNode.isRelevantSnippet(issueDescription, result, anthropic),
+                ]
+            )
+        )
+        const relevantResults = allResultsRelevant
+            .filter(([_, isRelevant]) => isRelevant)
+            .map(([result]) => result)
 
-        // Memorize most relevant snippets
+        console.log('# relevantResults', relevantResults)
 
-        // Display relevant snippets with commentary
+        // Record relevant snippets as action
+        memory.actions.push({
+            level: 0,
+            type: 'contextualize',
+            output: relevantResults.map(result => ({
+                source: result.uri.path,
+                text: result.text,
+                comment: '', // TODO(beyang): annotate each snippet with commentary tying it to the issue description
+            })),
+        })
+        human.report(proposedAction, 'completed', '')
 
-        // Explain existing behavior
+        return new PlanNode()
+    }
 
-        // Propose what needs to be changed
+    private static async isRelevantSnippet(
+        taskDescription: string,
+        result: TextSnippet,
+        anthropic: Anthropic
+    ): Promise<boolean> {
+        const message = await anthropic.messages.create({
+            system: isRelevantSnippetSystem,
+            max_tokens: 4096,
+            messages: isRelevantSnippetUser(taskDescription, result.uri.path, result.text),
+            model: 'claude-3-haiku-20240307',
+        })
+        const rawShouldModify = extractXMLFromAnthropicResponse(message, 'shouldModify')
+        return rawShouldModify.toLowerCase() === 'true'
+    }
+}
 
-        console.log('# finished Contextualize!')
+class PlanNode implements Node {
+    public async do(
+        human: HumanLink,
+        env: Environment,
+        memory: Memory,
+        anthropic: Anthropic
+    ): Promise<Node | null> {
+        console.log('### running plan')
         return null
+    }
+    public getArgs(): NodeArg[] {
+        throw new Error('Method not implemented.')
+    }
+    public updateArgs(args: NodeArg[]): void {
+        throw new Error('Method not implemented.')
     }
 }
 

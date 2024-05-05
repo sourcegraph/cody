@@ -7,8 +7,8 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
-import { SymfRunner } from '../local-context/symf'
-import type { Action } from './action'
+import type { SymfRunner } from '../local-context/symf'
+import type { Action, ActionStatus } from './action'
 import { type Environment, LocalVSCodeEnvironment } from './environment'
 import type { HumanLink, Memory } from './statemachine'
 import { RestateNode, StateMachine } from './statemachine'
@@ -142,12 +142,13 @@ export class MinionController
         transcript: [],
         actions: [],
     }
+    private nextAction: (Action & { status: ActionStatus }) | undefined = undefined
     private stateMachine: StateMachine | null = null
 
     // private pendingResponseToken?: vscode.CancellationToken
 
     constructor(
-        symf: SymfRunner | null,
+        symf: SymfRunner | undefined,
         private anthropic: Anthropic,
         panel: vscode.WebviewPanel,
         assetRoot: vscode.Uri,
@@ -162,7 +163,10 @@ export class MinionController
 
     private askCallbacks: { [id: string]: (error?: string) => void } = {}
 
-    // Override for HumanLink interface
+    //
+    // Overrides for HumanLink interface
+    //
+
     public ask(proposedAction: Action): Promise<void> {
         return new Promise((resolve, reject) => {
             this._sendAsk(proposedAction, error => {
@@ -178,21 +182,33 @@ export class MinionController
     private _sendAsk(action: Action, callback: (error?: string) => void): void {
         const id = uuid.v4()
         this.askCallbacks[id] = callback
-        void this.postMessage({ type: 'ask-action', id, action })
+        void this.postMessage({ type: 'propose-next-action', id, action })
+    }
+
+    public report(action: Action, status: Exclude<ActionStatus, 'pending'>, message: string): void {
+        if (status === 'completed') {
+            this.nextAction = undefined
+            void this.postMessage({
+                type: 'update-next-action',
+                nextAction: null,
+            })
+        } else {
+            this.nextAction = { ...action, status }
+            void this.postMessage({
+                type: 'update-next-action',
+                nextAction: { action, status, message },
+            })
+        }
     }
 
     protected handleDidReceiveMessage(message: MinionWebviewMessage): void {
-        // vscode.workspace.workspaceFolders[0].uri
-        const doc = vscode.workspace.openTextDocument(vscode.Uri.parse('file:///foo/bar/baz'))
-        // doc.
-
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
             case 'start': {
                 void this.handleStart(message.description)
                 return
             }
-            case 'ask-action-reply': {
+            case 'propose-next-action-reply': {
                 if (!(message.id in this.askCallbacks)) {
                     this.postMessage({
                         type: 'display-error',

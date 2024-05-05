@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Action } from '../../src/minion/action'
+import type { Action, ActionStatus } from '../../src/minion/action'
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
@@ -7,21 +7,33 @@ import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_pro
 
 class AgentRunnerClient {
     private disposables: (() => void)[] = []
-    private updateActionHandlers: ((actions: Action[]) => void)[] = []
-    private proposeActionHandlers: ((proposalID: string, action: Action) => void)[] = []
+    private updateActionsHandlers: ((actions: Action[]) => void)[] = []
+    private updateNextActionHandlers: ((
+        nextAction: {
+            action: Action
+            status: Exclude<ActionStatus, 'completed'>
+            message?: string
+            proposalID?: string
+        } | null
+    ) => void)[] = []
 
     constructor(private vscodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtensionMessage>) {
         this.disposables.push(
             this.vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'update-actions':
-                        for (const updateActionHandler of this.updateActionHandlers) {
-                            updateActionHandler(message.actions)
+                        for (const handle of this.updateActionsHandlers) {
+                            handle(message.actions)
                         }
                         break
-                    case 'ask-action':
-                        for (const proposeActionHandler of this.proposeActionHandlers) {
-                            proposeActionHandler(message.id, message.action)
+                    case 'propose-next-action':
+                        for (const handle of this.updateNextActionHandlers) {
+                            handle({ action: message.action, status: 'pending', proposalID: message.id })
+                        }
+                        break
+                    case 'update-next-action':
+                        for (const handle of this.updateNextActionHandlers) {
+                            handle(message.nextAction)
                         }
                         break
                 }
@@ -34,24 +46,33 @@ class AgentRunnerClient {
             d()
         }
         this.disposables = []
-        this.updateActionHandlers = []
-        this.proposeActionHandlers = []
+        this.updateActionsHandlers = []
+        this.updateNextActionHandlers = []
     }
 
     public start(description: string): void {
         this.vscodeAPI.postMessage({ type: 'start', description } as any)
     }
 
-    public approveAction(id: string, action: Action): void {
-        this.vscodeAPI.postMessage({ type: 'ask-action-reply', id, action })
-    }
-
     public onUpdateActions(handler: (actions: Action[]) => void): void {
-        this.updateActionHandlers.push(handler)
+        this.updateActionsHandlers.push(handler)
     }
 
-    public onProposeAction(handler: (proposalID: string, action: Action) => void): void {
-        this.proposeActionHandlers.push(handler)
+    public onUpdateNextAction(
+        handler: (
+            nextAction: {
+                action: Action
+                status: Exclude<ActionStatus, 'completed'>
+                message?: string
+                proposalID?: string
+            } | null
+        ) => void
+    ): void {
+        this.updateNextActionHandlers.push(handler)
+    }
+
+    public approveNextAction(id: string, action: Action): void {
+        this.vscodeAPI.postMessage({ type: 'propose-next-action-reply', id, action })
     }
 }
 
@@ -120,15 +141,17 @@ const ActionBlock: React.FunctionComponent<{
 }
 
 const NextActionBlock: React.FunctionComponent<{
-    proposalID: string
     agent: AgentRunnerClient
     action: Action
+    status: ActionStatus
+    proposalID?: string
+    message?: string
     children?: React.ReactNode
-}> = ({ proposalID, agent, action, children }) => {
-    const [isInProgress, setIsInProgress] = useState(false)
-
+}> = ({ proposalID, agent, action, status, message, children }) => {
     const onApprove = useCallback(() => {
-        agent.approveAction(proposalID, action)
+        if (proposalID) {
+            agent.approveNextAction(proposalID, action)
+        }
     }, [agent, proposalID, action])
 
     const { level } = action
@@ -142,14 +165,18 @@ const NextActionBlock: React.FunctionComponent<{
             </div>
             <div className="action-body">
                 {children}
-                {!isInProgress && (
+                {(status === 'pending' && (
                     <form>
                         <label>Waiting for approval</label>
                         <button onClick={onApprove} type="button">
                             Approve
                         </button>
                     </form>
-                )}
+                )) ||
+                    (status === 'in-progress' && <div>Working...</div>) ||
+                    (status === 'failed' && <div>Failed</div>) ||
+                    (status === 'stopped' && <div>Stopped</div>)}
+                {message && <div>{message}</div>}
             </div>
         </div>
     )
@@ -201,7 +228,18 @@ function renderAction(action: Action, key: string): React.ReactNode {
             )
         }
         case 'contextualize': {
-            return <ActionBlock level={action.level} codicon={codicon} title={title} />
+            return (
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
+                    {action.output.map(annotatedContext => (
+                        <div key={JSON.stringify(annotatedContext)}>
+                            {/* TODO(beyang): better key */}
+                            <pre className="action-text">{annotatedContext.source}</pre>
+                            <pre className="action-text">{annotatedContext.text}</pre>
+                            <pre className="action-text">{annotatedContext.comment}</pre>
+                        </div>
+                    ))}
+                </ActionBlock>
+            )
         }
         case 'reproduce': {
             return <ActionBlock level={action.level} codicon={codicon} title={title} />
@@ -280,15 +318,19 @@ export const MinionApp: React.FunctionComponent<{
     }, [vscodeAPI])
 
     const [actionLog, setActionLog] = useState<Action[]>([])
-    const [nextAction, setNextAction] = useState<{ action: Action; id: string } | undefined>(undefined)
+    const [nextAction, setNextAction] = useState<{
+        action: Action
+        status: ActionStatus
+        proposalID?: string
+    } | null>(null)
     const [agent] = useState(new AgentRunnerClient(vscodeAPI))
 
     useEffect(() => {
         agent.onUpdateActions(actions => {
             setActionLog(actions)
         })
-        agent.onProposeAction((id, action) => {
-            setNextAction({ id, action })
+        agent.onUpdateNextAction(nextAction => {
+            setNextAction(nextAction)
         })
     }, [agent])
 
@@ -373,7 +415,12 @@ export const MinionApp: React.FunctionComponent<{
     let nextActionComponent = undefined
     if (nextAction) {
         nextActionComponent = (
-            <NextActionBlock agent={agent} proposalID={nextAction.id} action={nextAction.action} />
+            <NextActionBlock
+                agent={agent}
+                proposalID={nextAction.proposalID}
+                action={nextAction.action}
+                status={nextAction.status}
+            />
         )
     }
 

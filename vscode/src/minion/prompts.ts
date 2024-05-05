@@ -24,3 +24,30 @@ export function generateQueriesUser(issueDescription: string): MessageParam[] {
         },
     ]
 }
+
+export const isRelevantSnippetSystem = `
+Your job is to determine if a source file should be modified to implement a described issue. You should accept a user request in the following format:
+<issue>the description of the issue</issue>
+<file name="filename">source file contents</file>
+
+Format your response in the following format:
+<reasoning>
+Explain why or why not the file is relevant to the issue, breaking down your thought process and referencing specific symbols in the source file. Most files will not be relevant to the specified issue.
+</reasoning>
+<shouldModify>true or false</shouldModify>`.trimStart()
+
+export function isRelevantSnippetUser(
+    taskDescription: string,
+    filename: string,
+    blob: string
+): MessageParam[] {
+    const text = `
+<issue>${taskDescription}</issue>
+<file name="${filename}">${blob}</file>`.trimStart()
+    return [
+        {
+            role: 'user',
+            content: text,
+        },
+    ]
+}

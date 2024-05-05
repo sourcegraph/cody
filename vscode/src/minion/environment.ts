@@ -26,7 +26,7 @@ export interface Environment {
 export class LocalVSCodeEnvironment implements Environment {
     constructor(
         public readonly rootURIs: vscode.Uri[],
-        private symf: SymfRunner | null
+        private symf: SymfRunner | undefined
     ) {}
 
     terminal(text: string, shouldExecute?: boolean | undefined): Promise<string> {

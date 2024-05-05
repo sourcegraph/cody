@@ -65,3 +65,5 @@ export type ActionL0 = { level: 0 } & (
 )
 
 export type Action = ActionL0 | ActionL1
+
+export type ActionStatus = 'pending' | 'in-progress' | 'stopped' | 'completed' | 'failed'

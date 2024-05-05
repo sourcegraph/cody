@@ -5,7 +5,7 @@ import { MinionController, ReactPanelController } from './MinionController'
 
 export async function createNewMinionPanel(
     extensionUri: vscode.Uri,
-    symf: SymfRunner | null
+    symf: SymfRunner | undefined
 ): Promise<void> {
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     const panel = vscode.window.createWebviewPanel(
