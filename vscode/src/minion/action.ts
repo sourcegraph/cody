@@ -1,6 +1,12 @@
+import type { RangeData } from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
+
 export interface AnnotatedContext {
     text: string
-    source: string
+    source: {
+        uri: URI
+        range: RangeData
+    }
     comment: string
 }
 

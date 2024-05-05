@@ -1,10 +1,10 @@
-import { PromptString, type Result } from '@sourcegraph/cody-shared'
+import { PromptString, type RangeData, type Result } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { SymfRunner } from '../local-context/symf'
 
 export interface TextSnippet {
     uri: vscode.Uri
-    range: vscode.Range
+    range: RangeData
     text: string
 }
 
@@ -40,16 +40,21 @@ export class LocalVSCodeEnvironment implements Environment {
         const queryPromptString = PromptString.unsafe_fromUserQuery(query)
         const resultsAcrossRoots = await this.symf.getResults(queryPromptString, this.rootURIs)
         const results: Result[] = (await Promise.all(resultsAcrossRoots)).flatMap(r => r)
+        console.log('### symf results for query', query, results)
         return await Promise.all(
             results.map(async ({ file, range: { startPoint, endPoint } }): Promise<TextSnippet> => {
-                const range = new vscode.Range(
+                const range: RangeData = {
+                    start: { line: startPoint.row, character: startPoint.col },
+                    end: { line: endPoint.row, character: endPoint.col },
+                }
+                const vscodeRange = new vscode.Range(
                     startPoint.row,
                     startPoint.col,
                     endPoint.row,
                     endPoint.col
                 )
                 const td = await vscode.workspace.openTextDocument(file)
-                const text = td.getText(range)
+                const text = td.getText(vscodeRange)
                 return {
                     uri: file,
                     range,

@@ -180,11 +180,18 @@ class ContextualizeNode implements Node {
         memory.actions.push({
             level: 0,
             type: 'contextualize',
-            output: relevantResults.map(result => ({
-                source: result.uri.path,
-                text: result.text,
-                comment: '', // TODO(beyang): annotate each snippet with commentary tying it to the issue description
-            })),
+            output: relevantResults.map(result => {
+                // highlightCodeSafe
+                // renderMarkdown
+                return {
+                    source: {
+                        uri: result.uri,
+                        range: result.range,
+                    },
+                    text: result.text,
+                    comment: '', // TODO(beyang): annotate each snippet with commentary tying it to the issue description
+                }
+            }),
         })
         human.report(proposedAction, 'completed', '')
 

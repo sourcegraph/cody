@@ -29,7 +29,7 @@ interface Point {
     col: number
 }
 
-export interface Range {
+interface Range {
     startByte: number
     endByte: number
     startPoint: Point

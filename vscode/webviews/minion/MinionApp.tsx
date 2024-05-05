@@ -3,6 +3,7 @@ import type { Action, ActionStatus } from '../../src/minion/action'
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
+import { markdownCodeBlockLanguageIDForFilename, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
 class AgentRunnerClient {
@@ -230,14 +231,28 @@ function renderAction(action: Action, key: string): React.ReactNode {
         case 'contextualize': {
             return (
                 <ActionBlock level={action.level} codicon={codicon} title={title}>
-                    {action.output.map(annotatedContext => (
-                        <div key={JSON.stringify(annotatedContext)}>
-                            {/* TODO(beyang): better key */}
-                            <pre className="action-text">{annotatedContext.source}</pre>
-                            <pre className="action-text">{annotatedContext.text}</pre>
-                            <pre className="action-text">{annotatedContext.comment}</pre>
-                        </div>
-                    ))}
+                    {action.output.map(annotatedContext => {
+                        const langID = markdownCodeBlockLanguageIDForFilename(
+                            annotatedContext.source.uri
+                        )
+                        const html = renderCodyMarkdown(
+                            '```' + langID + '\n' + annotatedContext.text + '\n```'
+                        )
+                        return (
+                            <div key={JSON.stringify(annotatedContext)}>
+                                {/* TODO(beyang): better key */}
+                                <pre className="action-text">
+                                    {annotatedContext.source.uri.toString()}
+                                </pre>
+                                <div
+                                    className="action-text"
+                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+                                    dangerouslySetInnerHTML={{ __html: html }}
+                                />
+                                <pre className="action-text">{annotatedContext.comment}</pre>
+                            </div>
+                        )
+                    })}
                 </ActionBlock>
             )
         }
