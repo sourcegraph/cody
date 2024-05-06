@@ -13,6 +13,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Chat: Fixed a bug where the entire Cody chat view would appear blank. [pull/4062](https://github.com/sourcegraph/cody/pull/4062)
+
 ### Changed
 
 - Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
