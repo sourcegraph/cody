@@ -116,7 +116,25 @@ After doing that:
 
 ## Publishing a New Release
 
-We plan to make releases every other Monday. Nightly version can be released as often as there is a need.
+
+```mermaid
+graph TD;
+    Title["JetBrains plugin release"] --> stable;
+    Title --> nightly;
+    stable --> push_stable["push git tag"];
+    push_stable --> release_job_stable["wait for release job to complete"];
+    release_job_stable --> marketplace_approval["wait for marketplace approval"];
+    marketplace_approval -->|Automated approval, up to 48hr| unhide["unhide"];
+    unhide --> available_to_end_users_stable["available for download"];
+    marketplace_approval -->|Manual quick-approve| slack_approval["request JetBrains Marketplace team to manually approve update via Slack"];
+    slack_approval --> unhide["unhide approved release (requires admin access)"];
+    nightly --> push_nightly["push git tag\nwith '-nightly' suffix"];
+    push_nightly --> release_job_nightly["wait for release job to complete"];
+    release_job_nightly --> available_to_end_users_nightly["available for download"];
+```
+
+We aim to cut a new Stable release every other week on Mondays.
+The release cadence is irregular for Nightly versions.
 
 ### 1. Push a Git Tag
 
@@ -148,7 +166,12 @@ After successfully pushing the new tag (for example: `v5.2.4819` or `v5.2.4249-n
 
 Wait for the `Release to Marketplace` GitHub workflow to complete.
 
-### 2. Publish a New Release on GitHub
+### 2. For Stable releases, wait for Marketplace approval
+
+It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
+It's possible to expedite this process by posting a message in the `#marketplace` channel in the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
+
+### 3. Publish a New Release on GitHub
 
 For every stable release, create a GitHub release summarizing the changes.
 
@@ -162,10 +185,11 @@ to [our first release](https://github.com/sourcegraph/jetbrains/releases/tag/v5.
 
 It's also optional create GitHub releases for nightly builds where it makes sense.
 
-### 3. Announce the New Release on our internal Slack channel
+### 4. Announce the New Release on our internal Slack channel
 
-It is mandatory to post about both stable and nightly releases on our internal `wg-cody-jetbrains` Slack channel. You
-can refer to past posts in the channel's history for examples.
+It is mandatory to post about both stable and nightly releases on our internal
+`#team-cody-clients` Slack channel. You can refer to past posts in the channel's
+history for examples.
 
 ## Enabling web view debugging
 
