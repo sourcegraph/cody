@@ -2,6 +2,7 @@ package com.sourcegraph.cody.edit.sessions
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -49,7 +50,8 @@ import kotlin.io.path.toPath
 
 /**
  * Common functionality for commands that let the agent edit the code inline, such as adding a doc
- * string, or fixing up a region according to user instructions.
+ * string, or fixing up a region according to user instructions. Instances of this class map 1:1
+ * with FixupTask instances in the Agent.
  */
 abstract class FixupSession(
     val controller: FixupService,
@@ -68,11 +70,16 @@ abstract class FixupSession(
 
   var selectionRange: Range? = null
 
+  // The prompt that the Agent used for this task. For Edit, it's the same as
+  // the most recent prompt the user sent, which we already have. But for Document Code,
+  // it enables us to show the user what we sent and let them hand-edit it.
+  var instruction: String? = null
+
   private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
 
   init {
     triggerFixupAsync()
-    ApplicationManager.getApplication().invokeLater { Disposer.register(controller, this) }
+    runInEdt { Disposer.register(controller, this) }
   }
 
   private val document
@@ -139,6 +146,7 @@ abstract class FixupSession(
   }
 
   fun update(task: EditTask) {
+    task.instruction?.let { instruction = it }
     when (task.state) {
       // This is an internal state (parked/ready tasks) and we should never see it.
       CodyTaskState.Idle -> {}
@@ -208,7 +216,7 @@ abstract class FixupSession(
     } catch (x: Exception) {
       logger.debug("Session cleanup error", x)
     }
-    ApplicationManager.getApplication().invokeLater {
+    runInEdt {
       try { // Disposing inlay requires EDT.
         Disposer.dispose(this)
       } catch (x: Exception) {
@@ -239,15 +247,14 @@ abstract class FixupSession(
   }
 
   fun retry() {
-    // TODO: The actual prompt we sent is displayed as ghost text in the text input field, in VS
-    // Code.
-    // E.g. "Write a brief documentation comment for the selected code <etc.>"
-    // We need to send the prompt along with the lenses, so that the client can display it.
+    val instruction = instruction
+    undo()
+    // Don't queue this up until undo() finishes above, so that the scrolling is
+    // finished before we open this dialog (or it will immediately close).
     ApplicationManager.getApplication().invokeLater {
-      // This starts an entirely new session, independent of this one.
-      EditCommandPrompt(controller, editor, "Edit instructions and Retry")
+      // This starts a brand-new session; the Edit dialog remembers your last prompt.
+      EditCommandPrompt(controller, editor, "Edit instructions and Retry", instruction)
     }
-    controller.cancelActiveSession()
   }
 
   // Action handler for FixupSession.ACTION_UNDO.
@@ -310,7 +317,7 @@ abstract class FixupSession(
 
     CodyAgentService.withAgent(project) { agent ->
       ensureSelectionRange(agent, textFile)
-      ApplicationManager.getApplication().invokeLater { showWorkingGroup() }
+      runInEdt { showWorkingGroup() }
     }
   }
 
@@ -365,8 +372,25 @@ abstract class FixupSession(
 
   private fun undoEdits() {
     if (project.isDisposed) return
-    WriteCommandAction.runWriteCommandAction(project) {
-      performedActions.reversed().forEach { it.undo() }
+
+    // Scroll back to starting position, since Undo puts us at top of document.
+    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+    val document = editor.document
+    val currentOffset = editor.caretModel.offset
+    val lineStartOffset = document.getLineStartOffset(document.getLineNumber(currentOffset))
+
+    try {
+      WriteCommandAction.runWriteCommandAction(project) {
+        performedActions.reversed().forEach { it.undo() }
+      }
+    } finally {
+      // Queue this up and don't execute immediately (don't use runInEdt).
+      ApplicationManager.getApplication().invokeLater {
+        val validOffset = minOf(lineStartOffset, document.textLength)
+        val validPosition = editor.offsetToLogicalPosition(validOffset)
+        editor.caretModel.moveToLogicalPosition(validPosition)
+        editor.scrollingModel.scrollTo(validPosition, ScrollType.CENTER)
+      }
     }
   }
 

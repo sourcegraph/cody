@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.ui
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.edit.EditUtil
@@ -176,7 +177,7 @@ class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : 
       else -> {}
     }
 
-    SwingUtilities.invokeLater { frame.setSize(newWidth, newHeight) }
+    runInEdt { frame.setSize(newWidth, newHeight) }
     lastMouseX = newX
     lastMouseY = newY
     lastUpdateTime = currentTime
@@ -187,7 +188,7 @@ class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : 
     if (currentTime - lastUpdateTime > 16) { // about 60 fps
       val x: Int = e.xOnScreen
       val y: Int = e.yOnScreen
-      SwingUtilities.invokeLater {
+      runInEdt {
         frame.rootPane?.let { rootPane ->
           UIUtil.getLocationOnScreen(rootPane)?.let { loc ->
             frame.setLocation(loc.x + x - lastMouseX, loc.y + y - lastMouseY)

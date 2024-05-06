@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.edit.widget
 
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import java.awt.FontMetrics
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
@@ -22,7 +22,7 @@ class LensSpinner(group: LensWidgetGroup, private val icon: Icon) : LensWidget(g
       }
 
   init {
-    ApplicationManager.getApplication().invokeLater { start() }
+    runInEdt { start() }
   }
 
   fun start() {
