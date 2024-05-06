@@ -144,6 +144,10 @@ export enum TriggerKind {
     SuggestWidget = 'SuggestWidget',
 }
 
+export function allTriggerKinds(): TriggerKind[] {
+    return [TriggerKind.Automatic, TriggerKind.Hover, TriggerKind.Manual, TriggerKind.SuggestWidget]
+}
+
 export async function getInlineCompletions(
     params: InlineCompletionsParams
 ): Promise<InlineCompletionsResult | null> {
