@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItems } from '../chat/chat-view/agentContextSorting'
-import { isUniqueContextItem } from './unique-context'
+import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
@@ -127,14 +127,14 @@ export class PromptBuilder {
                 continue
             }
 
-            // Skip duplicated or invalid items before updating the token usage.
-            if (!isUniqueContextItem(newContextItem, this.contextItems)) {
-                continue
-            }
-
             // Assistant messages come first because the transcript is in reversed order
             const contextMessage = isContextItem(item) ? renderContextItem(item) : item
             if (!contextMessage) {
+                continue
+            }
+
+            // Skip duplicated or invalid items before updating the token usage.
+            if (!isUniqueContextItem(newContextItem, this.contextItems)) {
                 continue
             }
 
@@ -155,7 +155,10 @@ export class PromptBuilder {
                 continue
             }
 
+            // Add the new context item to the list,
             this.contextItems.push(newContextItem)
+            // Remove any non-unique items that are no longer needed.
+            this.contextItems = getUniqueContextItems(this.contextItems)
         }
 
         return result
