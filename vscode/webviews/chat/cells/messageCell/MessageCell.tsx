@@ -6,7 +6,7 @@ import {
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type { ComponentProps, FunctionComponent } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../Chat'
 import { serializedPromptEditorStateFromChatMessage } from '../../../promptEditor/PromptEditor'
@@ -71,13 +71,13 @@ export const MessageCell: FunctionComponent<{
                 <SpeakerIcon message={message} userInfo={userInfo} chatModel={chatModel} size={24} />
             }
             disabled={disabled}
-            containerClassName={classNames(styles.cellContainer, {
+            containerClassName={clsx(styles.cellContainer, {
                 [styles.focused]: isItemBeingEdited,
                 [styles.disabled]: disabled,
             })}
             data-testid="message"
         >
-            <div className={classNames(message.speaker === 'human' && styles.humanMessageContainer)}>
+            <div className={clsx(message.speaker === 'human' && styles.humanMessageContainer)}>
                 <div className={styles.messageContent}>
                     {message.error ? (
                         typeof message.error === 'string' ? (

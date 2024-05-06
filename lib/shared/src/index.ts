@@ -66,6 +66,8 @@ export {
     type ContextItemMixin,
     type ContextItemType,
     type ContextItemPackage,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -82,7 +84,7 @@ export {
     DefaultChatCommands,
     DefaultEditCommands,
 } from './commands/types'
-export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export { dedupeWith, isDefined, isErrorLike, pluralize, unhandledSwitchCase } from './common'
 export {
     ProgrammingLanguage,
     extensionForLanguage,
@@ -259,6 +261,7 @@ export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextMentionProviderInformation,
+    type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -277,3 +280,9 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export * from './githubClient'
+export {
+    setOpenCtxExtensionAPI,
+    getOpenCtxExtensionAPI,
+    type OpenCtxExtensionAPI,
+} from './context/openctx/api'

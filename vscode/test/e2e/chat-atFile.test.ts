@@ -509,8 +509,8 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press(`${metaKey}+Shift+P`)
     const commandPaletteInputBox = page.getByPlaceholder('Type the name of a command to run.')
     await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>Cody Chat: Add context')
-    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await commandPaletteInputBox.fill('>New Chat with Selection')
+    await page.locator('a').filter({ hasText: 'New Chat with Selection' }).click()
 
     // Verify the chat input has the selected code as an @-mention item
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -525,8 +525,8 @@ test.extend<ExpectedEvents>({
     await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
     await page.keyboard.press(`${metaKey}+Shift+P`)
     await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>Cody Chat: Add context')
-    await page.locator('a').filter({ hasText: 'Cody Chat: Add context' }).click()
+    await commandPaletteInputBox.fill('>Add Selection to Cody Chat')
+    await page.locator('a').filter({ hasText: 'Add Selection to Cody Chat' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
 })
 

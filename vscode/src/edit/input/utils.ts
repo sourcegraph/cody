@@ -23,23 +23,28 @@ export function removeAfterLastAt(str: string): string {
  * Includes the file path and an optional range or symbol specifier.
  */
 export function getLabelForContextItem(item: ContextItem): string {
-    if (item.type === 'package') {
-        return `${item.ecosystem}:${item.name}`
-    }
+    switch (item.type) {
+        case 'package':
+            return `${item.ecosystem}:${item.name}`
+        case 'file':
+            if (item.title) {
+                return `Add context from: ${item.title}`
+            }
 
-    const isFileType = item.type === 'file'
-    const isMixinType = item.type === 'mixin'
-    if (isMixinType) {
-        return `Inject prompt from: ${item.title}`
+            {
+                const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
+                return `${displayPath(item.uri)}${rangeLabel}`
+            }
+        case 'symbol': {
+            const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
+            return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
+        }
+        case 'mixin': {
+            return `Inject prompt from: ${item.title}`
+        }
+        default:
+            throw new Error(`getLableForContextItem Error: Unexpected type ${item.type}`)
     }
-    if (isFileType && item.title) {
-        return `Add context from: ${item.title}`
-    }
-    const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
-    if (isFileType) {
-        return `${displayPath(item.uri)}${rangeLabel}`
-    }
-    return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
 }
 
 /**

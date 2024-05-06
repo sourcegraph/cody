@@ -1,8 +1,8 @@
 import type { ChatMessage, ModelProvider } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import type { UserAccountInfo } from '../../../Chat'
-import { chatModelIconComponent } from '../../../Components/ChatModelIcon'
-import { UserAvatar } from '../../../Components/UserAvatar'
+import { chatModelIconComponent } from '../../../components/ChatModelIcon'
+import { UserAvatar } from '../../../components/UserAvatar'
 
 /**
  * A component that shows the user's avatar for human messages and the LLM's icon for assistant

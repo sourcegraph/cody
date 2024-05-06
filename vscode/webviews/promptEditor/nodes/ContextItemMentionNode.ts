@@ -4,11 +4,14 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextItemMixin,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
     displayPath,
+    unhandledSwitchCase,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 import {
@@ -39,6 +42,8 @@ export type SerializedContextItem = {
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemMixin, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
+    | Omit<ContextItemGithubIssue, 'uri' | 'content'>
+    | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -185,7 +190,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // A displayed range of `foo.txt:2-4` means "include all of lines 2, 3, and 4", which means the
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
-    const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
+    const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
     switch (contextItem.type) {
         case 'file': {
             if (contextItem.provider && contextItem.title) {
@@ -203,16 +208,20 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'package': {
             return `@${contextItem.ecosystem}:${contextItem.name}`
         }
+        case 'github_pull_request': {
+            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
+        }
+        case 'github_issue': {
+            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+        }
         default: {
-            unhandledContextItem(contextItem)
+            unhandledSwitchCase<ContextItem>(contextItem, t => {
+                throw new Error(`unrecognized context item type ${t.type}`)
+            })
         }
     }
 }
 //this ensures exhaustive switch so that all context items are handled at compile time
-function unhandledContextItem(t: never): never
-function unhandledContextItem(t: SerializedContextItem) {
-    throw new Error(`unrecognized context item type ${t.type}`)
-}
 
 export function $createContextItemMentionNode(
     contextItem: ContextItem | SerializedContextItem

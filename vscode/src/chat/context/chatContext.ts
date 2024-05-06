@@ -1,6 +1,7 @@
 import {
     CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
+    type ContextItemProps,
     type ContextMentionProvider,
     type ContextMentionProviderInformation,
     type MentionQuery,
@@ -12,6 +13,7 @@ import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
+    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
@@ -55,10 +57,13 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
+            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
+
             for (const provider of getEnabledContextMentionProviders()) {
                 if (provider.id === query.provider) {
                     return provider.queryContextItems(
                         query.text,
+                        props,
                         convertCancellationTokenToAbortSignal(cancellationToken)
                     )
                 }
@@ -97,7 +102,6 @@ export function getMentionProvidersForMention(
         }
         providerInformation.push({ id, icon, description, triggerPrefixes })
     }
-    console.log(mentionQuery)
     return providerInformation
 }
 
@@ -112,16 +116,19 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
     const isPackageProviderEnabled =
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
+    //TODO(rnauta): const isMentionProviderEnabled
+    const isMixinProviderEnabled =
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.mixinContext') === true
 
     if (isURLProviderEnabled || isPackageProviderEnabled) {
         return CONTEXT_MENTION_PROVIDERS.filter(
             provider =>
                 (isURLProviderEnabled && provider.id === 'url') ||
-                (isPackageProviderEnabled && provider.id === 'package')
+                (isPackageProviderEnabled && provider.id === 'package') ||
+                (isMixinProviderEnabled && provider.id === 'mixin')
         )
     }
 
-    //TODO(rnauta): const isMentionProviderEnabled
     return []
 }
 

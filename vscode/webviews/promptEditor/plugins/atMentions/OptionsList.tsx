@@ -2,6 +2,8 @@ import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextItemMixin,
     type ContextItemSymbol,
     type MentionQuery,
@@ -12,8 +14,9 @@ import {
     displayPathDirname,
     isDefined,
     parseMentionQuery,
+    unhandledSwitchCase,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
@@ -53,7 +56,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={clsx(styles.item, styles.helpItem)}>
                 <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
@@ -132,15 +135,8 @@ const FileItem: FunctionComponent<ItemProps<ContextItemFile>> = ({
     const title = item.title ?? displayPathBasename(item.uri)
 
     const range = getLineRangeInMention(query, item.range)
-    const dir = displayPathDirname(item.uri)
+    const dir = decodeURIComponent(displayPathDirname(item.uri))
     const description = `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-    // =======
-    //     const isFileType = item.type === 'file'
-    //     const isPackageType = item.type === 'package'
-    //     const icon =
-    //         isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    //     const title =
-    //         item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
 
     //     const range = getLineRangeInMention(query, item.range)
     //     const dir = decodeURIComponent(displayPathDirname(item.uri))
@@ -160,7 +156,7 @@ const FileItem: FunctionComponent<ItemProps<ContextItemFile>> = ({
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(
+            className={clsx(
                 className,
                 styles.optionItem,
                 isSelected && styles.selected,
@@ -175,7 +171,7 @@ const FileItem: FunctionComponent<ItemProps<ContextItemFile>> = ({
         >
             <div className={styles.optionItemRow}>
                 <span
-                    className={classNames(
+                    className={clsx(
                         styles.optionItemTitle,
                         warning && styles.optionItemTitleWithWarning
                     )}
@@ -208,7 +204,7 @@ const SymbolItem: FunctionComponent<ItemProps<ContextItemSymbol>> = ({
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            className={clsx(className, styles.optionItem, isSelected && styles.selected)}
             ref={option.setRefElement}
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"
@@ -219,7 +215,7 @@ const SymbolItem: FunctionComponent<ItemProps<ContextItemSymbol>> = ({
             <div className={styles.optionItemRow}>
                 icon && (
                 <i className={`codicon codicon-${icon}`} title={item.kind} />)
-                <span className={classNames(styles.optionItemTitle)}>{title}</span>
+                <span className={clsx(styles.optionItemTitle)}>{title}</span>
                 {description && <span className={styles.optionItemDescription}>{description}</span>}
             </div>
         </li>
@@ -249,7 +245,7 @@ const MixinItem: FunctionComponent<ItemProps<ContextItemMixin>> = ({
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            className={clsx(className, styles.optionItem, isSelected && styles.selected)}
             ref={option.setRefElement}
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"
@@ -259,12 +255,39 @@ const MixinItem: FunctionComponent<ItemProps<ContextItemMixin>> = ({
         >
             <div className={styles.optionItemRow}>
                 {icon}
-                <span className={classNames(styles.optionItemTitle)}>{title}</span>
+                <span className={clsx(styles.optionItemTitle)}>{title}</span>
                 {description && <span className={styles.optionItemDescription}>{description}</span>}
             </div>
         </li>
     )
 }
+
+const GithubItem: FunctionComponent<ItemProps<ContextItemGithubIssue | ContextItemGithubPullRequest>> =
+    ({ query, option, className, isSelected, onMouseEnter, onClick }) => {
+        const item = option.item
+        const title = item.title ?? displayPathBasename(item.uri)
+        const description = `${item.owner}/${item.repoName}`
+
+        return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents:
+            <li
+                key={option.key}
+                tabIndex={-1}
+                className={clsx(className, styles.optionItem, isSelected && styles.selected)}
+                ref={option.setRefElement}
+                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
+                role="option"
+                aria-selected={isSelected}
+                onMouseEnter={onMouseEnter}
+                onClick={onClick}
+            >
+                <div className={styles.optionItemRow}>
+                    <span className={clsx(styles.optionItemTitle)}>{title}</span>
+                    {description && <span className={styles.optionItemDescription}>{description}</span>}
+                </div>
+            </li>
+        )
+    }
 
 const Item: FunctionComponent<ItemProps<ContextItem>> = props => {
     const item = props.option.item
@@ -280,68 +303,19 @@ const Item: FunctionComponent<ItemProps<ContextItem>> = props => {
             return <MixinItem {...(props as ItemProps<ContextItemMixin>)} />
         case 'package':
             return <></>
+        case 'github_issue':
+        case 'github_pull_request':
+            return (
+                <GithubItem
+                    {...(props as ItemProps<ContextItemGithubIssue | ContextItemGithubPullRequest>)}
+                />
+            )
         default:
-            //ensures exhaustive switch
-            return unhandledContextItemType(item)
+            return unhandledSwitchCase<ContextItem>(item, () => <></>)
     }
-    // const item = option.item
-    // const isFileType = item.type === 'file'
-    // const icon = isFileType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    // const title = item.title ?? (isFileType ? displayPathBasename(item.uri) : item.symbolName)
-
-    // const range = getLineRangeInMention(query, item.range)
-    // const dir = displayPathDirname(item.uri)
-    // const description = isFileType
-    //     ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-    //     : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
-
-    // const isLargeFile = isFileType && item.isTooLarge
-    // const warning =
-    //     isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
-
-    // return (
-    //     // biome-ignore lint/a11y/useKeyWithClickEvents:
-    //     <li
-    //         key={option.key}
-    //         tabIndex={-1}
-    //         className={classNames(
-    //             className,
-    //             styles.optionItem,
-    //             isSelected && styles.selected,
-    //             warning && styles.disabled
-    //         )}
-    //         ref={option.setRefElement}
-    //         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
-    //         role="option"
-    //         aria-selected={isSelected}
-    //         onMouseEnter={onMouseEnter}
-    //         onClick={onClick}
-    //     >
-    //         <div className={styles.optionItemRow}>
-    //             {item.type === 'symbol' && icon && (
-    //                 <i className={`codicon codicon-${icon}`} title={item.kind} />
-    //             )}
-    //             <span
-    //                 className={classNames(
-    //                     styles.optionItemTitle,
-    //                     warning && styles.optionItemTitleWithWarning
-    //                 )}
-    //             >
-    //                 {title}
-    //             </span>
-    //             {description && <span className={styles.optionItemDescription}>{description}</span>}
-    //         </div>
-    //         {warning && <span className={styles.optionItemWarning}>{warning}</span>}
-    //     </li>
-    // )
 }
 
 // ensures exhaustive switch
-function unhandledContextItemType(t: never): never
-function unhandledContextItemType(t: ContextItem) {
-    //render nothing
-    return <></>
-}
 
 interface MentionProviderProps {
     query: string
@@ -364,7 +338,7 @@ const MentionProvider: FunctionComponent<MentionProviderProps> = ({
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(className, styles.optionItem, isSelected && styles.selected)}
+            className={clsx(className, styles.optionItem, isSelected && styles.selected)}
             ref={option.setRefElement}
             // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
             role="option"
@@ -374,7 +348,7 @@ const MentionProvider: FunctionComponent<MentionProviderProps> = ({
         >
             <div className={styles.optionItemRow}>
                 <i className={`codicon codicon-${provider.icon}`} title={provider.id} />
-                <span className={classNames(styles.optionItemTitle)}>{provider.triggerPrefixes[0]}</span>
+                <span className={clsx(styles.optionItemTitle)}>{provider.triggerPrefixes[0]}</span>
                 <span className={styles.optionItemDescription}>
                     {provider.description ?? 'No description'}
                 </span>

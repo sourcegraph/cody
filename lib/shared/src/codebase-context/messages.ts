@@ -87,18 +87,83 @@ export enum ContextItemSource {
 
     /** From a package repository */
     Package = 'package',
+
+    /** From source control history */
+    History = 'history',
+
+    /** From Github API */
+    Github = 'github',
 }
 
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
 
-export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemPackage | ContextItemMixin
-
+export type ContextItem =
+    | ContextItemFile
+    | ContextItemSymbol
+    | ContextItemPackage
+    | ContextItemGithubPullRequest
+    | ContextItemGithubIssue
+    | ContextItemMixin
 export type ContextItemType = ContextItem['type']
 
 /**
- * A file (or a subset of a file given by a range) that is included as context in a chat message.
+ * A Github pull request that is included as context in a chat message.
+ */
+export interface ContextItemGithubPullRequest extends ContextItemCommon {
+    type: 'github_pull_request'
+
+    /**
+     * the owner of the repository.
+     */
+    owner: string
+
+    /**
+     * the name of the repository.
+     */
+    repoName: string
+
+    /**
+     *  the number for this pull request.
+     */
+    pullNumber: number
+
+    /**
+     * the title of this pull request.
+     */
+    title: string
+}
+
+/**
+ * A Github issue that is included as context in a chat message.
+ */
+export interface ContextItemGithubIssue extends ContextItemCommon {
+    type: 'github_issue'
+
+    /**
+     * the owner of the repository.
+     */
+    owner: string
+
+    /**
+     * the name of the repository.
+     */
+    repoName: string
+
+    /**
+     *  the number for this issue.
+     */
+    issueNumber: number
+
+    /**
+     * the title of this issue.
+     */
+    title: string
+}
+
+/**
+ * A package repository that is included as context in a chat message.
  */
 export interface ContextItemPackage extends ContextItemCommon {
     type: 'package'

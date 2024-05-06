@@ -12,6 +12,14 @@ export const isErrorLike = (value: unknown): value is ErrorLike =>
     !('__typename' in value)
 
 /**
+ * Can be used for exhaustive typechecks in switch cases.
+ */
+export function unhandledSwitchCase<T, R = any>(t: never, errFn: (t: T) => R): never
+export function unhandledSwitchCase<T, R = any>(t: T, errFn: (t: T) => R) {
+    return errFn(t)
+}
+
+/**
  * Returns true if `val` is not `null` or `undefined`
  */
 export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null

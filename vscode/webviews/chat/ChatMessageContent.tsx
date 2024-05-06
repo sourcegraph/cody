@@ -11,7 +11,7 @@ import {
     ShieldIcon,
 } from '../icons/CodeBlockActionIcons'
 
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import styles from './ChatMessageContent.module.css'
 
 export interface CodeBlockActionsProps {
@@ -319,7 +319,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     return (
         <div
             ref={rootRef}
-            className={classNames(styles.content, className)}
+            className={clsx(styles.content, className)}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
             dangerouslySetInnerHTML={{
                 // wrapLinksWithCodyCommand opens all links in assistant responses using the

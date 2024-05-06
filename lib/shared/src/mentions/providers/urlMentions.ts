@@ -11,7 +11,7 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
      * Given a possibly incomplete URL from user input (that the user may be typing), return context
      * items from fetching the URL and extracting its text content.
      */
-    async queryContextItems(query, signal) {
+    async queryContextItems(query, _, signal) {
         const url = tryParsePossiblyIncompleteURL(query)
         if (url === null) {
             return []
