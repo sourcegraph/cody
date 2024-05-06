@@ -27,9 +27,7 @@ class CommandPanelIgnoreBanner() : NonOpaquePanel() {
 
     // These colors cribbed from EditorComposite, createTopBottomSideBorder
     val scheme = EditorColorsManager.getInstance().globalScheme
-    val borderColor =
-        scheme.getColor(EditorColors.SEPARATOR_ABOVE_COLOR)
-            ?: scheme.getColor(EditorColors.TEARLINE_COLOR)
+    val borderColor = scheme.getColor(EditorColors.TEARLINE_COLOR)
     border = SideBorder(borderColor, SideBorder.TOP or SideBorder.BOTTOM)
   }
 
