@@ -25,7 +25,7 @@ class CodyCaretListener(val project: Project) : CaretListener {
 
     ProtocolTextDocument.fromEditor(e.editor)?.let { textDocument ->
       CodyAgentService.withAgent(project) { agent: CodyAgent ->
-        agent.server.textDocumentDidFocus(textDocument)
+        agent.server.textDocumentDidChange(textDocument)
       }
     }
 
