@@ -11,6 +11,7 @@ import {
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
+    githubClient,
     graphqlClient,
     newPromptMixin,
     setLogger,
@@ -39,6 +40,7 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -149,6 +151,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
+
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
@@ -181,6 +184,7 @@ const register = async (
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
+    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -260,6 +264,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(bindedRepoNamesResolver)
@@ -390,12 +395,43 @@ const register = async (
         )
     )
 
+    // Internal-only test commands
+    if (isExtensionModeDevOrTest) {
+        await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
+        disposables.push(
+            vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
+                // Prompt the user for the policy
+                const raw = await vscode.window.showInputBox({ title: 'Context Filters Overwrite' })
+                if (!raw) {
+                    return
+                }
+                try {
+                    const policy = JSON.parse(raw)
+                    contextFiltersProvider.setTestingContextFilters(policy)
+                } catch (error) {
+                    vscode.window.showErrorMessage(
+                        'Failed to parse context filters policy. Please check your JSON syntax.'
+                    )
+                }
+            })
+        )
+    }
+
+    if (commandsManager !== undefined) {
+        disposables.push(
+            vscode.commands.registerCommand('cody.command.explain-history', a =>
+                executeExplainHistoryCommand(commandsManager, a)
+            )
+        )
+    }
+
     disposables.push(
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
         ),
+
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),

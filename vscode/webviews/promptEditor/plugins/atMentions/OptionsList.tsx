@@ -8,7 +8,7 @@ import {
     displayPathDirname,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
@@ -44,7 +44,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={clsx(styles.item, styles.helpItem)}>
                 <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
@@ -94,6 +94,21 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
     }
 }
 
+function getDescription(item: MentionTypeaheadOption['item'], query: string): string {
+    switch (item.type) {
+        case 'github_issue':
+        case 'github_pull_request':
+            return `${item.owner}/${item.repoName}`
+        case 'file': {
+            const range = getLineRangeInMention(query, item.range)
+            const dir = decodeURIComponent(displayPathDirname(item.uri))
+            return `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+        }
+        default:
+            return `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+    }
+}
+
 const Item: FunctionComponent<{
     query: string
     isSelected: boolean
@@ -104,19 +119,10 @@ const Item: FunctionComponent<{
 }> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const isFileType = item.type === 'file'
-    const isPackageType = item.type === 'package'
-    const icon =
-        isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title =
-        item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
-
-    const range = getLineRangeInMention(query, item.range)
-    const dir = decodeURIComponent(displayPathDirname(item.uri))
-    const description = isPackageType
-        ? ''
-        : isFileType
-          ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-          : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+    const isSymbol = item.type === 'symbol'
+    const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
+    const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
+    const description = getDescription(item, query)
 
     const isIgnored = isFileType && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
@@ -134,7 +140,7 @@ const Item: FunctionComponent<{
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(
+            className={clsx(
                 className,
                 styles.optionItem,
                 isSelected && styles.selected,
@@ -152,7 +158,7 @@ const Item: FunctionComponent<{
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
                 )}
                 <span
-                    className={classNames(
+                    className={clsx(
                         styles.optionItemTitle,
                         warning && styles.optionItemTitleWithWarning
                     )}

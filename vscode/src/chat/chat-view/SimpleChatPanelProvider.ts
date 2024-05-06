@@ -652,20 +652,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
-        const selected = uri ? await getContextFileFromUri(uri) : await getContextFileFromCursor()
+        // Get selection from the active editor
+        const selection = vscode.window.activeTextEditor?.selection
+
+        // Determine context based on URI presence
+        const contextItem = uri
+            ? await getContextFileFromUri(uri, selection)
+            : await getContextFileFromCursor()
+
         const { input, context } = this.chatModel.contextWindow
         const userContextSize = context?.user ?? input
-        const contextItems = selected.map(f => ({
-            ...f,
-            content: undefined,
-            isTooLarge: f.size ? f.size > userContextSize : undefined,
-            source: ContextItemSource.User,
-        }))
+
         void this.postMessage({
             type: 'chat-input-context',
-            items: contextItems,
+            items: contextItem.map(f => ({
+                ...f,
+                // Remove content to avoid sending large data to the webview
+                content: undefined,
+                isTooLarge: f.size ? f.size > userContextSize : undefined,
+                source: ContextItemSource.User,
+                range: f.range,
+            })),
         })
-        // Makes sure to reveal the webview panel in case the panel is hidden.
+
+        // Reveal the webview panel if it is hidden
         this.webviewPanel?.reveal()
     }
 

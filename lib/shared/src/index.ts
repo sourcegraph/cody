@@ -57,6 +57,8 @@ export {
     type ContextItemSymbol,
     type ContextFileType,
     type ContextItemPackage,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -226,6 +228,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -244,6 +247,7 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export * from './githubClient'
 export {
     setOpenCtxExtensionAPI,
     getOpenCtxExtensionAPI,

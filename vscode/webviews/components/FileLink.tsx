@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type React from 'react'
 
 import {
@@ -68,7 +68,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     }
 
     return (
-        <div className={classNames(styles.linkContainer, className)}>
+        <div className={clsx(styles.linkContainer, className)}>
             {isIgnored ? (
                 <i className="codicon codicon-warning" title={IGNORE_WARNING} />
             ) : isTooLarge ? (
@@ -82,13 +82,10 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
                 onClick={logFileLinkClicked}
             >
                 <i
-                    className={classNames(
-                        'codicon',
-                        `codicon-${source === 'user' ? 'mention' : 'file'}`
-                    )}
+                    className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
                     title={getFileSourceIconTitle(source)}
                 />
-                <div className={classNames(styles.path, isTooLarge && styles.excluded)}>
+                <div className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}>
                     {pathWithRange}
                 </div>
             </a>

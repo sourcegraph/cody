@@ -1,7 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type React from 'react'
-import { FileLink } from '../../../Components/FileLink'
+import { FileLink } from '../../../components/FileLink'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMentionNode'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
@@ -89,7 +89,7 @@ export const ContextCell: React.FunctionComponent<{
                                     isIgnored={
                                         item.type === 'file' && item.isIgnored && item.source === 'user'
                                     }
-                                    className={classNames(styles.fileLink, MENTION_CLASS_NAME)}
+                                    className={clsx(styles.fileLink, MENTION_CLASS_NAME)}
                                 />
                             </li>
                         ))}

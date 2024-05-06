@@ -1,11 +1,13 @@
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
+import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 
 import {
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
+    type ContextItemProps,
     ContextItemSource,
     type ContextItemSymbol,
     type ContextItemWithContent,
@@ -14,6 +16,7 @@ import {
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
+    convertGitCloneURLToCodebaseName,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
@@ -352,4 +355,29 @@ async function resolveFileOrSymbolContextItem(
         content,
         size: contextItem.size ?? TokenCounter.countTokens(content),
     }
+}
+
+export function getWorkspaceGitRemotes(): ContextItemProps['gitRemotes'] {
+    return (
+        vscode.workspace.workspaceFolders?.flatMap(folder => {
+            const remoteUrls = gitRemoteUrlsFromGitExtension(folder.uri)
+
+            if (remoteUrls?.length) {
+                return remoteUrls
+                    .map(url => {
+                        const codebaseName = convertGitCloneURLToCodebaseName(url)
+                        if (!codebaseName) {
+                            return null
+                        }
+
+                        const [hostname, owner, repoName] = codebaseName.split('/')
+
+                        return { hostname, owner, repoName, url }
+                    })
+                    .filter(remote => remote !== null) as ContextItemProps['gitRemotes']
+            }
+
+            return []
+        }) || []
+    )
 }

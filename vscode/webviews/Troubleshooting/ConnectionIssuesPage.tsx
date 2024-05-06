@@ -1,7 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import type { TelemetryRecorder, TelemetryService } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { useCallback, useState } from 'react'
 import type { VSCodeWrapper } from '../utils/VSCodeApi'
 import styles from './ConnectionIssuesPage.module.css'
@@ -61,7 +61,7 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                 </div>
                 <div className={styles.actions}>
                     <VSCodeButton
-                        className={classNames(styles.actionButton)}
+                        className={clsx(styles.actionButton)}
                         type="button"
                         disabled={cooldown}
                         onClick={onRetry}
@@ -69,7 +69,7 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                         {cooldown ? 'Retrying...' : 'Retry Connection'}
                     </VSCodeButton>
                     <VSCodeButton
-                        className={classNames(styles.actionButton)}
+                        className={clsx(styles.actionButton)}
                         appearance="secondary"
                         type="button"
                         onClick={onSignOut}

@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import styles from './Popup.module.css'
 
@@ -50,12 +50,12 @@ export const PopupFrame: React.FunctionComponent<
             <>
                 <dialog
                     open={true}
-                    className={classNames(styles.popup, ...(extraClassNames || []))}
+                    className={clsx(styles.popup, ...(extraClassNames || []))}
                     onKeyUp={handleKeyUp}
                 >
                     <div className={styles.row}>{children}</div>
                     {actionButtons && (
-                        <div className={classNames(styles.actionButtonContainer, styles.row)}>
+                        <div className={clsx(styles.actionButtonContainer, styles.row)}>
                             {actionButtons}
                         </div>
                     )}
