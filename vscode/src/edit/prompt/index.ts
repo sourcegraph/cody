@@ -24,9 +24,6 @@ import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
-    'anthropic/claude-2.0': claude,
-    'anthropic/claude-2.1': claude,
-    'anthropic/claude-instant-1.2': claude,
     'anthropic/claude-3-opus-20240229': claude,
     'anthropic/claude-3-sonnet-20240229': claude,
     'anthropic/claude-3-haiku-20240307': claude,
@@ -137,7 +134,7 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext('user', contextItemsAndMessages)
+    await promptBuilder.tryAddContext('user', contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),

@@ -14,6 +14,7 @@ data class ClientCapabilities(
   val showDocument: ShowDocumentEnum? = null, // Oneof: none, enabled
   val codeLenses: CodeLensesEnum? = null, // Oneof: none, enabled
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
+  val ignore: IgnoreEnum? = null, // Oneof: none, enabled
 ) {
 
   enum class CompletionsEnum {
@@ -63,6 +64,11 @@ data class ClientCapabilities(
   enum class ShowWindowMessageEnum {
     @SerializedName("notification") Notification,
     @SerializedName("request") Request,
+  }
+
+  enum class IgnoreEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
   }
 }
 

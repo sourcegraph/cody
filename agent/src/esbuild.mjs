@@ -14,6 +14,7 @@ import { build } from 'esbuild'
         platform: 'node',
         sourcemap: true,
         logLevel: 'error',
+        external: ['typescript'],
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),
 

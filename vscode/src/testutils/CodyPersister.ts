@@ -1,10 +1,11 @@
 import crypto from 'node:crypto'
 
-import type { Har } from '@pollyjs/persister'
+import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
+import { isError, parseEvents } from '@sourcegraph/cody-shared'
+import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
-import { PollyYamlWriter } from './pollyapi'
 
 /**
  * SHA-256 digests a Sourcegraph access token so that it's value is redacted but
@@ -112,6 +113,7 @@ export class CodyPersister extends FSPersister {
             entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
+            entry.response.content.text = postProcessResponseText(entry)
 
             // And other misc fields.
             entry.time = 0
@@ -159,4 +161,37 @@ export class CodyPersister extends FSPersister {
                 removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
         )
     }
+}
+function postProcessResponseText(entry: HarEntry): string | undefined {
+    const { text } = entry.response.content
+    if (text === undefined) {
+        return undefined
+    }
+    if (
+        !entry.request.url.includes('/.api/completions/stream?api-version=1') &&
+        !entry.request.url.includes('/completions/code')
+    ) {
+        return text
+    }
+    const parseResult = parseEvents(text)
+    if (isError(parseResult)) {
+        return text
+    }
+    const hasError = parseResult.events.some(event => event.type === 'error')
+    if (hasError) {
+        return text
+    }
+
+    const [completionEvent, doneEvent] = parseResult.events.slice(-2)
+    if (completionEvent.type !== 'completion' || doneEvent.type !== 'done') {
+        return text
+    }
+
+    const lines = text.split('\n')
+    const lastCompletionEvent = lines.lastIndexOf('event: completion')
+    if (lastCompletionEvent >= 0) {
+        return lines.slice(lastCompletionEvent).join('\n')
+    }
+
+    return text
 }

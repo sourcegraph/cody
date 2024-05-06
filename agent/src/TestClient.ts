@@ -30,6 +30,7 @@ import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
+    AutocompleteParams,
     AutocompleteResult,
     ClientInfo,
     CreateFileOperation,
@@ -49,6 +50,7 @@ import type {
     WorkspaceEditParams,
 } from './protocol-alias'
 import type { TestingToken } from './testing-tokens'
+import { trimEndOfLine } from './trimEndOfLine'
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -318,7 +320,7 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
@@ -364,7 +366,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument = ProtocolTextDocumentWithUri.from(document.uri, {
             content: updatedContent,
         })
-        this.workspace.addDocument(protocolDocument)
+        this.workspace.loadDocument(protocolDocument)
         return { success: true, protocolDocument }
     }
     private logMessage(params: DebugMessage): void {
@@ -398,13 +400,15 @@ export class TestClient extends MessageHandler {
               ? await fspromises.readFile(uri.fsPath, 'utf8')
               : ''
         const selectionStartMarker = `/* ${selectionName}_START */`
+        const selectionEndMarker = `/* ${selectionName}_END */`
         const selectionStart = content.indexOf(selectionStartMarker)
-        const selectionEnd = content.indexOf(`/* ${selectionName}_END */`)
+        const selectionEnd = content.indexOf(selectionEndMarker)
         const cursor = content.indexOf('/* CURSOR */')
         if (selectionStart < 0 && selectionEnd < 0 && params?.selectionName) {
             throw new Error(`No selection found for name ${params.selectionName}`)
         }
-        if (params?.removeCursor ?? true) {
+
+        if (params?.removeCursor !== undefined ? params.removeCursor : true) {
             content = content.replace('/* CURSOR */', '')
         }
 
@@ -422,16 +426,16 @@ export class TestClient extends MessageHandler {
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
     }
 
-    public async autocompleteText(): Promise<string[]> {
-        const result = await this.autocomplete()
+    public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
+        const result = await this.autocomplete(params)
         return result.items.map(item => item.insertText)
     }
-    public autocomplete(): Promise<AutocompleteResult> {
+    public autocomplete(params?: Partial<AutocompleteParams>): Promise<AutocompleteResult> {
         if (!this.workspace.activeDocumentFilePath) {
             throw new Error('No active document')
         }
@@ -443,7 +447,7 @@ export class TestClient extends MessageHandler {
         return this.request('autocomplete/execute', {
             uri: this.workspace.activeDocumentFilePath.toString(),
             position,
-            triggerKind: 'Invoke',
+            ...params,
         })
     }
 
@@ -606,10 +610,29 @@ export class TestClient extends MessageHandler {
         })
     }
 
+    public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        expect(lenses).toHaveLength(0) // Code lenses are now handled client side
+        await this.request('editTask/accept', { id: task.id })
+    }
+
+    public documentText(uri: vscode.Uri): string {
+        const document = this.workspace.getDocument(uri)
+        if (document === undefined) {
+            throw new Error(`Document not found: ${uri}`)
+        }
+        return trimEndOfLine(document.getText())
+    }
+
     public async editMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; index?: number }
+        params?: {
+            addEnhancedContext?: boolean
+            contextFiles?: ContextItem[]
+            index?: number
+        }
     ): Promise<SerializedChatMessage | undefined> {
         const reply = asTranscriptMessage(
             await this.request('chat/editMessage', {
@@ -631,8 +654,12 @@ export class TestClient extends MessageHandler {
         text: string,
         params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
-        return (await this.sendSingleMessageToNewChatWithFullTranscript(text, { ...params, id }))
-            ?.lastMessage
+        return (
+            await this.sendSingleMessageToNewChatWithFullTranscript(text, {
+                ...params,
+                id,
+            })
+        )?.lastMessage
     }
 
     public async sendSingleMessageToNewChat(
@@ -644,7 +671,11 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[]; id?: string }
+        params?: {
+            addEnhancedContext?: boolean
+            contextFiles?: ContextItem[]
+            id?: string
+        }
     ): Promise<{
         lastMessage?: SerializedChatMessage
         panelID: string
@@ -663,7 +694,11 @@ export class TestClient extends MessageHandler {
                 },
             })
         )
-        return { panelID: id, transcript: reply, lastMessage: reply.messages.at(-1) }
+        return {
+            panelID: id,
+            transcript: reply,
+            lastMessage: reply.messages.at(-1),
+        }
     }
 
     // Given the following missing recording, tries to find an existing
@@ -720,6 +755,13 @@ ${patch}`
         }
     }
 
+    public async beforeAll() {
+        const info = await this.initialize()
+        expect(info.authStatus?.isLoggedIn).toBeTruthy()
+    }
+    public async afterAll() {
+        await this.shutdownAndExit()
+    }
     public async shutdownAndExit() {
         if (this.isAlive()) {
             const { errors } = await this.request('testing/requestErrors', null)
@@ -745,6 +787,11 @@ ${patch}`
         } else {
             console.error('Agent has already exited')
         }
+    }
+
+    public async lastCompletionRequest(): Promise<NetworkRequest | undefined> {
+        const { requests } = await this.request('testing/networkRequests', null)
+        return requests.filter(({ url }) => url.includes('/completions/')).at(-1)
     }
 
     private async handshake(

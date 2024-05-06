@@ -153,12 +153,19 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-    ])
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedModel] = await Promise.all(
+        [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFineTunedModel),
+        ]
+    )
+
+    if (finetunedModel) {
+        return { provider: 'fireworks', model: 'fireworks-completions-fine-tuned' }
+    }
 
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }

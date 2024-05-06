@@ -41,6 +41,8 @@ jobs:
       - run: pnpm run test
       - run: xvfb-run -a pnpm -C vscode run test:integration
       - run: xvfb-run -a pnpm -C vscode run test:e2e
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: true
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release
         if: github.repository == 'sourcegraph/cody'
         env:

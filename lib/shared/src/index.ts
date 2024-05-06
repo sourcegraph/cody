@@ -57,6 +57,8 @@ export {
     type ContextItemSymbol,
     type ContextFileType,
     type ContextItemPackage,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -80,6 +82,7 @@ export {
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths, pathFunctionsForURI, defaultPathFunctions } from './common/path'
+export { parseEvents } from './sourcegraph-api/completions/parse'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -225,6 +228,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -243,3 +247,9 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export * from './githubClient'
+export {
+    setOpenCtxExtensionAPI,
+    getOpenCtxExtensionAPI,
+    type OpenCtxExtensionAPI,
+} from './context/openctx/api'

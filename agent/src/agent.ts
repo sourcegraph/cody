@@ -71,7 +71,6 @@ import type {
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
-    Range,
     TextEdit,
 } from './protocol-alias'
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
@@ -374,72 +373,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
-            function isEmpty(range: Range | undefined): boolean {
-                return (
-                    !range ||
-                    (range.start.line === 0 &&
-                        range.start.character === 0 &&
-                        range.end.line === 0 &&
-                        range.end.character === 0)
-                )
-            }
-
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            // If the caller elided the content, reconstruct it here.
-            const cachedDocument = this.workspace.getDocumentFromUriString(
-                documentWithUri.uri.toString()
-            )
-            if (!documentWithUri.underlying.content) {
-                if (cachedDocument?.content != null) {
-                    documentWithUri.underlying.content = cachedDocument.content
-                }
-            }
-            // Similarly, don't let this notification blow away our cached selection.
-            if (isEmpty(document.selection) && !isEmpty(cachedDocument?.protocolDocument.selection)) {
-                document.selection = cachedDocument?.protocolDocument.selection
-            }
             this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
+                this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
-
-            const start = document.selection?.start
-            const end = document.selection?.end
-            if (
-                start !== undefined &&
-                start?.line === end?.line &&
-                start?.character === end?.character
-            ) {
-                vscode.commands
-                    .executeCommand('cursorMove', {
-                        to: 'down',
-                        by: 'line',
-                        value: start.line,
-                    })
-                    .then(() =>
-                        vscode.commands.executeCommand('cursorMove', {
-                            to: 'right',
-                            by: 'character',
-                            value: start.character,
-                        })
-                    )
-            }
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const { document: textDocument, contentChanges } =
+                this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
+                contentChanges,
                 reason: undefined,
             })
 
@@ -630,7 +585,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     new vscode.Position(params.position.line, params.position.character),
                     {
                         triggerKind:
-                            vscode.InlineCompletionTriggerKind[params.triggerKind || 'Automatic'],
+                            vscode.InlineCompletionTriggerKind[params.triggerKind ?? 'Automatic'],
                         selectedCompletionInfo:
                             params.selectedCompletionInfo?.text === undefined ||
                             params.selectedCompletionInfo?.text === null

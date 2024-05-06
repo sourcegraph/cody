@@ -19,7 +19,7 @@ import {
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
@@ -208,7 +208,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                     left: x ?? 0,
                                     width: 'max-content',
                                 }}
-                                className={classNames(styles.popover)}
+                                className={clsx(styles.popover)}
                             >
                                 <OptionsList
                                     query={query ?? ''}
