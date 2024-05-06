@@ -75,6 +75,7 @@ data class RemoteSearchProvider(
   val state: StateEnum, // Oneof: ready, no-match
   val id: String,
   val inclusion: InclusionEnum, // Oneof: auto, manual
+  val isIgnored: Boolean,
 ) : ContextProvider() {
 
   enum class KindEnum {
