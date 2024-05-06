@@ -157,6 +157,7 @@ export class KotlinFormatter {
     private readonly ignoredTypeRefs = [
         'npm @sourcegraph/telemetry', // Too many complicated types from this package
         '/TelemetryEventParameters#',
+        'ContextMentionProvider#[ID]', // We don't handle type parameters yet
         ' lib/`lib.es5.d.ts`/Omit#',
     ]
 

@@ -3,6 +3,7 @@ import type { PromptString } from '../prompt/prompt-string'
 import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
 import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
+import { PROMPT_MIXIN_MENTION_PROVIDER } from './providers/promptMixinMentions'
 import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 
@@ -21,11 +22,33 @@ export type ContextMentionProviderID = string
 export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
     URL_CONTEXT_MENTION_PROVIDER,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
+    PROMPT_MIXIN_MENTION_PROVIDER,
     SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
     OPENCTX_CONTEXT_MENTION_PROVIDER,
     GITHUB_CONTEXT_MENTION_PROVIDER,
 ]
 
+export interface ContextMentionProviderInformation<
+    ID extends ContextMentionProviderID = ContextMentionProviderID,
+> {
+    id: ID
+
+    /**
+     * A description of this provider that can be used to make this provider discoverable
+     */
+    description: string
+
+    /**
+     * A codicon for this provider
+     */
+    icon: string
+
+    /**
+     * Prefix strings for the user input after the `@` that trigger this provider. For example, a
+     * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
+     */
+    triggerPrefixes: string[]
+}
 /**
  * A provider that can supply context for users to @-mention in chat.
  *
@@ -39,6 +62,17 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
      * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
      */
     triggerPrefixes: string[]
+
+    // Information to help with discovery
+    /**
+     * A description of this provider that can be used to make this provider discoverable
+     */
+    description?: string
+
+    /**
+     * A codicon for this provider
+     */
+    icon?: string
 
     /**
      * Get a list of possible context items to show (in a completion menu) when the user triggers

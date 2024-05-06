@@ -4,6 +4,7 @@ import type {
     AuthStatus,
     ConfigurationWithAccessToken,
     ContextItem,
+    ContextMentionProviderInformation,
     EnhancedContextContextT,
     ModelProvider,
     RangeData,
@@ -153,11 +154,12 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
-     * Context files returned from a @-mention search
+     * Context items returned from a @-mention search with a getUserContext
      */
     | {
-          type: 'userContextFiles'
-          userContextFiles: ContextItem[] | null
+          type: 'userContext'
+          items: ContextItem[] | null
+          mentionProviders?: ContextMentionProviderInformation[] | null
       }
     /**
      * Send Context Files to chat view as input context (@-mentions)

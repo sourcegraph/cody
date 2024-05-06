@@ -69,11 +69,14 @@ const DOMPURIFY_CONFIG = {
 export function renderCodyMarkdown(markdown: string, options?: MarkdownOptions): string {
     registerHighlightContributions()
 
-    // Add Cody-specific Markdown rendering if needed.
-    return renderMarkdownCommon(markdown, {
+    const commonMarkdown = renderMarkdownCommon(markdown, {
         breaks: true,
         dompurifyConfig: DOMPURIFY_CONFIG,
         addTargetBlankToAllLinks: !options?.wrapLinksWithCodyCommand,
         ...options,
     })
+
+    // Add Cody-specific Markdown rendering if needed.
+
+    return commonMarkdown
 }

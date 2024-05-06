@@ -1,23 +1,34 @@
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextMentionProviderInformation,
+    displayPath,
+} from '@sourcegraph/cody-shared'
 import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LINE_RANGE_REGEXP, RANGE_MATCHES_REGEXP, parseLineRangeInMention } from './atMentions'
 
 export interface ChatContextClient {
-    getChatContextItems(query: string): Promise<ContextItem[]>
+    getChatContext(
+        query: string
+    ): Promise<{ items: ContextItem[]; mentionProviders: ContextMentionProviderInformation[] }>
 }
 
 const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
-    getChatContextItems(query: string): Promise<ContextItem[]> {
+    getChatContext(
+        query: string
+    ): Promise<{ items: ContextItem[]; mentionProviders: ContextMentionProviderInformation[] }> {
         // TODO(sqs): Would be best to handle line ranges on the backend, not here.
         const { textWithoutRange: backendQuery, range } = parseLineRangeInMention(query)
 
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
-        return new Promise<ContextItem[]>((resolve, reject) => {
+        return new Promise<{
+            items: ContextItem[]
+            mentionProviders: ContextMentionProviderInformation[]
+        }>((resolve, reject) => {
             const vscodeApi = getVSCodeAPI()
             vscodeApi.postMessage({ command: 'getUserContext', query: backendQuery, range })
 
-            const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
+            const RESPONSE_MESSAGE_TYPE = 'userContext' as const
 
             // Clean up after a while to avoid resource exhaustion in case there is a bug
             // somewhere.
@@ -31,10 +42,13 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
             // our call.
             const dispose = vscodeApi.onMessage(message => {
                 if (message.type === RESPONSE_MESSAGE_TYPE) {
-                    const resultsWithRange = message.userContextFiles?.map(item =>
+                    const itemsWithRange = message.items?.map(item =>
                         range ? { ...item, range } : item
                     )
-                    resolve(resultsWithRange ?? [])
+                    resolve({
+                        items: itemsWithRange ?? [],
+                        mentionProviders: message.mentionProviders ?? [],
+                    })
                     dispose()
                     clearTimeout(rejectTimeout)
                 }
@@ -54,31 +68,35 @@ function useChatContextClient(): ChatContextClient {
 }
 
 /** Hook to get the chat context items for the given query. */
-export function useChatContextItems(query: string | null): ContextItem[] | undefined {
+export function useChatContextItems(
+    query: string | null
+): [ContextItem[] | undefined, ContextMentionProviderInformation[] | undefined] {
     const chatContextClient = useChatContextClient()
-    const [results, setResults] = useState<ContextItem[]>()
+    const [items, setItems] = useState<ContextItem[]>()
+    const [mentionProviders, setMentionProviders] = useState<ContextMentionProviderInformation[]>()
     // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
         // An empty query is a valid query that we use to get open tabs context,
         // while a null query means this is not an at-mention query.
         if (query === null) {
-            setResults(undefined)
+            setItems(undefined)
             return
         }
 
         // If the query ends with a colon, we will reuse current results but remove the range.
+        // but only if the provider is the file provider
         if (query.endsWith(':')) {
-            const selected = results?.find(r => displayPath(r.uri) === query.slice(0, -1))
-            setResults(
+            const selected = items?.find(r => displayPath(r.uri) === query.slice(0, -1))
+            setItems(
                 selected
                     ? [{ ...selected, range: undefined }]
-                    : results?.map(r => ({ ...r, range: undefined }))
+                    : items?.map(r => ({ ...r, range: undefined }))
             )
             return
         }
 
         // If user is typing a line range, fetch new chat context items only if there are no results
-        if (results?.length && RANGE_MATCHES_REGEXP.test(query) && !LINE_RANGE_REGEXP.test(query)) {
+        if (items?.length && RANGE_MATCHES_REGEXP.test(query) && !LINE_RANGE_REGEXP.test(query)) {
             return
         }
 
@@ -88,15 +106,17 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
 
         if (chatContextClient) {
             chatContextClient
-                .getChatContextItems(query)
-                .then(mentions => {
+                .getChatContext(query)
+                .then(response => {
                     if (invalidated) {
                         return
                     }
-                    setResults(mentions)
+                    setItems(response.items)
+                    setMentionProviders(response.mentionProviders)
                 })
                 .catch(error => {
-                    setResults(undefined)
+                    setItems(undefined)
+                    setMentionProviders(undefined)
                     console.error(error)
                 })
         }
@@ -105,5 +125,5 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
             invalidated = true
         }
     }, [query])
-    return results
+    return [items, mentionProviders] as const
 }

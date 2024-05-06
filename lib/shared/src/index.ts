@@ -1,7 +1,12 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
+export {
+    type ChatModel,
+    type EditModel,
+    ModelUsage,
+    type ModelContextWindow,
+} from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
@@ -23,7 +28,10 @@ export type {
     SerializedChatTranscript,
 } from './chat/transcript'
 export { serializeChatMessage } from './chat/transcript'
-export { errorToChatError, DEFAULT_EVENT_SOURCE } from './chat/transcript/messages'
+export {
+    errorToChatError,
+    DEFAULT_EVENT_SOURCE,
+} from './chat/transcript/messages'
 export type {
     ChatError,
     EventSource,
@@ -55,7 +63,8 @@ export {
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
-    type ContextFileType,
+    type ContextItemMixin,
+    type ContextItemType,
     type ContextItemPackage,
     type ContextItemGithubIssue,
     type ContextItemGithubPullRequest,
@@ -70,19 +79,28 @@ export type {
     TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'
-export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
-export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
-export * from './common/abortController'
+export {
+    type DefaultCodyCommands,
+    DefaultChatCommands,
+    DefaultEditCommands,
+} from './commands/types'
+export { dedupeWith, isDefined, isErrorLike, pluralize, unhandledSwitchCase } from './common'
 export {
     ProgrammingLanguage,
+    extensionForLanguage,
     languageFromFilename,
     markdownCodeBlockLanguageIDForFilename,
-    extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
 export { posixFilePaths, pathFunctionsForURI, defaultPathFunctions } from './common/path'
 export { parseEvents } from './sourcegraph-api/completions/parse'
+export {
+    type RangeData,
+    toRangeData,
+    displayLineRange,
+    displayRange,
+} from './common/range'
+export * from './common/abortController'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -163,9 +181,16 @@ export {
 export type { Message } from './sourcegraph-api'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
-export type { CompletionLogger, CompletionsClientConfig } from './sourcegraph-api/completions/client'
+export type {
+    CompletionLogger,
+    CompletionsClientConfig,
+} from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
-export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
+export {
+    DOTCOM_URL,
+    LOCAL_APP_URL,
+    isDotCom,
+} from './sourcegraph-api/environments'
 export {
     AbortError,
     NetworkError,
@@ -177,7 +202,10 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
+export {
+    SourcegraphGraphQLAPIClient,
+    graphqlClient,
+} from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
@@ -215,7 +243,11 @@ export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export * from './tracing'
-export { convertGitCloneURLToCodebaseName, isError, createSubscriber } from './utils'
+export {
+    convertGitCloneURLToCodebaseName,
+    isError,
+    createSubscriber,
+} from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
@@ -228,6 +260,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextMentionProviderInformation,
     type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'

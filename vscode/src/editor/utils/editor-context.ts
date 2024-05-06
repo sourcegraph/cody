@@ -4,12 +4,12 @@ import * as vscode from 'vscode'
 import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 
 import {
-    type ContextFileType,
     type ContextItem,
     type ContextItemFile,
     type ContextItemProps,
     ContextItemSource,
     type ContextItemSymbol,
+    type ContextItemType,
     type ContextItemWithContent,
     type Editor,
     type PromptString,
@@ -22,7 +22,6 @@ import {
     isDefined,
     isWindows,
 } from '@sourcegraph/cody-shared'
-
 import { getOpenTabsUris } from '.'
 import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
@@ -217,7 +216,7 @@ async function createContextFileFromUri(
 async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
-    type: ContextFileType,
+    type: ContextItemType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
     symbolName?: string
@@ -227,24 +226,33 @@ async function createContextFileFromUri(
     }
 
     const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
-    return [
-        type === 'file'
-            ? {
-                  type,
-                  uri,
-                  range,
-                  source,
-                  isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
-              }
-            : {
-                  type,
-                  symbolName: symbolName!,
-                  uri,
-                  range,
-                  source,
-                  kind: kind!,
-              },
-    ]
+    switch (type) {
+        case 'file': {
+            return [
+                {
+                    type,
+                    uri,
+                    range,
+                    source,
+                    isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
+                },
+            ]
+        }
+        case 'symbol': {
+            return [
+                {
+                    type,
+                    symbolName: symbolName!,
+                    uri,
+                    range,
+                    source,
+                    kind: kind!,
+                },
+            ]
+        }
+        default:
+            return []
+    }
 }
 
 function createContextFileRange(selectionRange: vscode.Range): ContextItem['range'] {

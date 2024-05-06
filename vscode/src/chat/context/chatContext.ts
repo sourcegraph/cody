@@ -3,9 +3,9 @@ import {
     type ContextItem,
     type ContextItemProps,
     type ContextMentionProvider,
+    type ContextMentionProviderInformation,
     type MentionQuery,
     type RangeData,
-    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -17,7 +17,7 @@ import {
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
-    query: MentionQuery | string,
+    query: MentionQuery,
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
@@ -25,27 +25,24 @@ export async function getChatContextItemsForMention(
     },
     range?: RangeData
 ): Promise<ContextItem[]> {
-    const mentionQuery =
-        typeof query === 'string' ? parseMentionQuery(query, getEnabledContextMentionProviders()) : query
-
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.provider === 'default') {
+    if (query.provider === 'default') {
         telemetryRecorder?.empty()
     } else {
-        telemetryRecorder?.withProvider(mentionQuery.provider)
+        telemetryRecorder?.withProvider(query.provider)
     }
 
     const MAX_RESULTS = 20
-    switch (mentionQuery.provider) {
+    switch (query.provider) {
         case 'default':
             return getOpenTabsContextFile()
         case 'symbol':
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
-            return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
+            return getSymbolContextFiles(query.text, MAX_RESULTS)
         case 'file': {
-            const files = await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
+            const files = await getFileContextFiles(query.text, MAX_RESULTS)
 
             // If a range is provided, that means user is trying to mention a specific line range.
             // We will get the content of the file for that range to display file size warning if needed.
@@ -63,9 +60,9 @@ export async function getChatContextItemsForMention(
             const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
 
             for (const provider of getEnabledContextMentionProviders()) {
-                if (provider.id === mentionQuery.provider) {
+                if (provider.id === query.provider) {
                     return provider.queryContextItems(
-                        mentionQuery.text,
+                        query.text,
                         props,
                         convertCancellationTokenToAbortSignal(cancellationToken)
                     )
@@ -74,6 +71,38 @@ export async function getChatContextItemsForMention(
             return []
         }
     }
+}
+
+export function getMentionProvidersForMention(
+    mentionQuery: MentionQuery,
+    providers: ContextMentionProvider[]
+): ContextMentionProviderInformation[] {
+    //if the mention query is already matched to a provider nothing else can possibly match
+    if (
+        !(
+            mentionQuery.provider === 'default' ||
+            mentionQuery.provider === 'file' ||
+            mentionQuery.provider === 'symbol'
+        )
+    ) {
+        return []
+    }
+
+    const providerInformation: ContextMentionProviderInformation[] = []
+    for (const provider of providers) {
+        const { id, icon, description, triggerPrefixes } = provider
+        if (!icon || !description) {
+            continue
+        }
+        if (
+            mentionQuery.text &&
+            !triggerPrefixes.some(trigger => trigger.startsWith(mentionQuery.text))
+        ) {
+            continue
+        }
+        providerInformation.push({ id, icon, description, triggerPrefixes })
+    }
+    return providerInformation
 }
 
 export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
@@ -87,14 +116,18 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
     const isPackageProviderEnabled =
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
+    const isMixinProviderEnabled =
+        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.mixinContext') === true
 
     if (isURLProviderEnabled || isPackageProviderEnabled) {
         return CONTEXT_MENTION_PROVIDERS.filter(
             provider =>
                 (isURLProviderEnabled && provider.id === 'url') ||
-                (isPackageProviderEnabled && provider.id === 'package')
+                (isPackageProviderEnabled && provider.id === 'package') ||
+                (isMixinProviderEnabled && provider.id === 'mixin')
         )
     }
+
     return []
 }
 

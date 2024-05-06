@@ -117,7 +117,7 @@ export async function start(
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
                 if (config.chatPreInstruction.length > 0) {
-                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+                    PromptMixin.setCustom(newPromptMixin(config.chatPreInstruction))
                 }
                 getChatModelsFromConfiguration()
             }
@@ -161,7 +161,7 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     if (config.chatPreInstruction.length > 0) {
-        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+        PromptMixin.setCustom(newPromptMixin(config.chatPreInstruction))
     }
 
     parseAllVisibleDocuments()

@@ -537,7 +537,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             onEscapeKey={onEditorEscapeKey}
                             editorRef={editorRef}
                         />
-                        <div className={styles.contextButton}>
+                        <div className={styles.editorSuffixButtons}>
                             <EnhancedContextSettings
                                 isOpen={isEnhancedContextOpen}
                                 setOpen={onEnhancedContextTogglerClick}

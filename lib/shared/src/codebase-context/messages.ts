@@ -3,8 +3,6 @@ import type { URI } from 'vscode-uri'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
-export type ContextFileType = 'file' | 'symbol'
-
 /**
  * Fields that are common to any context item included in chat messages.
  */
@@ -105,12 +103,15 @@ export enum ContextItemSource {
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
+
 export type ContextItem =
     | ContextItemFile
     | ContextItemSymbol
     | ContextItemPackage
     | ContextItemGithubPullRequest
     | ContextItemGithubIssue
+    | ContextItemMixin
+export type ContextItemType = ContextItem['type']
 
 /**
  * A Github pull request that is included as context in a chat message.
@@ -209,6 +210,16 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
     /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
+}
+
+export interface ContextItemMixin extends ContextItemCommon {
+    type: 'mixin'
+    /** Where the mixin should be placed. The preamble location injects the mixin together with any other configured preInstructions. Whereas mentions are simply referenced in location where they are referenced in the message.*/
+    injectAt: 'preamble' | 'mention'
+    title: string
+    description: string
+    emoji?: string
+    icon?: string
 }
 
 /** The valid kinds of a symbol. */

@@ -4,9 +4,10 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <!-- This content security policy also implicitly disables inline scripts and styles. -->
+        <!--TODO(rnauta): this CSP needs careful consideration. Might need to do a PR to support nonce- in Mermaid.js-->
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'none'; img-src {cspSource} https: data:; script-src {cspSource}; style-src {cspSource}; font-src data: {cspSource};"
+            content="default-src 'none'; img-src {cspSource} https: data:; script-src {cspSource}; style-src {cspSource} 'unsafe-inline'; font-src data: {cspSource};"
         />
         <!-- DO NOT REMOVE: THIS FILE IS THE ENTRY FILE FOR CODY WEBVIEW -->
         <title>Cody</title>

@@ -39,6 +39,9 @@ export function getLabelForContextItem(item: ContextItem): string {
             const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
             return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
         }
+        case 'mixin': {
+            return `Inject prompt from: ${item.title}`
+        }
         default:
             throw new Error(`getLableForContextItem Error: Unexpected type ${item.type}`)
     }

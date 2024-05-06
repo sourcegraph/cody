@@ -171,3 +171,12 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 .content > *:last-child {
     margin-bottom: 0;
 }
+
+.mermaid-image {
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    padding: 1rem;
+}

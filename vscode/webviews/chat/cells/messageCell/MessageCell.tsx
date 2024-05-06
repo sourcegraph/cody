@@ -92,6 +92,7 @@ export const MessageCell: FunctionComponent<{
                     ) : null}
                     {displayMarkdown ? (
                         <ChatMessageContent
+                            isLoading={isLoading}
                             displayMarkdown={displayMarkdown}
                             wrapLinksWithCodyCommand={message.speaker !== 'human'}
                             copyButtonOnSubmit={copyButtonOnSubmit}

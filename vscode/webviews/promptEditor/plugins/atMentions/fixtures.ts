@@ -1,6 +1,8 @@
 import {
+    CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
     type ContextItemSymbol,
+    type ContextMentionProviderInformation,
     type SymbolKind,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
@@ -12,18 +14,27 @@ import type { ChatContextClient } from './chatContextClient'
  * @internal
  */
 export const dummyChatContextClient: ChatContextClient = {
-    async getChatContextItems(query) {
+    async getChatContext(query) {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
         query = query.toLowerCase()
         const mentionQuery = parseMentionQuery(query, [])
-        return mentionQuery.provider === 'symbol'
-            ? DUMMY_SYMBOLS.filter(
-                  f =>
-                      f.symbolName.toLowerCase().includes(query.slice(1)) ||
-                      f.uri.path.includes(query.slice(1))
-              )
-            : DUMMY_FILES.filter(f => f.uri.path.includes(query))
+        const items =
+            mentionQuery.provider === 'symbol'
+                ? DUMMY_SYMBOLS.filter(
+                      f =>
+                          f.symbolName.toLowerCase().includes(query.slice(1)) ||
+                          f.uri.path.includes(query.slice(1))
+                  )
+                : DUMMY_FILES.filter(f => f.uri.path.includes(query))
+        const mentionProviders = CONTEXT_MENTION_PROVIDERS.filter(p => p.description && p.icon).filter(
+            p => p.triggerPrefixes.some(prefix => prefix.startsWith(query) || query.startsWith(prefix))
+        ) as ContextMentionProviderInformation[]
+
+        return {
+            items,
+            mentionProviders,
+        }
     },
 }
 

@@ -29,7 +29,7 @@
     width: 100%;
 }
 
-.context-button {
+.editor-suffix-buttons {
     color: var(--button-primary-background);
     position: absolute;
     right: 0.3125rem;
@@ -37,7 +37,9 @@
     fill: currentColor;
     background: none;
     border: none;
-    cursor: pointer;
+    display: flex;
+    flex-direction: row-reverse; /* this is so the most top HTML action is first tab-order */
+    gap: 0.25rem;
 }
 
 .submit-button {

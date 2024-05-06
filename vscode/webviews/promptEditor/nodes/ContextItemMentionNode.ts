@@ -6,10 +6,12 @@ import {
     type ContextItemFile,
     type ContextItemGithubIssue,
     type ContextItemGithubPullRequest,
+    type ContextItemMixin,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
     displayPath,
+    unhandledSwitchCase,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 import {
@@ -31,9 +33,14 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
  */
-export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
+export type SerializedContextItem = {
+    uri: string
+    title?: string
+    content?: undefined
+} & (
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
+    | Omit<ContextItemMixin, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
     | Omit<ContextItemGithubIssue, 'uri' | 'content'>
     | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
@@ -184,27 +191,36 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
     const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
-    if (contextItem.type === 'file') {
-        if (contextItem.provider && contextItem.title) {
-            return `@${contextItem.title}`
+    switch (contextItem.type) {
+        case 'file': {
+            if (contextItem.provider && contextItem.title) {
+                return `@${contextItem.title}`
+            }
+            return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
         }
-        return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+        case 'symbol': {
+            return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+        }
+        case 'mixin': {
+            return `@snippet:${contextItem.title}`
+        }
+        case 'package': {
+            return `@${contextItem.ecosystem}:${contextItem.name}`
+        }
+        case 'github_pull_request': {
+            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
+        }
+        case 'github_issue': {
+            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+        }
+        default: {
+            unhandledSwitchCase<ContextItem>(contextItem, t => {
+                throw new Error(`unrecognized context item type ${t.type}`)
+            })
+        }
     }
-    if (contextItem.type === 'symbol') {
-        return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
-    }
-    if (contextItem.type === 'package') {
-        return `@${contextItem.ecosystem}:${contextItem.name}`
-    }
-    if (contextItem.type === 'github_pull_request') {
-        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
-    }
-    if (contextItem.type === 'github_issue') {
-        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
-    }
-    // @ts-ignore
-    throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
+//this ensures exhaustive switch so that all context items are handled at compile time
 
 export function $createContextItemMentionNode(
     contextItem: ContextItem | SerializedContextItem

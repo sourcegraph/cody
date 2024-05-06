@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextMentionProviderInformation } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../../storybook/VSCodeStoryDecorator'
 import { OptionsList } from './OptionsList'
-import { MentionTypeaheadOption } from './atMentions'
+import {
+    MentionItemTypeaheadOption,
+    MentionProviderTypeaheadOption,
+    type MentionTypeaheadOption,
+} from './atMentions'
 
 const meta: Meta<typeof OptionsList> = {
     title: 'cody/OptionsList',
@@ -28,8 +32,14 @@ const meta: Meta<typeof OptionsList> = {
 
 export default meta
 
-function toOptions(items: ContextItem[]): MentionTypeaheadOption[] {
-    return items.map(item => new MentionTypeaheadOption(item))
+function toOptions(
+    items: ContextItem[],
+    providers: ContextMentionProviderInformation[] = []
+): MentionTypeaheadOption[] {
+    return [
+        ...providers.map(provider => new MentionProviderTypeaheadOption(provider)),
+        ...items.map(item => new MentionItemTypeaheadOption(item)),
+    ]
 }
 
 export const FileSearchEmpty: StoryObj<typeof OptionsList> = {

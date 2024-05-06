@@ -17,7 +17,9 @@ const xmlBuilder = new XMLBuilder({
 
 class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
     public id = GithubContextId
-    public triggerPrefixes = ['github:', 'gh:']
+    public triggerPrefixes = ['gh://', 'github://']
+    public description = 'Include GitHub issue or pull request'
+    public icon = 'github-inverted'
 
     async queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal) {
         /* supported query formats:

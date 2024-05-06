@@ -1,7 +1,7 @@
+import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import mermaid from 'mermaid'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
-
-import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
 import {
     CheckCodeBlockIcon,
@@ -27,6 +27,7 @@ interface ChatMessageContentProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     guardrails?: Guardrails
+    isLoading?: boolean
     className?: string
 }
 
@@ -234,6 +235,7 @@ class GuardrailsStatusController {
  * A component presenting the content of a chat message.
  */
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
+    isLoading,
     displayMarkdown,
     wrapLinksWithCodyCommand,
     copyButtonOnSubmit,
@@ -245,7 +247,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
     useEffect(() => {
         const preElements = rootRef.current?.querySelectorAll('pre')
-        if (!preElements?.length || !copyButtonOnSubmit) {
+
+        if (!copyButtonOnSubmit || !preElements) {
             return
         }
 
@@ -293,6 +296,25 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             }
         }
     }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
+
+    useEffect(() => {
+        if (isLoading) {
+            return
+        }
+
+        const mermaidElements = rootRef.current?.querySelectorAll<HTMLElement>(
+            'pre > code.language-mermaid'
+        )
+
+        if (mermaidElements) {
+            for (const el of mermaidElements) {
+                el.parentElement?.replaceWith(el)
+                el.classList.add(styles.mermaidImage)
+            }
+            mermaid.initialize({ startOnLoad: false, darkMode: false, securityLevel: 'loose' })
+            mermaid.run({ nodes: mermaidElements, suppressErrors: true })
+        }
+    }, [isLoading])
 
     return (
         <div
