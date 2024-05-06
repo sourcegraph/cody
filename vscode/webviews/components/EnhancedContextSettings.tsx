@@ -141,7 +141,7 @@ const CompactProviderComponent: React.FunctionComponent<{
     inclusion: 'auto' | 'manual'
     handleRemove: (id: string) => void
     isIgnored: boolean
-}> = ({ id, name, inclusion, handleRemove, isIgnored }): React.ReactNode => {
+}> = ({ id, name, inclusion, handleRemove, isIgnored }) => {
     return (
         <div className={styles.enterpriseRepoListItem}>
             <i className={clsx('codicon', isIgnored ? 'codicon-circle-slash' : 'codicon-repo-forked'} title={name} />
