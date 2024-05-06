@@ -447,6 +447,13 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.minion.new-terminal",
+        "category": "Cody",
+        "title": "Minion new terminal - temporary test command",
+        "when": "cody.activated",
+        "group": "Cody"
+      },
+      {
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
