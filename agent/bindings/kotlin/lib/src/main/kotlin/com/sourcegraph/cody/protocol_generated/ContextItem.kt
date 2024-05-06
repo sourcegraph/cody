@@ -98,6 +98,7 @@ data class ContextItemGithubPullRequest(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
+  val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: github_pull_request
@@ -119,6 +120,7 @@ data class ContextItemGithubIssue(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
+  val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: github_issue
