@@ -653,7 +653,22 @@ const _window: typeof vscode.window = {
                     `vscode.window.showTextDocument: unable to infer URI from argument ${params}`
                 )
             }
-            const result = await agent.request('textDocument/show', { uri })
+            const selection = (options as any)?.selection
+            const selectionRange = selection
+                ? new Range(
+                      selection.start.line,
+                      selection.start.character,
+                      selection.end.line,
+                      selection.end.character
+                  )
+                : undefined
+            const result = await agent.request('textDocument/show', {
+                uri,
+                options: {
+                    preserveFocus: (options as any)?.preserveFocus ?? true,
+                    selection: selectionRange,
+                },
+            })
             if (!result) {
                 throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
             }

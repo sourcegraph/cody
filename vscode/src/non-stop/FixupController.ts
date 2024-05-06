@@ -155,9 +155,10 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
-        const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(task.selectionRange, task.original)
-        })
+        const editOk =
+            (await editor.edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, task.original)
+            })) !== false
 
         const legacyMetadata = {
             intent: task.intent,
