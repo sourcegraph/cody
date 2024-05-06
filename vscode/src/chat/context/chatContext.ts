@@ -116,7 +116,6 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
     const isPackageProviderEnabled =
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
-    //TODO(rnauta): const isMentionProviderEnabled
     const isMixinProviderEnabled =
         vscode.workspace.getConfiguration('cody').get<boolean>('experimental.mixinContext') === true
 

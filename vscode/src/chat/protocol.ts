@@ -154,14 +154,6 @@ export type ExtensionMessage =
     | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
-     * Context files returned from a @-mention search
-     */
-    // TODO(rnauta): deprecated
-    // | {
-    //       type: 'userContextFiles'
-    //       userContextFiles: ContextItem[] | null
-    //   }
-    /**
      * Context items returned from a @-mention search with a getUserContext
      */
     | {

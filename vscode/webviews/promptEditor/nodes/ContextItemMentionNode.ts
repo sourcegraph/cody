@@ -202,8 +202,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
         }
         case 'mixin': {
-            //TODO(rnauta): It would be better not just with text but that if clicked we open the content of the snippet.
-            return `@{{${contextItem.title}}}`
+            return `@snippet:${contextItem.title}`
         }
         case 'package': {
             return `@${contextItem.ecosystem}:${contextItem.name}`
