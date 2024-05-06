@@ -6,6 +6,7 @@ import {
     type Message,
     type ModelContextWindow,
     TokenCounter,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     ps,
     toRangeData,
@@ -80,10 +81,10 @@ export class PromptBuilder {
 
     private processedContextType = new Set<ContextTokenUsageType>()
 
-    public tryAddContext(
+    public async tryAddContext(
         tokenType: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
-    ): PromptBuilderContextResult {
+    ): Promise<PromptBuilderContextResult> {
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             used: [] as ContextItem[], // The items that were successfully added
@@ -98,6 +99,10 @@ export class PromptBuilder {
             const id = contextItemId(item)
             // Skip context items that are in the Cody ignore list
             if (isCodyIgnoredFile(userContextItem.uri)) {
+                result.ignored.push(userContextItem)
+                continue
+            }
+            if (await contextFiltersProvider.isUriIgnored(userContextItem.uri)) {
                 result.ignored.push(userContextItem)
                 continue
             }

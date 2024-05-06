@@ -54,7 +54,10 @@ export const FileSearchMatches: StoryObj<typeof OptionsList> = {
             {
                 uri: URI.file('a/b/x.go'),
                 type: 'file',
-                range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
+                range: {
+                    start: { line: 3, character: 5 },
+                    end: { line: 7, character: 9 },
+                },
             },
             ...Array.from(new Array(10).keys()).map(
                 i =>
@@ -77,6 +80,20 @@ export const FileSearchTooLarge: StoryObj<typeof OptionsList> = {
                 uri: URI.file('aaaaaaaaaa/bbbbbbbbb/cccccccccc/eeeeeeeeee/ddddddd.go'),
                 type: 'file',
                 isTooLarge: true,
+            },
+        ]),
+    },
+}
+
+export const FileSearchIgnored: StoryObj<typeof OptionsList> = {
+    args: {
+        query: 'd',
+        options: toOptions([
+            { uri: URI.file('a/b/c.go'), type: 'file' },
+            {
+                uri: URI.file('a/b/ddddddd.go'),
+                type: 'file',
+                isIgnored: true,
             },
         ]),
     },
@@ -123,7 +140,10 @@ export const SymbolSearchMatches: StoryObj<typeof OptionsList> = {
                 type: 'symbol',
                 kind: 'function',
                 uri: URI.file('/src/login.go'),
-                range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
+                range: {
+                    start: { line: 42, character: 1 },
+                    end: { line: 44, character: 1 },
+                },
             },
             {
                 symbolName: 'handleLogin',

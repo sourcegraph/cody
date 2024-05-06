@@ -24,7 +24,7 @@ export const ContextCell: React.FunctionComponent<{
     const excludedAtContext = []
     if (contextFiles) {
         for (const f of contextFiles) {
-            if (f.isTooLarge) {
+            if (f.isTooLarge || f.isIgnored) {
                 excludedAtContext.push(f)
             } else {
                 usedContext.push(f)
@@ -85,6 +85,9 @@ export const ContextCell: React.FunctionComponent<{
                                     title={item.title}
                                     isTooLarge={
                                         item.type === 'file' && item.isTooLarge && item.source === 'user'
+                                    }
+                                    isIgnored={
+                                        item.type === 'file' && item.isIgnored && item.source === 'user'
                                     }
                                     className={clsx(styles.fileLink, MENTION_CLASS_NAME)}
                                 />

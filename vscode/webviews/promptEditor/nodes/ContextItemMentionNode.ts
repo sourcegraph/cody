@@ -212,7 +212,7 @@ export function $createContextItemMentionNode(
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()
     contextItem.type === 'file' &&
-        contextItem.isTooLarge &&
+        (contextItem.isTooLarge || contextItem.isIgnored) &&
         node.setStyle('color: var(--vscode-list-errorForeground)')
     return $applyNodeReplacement(node)
 }
