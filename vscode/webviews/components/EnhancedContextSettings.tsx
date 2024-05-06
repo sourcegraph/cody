@@ -144,11 +144,7 @@ const CompactProviderComponent: React.FunctionComponent<{
 }> = ({ id, name, inclusion, handleRemove, isIgnored }): React.ReactNode => {
     return (
         <div className={styles.enterpriseRepoListItem}>
-            {isIgnored ? (
-                <i className="codicon codicon-circle-slash" title={name} />
-            ) : (
-                <i className="codicon codicon-repo-forked" title={name} />
-            )}
+            <i className={clsx('codicon', isIgnored ? 'codicon-circle-slash' : 'codicon-repo-forked'} title={name} />
             <span className={clsx(styles.repoName, { [styles.repoNameMuted]: isIgnored })} title={name}>
                 {briefName(name)}
             </span>
