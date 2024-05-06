@@ -215,6 +215,11 @@ function displayInfoForAction(action: Action): ActionInfo {
     switch (action.type) {
         case 'open': {
             info.title = `Open ${action.file}`
+            break
+        }
+        case 'do-step': {
+            info.title = `Do step ${action.ordinal}`
+            break
         }
     }
     return {
@@ -285,7 +290,7 @@ function renderAction(action: Action, key: string): React.ReactNode {
                 <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <ol>
                         {action.steps.map(step => (
-                            <li key={step.title}>{step.title}</li>
+                            <li key={step.description}>{step.description}</li>
                         ))}
                     </ol>
                 </ActionBlock>
@@ -294,7 +299,9 @@ function renderAction(action: Action, key: string): React.ReactNode {
         case 'do-step': {
             return (
                 <>
-                    <ActionBlock level={action.level} codicon={codicon} title={title} />
+                    <ActionBlock level={action.level} codicon={codicon} title={title}>
+                        <pre className="action-text">Doing: {action.step.description}</pre>
+                    </ActionBlock>
                     {action.subactions.map((subaction, i) => renderAction(subaction, `${key}-${i}`))}
                 </>
             )

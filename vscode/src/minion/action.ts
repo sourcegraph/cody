@@ -11,7 +11,6 @@ export interface AnnotatedContext {
 }
 
 export interface Step {
-    title: string
     description: string
 }
 
@@ -66,6 +65,8 @@ export type ActionL0 = { level: 0 } & (
       }
     | {
           type: 'do-step'
+          step: Step
+          ordinal: number
           subactions: ActionL1[]
       }
 )

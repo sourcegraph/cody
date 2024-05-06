@@ -70,4 +70,6 @@
 .action-code-snippet {
     max-height: 10em;
     overflow: scroll;
+    background-color: var(--vscode-textPreformat-background);
+    border: 1px solid var(--vscode-textBlockQuote-border);
 }
