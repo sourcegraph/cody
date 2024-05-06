@@ -38,6 +38,7 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
+        // Create context messages for each context item
         const assistantMessage = { speaker: 'assistant', text: ps`Ok.` } as Message
         for (const item of this.contextItems) {
             const contextMessage = renderContextItem(item)
@@ -158,8 +159,9 @@ export class PromptBuilder {
             // Add the new context item to the list,
             this.contextItems.push(newContextItem)
 
-            // Remove any items that are no longer unique.
-            // TODO (bee) update token usage with the new context items.
+            // Update context items for the next iteration,
+            // and removes any items that are no longer unique.
+            // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
 
