@@ -143,6 +143,7 @@ data class ContextItemMixin(
   val title: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
+  val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: mixin
