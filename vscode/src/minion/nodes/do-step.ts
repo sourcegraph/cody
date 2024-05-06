@@ -1,9 +1,11 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { MessageParam } from '@anthropic-ai/sdk/resources'
+import { isBoolean } from 'lodash'
 import type { Action, Step } from '../action'
 import type { Environment } from '../environment'
-import { taoSystem } from '../prompts'
+import * as prompts from '../prompts'
 import type { HumanLink, Memory, Node, NodeArg } from '../statemachine'
+import { extractXMLArrayFromAnthropicResponse, extractXMLFromAnthropicResponse } from '../util'
 
 interface SubAction {
     readonly type: string
@@ -97,6 +99,35 @@ export class DoPlanStep implements Node {
         }
         await human.ask(proposedAction)
 
+        let delegateToUser = false
+        try {
+            const shouldAskUserResp = await anthropic.messages.create({
+                system: prompts.shouldAskHumanSystem,
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 4096,
+                messages: prompts.shouldAskHumanUser(step.description),
+            })
+            const shouldAskUserRaw = extractXMLFromAnthropicResponse(shouldAskUserResp, 'humanIsBetter')
+            const shouldAskAIRaw = extractXMLFromAnthropicResponse(shouldAskUserResp, 'aiIsBetter')
+            const shouldAskUser = JSON.parse(shouldAskUserRaw)
+            const shouldAskAI = JSON.parse(shouldAskAIRaw)
+            if (!isBoolean(shouldAskUser) || !isBoolean(shouldAskAI)) {
+                throw new Error(
+                    `could not parse bool from these values: ${shouldAskUserRaw}, ${shouldAskAIRaw}`
+                )
+            }
+            if (shouldAskAI !== shouldAskUser) {
+                throw new Error(`shouldAskAI (${shouldAskAI}) === shouldAskUser (${shouldAskUser})`)
+            }
+            delegateToUser = shouldAskUser
+        } catch (e) {
+            console.error(`error detecting if should go with ai or user: ${e}`)
+        }
+
+        if (delegateToUser) {
+            console.log('#### HERE delegateToUser')
+        }
+
         // TODO(beyang): currently open file, terminal handle
 
         let obs = null
@@ -106,7 +137,7 @@ export class DoPlanStep implements Node {
         let finishedStatus: 'terminated' | 'pass' | 'fail' = 'terminated'
         const window = 100
         const commandDocs = 'TODO'
-        const systemPrompt = taoSystem(commandDocs, window)
+        const systemPrompt = prompts.taoSystem(commandDocs, window)
 
         // NEXT: get state by running terminal command
         const out = env.terminal(stateCommand)

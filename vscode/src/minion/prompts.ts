@@ -56,6 +56,12 @@ export function isRelevantSnippetUser(
 export const planSystem = `
 Your job is to write an implementation plan given (1) a spec of the existing state and desired change and (2) a set of contextual files that seem relevant.
 
+A few rules that you MUST ALWAYS OBEY:
+1. Include a step in the plan to add or update tests.
+1. Include a step at the end of the plan to run relevant tests and verify the fix.
+1. Include a step at the end of the plan to update documentation
+1. Include a step at the end of the plan to update the changelog.
+
 The user will provide a request in the following format:
 <spec>
 A high-level description of the existing state and desired state
@@ -69,10 +75,10 @@ A high-level description of the existing state and desired state
 
 Format your repsonse like this:
 <plan>
-<step>Description of the 1st step</step>
-<step>Description of the 2nd step</step>
+<step><description>Description of the 1st step</description><title>one-sentence summary of step</title></step>
+<step><description>Description of the 2nd step</description><title>one-sentence summary of step</title></step>
 ...
-<step>Description of the nth step</step>
+<step><description>Description of the nth step</description><title>one-sentence summary of step</title></step>
 </plan>
 `.trimStart()
 
@@ -183,4 +189,38 @@ IMPORTANT TIPS:
 bash-$`
     ).trimStart()
     return text
+}
+
+export const shouldAskHumanSystem = `
+Your job is to determine whether a particular programming task should be performed by AI or human.
+
+Here are tasks that AI is generally good at:
+- Writing boilerplate code for common frameworks like React
+- Writing DevOps code/configuration for common tools like terraform and AWS CloudFormation
+- Searching for code snippets that have keyword matches for a specific query
+- Writing tests
+- Writing documentation
+- Summarizing changed code and adding it to the changelog
+- Writing functions or classes that are likely well-represented on StackOverflow. For example, functions for common use cases of popular open-source frameworks, including but not limited to creating React components, HTTP handlers, command line argument parsers, string manipulations, and serialization of common data formats like JSON and XML.
+
+Here are tasks that humans are generally good at:
+- Thinking creatively about what should be built to solve a high-level user problem
+- Writing novel data structures or algorithms
+- Writing code that must integrate with an existing package in a private codebase
+- Complex features that involve writing code that's unlikely to have an answer on StackOverflow
+
+INPUT FORMAT:
+<description>a description of the programming task</description>
+
+RESPONSE_FORMAT:
+<humanIsBetter>true or false</humanIsBetter>
+<aiIsBetter>true or false</aiIsBetter>`.trimStart()
+
+export function shouldAskHumanUser(description: string): MessageParam[] {
+    return [
+        {
+            role: 'user',
+            content: `<description>${description}</description>`,
+        },
+    ]
 }

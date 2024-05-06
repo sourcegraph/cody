@@ -4,7 +4,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 import type { Action } from '../action'
 import type { Environment } from '../environment'
 import * as prompts from '../prompts'
-import { extractXMLArray, extractXMLFromAnthropicResponse } from '../util'
+import { extractXMLArray, extractXMLFromAnthropicResponse, mustExtractXML } from '../util'
 import { DoPlanStep } from './do-step'
 
 export class PlanNode implements Node {
@@ -53,7 +53,12 @@ export class PlanNode implements Node {
         })
 
         const rawPlan = extractXMLFromAnthropicResponse(message, 'plan')
-        const steps = extractXMLArray(rawPlan, 'step')
+        const steps = extractXMLArray(rawPlan, 'step').map(rawStep => {
+            return {
+                description: mustExtractXML(rawStep, 'description'),
+                title: mustExtractXML(rawStep, 'title'),
+            }
+        })
 
         console.log('# steps', steps)
 
@@ -61,9 +66,7 @@ export class PlanNode implements Node {
         memory.actions.push({
             level: 0,
             type: 'plan',
-            steps: steps.map(s => ({
-                description: s,
-            })),
+            steps,
         })
         human.report(proposedAction, 'completed', '')
 

@@ -1,5 +1,13 @@
 import type { Message } from '@anthropic-ai/sdk/resources'
 
+export function mustExtractXML(text: string, tag: string): string {
+    const r = extractXML(text, tag)
+    if (r === null) {
+        throw new Error(`did not find xml tag ${tag} in text ${text}`)
+    }
+    return r
+}
+
 export function extractXML(text: string, tag: string): string | null {
     const startTag = `<${tag}>`
     const endTag = `</${tag}>`

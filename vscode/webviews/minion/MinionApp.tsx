@@ -290,7 +290,7 @@ function renderAction(action: Action, key: string): React.ReactNode {
                 <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <ol>
                         {action.steps.map(step => (
-                            <li key={step.description}>{step.description}</li>
+                            <li key={step.title}>{step.title}</li>
                         ))}
                     </ol>
                 </ActionBlock>
@@ -300,7 +300,7 @@ function renderAction(action: Action, key: string): React.ReactNode {
             return (
                 <>
                     <ActionBlock level={action.level} codicon={codicon} title={title}>
-                        <pre className="action-text">Doing: {action.step.description}</pre>
+                        <pre className="action-text">{`Doing:\n${action.step.description}`}</pre>
                     </ActionBlock>
                     {action.subactions.map((subaction, i) => renderAction(subaction, `${key}-${i}`))}
                 </>
