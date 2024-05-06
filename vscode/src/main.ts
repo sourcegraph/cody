@@ -51,6 +51,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import { PoorMansBash } from './minion/environment'
 import { createNewMinionPanel } from './minion/minion'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
@@ -448,6 +449,12 @@ const register = async (
         vscode.commands.registerCommand('cody.minion.panel.new', () =>
             createNewMinionPanel(context.extensionUri, symfRunner)
         ),
+        vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
+            console.log('### HERE')
+            const t = new PoorMansBash()
+            const result = await t.run('hello world')
+            console.log('#### result', result)
+        }),
 
         // Account links
         ...registerSidebarCommands(),
