@@ -10,8 +10,9 @@ import { InitDoer } from '../chat/chat-view/InitDoer'
 import type { SymfRunner } from '../local-context/symf'
 import type { Action, ActionStatus } from './action'
 import { type Environment, LocalVSCodeEnvironment } from './environment'
+import { RestateNode } from './nodes/restate'
 import type { HumanLink, Memory } from './statemachine'
-import { RestateNode, StateMachine } from './statemachine'
+import { StateMachine } from './statemachine'
 
 /**
  * Message sent from webview
