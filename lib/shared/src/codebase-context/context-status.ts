@@ -25,6 +25,11 @@ export interface RemoteSearchProvider {
     // context source was included because the IDE detected the repo and
     // included it.
     inclusion: 'auto' | 'manual'
+
+    /**
+     * Whether the item is excluded by Cody Ignore.
+     */
+    isIgnored: boolean
 }
 
 export type EmbeddingsProvider = 'sourcegraph' | 'openai'

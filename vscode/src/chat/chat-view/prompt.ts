@@ -103,7 +103,8 @@ export class DefaultPrompter implements IPrompter {
                 limitReached: userLimitReached,
                 used,
                 ignored,
-            } = promptBuilder.tryAddContext('user', filteredExplicitContext)
+            } = await promptBuilder.tryAddContext('user', filteredExplicitContext)
+
             newContextUsed.push(...used.map(c => ({ ...c, isTooLarge: false })))
             newContextIgnored.push(...ignored.map(c => ({ ...c, isTooLarge: true })))
             if (userLimitReached) {
@@ -116,12 +117,12 @@ export class DefaultPrompter implements IPrompter {
             // Add user and enhanced context from previous messages seperately as they have different budgets
             const prevContext = reverseTranscript.flatMap(m => m?.contextFiles || [])
             const userContext = prevContext.filter(c => c.source === 'user')
-            if (promptBuilder.tryAddContext('user', userContext).limitReached) {
+            if ((await promptBuilder.tryAddContext('user', userContext)).limitReached) {
                 logDebug('DefaultPrompter.makePrompt', 'Ignored prior user context due to limit')
                 return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
             const enhancedContext = prevContext.filter(c => c.source !== 'user')
-            if (promptBuilder.tryAddContext('enhanced', enhancedContext).limitReached) {
+            if ((await promptBuilder.tryAddContext('enhanced', enhancedContext)).limitReached) {
                 logDebug('DefaultPrompter.makePrompt', 'Ignored prior enhanced context due to limit')
                 return { prompt: promptBuilder.build(), newContextUsed, newContextIgnored }
             }
@@ -137,7 +138,7 @@ export class DefaultPrompter implements IPrompter {
                 }
                 const newEnhancedContext = await this.getEnhancedContext(lastMessage.text)
                 sortContextItems(newEnhancedContext)
-                const { limitReached, used, ignored } = promptBuilder.tryAddContext(
+                const { limitReached, used, ignored } = await promptBuilder.tryAddContext(
                     'enhanced',
                     newEnhancedContext
                 )

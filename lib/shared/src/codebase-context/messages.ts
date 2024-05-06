@@ -41,6 +41,11 @@ interface ContextItemCommon {
     size?: number
 
     /**
+     * Whether the item is excluded by Cody Ignore.
+     */
+    isIgnored?: boolean
+
+    /**
      * Whether the content of the item is too large to be included as context.
      */
     isTooLarge?: boolean

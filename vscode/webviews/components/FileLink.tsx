@@ -20,9 +20,11 @@ interface FileLinkProps {
     range?: RangeData
     title?: string
     isTooLarge?: boolean
+    isIgnored?: boolean
 }
 
-const WARNING = 'Excluded due to context window limit'
+const LIMIT_WARNING = 'Excluded due to context window limit'
+const IGNORE_WARNING = 'File ignored by an admin setting'
 
 export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
     uri,
@@ -32,6 +34,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     title,
     revision,
     isTooLarge,
+    isIgnored,
     className,
 }) => {
     function logFileLinkClicked() {
@@ -59,14 +62,18 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
         const pathToDisplay = `${displayPath(uri)}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
-        tooltip = isTooLarge ? WARNING : pathWithRange
+        tooltip = isIgnored ? IGNORE_WARNING : isTooLarge ? LIMIT_WARNING : pathWithRange
         href = openURI.href
         target = openURI.target
     }
 
     return (
         <div className={clsx(styles.linkContainer, className)}>
-            {isTooLarge && <i className="codicon codicon-warning" title={WARNING} />}
+            {isIgnored ? (
+                <i className="codicon codicon-warning" title={IGNORE_WARNING} />
+            ) : isTooLarge ? (
+                <i className="codicon codicon-warning" title={LIMIT_WARNING} />
+            ) : null}
             <a
                 className={styles.linkButton}
                 title={tooltip}
@@ -78,7 +85,9 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
                     className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
                     title={getFileSourceIconTitle(source)}
                 />
-                <div className={clsx(styles.path, isTooLarge && styles.excluded)}>{pathWithRange}</div>
+                <div className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}>
+                    {pathWithRange}
+                </div>
             </a>
         </div>
     )

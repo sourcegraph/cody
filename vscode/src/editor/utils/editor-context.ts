@@ -15,13 +15,13 @@ import {
     type PromptString,
     type SymbolKind,
     TokenCounter,
+    contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
     isWindows,
 } from '@sourcegraph/cody-shared'
-
 import { getOpenTabsUris } from '.'
 import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
@@ -103,14 +103,21 @@ export async function getFileContextFiles(
     // fuzzysort can return results in different order for the same query if
     // they have the same score :( So we do this hacky post-limit sorting (first
     // by score, then by path) to ensure the order stays the same.
-    const sortedResults = adjustedResults
-        .sort((a, b) => {
-            return (
-                b.score - a.score ||
-                new Intl.Collator(undefined, { numeric: true }).compare(a.obj.uri.path, b.obj.uri.path)
-            )
-        })
-        .flatMap(result => createContextFileFromUri(result.obj.uri, ContextItemSource.User, 'file'))
+    const sortedResults = (
+        await Promise.all(
+            adjustedResults
+                .sort((a, b) => {
+                    return (
+                        b.score - a.score ||
+                        new Intl.Collator(undefined, { numeric: true }).compare(
+                            a.obj.uri.path,
+                            b.obj.uri.path
+                        )
+                    )
+                })
+                .map(result => createContextFileFromUri(result.obj.uri, ContextItemSource.User, 'file'))
+        )
+    ).flat()
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
 
@@ -159,21 +166,21 @@ export async function getSymbolContextFiles(
         return []
     }
 
-    const matches = []
-    for (const symbol of symbols) {
-        const contextFile = createContextFileFromUri(
-            symbol.location.uri,
-            ContextItemSource.User,
-            'symbol',
-            symbol.location.range,
-            // TODO(toolmantim): Update the kinds to match above
-            symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function',
-            symbol.name
+    const matches = await Promise.all(
+        symbols.map(symbol =>
+            createContextFileFromUri(
+                symbol.location.uri,
+                ContextItemSource.User,
+                'symbol',
+                symbol.location.range,
+                // TODO(toolmantim): Update the kinds to match above
+                symbol.kind === vscode.SymbolKind.Class ? 'class' : 'function',
+                symbol.name
+            )
         )
-        matches.push(contextFile)
-    }
+    )
 
-    return matches.flatMap(match => match)
+    return matches.flat()
 }
 
 /**
@@ -182,57 +189,56 @@ export async function getSymbolContextFiles(
  */
 export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterContextItemFiles(
-        getOpenTabsUris()
-            .filter(uri => !isCodyIgnoredFile(uri))
-            .flatMap(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
+        (
+            await Promise.all(
+                getOpenTabsUris()
+                    .filter(uri => !isCodyIgnoredFile(uri))
+                    .map(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
+            )
+        ).flat()
     )
 }
 
-function createContextFileFromUri(
+async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: 'symbol',
     selectionRange: vscode.Range,
     kind: SymbolKind,
     symbolName: string
-): ContextItemSymbol[]
-function createContextFileFromUri(
+): Promise<ContextItemSymbol[]>
+async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: 'file',
     selectionRange?: vscode.Range
-): ContextItemFile[]
-function createContextFileFromUri(
-    uri: vscode.Uri,
-    source: ContextItemSource,
-    type: 'mixin',
-    selectionRange?: vscode.Range
-): never
-function createContextFileFromUri(
+): Promise<ContextItemFile[]>
+async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: ContextItemType,
     selectionRange?: vscode.Range,
     kind?: SymbolKind,
     symbolName?: string
-): ContextItem[] {
+): Promise<ContextItem[]> {
     if (isCodyIgnoredFile(uri)) {
         return []
     }
+
+    const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
     switch (type) {
         case 'file': {
-            const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
             return [
                 {
                     type,
                     uri,
                     range,
                     source,
+                    isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
                 },
             ]
         }
         case 'symbol': {
-            const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
             return [
                 {
                     type,
@@ -244,9 +250,8 @@ function createContextFileFromUri(
                 },
             ]
         }
-        default: {
+        default:
             return []
-        }
     }
 }
 

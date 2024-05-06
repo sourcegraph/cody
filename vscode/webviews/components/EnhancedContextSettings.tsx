@@ -124,6 +124,7 @@ const CompactGroupsComponent: React.FunctionComponent<{
                         name={group}
                         inclusion={provider.inclusion}
                         handleRemove={handleRemove}
+                        isIgnored={provider.isIgnored}
                     />
                 ))
             )}
@@ -139,14 +140,22 @@ const CompactProviderComponent: React.FunctionComponent<{
     name: string
     inclusion: 'auto' | 'manual'
     handleRemove: (id: string) => void
-}> = ({ id, name, inclusion, handleRemove }): React.ReactNode => {
+    isIgnored: boolean
+}> = ({ id, name, inclusion, handleRemove, isIgnored }) => {
     return (
         <div className={styles.enterpriseRepoListItem}>
-            <i className="codicon codicon-repo-forked" title={name} />
-            <span className={styles.repoName} title={name}>
+            <i
+                className={clsx('codicon', isIgnored ? 'codicon-circle-slash' : 'codicon-repo-forked')}
+                title={name}
+            />
+            <span className={clsx(styles.repoName, { [styles.repoNameMuted]: isIgnored })} title={name}>
                 {briefName(name)}
             </span>
-            {inclusion === 'auto' ? (
+            {isIgnored ? (
+                <span className={styles.infoClose}>
+                    <i className="codicon codicon-info" title="Repo ignored by an admin setting." />
+                </span>
+            ) : inclusion === 'auto' ? (
                 <span className={styles.infoClose}>
                     <i
                         className="codicon codicon-info"

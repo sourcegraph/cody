@@ -22,6 +22,7 @@ import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_PACKAGE_MATCHES_LABEL,
@@ -138,18 +139,16 @@ const FileItem: FunctionComponent<ItemProps<ContextItemFile>> = ({
     const dir = decodeURIComponent(displayPathDirname(item.uri))
     const description = `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
 
-    //     const range = getLineRangeInMention(query, item.range)
-    //     const dir = decodeURIComponent(displayPathDirname(item.uri))
-    //     const description = isPackageType
-    //         ? ''
-    //         : isFileType
-    //           ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-    //           : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
-    // >>>>>>> refs/heads/main
-
+    const isIgnored = item.isIgnored
     const isLargeFile = item.isTooLarge
-    const warning =
-        isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
+    let warning: string
+    if (isIgnored) {
+        warning = IGNORED_FILE_WARNING_LABEL
+    } else if (isLargeFile && !item.range && !isValidLineRangeQuery(query)) {
+        warning = LARGE_FILE_WARNING_LABEL
+    } else {
+        warning = ''
+    }
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:

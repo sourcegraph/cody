@@ -67,7 +67,7 @@
     color: var(--vscode-list-activeSelectionForeground);
     background-color: var(--vscode-list-activeSelectionBackground);
 }
-.option-item:hover:not(.selected) {
+.option-item:hover:not(.selected):not(.disabled) {
     color: var(--vscode-list-hoverForeground);
     background-color: var(--vscode-list-hoverBackground);
 }
