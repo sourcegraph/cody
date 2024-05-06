@@ -51,6 +51,10 @@
     margin-left: 0.25rem;
 }
 
+.enterprise-repo-list-item .repo-name-muted {
+    color: var(--vscode-input-placeholderForeground)
+}
+
 .enterprise-repo-list-item .info-close {
     margin-left: auto;
     font-size: 16px;

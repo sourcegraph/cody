@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
-import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
+import { type ChatMessage, contextFiltersProvider, ps } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
+
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
     describe('tryAddMessages', () => {
         it('throws error when tryAddMessages before tryAddPrefix', () => {
@@ -113,7 +117,7 @@ describe('PromptBuilder', () => {
                 size: 100,
             }
             const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-            expect(() => builder.tryAddContext('enhanced', transcript.reverse())).toThrowError()
+            expect(() => builder.tryAddContext('enhanced', transcript.reverse())).rejects.toThrowError()
         })
 
         it('throws error when trying to add User Context before chat input', () => {
@@ -126,7 +130,7 @@ describe('PromptBuilder', () => {
                 size: 100,
             }
             const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-            expect(() => builder.tryAddContext('user', transcript.reverse())).toThrowError()
+            expect(() => builder.tryAddContext('user', transcript.reverse())).rejects.toThrowError()
         })
     })
 })
