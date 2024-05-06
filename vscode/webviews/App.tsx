@@ -19,16 +19,16 @@ import { EnhancedContextEnabled } from './chat/EnhancedContext'
 import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
-import {
-    EnhancedContextContext,
-    EnhancedContextEventHandlers,
-} from './Components/EnhancedContextSettings'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
+import {
+    EnhancedContextContext,
+    EnhancedContextEventHandlers,
+} from './components/EnhancedContextSettings'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'

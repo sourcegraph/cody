@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type React from 'react'
 import type { FunctionComponent, PropsWithChildren } from 'react'
 import styles from './Cell.module.css'
@@ -25,7 +25,7 @@ export const Cell: FunctionComponent<
     children,
 }) => (
     <div
-        className={classNames(
+        className={clsx(
             styles.container,
             {
                 [styles.containerStyleAssistant]: style === 'assistant',
@@ -38,6 +38,6 @@ export const Cell: FunctionComponent<
         data-testid={dataTestID}
     >
         <div className={styles.gutter}>{gutterIcon}</div>
-        <div className={classNames(styles.content, contentClassName)}>{children}</div>
+        <div className={clsx(styles.content, contentClassName)}>{children}</div>
     </div>
 )

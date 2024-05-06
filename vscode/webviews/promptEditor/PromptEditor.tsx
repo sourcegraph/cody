@@ -1,6 +1,6 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
 import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import {
     $createTextNode,
     $getRoot,
@@ -121,7 +121,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            className={classNames(styles.editor, editorClassName, disabled && styles.disabled)}
+            className={clsx(styles.editor, editorClassName, disabled && styles.disabled)}
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}

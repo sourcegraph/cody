@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import {
     type ContextGroup,
@@ -450,7 +450,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     )
 
     return (
-        <div className={classNames(popupStyles.popupHost)} onKeyDown={onKeyDown}>
+        <div className={clsx(popupStyles.popupHost)} onKeyDown={onKeyDown}>
             <PopupFrame
                 isOpen={isOpen}
                 onDismiss={handleDismiss}
@@ -502,7 +502,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 </div>
             </PopupFrame>
             <VSCodeButton
-                className={classNames(
+                className={clsx(
                     styles.settingsBtns,
                     styles.settingsIndicator,
                     enabled && styles.settingsIndicatorActive
@@ -517,7 +517,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
             </VSCodeButton>
             <VSCodeButton
-                className={classNames(
+                className={clsx(
                     styles.settingsBtns,
                     styles.settingsBtn,
                     isOpen && styles.settingsBtnActive

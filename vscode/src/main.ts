@@ -11,6 +11,7 @@ import {
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
+    githubClient,
     graphqlClient,
     newPromptMixin,
     setLogger,
@@ -183,6 +184,7 @@ const register = async (
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
+    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -262,6 +264,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(bindedRepoNamesResolver)
