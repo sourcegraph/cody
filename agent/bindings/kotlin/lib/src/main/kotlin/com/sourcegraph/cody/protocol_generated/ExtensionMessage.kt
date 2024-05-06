@@ -21,7 +21,7 @@ sealed class ExtensionMessage {
           "errors" -> context.deserialize<ErrorsExtensionMessage>(element, ErrorsExtensionMessage::class.java)
           "notice" -> context.deserialize<NoticeExtensionMessage>(element, NoticeExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
-          "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
+          "userContext" -> context.deserialize<UserContextExtensionMessage>(element, UserContextExtensionMessage::class.java)
           "chat-input-context" -> context.deserialize<`chat-input-contextExtensionMessage`>(element, `chat-input-contextExtensionMessage`::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
           "update-search-results" -> context.deserialize<`update-search-resultsExtensionMessage`>(element, `update-search-resultsExtensionMessage`::class.java)
@@ -122,13 +122,14 @@ data class `transcript-errorsExtensionMessage`(
   }
 }
 
-data class UserContextFilesExtensionMessage(
-  val type: TypeEnum, // Oneof: userContextFiles
-  val userContextFiles: List<ContextItem>? = null,
+data class UserContextExtensionMessage(
+  val type: TypeEnum, // Oneof: userContext
+  val items: List<ContextItem>? = null,
+  val mentionProviders: List<ContextMentionProviderInformation>? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
-    @SerializedName("userContextFiles") UserContextFiles,
+    @SerializedName("userContext") UserContext,
   }
 }
 

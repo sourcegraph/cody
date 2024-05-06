@@ -655,6 +655,10 @@ export class KotlinCodegen extends BaseCodegen {
             return
         }
 
+        if (jsonrpcMethod.kind === scip.SymbolInformation.Kind.TypeParameter) {
+            return
+        }
+
         throw new TypeError(`unknown info: ${JSON.stringify(jsonrpcMethod.toObject(), null, 2)}`)
     }
 }
