@@ -73,7 +73,10 @@ export class DefaultPrompter implements IPrompter {
             const contextCount = { user: 0, enhanced: 0, transcript: 0 }
 
             // Add context from new user-specified context items, e.g. @-mentions, @-uri
-            const newUserContextMessages = promptBuilder.tryAddContext('user', this.explicitContext)
+            const newUserContextMessages = await promptBuilder.tryAddContext(
+                'user',
+                this.explicitContext
+            )
             contextCount.user += newUserContextMessages.ignored.length
 
             // NOTE: Only used for display excluded context from user-specifed context items in UI
@@ -83,10 +86,11 @@ export class DefaultPrompter implements IPrompter {
             }))
 
             // Add user and enhanced context from previous messages (chat transcript)
-            contextCount.transcript += promptBuilder.tryAddContext(
+            const historyContext = await promptBuilder.tryAddContext(
                 'history',
                 reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            ).ignored.length
+            )
+            contextCount.transcript += historyContext.ignored.length
 
             // Get new enhanced context from current editor or broader search when enabled
             if (this.getEnhancedContext) {
@@ -96,7 +100,7 @@ export class DefaultPrompter implements IPrompter {
                 }
 
                 const newEnhancedContextItems = await this.getEnhancedContext(lastMessage.text)
-                const newEnhancedMessages = promptBuilder.tryAddContext(
+                const newEnhancedMessages = await promptBuilder.tryAddContext(
                     'enhanced',
                     newEnhancedContextItems
                 )

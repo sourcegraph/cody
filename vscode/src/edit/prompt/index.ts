@@ -134,7 +134,7 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    promptBuilder.tryAddContext('user', contextItemsAndMessages)
+    await promptBuilder.tryAddContext('user', contextItemsAndMessages)
 
     return {
         messages: promptBuilder.build(),

@@ -8,12 +8,13 @@ import {
     displayPathDirname,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_PACKAGE_MATCHES_LABEL,
@@ -43,7 +44,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={clsx(styles.item, styles.helpItem)}>
                 <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
@@ -123,16 +124,23 @@ const Item: FunctionComponent<{
     const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
     const description = getDescription(item, query)
 
+    const isIgnored = isFileType && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
-    const warning =
-        isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
+    let warning: string
+    if (isIgnored) {
+        warning = IGNORED_FILE_WARNING_LABEL
+    } else if (isLargeFile && !item.range && !isValidLineRangeQuery(query)) {
+        warning = LARGE_FILE_WARNING_LABEL
+    } else {
+        warning = ''
+    }
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(
+            className={clsx(
                 className,
                 styles.optionItem,
                 isSelected && styles.selected,
@@ -150,7 +158,7 @@ const Item: FunctionComponent<{
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
                 )}
                 <span
-                    className={classNames(
+                    className={clsx(
                         styles.optionItemTitle,
                         warning && styles.optionItemTitleWithWarning
                     )}

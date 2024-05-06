@@ -20,10 +20,15 @@ describe.skipIf(isWindows())('Graph Context', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'graph-test'))
 
     const models: TestParameters[] = [
-        { graphContext: 'tsc-mixed', provider: 'fireworks', model: 'starcoder-7b' },
         { graphContext: 'tsc-mixed', provider: 'fireworks', model: 'starcoder-16b' },
-        { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-instant-1.2' },
-        { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-3-haiku-20240307' },
+        // The models below are commented out because our focus with graph
+        // context for now is to make it work well with starcoder-16b. Running
+        // parallel clients makes the tests more flaky and they run slower. If
+        // we want to experiment with a new model in the future, then it's easy
+        // to compare the results below by adding it to the list here.
+        // { graphContext: 'tsc-mixed', provider: 'fireworks', model: 'starcoder-7b' },
+        // { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-instant-1.2' },
+        // { graphContext: 'tsc-mixed', provider: 'anthropic', model: 'claude-3-haiku-20240307' },
     ]
     const clients: TestClient[] = models.map(({ graphContext, provider, model }) =>
         TestClient.create({
@@ -39,7 +44,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
         })
     )
 
-    let modelFilter: { provider?: string; model?: string } = {}
+    let modelFilter: { provider?: string; model?: string } = { model: 'starcoder-16b' }
     function matchesFilter(client: TestClient): boolean {
         if (modelFilter.provider && !client.completionProvider.includes(modelFilter.provider)) {
             return false
@@ -119,14 +124,14 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
     describe('Autocomplete', () => {
         const mainUri = workspace.file('src', 'main.ts')
-        it('empty', async () => {
-            modelFilter = { model: 'starcoder-7b' }
+        it('empty (graph-context should not add symbols by default)', async () => {
+            modelFilter = { model: 'starcoder-16b' }
             await openFile(mainUri)
             expect(await autocompletes()).toMatchInlineSnapshot(`
               "autocompletes:
-                - name: starcoder-7b
+                - name: starcoder-16b
                   value:
-                    - "// TODO: Write tests"
+                    - "// TODO: Write the code for your program here"
               prompts:
                 - name: fireworks
                   value:
@@ -140,7 +145,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         })
 
         it('single-line', async () => {
-            modelFilter = { provider: 'fireworks' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -158,13 +162,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 `
               "autocompletes:
                 - name: starcoder-16b
-                  value:
-                    - |-
-                      const user = {
-                        firstName: 'John',
-                        isEligible: true
-                      }
-                - name: starcoder-7b
                   value:
                     - |-
                       const user = {
@@ -204,7 +201,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         })
 
         it('multiline', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -261,7 +257,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('multiple-symbols', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -383,7 +378,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('complex-types', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -485,7 +479,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -542,7 +535,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter2', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -720,7 +712,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -777,7 +768,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection-expression', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -834,7 +824,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('member-selection-expression-this', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -900,7 +889,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         it('function-parameter2', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
                 dedent`
@@ -1082,7 +1070,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const tsxUri = workspace.file('src', 'Calculator.tsx')
         it('tsx', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await openFile(tsxUri)
 
             const text = await autocompletes()
@@ -1145,7 +1132,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const jsUri = workspace.file('src', 'typeless2.js')
         it('js', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await openFile(jsUri)
 
             const text = await autocompletes()
@@ -1184,7 +1170,6 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
         const jsxUri = workspace.file('src', 'FruitsList.jsx')
         it('jsx', async () => {
-            modelFilter = { model: 'starcoder-16b' }
             await openFile(jsxUri)
 
             const text = await autocompletes()
