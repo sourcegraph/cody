@@ -51,8 +51,8 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
+import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { createNewMinionPanel } from './minion/minion'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
@@ -195,6 +195,24 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
+
+    //
+    // Minion stuff
+    //
+    const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
+    disposables.push(minionOrchestrator)
+    disposables.push(
+        // Minion
+        vscode.commands.registerCommand('cody.minion.panel.new', () =>
+            minionOrchestrator.createNewMinionPanel()
+        ),
+        vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
+            console.log('### HERE')
+            const t = new PoorMansBash()
+            const result = await t.run('hello world')
+            console.log('#### result', result)
+        })
+    )
 
     const enterpriseContextFactory = new EnterpriseContextFactory()
     disposables.push(enterpriseContextFactory)
@@ -444,17 +462,6 @@ const register = async (
         vscode.commands.registerCommand('cody.copy.version', () =>
             vscode.env.clipboard.writeText(version)
         ),
-
-        // Minion
-        vscode.commands.registerCommand('cody.minion.panel.new', () =>
-            createNewMinionPanel(context.extensionUri, symfRunner)
-        ),
-        vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-            console.log('### HERE')
-            const t = new PoorMansBash()
-            const result = await t.run('hello world')
-            console.log('#### result', result)
-        }),
 
         // Account links
         ...registerSidebarCommands(),
