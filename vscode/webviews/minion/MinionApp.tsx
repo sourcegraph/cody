@@ -345,7 +345,30 @@ function renderAction(action: Action, key: string): React.ReactNode {
             )
         }
         case 'human': {
-            return <ActionBlock level={action.level} codicon={codicon} title={title} />
+            let child: React.ReactNode | undefined
+            switch (action.actionType) {
+                case 'edit':
+                    child = (
+                        <div>
+                            <i className="codicon codicon-edit" />
+                            <span>{action.description}</span>
+                        </div>
+                    )
+                    break
+                case 'view':
+                    child = (
+                        <div>
+                            <i className="codicon codicon-eye" />
+                            <span>{action.description}</span>
+                        </div>
+                    )
+                    break
+            }
+            return (
+                <ActionBlock level={action.level} codicon={codicon} title={title}>
+                    {child}
+                </ActionBlock>
+            )
         }
         default: {
             return <ActionBlock level={(action as any).level} codicon={codicon} title={title} />

@@ -43,6 +43,7 @@ export type ActionL1 = { level: 1 } & (
       }
     | {
           type: 'human'
+          actionType: 'edit' | 'view'
           description: string
       }
 )

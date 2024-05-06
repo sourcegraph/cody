@@ -5,18 +5,43 @@ import { MinionController, ReactPanelController } from './MinionController'
 
 export class MinionOrchestrator implements vscode.Disposable {
     private minions: MinionController[] = []
+    private activeMinion: MinionController | undefined
     private disposables: vscode.Disposable[] = []
 
     constructor(
         private extensionUri: vscode.Uri,
         private symf: SymfRunner | undefined
-    ) {}
+    ) {
+        this.registerHumanListeners()
+    }
 
     public dispose() {
         for (const d of this.disposables) {
             d.dispose()
         }
         this.disposables = []
+        for (const m of this.minions) {
+            m.dispose()
+        }
+        this.minions = []
+        this.activeMinion = undefined
+    }
+
+    private registerHumanListeners() {
+        this.disposables.push(
+            vscode.workspace.onDidSaveTextDocument(e => {
+                if (!this.activeMinion) {
+                    return
+                }
+                this.activeMinion.handleUserActivity({ savedTextDocument: e })
+            }),
+            vscode.window.onDidChangeActiveTextEditor(e => {
+                if (!this.activeMinion) {
+                    return
+                }
+                this.activeMinion.handleUserActivity({ newActiveEditor: e })
+            })
+        )
     }
 
     public async createNewMinionPanel(): Promise<void> {
@@ -47,6 +72,7 @@ export class MinionOrchestrator implements vscode.Disposable {
                 return new MinionController(this.symf, anthropic, panel, assetRoot, () => {})
             }
         )
-        this.disposables.push(minion)
+        this.minions.push(minion)
+        this.activeMinion = minion
     }
 }

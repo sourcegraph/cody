@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type Anthropic from '@anthropic-ai/sdk'
 import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
@@ -202,6 +203,32 @@ export class MinionController
         }
     }
 
+    public handleUserActivity({
+        savedTextDocument,
+        newActiveEditor,
+    }: { savedTextDocument?: vscode.TextDocument; newActiveEditor?: vscode.TextEditor }): void {
+        console.log('# handleUserActivity', savedTextDocument, newActiveEditor)
+        if (savedTextDocument) {
+            const basename = path.basename(savedTextDocument.fileName)
+            this.memory.actions.push({
+                level: 1,
+                type: 'human',
+                actionType: 'edit',
+                description: `human edited ${basename}`,
+            })
+        }
+        if (newActiveEditor) {
+            const basename = path.basename(newActiveEditor.document.fileName)
+            this.memory.actions.push({
+                level: 1,
+                type: 'human',
+                actionType: 'view',
+                description: `human viewed ${basename}`,
+            })
+        }
+        this.postUpdateActions()
+    }
+
     protected handleDidReceiveMessage(message: MinionWebviewMessage): void {
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
@@ -252,7 +279,6 @@ export class MinionController
     }
 
     private postUpdateActions(): void {
-        console.log('#### this.postMessage', { actions: this.memory.actions })
         this.postMessage({
             type: 'update-actions',
             actions: this.memory.actions,

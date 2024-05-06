@@ -5,7 +5,7 @@ import type { Action, Step } from '../action'
 import type { Environment } from '../environment'
 import * as prompts from '../prompts'
 import type { HumanLink, Memory, Node, NodeArg } from '../statemachine'
-import { extractXMLArrayFromAnthropicResponse, extractXMLFromAnthropicResponse } from '../util'
+import { extractXMLFromAnthropicResponse } from '../util'
 
 interface SubAction {
     readonly type: string
