@@ -320,7 +320,7 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
@@ -366,7 +366,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument = ProtocolTextDocumentWithUri.from(document.uri, {
             content: updatedContent,
         })
-        this.workspace.addDocument(protocolDocument)
+        this.workspace.loadDocument(protocolDocument)
         return { success: true, protocolDocument }
     }
     private logMessage(params: DebugMessage): void {
@@ -426,7 +426,7 @@ export class TestClient extends MessageHandler {
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
     }

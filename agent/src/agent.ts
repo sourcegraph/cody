@@ -375,25 +375,26 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
+                this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const { document: textDocument, contentChanges } =
+                this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
+                contentChanges,
                 reason: undefined,
             })
 
