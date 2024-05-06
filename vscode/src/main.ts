@@ -44,10 +44,8 @@ import { executeExplainHistoryCommand } from './commands/execute/explain-history
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
-import {
-    createInlineCompletionItemProvider,
-    createInlineCompletionItemFromMultipleProviders
-} from './completions/create-inline-completion-item-provider'
+import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
+import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'

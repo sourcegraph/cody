@@ -652,7 +652,7 @@
       },
       {
         "command": "cody.multi-model-autocomplete.manual-trigger",
-        "key": "alt+\\",
+        "key": "alt+m",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {

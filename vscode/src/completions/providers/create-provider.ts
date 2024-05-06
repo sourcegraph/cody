@@ -21,18 +21,23 @@ import { createProviderConfig as createOpenAICompatibleProviderConfig } from './
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
-export async function createProviderConfigForModel(
+export async function createProviderConfigFromVSCodeConfig(
     client: CodeCompletionsClient,
     authStatus: AuthStatus,
-    model: string,
+    model: string | undefined,
     provider: string,
     config: ConfigurationWithAccessToken
-): Promise<ProviderConfig | null>  {
+): Promise<ProviderConfig | null> {
     switch (provider) {
+        case 'unstable-openai': {
+            return createUnstableOpenAIProviderConfig({
+                client,
+            })
+        }
         case 'fireworks': {
             return createFireworksProviderConfig({
                 client,
-                model: model,
+                model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
@@ -52,9 +57,7 @@ export async function createProviderConfigForModel(
         }
         case 'experimental-ollama':
         case 'unstable-ollama': {
-            return createExperimentalOllamaProviderConfig(
-                config.autocompleteExperimentalOllamaOptions
-            )
+            return createExperimentalOllamaProviderConfig(config.autocompleteExperimentalOllamaOptions)
         }
         default:
             logError(
@@ -64,7 +67,6 @@ export async function createProviderConfigForModel(
             return null
     }
 }
-
 
 export async function createProviderConfig(
     config: ConfigurationWithAccessToken,
@@ -79,47 +81,7 @@ export async function createProviderConfig(
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
-
-        switch (provider) {
-            case 'unstable-openai': {
-                return createUnstableOpenAIProviderConfig({
-                    client,
-                })
-            }
-            case 'fireworks': {
-                return createFireworksProviderConfig({
-                    client,
-                    model: config.autocompleteAdvancedModel ?? model ?? null,
-                    timeouts: config.autocompleteTimeouts,
-                    authStatus,
-                    config,
-                })
-            }
-            case 'anthropic': {
-                return createAnthropicProviderConfig({ client, model })
-            }
-            case 'experimental-openaicompatible': {
-                return createOpenAICompatibleProviderConfig({
-                    client,
-                    model: config.autocompleteAdvancedModel ?? model ?? null,
-                    timeouts: config.autocompleteTimeouts,
-                    authStatus,
-                    config,
-                })
-            }
-            case 'experimental-ollama':
-            case 'unstable-ollama': {
-                return createExperimentalOllamaProviderConfig(
-                    config.autocompleteExperimentalOllamaOptions
-                )
-            }
-            default:
-                logError(
-                    'createProviderConfig',
-                    `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
-                )
-                return null
-        }
+        return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
     }
 
     /**

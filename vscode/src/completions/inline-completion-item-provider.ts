@@ -80,12 +80,12 @@ interface CodyCompletionItemProviderConfig {
     // Flag to check if the current request is also triggered for multiple providers.
     // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
     // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
-    isRequestForMultipleModelCompletions?: boolean
+    noAnalytics?: boolean
 }
 
 export interface MultiModelCompletionsResults {
-    provider: string,
-    model: string,
+    provider: string
+    model: string
     completion?: string
 }
 
@@ -143,7 +143,7 @@ export class InlineCompletionItemProvider
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
-            isRequestForMultipleModelCompletions: config.isRequestForMultipleModelCompletions ?? false,
+            noAnalytics: config.noAnalytics ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -186,10 +186,11 @@ export class InlineCompletionItemProvider
             [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
 
-        if (!this.config.isRequestForMultipleModelCompletions) {
+        this.disposables.push(this.contextMixer)
+
+        if (!this.config.noAnalytics) {
             // We don't want to accept and log items when we are doing completion comparison from different models.
             this.disposables.push(
-                this.contextMixer,
                 vscode.commands.registerCommand(
                     'cody.autocomplete.inline.accepted',
                     ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
@@ -427,7 +428,7 @@ export class InlineCompletionItemProvider
                     // Returning null will clear any existing suggestions, thus we need to reset the
                     // last candidate.
                     this.lastCandidate = undefined
-                    if (!this.config.isRequestForMultipleModelCompletions) {
+                    if (!this.config.noAnalytics) {
                         // Don't log event if just want to compare the completion data from multiple providers.
                         CompletionLogger.noResponse(result.logId)
                     }
@@ -458,7 +459,7 @@ export class InlineCompletionItemProvider
                     span
                 )
 
-                if (!this.config.isRequestForMultipleModelCompletions) {
+                if (!this.config.noAnalytics) {
                     // Don't update the suggestion cache when we only want to compare various model completions output and not log.
 
                     // Store the log ID for each completion item so that we can later map to the selected
@@ -475,7 +476,7 @@ export class InlineCompletionItemProvider
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
-                if (!this.config.isRunningInsideAgent && !this.config.isRequestForMultipleModelCompletions) {
+                if (!this.config.isRunningInsideAgent && !this.config.noAnalytics) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
@@ -527,7 +528,7 @@ export class InlineCompletionItemProvider
 
         this.lastAcceptedCompletionItem = completion
 
-        if (!this.config.isRequestForMultipleModelCompletions) {
+        if (!this.config.noAnalytics) {
             // Don't log event if just want to compare the completion data from multiple providers.
             CompletionLogger.accepted(
                 completion.logId,
@@ -583,7 +584,7 @@ export class InlineCompletionItemProvider
         if (!completion) {
             return
         }
-        if (!this.config.isRequestForMultipleModelCompletions) {
+        if (!this.config.noAnalytics) {
             CompletionLogger.suggested(completion.logId, completion.span)
         }
     }
@@ -597,7 +598,7 @@ export class InlineCompletionItemProvider
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        if (!this.config.isRequestForMultipleModelCompletions) {
+        if (!this.config.noAnalytics) {
             CompletionLogger.partiallyAccept(
                 completion.logId,
                 completion.analyticsItem,
@@ -610,22 +611,22 @@ export class InlineCompletionItemProvider
     public async manuallyGetCompletionItemsForProvider(
         document: vscode.TextDocument,
         position: vscode.Position,
-        context: vscode.InlineCompletionContext,
+        context: vscode.InlineCompletionContext
     ): Promise<MultiModelCompletionsResults> {
         const result = await this.provideInlineCompletionItems(
             document,
             position,
             context,
-            new vscode.CancellationTokenSource().token,
-        );
-        const model = this.config.providerConfig.model;
-        const provider = this.config.providerConfig.identifier;
-        let completion = result?.items[0].insertText?.toString() || "";
+            new vscode.CancellationTokenSource().token
+        )
+        const model = this.config.providerConfig.model
+        const provider = this.config.providerConfig.identifier
+        const completion = result?.items[0].insertText?.toString() || ''
         return {
             provider,
             model,
             completion,
-        };
+        }
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
