@@ -157,7 +157,9 @@ export class PromptBuilder {
 
             // Add the new context item to the list,
             this.contextItems.push(newContextItem)
-            // Remove any non-unique items that are no longer needed.
+
+            // Remove any items that are no longer unique.
+            // TODO (bee) update token usage with the new context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
 

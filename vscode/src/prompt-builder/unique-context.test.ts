@@ -302,6 +302,7 @@ describe('Unique Context Items', () => {
             expect(getUniqueContextItems([noRange, inner])).toStrictEqual([noRange])
             expect(getUniqueContextItems([noRange, inner, noRange])).toStrictEqual([noRange])
             expect(getUniqueContextItems([inner, noRange])).toStrictEqual([noRange])
+            expect(getUniqueContextItems([inner, noRange, inner, inner])).toStrictEqual([noRange])
         })
     })
 
