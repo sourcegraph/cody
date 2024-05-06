@@ -149,10 +149,7 @@ const CompactProviderComponent: React.FunctionComponent<{
             ) : (
                 <i className="codicon codicon-repo-forked" title={name} />
             )}
-            <span
-                className={classNames(styles.repoName, { [styles.repoNameMuted]: isIgnored })}
-                title={name}
-            >
+            <span className={clsx(styles.repoName, { [styles.repoNameMuted]: isIgnored })} title={name}>
                 {briefName(name)}
             </span>
             {isIgnored ? (
