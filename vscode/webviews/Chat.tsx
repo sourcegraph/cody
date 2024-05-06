@@ -544,11 +544,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                                 isNewInstall={isNewInstall}
                             />
-                            {/* <ResponseSettings
-                                isOpen={isResponseSettingsOpen}
-                                setOpen={onResponseSettingsTogglerClick}
-                            /> */}
-                            4
                         </div>
                     </div>
                     <SubmitButton
