@@ -71,7 +71,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
                         state: 'ready',
                         id,
                         inclusion: auto ? 'auto' : 'manual',
-                        isIgnored: contextFiltersProvider.isRepoNameIgnored(id),
+                        isIgnored: contextFiltersProvider.isRepoNameIgnored(displayName),
                     },
                 ],
             }
