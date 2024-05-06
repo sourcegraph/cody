@@ -8,6 +8,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## [1.16.2]
+
+### Added
+
+### Fixed
+
 - Chat: Fixed a bug where the entire Cody chat view would appear blank. [pull/4062](https://github.com/sourcegraph/cody/pull/4062)
 
 ### Changed
