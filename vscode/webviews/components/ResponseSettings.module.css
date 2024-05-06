@@ -1,0 +1,42 @@
+.popup {
+    max-width: 300px;
+    cursor: default;
+}
+
+.popup i {
+    opacity: 0.8;
+}
+
+.popup vscode-checkbox {
+    margin-top: 0;
+}
+
+/*
+    vscode-checkbox and vscode-button is missing the borders and focus styles that built-in VS
+    controls have (perhaps out of date?) so we need to add them in ourselves
+*/
+.popup vscode-checkbox::part(control) {
+    background-color: var(--vscode-checkbox-background);
+    border: 1px solid var(--vscode-checkbox-border);
+}
+
+.popup vscode-checkbox:focus::part(control),
+.popup vscode-checkbox:focus-visible::part(control),
+.popup vscode-checkbox:focus-within::part(control) {
+    border-color: var(--vscode-focusBorder);
+}
+
+.popup vscode-button:focus::part(control),
+.popup vscode-button:focus-visible::part(control),
+.popup vscode-button:focus-within::part(control) {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+.settings-btns {
+    position: relative;
+    display: flex;
+    color: var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 3px;
+}
