@@ -9,6 +9,9 @@ import {
     renderCodyMarkdown,
 } from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
+import { PopoverButton } from '../Components/platform/Button'
+import { SelectList } from '../Components/platform/SelectList'
+import { PromptEditor, type SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
 class AgentRunnerClient {
@@ -87,27 +90,25 @@ const DescribeBlock: React.FunctionComponent<{
     agent: AgentRunnerClient
 }> = ({ isActive, agent }) => {
     const [description, setDescription] = useState('')
+    const [isEditing, setIsEditing] = useState(isActive)
 
     const start = useCallback(() => agent.start(description), [agent, description])
 
-    const onSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>) => {
-            event.preventDefault()
-            start()
-        },
-        [start]
-    )
-
-    const onKeyUp = useCallback(
-        (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-            if (event.key === 'Enter') {
+    const onEnter = useCallback(
+        (event: KeyboardEvent | null): void => {
+            if (event && !event.shiftKey && !event.isComposing && description.trim().length > 0) {
+                event.preventDefault()
+                setIsEditing(false)
                 start()
                 return
             }
-            setDescription(event.currentTarget.value)
         },
-        [start]
+        [description, start]
     )
+
+    const onEditorChange = useCallback((value: SerializedPromptEditorValue): void => {
+        setDescription(value.text)
+    }, [])
 
     return (
         <div className="action action-l0">
@@ -116,17 +117,41 @@ const DescribeBlock: React.FunctionComponent<{
                 <span className="action-title-name">Describe</span>
             </div>
             <div className="action-body">
-                {isActive ? (
-                    <form onSubmit={onSubmit}>
-                        <textarea className="action-input" onKeyUp={onKeyUp} />
-                        <input type="submit" />
-                    </form>
+                {isEditing ? (
+                    <PromptEditor
+                        onChange={onEditorChange}
+                        onEnterKey={onEnter}
+                        placeholder="Describe what you'd like to do"
+                    />
                 ) : (
                     <pre className="action-text">{description}</pre>
                 )}
             </div>
         </div>
     )
+}
+
+const actionL0SelectOptions = {
+    restate: {
+        value: 'restate',
+        title: 'Restate',
+    },
+    contextualize: {
+        value: 'contextualize',
+        title: 'Contextualize',
+    },
+    reproduce: {
+        value: 'reproduce',
+        title: 'Reproduce',
+    },
+    plan: {
+        value: 'plan',
+        title: 'Plan',
+    },
+    'do-step': {
+        value: 'do-step',
+        title: 'Do Step',
+    },
 }
 
 const ActionBlock: React.FunctionComponent<{
@@ -159,15 +184,44 @@ const NextActionBlock: React.FunctionComponent<{
             agent.approveNextAction(proposalID, action)
         }
     }, [agent, proposalID, action])
+    const onChangeAction = useCallback((newActionType: string | undefined) => {
+        console.log('# selected new action', newActionType)
+    }, [])
 
     const { level } = action
     const { codicon, title } = displayInfoForAction(action)
 
+    // NEXT: user options at this point:
+    // - switch action
+    // - type text / instructions
+    // - take action in the editor
     return (
         <div className={`action action-l${level}`}>
             <div className="action-title">
-                <i className={`codicon codicon-${codicon}`} />
-                <span className="action-title-name">{title}</span>
+                {level === 0 ? (
+                    <PopoverButton
+                        popoverContent={close => (
+                            <SelectList
+                                value={action.type}
+                                options={Object.values(actionL0SelectOptions)}
+                                onChange={(value, shouldClose) => {
+                                    onChangeAction(value)
+                                    if (shouldClose) {
+                                        close()
+                                    }
+                                }}
+                            />
+                        )}
+                    >
+                        <i className={`codicon codicon-${codicon}`} />
+                        <span className="action-title-name">{title}</span>
+                    </PopoverButton>
+                ) : (
+                    <>
+                        <i className={`codicon codicon-${codicon}`} />
+                        <span className="action-title-name">{title}</span>
+                    </>
+                )}
             </div>
             <div className="action-body">
                 {children}
@@ -349,18 +403,18 @@ function renderAction(action: Action, key: string): React.ReactNode {
             switch (action.actionType) {
                 case 'edit':
                     child = (
-                        <div>
+                        <>
                             <i className="codicon codicon-edit" />
                             <span>{action.description}</span>
-                        </div>
+                        </>
                     )
                     break
                 case 'view':
                     child = (
-                        <div>
+                        <>
                             <i className="codicon codicon-eye" />
                             <span>{action.description}</span>
-                        </div>
+                        </>
                     )
                     break
             }

@@ -31,7 +31,7 @@ import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { executeCodyCommand, setCommandController } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
-    executeDocCommand, // foo
+    executeDocCommand,
     executeExplainCommand,
     executeExplainOutput,
     executeSmellCommand,
