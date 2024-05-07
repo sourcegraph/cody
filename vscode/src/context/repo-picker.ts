@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { contextFiltersProvider, pluralize } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { RemoteSearch } from './remote-search'
 import { type Repo, type RepoFetcher, RepoFetcherState } from './repo-fetcher'
@@ -217,6 +217,8 @@ export class RemoteRepoPicker implements vscode.Disposable {
 
 function showIgnoredRepoNotification(names: string[]) {
     vscode.window.showErrorMessage(
-        `The repository ${names.join(', ')} is ignored by your Cody ignore policy.`
+        `The ${pluralize('repository', names.length, 'repositories')} ${names.join(
+            ', '
+        )} is ignored by your Cody ignore policy.`
     )
 }
