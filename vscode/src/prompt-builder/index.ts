@@ -101,9 +101,7 @@ export class PromptBuilder {
         const reversedContextItems = contextMessages.slice().reverse()
 
         // Required by agent tests to ensure the context items are sorted correctly.
-        if (type !== 'history') {
-            sortContextItems(reversedContextItems as ContextItem[])
-        }
+        sortContextItems(reversedContextItems as ContextItem[])
 
         for (const item of reversedContextItems) {
             const newContextItem = contextItem(item)
