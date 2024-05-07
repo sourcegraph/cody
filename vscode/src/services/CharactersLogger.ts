@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getConfiguration } from '../configuration'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
 
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes

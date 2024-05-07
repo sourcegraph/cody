@@ -236,8 +236,8 @@ export type {
     event,
 } from './sourcegraph-api/graphql/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-export { NOOP_TELEMETRY_SERVICE } from './telemetry'
-export type { TelemetryEventProperties, TelemetryService } from './telemetry'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
+export type { TelemetryEventProperties, TelemetryService, NOOP_TELEMETRY_SERVICE } from './telemetry'
 export { type BillingCategory, type BillingProduct } from './telemetry-v2'
 export {
     MockServerTelemetryRecorderProvider,

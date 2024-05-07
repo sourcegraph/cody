@@ -28,6 +28,7 @@ import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
