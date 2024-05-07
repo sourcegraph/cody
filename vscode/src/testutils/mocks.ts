@@ -827,6 +827,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
+    experimentalGithubAccessToken: '',
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

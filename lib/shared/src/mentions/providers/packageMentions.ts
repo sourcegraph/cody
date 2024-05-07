@@ -39,7 +39,7 @@ export const PACKAGE_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'package'>
     id: 'package',
     triggerPrefixes: Object.values(PackageEcosystem).map(prefix => prefix + ':'),
 
-    async queryContextItems(query, signal) {
+    async queryContextItems(query, _, signal) {
         const [ecosystemName = '', name = ''] = query.split(':')
         const ecosystem = toPackageEcosystem(ecosystemName)
         if (!ecosystem || name.length < 3) {

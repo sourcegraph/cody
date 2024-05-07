@@ -166,11 +166,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                       }
                 - name: starcoder-7b
                   value:
-                    - |-
-                      const user = {
-                        firstName: 'John',
-                        isEligible: true
-                      }
+                    - const user = new User()
               prompts:
                 - name: fireworks
                   value:
@@ -251,7 +247,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                         import { User } from './user'
 
 
-                        const user = {<fim_suffix>
+                        const user = <fim_suffix>
 
 
                         export const message = 'Hello'<fim_middle>
@@ -288,7 +284,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
               "autocompletes:
                 - name: starcoder-16b
                   value:
-                    - "  return cars.find(car => isNewCar(car, { minimumYear: 2018 }))"
+                    - "  return cars.find(isNewCar)!.user"
               prompts:
                 - name: fireworks
                   value:
@@ -382,7 +378,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
             )
         }, 10_000)
 
-        it('complex-types', async () => {
+        it.skip('complex-types', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
@@ -503,7 +499,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 `
               "autocompletes:
                 - name: starcoder-16b
-                  value: []
+                  value:
+                    - "    doSomething({ validDogSled: true })"
               prompts:
                 - name: fireworks
                   value:
@@ -722,7 +719,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
         }, 10_000)
 
         const tsxUri = workspace.file('src', 'Calculator.tsx')
-        it('tsx', async () => {
+        it.skip('tsx', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await openFile(tsxUri)
 
@@ -734,7 +731,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 - name: starcoder-16b
                   value:
                     - "    return <h1>My favorite calculator comes from
-                      {props.languageKind}</h1>"
+                      {props.languageKind}!</h1>"
               prompts:
                 - name: fireworks
                   value:

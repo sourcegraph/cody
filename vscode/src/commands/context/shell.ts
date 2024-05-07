@@ -45,16 +45,16 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             const content = outputWrapper.replace('{command}', command).replace('{output}', output)
             const size = TokenCounter.countTokens(content)
 
-            const file = {
-                type: 'file',
-                content,
-                title: 'Terminal Output',
-                uri: vscode.Uri.file('terminal-output'),
-                source: ContextItemSource.Terminal,
-                size,
-            } satisfies ContextItem
-
-            return [file]
+            return [
+                {
+                    type: 'file',
+                    content,
+                    title: 'Terminal Output',
+                    uri: vscode.Uri.file(command),
+                    source: ContextItemSource.Terminal,
+                    size,
+                },
+            ]
         } catch (error) {
             // Handles errors and empty output
             logError('getContextFileFromShell', 'failed', { verbose: error })

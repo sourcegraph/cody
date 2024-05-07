@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from '@heroicons/react/16/solid'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import {
     type ButtonHTMLAttributes,
     type ComponentType,
@@ -40,7 +40,7 @@ export const Button = forwardRef<
     ) => (
         <button
             type={type}
-            className={classNames(
+            className={clsx(
                 styles.button,
                 {
                     [styles.buttonPrimary]: appearance === 'primary',

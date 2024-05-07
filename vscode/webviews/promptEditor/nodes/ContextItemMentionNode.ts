@@ -4,6 +4,8 @@ import styles from './ContextItemMentionNode.module.css'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
@@ -33,6 +35,8 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemPackage, 'uri' | 'content'>
+    | Omit<ContextItemGithubIssue, 'uri' | 'content'>
+    | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -179,7 +183,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // A displayed range of `foo.txt:2-4` means "include all of lines 2, 3, and 4", which means the
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
-    const rangeText = contextItem.range ? `:${displayLineRange(contextItem.range)}` : ''
+    const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
     if (contextItem.type === 'file') {
         if (contextItem.provider && contextItem.title) {
             return `@${contextItem.title}`
@@ -192,6 +196,12 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     if (contextItem.type === 'package') {
         return `@${contextItem.ecosystem}:${contextItem.name}`
     }
+    if (contextItem.type === 'github_pull_request') {
+        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
+    }
+    if (contextItem.type === 'github_issue') {
+        return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+    }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
@@ -202,7 +212,7 @@ export function $createContextItemMentionNode(
     const node = new ContextItemMentionNode(contextItem)
     node.setMode('token').toggleDirectionless()
     contextItem.type === 'file' &&
-        contextItem.isTooLarge &&
+        (contextItem.isTooLarge || contextItem.isIgnored) &&
         node.setStyle('color: var(--vscode-list-errorForeground)')
     return $applyNodeReplacement(node)
 }

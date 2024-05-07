@@ -6,6 +6,7 @@ import {
     type Message,
     type ModelContextWindow,
     TokenCounter,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     ps,
     toRangeData,
@@ -80,10 +81,10 @@ export class PromptBuilder {
 
     private processedContextType = new Set<ContextTokenUsageType>()
 
-    public tryAddContext(
+    public async tryAddContext(
         tokenType: ContextTokenUsageType,
         contextMessages: (ContextItem | ContextMessage)[]
-    ): PromptBuilderContextResult {
+    ): Promise<PromptBuilderContextResult> {
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             used: [] as ContextItem[], // The items that were successfully added
@@ -101,6 +102,23 @@ export class PromptBuilder {
                 result.ignored.push(userContextItem)
                 continue
             }
+            if (await contextFiltersProvider.isUriIgnored(userContextItem.uri)) {
+                result.ignored.push(userContextItem)
+                continue
+            }
+            // Special-case remote context here. We can usually rely on the remote context to honor
+            // any context filters but in case of client side overwrites, we want a file that is
+            // ignored on a client to always be treated as ignored.
+            if (
+                userContextItem.type === 'file' &&
+                (userContextItem.uri.scheme === 'https' || userContextItem.uri.scheme === 'http') &&
+                userContextItem.repoName &&
+                contextFiltersProvider.isRepoNameIgnored(userContextItem.repoName)
+            ) {
+                result.ignored.push(userContextItem)
+                continue
+            }
+
             // Skip context items that have already been seen
             if (this.seenContext.has(id)) {
                 result.duplicate.push(userContextItem)

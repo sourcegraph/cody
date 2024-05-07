@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, type ReactNode, useCallback, useEffect, useRef } from 'react'
 import { FLOATING_WIDGET_CLASS_NAME } from './FloatingWidget'
 import styles from './SelectList.module.css'
@@ -32,7 +32,7 @@ export const SelectList: FunctionComponent<{
     }, [])
 
     return (
-        <div className={classNames(styles.container, FLOATING_WIDGET_CLASS_NAME, className)}>
+        <div className={clsx(styles.container, FLOATING_WIDGET_CLASS_NAME, className)}>
             <ul
                 className={styles.list}
                 role="radiogroup"
