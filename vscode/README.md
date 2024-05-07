@@ -39,7 +39,7 @@ You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/doc
 
 ## Choose Your LLM
 
-Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 2.0, Claude 2.1, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, Claude Instant, and Mixtral.
+Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, Claude Instant, and Mixtral.
 
 Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
 
