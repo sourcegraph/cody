@@ -121,12 +121,11 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
     private _handleDidReceiveMessage(message: WebviewMessageT | BaseWebviewMessage): void {
         if ('type' in message && message.type === 'ready') {
             this.handleReady()
-            return
         }
-        this.handleDidReceiveMessage(message as any)
+        this.handleDidReceiveMessage(message)
     }
 
-    protected abstract handleDidReceiveMessage(message: WebviewMessageT): void
+    protected abstract handleDidReceiveMessage(message: WebviewMessageT | BaseWebviewMessage): void
 
     protected async postMessage(
         message: ExtensionMessageT | BaseExtensionMessage
@@ -214,7 +213,7 @@ export class MinionController
                 level: 1,
                 type: 'human',
                 actionType: 'edit',
-                description: `human edited ${basename}`,
+                description: `Edited ${basename}`,
             })
         }
         if (newActiveEditor) {
@@ -223,18 +222,25 @@ export class MinionController
                 level: 1,
                 type: 'human',
                 actionType: 'view',
-                description: `human viewed ${basename}`,
+                description: `Viewed ${basename}`,
             })
         }
         this.postUpdateActions()
     }
 
-    protected handleDidReceiveMessage(message: MinionWebviewMessage): void {
+    protected handleDidReceiveMessage(message: MinionWebviewMessage | BaseWebviewMessage): void {
         console.log('# AgentController.handleDidReceiveMessage', message)
         switch (message.type) {
+            case 'ready': {
+                const workspaceFolderUris = (vscode.workspace.workspaceFolders || []).map(f =>
+                    f.uri.toString()
+                )
+                this.postMessage({ type: 'config', workspaceFolderUris })
+                break
+            }
             case 'start': {
                 void this.handleStart(message.description)
-                return
+                break
             }
             case 'propose-next-action-reply': {
                 if (!(message.id in this.askCallbacks)) {
@@ -248,6 +254,7 @@ export class MinionController
                     this.askCallbacks[message.id](message.error)
                 }
                 delete this.askCallbacks[message.id]
+                break
             }
         }
     }

@@ -60,6 +60,13 @@
     align-self: flex-start;
 }
 
+.action-body .human-action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 1em;
+}
+
 .action-input {
     flex: 1 1 100%;
     background-color: var(--vscode-input-background);

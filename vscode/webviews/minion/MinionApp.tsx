@@ -9,9 +9,11 @@ import {
     renderCodyMarkdown,
 } from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
+import { FileLink } from '../Components/FileLink'
 import { PopoverButton } from '../Components/platform/Button'
 import { SelectList } from '../Components/platform/SelectList'
 import { PromptEditor, type SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import { updateDisplayPathEnvInfoForWebview } from '../utils/displayPathEnvInfo'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
 class AgentRunnerClient {
@@ -30,6 +32,9 @@ class AgentRunnerClient {
         this.disposables.push(
             this.vscodeAPI.onMessage(message => {
                 switch (message.type) {
+                    case 'config':
+                        updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
+                        break
                     case 'update-actions':
                         for (const handle of this.updateActionsHandlers) {
                             handle(message.actions)
@@ -191,10 +196,6 @@ const NextActionBlock: React.FunctionComponent<{
     const { level } = action
     const { codicon, title } = displayInfoForAction(action)
 
-    // NEXT: user options at this point:
-    // - switch action
-    // - type text / instructions
-    // - take action in the editor
     return (
         <div className={`action action-l${level}`}>
             <div className="action-title">
@@ -229,7 +230,7 @@ const NextActionBlock: React.FunctionComponent<{
                     <form>
                         <label>Waiting for approval</label>
                         <button onClick={onApprove} type="button">
-                            Approve
+                            Proceed
                         </button>
                     </form>
                 )) ||
@@ -263,7 +264,7 @@ function displayInfoForAction(action: Action): ActionInfo {
         scroll: { codicon: 'eye' },
         edit: { codicon: 'edit' },
         bash: { codicon: 'terminal' },
-        human: { codicon: 'robot', title: 'Invoke human' },
+        human: { codicon: 'robot', title: 'Observed human' },
     }
     const info = hardcoded[action.type] || {}
     switch (action.type) {
@@ -317,12 +318,10 @@ function renderAction(action: Action, key: string): React.ReactNode {
                                 )}
                             >
                                 <div>
-                                    <a
-                                        href={annotatedContext.source.uri.toString()}
-                                        className="action-text"
-                                    >
-                                        {annotatedContext.source.uri.toString()}
-                                    </a>
+                                    <FileLink
+                                        uri={annotatedContext.source.uri}
+                                        range={annotatedContext.source.range}
+                                    />
                                 </div>
                                 <div
                                     className="action-code-snippet"
@@ -403,18 +402,20 @@ function renderAction(action: Action, key: string): React.ReactNode {
             switch (action.actionType) {
                 case 'edit':
                     child = (
-                        <>
+                        <div className="human-action">
                             <i className="codicon codicon-edit" />
+                            &nbsp;
                             <span>{action.description}</span>
-                        </>
+                        </div>
                     )
                     break
                 case 'view':
                     child = (
-                        <>
+                        <div className="human-action">
                             <i className="codicon codicon-eye" />
+                            &nbsp;
                             <span>{action.description}</span>
-                        </>
+                        </div>
                     )
                     break
             }

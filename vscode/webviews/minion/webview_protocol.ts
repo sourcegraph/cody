@@ -17,6 +17,10 @@ export type MinionWebviewMessage =
 
 export type MinionExtensionMessage =
     | {
+          type: 'config'
+          workspaceFolderUris: string[]
+      }
+    | {
           type: 'update-actions'
           actions: Action[]
       }
