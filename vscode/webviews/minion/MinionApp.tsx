@@ -343,7 +343,10 @@ function renderAction(action: Action, key: string): React.ReactNode {
                 <ActionBlock level={action.level} codicon={codicon} title={title}>
                     <ol>
                         {action.steps.map(step => (
-                            <li key={step.title}>{step.title}</li>
+                            <li key={step.title}>
+                                <h3>{step.title}</h3>
+                                <pre className="action-text">{step.description}</pre>
+                            </li>
                         ))}
                     </ol>
                 </ActionBlock>
