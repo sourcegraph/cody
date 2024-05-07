@@ -70,14 +70,14 @@ export class DefaultPrompter implements IPrompter {
             }
 
             // Counter for context items categorized by source
-            const contextCount = { user: 0, enhanced: 0, transcript: 0 }
+            const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
 
             // Add context from new user-specified context items, e.g. @-mentions, @-uri
             const newUserContextMessages = await promptBuilder.tryAddContext(
                 'user',
                 this.explicitContext
             )
-            contextCount.user += newUserContextMessages.ignored.length
+            ignoredContext.user += newUserContextMessages.ignored.length
 
             // NOTE: Only used for display excluded context from user-specifed context items in UI
             const ignoredUserContext: ContextItem[] = newUserContextMessages.ignored.map(c => ({
@@ -90,7 +90,7 @@ export class DefaultPrompter implements IPrompter {
                 'history',
                 reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
             )
-            contextCount.transcript += historyContext.ignored.length
+            ignoredContext.transcript += historyContext.ignored.length
 
             // Get new enhanced context from current editor or broader search when enabled
             if (this.getEnhancedContext) {
@@ -104,12 +104,12 @@ export class DefaultPrompter implements IPrompter {
                     'enhanced',
                     newEnhancedContextItems
                 )
-                contextCount.enhanced += newEnhancedMessages.ignored.length
+                ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
 
             logDebug(
                 'DefaultPrompter.makePrompt',
-                `Ignored context due to context limit: user=${contextCount.user}, enhanced=${contextCount.enhanced}, previous=${contextCount.transcript}`
+                `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
             )
 
             return {

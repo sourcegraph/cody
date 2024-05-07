@@ -6,7 +6,7 @@ import {
 import { getContextItemTokenUsageType } from './utils'
 
 /**
- * Filters a exisiting context items for uniqueness.
+ * Filters exisiting context items for uniqueness.
  *
  * NOTE: The transcript is reversed during the prompt-building process to ensure
  * that the most recent items are considered first. Therefre, the `reversedItems`
@@ -26,8 +26,10 @@ export function getUniqueContextItems(reversedItems: ContextItem[]): ContextItem
             continue
         }
 
-        // Filter non-unique items and items with the same display path
-        // when the new item's range contains the existing item's range.
+        // Filter non-unique items from items with the same display path:
+        // - when the new item's range contains the existing item's range,
+        // - when the existing item's range contains the new item's range,
+        // - when the new item is a user-added item with a different source.
         uniqueItems = uniqueItems.filter(
             item =>
                 getContextItemDisplayPath(item) !== itemToAddPath ||
@@ -36,8 +38,7 @@ export function getUniqueContextItems(reversedItems: ContextItem[]): ContextItem
                 (isUserAddedItem(item) && itemToAdd.source !== item.source)
         )
 
-        // Add the current item to the list of unique items
-        uniqueItems.push(itemToAdd)
+        uniqueItems.push(itemToAdd) // Add the current item to the list of unique items
     }
 
     return uniqueItems
@@ -65,8 +66,8 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
                 return false // Duplicate found.
             }
 
-            // If overlapping ranges on the same lines.
-            // If the item's range contains content from new item.
+            // Duplicates if overlapping ranges on the same lines,
+            // or if one range contains the other.
             if (item.range && itemToAddRange) {
                 return !(
                     rangesOnSameLines(item.range, itemToAddRange) ||
@@ -76,22 +77,40 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
         }
     }
 
-    // If no conflicts are found, return true
-    return true
+    return true // No conflicts are found.
 }
 
+/**
+ * Checks if the outer range contains the inner range:
+ * - The start of the outer range is less than or equal to the start of the inner range.
+ * - The end of the outer range is greater than or equal to the end of the inner range.
+ */
 function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boolean {
     return outerRange.start.line <= innerRange.start.line && outerRange.end.line >= innerRange.end.line
 }
 
+/**
+ * Checks if both ranges are on the same lines.
+ */
 function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
     return range1.start.line === range2.start.line && range1.end.line === range2.end.line
 }
 
+/**
+ * Returns the display path for a context item.
+ *
+ * For unified items, the title is used as the display path.
+ * For other items, the URI is used.
+ */
 function getContextItemDisplayPath(item: ContextItem): string {
     return item.source === 'unified' && item.title ? item.title : getDisplayPath(item.uri)
 }
 
+/**
+ * If the context item is a user-added item:
+ * - `user` - The item was added by the user through @-mentions or other user input.
+ * - `selection` - The item was added by the user through a selection.
+ */
 function isUserAddedItem(item: ContextItem): boolean {
     return getContextItemTokenUsageType(item) === 'user'
 }

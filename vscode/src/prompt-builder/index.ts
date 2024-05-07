@@ -38,7 +38,8 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
-        // Create context messages for each context item
+        // Create context messages for each context item, where
+        // assistant messages come first because the transcript is in reversed order.
         const assistantMessage = { speaker: 'assistant', text: ps`Ok.` } as Message
         for (const item of this.contextItems) {
             const contextMessage = renderContextItem(item)
@@ -99,7 +100,7 @@ export class PromptBuilder {
         // then reverse it to process the newest context items first.
         const reversedContextItems = contextMessages.slice().reverse()
 
-        // Required by agent tests to ensure the context items are sorted correctly
+        // Required by agent tests to ensure the context items are sorted correctly.
         if (type !== 'history') {
             sortContextItems(reversedContextItems as ContextItem[])
         }
@@ -128,7 +129,6 @@ export class PromptBuilder {
                 continue
             }
 
-            // Assistant messages come first because the transcript is in reversed order
             const contextMessage = isContextItem(item) ? renderContextItem(item) : item
             if (!contextMessage) {
                 continue
@@ -143,7 +143,7 @@ export class PromptBuilder {
             const tokenType = getContextItemTokenUsageType(newContextItem)
             const isWithinLimit = this.tokenCounter.updateUsage(tokenType, messagePair)
 
-            // Don't update context items from the past
+            // Don't update context items from the past (history items) unless undefined.
             if (type !== 'history' || newContextItem.isTooLarge === undefined) {
                 newContextItem.isTooLarge = !isWithinLimit
             }
@@ -156,11 +156,9 @@ export class PromptBuilder {
                 continue
             }
 
-            // Add the new context item to the list,
+            // Add the new valid context item to the context list.
             this.contextItems.push(newContextItem)
-
-            // Update context items for the next iteration,
-            // and removes any items that are no longer unique.
+            // Update context items for the next iteration, removes items that are no longer unique.
             // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
