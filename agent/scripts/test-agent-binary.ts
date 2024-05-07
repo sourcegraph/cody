@@ -7,9 +7,9 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
+import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from '../src/TestClient'
 import { TestWorkspace } from '../src/TestWorkspace'
-import { TESTING_TOKENS } from '../src/testing-tokens'
 
 async function main() {
     if (!process.env.SRC_ACCESS_TOKEN) {
@@ -30,13 +30,13 @@ async function main() {
 
     const osArch = getOSArch()
     const workspace = new TestWorkspace(prototypePath)
-    const token = TESTING_TOKENS.dotcom
+    const credentials = TESTING_CREDENTIALS.dotcom
 
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
         bin: './dist/agent-' + osArch,
-        token,
+        credentials: credentials,
     })
 
     await client.initialize({})
@@ -44,8 +44,8 @@ async function main() {
     const valid = await client.request('extensionConfiguration/change', {
         ...client.info.extensionConfiguration,
         anonymousUserID: 'abcde1234',
-        accessToken: token.production!,
-        serverEndpoint: token.serverEndpoint,
+        accessToken: credentials.token!,
+        serverEndpoint: credentials.serverEndpoint,
         customHeaders: {},
     })
 

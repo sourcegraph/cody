@@ -4,9 +4,9 @@ import dedent from 'dedent'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import YAML from 'yaml'
+import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
-import { TESTING_TOKENS } from './testing-tokens'
 import { trimEndOfLine } from './trimEndOfLine'
 
 interface TestParameters {
@@ -29,7 +29,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
         TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: `graph-context-${model}`,
-            token: TESTING_TOKENS.dotcom,
+            credentials: TESTING_CREDENTIALS.dotcom,
             extraConfiguration: {
                 'cody.autocomplete.experimental.graphContext': graphContext,
                 'cody.autocomplete.advanced.provider': provider,
