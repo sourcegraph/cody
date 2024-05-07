@@ -15,6 +15,7 @@ import {
 
 import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
+import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
@@ -24,7 +25,6 @@ import type {
     EditTask,
     Requests,
 } from './protocol-alias'
-import { TESTING_TOKENS } from './testing-tokens'
 import { trimEndOfLine } from './trimEndOfLine'
 
 const explainPollyError = `
@@ -34,9 +34,7 @@ const explainPollyError = `
     If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
     Run the following commands locally to update the recordings:
 
-      export SRC_ACCESS_TOKEN=YOUR_TOKEN
-      export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=RATE_LIMITED_TOKEN # see https://sourcegraph.slack.com/archives/C059N5FRYG3/p1702990080820699
-      export SRC_ENDPOINT=https://sourcegraph.com
+      source agent/scripts/export-cody-http-recording-tokens.sh
       pnpm update-agent-recordings
       # Press 'u' to update the snapshots if the new behavior makes sense. It's
       # normal that the LLM returns minor changes to the wording.
@@ -57,7 +55,7 @@ describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        token: TESTING_TOKENS.dotcom,
+        credentials: TESTING_CREDENTIALS.dotcom,
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1394,7 +1392,7 @@ describe('Agent', () => {
         const rateLimitedClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
-            token: TESTING_TOKENS.dotcomProUserRateLimited,
+            credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
@@ -1421,7 +1419,7 @@ describe('Agent', () => {
         const demoEnterpriseClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseClient',
-            token: TESTING_TOKENS.enterprise,
+            credentials: TESTING_CREDENTIALS.enterprise,
             logEventMode: 'connected-instance-only',
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1586,7 +1584,7 @@ describe('Agent', () => {
         const s2EnterpriseClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseMainBranchClient',
-            token: TESTING_TOKENS.s2,
+            credentials: TESTING_CREDENTIALS.s2,
             logEventMode: 'connected-instance-only',
         })
 
