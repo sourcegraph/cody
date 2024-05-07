@@ -1,4 +1,4 @@
-import * as fspromises from 'node:fs/promises'
+import fs from 'fs';
 import * as path from 'node:path'
 import { type FileURI, type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-shared'
 import _ from 'lodash'
@@ -27,16 +27,16 @@ function getLoggingDirPath(): FileURI {
 
 async function createLogsFileIfNotExist(): Promise<string> {
     const dirPath = getLoggingDirPath().fsPath
-    await fspromises.mkdir(dirPath, { recursive: true })
+    await fs.promises.mkdir(dirPath, { recursive: true })
     const fileName = 'cody-custom-completions.jsonl'
     const filePath = path.join(dirPath, fileName)
     if (
-        !(await fspromises
+        !(await fs.promises
             .access(filePath)
             .then(() => true)
             .catch(() => false))
     ) {
-        await fspromises.writeFile(filePath, '')
+        await fs.promises.writeFile(filePath, '')
     }
     return filePath
 }
@@ -62,7 +62,7 @@ async function appendCompletionLogsFile(
         const modelName = result.model
         dataToLog[modelName] = result.completion ? result.completion : ''
     }
-    await fspromises.appendFile(logFilePath, JSON.stringify(dataToLog) + '\n')
+    await fs.promises.appendFile(logFilePath, JSON.stringify(dataToLog) + '\n')
 }
 
 export async function triggerMultiModelAutocompletionsForComparison(
