@@ -815,16 +815,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private postContextStatus(): void {
-        logDebug(
-            'SimpleChatPanelProvider',
-            'postContextStatusToWebView',
-            JSON.stringify(this.contextStatusAggregator.status)
-        )
+        const status = this.contextStatusAggregator.status
+        // Only log non-empty status.
+        if (status.length > 0) {
+            logDebug('SimpleChatPanelProvider', 'postContextStatusToWebView', JSON.stringify(status))
+        }
         void this.postMessage({
             type: 'enhanced-context',
-            enhancedContextStatus: {
-                groups: this.contextStatusAggregator.status,
-            },
+            enhancedContextStatus: { groups: status },
         })
     }
 
