@@ -980,10 +980,6 @@
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
-        "cody.proxy": {
-          "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
-        },
         "cody.codebase": {
           "order": 2,
           "type": "string",

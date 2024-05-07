@@ -39,10 +39,9 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
             return socksProxyAgent
         }
 
-        const optionProxyUrl = undefined
         const optionStrictSSL = undefined
 
-        const proxyURL = optionProxyUrl || getSystemProxyURI(protocol, process.env);
+        const proxyURL = proxy || getSystemProxyURI(protocol, process.env);
         if (!proxyURL) {
             if (protocol === 'http:') {
                 return httpAgent
