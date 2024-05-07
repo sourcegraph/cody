@@ -1,69 +1,11 @@
-import fs from 'fs';
-import * as path from 'node:path'
-import { type FileURI, type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-shared'
+import { type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-shared'
 import _ from 'lodash'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { logDebug } from '../log'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import type { MultiModelCompletionsResults } from './inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfigFromVSCodeConfig } from './providers/create-provider'
-
-function getLoggingDirPath(): FileURI {
-    switch (process.platform) {
-        case 'darwin':
-            return URI.file(
-                `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/multi-model-completion`
-            )
-        case 'linux':
-            return URI.file(`${process.env.HOME}/.cache/com.sourcegraph.cody/multi-model-completion`)
-        case 'win32':
-            return URI.file(`${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\multi-model-completion`)
-        default:
-            throw new Error(`Unsupported platform: ${process.platform}`)
-    }
-}
-
-async function createLogsFileIfNotExist(): Promise<string> {
-    const dirPath = getLoggingDirPath().fsPath
-    await fs.promises.mkdir(dirPath, { recursive: true })
-    const fileName = 'cody-custom-completions.jsonl'
-    const filePath = path.join(dirPath, fileName)
-    if (
-        !(await fs.promises
-            .access(filePath)
-            .then(() => true)
-            .catch(() => false))
-    ) {
-        await fs.promises.writeFile(filePath, '')
-    }
-    return filePath
-}
-
-async function appendCompletionLogsFile(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    completions: MultiModelCompletionsResults[]
-) {
-    // Add logs to a local file for analysis
-    const logFilePath = await createLogsFileIfNotExist()
-    const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
-    const suffix = document.getText(
-        new vscode.Range(position, document.positionAt(document.getText().length))
-    )
-    const fileName = path.basename(document.fileName)
-    const dataToLog: { [key: string]: string } = {
-        fileName,
-        prefix,
-        suffix,
-    }
-    for (const result of completions) {
-        const modelName = result.model
-        dataToLog[modelName] = result.completion ? result.completion : ''
-    }
-    await fs.promises.appendFile(logFilePath, JSON.stringify(dataToLog) + '\n')
-}
 
 export async function triggerMultiModelAutocompletionsForComparison(
     allCompletionsProviders: InlineCompletionItemProvider[]
@@ -83,7 +25,6 @@ export async function triggerMultiModelAutocompletionsForComparison(
         allPromises.push(provider.manuallyGetCompletionItemsForProvider(document, position, context))
     }
     const completions = await Promise.all(allPromises)
-    appendCompletionLogsFile(document, position, completions)
     let completionsOutput = ''
     for (const result of completions) {
         completionsOutput += `Model: ${result.model}\n${result.completion}\n\n`
