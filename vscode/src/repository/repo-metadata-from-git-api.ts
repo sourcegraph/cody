@@ -24,7 +24,9 @@ export class RepoMetadatafromGitApi {
             return this.cache.get(gitUrl)
         }
         const repoMetaData = await this.metadataFromGit(gitUrl)
-        this.cache.set(gitUrl, repoMetaData)
+        if (repoMetaData) {
+            this.cache.set(gitUrl, repoMetaData)
+        }
         return repoMetaData
     }
 
@@ -42,8 +44,7 @@ export class RepoMetadatafromGitApi {
         const metadata = { owner, repoName, isPublic: false }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD' })
-            const repoData = await response.json()
-            metadata.isPublic = response.ok && repoData.private === false
+            metadata.isPublic = response.ok
             return metadata
         } catch (error) {
             return undefined
