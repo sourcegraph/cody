@@ -21,6 +21,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
 - Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
 
+## [1.16.2]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the entire Cody chat view would appear blank. [pull/4062](https://github.com/sourcegraph/cody/pull/4062)
+
+### Changed
+
 ## [1.16.1]
 
 ### Added

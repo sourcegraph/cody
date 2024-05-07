@@ -58,7 +58,9 @@ export const Popover: FunctionComponent<{
         if (!popoverEl.current || !anchor) {
             return
         }
-        popoverEl.current.hidePopover()
+        try {
+            popoverEl.current.hidePopover()
+        } catch {}
         if (anchorWasFocused) {
             anchor.focus()
         }

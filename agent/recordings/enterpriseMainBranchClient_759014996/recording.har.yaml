@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 1c3240388e0fd45b94acb211bf5fee4e
+    - _id: 55afdd9a698cf7ebd71c95ffc5154c26
       _order: 0
       cache: {}
       request:
@@ -36,7 +36,7 @@ log:
             value: "849"
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 371
+        headersSize: 428
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -50,7 +50,7 @@ log:
                   <filename>src/sum.ts<fim_prefix>// Here is a reference snippet
                   of code from src/animal.ts:
 
-                  //
+                  // 
 
                   // /* SELECTION_START */
 
@@ -66,13 +66,13 @@ log:
 
                   // /* SELECTION_END */
 
-                  //
+                  // 
 
-                  //
+                  // 
 
                   // Here is a reference snippet of code from src/squirrel.ts:
 
-                  //
+                  // 
 
                   // /**
 
@@ -84,7 +84,7 @@ log:
 
                   // export interface Squirrel {}
 
-                  //
+                  // 
 
                   export function sum(a: number, b: number): number {
                      <fim_suffix>
@@ -99,8 +99,12 @@ log:
             temperature: 0.2
             timeoutMs: 15000
             topK: 0
-        queryString: []
-        url: https://sourcegraph.sourcegraph.com/.api/completions/code
+        queryString:
+          - name: client-name
+            value: enterprisemainbranchclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=enterprisemainbranchclient&client-version=v1
       response:
         bodySize: 236
         content:
@@ -116,7 +120,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 01 May 2024 09:57:29 GMT
+            value: Thu, 02 May 2024 11:24:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -145,7 +149,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-01T09:57:29.536Z
+      startedDateTime: 2024-05-02T11:24:29.321Z
       time: 0
       timings:
         blocked: -1

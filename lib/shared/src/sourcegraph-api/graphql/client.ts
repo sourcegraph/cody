@@ -56,7 +56,10 @@ interface SiteVersionResponse {
 }
 
 interface SiteIdentificationResponse {
-    site: { siteID: string; productSubscription: { license: { hashedKey: string } } } | null
+    site: {
+        siteID: string
+        productSubscription: { license: { hashedKey: string } }
+    } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -677,7 +680,10 @@ export class SourcegraphGraphQLAPIClient {
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
-            return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
+            return {
+                enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
+                version: siteVersion,
+            }
         }
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
@@ -898,7 +904,10 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: this.config.serverEndpoint,
+        })
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
@@ -918,7 +927,10 @@ export class SourcegraphGraphQLAPIClient {
         query: string,
         variables: Record<string, any>
     ): Promise<T | Error> {
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: this.dotcomUrl.href,
+        })
         const headers = new Headers()
         addCustomUserAgent(headers)
         addTraceparent(headers)
