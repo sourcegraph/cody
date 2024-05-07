@@ -1,5 +1,8 @@
 import path from 'node:path'
+import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { telemetryService } from '../services/telemetry'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 
 let tutorialDocumentUri: vscode.Uri
 
@@ -17,4 +20,20 @@ export const isInTutorial = (document: vscode.TextDocument): boolean => {
 
     // True if the users target document matches our tutorial document
     return document.uri.toString() === tutorialDocumentUri.toString()
+}
+
+// A/B testing logic for the interactive tutorial
+// Ensure that the featureFlagProvider has the latest auth status,
+// and then trigger the tutorial.
+// This will either noop or open the tutorial depending on the feature flag.
+export const maybeStartInteractiveTutorial = async () => {
+    telemetryService.log('CodyVSCodeExtension:cody:interactiveTutorial:attemptingStart')
+    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'attemptingStart')
+    await featureFlagProvider.syncAuthStatus()
+    const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
+    logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
+    if (!enabled) {
+        return
+    }
+    return vscode.commands.executeCommand('cody.tutorial.start')
 }
