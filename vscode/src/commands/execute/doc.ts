@@ -14,7 +14,10 @@ import {
 } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
-function getDefaultDocumentableRange(editor: vscode.TextEditor): {
+/**
+ * Gets the default range and insertion point for documenting the code around the current cursor position.
+ */
+function getDefaultDocumentableRanges(editor: vscode.TextEditor): {
     range?: vscode.Range
     insertionPoint?: vscode.Position
 } {
@@ -27,7 +30,8 @@ function getDefaultDocumentableRange(editor: vscode.TextEditor): {
         }
     }
 
-    // No usable selection, fallback to expanding the range to the nearest block.
+    // No usable selection, fallback to expanding the range to the nearest block,
+    // as is the default behavior for all "Edit" commands
     return {}
 }
 
@@ -61,14 +65,14 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     })
 
     if (!documentableNode) {
-        return getDefaultDocumentableRange(editor)
+        return getDefaultDocumentableRanges(editor)
     }
 
     const { range: documentableRange, insertionPoint: documentableInsertionPoint } = documentableNode
     if (!documentableRange) {
         // No documentable range found.
         // Fallback to expanding the range to the nearest block.
-        return getDefaultDocumentableRange(editor)
+        return getDefaultDocumentableRanges(editor)
     }
 
     const {
@@ -88,7 +92,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     if (!selectionMatchesNode && !editor.selection.isEmpty) {
         // We found a documentable range, but the users' adjusted selection does not match it.
         // We have to use the users' selection here, as it's possible they do not want the documentable node.
-        return getDefaultDocumentableRange(editor)
+        return getDefaultDocumentableRanges(editor)
     }
 
     const insertionPoint = documentableInsertionPoint

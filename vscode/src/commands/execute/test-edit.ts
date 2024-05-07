@@ -42,7 +42,8 @@ function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
     const { range: testableRange } = testableNode
     if (!testableRange) {
         // No user-provided selection, no testable range found.
-        // Fallback to expanding the range to the nearest block.
+        // Fallback to expanding the range to the nearest block,
+        // as is the default behavior for all "Edit" commands
         return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 
